@@ -1,0 +1,71 @@
+/**
+ * Public Reader Page
+ * 
+ * Full content reader view.
+ * Public access - no authentication required.
+ */
+
+import { notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { ReaderView } from "@/components/reader/ReaderView";
+import { LoginButton } from "@/components/ui/LoginButton";
+import type { ContentItemWithSegments, SegmentFull, ArtifactSummary, QuickMode } from "@/types/domain";
+
+interface PageProps {
+    params: Promise<{ id: string }>;
+}
+
+export default async function ReadPage({ params }: PageProps) {
+    const { id } = await params;
+    const supabase = await createClient();
+
+    // Fetch content with segments and artifacts
+    const { data: content, error } = await supabase
+        .from("content_item")
+        .select(`
+            *,
+            segments:segment(*),
+            artifacts:artifact(id, type, payload_schema, version)
+        `)
+        .eq("id", id)
+        .eq("status", "verified")
+        .is("deleted_at", null)
+        .order("order_index", { referencedTable: "segment" })
+        .single();
+
+    if (error || !content) {
+        notFound();
+    }
+
+    // Check Session
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Transform to domain type
+    const contentAny = content as any;
+    const item: ContentItemWithSegments = {
+        id: contentAny.id,
+        type: contentAny.type,
+        title: contentAny.title,
+        source_url: contentAny.source_url,
+        status: contentAny.status,
+        category: contentAny.category || null,
+        quick_mode_json: contentAny.quick_mode_json as QuickMode | null,
+        duration_seconds: contentAny.duration_seconds,
+        author: contentAny.author,
+        cover_image_url: contentAny.cover_image_url,
+        segments: (contentAny.segments as any[]).map(s => ({
+            id: s.id,
+            item_id: s.item_id,
+            order_index: s.order_index,
+            title: s.title,
+            markdown_body: s.markdown_body,
+            start_time_sec: s.start_time_sec,
+            end_time_sec: s.end_time_sec
+        })) as SegmentFull[],
+        artifacts: (contentAny.artifacts as any[]) as ArtifactSummary[],
+    };
+
+    // Gate removed - allow guest access
+
+    return <ReaderView content={item} />;
+}

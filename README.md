@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Lifebook
+
+> **A curated knowledge library.** Distilled wisdom from podcasts, books, and articles — made accessible for everyone.
+
+## What is Lifebook?
+
+Lifebook is a **public knowledge platform** where curated summaries of high-value content are published for free consumption. Think of it as a personal library of distilled insights.
+
+### Features
+
+- **Quick Mode**: Get the key takeaways in bullet points
+- **Deep Mode**: Read the full, structured summary with context
+- **Interactive Checklists**: Track your progress on actionable items
+- **Progress Tracking**: Pick up where you left off (stored locally, no account needed)
+- **Netflix-style UI**: Beautiful hero carousel and category lanes
+- **Featured Content**: Spotlight the best content in the hero section
+
+### Content Types
+
+- 🎧 **Podcasts** — Episode summaries and key insights
+- 📚 **Books** — Chapter breakdowns and actionable takeaways
+- 📰 **Articles** — Condensed versions of long-form content
+
+### Categories
+
+Health • Fitness • Wealth • Finance • Productivity • Mindset • Relationships • Science • Business • Philosophy • Technology • Lifestyle
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS
+- **Database**: Supabase (PostgreSQL)
+- **Validation**: Zod
+- **Drag & Drop**: dnd-kit
+- **Deployment**: Vercel
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment variables
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Start local Supabase (requires Docker)
+npx supabase start
+
+# Apply database migrations
+npx supabase db reset
+
+# Run the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+/app
+  /(public)       # Public pages (home, search, random)
+  /read/[id]      # Content reader page
+  /admin          # Protected admin panel
+  /admin-login    # Admin login page
+  /api            # API routes
+/components
+  /admin          # Admin UI components
+  /reader         # Reader view components
+  /ui             # Shared UI components
+/lib              # Utilities and Supabase clients
+/types            # TypeScript type definitions
+/supabase         # Database migrations and seed data
+/docs             # Architecture and design documentation
+```
 
-## Learn More
+## Admin Panel
 
-To learn more about Next.js, take a look at the following resources:
+Access the admin panel at `/admin-login` with the password set in `ADMIN_PASSWORD` environment variable.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Admin Features:**
+- Create/edit content items
+- Manage segments with drag-and-drop reordering
+- Add interactive checklists
+- Toggle featured status for hero carousel
+- Upload cover images
+- Filter by status and featured flag
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentation
 
-## Deploy on Vercel
+- [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System design and data model
+- [DESIGN.md](./docs/DESIGN.md) — UI/UX design system
+- [AGENT.md](./docs/AGENT.md) — Implementation roadmap
+- [API_SPECS.md](./docs/API_SPECS.md) — API contracts
+- [OPS.md](./docs/OPS.md) — Operational workflows
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Private project.
