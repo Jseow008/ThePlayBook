@@ -33,9 +33,6 @@ export function HomeFeed({ items, featuredItems, diaryItems, tedItems }: HomeFee
                         items={items.slice(0, 10)}
                     />
 
-                    {/* Continue Reading (Client-side from localStorage) */}
-                    <ContinueReading allItems={items} />
-
                     {/* Diary of a CEO Lane */}
                     {diaryItems.length > 0 && (
                         <ContentLane
@@ -53,24 +50,23 @@ export function HomeFeed({ items, featuredItems, diaryItems, tedItems }: HomeFee
                     )}
                 </div>
             </div>
-        </div>
 
-            {/* Footer */ }
-    <footer className="border-t border-zinc-800/50 py-12 px-6 lg:px-16 mt-12 bg-black/20">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-                <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-black font-serif font-bold">
-                    L
+            {/* Footer */}
+            <footer className="border-t border-zinc-800/50 py-12 px-6 lg:px-16 mt-12 bg-black/20">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-black font-serif font-bold">
+                            L
+                        </div>
+                        <p>© 2026 Lifebook</p>
+                    </div>
+                    <div className="flex gap-8">
+                        <a href="/about" className="hover:text-foreground transition-colors">About</a>
+                        <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
+                        <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
+                    </div>
                 </div>
-                <p>© 2026 Lifebook</p>
-            </div>
-            <div className="flex gap-8">
-                <a href="/about" className="hover:text-foreground transition-colors">About</a>
-                <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
-                <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
-            </div>
+            </footer>
         </div>
-    </footer>
-        </div >
     );
 }

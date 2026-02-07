@@ -68,8 +68,6 @@ export default async function HomePage() {
         .order("created_at", { ascending: false })
         .limit(10);
 
-    const featuredItems = (featuredData || []) as ContentItem[];
-    const items = (allItems || []) as ContentItem[];
     const diaryItems = (diaryData || []) as ContentItem[];
     const tedItems = (tedData || []) as ContentItem[];
 
