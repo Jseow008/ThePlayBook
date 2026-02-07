@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Play, Info, Star, Clock, BookOpen } from "lucide-react";
+import { Info, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
 
@@ -47,15 +47,9 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                     <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
                         Lifebook
                     </h1>
-                    <p className="text-xl text-zinc-300 mb-8 max-w-2xl mx-auto bg-black/40 p-4 rounded-xl backdrop-blur-sm">
-                        Your personal knowledge library is empty. Add content or mark items as "Featured" to see them here.
+                    <p className="text-xl text-zinc-300 max-w-2xl mx-auto bg-black/40 p-4 rounded-xl backdrop-blur-sm">
+                        A curated library of insights from books, podcasts, and articles. Check back soon for featured content.
                     </p>
-                    <Link
-                        href="/admin"
-                        className="inline-flex h-14 items-center gap-3 rounded-md bg-[#E50914] px-8 text-xl font-bold text-white hover:bg-[#b81d24] transition-colors"
-                    >
-                        Go to Admin
-                    </Link>
                 </div>
                 {/* Bottom Gradient to blend with content lanes */}
                 <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent z-10" />

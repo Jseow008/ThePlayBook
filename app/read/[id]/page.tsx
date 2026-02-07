@@ -8,7 +8,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ReaderView } from "@/components/reader/ReaderView";
-import { LoginButton } from "@/components/ui/LoginButton";
 import type { ContentItemWithSegments, SegmentFull, ArtifactSummary, QuickMode } from "@/types/domain";
 
 interface PageProps {

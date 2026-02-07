@@ -13,7 +13,9 @@
 * [x] Initialize Next.js with TypeScript, Tailwind, App Router
 * [x] Install dependencies (Supabase, Zustand, dnd-kit, etc.)
 * [x] Configure environment variables
-* [x] Set up Supabase project
+* [x] Set up Supabase project (hosted on Supabase Cloud)
+* [x] Configure Supabase Auth for user authentication
+* [x] Configure Supabase Storage for image uploads
 
 ---
 

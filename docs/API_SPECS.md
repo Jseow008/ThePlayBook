@@ -323,8 +323,11 @@ All inputs validated with Zod before processing.
 
 ### 4.3 Database Access
 
-Admin endpoints use Supabase service role key for full access.
-Public queries use anon key with RLS.
+The database is hosted on **Supabase Cloud** (`xmuqsgfxuaaophxnwure.supabase.co`).
+
+- Admin endpoints use Supabase service role key for full access
+- Public queries use anon key with RLS policies
+- Image uploads stored in Supabase Storage bucket
 
 ---
 

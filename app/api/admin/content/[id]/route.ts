@@ -161,26 +161,55 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         // Handle segments update
         if (segments !== undefined) {
-            // Delete existing segments
-            await supabase.from("segment").delete().eq("item_id", id);
+            // Delete ALL existing segments for this item and re-insert to avoid unique constraint violations (order reordering)
+            const { error: deleteError } = await supabase
+                .from("segment")
+                .delete()
+                .eq("item_id", id);
 
-            // Insert new segments
+            if (deleteError) throw deleteError;
+
+            // Insert new/updated segments
             if (segments.length > 0) {
-                const segmentsToInsert = segments.map((segment) => ({
-                    item_id: id,
-                    order_index: segment.order_index,
-                    title: segment.title || null,
-                    markdown_body: segment.markdown_body,
-                    start_time_sec: segment.start_time_sec || null,
-                    end_time_sec: segment.end_time_sec || null,
-                }));
+                // Separate segments into two groups: with ID and without ID
+                // This is because Supabase/PostgREST bulk insert expects uniform objects.
+                // Mixing objects with 'id' and objects without 'id' can cause issues.
+                const segmentsWithId: Record<string, unknown>[] = [];
+                const segmentsWithoutId: Record<string, unknown>[] = [];
 
-                const { error: segmentError } = await supabase
-                    .from("segment")
-                    .insert(segmentsToInsert);
+                segments.forEach((segment) => {
+                    const segmentData: Record<string, unknown> = {
+                        item_id: id,
+                        order_index: segment.order_index,
+                        title: segment.title || null,
+                        markdown_body: segment.markdown_body,
+                        start_time_sec: segment.start_time_sec || null,
+                        end_time_sec: segment.end_time_sec || null,
+                        updated_at: new Date().toISOString(),
+                    };
 
-                if (segmentError) {
-                    throw segmentError;
+                    if (segment.id) {
+                        segmentData.id = segment.id;
+                        segmentsWithId.push(segmentData);
+                    } else {
+                        segmentsWithoutId.push(segmentData);
+                    }
+                });
+
+                // 1. Insert segments with IDs (Explicitly keeping old IDs)
+                if (segmentsWithId.length > 0) {
+                    const { error: insertError1 } = await supabase
+                        .from("segment")
+                        .insert(segmentsWithId);
+                    if (insertError1) throw insertError1;
+                }
+
+                // 2. Insert new segments (Letting DB generate IDs)
+                if (segmentsWithoutId.length > 0) {
+                    const { error: insertError2 } = await supabase
+                        .from("segment")
+                        .insert(segmentsWithoutId);
+                    if (insertError2) throw insertError2;
                 }
             }
         }
@@ -219,7 +248,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     } catch (error) {
         console.error("Error updating content:", error);
         return NextResponse.json(
-            { success: false, error: { code: "INTERNAL_ERROR", message: "Failed to update content" } },
+            {
+                success: false,
+                error: {
+                    code: "INTERNAL_ERROR",
+                    message: `Failed to update content: ${(error as Error).message}`
+                }
+            },
             { status: 500 }
         );
     }

@@ -18,7 +18,7 @@ CREATE TYPE artifact_type AS ENUM ('checklist', 'plan', 'script');
 -- ==========================================================================
 
 CREATE TABLE content_item (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   type content_type NOT NULL,
   title TEXT NOT NULL,
   source_url TEXT,
@@ -48,7 +48,7 @@ CREATE INDEX idx_content_item_type ON content_item(type) WHERE deleted_at IS NUL
 -- ==========================================================================
 
 CREATE TABLE segment (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   item_id UUID NOT NULL REFERENCES content_item(id) ON DELETE CASCADE,
   order_index INTEGER NOT NULL,
   title TEXT,
@@ -78,7 +78,7 @@ CREATE INDEX idx_segment_item_id ON segment(item_id) WHERE deleted_at IS NULL;
 -- ==========================================================================
 
 CREATE TABLE artifact (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   item_id UUID NOT NULL REFERENCES content_item(id) ON DELETE CASCADE,
   type artifact_type NOT NULL,
   

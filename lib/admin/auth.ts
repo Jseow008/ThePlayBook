@@ -93,11 +93,25 @@ export async function clearAdminSession(): Promise<void> {
 /**
  * Verify password matches the environment variable
  */
+import { timingSafeEqual } from "crypto";
+
 export function verifyAdminPassword(password: string): boolean {
     const adminPassword = process.env.ADMIN_PASSWORD;
     if (!adminPassword) {
         console.error("ADMIN_PASSWORD environment variable is not set");
         return false;
     }
-    return password === adminPassword;
+
+    try {
+        const bufferA = Buffer.from(password);
+        const bufferB = Buffer.from(adminPassword);
+
+        if (bufferA.length !== bufferB.length) {
+            return false;
+        }
+
+        return timingSafeEqual(bufferA, bufferB);
+    } catch {
+        return false;
+    }
 }

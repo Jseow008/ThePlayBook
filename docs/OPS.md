@@ -7,19 +7,18 @@
 
 ## 1. Development Workflow
 
-### 1.1 Start Local Stack
+### 1.1 Start Development Server
 
-**Prerequisites:** Docker must be running.
+**Note:** The database, authentication, and storage are now hosted on Supabase Cloud. No local Docker setup is required.
 
 ```bash
-# 1. Start Supabase (runs local DB, Auth, Storage)
-npx supabase start
-
-# 2. Start Next.js development server
+# Start Next.js development server
 npm run dev
 ```
 
 The app will be available at [http://localhost:3000](http://localhost:3000).
+
+The app connects to the hosted Supabase instance configured in `.env.local`.
 
 ### 1.2 Database Migrations
 
@@ -49,16 +48,21 @@ psql $DATABASE_URL -f supabase/seed.sql
 
 | File | Purpose |
 | --- | --- |
-| `.env.local` | Local development (Next.js) |
+| `.env.local` | Development & Production (Next.js) |
 | `.env.example` | Template for required vars |
 
 **Required Variables:**
 ```env
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+# Supabase (Hosted)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_KEY=your-service-key
+
+# Admin Panel Password
 ADMIN_PASSWORD=your-secure-password
 ```
+
+> **Note:** These environment variables now point to the hosted Supabase instance. Get these values from your Supabase project dashboard.
 
 ---
 
@@ -76,12 +80,15 @@ ADMIN_PASSWORD=your-secure-password
 - `SUPABASE_SERVICE_KEY`
 - `ADMIN_PASSWORD`
 
-### 2.2 Database → Supabase
+### 2.2 Database → Supabase (Hosted)
 
-**Production Setup:**
-1. Create project at [supabase.com](https://supabase.com)
-2. Link local project: `npx supabase link --project-ref YOUR_REF`
-3. Push migrations: `npx supabase db push`
+**Current Setup:** The database is hosted on Supabase Cloud and shared between development and production.
+
+**Database URL:** `https://xmuqsgfxuaaophxnwure.supabase.co`
+
+**Migrations (if needed):**
+1. Link project: `npx supabase link --project-ref xmuqsgfxuaaophxnwure`
+2. Push migrations: `npx supabase db push`
 
 ### 2.3 Domain & SSL
 

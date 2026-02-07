@@ -12,7 +12,7 @@ import type { ContentItem } from "@/types/database";
  * Requires authentication to access full reader.
  */
 
-export const revalidate = 3600; // Revalidate every hour
+export const revalidate = 60; // Revalidate every 60 seconds
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -151,20 +151,6 @@ export default async function PreviewPage({ params }: PageProps) {
                     </div>
                 )}
 
-                {/* Artifacts Preview */}
-                {artifactCount && artifactCount > 0 && (
-                    <div className="mt-8 p-4 rounded-lg border border-border bg-card/50">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CheckSquare className="size-4" />
-                            <span>
-                                This content includes {artifactCount} interactive{" "}
-                                {artifactCount === 1 ? "checklist" : "checklists"}
-                            </span>
-                        </div>
-                    </div>
-                )}
-
-                {/* CTA */}
                 {/* CTA */}
                 <div className="mt-12 text-center">
                     <Link
@@ -178,3 +164,4 @@ export default async function PreviewPage({ params }: PageProps) {
         </div>
     );
 }
+

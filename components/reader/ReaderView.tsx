@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Menu, X, BookOpen, Download, Share2, Layers } from "lucide-react";
 import { SegmentNav } from "./SegmentNav";
 import { SegmentContent } from "./SegmentContent";
-import { ChecklistDisplay } from "./ChecklistDisplay";
 import type { ContentItemWithSegments } from "@/types/domain";
 
 interface ReaderViewProps {
@@ -19,6 +18,27 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
+    const [showCopiedToast, setShowCopiedToast] = useState(false);
+
+    const handleShare = async () => {
+        const shareData = {
+            title: content.title,
+            text: `Read "${content.title}" on Lifebook`,
+            url: window.location.href,
+        };
+
+        try {
+            if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                setShowCopiedToast(true);
+                setTimeout(() => setShowCopiedToast(false), 2000);
+            }
+        } catch (err) {
+            console.error("Error sharing:", err);
+        }
+    };
 
     // Computed active segment
     const activeSegment = content.segments[activeSegmentIndex];
@@ -57,18 +77,22 @@ export function ReaderView({ content }: ReaderViewProps) {
     // Save progress to localStorage (debounced, separate from state updates)
     useEffect(() => {
         const timeoutId = setTimeout(() => {
+            // Check if user has reached the final segment
+            const isCompleted = activeSegmentIndex === content.segments.length - 1;
+
             localStorage.setItem(
                 `lifebook_progress_${content.id}`,
                 JSON.stringify({
                     completed: Array.from(completedSegments),
                     lastSegmentIndex: activeSegmentIndex,
                     lastReadAt: new Date().toISOString(),
+                    isCompleted, // Mark as completed when on final segment
                 })
             );
         }, 500);
 
         return () => clearTimeout(timeoutId);
-    }, [activeSegmentIndex, content.id, completedSegments]);
+    }, [activeSegmentIndex, content.id, content.segments.length, completedSegments]);
 
     const handleNext = () => {
         if (activeSegmentIndex < content.segments.length - 1) {
@@ -102,22 +126,8 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Actions Panel Content
     const ActionsPanel = () => {
-        // Filter for checklist artifacts
-        const checklists = (content.artifacts || [])
-            .filter(a => a.type === "checklist")
-            .map(a => ({
-                id: a.id,
-                type: "checklist" as const,
-                payload_schema: a.payload_schema as { title: string; items: Array<{ id: string; label: string; mandatory: boolean }> },
-            }));
-
         return (
             <div className="space-y-6 pt-6">
-                {/* Interactive Learning Checklists */}
-                {checklists.length > 0 && (
-                    <ChecklistDisplay contentId={content.id} checklists={checklists} />
-                )}
-
                 {/* Actions */}
                 <div className="p-4 rounded-lg bg-card border shadow-sm space-y-3">
                     <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider">
@@ -130,9 +140,12 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <Download className="size-4" />
                         <span>Download PDF (Coming Soon)</span>
                     </button>
-                    <button className="w-full flex items-center gap-3 p-3 rounded-md bg-secondary/50 text-foreground hover:bg-secondary transition-colors text-sm text-left">
+                    <button
+                        onClick={handleShare}
+                        className="w-full flex items-center gap-3 p-3 rounded-md bg-secondary/50 text-foreground hover:bg-secondary transition-colors text-sm text-left"
+                    >
                         <Share2 className="size-4" />
-                        <span>Share Summary</span>
+                        <span>{showCopiedToast ? "Link Copied!" : "Share Summary"}</span>
                     </button>
                 </div>
 
@@ -161,9 +174,17 @@ export function ReaderView({ content }: ReaderViewProps) {
                     <Menu className="size-5" />
                 </button>
                 <span className="font-semibold truncate max-w-[200px]">{content.title}</span>
-                <Link href="/" className="p-2 -mr-2 text-muted-foreground">
-                    <X className="size-5" />
-                </Link>
+                <div className="flex items-center">
+                    <button
+                        onClick={() => setIsActionsOpen(true)}
+                        className="p-2 text-muted-foreground lg:hidden"
+                    >
+                        <Layers className="size-5" />
+                    </button>
+                    <Link href="/" className="p-2 -mr-2 text-muted-foreground">
+                        <X className="size-5" />
+                    </Link>
+                </div>
             </header>
 
             {/* Left Column: Navigation (Desktop: w-72, Mobile: Drawer) */}
@@ -225,7 +246,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                             />
                         ) : (
                             <div className="text-center py-20 text-muted-foreground">
-                                Loading content...
+                                No content available.
                             </div>
                         )}
                     </div>
@@ -246,6 +267,14 @@ export function ReaderView({ content }: ReaderViewProps) {
                         >
                             Back to Library
                         </button>
+
+                        <button
+                            onClick={handleNext}
+                            disabled={activeSegmentIndex === segments.length - 1}
+                            className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
+                        >
+                            Next →
+                        </button>
                     </div>
                 </div>
             </main>
@@ -262,6 +291,35 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
+
+            {/* Mobile Overlay for Actions */}
+            {isActionsOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+                    onClick={() => setIsActionsOpen(false)}
+                />
+            )}
+
+            {/* Mobile Actions Slide-over */}
+            <aside
+                className={`
+                    fixed inset-y-0 right-0 z-40 w-80 bg-background border-l transform transition-transform duration-300 ease-in-out lg:hidden
+                    ${isActionsOpen ? "translate-x-0" : "translate-x-full"}
+                `}
+            >
+                <div className="h-full flex flex-col p-6 overflow-y-auto">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-lg font-semibold">Actions & Progress</h2>
+                        <button
+                            onClick={() => setIsActionsOpen(false)}
+                            className="p-2 -mr-2 text-muted-foreground"
+                        >
+                            <X className="size-5" />
+                        </button>
+                    </div>
+                    <ActionsPanel />
+                </div>
+            </aside>
         </div>
     );
 }

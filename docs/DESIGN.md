@@ -246,8 +246,15 @@ Visual differentiation by content type:
 
 ## 10. Empty States
 
-When no content exists (e.g., empty category):
+### Hero Carousel (No Featured Content)
+```
+Container: h-[85vh] centered, dark bg with overlay
+├── Heading: "Lifebook" (large, white)
+└── Subtext: "A curated library of insights from books, podcasts, and articles. Check back soon for featured content."
+```
+Note: NO admin button is shown to regular users.
 
+### General Empty States (e.g., empty category)
 ```
 Container: centered, muted
 ├── Large Icon (size-12, muted)

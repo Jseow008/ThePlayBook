@@ -21,8 +21,9 @@ export async function GET() {
     }
 
     // Pick a random one
-    const randomIndex = Math.floor(Math.random() * items.length);
-    const randomItem = items[randomIndex];
+    const safeItems = items as { id: string }[];
+    const randomIndex = Math.floor(Math.random() * safeItems.length);
+    const randomItem = safeItems[randomIndex];
 
     return NextResponse.json({ id: randomItem.id });
 }

@@ -42,11 +42,12 @@ Lifebook is a **founder-curated content platform**. The founder uploads summarie
 | **Framework** | Next.js (App Router) | Server Components + ISR |
 | **Language** | TypeScript (strict) | Type safety |
 | **Styling** | Tailwind CSS | Utility-first CSS |
-| **Database** | Supabase (PostgreSQL) | Content storage |
+| **Database** | Supabase (PostgreSQL, Hosted) | Content storage (cloud) |
+| **Storage** | Supabase Storage (Hosted) | Image/media uploads |
+| **Auth** | Supabase Auth (Hosted) | User authentication & admin access |
 | **Local Storage** | localStorage | Reading progress, checklist state |
 | **Drag & Drop** | dnd-kit | Segment reordering in admin |
 | **Validation** | Zod | Runtime type validation |
-| **Auth** | Supabase Auth | Optional user accounts |
 
 ---
 

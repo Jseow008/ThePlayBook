@@ -7,6 +7,7 @@
 import { notFound } from "next/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { ContentForm } from "@/components/admin/ContentForm";
+import { Segment } from "@/types/database";
 
 interface EditContentPageProps {
     params: Promise<{ id: string }>;
@@ -49,7 +50,7 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
             big_idea: string;
             key_takeaways: string[];
         } | null,
-        segments: (contentItem.segments || []).map((seg) => ({
+        segments: ((contentItem as any).segments || []).map((seg: Segment) => ({
             id: seg.id,
             order_index: seg.order_index,
             title: seg.title || "",

@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { User } from "@supabase/supabase-js";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,18 +10,65 @@ import {
     Home,
     Shuffle,
     BookOpen,
+    Library,
+    BookMarked,
+    CheckCircle2,
+    ChevronDown,
+    Plus,
+    LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 
 const navItems = [
     { icon: Search, label: "Search", href: "/search" },
     { icon: Home, label: "Home", href: "/" },
+    { icon: LayoutGrid, label: "Browse Categories", href: "/categories" },
     { icon: Shuffle, label: "Surprise Me", href: "/random" },
 ];
 
 export function NetflixSidebar() {
     const pathname = usePathname();
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const supabase = createClient();
+
+    const { inProgressCount, completedCount, myListCount, isLoaded } = useReadingProgress();
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setUser(user);
+        };
+        fetchUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+            (event, session) => {
+                setUser(session?.user ?? null);
+            }
+        );
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []);
+
+    // Auto-expand library when sidebar expands and there's reading history
+    useEffect(() => {
+        if (isExpanded && isLoaded && (inProgressCount > 0 || completedCount > 0)) {
+            setIsLibraryOpen(true);
+        }
+    }, [isExpanded, isLoaded, inProgressCount, completedCount]);
+
+    // Close library when sidebar collapses
+    useEffect(() => {
+        if (!isExpanded) {
+            setIsLibraryOpen(false);
+        }
+    }, [isExpanded]);
+
+    const totalLibraryItems = inProgressCount + completedCount + myListCount;
 
     return (
         <aside
@@ -85,20 +134,126 @@ export function NetflixSidebar() {
                         );
                     })}
                 </ul>
+
+                {/* Divider */}
+                <div className="my-4 mx-4 border-t border-zinc-800/50" />
+
+                {/* My Library Section */}
+                <div className="space-y-1">
+                    {/* My Library Header */}
+                    <button
+                        onClick={() => isExpanded && setIsLibraryOpen(!isLibraryOpen)}
+                        className={cn(
+                            "w-full flex items-center h-12 px-4 transition-colors text-zinc-400 hover:text-foreground hover:bg-zinc-800/30",
+                            isExpanded ? "justify-start gap-3" : "justify-center",
+                            (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-zinc-800/50 border-l-4 border-primary"
+                        )}
+                    >
+                        <div className="relative flex-shrink-0">
+                            <Library className="size-5" />
+                            {/* Badge for total items when collapsed */}
+                            {!isExpanded && isLoaded && totalLibraryItems > 0 && (
+                                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
+                                    {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
+                                </span>
+                            )}
+                        </div>
+                        <span
+                            className={cn(
+                                "text-sm font-medium transition-opacity whitespace-nowrap flex-1 text-left",
+                                isExpanded ? "opacity-100" : "opacity-0 w-0"
+                            )}
+                        >
+                            My Library
+                        </span>
+                        {isExpanded && isLoaded && totalLibraryItems > 0 && (
+                            <ChevronDown
+                                className={cn(
+                                    "size-4 transition-transform",
+                                    isLibraryOpen && "rotate-180"
+                                )}
+                            />
+                        )}
+                    </button>
+
+                    {/* Library Sub-items (only when expanded and open) */}
+                    {isExpanded && isLibraryOpen && isLoaded && (
+                        <div className="ml-4 space-y-1">
+                            {/* My List */}
+                            <Link
+                                href="/library/my-list"
+                                className={cn(
+                                    "flex items-center h-10 px-4 transition-colors rounded-md",
+                                    pathname === "/library/my-list"
+                                        ? "text-foreground bg-zinc-800/50"
+                                        : "text-zinc-500 hover:text-foreground hover:bg-zinc-800/30"
+                                )}
+                            >
+                                <Plus className="size-4 mr-3 flex-shrink-0" />
+                                <span className="text-sm whitespace-nowrap flex-1">My List</span>
+                                {myListCount > 0 && (
+                                    <span className="text-xs bg-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded-full font-medium">
+                                        {myListCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            {/* Continue Reading */}
+                            <Link
+                                href="/library/reading"
+                                className={cn(
+                                    "flex items-center h-10 px-4 transition-colors rounded-md",
+                                    pathname === "/library/reading"
+                                        ? "text-foreground bg-zinc-800/50"
+                                        : "text-zinc-500 hover:text-foreground hover:bg-zinc-800/30"
+                                )}
+                            >
+                                <BookMarked className="size-4 mr-3 flex-shrink-0" />
+                                <span className="text-sm whitespace-nowrap flex-1">Continue Reading</span>
+                                {inProgressCount > 0 && (
+                                    <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full font-medium">
+                                        {inProgressCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            {/* Completed */}
+                            <Link
+                                href="/library/completed"
+                                className={cn(
+                                    "flex items-center h-10 px-4 transition-colors rounded-md",
+                                    pathname === "/library/completed"
+                                        ? "text-foreground bg-zinc-800/50"
+                                        : "text-zinc-500 hover:text-foreground hover:bg-zinc-800/30"
+                                )}
+                            >
+                                <CheckCircle2 className="size-4 mr-3 flex-shrink-0" />
+                                <span className="text-sm whitespace-nowrap flex-1">Completed</span>
+                                {completedCount > 0 && (
+                                    <span className="text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-medium">
+                                        {completedCount}
+                                    </span>
+                                )}
+                            </Link>
+                        </div>
+                    )}
+                </div>
             </nav>
 
             {/* Sign In */}
-            <div className="p-4 border-t border-zinc-800/50">
-                <Link
-                    href="/login"
-                    className={cn(
-                        "flex items-center h-10 rounded-md bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90",
-                        isExpanded ? "justify-center px-4" : "justify-center w-10 mx-auto"
-                    )}
-                >
-                    {isExpanded ? "Sign In" : "→"}
-                </Link>
-            </div>
+            {!user && (
+                <div className="p-4 border-t border-zinc-800/50">
+                    <Link
+                        href="/login"
+                        className={cn(
+                            "flex items-center h-10 rounded-md bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90",
+                            isExpanded ? "justify-center px-4" : "justify-center w-10 mx-auto"
+                        )}
+                    >
+                        {isExpanded ? "Sign In" : "→"}
+                    </Link>
+                </div>
+            )}
         </aside>
     );
 }

@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { adminClient } from "@/lib/supabase/admin";
+import { verifyAdminSession } from "@/lib/admin/auth";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(req: NextRequest) {
+    // Verify admin session
+    const isAdmin = await verifyAdminSession();
+    if (!isAdmin) {
+        return NextResponse.json(
+            { error: "Unauthorized" },
+            { status: 401 }
+        );
+    }
+
     try {
         const formData = await req.formData();
         const file = formData.get("file") as File;
@@ -34,7 +44,7 @@ export async function POST(req: NextRequest) {
         const filePath = `covers/${fileName}`;
 
         // Upload using admin client (bypasses RLS)
-        const { error: uploadError } = await adminClient.storage
+        const { error: uploadError } = await getAdminClient().storage
             .from("media")
             .upload(filePath, file, {
                 contentType: file.type,
@@ -50,7 +60,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Get public URL
-        const { data: { publicUrl } } = adminClient.storage
+        const { data: { publicUrl } } = getAdminClient().storage
             .from("media")
             .getPublicUrl(filePath);
 

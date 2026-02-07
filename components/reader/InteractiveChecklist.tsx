@@ -59,7 +59,6 @@ export function InteractiveChecklist({
                     return (
                         <ChecklistItem
                             key={item.id}
-                            id={item.id}
                             label={item.label}
                             mandatory={item.mandatory}
                             checked={isChecked}
@@ -74,7 +73,6 @@ export function InteractiveChecklist({
 }
 
 interface ChecklistItemProps {
-    id: string;
     label: string;
     mandatory?: boolean;
     checked: boolean;
@@ -83,7 +81,6 @@ interface ChecklistItemProps {
 }
 
 function ChecklistItem({
-    id,
     label,
     mandatory,
     checked,

@@ -83,55 +83,61 @@ export function ChecklistDisplay({ contentId, checklists }: ChecklistDisplayProp
         return null;
     }
 
-    // For now, just show the first checklist's items directly
-    const checklist = checklists[0];
-    const progress = getProgress(checklist);
+
 
     return (
-        <div className="p-4 rounded-lg bg-card border shadow-sm space-y-3">
-            {/* Header - matching Actions panel style */}
-            <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    Action Items
-                </h3>
-                <span className="text-xs text-muted-foreground">
-                    {progress.completed}/{progress.total}
-                </span>
-            </div>
+        <div className="space-y-4">
+            {checklists.map((checklist) => {
+                const progress = getProgress(checklist);
 
-            {/* Checklist Items */}
-            {checklist.payload_schema.items.map(item => {
-                const isChecked = (completedItems[checklist.id] || new Set()).has(item.id);
                 return (
-                    <button
-                        key={item.id}
-                        onClick={() => toggleItem(checklist.id, item.id)}
-                        className={`w-full flex items-center gap-3 p-3 rounded-md transition-colors text-sm text-left ${isChecked
-                                ? "bg-primary/10 text-muted-foreground"
-                                : "bg-secondary/50 text-foreground hover:bg-secondary"
-                            }`}
-                    >
-                        {isChecked ? (
-                            <CheckSquare className="size-4 text-primary flex-shrink-0" />
-                        ) : (
-                            <Square className="size-4 flex-shrink-0" />
-                        )}
-                        <span className={isChecked ? "line-through" : ""}>
-                            {item.label}
-                        </span>
-                    </button>
+                    <div key={checklist.id} className="p-4 rounded-lg bg-card border shadow-sm space-y-3">
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                {checklist.payload_schema.title || "Action Items"}
+                            </h3>
+                            <span className="text-xs text-muted-foreground">
+                                {progress.completed}/{progress.total}
+                            </span>
+                        </div>
+
+                        {/* Checklist Items */}
+                        {checklist.payload_schema.items.map(item => {
+                            const isChecked = (completedItems[checklist.id] || new Set()).has(item.id);
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => toggleItem(checklist.id, item.id)}
+                                    className={`w-full flex items-center gap-3 p-3 rounded-md transition-colors text-sm text-left ${isChecked
+                                        ? "bg-primary/10 text-muted-foreground"
+                                        : "bg-secondary/50 text-foreground hover:bg-secondary"
+                                        }`}
+                                >
+                                    {isChecked ? (
+                                        <CheckSquare className="size-4 text-primary flex-shrink-0" />
+                                    ) : (
+                                        <Square className="size-4 flex-shrink-0" />
+                                    )}
+                                    <span className={isChecked ? "line-through" : ""}>
+                                        {item.label}
+                                    </span>
+                                </button>
+                            );
+                        })}
+
+                        {/* Progress bar */}
+                        <div className="pt-2">
+                            <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-primary transition-all duration-300"
+                                    style={{ width: `${progress.percentage}%` }}
+                                />
+                            </div>
+                        </div>
+                    </div>
                 );
             })}
-
-            {/* Progress bar */}
-            <div className="pt-2">
-                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-primary transition-all duration-300"
-                        style={{ width: `${progress.percentage}%` }}
-                    />
-                </div>
-            </div>
         </div>
     );
 }

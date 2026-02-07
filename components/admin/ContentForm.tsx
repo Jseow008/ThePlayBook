@@ -645,7 +645,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                                         alt="Preview"
                                         className="w-full h-full object-cover"
                                         onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "https://via.placeholder.com/200x300?text=Invalid+URL";
+                                            (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f4f4f5' width='200' height='300'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1aa' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
                                         }}
                                     />
                                     {/* Remove Button */}

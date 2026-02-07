@@ -2,9 +2,10 @@
 
 import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, BookOpen, Headphones, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
+import { ContentCard } from "@/components/ui/ContentCard";
 
 interface ContentLaneProps {
     title: string;
@@ -12,60 +13,6 @@ interface ContentLaneProps {
     viewAllHref?: string;
 }
 
-function ContentCard({ item, index }: { item: ContentItem; index: number }) {
-    const typeIcon = {
-        podcast: Headphones,
-        book: BookOpen,
-        article: FileText,
-    }[item.type];
-    const Icon = typeIcon;
-
-    return (
-        <Link
-            href={`/read/${item.id}`}
-            className="group relative flex-shrink-0 w-[180px] md:w-[200px] lg:w-[220px] aspect-[2/3] rounded-md overflow-hidden transition-transform duration-300 hover:scale-105 hover:z-10"
-            style={{ animationDelay: `${index * 50}ms` }}
-        >
-            {/* Background */}
-            {item.cover_image_url ? (
-                <img
-                    src={item.cover_image_url}
-                    alt={item.title}
-                    className="w-full h-full object-cover"
-                />
-            ) : (
-                <div className="w-full h-full bg-gradient-to-br from-zinc-700 via-zinc-800 to-zinc-900 flex items-center justify-center">
-                    <Icon className="size-16 text-zinc-600" />
-                </div>
-            )}
-
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-            {/* Bottom Info - Always visible */}
-            <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 to-transparent">
-                <p className="text-xs text-zinc-400 uppercase tracking-wider mb-1">
-                    {item.type}
-                </p>
-                <h3 className="font-medium text-sm text-white line-clamp-2 group-hover:text-primary transition-colors">
-                    {item.title}
-                </h3>
-            </div>
-
-            {/* Hover Details */}
-            <div className="absolute inset-x-0 top-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                {item.author && (
-                    <p className="text-xs text-zinc-300 truncate">
-                        {item.author}
-                    </p>
-                )}
-            </div>
-
-            {/* Border on hover */}
-            <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/50 rounded-md transition-colors" />
-        </Link>
-    );
-}
 
 export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -157,7 +104,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                     <div
                         ref={scrollRef}
                         onScroll={handleScroll}
-                        className="flex gap-3 overflow-x-auto px-6 lg:px-16 scroll-smooth pb-12"
+                        className="flex gap-4 overflow-x-auto px-6 lg:px-16 scroll-smooth pt-4 pb-12"
                         style={{
                             scrollbarWidth: 'none',
                             msOverflowStyle: 'none',
@@ -165,8 +112,10 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                             clipPath: 'inset(0 0 20px 0)' /* Clip the bottom scrollbar area */
                         }}
                     >
-                        {items.map((item, index) => (
-                            <ContentCard key={item.id} item={item} index={index} />
+                        {items.map((item) => (
+                            <div key={item.id} className="min-w-[200px] w-[200px] md:min-w-[240px] md:w-[240px]">
+                                <ContentCard item={item} />
+                            </div>
                         ))}
                     </div>
                 </div>
