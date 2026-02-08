@@ -1,21 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
 import { HeroCarousel } from "@/components/ui/HeroCarousel";
 import { ContentLane } from "@/components/ui/ContentLane";
-import { ContinueReading } from "@/components/ui/ContinueReading";
-import { ContentCard } from "@/components/ui/ContentCard";
-import type { ContentItem } from "@/types/database";
+import type { ContentItem, HomepageSection } from "@/types/database";
 import { cn } from "@/lib/utils";
 
 interface HomeFeedProps {
     items: ContentItem[];
     featuredItems: ContentItem[];
-    diaryItems: ContentItem[];
-    tedItems: ContentItem[];
+    sections: HomepageSection[];
+    sectionItems: Record<string, ContentItem[]>;
 }
 
-export function HomeFeed({ items, featuredItems, diaryItems, tedItems }: HomeFeedProps) {
+export function HomeFeed({ items, featuredItems, sections, sectionItems }: HomeFeedProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Hero Carousel */}
@@ -33,21 +30,19 @@ export function HomeFeed({ items, featuredItems, diaryItems, tedItems }: HomeFee
                         items={items.slice(0, 10)}
                     />
 
-                    {/* Diary of a CEO Lane */}
-                    {diaryItems.length > 0 && (
-                        <ContentLane
-                            title="Diary of a CEO"
-                            items={diaryItems}
-                        />
-                    )}
+                    {/* Dynamic Sections from Admin */}
+                    {(sections || []).map((section) => {
+                        const sectionContent = sectionItems[section.id] || [];
+                        if (sectionContent.length === 0) return null;
 
-                    {/* TED Talks Lane */}
-                    {tedItems.length > 0 && (
-                        <ContentLane
-                            title="TED Talks"
-                            items={tedItems}
-                        />
-                    )}
+                        return (
+                            <ContentLane
+                                key={section.id}
+                                title={section.title}
+                                items={sectionContent}
+                            />
+                        );
+                    })}
                 </div>
             </div>
 

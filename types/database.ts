@@ -137,6 +137,38 @@ export interface Database {
                     updated_at?: string;
                 };
             };
+            homepage_section: {
+                Row: {
+                    id: string;
+                    title: string;
+                    filter_type: "author" | "category" | "title" | "featured";
+                    filter_value: string;
+                    order_index: number;
+                    is_active: boolean;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    title: string;
+                    filter_type: "author" | "category" | "title" | "featured";
+                    filter_value: string;
+                    order_index?: number;
+                    is_active?: boolean;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: {
+                    id?: string;
+                    title?: string;
+                    filter_type?: "author" | "category" | "title" | "featured";
+                    filter_value?: string;
+                    order_index?: number;
+                    is_active?: boolean;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+            };
         };
         Views: Record<string, never>;
         Functions: Record<string, never>;
@@ -152,3 +184,4 @@ export interface Database {
 export type ContentItem = Database["public"]["Tables"]["content_item"]["Row"];
 export type Segment = Database["public"]["Tables"]["segment"]["Row"];
 export type Artifact = Database["public"]["Tables"]["artifact"]["Row"];
+export type HomepageSection = Database["public"]["Tables"]["homepage_section"]["Row"];
