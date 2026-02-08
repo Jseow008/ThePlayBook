@@ -161,14 +161,14 @@ export default function SectionsPage() {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Homepage Sections</h1>
-                    <p className="text-muted-foreground mt-1">
+                    <h1 className="text-2xl font-bold text-zinc-900">Homepage Sections</h1>
+                    <p className="text-zinc-500 mt-1">
                         Manage the content lanes that appear on the homepage
                     </p>
                 </div>
                 <button
                     onClick={() => setShowForm(!showForm)}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors"
                 >
                     <Plus className="size-4" />
                     Add Section
@@ -179,29 +179,29 @@ export default function SectionsPage() {
             {showForm && (
                 <form
                     onSubmit={handleAddSection}
-                    className="p-6 bg-zinc-900 rounded-xl border border-zinc-800 space-y-4"
+                    className="p-6 bg-white rounded-xl border border-zinc-200 space-y-4 shadow-sm"
                 >
-                    <h3 className="font-semibold">New Section</h3>
+                    <h3 className="font-semibold text-zinc-900">New Section</h3>
 
                     <div className="grid gap-4 md:grid-cols-3">
                         <div>
-                            <label className="block text-sm font-medium mb-2">Section Title</label>
+                            <label className="block text-sm font-medium mb-2 text-zinc-700">Section Title</label>
                             <input
                                 type="text"
                                 value={newTitle}
                                 onChange={(e) => setNewTitle(e.target.value)}
                                 placeholder="e.g., Diary of a CEO"
-                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-zinc-900 placeholder:text-zinc-400"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium mb-2">Filter Type</label>
+                            <label className="block text-sm font-medium mb-2 text-zinc-700">Filter Type</label>
                             <select
                                 value={newFilterType}
                                 onChange={(e) => setNewFilterType(e.target.value as HomepageSection["filter_type"])}
-                                className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-zinc-900"
                             >
                                 {FILTER_TYPES.map((type) => (
                                     <option key={type.value} value={type.value}>
@@ -213,13 +213,13 @@ export default function SectionsPage() {
 
                         {newFilterType !== "featured" && (
                             <div>
-                                <label className="block text-sm font-medium mb-2">Filter Value</label>
+                                <label className="block text-sm font-medium mb-2 text-zinc-700">Filter Value</label>
                                 <input
                                     type="text"
                                     value={newFilterValue}
                                     onChange={(e) => setNewFilterValue(e.target.value)}
                                     placeholder="e.g., Steven Bartlett"
-                                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                                    className="w-full px-3 py-2 bg-white border border-zinc-300 rounded-lg focus:ring-2 focus:ring-zinc-900 focus:border-transparent text-zinc-900 placeholder:text-zinc-400"
                                     required
                                 />
                             </div>
@@ -230,7 +230,7 @@ export default function SectionsPage() {
                         <button
                             type="submit"
                             disabled={saving}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
                         >
                             <Save className="size-4" />
                             {saving ? "Saving..." : "Save Section"}
@@ -238,7 +238,7 @@ export default function SectionsPage() {
                         <button
                             type="button"
                             onClick={() => setShowForm(false)}
-                            className="px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
+                            className="px-4 py-2 bg-white border border-zinc-300 text-zinc-700 rounded-lg hover:bg-zinc-50 transition-colors"
                         >
                             Cancel
                         </button>
@@ -247,46 +247,46 @@ export default function SectionsPage() {
             )}
 
             {/* Sections List */}
-            <div className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+            <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
                 {sections.length === 0 ? (
-                    <div className="p-12 text-center text-muted-foreground">
+                    <div className="p-12 text-center text-zinc-500">
                         <p>No sections yet. Add your first section above!</p>
                     </div>
                 ) : (
                     <table className="w-full">
-                        <thead className="bg-zinc-800/50">
+                        <thead className="bg-zinc-50/50 border-b border-zinc-200">
                             <tr>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground w-12">Order</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Title</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Filter</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground w-24">Status</th>
-                                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground w-24">Actions</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500 w-12">Order</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500">Title</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500">Filter</th>
+                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500 w-24">Status</th>
+                                <th className="px-4 py-3 text-right text-sm font-medium text-zinc-500 w-32">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-800">
+                        <tbody className="divide-y divide-zinc-200">
                             {sections.map((section, index) => (
-                                <tr key={section.id} className="hover:bg-zinc-800/30">
+                                <tr key={section.id} className="hover:bg-zinc-50/50 transition-colors">
                                     <td className="px-4 py-3">
                                         <div className="flex flex-col gap-1">
                                             <button
                                                 onClick={() => handleReorder(index, "up")}
                                                 disabled={index === 0}
-                                                className="p-1 hover:bg-zinc-700 rounded disabled:opacity-30"
+                                                className="p-1 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded disabled:opacity-30 transition-colors"
                                             >
                                                 ▲
                                             </button>
                                             <button
                                                 onClick={() => handleReorder(index, "down")}
                                                 disabled={index === sections.length - 1}
-                                                className="p-1 hover:bg-zinc-700 rounded disabled:opacity-30"
+                                                className="p-1 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded disabled:opacity-30 transition-colors"
                                             >
                                                 ▼
                                             </button>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-3 font-medium">{section.title}</td>
-                                    <td className="px-4 py-3 text-muted-foreground">
-                                        <span className="text-xs bg-zinc-800 px-2 py-1 rounded">
+                                    <td className="px-4 py-3 font-medium text-zinc-900">{section.title}</td>
+                                    <td className="px-4 py-3 text-zinc-500">
+                                        <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-1 rounded border border-zinc-200">
                                             {section.filter_type}
                                         </span>
                                         <span className="ml-2">{section.filter_value}</span>
@@ -295,8 +295,8 @@ export default function SectionsPage() {
                                         <button
                                             onClick={() => handleToggleActive(section)}
                                             className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-colors ${section.is_active
-                                                ? "bg-emerald-500/20 text-emerald-400"
-                                                : "bg-zinc-700 text-zinc-400"
+                                                ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                                : "bg-zinc-100 text-zinc-500 border border-zinc-200"
                                                 }`}
                                         >
                                             {section.is_active ? (
@@ -315,14 +315,14 @@ export default function SectionsPage() {
                                             <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     onClick={() => handleDelete(section.id)}
-                                                    className="p-2 bg-red-500/20 text-red-500 rounded-lg hover:bg-red-500/30 transition-colors"
+                                                    className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
                                                     title="Confirm Delete"
                                                 >
                                                     <Check className="size-4" />
                                                 </button>
                                                 <button
                                                     onClick={() => setDeletingId(null)}
-                                                    className="p-2 bg-zinc-800 text-zinc-400 rounded-lg hover:bg-zinc-700 transition-colors"
+                                                    className="p-2 bg-zinc-100 text-zinc-600 rounded-lg hover:bg-zinc-200 transition-colors"
                                                     title="Cancel"
                                                 >
                                                     <X className="size-4" />
@@ -331,7 +331,7 @@ export default function SectionsPage() {
                                         ) : (
                                             <button
                                                 onClick={() => setDeletingId(section.id)}
-                                                className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors"
+                                                className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 title="Delete section"
                                             >
                                                 <Trash2 className="size-4" />
