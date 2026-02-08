@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookMarked, Clock, Search, ChevronDown } from "lucide-react";
+import { ArrowLeft, BookMarked, Clock } from "lucide-react";
+import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import type { ContentItem } from "@/types/database";
@@ -148,56 +149,16 @@ export default function ContinueReadingPage() {
 
                     {/* Toolbar */}
                     {!isLoading && allItems.length > 0 && (
-                        <div className="mt-6 pt-4 border-t border-zinc-800/50">
-                            <div className="flex flex-col md:flex-row gap-4 justify-between">
-                                {/* Search */}
-                                <div className="relative group w-full md:w-96">
-                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <Search className="h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        className="block w-full pl-10 pr-3 py-2 border border-zinc-800 rounded-md leading-5 bg-zinc-900/50 text-foreground placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm transition-all"
-                                        placeholder="Search titles or authors..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Filters & Sort */}
-                                <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-                                    <div className="relative">
-                                        <select
-                                            value={activeFilter}
-                                            onChange={(e) => setActiveFilter(e.target.value)}
-                                            className="h-9 block w-full pl-3 pr-8 py-2 text-base border-zinc-800 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md bg-zinc-900/50 text-foreground appearance-none"
-                                        >
-                                            <option value="all">All Types</option>
-                                            <option value="book">Books</option>
-                                            <option value="podcast">Podcasts</option>
-                                            <option value="article">Articles</option>
-                                        </select>
-                                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                        </div>
-                                    </div>
-                                    <div className="h-4 w-px bg-zinc-800 mx-2" />
-                                    <div className="relative">
-                                        <select
-                                            value={activeSort}
-                                            onChange={(e) => setActiveSort(e.target.value as any)}
-                                            className="h-9 block w-full pl-3 pr-8 py-2 text-base border-zinc-800 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md bg-zinc-900/50 text-foreground appearance-none"
-                                        >
-                                            <option value="newest">Recent</option>
-                                            <option value="oldest">Oldest First</option>
-                                            <option value="title">Title (A-Z)</option>
-                                        </select>
-                                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className="mt-6 border-t border-zinc-800/50">
+                            <LibraryToolbar
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                activeFilter={activeFilter}
+                                onFilterChange={setActiveFilter}
+                                activeSort={activeSort}
+                                onSortChange={setActiveSort}
+                                className="pt-4"
+                            />
                         </div>
                     )}
                 </div>

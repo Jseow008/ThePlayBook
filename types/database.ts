@@ -16,6 +16,7 @@ export type Json =
 export type ContentStatus = "draft" | "verified";
 export type ContentType = "podcast" | "book" | "article";
 export type ArtifactType = "checklist" | "plan" | "script";
+export type UserRole = "user" | "admin";
 
 export interface Database {
     public: {
@@ -169,13 +170,42 @@ export interface Database {
                     updated_at?: string;
                 };
             };
+            profiles: {
+                Row: {
+                    id: string;
+                    email: string | null;
+                    role: UserRole;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id: string;
+                    email?: string | null;
+                    role?: UserRole;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: {
+                    id?: string;
+                    email?: string | null;
+                    role?: UserRole;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+            };
         };
         Views: Record<string, never>;
-        Functions: Record<string, never>;
+        Functions: {
+            is_admin: {
+                Args: Record<string, never>;
+                Returns: boolean;
+            };
+        };
         Enums: {
             content_status: ContentStatus;
             content_type: ContentType;
             artifact_type: ArtifactType;
+            user_role: UserRole;
         };
     };
 }
@@ -185,3 +215,4 @@ export type ContentItem = Database["public"]["Tables"]["content_item"]["Row"];
 export type Segment = Database["public"]["Tables"]["segment"]["Row"];
 export type Artifact = Database["public"]["Tables"]["artifact"]["Row"];
 export type HomepageSection = Database["public"]["Tables"]["homepage_section"]["Row"];
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];

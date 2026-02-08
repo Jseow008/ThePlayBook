@@ -1,14 +1,16 @@
 /**
  * Admin Logout API Route
  * POST /api/admin/logout
+ * 
+ * Signs out the current user using Supabase Auth.
  */
 
 import { NextResponse } from "next/server";
-import { clearAdminSession } from "@/lib/admin/auth";
+import { signOut } from "@/lib/admin/auth";
 
 export async function POST() {
     try {
-        await clearAdminSession();
+        await signOut();
 
         return NextResponse.json({
             success: true,

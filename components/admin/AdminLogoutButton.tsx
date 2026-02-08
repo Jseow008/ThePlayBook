@@ -19,7 +19,7 @@ export function AdminLogoutButton() {
 
         try {
             await fetch("/api/admin/logout", { method: "POST" });
-            router.push("/admin/login");
+            router.push("/admin-login");
             router.refresh();
         } catch (error) {
             console.error("Logout error:", error);

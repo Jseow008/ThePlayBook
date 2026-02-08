@@ -36,7 +36,7 @@ export function SegmentContent({
     }, [segment.id]);
 
     return (
-        <article className="min-h-[60vh] flex flex-col animate-in fade-in duration-500">
+        <article className="min-h-[60vh] flex flex-col animate-fade-in">
             {/* Segment Title */}
             {segment.title && (
                 <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-8">

@@ -1,117 +1,78 @@
 /**
  * Admin Authentication Utilities
- * 
- * Simple password-based auth for the admin panel.
- * Uses a signed session cookie stored in httpOnly cookie.
+ *
+ * Uses Supabase Auth with Role-Based Access Control.
+ * Admin role is stored in the profiles table.
  */
 
-import { cookies } from "next/headers";
-import { createHash, randomBytes } from "crypto";
-
-const ADMIN_COOKIE_NAME = "admin_session";
-const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-/**
- * Create a signed session token
- */
-function createSessionToken(): string {
-    const random = randomBytes(32).toString("hex");
-    const timestamp = Date.now().toString();
-    const data = `${random}:${timestamp}`;
-    const signature = createHash("sha256")
-        .update(data + process.env.ADMIN_PASSWORD)
-        .digest("hex");
-    return `${data}:${signature}`;
-}
-
-/**
- * Verify a session token is valid and not expired
- */
-function verifySessionToken(token: string): boolean {
-    try {
-        const parts = token.split(":");
-        if (parts.length !== 3) return false;
-
-        const [random, timestamp, signature] = parts;
-        const data = `${random}:${timestamp}`;
-
-        // Verify signature
-        const expectedSignature = createHash("sha256")
-            .update(data + process.env.ADMIN_PASSWORD)
-            .digest("hex");
-
-        if (signature !== expectedSignature) return false;
-
-        // Check expiration
-        const tokenTime = parseInt(timestamp, 10);
-        if (Date.now() - tokenTime > SESSION_DURATION_MS) return false;
-
-        return true;
-    } catch {
-        return false;
-    }
-}
+import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Verify the current request has a valid admin session
+ * Checks both authentication AND admin role
  */
 export async function verifyAdminSession(): Promise<boolean> {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get(ADMIN_COOKIE_NAME);
-
-    if (!sessionCookie?.value) {
-        return false;
-    }
-
-    return verifySessionToken(sessionCookie.value);
-}
-
-/**
- * Create an admin session and set the cookie
- */
-export async function createAdminSession(): Promise<void> {
-    const cookieStore = await cookies();
-    const token = createSessionToken();
-
-    cookieStore.set(ADMIN_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: SESSION_DURATION_MS / 1000, // in seconds
-        path: "/",
-    });
-}
-
-/**
- * Clear the admin session cookie
- */
-export async function clearAdminSession(): Promise<void> {
-    const cookieStore = await cookies();
-    cookieStore.delete(ADMIN_COOKIE_NAME);
-}
-
-/**
- * Verify password matches the environment variable
- */
-import { timingSafeEqual } from "crypto";
-
-export function verifyAdminPassword(password: string): boolean {
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    if (!adminPassword) {
-        console.error("ADMIN_PASSWORD environment variable is not set");
-        return false;
-    }
-
     try {
-        const bufferA = Buffer.from(password);
-        const bufferB = Buffer.from(adminPassword);
+        const supabase = await createClient();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
 
-        if (bufferA.length !== bufferB.length) {
+        if (userError || !user) {
             return false;
         }
 
-        return timingSafeEqual(bufferA, bufferB);
-    } catch {
+        // Check if user has admin role in profiles table
+        // Use admin client to bypass RLS for role check
+        const adminClient = getAdminClient();
+        const { data: profile, error: profileError } = await adminClient
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single();
+
+        if (profileError || !profile) {
+            return false;
+        }
+
+        return profile.role === "admin";
+    } catch (error) {
+        console.error("Error verifying admin session:", error);
         return false;
     }
+}
+
+/**
+ * Get the current authenticated user
+ */
+export async function getCurrentUser() {
+    const supabase = await createClient();
+    return supabase.auth.getUser();
+}
+
+/**
+ * Get the current user's profile with role
+ */
+export async function getCurrentUserProfile() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return null;
+    }
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+    return profile;
+}
+
+/**
+ * Sign out the current user
+ */
+export async function signOut() {
+    const supabase = await createClient();
+    return supabase.auth.signOut();
 }

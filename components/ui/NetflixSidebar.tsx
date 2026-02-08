@@ -54,12 +54,7 @@ export function NetflixSidebar() {
         };
     }, []);
 
-    // Auto-expand library when sidebar expands and there's reading history
-    useEffect(() => {
-        if (isExpanded && isLoaded && (inProgressCount > 0 || completedCount > 0)) {
-            setIsLibraryOpen(true);
-        }
-    }, [isExpanded, isLoaded, inProgressCount, completedCount]);
+
 
     // Close library when sidebar collapses
     useEffect(() => {
@@ -75,7 +70,7 @@ export function NetflixSidebar() {
             onMouseEnter={() => setIsExpanded(true)}
             onMouseLeave={() => setIsExpanded(false)}
             className={cn(
-                "fixed left-0 top-0 bottom-0 z-50 bg-black/95 backdrop-blur-md border-r border-zinc-800/50 transition-all duration-300 hidden lg:flex flex-col",
+                "fixed left-0 top-0 bottom-0 z-50 bg-black backdrop-blur-md border-r border-zinc-800/50 transition-all duration-300 hidden lg:flex flex-col",
                 isExpanded ? "w-56" : "w-16"
             )}
         >

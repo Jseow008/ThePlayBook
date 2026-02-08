@@ -13,6 +13,7 @@ export interface ReadingProgressData {
     lastSegmentIndex: number;
     lastReadAt: string;
     isCompleted: boolean;
+    totalSegments?: number; // Optional total segments count for percentage calculation
 }
 
 interface UserLibraryRow {
@@ -31,6 +32,7 @@ export function useReadingProgress() {
     const [inProgressIds, setInProgressIds] = useState<string[]>([]);
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [myListIds, setMyListIds] = useState<string[]>([]);
+    const [progressMap, setProgressMap] = useState<Record<string, ReadingProgressData>>({});
     const [isLoaded, setIsLoaded] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const supabase = createClient();
@@ -47,12 +49,15 @@ export function useReadingProgress() {
 
         const inProgress: { id: string; lastReadAt: string }[] = [];
         const completed: { id: string; lastReadAt: string }[] = [];
+        const newProgressMap: Record<string, ReadingProgressData> = {};
 
         progressKeys.forEach(key => {
             const id = key.replace("lifebook_progress_", "");
             try {
                 const data = JSON.parse(localStorage.getItem(key) || "{}") as ReadingProgressData;
                 const entry = { id, lastReadAt: data.lastReadAt || "" };
+
+                newProgressMap[id] = data;
 
                 if (data.isCompleted) {
                     completed.push(entry);
@@ -73,6 +78,7 @@ export function useReadingProgress() {
 
         setInProgressIds(inProgress.sort(sortByRecent).map(e => e.id));
         setCompletedIds(completed.sort(sortByRecent).map(e => e.id));
+        setProgressMap(newProgressMap);
 
         // 2. Load My List
         try {
@@ -319,6 +325,8 @@ export function useReadingProgress() {
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
 
+    const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);
+
     const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
 
     return {
@@ -331,6 +339,7 @@ export function useReadingProgress() {
         refresh: loadProgress,
         removeFromProgress,
         saveReadingProgress,
+        getProgress,
 
         // My List
         myListIds,

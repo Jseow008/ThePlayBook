@@ -1,6 +1,7 @@
 "use client";
 
 import { HeroCarousel } from "@/components/ui/HeroCarousel";
+import { ContinueReadingRow } from "@/components/ui/ContinueReadingRow";
 import { ContentLane } from "@/components/ui/ContentLane";
 import type { ContentItem, HomepageSection } from "@/types/database";
 import { cn } from "@/lib/utils";
@@ -29,6 +30,9 @@ export function HomeFeed({ items, featuredItems, sections, sectionItems }: HomeF
                         title="New on Lifebook"
                         items={items.slice(0, 10)}
                     />
+
+                    {/* Continue Reading (Moved below New) */}
+                    <ContinueReadingRow />
 
                     {/* Dynamic Sections from Admin */}
                     {(sections || []).map((section) => {

@@ -128,7 +128,8 @@ export function ReaderView({ content }: ReaderViewProps) {
                 lastSegmentIndex: activeSegmentIndex,
                 lastReadAt: new Date().toISOString(),
                 isCompleted,
-                itemId: content.id
+                itemId: content.id,
+                totalSegments: content.segments.length
             };
 
             // Use the hook to save (handles localStorage + Cloud Sync)
@@ -283,6 +284,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     <div className="font-serif flex-1">
                         {activeSegment ? (
                             <SegmentContent
+                                key={activeSegment.id}
                                 segment={activeSegment}
                                 nextSegment={nextSegment}
                                 isDeepMode={true}

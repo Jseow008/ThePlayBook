@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Filter, ArrowDownUp } from "lucide-react";
+import { Search, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LibraryToolbarProps {
@@ -56,17 +56,17 @@ export function LibraryToolbar({
                 </div>
 
                 {/* Sort */}
-                <div className="flex items-center gap-2">
+                <div className="relative">
                     <select
                         value={activeSort}
                         onChange={(e) => onSortChange(e.target.value as any)}
-                        className="h-9 px-3 rounded-lg bg-secondary/30 text-sm font-medium border-none outline-none focus:ring-1 focus:ring-primary cursor-pointer text-muted-foreground hover:text-foreground transition-colors appearance-none pr-8 relative"
-                        style={{ backgroundImage: 'none' }}
+                        className="h-9 pl-3 pr-8 rounded-lg bg-secondary/30 text-sm font-medium border-none outline-none focus:ring-1 focus:ring-primary cursor-pointer text-muted-foreground hover:text-foreground transition-colors appearance-none"
                     >
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
                         <option value="title">A-Z</option>
                     </select>
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
                 </div>
             </div>
         </div>
