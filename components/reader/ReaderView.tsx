@@ -7,6 +7,7 @@ import { ArrowLeft, Menu, X, BookOpen, Download, Share2, Layers } from "lucide-r
 import { SegmentNav } from "./SegmentNav";
 import { SegmentContent } from "./SegmentContent";
 import type { ContentItemWithSegments } from "@/types/domain";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 
 interface ReaderViewProps {
     content: ContentItemWithSegments;
@@ -19,6 +20,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const [showCopiedToast, setShowCopiedToast] = useState(false);
+    const { saveReadingProgress } = useReadingProgress();
 
     const handleShare = async () => {
         const shareData = {
@@ -44,22 +46,64 @@ export function ReaderView({ content }: ReaderViewProps) {
     const activeSegment = content.segments[activeSegmentIndex];
     const nextSegment = content.segments[activeSegmentIndex + 1];
 
-    // Load progress from localStorage
+    // Load progress from localStorage (Initial + Polling for Cloud Sync)
+    useEffect(() => {
+        const load = () => {
+            const savedProgress = localStorage.getItem(`lifebook_progress_${content.id}`);
+            if (savedProgress) {
+                try {
+                    const { lastSegmentIndex, completed } = JSON.parse(savedProgress);
+                    // Only update if significantly different to avoid jitter (e.g. if user is reading)
+                    // But for initial load, we want to set it. 
+                    // To avoid overwriting user's active navigation, we might check if activeSegmentIndex is 0?
+                    // Or just let user navigate. 
+                    // Ideally, we only force update if the stored index is > active index? 
+                    // Let's just load on mount and poll once or twice?
+                    // Simple logic: If we are at 0, and stored is > 0, jump.
+
+                    /* 
+                       Logic: We want to accept cloud updates effectively.
+                       If existing state is "default" (0), accept any update.
+                       If existing state is user-modified, be careful?
+                       For simplicity, we just interpret the stored state.
+                       To prevent overriding user's manual navigation, we can't just react blindly.
+                       
+                       BUT, since we are implementing Cloud Sync, the "truth" comes from storage.
+                       We rely on the standard `useEffect` below only on mount? 
+                       No, I added polling plan.
+                    */
+
+                    if (completed) {
+                        setCompletedSegments(prev => {
+                            if (prev.size !== completed.length) {
+                                return new Set(completed);
+                            }
+                            return prev;
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to parse progress", e);
+                }
+            }
+        };
+
+        load();
+
+        // Polling to catch Cloud Sync updates (e.g. coming from another device via hook sync)
+        const interval = setInterval(load, 2000);
+        return () => clearInterval(interval);
+    }, [content.id]);
+
+    // Separate effect for initial jump to last position to avoid polling jumping
     useEffect(() => {
         const savedProgress = localStorage.getItem(`lifebook_progress_${content.id}`);
         if (savedProgress) {
             try {
-                const { lastSegmentIndex, completed } = JSON.parse(savedProgress);
-                // Validate index
+                const { lastSegmentIndex } = JSON.parse(savedProgress);
                 if (typeof lastSegmentIndex === 'number' && lastSegmentIndex >= 0 && lastSegmentIndex < content.segments.length) {
                     setActiveSegmentIndex(lastSegmentIndex);
                 }
-                if (completed) {
-                    setCompletedSegments(new Set(completed));
-                }
-            } catch (e) {
-                console.error("Failed to parse progress", e);
-            }
+            } catch { }
         }
     }, [content.id, content.segments.length]);
 
@@ -74,25 +118,25 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
     }, [activeSegmentIndex, activeSegment]);
 
-    // Save progress to localStorage (debounced, separate from state updates)
+    // Save progress using hook
     useEffect(() => {
         const timeoutId = setTimeout(() => {
-            // Check if user has reached the final segment
             const isCompleted = activeSegmentIndex === content.segments.length - 1;
 
-            localStorage.setItem(
-                `lifebook_progress_${content.id}`,
-                JSON.stringify({
-                    completed: Array.from(completedSegments),
-                    lastSegmentIndex: activeSegmentIndex,
-                    lastReadAt: new Date().toISOString(),
-                    isCompleted, // Mark as completed when on final segment
-                })
-            );
-        }, 500);
+            const progressData = {
+                completed: Array.from(completedSegments),
+                lastSegmentIndex: activeSegmentIndex,
+                lastReadAt: new Date().toISOString(),
+                isCompleted,
+                itemId: content.id
+            };
+
+            // Use the hook to save (handles localStorage + Cloud Sync)
+            saveReadingProgress(content.id, progressData);
+        }, 1000); // 1s debounce
 
         return () => clearTimeout(timeoutId);
-    }, [activeSegmentIndex, content.id, content.segments.length, completedSegments]);
+    }, [activeSegmentIndex, content.id, content.segments.length, completedSegments, saveReadingProgress]);
 
     const handleNext = () => {
         if (activeSegmentIndex < content.segments.length - 1) {

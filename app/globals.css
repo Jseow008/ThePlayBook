@@ -184,3 +184,8 @@ body {
 .btn-active {
   @apply active:scale-95 transition-transform;
 }
+
+/* Safe area padding for mobile devices with notch/home indicator */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

@@ -240,8 +240,8 @@ export function NetflixSidebar() {
                 </div>
             </nav>
 
-            {/* Sign In */}
-            {!user && (
+            {/* Sign In / User Profile */}
+            {!user ? (
                 <div className="p-4 border-t border-zinc-800/50">
                     <Link
                         href="/login"
@@ -251,6 +251,44 @@ export function NetflixSidebar() {
                         )}
                     >
                         {isExpanded ? "Sign In" : "→"}
+                    </Link>
+                </div>
+            ) : (
+                <div className="p-4 border-t border-zinc-800/50">
+                    <Link
+                        href="/profile"
+                        className={cn(
+                            "flex items-center gap-3 p-2 rounded-md hover:bg-zinc-800/50 transition-colors group",
+                            isExpanded ? "justify-start" : "justify-center"
+                        )}
+                    >
+                        <div className="size-8 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden border border-zinc-600 flex-shrink-0">
+                            {user.user_metadata?.avatar_url ? (
+                                <img
+                                    src={user.user_metadata.avatar_url}
+                                    alt={user.user_metadata.full_name || "User"}
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                <span className="text-xs font-medium text-zinc-300">
+                                    {(user.email?.[0] || "U").toUpperCase()}
+                                </span>
+                            )}
+                        </div>
+
+                        <div
+                            className={cn(
+                                "flex flex-col overflow-hidden transition-all duration-300",
+                                isExpanded ? "opacity-100 flex-1" : "opacity-0 w-0 hidden"
+                            )}
+                        >
+                            <span className="text-sm font-medium text-foreground truncate">
+                                {user.user_metadata?.full_name || "My Profile"}
+                            </span>
+                            <span className="text-xs text-muted-foreground truncate">
+                                View Account
+                            </span>
+                        </div>
                     </Link>
                 </div>
             )}

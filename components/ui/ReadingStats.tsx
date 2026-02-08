@@ -1,0 +1,67 @@
+"use client";
+
+import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { BookOpen, Trophy, Bookmark } from "lucide-react";
+import { useMemo } from "react";
+
+export function ReadingStats() {
+    const {
+        inProgressCount,
+        completedCount,
+        myListCount,
+        isLoaded
+    } = useReadingProgress();
+
+    // Stats data
+    const stats = useMemo(() => [
+        {
+            label: "Books Read",
+            value: completedCount,
+            icon: Trophy,
+            color: "text-emerald-400",
+            bg: "bg-emerald-500/10",
+            border: "border-emerald-500/20"
+        },
+        {
+            label: "In Progress",
+            value: inProgressCount,
+            icon: BookOpen,
+            color: "text-amber-400",
+            bg: "bg-amber-500/10",
+            border: "border-amber-500/20"
+        },
+        {
+            label: "Saved to List",
+            value: myListCount,
+            icon: Bookmark,
+            color: "text-blue-400",
+            bg: "bg-blue-500/10",
+            border: "border-blue-500/20"
+        }
+    ], [completedCount, inProgressCount, myListCount]);
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {stats.map((stat) => (
+                <div
+                    key={stat.label}
+                    className={`relative overflow-hidden rounded-xl p-6 border ${stat.border} ${stat.bg} backdrop-blur-sm transition-all hover:scale-[1.02]`}
+                >
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <p className="text-sm font-medium text-zinc-400 uppercase tracking-wider mb-1">
+                                {stat.label}
+                            </p>
+                            <p className="text-3xl font-bold text-white">
+                                {isLoaded ? stat.value : "-"}
+                            </p>
+                        </div>
+                        <div className={`p-3 rounded-full ${stat.bg} ${stat.color}`}>
+                            <stat.icon className="w-6 h-6" />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+}

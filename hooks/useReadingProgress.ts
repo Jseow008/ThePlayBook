@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { User } from "@supabase/supabase-js";
 
 /**
  * Reading progress data stored in localStorage
@@ -13,6 +15,13 @@ export interface ReadingProgressData {
     isCompleted: boolean;
 }
 
+interface UserLibraryRow {
+    content_id: string;
+    is_bookmarked: boolean;
+    progress: ReadingProgressData | null;
+    last_interacted_at: string;
+}
+
 /**
  * Hook to retrieve all reading progress from localStorage
  * Returns in-progress and completed item IDs, sorted by recency
@@ -23,6 +32,11 @@ export function useReadingProgress() {
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [myListIds, setMyListIds] = useState<string[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const supabase = createClient();
+
+    // Track if we've done the initial cloud sync
+    const hasSyncedRef = useRef(false);
 
     const loadProgress = useCallback(() => {
         if (typeof window === "undefined") return;
@@ -72,6 +86,147 @@ export function useReadingProgress() {
         setIsLoaded(true);
     }, []);
 
+    // Sync Helper: Upsert row to Supabase
+    const syncItemToCloud = useCallback(async (itemId: string, isBookmarked?: boolean, progressData?: ReadingProgressData | null) => {
+        if (!user) return;
+
+        try {
+            // If parameters are undefined, try to read from localStorage to fill gaps
+            let currentBookmarkState = isBookmarked;
+            if (currentBookmarkState === undefined) {
+                const list = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+                currentBookmarkState = list.includes(itemId);
+            }
+
+            let currentProgress = progressData;
+            if (currentProgress === undefined) {
+                const stored = localStorage.getItem(`lifebook_progress_${itemId}`);
+                currentProgress = stored ? JSON.parse(stored) : null;
+            }
+
+            // Construct payload
+            const payload: any = {
+                user_id: user.id,
+                content_id: itemId,
+                last_interacted_at: new Date().toISOString(),
+            };
+
+            if (currentBookmarkState !== undefined) {
+                payload.is_bookmarked = currentBookmarkState;
+            }
+
+            // Only update progress if we have data or explicit null (to clear?) 
+            if (currentProgress) {
+                payload.progress = currentProgress;
+            }
+
+            const { error } = await supabase
+                .from("user_library")
+                .upsert(payload, { onConflict: "user_id, content_id" });
+
+            if (error) console.error("Cloud sync error:", error);
+
+        } catch (err) {
+            console.error("Failed to sync item:", itemId, err);
+        }
+    }, [user, supabase]);
+
+    // Initial Cloud Sync
+    useEffect(() => {
+        if (!user || hasSyncedRef.current) return;
+
+        const syncCloud = async () => {
+            const { data, error } = await supabase
+                .from("user_library")
+                .select("content_id, is_bookmarked, progress, last_interacted_at");
+
+            if (error || !data) return;
+
+            // Cloud Overwrites Local on mount logic
+            const rows = data as unknown as UserLibraryRow[];
+            const cloudMyListIds: string[] = [];
+
+            rows.forEach((row) => {
+                // 1. Sync My List
+                if (row.is_bookmarked) {
+                    cloudMyListIds.push(row.content_id);
+                }
+
+                // 2. Sync Progress
+                if (row.progress && Object.keys(row.progress).length > 0) {
+                    const localKey = `lifebook_progress_${row.content_id}`;
+                    const localDataStr = localStorage.getItem(localKey);
+
+                    let shouldUpdateLocal = true;
+                    if (localDataStr) {
+                        const localData = JSON.parse(localDataStr);
+                        // row.last_interacted_at vs localData.lastReadAt
+                        if (localData.lastReadAt && row.last_interacted_at) {
+                            if (new Date(localData.lastReadAt) > new Date(row.last_interacted_at)) {
+                                shouldUpdateLocal = false;
+                                // We have newer local data, maybe push to cloud?
+                                syncItemToCloud(row.content_id, row.is_bookmarked, localData);
+                            }
+                        }
+                    }
+
+                    if (shouldUpdateLocal) {
+                        localStorage.setItem(localKey, JSON.stringify(row.progress));
+                    }
+                }
+            });
+
+            // 3. Upload Local-only data to Cloud (Migration/Offline-sync)
+            const cloudContentIds = new Set(rows.map(r => r.content_id));
+
+            // Push missing Progress
+            const localKeys = Object.keys(localStorage).filter(k => k.startsWith("lifebook_progress_"));
+            localKeys.forEach(key => {
+                const id = key.replace("lifebook_progress_", "");
+                if (!cloudContentIds.has(id)) {
+                    try {
+                        const localData = JSON.parse(localStorage.getItem(key) || "{}");
+                        syncItemToCloud(id, undefined, localData);
+                    } catch { }
+                }
+            });
+
+            // Push missing My List to Cloud
+            const localMyListForUpload = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+            localMyListForUpload.forEach((id: string) => {
+                if (!cloudContentIds.has(id)) {
+                    syncItemToCloud(id, true, undefined);
+                }
+            });
+
+            // Update My List in LocalStorage
+            // Merge: Add cloud items to local list (union)
+            const localMyList = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+            const newMyList = new Set(localMyList);
+            cloudMyListIds.forEach(id => {
+                if (!newMyList.has(id)) newMyList.add(id);
+            });
+
+            localStorage.setItem("lifebook_mylist", JSON.stringify(Array.from(newMyList)));
+
+            hasSyncedRef.current = true;
+            loadProgress(); // Reload state from the updated localStorage
+        };
+
+        syncCloud();
+    }, [user, supabase, loadProgress, syncItemToCloud]);
+
+    // Auth Listener
+    useEffect(() => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            setUser(session?.user || null);
+            if (event === 'SIGNED_OUT') {
+                hasSyncedRef.current = false;
+            }
+        });
+        return () => subscription.unsubscribe();
+    }, [supabase]);
+
     useEffect(() => {
         loadProgress();
 
@@ -99,7 +254,11 @@ export function useReadingProgress() {
 
         // Refresh local state
         loadProgress();
-    }, [loadProgress]);
+
+        if (user) {
+            syncItemToCloud(itemId, undefined, null);
+        }
+    }, [loadProgress, user, syncItemToCloud]);
 
     // My List Actions
     const addToMyList = useCallback((itemId: string) => {
@@ -115,8 +274,11 @@ export function useReadingProgress() {
                 newValue: JSON.stringify(newList)
             }));
             loadProgress();
+
+            // Cloud Sync
+            syncItemToCloud(itemId, true, undefined);
         }
-    }, [loadProgress]);
+    }, [loadProgress, syncItemToCloud]);
 
     const removeFromMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
@@ -130,7 +292,10 @@ export function useReadingProgress() {
             newValue: JSON.stringify(newList)
         }));
         loadProgress();
-    }, [loadProgress]);
+
+        // Cloud Sync
+        syncItemToCloud(itemId, false, undefined);
+    }, [loadProgress, syncItemToCloud]);
 
     const toggleMyList = useCallback((itemId: string) => {
         if (myListIds.includes(itemId)) {
@@ -140,7 +305,21 @@ export function useReadingProgress() {
         }
     }, [myListIds, addToMyList, removeFromMyList]);
 
+    // Expose a way to manually update progress (used by Reader components)
+    // This is a new helper to replace direct localStorage calls in components
+    const saveReadingProgress = useCallback((itemId: string, data: ReadingProgressData) => {
+        if (typeof window === "undefined") return;
+
+        localStorage.setItem(`lifebook_progress_${itemId}`, JSON.stringify(data));
+
+        loadProgress();
+
+        syncItemToCloud(itemId, undefined, data);
+    }, [loadProgress, syncItemToCloud]);
+
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
+
+    const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
 
     return {
         // Progress
@@ -151,6 +330,7 @@ export function useReadingProgress() {
         isLoaded,
         refresh: loadProgress,
         removeFromProgress,
+        saveReadingProgress,
 
         // My List
         myListIds,
@@ -159,5 +339,8 @@ export function useReadingProgress() {
         removeFromMyList,
         toggleMyList,
         isInMyList,
+
+        // Combined
+        totalLibraryItems,
     };
 }

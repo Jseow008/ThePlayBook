@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { UserNav } from "@/components/ui/UserNav";
+import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 
 /**
  * Public Layout
@@ -37,11 +38,14 @@ export default async function PublicLayout({
             </header>
 
             {/* Main Content */}
-            <main className="lg:pl-16">
+            <main className="lg:pl-16 pb-20 lg:pb-0">
                 {/* Mobile padding for fixed header */}
                 <div className="lg:hidden h-14" />
                 {children}
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
         </div>
     );
 }
