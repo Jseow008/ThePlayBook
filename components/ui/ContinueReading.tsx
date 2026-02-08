@@ -17,12 +17,12 @@ export function ContinueReading({ allItems }: ContinueReadingProps) {
 
         // Find all progress keys in localStorage
         const progressKeys = Object.keys(localStorage)
-            .filter(key => key.startsWith("lifebook_progress_"));
+            .filter(key => key.startsWith("flux_progress_"));
 
         // Extract IDs and get corresponding items
         const inProgress = progressKeys
             .map(key => {
-                const id = key.replace("lifebook_progress_", "");
+                const id = key.replace("flux_progress_", "");
                 const item = allItems.find(i => i.id === id);
 
                 // Get last read timestamp and completion status for sorting/filtering

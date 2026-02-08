@@ -1,10 +1,10 @@
-# Lifebook
+# Flux
 
-> **A curated knowledge library.** Distilled wisdom from podcasts, books, and articles — made accessible for everyone.
+> **Continuous flow of knowledge.** Distilled wisdom from podcasts, books, and articles — made accessible for everyone.
 
-## What is Lifebook?
+## What is Flux?
 
-Lifebook is a **public knowledge platform** where curated summaries of high-value content are published for free consumption. Think of it as a personal library of distilled insights.
+Flux is a **public knowledge platform** where curated summaries of high-value content are published for free consumption. Think of it as a personal stream of distilled insights.
 
 ### Features
 

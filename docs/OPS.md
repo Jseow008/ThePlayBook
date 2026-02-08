@@ -1,7 +1,7 @@
 # OPS.md: Operational Workflows
 
 > **Status:** Active  
-> **Purpose:** Development, deployment, and maintenance procedures for Lifebook.
+> **Purpose:** Development, deployment, and maintenance procedures for Flux.
 
 ---
 

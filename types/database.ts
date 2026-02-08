@@ -34,6 +34,7 @@ export interface Database {
                     cover_image_url: string | null;
                     category: string | null;
                     is_featured: boolean;
+                    audio_url: string | null;
                     created_at: string;
                     updated_at: string;
                     deleted_at: string | null;
@@ -50,6 +51,7 @@ export interface Database {
                     cover_image_url?: string | null;
                     category?: string | null;
                     is_featured?: boolean;
+                    audio_url?: string | null;
                     created_at?: string;
                     updated_at?: string;
                     deleted_at?: string | null;
@@ -66,6 +68,7 @@ export interface Database {
                     cover_image_url?: string | null;
                     category?: string | null;
                     is_featured?: boolean;
+                    audio_url?: string | null;
                     created_at?: string;
                     updated_at?: string;
                     deleted_at?: string | null;

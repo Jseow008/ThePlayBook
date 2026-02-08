@@ -58,7 +58,7 @@ export default function MyListPage() {
                             // But `removeFromMyList` updates state and storage. Calling in loop is okay but might cause multiple renders.
                             // Better: filter valid IDs and update storage manually if needed, or just let user see empty?
                             // Actually, we should clean up.
-                            // The hook manages 'lifebook_mylist'.
+                            // The hook manages 'flux_mylist'.
                             // Let's just call removeFromMyList for each invalid ID.
                             removeFromMyList(id);
                         });

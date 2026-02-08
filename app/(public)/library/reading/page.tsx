@@ -52,7 +52,7 @@ export default function ContinueReadingPage() {
                     if (invalidIds.length > 0) {
                         console.log("Cleaning up invalid reading progress:", invalidIds);
                         invalidIds.forEach(id => {
-                            localStorage.removeItem(`lifebook_progress_${id}`);
+                            localStorage.removeItem(`flux_progress_${id}`);
                         });
                         refresh();
                     }

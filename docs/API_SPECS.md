@@ -1,4 +1,4 @@
-# API_SPECS.md: Lifebook API Contracts
+# API_SPECS.md: Flux API Contracts
 
 > **Status:** Active  
 > **Purpose:** API definitions for public data fetching, admin content management, and exports.

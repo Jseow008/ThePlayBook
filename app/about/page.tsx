@@ -1,15 +1,15 @@
 /**
  * About Page
  * 
- * Information about Lifebook and its mission.
+ * Information about Flux and its mission.
  */
 
 import Link from "next/link";
 import { BookOpen, Headphones, Lightbulb, Sparkles } from "lucide-react";
 
 export const metadata = {
-    title: "About | Lifebook",
-    description: "Learn more about Lifebook - your curated knowledge library for books, podcasts, and ideas.",
+    title: "About | Flux",
+    description: "Learn more about Flux - your curated knowledge stream for books, podcasts, and ideas.",
 };
 
 export default function AboutPage() {
@@ -22,7 +22,7 @@ export default function AboutPage() {
                         href="/"
                         className="text-2xl font-bold tracking-tight hover:text-zinc-300 transition-colors"
                     >
-                        Lifebook
+                        Flux
                     </Link>
                 </div>
             </header>
@@ -32,10 +32,10 @@ export default function AboutPage() {
                 {/* Hero */}
                 <div className="text-center mb-16">
                     <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-zinc-100 to-zinc-400 bg-clip-text text-transparent">
-                        About Lifebook
+                        About Flux
                     </h1>
                     <p className="text-xl text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-                        A personal knowledge library built to capture, distill, and revisit the best ideas from books, podcasts, and articles.
+                        A personal knowledge stream built to capture, distill, and revisit the best ideas from books, podcasts, and articles.
                     </p>
                 </div>
 
@@ -44,7 +44,7 @@ export default function AboutPage() {
                     <h2 className="text-2xl font-semibold mb-4 text-zinc-100">The Mission</h2>
                     <div className="prose prose-invert prose-zinc max-w-none">
                         <p className="text-zinc-300 leading-relaxed text-lg">
-                            We consume so much content—podcasts during commutes, books before bed, articles throughout the day—but how much do we actually retain? Lifebook exists to solve that problem.
+                            We consume so much content—podcasts during commutes, books before bed, articles throughout the day—but how much do we actually retain? Flux exists to solve that problem.
                         </p>
                         <p className="text-zinc-300 leading-relaxed text-lg mt-4">
                             Every entry here is a personal reflection: a distillation of key insights, memorable quotes, and actionable takeaways. It&apos;s not just a summary—it&apos;s a second brain for ideas worth remembering.
@@ -98,7 +98,7 @@ export default function AboutPage() {
                                 &ldquo;The faintest ink is more powerful than the strongest memory.&rdquo;
                             </blockquote>
                             <p className="text-zinc-400 mt-4 leading-relaxed">
-                                Ideas are only valuable if we can access them when we need them. Lifebook is a living document—a place to capture wisdom before it fades.
+                                Ideas are only valuable if we can access them when we need them. Flux is a living document—a place to capture wisdom before it fades.
                             </p>
                         </div>
                     </div>
@@ -118,7 +118,7 @@ export default function AboutPage() {
             {/* Footer */}
             <footer className="border-t border-zinc-800 py-8 mt-16">
                 <div className="max-w-4xl mx-auto px-6 flex items-center justify-between text-sm text-zinc-500">
-                    <span>© {new Date().getFullYear()} Lifebook</span>
+                    <span>© {new Date().getFullYear()} Flux</span>
                     <div className="flex gap-6">
                         <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>
                         <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>

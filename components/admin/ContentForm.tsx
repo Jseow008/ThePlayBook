@@ -19,6 +19,7 @@ import {
     FileText,
     UploadCloud,
     Image as ImageIcon,
+    Music,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { ArtifactEditor, Artifact } from "./ArtifactEditor";
@@ -66,6 +67,7 @@ interface ContentFormData {
     category: string;
     source_url: string;
     cover_image_url: string;
+    audio_url: string;
     duration_seconds: number | null;
     status: "draft" | "verified";
     is_featured: boolean;
@@ -112,6 +114,7 @@ const defaultFormData: ContentFormData = {
     category: "",
     source_url: "",
     cover_image_url: "",
+    audio_url: "",
     duration_seconds: null,
     status: "draft",
     is_featured: false,
@@ -248,6 +251,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [expandedSegment, setExpandedSegment] = useState<string | null>(null); // Use ID instead of index
     const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingAudio, setIsUploadingAudio] = useState(false);
 
     // DnD Sensors
     const sensors = useSensors(
@@ -385,6 +389,37 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
         }
     };
 
+    const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingAudio(true);
+        setError("");
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("/api/admin/upload-audio", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Upload failed");
+            }
+
+            const data = await response.json();
+            updateField("audio_url", data.url);
+        } catch (err: any) {
+            console.error("Audio upload failed:", err);
+            setError(err.message || "Failed to upload audio. Please try again.");
+        } finally {
+            setIsUploadingAudio(false);
+        }
+    };
+
     const handleSubmit = async (status: "draft" | "verified") => {
         setError("");
         setIsSubmitting(true);
@@ -402,6 +437,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
             duration_seconds: formData.duration_seconds || null,
             source_url: formData.source_url || null,
             cover_image_url: formData.cover_image_url || null,
+            audio_url: formData.audio_url || null,
             category: formData.category || null,
         };
 
@@ -662,6 +698,79 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                         {fieldErrors.cover_image_url && (
                             <p className="mt-1 text-sm text-red-600">{fieldErrors.cover_image_url}</p>
                         )}
+                    </div>
+
+                    {/* Audio File (Read For Me) */}
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-700 mb-2">
+                            Audio Narration <span className="text-zinc-400 font-normal">(Optional - "Read For Me")</span>
+                        </label>
+                        <div className="space-y-4">
+                            {/* Upload Area */}
+                            <label
+                                className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingAudio
+                                    ? "bg-zinc-50 border-zinc-300"
+                                    : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
+                                    }`}
+                            >
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    {isUploadingAudio ? (
+                                        <>
+                                            <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
+                                            <p className="text-sm text-zinc-500">Uploading audio...</p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Music className="w-8 h-8 mb-2 text-zinc-400" />
+                                            <p className="text-sm text-zinc-500 font-medium">Click to upload audio file</p>
+                                            <p className="text-xs text-zinc-400 mt-1">MP3, WAV, or M4A (max 50MB)</p>
+                                        </>
+                                    )}
+                                </div>
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept="audio/*"
+                                    onChange={handleAudioUpload}
+                                    disabled={isUploadingAudio}
+                                />
+                            </label>
+
+                            {/* Manual URL Input */}
+                            <div className="relative">
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                    <Music className="w-4 h-4 text-zinc-400" />
+                                </div>
+                                <input
+                                    type="url"
+                                    value={formData.audio_url}
+                                    onChange={(e) => updateField("audio_url", e.target.value)}
+                                    placeholder="Or paste audio URL directly..."
+                                    className="w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Audio Preview */}
+                            {formData.audio_url && (
+                                <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200">
+                                    <Music className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+                                    <audio
+                                        controls
+                                        className="flex-1 h-10"
+                                        src={formData.audio_url}
+                                    >
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    <button
+                                        type="button"
+                                        onClick={() => updateField("audio_url", "")}
+                                        className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Duration */}

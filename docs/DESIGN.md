@@ -1,4 +1,4 @@
-# DESIGN.md: Lifebook Design System
+# DESIGN.md: Flux Design System
 
 > **Theme:** Dark Mode Native. High-contrast, distraction-free, content-focused.  
 > **Tech Stack:** Tailwind CSS, Lucide React.  
@@ -57,7 +57,7 @@
 **Category Sections:**
 * Dynamic category-based lanes
 * Ordered by: Health, Fitness, Wealth, Finance, Productivity, etc.
-* "New on Lifebook" lane at top
+* "New on Flux" lane at top
 
 ### 2.2 Reader (Desktop)
 
@@ -249,7 +249,7 @@ Visual differentiation by content type:
 ### Hero Carousel (No Featured Content)
 ```
 Container: h-[85vh] centered, dark bg with overlay
-├── Heading: "Lifebook" (large, white)
+├── Heading: "Flux" (large, white)
 └── Subtext: "A curated library of insights from books, podcasts, and articles. Check back soon for featured content."
 ```
 Note: NO admin button is shown to regular users.

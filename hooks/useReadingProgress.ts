@@ -45,14 +45,14 @@ export function useReadingProgress() {
 
         // 1. Load Reading Progress
         const progressKeys = Object.keys(localStorage)
-            .filter(key => key.startsWith("lifebook_progress_"));
+            .filter(key => key.startsWith("flux_progress_"));
 
         const inProgress: { id: string; lastReadAt: string }[] = [];
         const completed: { id: string; lastReadAt: string }[] = [];
         const newProgressMap: Record<string, ReadingProgressData> = {};
 
         progressKeys.forEach(key => {
-            const id = key.replace("lifebook_progress_", "");
+            const id = key.replace("flux_progress_", "");
             try {
                 const data = JSON.parse(localStorage.getItem(key) || "{}") as ReadingProgressData;
                 const entry = { id, lastReadAt: data.lastReadAt || "" };
@@ -82,7 +82,7 @@ export function useReadingProgress() {
 
         // 2. Load My List
         try {
-            const list = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+            const list = JSON.parse(localStorage.getItem("flux_mylist") || "[]");
             setMyListIds(Array.isArray(list) ? list : []);
         } catch (e) {
             console.error("Error parsing My List", e);
@@ -100,13 +100,13 @@ export function useReadingProgress() {
             // If parameters are undefined, try to read from localStorage to fill gaps
             let currentBookmarkState = isBookmarked;
             if (currentBookmarkState === undefined) {
-                const list = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+                const list = JSON.parse(localStorage.getItem("flux_mylist") || "[]");
                 currentBookmarkState = list.includes(itemId);
             }
 
             let currentProgress = progressData;
             if (currentProgress === undefined) {
-                const stored = localStorage.getItem(`lifebook_progress_${itemId}`);
+                const stored = localStorage.getItem(`flux_progress_${itemId}`);
                 currentProgress = stored ? JSON.parse(stored) : null;
             }
 
@@ -160,7 +160,7 @@ export function useReadingProgress() {
 
                 // 2. Sync Progress
                 if (row.progress && Object.keys(row.progress).length > 0) {
-                    const localKey = `lifebook_progress_${row.content_id}`;
+                    const localKey = `flux_progress_${row.content_id}`;
                     const localDataStr = localStorage.getItem(localKey);
 
                     let shouldUpdateLocal = true;
@@ -186,9 +186,9 @@ export function useReadingProgress() {
             const cloudContentIds = new Set(rows.map(r => r.content_id));
 
             // Push missing Progress
-            const localKeys = Object.keys(localStorage).filter(k => k.startsWith("lifebook_progress_"));
+            const localKeys = Object.keys(localStorage).filter(k => k.startsWith("flux_progress_"));
             localKeys.forEach(key => {
-                const id = key.replace("lifebook_progress_", "");
+                const id = key.replace("flux_progress_", "");
                 if (!cloudContentIds.has(id)) {
                     try {
                         const localData = JSON.parse(localStorage.getItem(key) || "{}");
@@ -198,7 +198,7 @@ export function useReadingProgress() {
             });
 
             // Push missing My List to Cloud
-            const localMyListForUpload = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+            const localMyListForUpload = JSON.parse(localStorage.getItem("flux_mylist") || "[]");
             localMyListForUpload.forEach((id: string) => {
                 if (!cloudContentIds.has(id)) {
                     syncItemToCloud(id, true, undefined);
@@ -207,13 +207,13 @@ export function useReadingProgress() {
 
             // Update My List in LocalStorage
             // Merge: Add cloud items to local list (union)
-            const localMyList = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+            const localMyList = JSON.parse(localStorage.getItem("flux_mylist") || "[]");
             const newMyList = new Set(localMyList);
             cloudMyListIds.forEach(id => {
                 if (!newMyList.has(id)) newMyList.add(id);
             });
 
-            localStorage.setItem("lifebook_mylist", JSON.stringify(Array.from(newMyList)));
+            localStorage.setItem("flux_mylist", JSON.stringify(Array.from(newMyList)));
 
             hasSyncedRef.current = true;
             loadProgress(); // Reload state from the updated localStorage
@@ -238,7 +238,7 @@ export function useReadingProgress() {
 
         // Listen for storage changes (cross-tab sync)
         const handleStorage = (e: StorageEvent) => {
-            if (e.key?.startsWith("lifebook_progress_") || e.key === "lifebook_mylist") {
+            if (e.key?.startsWith("flux_progress_") || e.key === "flux_mylist") {
                 loadProgress();
             }
         };
@@ -250,11 +250,11 @@ export function useReadingProgress() {
     const removeFromProgress = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
 
-        localStorage.removeItem(`lifebook_progress_${itemId}`);
+        localStorage.removeItem(`flux_progress_${itemId}`);
 
         // Trigger storage event for other components/tabs
         window.dispatchEvent(new StorageEvent("storage", {
-            key: `lifebook_progress_${itemId}`,
+            key: `flux_progress_${itemId}`,
             newValue: null
         }));
 
@@ -270,13 +270,13 @@ export function useReadingProgress() {
     const addToMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
 
-        const currentList = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+        const currentList = JSON.parse(localStorage.getItem("flux_mylist") || "[]");
         if (!currentList.includes(itemId)) {
             const newList = [itemId, ...currentList]; // Add to top
-            localStorage.setItem("lifebook_mylist", JSON.stringify(newList));
+            localStorage.setItem("flux_mylist", JSON.stringify(newList));
 
             window.dispatchEvent(new StorageEvent("storage", {
-                key: "lifebook_mylist",
+                key: "flux_mylist",
                 newValue: JSON.stringify(newList)
             }));
             loadProgress();
@@ -289,12 +289,12 @@ export function useReadingProgress() {
     const removeFromMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
 
-        const currentList = JSON.parse(localStorage.getItem("lifebook_mylist") || "[]");
+        const currentList = JSON.parse(localStorage.getItem("flux_mylist") || "[]");
         const newList = currentList.filter((id: string) => id !== itemId);
-        localStorage.setItem("lifebook_mylist", JSON.stringify(newList));
+        localStorage.setItem("flux_mylist", JSON.stringify(newList));
 
         window.dispatchEvent(new StorageEvent("storage", {
-            key: "lifebook_mylist",
+            key: "flux_mylist",
             newValue: JSON.stringify(newList)
         }));
         loadProgress();
@@ -316,7 +316,7 @@ export function useReadingProgress() {
     const saveReadingProgress = useCallback((itemId: string, data: ReadingProgressData) => {
         if (typeof window === "undefined") return;
 
-        localStorage.setItem(`lifebook_progress_${itemId}`, JSON.stringify(data));
+        localStorage.setItem(`flux_progress_${itemId}`, JSON.stringify(data));
 
         loadProgress();
 

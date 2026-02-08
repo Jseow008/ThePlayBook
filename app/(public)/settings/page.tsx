@@ -30,9 +30,9 @@ export default function SettingsPage() {
         }
 
         setIsClearing(true);
-        // Clear all localStorage keys starting with lifebook_progress_
+        // Clear all localStorage keys starting with flux_progress_
         Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith("lifebook_progress_")) {
+            if (key.startsWith("flux_progress_")) {
                 localStorage.removeItem(key);
             }
         });
@@ -143,7 +143,7 @@ export default function SettingsPage() {
                             </div>
                         </Link>
                         <div className="p-4 text-center text-xs text-muted-foreground bg-zinc-900/30">
-                            Version 1.0.0 • Lifebook
+                            Version 1.0.0 • Flux
                         </div>
                     </div>
                 </section>

@@ -27,7 +27,7 @@ export function HomeFeed({ items, featuredItems, sections, sectionItems }: HomeF
                 <div className="space-y-8 animate-in fade-in duration-500">
                     {/* New / Latest Additions */}
                     <ContentLane
-                        title="New on Lifebook"
+                        title="New on Flux"
                         items={items.slice(0, 10)}
                     />
 
@@ -57,7 +57,7 @@ export function HomeFeed({ items, featuredItems, sections, sectionItems }: HomeF
                         <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-black font-serif font-bold">
                             L
                         </div>
-                        <p>© 2026 Lifebook</p>
+                        <p>© 2026 Flux</p>
                     </div>
                     <div className="flex gap-8">
                         <a href="/about" className="hover:text-foreground transition-colors">About</a>

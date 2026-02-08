@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Menu, X, BookOpen, Download, Share2, Layers } from "lucide-react";
 import { SegmentNav } from "./SegmentNav";
 import { SegmentContent } from "./SegmentContent";
+import { AudioPlayer } from "./AudioPlayer";
 import type { ContentItemWithSegments } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 
@@ -25,7 +26,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const handleShare = async () => {
         const shareData = {
             title: content.title,
-            text: `Read "${content.title}" on Lifebook`,
+            text: `Read "${content.title}" on Flux`,
             url: window.location.href,
         };
 
@@ -49,7 +50,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     // Load progress from localStorage (Initial + Polling for Cloud Sync)
     useEffect(() => {
         const load = () => {
-            const savedProgress = localStorage.getItem(`lifebook_progress_${content.id}`);
+            const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
             if (savedProgress) {
                 try {
                     const { lastSegmentIndex, completed } = JSON.parse(savedProgress);
@@ -96,7 +97,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Separate effect for initial jump to last position to avoid polling jumping
     useEffect(() => {
-        const savedProgress = localStorage.getItem(`lifebook_progress_${content.id}`);
+        const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
         if (savedProgress) {
             try {
                 const { lastSegmentIndex } = JSON.parse(savedProgress);
@@ -277,6 +278,16 @@ export function ReaderView({ content }: ReaderViewProps) {
                         </h1>
                         {content.author && (
                             <p className="text-xl text-muted-foreground">by {content.author}</p>
+                        )}
+
+                        {/* Audio Player (Read For Me) */}
+                        {content.audio_url && (
+                            <div className="mt-8 max-w-xl mx-auto">
+                                <AudioPlayer
+                                    src={content.audio_url}
+                                    title="Listen to this summary"
+                                />
+                            </div>
                         )}
                     </header>
 

@@ -52,6 +52,7 @@ export default async function ReadPage({ params }: PageProps) {
         duration_seconds: contentAny.duration_seconds,
         author: contentAny.author,
         cover_image_url: contentAny.cover_image_url,
+        audio_url: contentAny.audio_url || null,
         segments: (contentAny.segments as any[]).map(s => ({
             id: s.id,
             item_id: s.item_id,

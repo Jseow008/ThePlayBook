@@ -36,7 +36,7 @@ export default async function HomePage() {
         featuredData = fallbackData;
     }
 
-    // 2. Fetch All Items for "New on Lifebook" row
+    // 2. Fetch All Items for "New on Flux" row
     const { data: allItems } = await supabase
         .from("content_item")
         .select("*")

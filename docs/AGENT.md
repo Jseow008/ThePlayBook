@@ -1,7 +1,7 @@
 # AGENT.md: Implementation Roadmap
 
 > **Role:** Full-Stack Engineer  
-> **Objective:** Build Lifebook MVP  
+> **Objective:** Build Flux MVP  
 > **Definition of Done:** Founder can upload content via admin panel. Visitors can browse, read (Quick/Deep mode), track progress locally, and engage with interactive artifacts.
 
 ---
@@ -57,7 +57,7 @@
   * Hero carousel with featured content (is_featured flag)
   * Netflix-style horizontal scroll content lanes
   * Category-based content organization
-  * "New on Lifebook" lane for latest additions
+  * "New on Flux" lane for latest additions
   * ISR with 1-hour revalidation
 
 * [x] **2.2 Reader Page (`/read/[id]`)**

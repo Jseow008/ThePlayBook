@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const RECENT_SEARCHES_KEY = "lifebook_recent_searches";
+const RECENT_SEARCHES_KEY = "flux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
 
 interface SearchInputProps {

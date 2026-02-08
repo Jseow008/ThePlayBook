@@ -7,6 +7,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
+import { Database } from "@/types/database";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -26,16 +27,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { title, filter_type, filter_value, order_index, is_active } = body;
 
     // Build update object with only provided fields
-    const updateData: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    const updateData: Database['public']['Tables']['homepage_section']['Update'] = { updated_at: new Date().toISOString() };
     if (title !== undefined) updateData.title = title;
     if (filter_type !== undefined) updateData.filter_type = filter_type;
     if (filter_value !== undefined) updateData.filter_value = filter_value;
     if (order_index !== undefined) updateData.order_index = order_index;
     if (is_active !== undefined) updateData.is_active = is_active;
 
-    const { data, error } = await supabase
-        .from("homepage_section")
-        .update(updateData)
+    const { data, error } = await (supabase
+        .from("homepage_section") as any)
+        .update(updateData as any)
         .eq("id", id)
         .select()
         .single();

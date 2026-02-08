@@ -71,7 +71,7 @@ export default async function CategoriesPage() {
     // Count categories
     const categoryCounts: Record<string, number> = {};
     if (data) {
-        data.forEach(item => {
+        (data as any[]).forEach(item => {
             if (item.category) {
                 // Determine if category string contains multiple (e.g. "Health, Fitness")?
                 // Assuming single category per item for now based on current schema usage.

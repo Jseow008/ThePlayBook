@@ -1,14 +1,14 @@
 /**
  * Terms of Service Page
  * 
- * Terms and conditions for using Lifebook.
+ * Terms and conditions for using Flux.
  */
 
 import Link from "next/link";
 
 export const metadata = {
-    title: "Terms of Service | Lifebook",
-    description: "Terms of service for using Lifebook.",
+    title: "Terms of Service | Flux",
+    description: "Terms of service for using Flux.",
 };
 
 export default function TermsPage() {
@@ -23,7 +23,7 @@ export default function TermsPage() {
                         href="/"
                         className="text-2xl font-bold tracking-tight hover:text-zinc-300 transition-colors"
                     >
-                        Lifebook
+                        Flux
                     </Link>
                 </div>
             </header>
@@ -37,16 +37,16 @@ export default function TermsPage() {
 
                 <div className="prose prose-invert prose-zinc max-w-none space-y-8">
                     <section>
-                        <h2 className="text-2xl font-semibold mb-4 text-zinc-100">Welcome to Lifebook</h2>
+                        <h2 className="text-2xl font-semibold mb-4 text-zinc-100">Welcome to Flux</h2>
                         <p className="text-zinc-300 leading-relaxed">
-                            By accessing and using Lifebook (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
+                            By accessing and using Flux (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
                         </p>
                     </section>
 
                     <section>
                         <h2 className="text-2xl font-semibold mb-4 text-zinc-100">Nature of Content</h2>
                         <p className="text-zinc-300 leading-relaxed">
-                            Lifebook is a personal knowledge library containing summaries, reflections, and insights derived from books, podcasts, articles, and other media. Please note:
+                            Flux is a personal knowledge stream containing summaries, reflections, and insights derived from books, podcasts, articles, and other media. Please note:
                         </p>
                         <ul className="list-disc list-inside text-zinc-300 mt-4 space-y-2">
                             <li>
@@ -66,19 +66,19 @@ export default function TermsPage() {
 
                         <h3 className="text-lg font-medium mb-2 text-zinc-200">Original Works</h3>
                         <p className="text-zinc-300 leading-relaxed">
-                            The books, podcasts, and other media summarized on Lifebook are the intellectual property of their respective authors, publishers, and creators. All rights to original works remain with their owners.
+                            The books, podcasts, and other media summarized on Flux are the intellectual property of their respective authors, publishers, and creators. All rights to original works remain with their owners.
                         </p>
 
                         <h3 className="text-lg font-medium mb-2 mt-4 text-zinc-200">Our Content</h3>
                         <p className="text-zinc-300 leading-relaxed">
-                            The summaries, commentary, and presentation on Lifebook are original works created through personal reflection and analysis. This content is protected under applicable copyright laws.
+                            The summaries, commentary, and presentation on Flux are original works created through personal reflection and analysis. This content is protected under applicable copyright laws.
                         </p>
                     </section>
 
                     <section>
                         <h2 className="text-2xl font-semibold mb-4 text-zinc-100">Acceptable Use</h2>
                         <p className="text-zinc-300 leading-relaxed">
-                            You may use Lifebook for personal, non-commercial purposes. You agree not to:
+                            You may use Flux for personal, non-commercial purposes. You agree not to:
                         </p>
                         <ul className="list-disc list-inside text-zinc-300 mt-4 space-y-2">
                             <li>Reproduce, distribute, or republish content without permission</li>
@@ -107,7 +107,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4 text-zinc-100">Limitation of Liability</h2>
                         <p className="text-zinc-300 leading-relaxed">
-                            To the fullest extent permitted by law, Lifebook and its creator shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the Service.
+                            To the fullest extent permitted by law, Flux and its creator shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the Service.
                         </p>
                     </section>
 
@@ -137,7 +137,7 @@ export default function TermsPage() {
             {/* Footer */}
             <footer className="border-t border-zinc-800 py-8 mt-16">
                 <div className="max-w-4xl mx-auto px-6 flex items-center justify-between text-sm text-zinc-500">
-                    <span>© {new Date().getFullYear()} Lifebook</span>
+                    <span>© {new Date().getFullYear()} Flux</span>
                     <div className="flex gap-6">
                         <Link href="/about" className="hover:text-zinc-300 transition-colors">About</Link>
                         <Link href="/privacy" className="hover:text-zinc-300 transition-colors">Privacy</Link>

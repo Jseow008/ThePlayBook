@@ -1,7 +1,7 @@
 /**
  * New Content Page
  * 
- * Create new content for Lifebook.
+ * Create new content for Flux.
  */
 
 import { ContentForm } from "@/components/admin/ContentForm";

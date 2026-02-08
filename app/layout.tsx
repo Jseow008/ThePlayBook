@@ -16,10 +16,10 @@ const merriweather = Merriweather({
 });
 
 export const metadata: Metadata = {
-  title: "Lifebook | Curated Knowledge Library",
+  title: "Flux | Curated Knowledge Stream",
   description:
     "Curated summaries of podcasts, books, and articles. Read distilled wisdom for free.",
-  keywords: ["knowledge", "summaries", "podcasts", "books", "learning"],
+  keywords: ["knowledge", "summaries", "podcasts", "books", "learning", "flux"],
 };
 
 export default function RootLayout({

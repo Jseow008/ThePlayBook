@@ -11,8 +11,8 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET() {
     const supabase = await createClient();
 
-    const { data, error } = await supabase
-        .from("homepage_section")
+    const { data, error } = await (supabase
+        .from("homepage_section") as any)
         .select("*")
         .order("order_index", { ascending: true });
 
@@ -46,17 +46,17 @@ export async function POST(request: NextRequest) {
     // Get max order_index if not provided
     let finalOrderIndex = order_index;
     if (finalOrderIndex === undefined) {
-        const { data: maxOrder } = await supabase
-            .from("homepage_section")
+        const { data: maxOrder } = await (supabase
+            .from("homepage_section") as any)
             .select("order_index")
             .order("order_index", { ascending: false })
             .limit(1)
             .single();
-        finalOrderIndex = (maxOrder?.order_index || 0) + 1;
+        finalOrderIndex = ((maxOrder as any)?.order_index || 0) + 1;
     }
 
-    const { data, error } = await supabase
-        .from("homepage_section")
+    const { data, error } = await (supabase
+        .from("homepage_section") as any)
         .insert({
             title,
             filter_type,

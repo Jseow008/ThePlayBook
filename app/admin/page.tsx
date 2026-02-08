@@ -115,7 +115,7 @@ export default async function AdminDashboardPage({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-zinc-900">Content Dashboard</h1>
-                    <p className="text-zinc-500 mt-1">Manage your Lifebook content</p>
+                    <p className="text-zinc-500 mt-1">Manage your Flux content</p>
                 </div>
 
                 <div className="flex items-center gap-3">

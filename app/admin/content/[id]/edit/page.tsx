@@ -1,7 +1,7 @@
 /**
  * Edit Content Page
  * 
- * Edit existing content for Lifebook.
+ * Edit existing content for Flux.
  */
 
 import { notFound } from "next/navigation";
@@ -42,6 +42,7 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
         category: contentItem.category || "",
         source_url: contentItem.source_url || "",
         cover_image_url: contentItem.cover_image_url || "",
+        audio_url: contentItem.audio_url || "",
         duration_seconds: contentItem.duration_seconds,
         status: contentItem.status as "draft" | "verified",
         is_featured: contentItem.is_featured,

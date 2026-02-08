@@ -33,7 +33,7 @@ export default async function PublicLayout({
 
             {/* Mobile Header */}
             <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-black/90 backdrop-blur-md border-b border-zinc-800/50 flex items-center justify-between px-4">
-                <span className="font-bold text-lg text-foreground">Lifebook</span>
+                <span className="font-bold text-lg text-foreground">Flux</span>
                 <UserNav />
             </header>
 

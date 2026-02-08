@@ -35,7 +35,7 @@ export function ChecklistDisplay({ contentId, checklists }: ChecklistDisplayProp
 
     // Load saved progress from localStorage
     useEffect(() => {
-        const saved = localStorage.getItem(`lifebook_checklists_${contentId}`);
+        const saved = localStorage.getItem(`flux_checklists_${contentId}`);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
@@ -56,7 +56,7 @@ export function ChecklistDisplay({ contentId, checklists }: ChecklistDisplayProp
         for (const [key, items] of Object.entries(completedItems)) {
             toSave[key] = Array.from(items);
         }
-        localStorage.setItem(`lifebook_checklists_${contentId}`, JSON.stringify(toSave));
+        localStorage.setItem(`flux_checklists_${contentId}`, JSON.stringify(toSave));
     }, [completedItems, contentId]);
 
     const toggleItem = (checklistId: string, itemId: string) => {

@@ -45,10 +45,10 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
-                        Lifebook
+                        Flux
                     </h1>
                     <p className="text-xl text-zinc-300 max-w-2xl mx-auto bg-black/40 p-4 rounded-xl backdrop-blur-sm">
-                        A curated library of insights from books, podcasts, and articles. Check back soon for featured content.
+                        A curated stream of insights from books, podcasts, and articles. Check back soon for featured content.
                     </p>
                 </div>
                 {/* Bottom Gradient to blend with content lanes */}
@@ -61,7 +61,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     // Safely extract description from quick_mode_json
     const quickMode = activeItem.quick_mode_json as { hook?: string; big_idea?: string } | null;
-    const description = quickMode?.hook || quickMode?.big_idea || "Experience this Lifebook content today.";
+    const description = quickMode?.hook || quickMode?.big_idea || "Experience this Flux content today.";
 
     return (
         <div className="relative h-[85vh] min-h-[600px] w-full overflow-hidden bg-black">

@@ -86,6 +86,7 @@ export interface ContentListItem {
     cover_image_url: string | null;
     duration_seconds: number | null;
     quick_mode_json: QuickMode | null;
+    audio_url: string | null;
 }
 
 export interface ContentListResponse {
@@ -112,6 +113,7 @@ export interface ContentItemWithSegments {
     duration_seconds: number | null;
     author: string | null;
     cover_image_url: string | null;
+    audio_url: string | null;
     segments: SegmentFull[];
     artifacts: ArtifactSummary[];
 }

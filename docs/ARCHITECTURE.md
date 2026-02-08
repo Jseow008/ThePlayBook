@@ -1,4 +1,4 @@
-# ARCHITECTURE.md: Lifebook
+# ARCHITECTURE.md: Flux
 
 > **Status:** Active  
 > **Last Updated:** February 2026  
@@ -6,7 +6,7 @@
 
 ## 1. Product Overview
 
-Lifebook is a **founder-curated content platform**. The founder uploads summaries of podcasts, books, and articles. Visitors browse and read content freely without creating accounts.
+Flux is a **founder-curated content platform**. The founder uploads summaries of podcasts, books, and articles. Visitors browse and read content freely without creating accounts.
 
 ### Key Principles
 
@@ -19,7 +19,7 @@ Lifebook is a **founder-curated content platform**. The founder uploads summarie
 
 ## 2. High-Level System Design
 
-### Zone A: Public Content (The Library)
+### Zone A: Public Content (The Stream)
 
 * **Strategy:** Incremental Static Regeneration (ISR) for SEO.
 * **Goal:** Sub-100ms TTFB, excellent SEO for discoverability.
@@ -147,7 +147,7 @@ Since there are no mandatory user accounts, personalization is stored locally in
 ### 5.1 Checklist Progress (localStorage)
 
 ```typescript
-// Key: "lifebook-checklist-{artifactId}"
+// Key: "flux-checklist-{artifactId}"
 // Value: Record<itemId, boolean>
 
 interface ChecklistProgress {
@@ -158,7 +158,7 @@ interface ChecklistProgress {
 ### 5.2 Reading Progress (localStorage)
 
 ```typescript
-// Key: "lifebook-progress"
+// Key: "flux-progress"
 // Value: Record<itemId, ProgressState>
 
 interface ProgressState {
