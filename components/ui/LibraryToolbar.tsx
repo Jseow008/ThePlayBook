@@ -23,28 +23,28 @@ export function LibraryToolbar({
     className,
 }: LibraryToolbarProps) {
     return (
-        <div className={cn("flex flex-col md:flex-row gap-4 items-center justify-between py-6", className)}>
+        <div className={cn("flex flex-col lg:flex-row gap-4 items-center justify-between py-4", className)}>
             {/* Search */}
-            <div className="relative w-full md:w-96">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+            <div className="relative w-full lg:w-96 group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
                 <input
                     type="text"
-                    placeholder="Search your library..."
+                    placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full h-10 pl-10 pr-4 rounded-lg bg-secondary/50 border border-transparent focus:border-primary focus:bg-secondary transition-all outline-none text-sm placeholder:text-muted-foreground/70"
+                    className="w-full h-10 pl-10 pr-4 rounded-full bg-secondary/50 border-none focus:ring-1 focus:ring-primary/20 transition-all outline-none text-sm placeholder:text-muted-foreground/70"
                 />
             </div>
 
-            <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+            <div className="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
                 {/* Filter */}
-                <div className="flex items-center bg-secondary/30 rounded-lg p-1">
+                <div className="flex items-center bg-secondary/30 rounded-full p-1 border border-zinc-800/50">
                     {["all", "book", "podcast", "article"].map((filter) => (
                         <button
                             key={filter}
                             onClick={() => onFilterChange(filter)}
                             className={cn(
-                                "px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all whitespace-nowrap",
+                                "px-4 py-1.5 rounded-full text-xs font-medium capitalize transition-all whitespace-nowrap",
                                 activeFilter === filter
                                     ? "bg-background text-foreground shadow-sm"
                                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
@@ -60,13 +60,13 @@ export function LibraryToolbar({
                     <select
                         value={activeSort}
                         onChange={(e) => onSortChange(e.target.value as any)}
-                        className="h-9 pl-3 pr-8 rounded-lg bg-secondary/30 text-sm font-medium border-none outline-none focus:ring-1 focus:ring-primary cursor-pointer text-muted-foreground hover:text-foreground transition-colors appearance-none"
+                        className="h-9 pl-3 pr-8 rounded-full bg-secondary/30 text-xs font-medium border-none outline-none focus:ring-1 focus:ring-primary/20 cursor-pointer text-muted-foreground hover:text-foreground transition-colors appearance-none"
                     >
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
+                        <option value="newest">Newest</option>
+                        <option value="oldest">Oldest</option>
                         <option value="title">A-Z</option>
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
+                    <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
                 </div>
             </div>
         </div>
