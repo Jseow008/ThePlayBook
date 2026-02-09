@@ -55,20 +55,20 @@ export default async function PreviewPage({ params }: PageProps) {
     return (
         <div className="min-h-screen">
             {/* Header */}
-            <div className="border-b border-border bg-card/50">
-                <div className="container mx-auto px-4 py-4">
+            <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
+                <div className="container mx-auto px-4 h-16 flex items-center">
                     <Link
                         href="/"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md hover:bg-zinc-800/50"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors p-2 rounded-full hover:bg-accent"
                     >
-                        <ArrowLeft className="size-4" />
-                        Back to Home
+                        <ArrowLeft className="size-5" />
+                        <span>Back to Home</span>
                     </Link>
                 </div>
             </div>
 
             {/* Content */}
-            <div className="container mx-auto px-4 py-8 max-w-3xl">
+            <div className="container mx-auto px-4 pt-10 pb-8 max-w-3xl">
                 {/* Cover Image */}
                 {item.cover_image_url && (
                     <div className="relative w-full aspect-video md:aspect-[21/9] rounded-xl overflow-hidden mb-8 shadow-lg border border-white/10">

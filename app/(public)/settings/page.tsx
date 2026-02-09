@@ -47,7 +47,7 @@ export default function SettingsPage() {
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
             {/* Header */}
-            <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
+            <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
                 <div className="container max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
                     <Link
                         href="/"
@@ -59,7 +59,7 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <div className="container max-w-3xl mx-auto px-4 py-8 space-y-8">
+            <div className="container max-w-3xl mx-auto px-4 pt-10 pb-8 space-y-8">
 
                 {/* Account Section */}
                 <section className="space-y-4">

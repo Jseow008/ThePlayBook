@@ -5,14 +5,17 @@ import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export function UserNav() {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const supabase = createClient();
 
     useEffect(() => {
+        const supabase = createClient();
+
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);
@@ -42,8 +45,11 @@ export function UserNav() {
     }, []);
 
     const handleSignOut = async () => {
+        const supabase = createClient();
         await supabase.auth.signOut();
         setIsOpen(false);
+        router.refresh(); // Clear server component cache
+        router.push("/login");
     };
 
     if (!user) {

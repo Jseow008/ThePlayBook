@@ -88,12 +88,84 @@ export default async function HomePage() {
         sectionItems[section.id] = (data || []) as ContentItem[];
     }
 
+    // 5. Personalized Recommendations ("Because you read...")
+    let recommendations: ContentItem[] = [];
+    let recommendationSource: string | undefined;
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+        console.log("[Recommendations] User found:", user.id);
+
+        interface UserLibraryItem {
+            content_id: string;
+            last_interacted_at: string;
+            is_bookmarked: boolean;
+            progress: Record<string, any> | null;
+        }
+
+        if (user) {
+            // Find most recently acted items (fetch more in case recent ones are deleted)
+            const { data: rawLibraryItems } = await supabase
+                .from("user_library")
+                .select("content_id, last_interacted_at, is_bookmarked, progress")
+                .eq("user_id", user.id)
+                .order("last_interacted_at", { ascending: false })
+                .limit(20);
+
+            const libraryItems = rawLibraryItems as unknown as UserLibraryItem[];
+
+            if (libraryItems && libraryItems.length > 0) {
+                // Fetch content details for these items to find one with a category
+                const contentIds = libraryItems.map(i => i.content_id);
+                const { data: rawContentDetails } = await supabase
+                    .from("content_item")
+                    .select("id, title, category")
+                    .in("id", contentIds)
+                    .is("deleted_at", null);
+
+                const contentDetails = rawContentDetails as unknown as Pick<ContentItem, "id" | "title" | "category">[];
+
+                // Find the most recent one that exists, has a category, and has reading progress
+                for (const libItem of libraryItems) {
+                    // Skip if no progress (meaning it was just bookmarked or deleted)
+                    const hasProgress = libItem.progress && Object.keys(libItem.progress).length > 0;
+                    if (!hasProgress) continue;
+
+                    const details = contentDetails?.find(c => c.id === libItem.content_id);
+                    if (details && details.category) {
+
+                        // Fetch recommendations
+                        const { data: recs } = await supabase
+                            .from("content_item")
+                            .select("*")
+                            .eq("status", "verified")
+                            .eq("category", details.category)
+                            .neq("id", details.id)
+                            .is("deleted_at", null)
+                            .limit(10);
+
+                        if (recs && recs.length > 0) {
+                            recommendationSource = details.title;
+                            recommendations = recs as ContentItem[];
+                            break; // Found our source and recs, stop looking
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        console.log("[Recommendations] No user found");
+    }
+
     return (
         <HomeFeed
             items={items}
             featuredItems={featuredItems}
             sections={sections}
             sectionItems={sectionItems}
+            recommendations={recommendations}
+            recommendationSource={recommendationSource}
         />
     );
 }

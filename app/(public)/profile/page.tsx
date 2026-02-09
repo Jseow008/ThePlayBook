@@ -17,7 +17,7 @@ export default async function ProfilePage() {
     return (
         <div className="min-h-screen bg-background text-foreground pb-20">
             {/* Header / Nav */}
-            <div className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md">
+            <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
                 <div className="container max-w-5xl mx-auto px-4 h-16 flex items-center gap-4">
                     <Link
                         href="/"
@@ -30,7 +30,7 @@ export default async function ProfilePage() {
                 </div>
             </div>
 
-            <main className="container max-w-5xl mx-auto px-4 py-8 space-y-12">
+            <main className="container max-w-5xl mx-auto px-4 pt-10 pb-8 space-y-12">
 
                 {/* 1. Profile Identity Header */}
                 <section>

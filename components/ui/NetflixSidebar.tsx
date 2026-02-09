@@ -32,11 +32,12 @@ export function NetflixSidebar() {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
-    const supabase = createClient();
 
     const { inProgressCount, completedCount, myListCount, isLoaded } = useReadingProgress();
 
     useEffect(() => {
+        const supabase = createClient();
+
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             setUser(user);

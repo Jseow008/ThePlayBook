@@ -122,8 +122,8 @@ export function useReadingProgress() {
             }
 
             // Only update progress if we have data or explicit null (to clear?) 
-            if (currentProgress) {
-                payload.progress = currentProgress;
+            if (currentProgress !== undefined) {
+                payload.progress = currentProgress === null ? {} : currentProgress;
             }
 
             const { error } = await supabase
@@ -228,6 +228,20 @@ export function useReadingProgress() {
             setUser(session?.user || null);
             if (event === 'SIGNED_OUT') {
                 hasSyncedRef.current = false;
+
+                // 1. Clear LocalStorage
+                localStorage.removeItem("flux_mylist");
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith("flux_progress_")) {
+                        localStorage.removeItem(key);
+                    }
+                });
+
+                // 2. Clear State
+                setInProgressIds([]);
+                setCompletedIds([]);
+                setMyListIds([]);
+                setProgressMap({});
             }
         });
         return () => subscription.unsubscribe();

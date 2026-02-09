@@ -11,9 +11,18 @@ interface HomeFeedProps {
     featuredItems: ContentItem[];
     sections: HomepageSection[];
     sectionItems: Record<string, ContentItem[]>;
+    recommendations?: ContentItem[];
+    recommendationSource?: string;
 }
 
-export function HomeFeed({ items, featuredItems, sections, sectionItems }: HomeFeedProps) {
+export function HomeFeed({
+    items,
+    featuredItems,
+    sections,
+    sectionItems,
+    recommendations = [],
+    recommendationSource
+}: HomeFeedProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Hero Carousel */}
@@ -33,6 +42,14 @@ export function HomeFeed({ items, featuredItems, sections, sectionItems }: HomeF
 
                     {/* Continue Reading (Moved below New) */}
                     <ContinueReadingRow />
+
+                    {/* Personalized Recommendations */}
+                    {recommendations.length > 0 && recommendationSource && (
+                        <ContentLane
+                            title={`Because you read "${recommendationSource}"`}
+                            items={recommendations}
+                        />
+                    )}
 
                     {/* Dynamic Sections from Admin */}
                     {(sections || []).map((section) => {

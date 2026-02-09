@@ -98,10 +98,11 @@ export default async function CategoriesPage() {
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
-            <div className="border-b border-zinc-800/50 bg-background/80 backdrop-blur-md sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6">
-                    <h1 className="text-2xl font-bold text-foreground">Browse Categories</h1>
-                    <p className="text-sm text-muted-foreground">
+            <div className="h-16 border-b border-zinc-800/50 bg-background/95 backdrop-blur-md sticky top-0 z-40 flex items-center">
+                <div className="w-full max-w-7xl mx-auto px-6 lg:px-16 flex items-center gap-4">
+                    <h1 className="text-lg font-bold text-foreground">Browse Categories</h1>
+                    <div className="hidden sm:block h-4 w-px bg-zinc-800" />
+                    <p className="hidden sm:block text-sm text-muted-foreground">
                         Explore our curated library by topic
                     </p>
                 </div>
