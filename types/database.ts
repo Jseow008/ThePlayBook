@@ -196,6 +196,29 @@ export interface Database {
                     updated_at?: string;
                 };
             };
+            user_library: {
+                Row: {
+                    user_id: string;
+                    content_id: string;
+                    is_bookmarked: boolean;
+                    progress: Json;
+                    last_interacted_at: string;
+                };
+                Insert: {
+                    user_id: string;
+                    content_id: string;
+                    is_bookmarked?: boolean;
+                    progress?: Json;
+                    last_interacted_at?: string;
+                };
+                Update: {
+                    user_id?: string;
+                    content_id?: string;
+                    is_bookmarked?: boolean;
+                    progress?: Json;
+                    last_interacted_at?: string;
+                };
+            };
         };
         Views: Record<string, never>;
         Functions: {

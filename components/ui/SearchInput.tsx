@@ -169,22 +169,26 @@ export function SearchInput({
                     <ul>
                         {recentSearches.map((term, idx) => (
                             <li key={idx}>
-                                <button
-                                    type="button"
-                                    onClick={() => handleRecentClick(term)}
-                                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors text-left group"
-                                >
-                                    <Clock className="size-4 text-muted-foreground flex-shrink-0" />
-                                    <span className="flex-1 text-foreground truncate">{term}</span>
-                                    <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <div className="group relative flex items-center w-full hover:bg-accent/50 transition-colors">
                                     <button
                                         type="button"
-                                        onClick={(e) => removeRecentSearch(term, e)}
-                                        className="p-1 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                                        onClick={() => handleRecentClick(term)}
+                                        className="flex-1 flex items-center gap-3 px-4 py-3 text-left min-w-0 bg-transparent border-0 outline-none"
                                     >
-                                        <X className="size-3" />
+                                        <Clock className="size-4 text-muted-foreground flex-shrink-0" />
+                                        <span className="truncate">{term}</span>
                                     </button>
-                                </button>
+                                    <div className="flex items-center gap-2 pr-4">
+                                        <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <button
+                                            type="button"
+                                            onClick={(e) => removeRecentSearch(term, e)}
+                                            className="p-1 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-background rounded-full"
+                                        >
+                                            <X className="size-3" />
+                                        </button>
+                                    </div>
+                                </div>
                             </li>
                         ))}
                     </ul>

@@ -90,7 +90,7 @@ export function NetflixSidebar() {
                         isExpanded ? "opacity-100" : "opacity-0 w-0"
                     )}
                 >
-                    Flux
+                    NETFLUX
                 </span>
             </Link>
 

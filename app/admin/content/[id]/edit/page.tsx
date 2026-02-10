@@ -1,7 +1,7 @@
 /**
  * Edit Content Page
  * 
- * Edit existing content for Flux.
+ * Edit existing content for NETFLUX.
  */
 
 import { notFound } from "next/navigation";

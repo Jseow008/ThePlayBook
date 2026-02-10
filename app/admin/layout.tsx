@@ -33,7 +33,7 @@ export default async function AdminLayout({
                             <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
                                 <BookOpen className="w-4 h-4 text-white" />
                             </div>
-                            <span className="font-semibold text-zinc-900">Flux Admin</span>
+                            <span className="font-semibold text-zinc-900">NETFLUX Admin</span>
                         </Link>
 
                         {/* Navigation */}

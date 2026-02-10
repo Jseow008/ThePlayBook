@@ -66,11 +66,13 @@ const FALLBACK_STYLES = [
 export default async function CategoriesPage() {
     const supabase = await createClient();
 
-    // Fetch all non-null categories
+    // Fetch all non-null categories from valid content
     const { data } = await supabase
         .from("content_item")
         .select("category")
-        .not("category", "is", null);
+        .not("category", "is", null)
+        .eq("status", "verified")
+        .is("deleted_at", null);
 
     // Count categories
     const categoryCounts: Record<string, number> = {};

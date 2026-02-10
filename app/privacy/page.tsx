@@ -1,14 +1,14 @@
 /**
  * Privacy Policy Page
  * 
- * Privacy information for Flux users.
+ * Privacy information for NETFLUX users.
  */
 
 import Link from "next/link";
 
 export const metadata = {
-    title: "Privacy Policy | Flux",
-    description: "Privacy policy for Flux - how we handle your information.",
+    title: "Privacy Policy | NETFLUX",
+    description: "Privacy policy for NETFLUX - how we handle your information.",
 };
 
 export default function PrivacyPage() {
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
                         href="/"
                         className="text-2xl font-bold tracking-tight hover:text-zinc-300 transition-colors"
                     >
-                        Flux
+                        NETFLUX
                     </Link>
                 </div>
             </header>
@@ -39,7 +39,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4 text-zinc-100">Overview</h2>
                         <p className="text-zinc-300 leading-relaxed">
-                            Flux (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard information when you visit our website.
+                            NETFLUX (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard information when you visit our website.
                         </p>
                         <p className="text-zinc-300 leading-relaxed mt-4">
                             We believe in transparency and minimalism when it comes to data collection. We only collect what&apos;s necessary to improve your experience.
@@ -125,7 +125,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-2xl font-semibold mb-4 text-zinc-100">Your Rights</h2>
                         <p className="text-zinc-300 leading-relaxed">
-                            Since we don&apos;t collect personal data, there&apos;s nothing to request, modify, or delete. You can browse Flux completely anonymously.
+                            Since we don&apos;t collect personal data, there&apos;s nothing to request, modify, or delete. You can browse NETFLUX completely anonymously.
                         </p>
                     </section>
 
@@ -148,7 +148,7 @@ export default function PrivacyPage() {
             {/* Footer */}
             <footer className="border-t border-zinc-800 py-8 mt-16">
                 <div className="max-w-4xl mx-auto px-6 flex items-center justify-between text-sm text-zinc-500">
-                    <span>© {new Date().getFullYear()} Flux</span>
+                    <span>© {new Date().getFullYear()} NETFLUX</span>
                     <div className="flex gap-6">
                         <Link href="/about" className="hover:text-zinc-300 transition-colors">About</Link>
                         <Link href="/terms" className="hover:text-zinc-300 transition-colors">Terms</Link>

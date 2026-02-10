@@ -26,7 +26,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const handleShare = async () => {
         const shareData = {
             title: content.title,
-            text: `Read "${content.title}" on Flux`,
+            text: `Read "${content.title}" on NETFLUX`,
             url: window.location.href,
         };
 
@@ -90,9 +90,15 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         load();
 
-        // Polling to catch Cloud Sync updates (e.g. coming from another device via hook sync)
-        const interval = setInterval(load, 2000);
-        return () => clearInterval(interval);
+        // Listen for storage events (cross-tab sync)
+        const handleStorage = (e: StorageEvent) => {
+            if (e.key === `flux_progress_${content.id}`) {
+                load();
+            }
+        };
+
+        window.addEventListener("storage", handleStorage);
+        return () => window.removeEventListener("storage", handleStorage);
     }, [content.id]);
 
     // Separate effect for initial jump to last position to avoid polling jumping

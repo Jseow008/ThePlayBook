@@ -29,7 +29,7 @@ export default async function ReadPage({ params }: PageProps) {
         .eq("id", id)
         .eq("status", "verified")
         .is("deleted_at", null)
-        .order("order_index", { referencedTable: "segment" })
+        .order("order_index", { referencedTable: "segment", ascending: true })
         .single();
 
     if (error || !content) {
@@ -53,15 +53,18 @@ export default async function ReadPage({ params }: PageProps) {
         author: contentAny.author,
         cover_image_url: contentAny.cover_image_url,
         audio_url: contentAny.audio_url || null,
-        segments: (contentAny.segments as any[]).map(s => ({
-            id: s.id,
-            item_id: s.item_id,
-            order_index: s.order_index,
-            title: s.title,
-            markdown_body: s.markdown_body,
-            start_time_sec: s.start_time_sec,
-            end_time_sec: s.end_time_sec
-        })) as SegmentFull[],
+        segments: (contentAny.segments as any[])
+            .filter(s => !s.deleted_at) // Filter out soft-deleted segments
+            .sort((a, b) => a.order_index - b.order_index) // Ensure correct order
+            .map(s => ({
+                id: s.id,
+                item_id: s.item_id,
+                order_index: s.order_index,
+                title: s.title,
+                markdown_body: s.markdown_body,
+                start_time_sec: s.start_time_sec,
+                end_time_sec: s.end_time_sec
+            })) as SegmentFull[],
         artifacts: (contentAny.artifacts as any[]) as ArtifactSummary[],
     };
 

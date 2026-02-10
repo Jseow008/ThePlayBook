@@ -23,7 +23,18 @@ export async function GET() {
     // Pick a random one
     const safeItems = items as { id: string }[];
     const randomIndex = Math.floor(Math.random() * safeItems.length);
-    const randomItem = safeItems[randomIndex];
+    const randomId = safeItems[randomIndex].id;
 
-    return NextResponse.json({ id: randomItem.id });
+    // Fetch the full content for the selected item
+    const { data: fullItem, error: itemError } = await supabase
+        .from("content_item")
+        .select("*")
+        .eq("id", randomId)
+        .single();
+
+    if (itemError || !fullItem) {
+        return NextResponse.json({ error: "Failed to fetch content" }, { status: 500 });
+    }
+
+    return NextResponse.json(fullItem);
 }

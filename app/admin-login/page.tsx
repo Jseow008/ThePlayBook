@@ -82,7 +82,7 @@ export default function AdminLoginPage() {
                     <div className="inline-flex items-center justify-center w-16 h-16 bg-zinc-900 rounded-2xl mb-4">
                         <Lock className="w-8 h-8 text-white" />
                     </div>
-                    <h1 className="text-2xl font-bold text-zinc-900">Flux Admin</h1>
+                    <h1 className="text-2xl font-bold text-zinc-900">NETFLUX Admin</h1>
                     <p className="text-zinc-500 mt-1">Sign in with your admin account</p>
                 </div>
 
@@ -154,7 +154,7 @@ export default function AdminLoginPage() {
                         href="/"
                         className="text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
                     >
-                        ← Back to Flux
+                        ← Back to NETFLUX
                     </a>
                 </div>
             </div>

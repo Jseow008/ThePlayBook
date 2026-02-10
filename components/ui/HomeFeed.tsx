@@ -36,7 +36,7 @@ export function HomeFeed({
                 <div className="space-y-8 animate-in fade-in duration-500">
                     {/* New / Latest Additions */}
                     <ContentLane
-                        title="New on Flux"
+                        title="New on NETFLUX"
                         items={items.slice(0, 10)}
                     />
 
@@ -74,7 +74,7 @@ export function HomeFeed({
                         <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-black font-serif font-bold">
                             L
                         </div>
-                        <p>© 2026 Flux</p>
+                        <p>© 2026 NETFLUX</p>
                     </div>
                     <div className="flex gap-8">
                         <a href="/about" className="hover:text-foreground transition-colors">About</a>

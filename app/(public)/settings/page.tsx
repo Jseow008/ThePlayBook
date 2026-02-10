@@ -143,7 +143,7 @@ export default function SettingsPage() {
                             </div>
                         </Link>
                         <div className="p-4 text-center text-xs text-muted-foreground bg-zinc-900/30">
-                            Version 1.0.0 • Flux
+                            Version 1.0.0 • NETFLUX
                         </div>
                     </div>
                 </section>

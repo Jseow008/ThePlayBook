@@ -1,59 +1,58 @@
 "use client";
 
-/**
- * Surprise Me Page
- * 
- * Fetches a random published content item and redirects to its preview page.
- */
-
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Shuffle } from "lucide-react";
+import { ContentPreview } from "@/components/ui/ContentPreview";
+import type { ContentItem } from "@/types/database";
+import { Loader2, Shuffle } from "lucide-react";
 
 export default function RandomPage() {
     const router = useRouter();
-    const [error, setError] = useState<string | null>(null);
+    const [item, setItem] = useState<ContentItem | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [spinning, setSpinning] = useState(false);
+
+    const fetchRandom = useCallback(async () => {
+        setSpinning(true);
+        try {
+            // Add a small delay for feeling
+            await new Promise(r => setTimeout(r, 600));
+
+            const res = await fetch("/api/random");
+            if (!res.ok) throw new Error("Failed");
+
+            const data = await res.json();
+            setItem(data);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+            setSpinning(false);
+        }
+    }, []);
 
     useEffect(() => {
-        async function fetchRandomContent() {
-            try {
-                const response = await fetch("/api/random");
-                const data = await response.json();
+        fetchRandom();
+    }, [fetchRandom]);
 
-                if (data.id) {
-                    router.replace(`/preview/${data.id}`);
-                } else {
-                    setError("No content available yet.");
-                }
-            } catch (e) {
-                console.error("Failed to fetch random content", e);
-                setError("Failed to load. Please try again.");
-            }
-        }
+    if (loading && !item) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="size-10 text-primary animate-spin" />
+            </div>
+        );
+    }
 
-        fetchRandomContent();
-    }, [router]);
+    if (!item) return null;
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-            <div className="text-center">
-                {error ? (
-                    <>
-                        <p className="text-muted-foreground text-lg mb-4">{error}</p>
-                        <button
-                            onClick={() => router.push("/")}
-                            className="px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-                        >
-                            Go Home
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <Shuffle className="size-16 text-primary mx-auto mb-4 animate-pulse" />
-                        <p className="text-muted-foreground text-lg">Finding something good...</p>
-                    </>
-                )}
-            </div>
-        </div>
+        <ContentPreview
+            item={item}
+            onSpinAgain={fetchRandom}
+            isSpinning={spinning}
+            title="Surprise Me"
+            subtitle="Discover something new from the library"
+            icon={Shuffle}
+        />
     );
 }

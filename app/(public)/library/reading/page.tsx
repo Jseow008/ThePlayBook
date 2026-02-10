@@ -106,7 +106,7 @@ export default function ContinueReadingPage() {
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
-            <div className="border-b border-zinc-800/50 bg-background/80 backdrop-blur-md sticky top-0 z-40">
+            <div className="bg-background/80 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
@@ -149,7 +149,7 @@ export default function ContinueReadingPage() {
 
                     {/* Toolbar */}
                     {!isLoading && allItems.length > 0 && (
-                        <div className="mt-6 border-t border-zinc-800/50">
+                        <div className="mt-2">
                             <LibraryToolbar
                                 searchQuery={searchQuery}
                                 onSearchChange={setSearchQuery}
@@ -157,7 +157,7 @@ export default function ContinueReadingPage() {
                                 onFilterChange={setActiveFilter}
                                 activeSort={activeSort}
                                 onSortChange={setActiveSort}
-                                className="pt-4"
+                                className="pt-2"
                             />
                         </div>
                     )}
