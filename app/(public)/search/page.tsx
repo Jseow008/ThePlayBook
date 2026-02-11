@@ -76,7 +76,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">No results found</h3>
                     <p className="text-muted-foreground max-w-sm mx-auto mb-6">
-                        We couldn't find anything matching your search. Try different keywords or filters.
+                        We couldn&apos;t find anything matching your search. Try different keywords or filters.
                     </p>
                     <Link
                         href="/search"

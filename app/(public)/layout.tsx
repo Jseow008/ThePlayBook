@@ -2,7 +2,7 @@
 import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
-import { APP_NAME } from "@/lib/brand";
+
 import { Logo } from "@/components/ui/Logo";
 import Link from "next/link";
 
