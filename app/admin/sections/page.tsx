@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, GripVertical, Eye, EyeOff, Save, Check, X } from "lucide-react";
+import { Plus, Trash2, Eye, EyeOff, Save, Check, X } from "lucide-react";
 import type { HomepageSection } from "@/types/database";
 
 const FILTER_TYPES = [
@@ -254,18 +254,18 @@ export default function SectionsPage() {
                     </div>
                 ) : (
                     <table className="w-full">
-                        <thead className="bg-zinc-50/50 border-b border-zinc-200">
+                        <thead className="bg-zinc-50 border-b border-zinc-200">
                             <tr>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500 w-12">Order</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500">Title</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500">Filter</th>
-                                <th className="px-4 py-3 text-left text-sm font-medium text-zinc-500 w-24">Status</th>
-                                <th className="px-4 py-3 text-right text-sm font-medium text-zinc-500 w-32">Actions</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider w-12">Order</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Title</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider">Filter</th>
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-zinc-500 uppercase tracking-wider w-24">Status</th>
+                                <th className="px-4 py-3 text-right text-xs font-semibold text-zinc-500 uppercase tracking-wider w-32">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-200">
+                        <tbody className="divide-y divide-zinc-100">
                             {sections.map((section, index) => (
-                                <tr key={section.id} className="hover:bg-zinc-50/50 transition-colors">
+                                <tr key={section.id} className="hover:bg-zinc-50 transition-colors">
                                     <td className="px-4 py-3">
                                         <div className="flex flex-col gap-1">
                                             <button

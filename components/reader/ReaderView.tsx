@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Menu, X, BookOpen, Download, Share2, Layers } from "lucide-react";
+import { ArrowLeft, Menu, X, Download, Share2, Layers } from "lucide-react";
 import { SegmentNav } from "./SegmentNav";
 import { SegmentContent } from "./SegmentContent";
 import { AudioPlayer } from "./AudioPlayer";
 import type { ContentItemWithSegments } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { APP_NAME } from "@/lib/brand";
 
 interface ReaderViewProps {
     content: ContentItemWithSegments;
@@ -26,7 +27,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const handleShare = async () => {
         const shareData = {
             title: content.title,
-            text: `Read "${content.title}" on NETFLUX`,
+            text: `Read "${content.title}" on ${APP_NAME}`,
             url: window.location.href,
         };
 
@@ -53,7 +54,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
             if (savedProgress) {
                 try {
-                    const { lastSegmentIndex, completed } = JSON.parse(savedProgress);
+                    const { completed } = JSON.parse(savedProgress);
                     // Only update if significantly different to avoid jitter (e.g. if user is reading)
                     // But for initial load, we want to set it. 
                     // To avoid overwriting user's active navigation, we might check if activeSegmentIndex is 0?
@@ -219,21 +220,21 @@ export function ReaderView({ content }: ReaderViewProps) {
     };
 
     return (
-        <div className="flex h-screen bg-background overflow-hidden font-sans">
+        <div className="flex h-screen bg-background overflow-hidden font-sans text-foreground">
             {/* Mobile Header */}
-            <header className="lg:hidden fixed top-0 w-full z-50 flex items-center justify-between px-4 py-3 bg-background/80 backdrop-blur-md border-b">
-                <button onClick={() => setIsSidebarOpen(true)} className="p-2 -ml-2 text-muted-foreground">
+            <header className="lg:hidden fixed top-0 w-full z-50 flex items-center justify-between px-4 py-3 bg-background/95 backdrop-blur-md border-b border-border">
+                <button onClick={() => setIsSidebarOpen(true)} className="focus-ring p-2 -ml-2 rounded-md text-muted-foreground hover:text-foreground">
                     <Menu className="size-5" />
                 </button>
                 <span className="font-semibold truncate max-w-[200px]">{content.title}</span>
                 <div className="flex items-center">
                     <button
                         onClick={() => setIsActionsOpen(true)}
-                        className="p-2 text-muted-foreground lg:hidden"
+                        className="focus-ring p-2 rounded-md text-muted-foreground hover:text-foreground lg:hidden"
                     >
                         <Layers className="size-5" />
                     </button>
-                    <Link href="/" className="p-2 -mr-2 text-muted-foreground">
+                    <Link href="/" className="focus-ring p-2 -mr-2 rounded-md text-muted-foreground hover:text-foreground">
                         <X className="size-5" />
                     </Link>
                 </div>
@@ -242,15 +243,15 @@ export function ReaderView({ content }: ReaderViewProps) {
             {/* Left Column: Navigation (Desktop: w-72, Mobile: Drawer) */}
             <aside
                 className={`
-                    fixed inset-y-0 left-0 z-40 w-72 bg-card border-r transform transition-transform duration-300 ease-in-out lg:relative lg:transform-none
+                    fixed inset-y-0 left-0 z-40 w-72 bg-card border-r border-border transform transition-transform duration-300 ease-in-out lg:relative lg:transform-none
                     ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
                 `}
             >
                 <div className="h-full flex flex-col">
-                    <div className="flex items-center gap-3 p-4 border-b h-16">
+                    <div className="flex items-center gap-3 p-4 border-b border-border h-16">
                         <button
                             onClick={() => router.push("/")}
-                            className="flex items-center gap-3 w-full p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent/50 transition-colors text-left"
+                            className="focus-ring flex items-center gap-3 w-full p-2 -ml-2 text-muted-foreground hover:text-foreground rounded-md hover:bg-accent/50 transition-colors text-left"
                         >
                             <ArrowLeft className="size-4" />
                             <span className="font-semibold truncate">Library</span>
@@ -343,7 +344,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             </main>
 
             {/* Right Column: Actions (Desktop: w-80, Mobile: Hidden/Bottom Sheet?) */}
-            <aside className="hidden lg:block w-80 bg-background border-l p-6 overflow-y-auto">
+            <aside className="hidden lg:block w-80 bg-background border-l border-border p-6 overflow-y-auto">
                 <ActionsPanel />
             </aside>
 
@@ -366,7 +367,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             {/* Mobile Actions Slide-over */}
             <aside
                 className={`
-                    fixed inset-y-0 right-0 z-40 w-80 bg-background border-l transform transition-transform duration-300 ease-in-out lg:hidden
+                    fixed inset-y-0 right-0 z-40 w-80 bg-background border-l border-border transform transition-transform duration-300 ease-in-out lg:hidden
                     ${isActionsOpen ? "translate-x-0" : "translate-x-full"}
                 `}
             >
@@ -375,7 +376,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <h2 className="text-lg font-semibold">Actions & Progress</h2>
                         <button
                             onClick={() => setIsActionsOpen(false)}
-                            className="p-2 -mr-2 text-muted-foreground"
+                            className="focus-ring p-2 -mr-2 rounded-md text-muted-foreground hover:text-foreground"
                         >
                             <X className="size-5" />
                         </button>

@@ -32,7 +32,7 @@ export function InteractiveChecklist({
     const progressPercent = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
     return (
-        <div className="border border-border rounded-lg bg-card/40 overflow-hidden">
+        <div className="border border-border rounded-lg bg-card/40 overflow-hidden" data-artifact-id={artifactId}>
             {/* Header */}
             <div className="p-4 border-b border-border bg-muted/20">
                 <div className="flex items-center justify-between mb-2">

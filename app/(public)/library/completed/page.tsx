@@ -2,12 +2,11 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, CheckCircle2, Trophy, Clock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Trophy } from "lucide-react";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import type { ContentItem } from "@/types/database";
-import { cn } from "@/lib/utils";
 
 /**
  * Filter and Sort Controls
@@ -77,7 +76,7 @@ export default function CompletedPage() {
         };
 
         fetchItems();
-    }, [completedIds, isLoaded]);
+    }, [completedIds, isLoaded, refresh]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {

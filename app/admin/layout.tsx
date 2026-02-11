@@ -10,6 +10,9 @@ import Link from "next/link";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { LayoutDashboard, BookOpen, LayoutGrid } from "lucide-react";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { APP_NAME } from "@/lib/brand";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
     children,
@@ -23,24 +26,24 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50">
+        <div className="min-h-screen bg-zinc-50 text-zinc-900 light">
             {/* Header */}
-            <header className="bg-white border-b border-zinc-200 sticky top-0 z-40">
+            <header className="bg-white/80 backdrop-blur-md border-b border-zinc-200 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         {/* Logo */}
-                        <Link href="/admin" className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center">
-                                <BookOpen className="w-4 h-4 text-white" />
+                        <Link href="/admin" className="flex items-center gap-2 group">
+                            <div className="w-8 h-8 bg-zinc-900 text-white rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
+                                <BookOpen className="w-4 h-4" />
                             </div>
-                            <span className="font-semibold text-zinc-900">NETFLUX Admin</span>
+                            <span className="font-semibold text-zinc-900 tracking-tight">{APP_NAME} Admin</span>
                         </Link>
 
                         {/* Navigation */}
                         <nav className="flex items-center gap-1">
                             <Link
                                 href="/admin"
-                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                             >
                                 <LayoutDashboard className="w-4 h-4" />
                                 <span className="hidden sm:inline">Dashboard</span>
@@ -48,7 +51,7 @@ export default async function AdminLayout({
 
                             <Link
                                 href="/admin/sections"
-                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                             >
                                 <LayoutGrid className="w-4 h-4" />
                                 <span className="hidden sm:inline">Sections</span>
@@ -57,7 +60,7 @@ export default async function AdminLayout({
                             <Link
                                 href="/"
                                 target="_blank"
-                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                             >
                                 <span className="hidden sm:inline">View Site</span>
                             </Link>

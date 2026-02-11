@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import type { ContentItem } from "@/types/database";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { Clock, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import Link from "next/link";
 
 export function RecentActivity() {

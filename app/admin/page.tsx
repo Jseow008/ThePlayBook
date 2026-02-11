@@ -10,6 +10,7 @@ import { Plus, BookOpen, Headphones, FileText, Pencil, Eye, ChevronLeft, Chevron
 import { DeleteContentButton } from "@/components/admin/DeleteContentButton";
 import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { ContentFilters } from "@/components/admin/ContentFilters";
+import { APP_NAME } from "@/lib/brand";
 
 // Type icons mapping
 const typeIcons = {
@@ -22,7 +23,7 @@ const typeIcons = {
 function StatusBadge({ status, deleted }: { status: string; deleted: boolean }) {
     if (deleted) {
         return (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/15 text-red-300 border border-red-500/30">
                 Deleted
             </span>
         );
@@ -30,14 +31,14 @@ function StatusBadge({ status, deleted }: { status: string; deleted: boolean }) 
 
     if (status === "verified") {
         return (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
                 Published
             </span>
         );
     }
 
     return (
-        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
             Draft
         </span>
     );
@@ -114,15 +115,15 @@ export default async function AdminDashboardPage({
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-zinc-900">Content Dashboard</h1>
-                    <p className="text-zinc-500 mt-1">Manage your NETFLUX content</p>
+                    <h1 className="text-2xl font-bold text-foreground">Content Dashboard</h1>
+                    <p className="text-muted-foreground mt-1">Manage your {APP_NAME} content</p>
                 </div>
 
                 <div className="flex items-center gap-3">
                     <ContentFilters />
                     <Link
                         href="/admin/content/new"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-900 text-white font-medium rounded-lg hover:bg-zinc-800 transition-colors"
+                        className="focus-ring inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
                     >
                         <Plus className="w-4 h-4" />
                         New Content
@@ -132,23 +133,23 @@ export default async function AdminDashboardPage({
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl border border-zinc-200 p-6">
+                <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
                     <p className="text-sm font-medium text-zinc-500">Total Content</p>
                     <p className="text-3xl font-bold text-zinc-900 mt-1">{totalItems}</p>
                 </div>
-                <div className="bg-white rounded-xl border border-zinc-200 p-6">
+                <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
                     <p className="text-sm font-medium text-zinc-500">Published</p>
-                    <p className="text-3xl font-bold text-green-600 mt-1">{publishedItems}</p>
+                    <p className="text-3xl font-bold text-emerald-600 mt-1">{publishedItems}</p>
                 </div>
-                <div className="bg-white rounded-xl border border-zinc-200 p-6">
+                <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
                     <p className="text-sm font-medium text-zinc-500">Drafts</p>
-                    <p className="text-3xl font-bold text-yellow-600 mt-1">{draftItems}</p>
+                    <p className="text-3xl font-bold text-amber-500 mt-1">{draftItems}</p>
                 </div>
             </div>
 
             {/* Content Table */}
-            <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-zinc-200 flex justify-between items-center">
+            <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-zinc-200 flex justify-between items-center bg-white">
                     <div className="flex items-center gap-2">
                         <h2 className="font-semibold text-zinc-900">All Content</h2>
                         {(statusFilter || featuredFilter) && (
@@ -163,12 +164,12 @@ export default async function AdminDashboardPage({
                 </div>
 
                 {items.length === 0 ? (
-                    <div className="px-6 py-12 text-center">
+                    <div className="px-6 py-12 text-center bg-white">
                         <BookOpen className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
                         <p className="text-zinc-500 mb-4">No content found matching your filters</p>
                         <Link
                             href="/admin"
-                            className="inline-flex items-center gap-2 text-zinc-900 font-medium hover:underline"
+                            className="focus-ring inline-flex items-center gap-2 text-zinc-900 font-medium hover:underline rounded-sm"
                         >
                             Clear filters
                         </Link>
@@ -176,7 +177,7 @@ export default async function AdminDashboardPage({
                 ) : (
                     <>
                         {/* Table Header - Fixed columns for alignment */}
-                        <div className="grid grid-cols-[48px_1fr_80px_100px_100px] gap-4 px-6 py-3 bg-zinc-50 border-b border-zinc-200 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+                        <div className="grid grid-cols-[48px_1fr_80px_100px_120px] gap-4 px-6 py-3 bg-zinc-50 border-b border-zinc-200 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                             <div>Type</div>
                             <div>Details</div>
                             <div className="text-center">Featured</div>
@@ -184,7 +185,7 @@ export default async function AdminDashboardPage({
                             <div className="text-right">Actions</div>
                         </div>
 
-                        <div className="divide-y divide-zinc-100">
+                        <div className="divide-y divide-zinc-100 bg-white">
                             {items.map((item: any) => {
                                 const TypeIcon = typeIcons[item.type as keyof typeof typeIcons] || FileText;
                                 const isDeleted = !!item.deleted_at;
@@ -192,11 +193,11 @@ export default async function AdminDashboardPage({
                                 return (
                                     <div
                                         key={item.id}
-                                        className={`grid grid-cols-[48px_1fr_80px_100px_100px] items-center gap-4 px-6 py-4 ${isDeleted ? "opacity-50" : ""}`}
+                                        className={`grid grid-cols-[48px_1fr_80px_100px_120px] items-center gap-4 px-6 py-4 hover:bg-zinc-50/50 transition-colors ${isDeleted ? "opacity-50 grayscale" : ""}`}
                                     >
                                         {/* Type Icon */}
-                                        <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center flex-shrink-0">
-                                            <TypeIcon className="w-5 h-5 text-zinc-600" />
+                                        <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center flex-shrink-0 text-zinc-500">
+                                            <TypeIcon className="w-5 h-5" />
                                         </div>
 
                                         {/* Content Info */}
@@ -226,20 +227,20 @@ export default async function AdminDashboardPage({
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="flex items-center justify-end gap-2">
+                                        <div className="flex items-center justify-end gap-1">
                                             {!isDeleted && (
                                                 <>
                                                     <Link
                                                         href={`/read/${item.id}`}
                                                         target="_blank"
-                                                        className="p-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors"
+                                                        className="focus-ring p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                                                         title="Preview"
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </Link>
                                                     <Link
                                                         href={`/admin/content/${item.id}/edit`}
-                                                        className="p-2 text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 rounded-lg transition-colors"
+                                                        className="focus-ring p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                                                         title="Edit"
                                                     >
                                                         <Pencil className="w-4 h-4" />
@@ -257,12 +258,12 @@ export default async function AdminDashboardPage({
 
                 {/* Pagination Controls */}
                 {items.length > 0 && (
-                    <div className="px-6 py-4 border-t border-zinc-200 bg-zinc-50 flex items-center justify-between">
+                    <div className="px-6 py-4 border-t border-border bg-muted/40 flex items-center justify-between">
                         <Link
                             href={hasPrevPage ? getPageLink(page - 1) : "#"}
                             className={`flex items-center gap-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${hasPrevPage
-                                ? "bg-white border-zinc-300 text-zinc-700 hover:bg-zinc-50"
-                                : "bg-zinc-100 border-zinc-200 text-zinc-400 cursor-not-allowed"
+                                ? "bg-card border-border text-foreground hover:bg-accent"
+                                : "bg-muted border-border text-muted-foreground cursor-not-allowed"
                                 }`}
                             aria-disabled={!hasPrevPage}
                         >
@@ -270,15 +271,15 @@ export default async function AdminDashboardPage({
                             Previous
                         </Link>
 
-                        <div className="text-sm text-zinc-500">
+                        <div className="text-sm text-muted-foreground">
                             Showing <span className="font-medium">{from + 1}</span> to <span className="font-medium">{Math.min(to + 1, count || 0)}</span> of <span className="font-medium">{count}</span> results
                         </div>
 
                         <Link
                             href={hasNextPage ? getPageLink(page + 1) : "#"}
                             className={`flex items-center gap-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${hasNextPage
-                                ? "bg-white border-zinc-300 text-zinc-700 hover:bg-zinc-50"
-                                : "bg-zinc-100 border-zinc-200 text-zinc-400 cursor-not-allowed"
+                                ? "bg-card border-border text-foreground hover:bg-accent"
+                                : "bg-muted border-border text-muted-foreground cursor-not-allowed"
                                 }`}
                             aria-disabled={!hasNextPage}
                         >

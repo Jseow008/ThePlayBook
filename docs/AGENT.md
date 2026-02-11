@@ -125,9 +125,9 @@
 **Context:** Protected interface for founder to manage content.
 
 * [x] **5.1 Admin Auth**
-  * Created `/admin-login` route with password protection
-  * Compare against `ADMIN_PASSWORD` env var
-  * Store session in httpOnly cookie
+  * Created `/admin-login` route with Supabase Auth sign-in
+  * Verify admin role using `profiles.role = 'admin'`
+  * Protect admin routes and APIs with server-side session checks
 
 * [x] **5.2 Admin Dashboard**
   * List all content items (draft + verified)

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, BookMarked, ListPlus, Plus } from "lucide-react";
+import { ArrowLeft, ListPlus, Plus } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
@@ -14,7 +14,7 @@ import type { ContentItem } from "@/types/database";
  * Shows content manually bookmarked by the user for later reading.
  */
 export default function MyListPage() {
-    const { myListIds, isLoaded, refresh, removeFromMyList } = useReadingProgress();
+    const { myListIds, isLoaded, removeFromMyList } = useReadingProgress();
     const [allItems, setAllItems] = useState<ContentItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -136,7 +136,7 @@ export default function MyListPage() {
                                 <div>
                                     <h1 className="text-2xl font-bold text-foreground">My List</h1>
                                     <p className="text-sm text-muted-foreground">
-                                        Content you've saved for later
+                                        Content you&apos;ve saved for later
                                     </p>
                                 </div>
                             </div>

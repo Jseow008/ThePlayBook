@@ -27,7 +27,7 @@ Health • Fitness • Wealth • Finance • Productivity • Mindset • Relat
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript (strict mode)
 - **Styling**: Tailwind CSS
 - **Database**: Supabase (PostgreSQL)
@@ -45,11 +45,8 @@ npm install
 cp .env.example .env.local
 # Edit .env.local with your Supabase credentials
 
-# Start local Supabase (requires Docker)
-npx supabase start
-
-# Apply database migrations
-npx supabase db reset
+# Apply hosted database migrations (if needed)
+npx supabase db push
 
 # Run the development server
 npm run dev
@@ -78,7 +75,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ## Admin Panel
 
-Access the admin panel at `/admin-login` with the password set in `ADMIN_PASSWORD` environment variable.
+Access the admin panel at `/admin-login` with a Supabase account that has `profiles.role = 'admin'`.
 
 **Admin Features:**
 - Create/edit content items

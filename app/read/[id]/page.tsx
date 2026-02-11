@@ -36,8 +36,8 @@ export default async function ReadPage({ params }: PageProps) {
         notFound();
     }
 
-    // Check Session
-    const { data: { user } } = await supabase.auth.getUser();
+    // Check Session - removed as not used
+    // const { data: { user } } = await supabase.auth.getUser();
 
     // Transform to domain type
     const contentAny = content as any;

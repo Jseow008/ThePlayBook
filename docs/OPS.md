@@ -57,9 +57,6 @@ psql $DATABASE_URL -f supabase/seed.sql
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_KEY=your-service-key
-
-# Admin Panel Password
-ADMIN_PASSWORD=your-secure-password
 ```
 
 > **Note:** These environment variables now point to the hosted Supabase instance. Get these values from your Supabase project dashboard.
@@ -78,7 +75,6 @@ ADMIN_PASSWORD=your-secure-password
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_KEY`
-- `ADMIN_PASSWORD`
 
 ### 2.2 Database → Supabase (Hosted)
 
@@ -102,7 +98,7 @@ Content is managed via the admin panel.
 
 ### 3.1 Adding New Content
 
-1. Go to `/admin-login` (enter password)
+1. Go to `/admin-login` and sign in with an admin account
 2. Navigate to `/admin` dashboard
 3. Click "New Content"
 4. Fill in:
@@ -141,10 +137,10 @@ For large imports, use SQL scripts via `supabase/seed.sql` and apply with `psql`
 
 ### 3.6 Admin Session Flow
 
-1. Admin visits `/admin-login` and submits the password form.
-2. `/api/admin/login` validates against `ADMIN_PASSWORD`.
-3. On success, server sets an httpOnly `admin_session` cookie (24h).
-4. All `/admin/*` routes verify the cookie before rendering or mutating content.
+1. Admin visits `/admin-login` and signs in through Supabase Auth.
+2. After sign-in, server components and API handlers verify session + `profiles.role = 'admin'`.
+3. Admin APIs run only when `verifyAdminSession()` passes.
+4. `/admin/*` routes redirect to `/admin-login` when the current user is not an admin.
 
 ---
 
@@ -170,9 +166,12 @@ npx supabase db reset
 
 ### 4.3 Admin login not working
 
-**Cause:** `ADMIN_PASSWORD` env var not set or mismatched.
+**Possible causes:**
+1. The user is not authenticated in Supabase
+2. `profiles.role` is not set to `admin`
+3. Supabase keys are misconfigured
 
-**Fix:** Check environment variables and restart the app.
+**Fix:** Verify Supabase auth state, ensure admin role in `profiles`, and confirm environment variables.
 
 ### 4.4 Featured content not in hero
 
@@ -265,7 +264,7 @@ Target sizes:
 
 ## 8. Security Checklist
 
-- [ ] `ADMIN_PASSWORD` is strong (20+ characters)
+- [ ] Admin users are managed in Supabase Auth and `profiles.role = 'admin'` is tightly controlled
 - [ ] `SUPABASE_SERVICE_KEY` is not exposed to client
 - [ ] RLS policies are enabled on all tables
 - [ ] Markdown content is sanitized before rendering

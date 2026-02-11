@@ -68,7 +68,7 @@ export default function ContinueReadingPage() {
         };
 
         fetchItems();
-    }, [inProgressIds, isLoaded]);
+    }, [inProgressIds, isLoaded, refresh]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {

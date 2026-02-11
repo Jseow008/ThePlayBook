@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { ContentPreview } from "@/components/ui/ContentPreview";
 import type { ContentItem } from "@/types/database";
 import { Loader2, Shuffle } from "lucide-react";
 
 export default function RandomPage() {
-    const router = useRouter();
     const [item, setItem] = useState<ContentItem | null>(null);
     const [loading, setLoading] = useState(true);
     const [spinning, setSpinning] = useState(false);
@@ -50,9 +48,7 @@ export default function RandomPage() {
             item={item}
             onSpinAgain={fetchRandom}
             isSpinning={spinning}
-            title="Surprise Me"
-            subtitle="Discover something new from the library"
-            icon={Shuffle}
+            ctaIcon={Shuffle}
         />
     );
 }

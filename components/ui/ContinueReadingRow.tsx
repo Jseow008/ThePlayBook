@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import type { ContentItem } from "@/types/database";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { ChevronRight } from "lucide-react";
 
 export function ContinueReadingRow() {
     const { inProgressIds, isLoaded } = useReadingProgress();

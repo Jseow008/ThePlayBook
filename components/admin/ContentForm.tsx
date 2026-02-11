@@ -21,7 +21,6 @@ import {
     Image as ImageIcon,
     Music,
 } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { ArtifactEditor, Artifact } from "./ArtifactEditor";
 
 // DnD Kit Imports
@@ -381,9 +380,10 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
 
             const data = await response.json();
             updateField("cover_image_url", data.url);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Upload failed:", err);
-            setError(err.message || "Failed to upload image. Please try again.");
+            const message = err instanceof Error ? err.message : "Failed to upload image. Please try again.";
+            setError(message);
         } finally {
             setIsUploading(false);
         }
@@ -412,9 +412,10 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
 
             const data = await response.json();
             updateField("audio_url", data.url);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Audio upload failed:", err);
-            setError(err.message || "Failed to upload audio. Please try again.");
+            const message = err instanceof Error ? err.message : "Failed to upload audio. Please try again.";
+            setError(message);
         } finally {
             setIsUploadingAudio(false);
         }
@@ -425,8 +426,16 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
         setIsSubmitting(true);
 
         // Remove client_id before submitting
-        const segmentsToSubmit = formData.segments.map(({ client_id, ...rest }) => rest);
-        const artifactsToSubmit = formData.artifacts.map(({ client_id, ...rest }) => rest);
+        const segmentsToSubmit = formData.segments.map((segment) => {
+            const { client_id, ...rest } = segment;
+            void client_id;
+            return rest;
+        });
+        const artifactsToSubmit = formData.artifacts.map((artifact) => {
+            const { client_id, ...rest } = artifact;
+            void client_id;
+            return rest;
+        });
 
         const dataToSubmit = {
             ...formData,
@@ -506,7 +515,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
             )}
 
             {/* Featured Toggle */}
-            <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-zinc-200 shadow-sm">
+            <div className="flex items-center justify-between p-4 bg-white rounded-xl border border-zinc-200 shadow-sm transition-all hover:border-zinc-300">
                 <div>
                     <h3 className="text-sm font-medium text-zinc-900">Featured Content</h3>
                     <p className="text-xs text-zinc-500">Show this item in the Homepage Hero Carousel.</p>
@@ -523,7 +532,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
             </div>
 
             {/* Basic Info */}
-            <section className="bg-white rounded-xl border border-zinc-200 p-6 space-y-6">
+            <section className="bg-white rounded-xl border border-zinc-200 p-6 space-y-6 shadow-sm">
                 <h2 className="text-lg font-semibold text-zinc-900">Basic Information</h2>
 
                 <div className="grid gap-6 md:grid-cols-2">
@@ -703,7 +712,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                     {/* Audio File (Read For Me) */}
                     <div>
                         <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Audio Narration <span className="text-zinc-400 font-normal">(Optional - "Read For Me")</span>
+                            Audio Narration <span className="text-zinc-400 font-normal">(Optional - &quot;Read For Me&quot;)</span>
                         </label>
                         <div className="space-y-4">
                             {/* Upload Area */}

@@ -57,34 +57,12 @@ const { data } = await supabase
 
 ## 2. Admin API Endpoints
 
-All admin endpoints require authentication via admin session cookie.
+All admin endpoints require a valid Supabase session and an admin role (`profiles.role = 'admin'`).
 
 ### 2.1 Admin Login
 
-**POST** `/api/admin/login`
-
-**Request Body:**
-```typescript
-z.object({
-  password: z.string().min(1)
-})
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true
-}
-```
-Sets httpOnly cookie: `admin_session`
-
-**Response (401 Unauthorized):**
-```json
-{
-  "success": false,
-  "error": "Invalid password"
-}
-```
+Admin login is handled by the `/admin-login` page with Supabase Auth email/password sign-in.
+There is no custom `/api/admin/login` endpoint.
 
 ---
 
@@ -92,7 +70,7 @@ Sets httpOnly cookie: `admin_session`
 
 **POST** `/api/admin/logout`
 
-Clears the admin session cookie.
+Signs out the current Supabase session for the active admin user.
 
 **Response (200 OK):**
 ```json
@@ -303,7 +281,7 @@ Upload an image to Supabase Storage.
 | Code | HTTP Status | Description |
 | --- | --- | --- |
 | `VALIDATION_ERROR` | 400 | Invalid request body |
-| `UNAUTHORIZED` | 401 | Missing or invalid admin session |
+| `UNAUTHORIZED` | 401 | Missing/invalid Supabase session or non-admin role |
 | `NOT_FOUND` | 404 | Resource not found |
 | `INTERNAL_ERROR` | 500 | Server error |
 
@@ -313,9 +291,9 @@ Upload an image to Supabase Storage.
 
 ### 4.1 Admin Authentication
 
-- Password compared against `ADMIN_PASSWORD` env var
-- Session stored in httpOnly cookie (24h expiry)
-- Cookie name: `admin_session`
+- Authentication is handled by Supabase Auth.
+- Authorization is enforced by checking `profiles.role = 'admin'`.
+- Admin APIs validate role server-side before using service-role operations.
 
 ### 4.2 Input Validation
 

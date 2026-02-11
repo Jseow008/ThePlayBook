@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { APP_NAME } from "@/lib/brand";
 
 const navItems = [
     { icon: Search, label: "Search", href: "/search" },
@@ -71,27 +73,33 @@ export function NetflixSidebar() {
             onMouseEnter={() => setIsExpanded(true)}
             onMouseLeave={() => setIsExpanded(false)}
             className={cn(
-                "fixed left-0 top-0 bottom-0 z-50 bg-black backdrop-blur-md border-r border-zinc-800/50 transition-all duration-300 hidden lg:flex flex-col",
+                "fixed left-0 top-0 bottom-0 z-50 bg-background/95 backdrop-blur-md border-r border-border transition-all duration-300 hidden lg:flex flex-col",
                 isExpanded ? "w-56" : "w-16"
             )}
         >
             {/* Logo */}
+            {/* Logo */}
             <Link
                 href="/"
                 className={cn(
-                    "flex items-center h-16 px-4 border-b border-zinc-800/50",
+                    "flex items-center h-16 px-4 border-b border-border transition-all duration-300",
                     isExpanded ? "justify-start gap-3" : "justify-center"
                 )}
             >
-                <BookOpen className="size-6 text-primary flex-shrink-0" />
-                <span
-                    className={cn(
-                        "font-bold text-lg text-foreground transition-opacity whitespace-nowrap",
-                        isExpanded ? "opacity-100" : "opacity-0 w-0"
-                    )}
-                >
-                    NETFLUX
-                </span>
+                {isExpanded ? (
+                    <div className="relative h-8 w-32 transition-opacity duration-300 opacity-100">
+                        {/* Full Logo when expanded */}
+                        <Image
+                            src="/images/netflux-logo.png"
+                            alt={APP_NAME}
+                            fill
+                            className="object-contain"
+                            priority
+                        />
+                    </div>
+                ) : (
+                    <BookOpen className="size-6 text-primary flex-shrink-0" />
+                )}
             </Link>
 
             {/* Navigation */}
@@ -107,8 +115,8 @@ export function NetflixSidebar() {
                                         "flex items-center h-12 px-4 transition-colors",
                                         isExpanded ? "justify-start gap-3" : "justify-center",
                                         isActive
-                                            ? "text-foreground bg-zinc-800/50 border-l-4 border-primary"
-                                            : "text-zinc-400 hover:text-foreground hover:bg-zinc-800/30"
+                                            ? "text-foreground bg-accent border-l-4 border-primary"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                     )}
                                 >
                                     <item.icon
@@ -132,7 +140,7 @@ export function NetflixSidebar() {
                 </ul>
 
                 {/* Divider */}
-                <div className="my-4 mx-4 border-t border-zinc-800/50" />
+                <div className="my-4 mx-4 border-t border-border" />
 
                 {/* My Library Section */}
                 <div className="space-y-1">
@@ -140,9 +148,9 @@ export function NetflixSidebar() {
                     <button
                         onClick={() => isExpanded && setIsLibraryOpen(!isLibraryOpen)}
                         className={cn(
-                            "w-full flex items-center h-12 px-4 transition-colors text-zinc-400 hover:text-foreground hover:bg-zinc-800/30",
+                            "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
                             isExpanded ? "justify-start gap-3" : "justify-center",
-                            (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-zinc-800/50 border-l-4 border-primary"
+                            (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-accent border-l-4 border-primary"
                         )}
                     >
                         <div className="relative flex-shrink-0">
@@ -181,8 +189,8 @@ export function NetflixSidebar() {
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
                                     pathname === "/library/my-list"
-                                        ? "text-foreground bg-zinc-800/50"
-                                        : "text-zinc-500 hover:text-foreground hover:bg-zinc-800/30"
+                                        ? "text-foreground bg-accent"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
                                 <Plus className="size-4 mr-3 flex-shrink-0" />
@@ -200,8 +208,8 @@ export function NetflixSidebar() {
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
                                     pathname === "/library/reading"
-                                        ? "text-foreground bg-zinc-800/50"
-                                        : "text-zinc-500 hover:text-foreground hover:bg-zinc-800/30"
+                                        ? "text-foreground bg-accent"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
                                 <BookMarked className="size-4 mr-3 flex-shrink-0" />
@@ -219,8 +227,8 @@ export function NetflixSidebar() {
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
                                     pathname === "/library/completed"
-                                        ? "text-foreground bg-zinc-800/50"
-                                        : "text-zinc-500 hover:text-foreground hover:bg-zinc-800/30"
+                                        ? "text-foreground bg-accent"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
                                 <CheckCircle2 className="size-4 mr-3 flex-shrink-0" />
@@ -238,7 +246,7 @@ export function NetflixSidebar() {
 
             {/* Sign In / User Profile */}
             {!user ? (
-                <div className="p-4 border-t border-zinc-800/50">
+                <div className="p-4 border-t border-border">
                     <Link
                         href="/login"
                         className={cn(
@@ -250,11 +258,11 @@ export function NetflixSidebar() {
                     </Link>
                 </div>
             ) : (
-                <div className="p-4 border-t border-zinc-800/50">
+                <div className="p-4 border-t border-border">
                     <Link
                         href="/profile"
                         className={cn(
-                            "flex items-center gap-3 p-2 rounded-md hover:bg-zinc-800/50 transition-colors group",
+                            "flex items-center gap-3 p-2 rounded-md hover:bg-accent transition-colors group",
                             isExpanded ? "justify-start" : "justify-center"
                         )}
                     >

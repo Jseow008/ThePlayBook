@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { AuthUser as User } from "@supabase/supabase-js";
 
 /**
  * Reading progress data stored in localStorage
@@ -224,7 +224,7 @@ export function useReadingProgress() {
 
     // Auth Listener
     useEffect(() => {
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string, session: any) => {
             setUser(session?.user || null);
             if (event === 'SIGNED_OUT') {
                 hasSyncedRef.current = false;

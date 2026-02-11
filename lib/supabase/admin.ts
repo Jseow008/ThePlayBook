@@ -17,4 +17,3 @@ export const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
 });
 
 export const getAdminClient = () => adminClient;
-

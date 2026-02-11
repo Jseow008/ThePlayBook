@@ -1,7 +1,10 @@
-import { createClient } from "@/lib/supabase/server";
+
 import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
+import { APP_NAME } from "@/lib/brand";
+import { Logo } from "@/components/ui/Logo";
+import Link from "next/link";
 
 /**
  * Public Layout
@@ -15,7 +18,7 @@ export default async function PublicLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const supabase = await createClient();
+
 
     return (
         <div className="min-h-screen bg-background">
@@ -28,11 +31,15 @@ export default async function PublicLayout({
             </div>
 
             {/* Desktop Top Gradient (for better text ease) */}
-            <div className="hidden lg:block fixed top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/80 to-transparent z-40 pointer-events-none" />
+            <div className="hidden lg:block fixed top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent z-40 pointer-events-none" />
+
+
 
             {/* Mobile Header */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-black/90 backdrop-blur-md border-b border-zinc-800/50 flex items-center justify-between px-4">
-                <span className="font-bold text-lg text-foreground">NETFLUX</span>
+            <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4">
+                <Link href="/">
+                    <Logo width={80} height={24} />
+                </Link>
                 <UserNav />
             </header>
 

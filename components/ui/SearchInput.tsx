@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Search, X, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,6 @@ export function SearchInput({
     placeholder = "Search by title, author, or keyword..."
 }: SearchInputProps) {
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     const [query, setQuery] = useState(initialQuery);
     const [isFocused, setIsFocused] = useState(false);

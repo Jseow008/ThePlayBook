@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Info, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
+import { APP_NAME } from "@/lib/brand";
 
 interface HeroCarouselProps {
     items: ContentItem[];
@@ -24,7 +26,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Auto-rotate every 10 seconds (slower for better reading)
+    // Auto-rotate every 5 seconds per design spec
     useEffect(() => {
         if (items.length <= 1) return;
 
@@ -34,7 +36,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                 setActiveIndex((prev) => (prev + 1) % items.length);
                 setIsTransitioning(false);
             }, 800); // Slightly longer transition sync
-        }, 10000);
+        }, 5000);
 
         return () => clearInterval(interval);
     }, [items.length]);
@@ -45,7 +47,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
-                        NETFLUX
+                        {APP_NAME}
                     </h1>
                     <p className="text-xl text-zinc-300 max-w-2xl mx-auto bg-black/40 p-4 rounded-xl backdrop-blur-sm">
                         A curated stream of insights from books, podcasts, and articles. Check back soon for featured content.
@@ -61,10 +63,10 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     // Safely extract description from quick_mode_json
     const quickMode = activeItem.quick_mode_json as { hook?: string; big_idea?: string } | null;
-    const description = quickMode?.hook || quickMode?.big_idea || "Experience this NETFLUX content today.";
+    const description = quickMode?.hook || quickMode?.big_idea || `Experience this ${APP_NAME} content today.`;
 
     return (
-        <div className="relative h-[85vh] min-h-[600px] w-full overflow-hidden bg-black">
+        <div className="relative h-[85vh] min-h-[600px] w-full overflow-hidden bg-background">
             {/* Background Image Layer */}
             <div
                 className="absolute inset-0 w-full h-full"
@@ -83,10 +85,12 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                 >
                     {activeItem.cover_image_url ? (
                         <div className="absolute inset-0">
-                            <img
+                            <Image
                                 src={activeItem.cover_image_url}
-                                alt="Background"
-                                className="w-full h-full object-cover object-center"
+                                alt={activeItem.title}
+                                fill
+                                priority={activeIndex === 0}
+                                className="object-cover object-center"
                             />
                             {/* Vignette Overlay (Top/Bottom) */}
                             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-background" />
@@ -171,14 +175,14 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         >
                             <Link
                                 href={`/preview/${activeItem.id}`}
-                                className="flex items-center gap-3 bg-white text-black px-8 py-3 rounded md:rounded-md text-lg md:text-xl font-bold hover:bg-white/90 transition hover:scale-105 active:scale-95"
+                                className="focus-ring flex items-center gap-3 bg-white text-black px-8 py-3 rounded md:rounded-md text-lg md:text-xl font-bold hover:bg-white/90 transition hover:scale-105 active:scale-95"
                             >
                                 <BookOpen className="fill-black w-6 h-6 md:w-7 md:h-7" />
                                 Read
                             </Link>
                             <Link
                                 href={`/preview/${activeItem.id}`}
-                                className="flex items-center gap-3 bg-zinc-500/70 text-white px-8 py-3 rounded md:rounded-md text-lg md:text-xl font-semibold hover:bg-zinc-500/50 transition hover:scale-105 active:scale-95 backdrop-blur-sm"
+                                className="focus-ring flex items-center gap-3 bg-zinc-500/70 text-white px-8 py-3 rounded md:rounded-md text-lg md:text-xl font-semibold hover:bg-zinc-500/50 transition hover:scale-105 active:scale-95 backdrop-blur-sm"
                             >
                                 <Info className="w-6 h-6 md:w-7 md:h-7" />
                                 More Info

@@ -36,6 +36,10 @@ export async function verifyAdminSession(): Promise<boolean> {
 
         return profile.role === "admin";
     } catch (error) {
+        const maybeDynamicError = error as { digest?: string };
+        if (maybeDynamicError.digest === "DYNAMIC_SERVER_USAGE") {
+            return false;
+        }
         console.error("Error verifying admin session:", error);
         return false;
     }

@@ -7,7 +7,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { Search, Sparkles } from "lucide-react";
+import { Sparkles, Search } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import Link from "next/link";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -70,12 +70,17 @@ async function SearchResults({ query, category, type }: { query?: string; catego
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-20">
-                    <p className="text-muted-foreground text-lg">No results found.</p>
-                    <p className="text-muted-foreground text-sm mt-2">Try adjusting your filters.</p>
+                <div className="text-center py-20 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="inline-flex items-center justify-center p-6 bg-zinc-800/30 rounded-full mb-6 border border-zinc-800">
+                        <Search className="size-10 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">No results found</h3>
+                    <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                        We couldn't find anything matching your search. Try different keywords or filters.
+                    </p>
                     <Link
                         href="/search"
-                        className="inline-block mt-4 text-primary hover:underline"
+                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
                     >
                         Clear all filters
                     </Link>
@@ -211,4 +216,3 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         </div>
     );
 }
-

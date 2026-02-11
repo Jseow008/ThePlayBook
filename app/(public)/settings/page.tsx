@@ -17,7 +17,7 @@ export default function SettingsPage() {
 
     const handleSignOut = async () => {
         setIsSigningOut(true);
-        await supabase.auth.signOut();
+        await (supabase.auth as any).signOut();
         router.push("/login"); // Redirect to login after sign out
         router.refresh();
     };

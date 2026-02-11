@@ -31,7 +31,7 @@ Flux is a **founder-curated content platform**. The founder uploads summaries of
 * **Strategy:** Server-side protected route.
 * **Goal:** Simple interface for founder to upload/edit content.
 * **Routes:** `/admin`, `/admin/content/new`, `/admin/content/[id]/edit`.
-* **Protection:** Environment variable password (`ADMIN_PASSWORD`).
+* **Protection:** Supabase Auth session + RBAC (`profiles.role = 'admin'`).
 
 ---
 
@@ -182,7 +182,7 @@ interface ProgressState {
 
 ### 6.2 Admin Protection
 
-The admin panel is protected by comparing against `ADMIN_PASSWORD` and setting an httpOnly cookie for the session.
+The admin panel is protected by Supabase Auth session validation and server-side admin role checks.
 
 ### 6.3 Input Validation
 

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock, User, Sparkles, BookOpen, Eye } from "lucide-react";
+import { ArrowLeft, Clock, Sparkles, BookOpen } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ContentItem } from "@/types/database";
 import type { QuickMode } from "@/types/domain";
@@ -12,9 +11,7 @@ interface ContentPreviewProps {
     segmentCount?: number | null;
     onSpinAgain?: () => void;
     isSpinning?: boolean;
-    title?: string;
-    subtitle?: string;
-    icon?: React.ElementType;
+    ctaIcon?: React.ElementType;
 }
 
 export function ContentPreview({
@@ -22,9 +19,7 @@ export function ContentPreview({
     segmentCount,
     onSpinAgain,
     isSpinning = false,
-    title = "Preview",
-    subtitle = "Get a glimpse of this content",
-    icon: Icon = Eye,
+    ctaIcon: CtaIcon = Sparkles,
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
 
@@ -109,7 +104,7 @@ export function ContentPreview({
                                         disabled={isSpinning}
                                         className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white/5 text-foreground hover:bg-white/10 hover:text-white transition-all border border-white/5 font-medium"
                                     >
-                                        <Sparkles className={`size-4 ${isSpinning ? "animate-spin" : ""}`} />
+                                        <CtaIcon className={`size-4 ${isSpinning ? "animate-spin" : ""}`} />
                                         <span>Discover Another</span>
                                     </button>
                                 )}
@@ -174,7 +169,7 @@ export function ContentPreview({
                                             disabled={isSpinning}
                                             className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white/5 text-foreground hover:bg-white/10 hover:text-white transition-all border border-white/5 font-medium"
                                         >
-                                            <Sparkles className={`size-4 ${isSpinning ? "animate-spin" : ""}`} />
+                                            <CtaIcon className={`size-4 ${isSpinning ? "animate-spin" : ""}`} />
                                             <span>Discover Another</span>
                                         </button>
                                     )}
@@ -187,7 +182,7 @@ export function ContentPreview({
                                     {quickMode.hook && (
                                         <div className="relative">
                                             <blockquote className="text-2xl md:text-3xl font-serif italic leading-relaxed text-foreground/90 pl-6 border-l-4 border-primary">
-                                                "{quickMode.hook}"
+                                                &ldquo;{quickMode.hook}&rdquo;
                                             </blockquote>
                                         </div>
                                     )}

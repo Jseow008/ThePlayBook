@@ -8,7 +8,7 @@ import type { ContentItem } from "@/types/database";
 import { ContentCard } from "@/components/ui/ContentCard";
 
 interface ContentLaneProps {
-    title: string;
+    title: React.ReactNode;
     items: ContentItem[];
     viewAllHref?: string;
 }
@@ -73,7 +73,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                     {viewAllHref && (
                         <Link
                             href={viewAllHref}
-                            className="text-sm font-normal text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover/lane:opacity-100"
+                            className="focus-ring rounded-sm text-sm font-normal text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover/lane:opacity-100"
                         >
                             <span className="flex items-center gap-1">
                                 Explore All <ChevronRight className="size-4" />
@@ -89,7 +89,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                 <button
                     onClick={() => scroll("left")}
                     className={cn(
-                        "absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/80 text-white flex items-center justify-center transition-opacity hover:bg-black",
+                        "focus-ring absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-card/90 text-foreground border border-border flex items-center justify-center transition-opacity hover:bg-card",
                         showLeftArrow
                             ? "opacity-0 group-hover/lane:opacity-100"
                             : "opacity-0 pointer-events-none"
@@ -104,12 +104,10 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                     <div
                         ref={scrollRef}
                         onScroll={handleScroll}
-                        className="flex gap-4 overflow-x-auto px-6 lg:px-16 scroll-smooth pt-4 pb-12"
+                        className="flex gap-4 overflow-x-auto px-6 lg:px-16 scroll-smooth pt-4 pb-12 scrollbar-hide"
                         style={{
-                            scrollbarWidth: 'none',
-                            msOverflowStyle: 'none',
-                            marginBottom: '-30px', /* Pull bottom up to hide any padding excess if needed */
-                            clipPath: 'inset(0 0 20px 0)' /* Clip the bottom scrollbar area */
+                            marginBottom: '-30px',
+                            clipPath: 'inset(0 0 20px 0)'
                         }}
                     >
                         {items.map((item) => (
@@ -124,7 +122,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                 <button
                     onClick={() => scroll("right")}
                     className={cn(
-                        "absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/80 text-white flex items-center justify-center transition-opacity hover:bg-black",
+                        "focus-ring absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-card/90 text-foreground border border-border flex items-center justify-center transition-opacity hover:bg-card",
                         showRightArrow
                             ? "opacity-0 group-hover/lane:opacity-100"
                             : "opacity-0 pointer-events-none"

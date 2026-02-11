@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ProfileHeader } from "@/components/ui/ProfileHeader";
 import { ReadingStats } from "@/components/ui/ReadingStats";
 import { RecentActivity } from "@/components/ui/RecentActivity";
-import { ArrowLeft, Clock, History } from "lucide-react";
+import { ArrowLeft, History } from "lucide-react";
 import Link from "next/link";
 
 export default async function ProfilePage() {

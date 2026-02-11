@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Lock, Loader2, AlertCircle, Mail } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -150,12 +151,12 @@ export default function AdminLoginPage() {
 
                 {/* Back link */}
                 <div className="mt-6 text-center">
-                    <a
+                    <Link
                         href="/"
                         className="text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
                     >
                         ← Back to NETFLUX
-                    </a>
+                    </Link>
                 </div>
             </div>
         </div>
