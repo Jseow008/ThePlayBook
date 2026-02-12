@@ -104,7 +104,7 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   --font-sans: var(--font-inter);
-  --font-serif: var(--font-merriweather);
+  --font-display: var(--font-outfit);
 }
 
 /* --------------------------------------------------------------------------
@@ -147,9 +147,18 @@ body {
   --tw-prose-td-borders: hsl(var(--border));
 }
 
-/* Deep Mode - Serif font for reader body */
+/* Deep Mode - Serif font for reader body with generous sizing */
 .prose-deep {
   font-family: var(--font-serif), ui-serif, Georgia, serif;
+  font-size: 1.2rem;
+  line-height: 1.85;
+}
+
+@media (min-width: 768px) {
+  .prose-deep {
+    font-size: 1.35rem;
+    line-height: 1.9;
+  }
 }
 
 /* --------------------------------------------------------------------------

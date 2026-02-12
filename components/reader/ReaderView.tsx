@@ -20,6 +20,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isActionsOpen, setIsActionsOpen] = useState(false);
     const [activeSegmentIndex, setActiveSegmentIndex] = useState(0);
+    const [maxSegmentIndex, setMaxSegmentIndex] = useState(0);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const [showCopiedToast, setShowCopiedToast] = useState(false);
     const { saveReadingProgress } = useReadingProgress();
@@ -107,13 +108,29 @@ export function ReaderView({ content }: ReaderViewProps) {
         const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
         if (savedProgress) {
             try {
-                const { lastSegmentIndex } = JSON.parse(savedProgress);
+                const parsed = JSON.parse(savedProgress);
+                const { lastSegmentIndex } = parsed;
                 if (typeof lastSegmentIndex === 'number' && lastSegmentIndex >= 0 && lastSegmentIndex < content.segments.length) {
                     setActiveSegmentIndex(lastSegmentIndex);
+                }
+
+                // Initialize maxSegmentIndex
+                if (typeof parsed.maxSegmentIndex === 'number') {
+                    setMaxSegmentIndex(parsed.maxSegmentIndex);
+                } else {
+                    // Fallback for existing data: start with lastSegmentIndex
+                    setMaxSegmentIndex(lastSegmentIndex || 0);
                 }
             } catch { }
         }
     }, [content.id, content.segments.length]);
+
+    // Update maxSegmentIndex when user progresses
+    useEffect(() => {
+        if (activeSegmentIndex > maxSegmentIndex) {
+            setMaxSegmentIndex(activeSegmentIndex);
+        }
+    }, [activeSegmentIndex, maxSegmentIndex]);
 
     // Mark segment as completed when index changes
     useEffect(() => {
@@ -134,6 +151,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             const progressData = {
                 completed: Array.from(completedSegments),
                 lastSegmentIndex: activeSegmentIndex,
+                maxSegmentIndex, // Persist max depth
                 lastReadAt: new Date().toISOString(),
                 isCompleted,
                 itemId: content.id,
@@ -145,7 +163,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         }, 1000); // 1s debounce
 
         return () => clearTimeout(timeoutId);
-    }, [activeSegmentIndex, content.id, content.segments.length, completedSegments, saveReadingProgress]);
+    }, [activeSegmentIndex, maxSegmentIndex, content.id, content.segments.length, completedSegments, saveReadingProgress]);
 
     const handleNext = () => {
         if (activeSegmentIndex < content.segments.length - 1) {
@@ -206,12 +224,12 @@ export function ReaderView({ content }: ReaderViewProps) {
                 <div className="p-4 rounded-lg bg-card border shadow-sm">
                     <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
                         <span>Progress</span>
-                        <span>{Math.round(((activeSegmentIndex + 1) / segments.length) * 100)}%</span>
+                        <span>{Math.round(((maxSegmentIndex + 1) / segments.length) * 100)}%</span>
                     </div>
                     <div className="h-2 bg-secondary rounded-full overflow-hidden">
                         <div
                             className="h-full bg-primary transition-all duration-500"
-                            style={{ width: `${((activeSegmentIndex + 1) / segments.length) * 100}%` }}
+                            style={{ width: `${((maxSegmentIndex + 1) / segments.length) * 100}%` }}
                         />
                     </div>
                 </div>
@@ -280,7 +298,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                                 {content.type} • {activeSegmentIndex + 1} of {segments.length}
                             </span>
                         </div>
-                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4 leading-tight">
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground mb-6 leading-tight tracking-tight">
                             {content.title}
                         </h1>
                         {content.author && (
@@ -304,8 +322,10 @@ export function ReaderView({ content }: ReaderViewProps) {
                             <SegmentContent
                                 key={activeSegment.id}
                                 segment={activeSegment}
+                                prevSegment={activeSegmentIndex > 0 ? content.segments[activeSegmentIndex - 1] : undefined}
                                 nextSegment={nextSegment}
                                 isDeepMode={true}
+                                onPrev={handlePrev}
                                 onNext={handleNext}
                             />
                         ) : (
@@ -315,29 +335,13 @@ export function ReaderView({ content }: ReaderViewProps) {
                         )}
                     </div>
 
-                    {/* Pagination Controls */}
-                    <div className="mt-12 pt-12 border-t flex items-center justify-between">
-                        <button
-                            onClick={handlePrev}
-                            disabled={activeSegmentIndex === 0}
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
-                        >
-                            ← Previous
-                        </button>
-                        {/* Centered Back to Library for ease */}
+                    {/* Pagination Controls - Simplified */}
+                    <div className="mt-12 pt-12 border-t flex flex-col items-center justify-center gap-6">
                         <button
                             onClick={() => router.push("/")}
-                            className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 text-sm font-medium transition-colors"
+                            className="w-full max-w-md py-4 rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80 text-lg font-bold transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                         >
                             Back to Library
-                        </button>
-
-                        <button
-                            onClick={handleNext}
-                            disabled={activeSegmentIndex === segments.length - 1}
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:hover:text-muted-foreground transition-colors"
-                        >
-                            Next →
                         </button>
                     </div>
                 </div>

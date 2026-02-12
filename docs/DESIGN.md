@@ -23,7 +23,9 @@
 ### 1.2 Typography
 
 * **UI Font:** `Inter` (Variable) — Navigation, buttons, headings
-* **Prose Font:** `Merriweather` (Serif) — Deep Mode reading content
+* **Headings:** `Outfit` (Sans-Serif) — Modern, geometric, premium
+* **Body:** `Inter` (Sans-Serif) — Clean, legible
+* **Prose Font:** `System Serif` / `Georgia` — Deep Mode reading content
 * **Weights:** Regular (400), Medium (500), Semibold (600)
 
 ### 1.3 Spacing & Radii

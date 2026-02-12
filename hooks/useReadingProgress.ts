@@ -14,6 +14,7 @@ export interface ReadingProgressData {
     lastReadAt: string;
     isCompleted: boolean;
     totalSegments?: number; // Optional total segments count for percentage calculation
+    maxSegmentIndex?: number; // The furthest segment index reached
 }
 
 interface UserLibraryRow {

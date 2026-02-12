@@ -104,9 +104,9 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             </div>
 
             {/* Content Layer */}
-            <div className="absolute inset-0 flex items-end z-30 pointer-events-none pb-24">
-                <div className="container mx-auto px-6 lg:px-16 pt-20 pointer-events-auto">
-                    <div className="max-w-2xl space-y-6">
+            <div className="absolute inset-0 flex items-center z-30 pointer-events-none">
+                <div className="w-full px-6 lg:px-16 pointer-events-auto">
+                    <div className="max-w-6xl space-y-8">
                         {/* Featured Badge */}
                         <div
                             className={cn(
@@ -115,7 +115,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             )}
                         >
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-serif font-bold text-lg">
+                                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-display font-bold text-lg">
                                     L
                                 </div>
                                 <span className="text-sm font-bold tracking-[0.2em] text-zinc-400 uppercase">
@@ -127,7 +127,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Title */}
                         <h1
                             className={cn(
-                                "text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.9] tracking-tight drop-shadow-2xl transition-all duration-700 delay-100 origin-left",
+                                "text-5xl md:text-7xl font-display font-bold text-white leading-[1.1] tracking-tight drop-shadow-2xl transition-all duration-700 delay-100 origin-left max-w-5xl",
                                 isTransitioning ? "opacity-0 scale-95 translate-y-4" : "opacity-100 scale-100 translate-y-0"
                             )}
                         >

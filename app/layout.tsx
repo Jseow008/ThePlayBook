@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Merriweather } from "next/font/google";
+import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
@@ -10,10 +10,9 @@ const inter = Inter({
   display: "swap",
 });
 
-const merriweather = Merriweather({
-  weight: ["400", "700"],
+const outfit = Outfit({
   subsets: ["latin"],
-  variable: "--font-merriweather",
+  variable: "--font-outfit",
   display: "swap",
 });
 
@@ -32,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.variable} ${merriweather.variable} font-sans antialiased isolate`}
+        className={`${inter.variable} ${outfit.variable} font-sans antialiased isolate`}
       >
         <AmbientBackground />
         {children}

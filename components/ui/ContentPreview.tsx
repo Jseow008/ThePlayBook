@@ -128,7 +128,7 @@ export function ContentPreview({
                             {/* Header Info */}
                             <div className="space-y-6 text-center lg:text-left">
                                 <div className="space-y-2">
-                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-foreground tracking-tight leading-[1.1]">
+                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-foreground tracking-tight leading-[1.1]">
                                         {item.title}
                                     </h1>
                                     {item.author && (
@@ -181,7 +181,7 @@ export function ContentPreview({
                                     {/* Hook */}
                                     {quickMode.hook && (
                                         <div className="relative">
-                                            <blockquote className="text-2xl md:text-3xl font-serif italic leading-relaxed text-foreground/90 pl-6 border-l-4 border-primary">
+                                            <blockquote className="text-lg md:text-xl font-serif italic leading-relaxed text-muted-foreground/80 pl-6 border-l-2 border-primary/30">
                                                 &ldquo;{quickMode.hook}&rdquo;
                                             </blockquote>
                                         </div>

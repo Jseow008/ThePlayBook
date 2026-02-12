@@ -27,7 +27,7 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
 
     // Calculate Progress Percentage
     const percentage = progress && progress.totalSegments
-        ? Math.min(100, Math.round(((progress.lastSegmentIndex + 1) / progress.totalSegments) * 100))
+        ? Math.min(100, Math.round((((progress.maxSegmentIndex ?? progress.lastSegmentIndex) + 1) / progress.totalSegments) * 100))
         : 0;
 
     // Only show progress bar if started, not completed, and has valid percentage
