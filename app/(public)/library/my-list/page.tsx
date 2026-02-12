@@ -119,18 +119,18 @@ export default function MyListPage() {
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
-            <div className="bg-background/80 backdrop-blur-md sticky top-12 lg:top-0 z-40">
+            <div className="sticky top-12 lg:top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/70">
                 <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <Link
                                 href="/"
-                                className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-zinc-800/50"
+                                className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                             >
                                 <ArrowLeft className="size-5" />
                             </Link>
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-zinc-700/50 rounded-lg">
+                                <div className="p-2 bg-secondary/60 rounded-lg border border-border/70">
                                     <ListPlus className="size-6 text-zinc-100" />
                                 </div>
                                 <div>
@@ -180,7 +180,7 @@ export default function MyListPage() {
                     </div>
                 ) : allItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="inline-flex items-center justify-center p-6 bg-zinc-800/30 rounded-full mb-6 border border-zinc-800">
+                        <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
                             <Plus className="size-10 text-muted-foreground" />
                         </div>
                         <h2 className="text-xl font-semibold text-foreground mb-2">
@@ -191,7 +191,7 @@ export default function MyListPage() {
                         </p>
                         <Link
                             href="/"
-                            className="inline-flex items-center px-6 py-3 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-all hover:scale-105"
+                            className="inline-flex items-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         >
                             Browse Library
                         </Link>
@@ -201,7 +201,7 @@ export default function MyListPage() {
                         <p className="text-muted-foreground">No items match your search.</p>
                         <button
                             onClick={() => { setSearchQuery(""); setActiveFilter("all"); }}
-                            className="text-primary hover:underline mt-2 text-sm"
+                            className="mt-3 inline-flex h-9 items-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm text-foreground hover:bg-secondary/50 transition-colors"
                         >
                             Clear filters
                         </button>

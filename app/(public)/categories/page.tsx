@@ -118,12 +118,14 @@ export default async function CategoriesPage() {
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
             <div className="pt-8 pb-6 px-6 lg:px-12">
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                    Browse Categories
-                </h1>
-                <p className="text-muted-foreground">
-                    Explore our curated library by topic
-                </p>
+                <div className="max-w-7xl mx-auto">
+                    <h1 className="text-3xl font-bold text-foreground mb-2">
+                        Browse Categories
+                    </h1>
+                    <p className="text-muted-foreground">
+                        Explore our curated library by topic
+                    </p>
+                </div>
             </div>
 
             {/* Content */}
@@ -140,9 +142,9 @@ export default async function CategoriesPage() {
                                     key={category.name}
                                     href={`/search?category=${encodeURIComponent(category.name)}`}
                                     className={`
-                                        group relative overflow-hidden rounded-3xl border border-white/5 
-                                        bg-zinc-900/40 backdrop-blur-xl transition-all duration-500
-                                        hover:scale-[1.02] hover:border-white/10 hover:shadow-2xl hover:shadow-black/50
+                                        group relative overflow-hidden rounded-3xl border border-border/60
+                                        bg-secondary/20 backdrop-blur-xl transition-all duration-500
+                                        hover:scale-[1.02] hover:border-border hover:shadow-2xl hover:shadow-black/40
                                         animate-fade-in opacity-0
                                         flex flex-col justify-between p-6
                                         ${category.span || "col-span-1 row-span-1"}
@@ -162,16 +164,16 @@ export default async function CategoriesPage() {
                                         </div>
 
                                         {/* Counter Badge */}
-                                        <span className="text-xs font-medium text-zinc-500 bg-zinc-900/50 px-2 py-1 rounded-full border border-zinc-800/50 group-hover:text-zinc-300 group-hover:border-zinc-700 transition-colors">
+                                        <span className="text-xs font-medium text-muted-foreground bg-secondary/40 px-2 py-1 rounded-full border border-border/60 group-hover:text-foreground group-hover:border-border transition-colors">
                                             {category.count}
                                         </span>
                                     </div>
 
                                     <div className="relative z-10 mt-auto">
-                                        <h3 className="text-xl font-bold text-zinc-100 group-hover:text-white transition-colors">
+                                        <h3 className="text-xl font-bold text-foreground group-hover:text-foreground transition-colors">
                                             {category.name}
                                         </h3>
-                                        <p className="text-xs text-zinc-500 mt-1 group-hover:text-zinc-400 transition-colors flex items-center gap-1">
+                                        <p className="text-xs text-muted-foreground mt-1 group-hover:text-foreground transition-colors flex items-center gap-1">
                                             Explore collection
                                             <svg className="w-3 h-3 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
