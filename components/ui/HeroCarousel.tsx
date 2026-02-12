@@ -90,7 +90,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 alt={activeItem.title}
                                 fill
                                 priority={activeIndex === 0}
-                                className="object-cover object-center"
+                                className="object-cover object-[50%_20%]"
                             />
                             {/* Vignette Overlay (Top/Bottom) */}
                             <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-background" />
@@ -104,7 +104,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             </div>
 
             {/* Content Layer */}
-            <div className="absolute inset-0 flex items-center z-30 pointer-events-none">
+            <div className="absolute inset-0 flex items-end z-30 pointer-events-none pb-24">
                 <div className="container mx-auto px-6 lg:px-16 pt-20 pointer-events-auto">
                     <div className="max-w-2xl space-y-6">
                         {/* Featured Badge */}
