@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock, Sparkles, BookOpen } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Clock, BookOpen, Sparkles, ChevronDown } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import type { QuickMode } from "@/types/domain";
 
@@ -22,215 +22,199 @@ export function ContentPreview({
     ctaIcon: CtaIcon = Sparkles,
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
+    const [showAllTakeaways, setShowAllTakeaways] = useState(false);
 
     // Filter out empty takeaways
-    const activeTakeaways = quickMode?.key_takeaways.filter(t => t && t.trim().length > 0) || [];
+    const activeTakeaways =
+        quickMode?.key_takeaways.filter((t) => t && t.trim().length > 0) || [];
+
+    const VISIBLE_COUNT = 3;
+    const visibleTakeaways = showAllTakeaways
+        ? activeTakeaways
+        : activeTakeaways.slice(0, VISIBLE_COUNT);
+    const hasHidden = activeTakeaways.length > VISIBLE_COUNT;
 
     return (
-        <div className="min-h-screen bg-background text-foreground pb-20 relative overflow-hidden">
-            {/* Ambient Background */}
-            {item.cover_image_url && (
-                <div className="absolute inset-0 z-0">
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-background/80 z-10" />
-                    <img
-                        src={item.cover_image_url}
-                        alt=""
-                        className="w-full h-full object-cover blur-[100px] opacity-30 select-none"
-                    />
+        <div className="min-h-screen bg-background text-foreground pb-28 lg:pb-20">
+            {/* Container */}
+            <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8">
+                {/* ── Back to Library ── */}
+                <div className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
                 </div>
-            )}
 
-            {/* Header - Transparent & Floating */}
-            <div className="relative z-40">
-                <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <Link
-                            href="/"
-                            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-                        >
-                            <ArrowLeft className="size-5" />
-                            <span className="font-medium">Back</span>
-                        </Link>
+                {/* ── Hero: Cover + Info ── */}
+                <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-10">
+                    {/* Cover Image */}
+                    {item.cover_image_url && (
+                        <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
+                            <div className="aspect-[2/3] w-full max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 relative group">
+                                <img
+                                    src={item.cover_image_url}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                        </div>
+                    )}
 
-                        {/* Actions - specific to header if any others needed */}
-                        <div className="flex items-center gap-4">
+                    {/* Title, Author & CTA */}
+                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-foreground tracking-tight leading-[1.15] mb-2">
+                            {item.title}
+                        </h1>
+                        {item.author && (
+                            <p className="text-lg text-muted-foreground font-medium mb-4 truncate">
+                                {item.author}
+                            </p>
+                        )}
+
+                        {/* Metadata Pills */}
+                        <div className="flex flex-wrap items-center gap-2 mb-6">
+                            {item.duration_seconds && (
+                                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
+                                    <Clock className="size-3" />
+                                    {Math.round(item.duration_seconds / 60)} min
+                                </span>
+                            )}
+                            <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50 uppercase tracking-wider">
+                                {item.type}
+                            </span>
+                            {segmentCount !== undefined &&
+                                segmentCount !== null &&
+                                segmentCount > 0 && (
+                                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
+                                        {segmentCount} sections
+                                    </span>
+                                )}
+                        </div>
+
+                        {/* CTA Buttons */}
+                        <div className="hidden sm:flex flex-col gap-3">
+                            <Link
+                                href={`/read/${item.id}`}
+                                className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
+                            >
+                                <BookOpen className="size-5" />
+                                Read
+                            </Link>
+                            {onSpinAgain && (
+                                <button
+                                    onClick={onSpinAgain}
+                                    disabled={isSpinning}
+                                    className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-secondary/60 text-foreground hover:bg-secondary hover:text-white transition-all border border-border/50 font-medium text-sm"
+                                >
+                                    <CtaIcon
+                                        className={`size-4 ${isSpinning ? "animate-spin" : ""}`}
+                                    />
+                                    <span>Discover Another</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Main Content */}
-            <AnimatePresence mode="wait">
-                <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                    className="relative z-10 max-w-7xl mx-auto px-6 lg:px-16 py-8"
-                >
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-                        {/* Left Column: Cover & Sticky Actions */}
-                        <div className="lg:col-span-4 space-y-8">
-                            {item.cover_image_url && (
-                                <motion.div
-                                    initial={{ scale: 0.95, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    transition={{ delay: 0.1 }}
-                                    className="aspect-[2/3] w-full max-w-[320px] mx-auto lg:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-white/10 relative group"
-                                >
-                                    <img
-                                        src={item.cover_image_url}
-                                        alt={item.title}
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </motion.div>
-                            )}
+                {/* ── Quick Mode Content ── */}
+                {quickMode ? (
+                    <div className="space-y-8">
+                        {/* Hook */}
+                        {quickMode.hook && (
+                            <blockquote className="text-base md:text-lg font-serif italic leading-relaxed text-muted-foreground pl-6 border-l-2 border-primary/30">
+                                &ldquo;{quickMode.hook}&rdquo;
+                            </blockquote>
+                        )}
 
-                            {/* Desktop Actions */}
-                            <div className="hidden lg:flex flex-col gap-3">
-                                <Link
-                                    href={`/read/${item.id}`}
-                                    className="w-full inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-primary text-primary-foreground text-lg font-semibold hover:bg-primary/90 transition-all hover:scale-[1.02] shadow-lg shadow-primary/15"
-                                >
-                                    <BookOpen className="size-5" />
-                                    Open Summary
-                                </Link>
+                        {/* Big Idea */}
+                        <div className="bg-card/60 rounded-2xl p-6 sm:p-8 border border-border/60">
+                            <h3 className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">
+                                The Big Idea
+                            </h3>
+                            <p className="text-lg md:text-xl text-foreground leading-relaxed">
+                                {quickMode.big_idea}
+                            </p>
+                        </div>
 
-                                {onSpinAgain && (
+                        {/* Key Takeaways */}
+                        {activeTakeaways.length > 0 && (
+                            <div className="space-y-4">
+                                <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">
+                                    Key Takeaways
+                                </h3>
+                                <div className="grid gap-3">
+                                    {visibleTakeaways.map((takeaway, index) => (
+                                        <div
+                                            key={index}
+                                            className="flex gap-4 p-4 rounded-xl bg-card/40 hover:bg-card/60 border border-border/40 hover:border-border/60 transition-all duration-200"
+                                        >
+                                            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+                                                {index + 1}
+                                            </span>
+                                            <p className="text-base text-foreground leading-relaxed pt-0.5">
+                                                {takeaway}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Show All / Show Less Toggle */}
+                                {hasHidden && (
                                     <button
-                                        onClick={onSpinAgain}
-                                        disabled={isSpinning}
-                                        className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white/5 text-foreground hover:bg-white/10 hover:text-white transition-all border border-white/5 font-medium"
+                                        onClick={() =>
+                                            setShowAllTakeaways(!showAllTakeaways)
+                                        }
+                                        className="flex items-center gap-1.5 mx-auto text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-full hover:bg-secondary/50"
                                     >
-                                        <CtaIcon className={`size-4 ${isSpinning ? "animate-spin" : ""}`} />
-                                        <span>Discover Another</span>
+                                        <span>
+                                            {showAllTakeaways
+                                                ? "Show less"
+                                                : `Show all ${activeTakeaways.length} takeaways`}
+                                        </span>
+                                        <ChevronDown
+                                            className={`size-4 transition-transform ${showAllTakeaways ? "rotate-180" : ""}`}
+                                        />
                                     </button>
                                 )}
-
-                                <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground mt-2">
-                                    {item.duration_seconds && (
-                                        <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                                            <Clock className="size-3.5" />
-                                            {Math.round(item.duration_seconds / 60)} min
-                                        </span>
-                                    )}
-                                    <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 uppercase tracking-wider font-semibold text-xs">
-                                        {item.type}
-                                    </span>
-                                </div>
                             </div>
-                        </div>
-
-                        {/* Right Column: Content Details */}
-                        <div className="lg:col-span-8 space-y-10">
-                            {/* Header Info */}
-                            <div className="space-y-6 text-center lg:text-left">
-                                <div className="space-y-2">
-                                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-semibold text-foreground tracking-tight leading-[1.1]">
-                                        {item.title}
-                                    </h1>
-                                    {item.author && (
-                                        <div className="text-xl md:text-2xl text-muted-foreground font-medium">
-                                            {item.author}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Mobile Actions */}
-                                <div className="lg:hidden flex flex-col gap-4">
-                                    <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
-                                        <span className="px-3 py-1 rounded-full bg-white/10 border border-white/5 font-medium">
-                                            {item.type}
-                                        </span>
-                                        {item.duration_seconds && (
-                                            <span className="flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 border border-white/5">
-                                                <Clock className="size-3.5" />
-                                                {Math.round(item.duration_seconds / 60)} min
-                                            </span>
-                                        )}
-                                        {segmentCount !== undefined && segmentCount !== null && segmentCount > 0 && (
-                                            <span className="px-3 py-1 rounded-full bg-white/10 border border-white/5">
-                                                {segmentCount} sections
-                                            </span>
-                                        )}
-                                    </div>
-                                    <Link
-                                        href={`/read/${item.id}`}
-                                        className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-transform active:scale-95"
-                                    >
-                                        <BookOpen className="size-5" />
-                                        Open Summary
-                                    </Link>
-                                    {onSpinAgain && (
-                                        <button
-                                            onClick={onSpinAgain}
-                                            disabled={isSpinning}
-                                            className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white/5 text-foreground hover:bg-white/10 hover:text-white transition-all border border-white/5 font-medium"
-                                        >
-                                            <CtaIcon className={`size-4 ${isSpinning ? "animate-spin" : ""}`} />
-                                            <span>Discover Another</span>
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-
-                            {quickMode ? (
-                                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 fill-mode-both">
-                                    {/* Hook */}
-                                    {quickMode.hook && (
-                                        <div className="relative">
-                                            <blockquote className="text-base md:text-lg font-serif italic leading-relaxed text-muted-foreground pl-6 border-l-2 border-primary/30">
-                                                &ldquo;{quickMode.hook}&rdquo;
-                                            </blockquote>
-                                        </div>
-                                    )}
-
-                                    {/* Big Idea */}
-                                    <div className="bg-white/[0.04] rounded-3xl p-8 border border-white/10">
-                                        <h3 className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-4">
-                                            The Big Idea
-                                        </h3>
-                                        <p className="text-lg md:text-xl text-foreground leading-relaxed">
-                                            {quickMode.big_idea}
-                                        </p>
-                                    </div>
-
-                                    {/* Key Takeaways */}
-                                    {activeTakeaways.length > 0 && (
-                                        <div className="space-y-6">
-                                            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-[0.2em] px-2">
-                                                Key Takeaways
-                                            </h3>
-                                            <div className="grid gap-3">
-                                                {activeTakeaways.map((takeaway, index) => (
-                                                    <div
-                                                        key={index}
-                                                        className="group flex gap-5 p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all duration-300"
-                                                    >
-                                                        <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
-                                                            {index + 1}
-                                                        </span>
-                                                        <p className="text-lg text-foreground leading-relaxed">
-                                                            {takeaway}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-full min-h-[300px] bg-white/5 rounded-3xl border border-white/5 p-12 text-center text-muted-foreground">
-                                    <BookOpen className="size-16 mb-4 opacity-30" />
-                                    <p className="text-lg">Preview content coming soon.</p>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
-                </motion.div>
-            </AnimatePresence>
-        </div >
+                ) : (
+                    <div className="flex flex-col items-center justify-center min-h-[200px] bg-card/30 rounded-2xl border border-border/40 p-10 text-center text-muted-foreground">
+                        <BookOpen className="size-12 mb-3 opacity-30" />
+                        <p className="text-base">
+                            Preview content coming soon.
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Sticky Mobile CTA ── */}
+            <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/60 p-4 flex gap-3 safe-area-bottom">
+                <Link
+                    href={`/read/${item.id}`}
+                    className="flex-1 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-base transition-transform active:scale-95"
+                >
+                    <BookOpen className="size-5" />
+                    Read
+                </Link>
+                {onSpinAgain && (
+                    <button
+                        onClick={onSpinAgain}
+                        disabled={isSpinning}
+                        className="h-12 w-12 flex items-center justify-center rounded-xl bg-secondary/60 border border-border/50 text-foreground transition-all active:scale-95"
+                    >
+                        <CtaIcon
+                            className={`size-5 ${isSpinning ? "animate-spin" : ""}`}
+                        />
+                    </button>
+                )}
+            </div>
+        </div>
     );
 }
