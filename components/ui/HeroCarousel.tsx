@@ -43,7 +43,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     if (items.length === 0) {
         return (
-            <div className="relative h-[85vh] min-h-[600px] w-full overflow-hidden bg-zinc-900 flex items-center justify-center">
+            <div className="relative h-[85vh] min-h-[500px] w-full overflow-hidden bg-zinc-900 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
@@ -66,7 +66,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const description = quickMode?.hook || quickMode?.big_idea || `Experience this ${APP_NAME} content today.`;
 
     return (
-        <div className="relative h-[85vh] min-h-[600px] w-full overflow-hidden bg-background">
+        <div className="relative h-[85vh] min-h-[500px] w-full overflow-hidden bg-background">
             {/* Background Image Layer */}
             <div
                 className="absolute inset-0 w-full h-full"
@@ -106,7 +106,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             {/* Content Layer */}
             <div className="absolute inset-0 flex items-center z-30 pointer-events-none">
                 <div className="w-full px-6 lg:px-16 pointer-events-auto">
-                    <div className="max-w-6xl space-y-8">
+                    <div className="max-w-6xl space-y-4 md:space-y-8">
                         {/* Featured Badge */}
                         <div
                             className={cn(
@@ -127,7 +127,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Title */}
                         <h1
                             className={cn(
-                                "text-5xl md:text-7xl font-display font-bold text-white leading-[1.1] tracking-tight drop-shadow-2xl transition-all duration-700 delay-100 origin-left max-w-5xl",
+                                "text-3xl md:text-5xl lg:text-7xl font-display font-bold text-white leading-[1.1] tracking-tight drop-shadow-2xl transition-all duration-700 delay-100 origin-left max-w-5xl",
                                 isTransitioning ? "opacity-0 scale-95 translate-y-4" : "opacity-100 scale-100 translate-y-0"
                             )}
                         >
@@ -145,7 +145,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 {activeItem.type}
                             </span>
                             {activeItem.author && (
-                                <span className="text-white/80 text-base">
+                                <span className="text-white/80 text-sm md:text-base">
                                     by <span className="font-semibold text-white">{activeItem.author}</span>
                                 </span>
                             )}
@@ -159,7 +159,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Description */}
                         <p
                             className={cn(
-                                "text-lg md:text-xl text-white/90 font-medium leading-relaxed drop-shadow-md max-w-xl transition-all duration-700 delay-300",
+                                "text-base md:text-xl text-white/90 font-medium leading-relaxed drop-shadow-md max-w-xl transition-all duration-700 delay-300 line-clamp-3 md:line-clamp-none",
                                 isTransitioning ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
                             )}
                         >
@@ -174,17 +174,17 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             )}
                         >
                             <Link
-                                href={`/preview/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-3 bg-white text-black px-8 py-3 rounded md:rounded-md text-lg md:text-xl font-bold hover:bg-white/90 transition hover:scale-105 active:scale-95"
+                                href={`/read/${activeItem.id}`}
+                                className="focus-ring flex items-center gap-2 md:gap-3 bg-white text-black px-6 py-2 md:px-8 md:py-3 rounded md:rounded-md text-base md:text-xl font-bold hover:bg-white/90 transition hover:scale-105 active:scale-95"
                             >
-                                <BookOpen className="fill-black w-6 h-6 md:w-7 md:h-7" />
+                                <BookOpen className="fill-black w-5 h-5 md:w-7 md:h-7" />
                                 Read
                             </Link>
                             <Link
                                 href={`/preview/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-3 bg-zinc-500/70 text-white px-8 py-3 rounded md:rounded-md text-lg md:text-xl font-semibold hover:bg-zinc-500/50 transition hover:scale-105 active:scale-95 backdrop-blur-sm"
+                                className="focus-ring flex items-center gap-2 md:gap-3 bg-zinc-500/70 text-white px-6 py-2 md:px-8 md:py-3 rounded md:rounded-md text-base md:text-xl font-semibold hover:bg-zinc-500/50 transition hover:scale-105 active:scale-95 backdrop-blur-sm"
                             >
-                                <Info className="w-6 h-6 md:w-7 md:h-7" />
+                                <Info className="w-5 h-5 md:w-7 md:h-7" />
                                 More Info
                             </Link>
                         </div>

@@ -77,7 +77,7 @@ export function ContentPreview({
                                     initial={{ scale: 0.95, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ delay: 0.1 }}
-                                    className="aspect-[2/3] w-full max-w-[320px] mx-auto lg:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-white/10 ring-1 ring-white/5 relative group"
+                                    className="aspect-[2/3] w-full max-w-[320px] mx-auto lg:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/50 border border-white/10 relative group"
                                 >
                                     <img
                                         src={item.cover_image_url}
@@ -92,10 +92,10 @@ export function ContentPreview({
                             <div className="hidden lg:flex flex-col gap-3">
                                 <Link
                                     href={`/read/${item.id}`}
-                                    className="w-full inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-primary text-primary-foreground text-lg font-semibold hover:bg-primary/90 transition-all hover:scale-[1.02] shadow-xl shadow-primary/20"
+                                    className="w-full inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-primary text-primary-foreground text-lg font-semibold hover:bg-primary/90 transition-all hover:scale-[1.02] shadow-lg shadow-primary/15"
                                 >
                                     <BookOpen className="size-5" />
-                                    Start Reading
+                                    Open Summary
                                 </Link>
 
                                 {onSpinAgain && (
@@ -161,7 +161,7 @@ export function ContentPreview({
                                         className="w-full inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-transform active:scale-95"
                                     >
                                         <BookOpen className="size-5" />
-                                        Start Reading
+                                        Open Summary
                                     </Link>
                                     {onSpinAgain && (
                                         <button
@@ -181,18 +181,18 @@ export function ContentPreview({
                                     {/* Hook */}
                                     {quickMode.hook && (
                                         <div className="relative">
-                                            <blockquote className="text-lg md:text-xl font-serif italic leading-relaxed text-muted-foreground/80 pl-6 border-l-2 border-primary/30">
+                                            <blockquote className="text-base md:text-lg font-serif italic leading-relaxed text-muted-foreground pl-6 border-l-2 border-primary/30">
                                                 &ldquo;{quickMode.hook}&rdquo;
                                             </blockquote>
                                         </div>
                                     )}
 
                                     {/* Big Idea */}
-                                    <div className="bg-zinc-900/40 backdrop-blur-md rounded-3xl p-8 border border-white/10 shadow-2xl">
+                                    <div className="bg-white/[0.04] rounded-3xl p-8 border border-white/10">
                                         <h3 className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-4">
                                             The Big Idea
                                         </h3>
-                                        <p className="text-lg md:text-xl text-foreground leading-relaxed font-light">
+                                        <p className="text-lg md:text-xl text-foreground leading-relaxed">
                                             {quickMode.big_idea}
                                         </p>
                                     </div>
@@ -203,16 +203,16 @@ export function ContentPreview({
                                             <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-[0.2em] px-2">
                                                 Key Takeaways
                                             </h3>
-                                            <div className="grid gap-4">
+                                            <div className="grid gap-3">
                                                 {activeTakeaways.map((takeaway, index) => (
                                                     <div
                                                         key={index}
-                                                        className="group flex gap-5 p-6 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all duration-300"
+                                                        className="group flex gap-5 p-5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-white/10 transition-all duration-300"
                                                     >
                                                         <span className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center text-lg font-bold group-hover:scale-110 transition-transform">
                                                             {index + 1}
                                                         </span>
-                                                        <p className="text-lg text-foreground/90 leading-relaxed">
+                                                        <p className="text-lg text-foreground leading-relaxed">
                                                             {takeaway}
                                                         </p>
                                                     </div>

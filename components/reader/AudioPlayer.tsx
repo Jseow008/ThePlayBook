@@ -123,19 +123,24 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
 
                 {/* Progress Section */}
                 <div className="flex-1 flex flex-col gap-2">
-                    {/* Progress bar */}
-                    <div className="relative h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div
-                            className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-100"
-                            style={{ width: `${progress}%` }}
-                        />
+                    {/* Progress bar container with increased hit area */}
+                    <div className="relative h-6 flex items-center group">
+                        {/* Visual track */}
+                        <div className="absolute inset-x-0 h-1.5 bg-secondary rounded-full overflow-hidden pointer-events-none">
+                            <div
+                                className="h-full bg-primary rounded-full transition-all duration-100"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        {/* Invisible interactive input */}
                         <input
                             type="range"
                             min="0"
                             max={duration || 0}
                             value={currentTime}
                             onChange={handleSeek}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            aria-label="Seek timeline"
                         />
                     </div>
 
