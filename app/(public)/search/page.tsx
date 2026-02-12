@@ -122,10 +122,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     return (
         <div className="min-h-screen bg-background">
             {/* Search Header */}
-            <div className="pt-8 pb-6 px-6 lg:px-12">
+            <div className="pt-8 pb-6 px-6 lg:px-12 xl:px-16">
                 <div className="max-w-7xl mx-auto">
                     <div className="flex flex-col gap-4 mb-6">
-                        <h1 className="text-3xl font-bold text-foreground">
+                        <h1 className="text-3xl font-bold text-foreground font-display">
                             {category ? `${category} Content` : "Search"}
                         </h1>
                         {category && (
@@ -178,7 +178,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </div>
 
             {/* Results */}
-            <div className="px-6 lg:px-12 pb-12">
+            <div className="px-6 lg:px-12 xl:px-16 pb-12">
                 <div className="max-w-7xl mx-auto">
                     {hasSearch ? (
                         <Suspense fallback={<ResultsSkeleton />}>

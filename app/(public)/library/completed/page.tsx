@@ -112,7 +112,7 @@ export default function CompletedPage() {
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
             <div className="sticky top-12 lg:top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/70">
-                <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6">
+                <div className="max-w-7xl mx-auto px-6 lg:px-12 xl:px-16 py-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <Link
@@ -170,7 +170,7 @@ export default function CompletedPage() {
             </div>
 
             {/* Content */}
-            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8">
+            <div className="max-w-7xl mx-auto px-6 lg:px-12 xl:px-16 py-8">
                 {isLoading ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                         {[...Array(8)].map((_, i) => (

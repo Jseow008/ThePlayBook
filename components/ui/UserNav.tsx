@@ -6,12 +6,14 @@ import { createClient } from "@/lib/supabase/client";
 import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
 export function UserNav() {
     const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         const supabase = createClient();
@@ -44,6 +46,24 @@ export function UserNav() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && isOpen) {
+                setIsOpen(false);
+                triggerRef.current?.focus();
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("keydown", handleKeyDown);
+        }
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [isOpen]);
+
     const handleSignOut = async () => {
         const supabase = createClient();
         await supabase.auth.signOut();
@@ -66,8 +86,13 @@ export function UserNav() {
     return (
         <div className="relative" ref={wrapperRef}>
             <button
+                ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 outline-none"
+                className="flex items-center gap-2 outline-none rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all hover:ring-2 hover:ring-ring/50"
+                aria-label="Open user menu"
+                aria-haspopup="true"
+                aria-expanded={isOpen}
+                aria-controls="user-menu"
             >
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center border border-border overflow-hidden">
                     {user.user_metadata?.avatar_url ? (
@@ -85,7 +110,11 @@ export function UserNav() {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-56 rounded-md border border-border bg-popover p-1 shadow-lg text-popover-foreground z-50 animate-in fade-in zoom-in-95 duration-200">
+                <div
+                    id="user-menu"
+                    role="menu"
+                    className="absolute right-0 mt-2 w-56 rounded-md border border-border bg-popover p-1 shadow-lg text-popover-foreground z-50 animate-in fade-in zoom-in-95 duration-200"
+                >
                     <div className="px-2 py-1.5 border-b border-border mb-1">
                         <p className="text-sm font-medium leading-none truncate">
                             {user.user_metadata?.full_name || "User"}
@@ -97,7 +126,8 @@ export function UserNav() {
 
                     <Link
                         href="/profile"
-                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full"
+                        role="menuitem"
+                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full focus:bg-accent focus:text-accent-foreground outline-none"
                         onClick={() => setIsOpen(false)}
                     >
                         <UserIcon className="h-4 w-4" />
@@ -106,7 +136,8 @@ export function UserNav() {
 
                     <Link
                         href="/settings"
-                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full"
+                        role="menuitem"
+                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full focus:bg-accent focus:text-accent-foreground outline-none"
                         onClick={() => setIsOpen(false)}
                     >
                         <Settings className="h-4 w-4" />
@@ -116,8 +147,9 @@ export function UserNav() {
                     <div className="h-px bg-border my-1" />
 
                     <button
+                        role="menuitem"
                         onClick={handleSignOut}
-                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full text-left text-red-500 hover:text-red-500"
+                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-destructive/10 hover:text-destructive cursor-default w-full text-left text-destructive/80 focus:bg-destructive/10 focus:text-destructive outline-none"
                     >
                         <LogOut className="h-4 w-4" />
                         <span>Sign out</span>

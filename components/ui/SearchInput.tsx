@@ -150,6 +150,7 @@ export function SearchInput({
                             type="button"
                             onClick={handleClear}
                             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label="Clear search"
                         >
                             <X className="size-5" />
                         </button>

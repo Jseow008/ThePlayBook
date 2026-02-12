@@ -68,7 +68,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
         >
             {/* Header */}
             <div className="flex items-center justify-between mb-4 px-6 lg:px-16">
-                <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2">
+                <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2 font-display">
                     {title}
                     {viewAllHref && (
                         <Link
@@ -88,6 +88,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                 {/* Left Arrow */}
                 <button
                     onClick={() => scroll("left")}
+                    aria-label="Scroll left"
                     className={cn(
                         "focus-ring absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-card/90 text-foreground border border-border flex items-center justify-center transition-opacity hover:bg-card",
                         showLeftArrow
@@ -121,6 +122,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                 {/* Right Arrow */}
                 <button
                     onClick={() => scroll("right")}
+                    aria-label="Scroll right"
                     className={cn(
                         "focus-ring absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-card/90 text-foreground border border-border flex items-center justify-center transition-opacity hover:bg-card",
                         showRightArrow

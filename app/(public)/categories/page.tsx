@@ -117,9 +117,9 @@ export default async function CategoriesPage() {
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
-            <div className="pt-8 pb-6 px-6 lg:px-12">
+            <div className="pt-8 pb-6 px-6 lg:px-12 xl:px-16">
                 <div className="max-w-7xl mx-auto">
-                    <h1 className="text-3xl font-bold text-foreground mb-2">
+                    <h1 className="text-3xl font-bold text-foreground mb-2 font-display">
                         Browse Categories
                     </h1>
                     <p className="text-muted-foreground">
@@ -129,7 +129,7 @@ export default async function CategoriesPage() {
             </div>
 
             {/* Content */}
-            <div className="max-w-7xl mx-auto px-6 lg:px-12 pb-20">
+            <div className="max-w-7xl mx-auto px-6 lg:px-12 xl:px-16 pb-20">
                 {categories.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-[180px] gap-4 grid-flow-dense">
                         {categories.map((category, index) => {

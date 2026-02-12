@@ -92,13 +92,13 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-zinc-900/80 backdrop-blur-sm border border-zinc-700/50 shadow-xl">
+        <div className="relative overflow-hidden rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-xl">
             <audio ref={audioRef} src={src} preload="metadata" />
 
             {/* Header with label */}
-            <div className="flex items-center justify-center gap-2 px-4 py-2 border-b border-zinc-700/30 bg-zinc-800/30">
-                <Headphones className="w-3.5 h-3.5 text-zinc-400" />
-                <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
+            <div className="flex items-center justify-center gap-2 px-4 py-2 border-b border-border bg-muted/30">
+                <Headphones className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     {title || "Listen to this summary"}
                 </span>
             </div>
@@ -109,8 +109,8 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
                 <button
                     onClick={togglePlay}
                     className={`w-12 h-12 flex items-center justify-center rounded-full transition-all duration-200 shadow-lg ${isPlaying
-                            ? "bg-white text-zinc-900 hover:bg-zinc-200"
-                            : "bg-white text-zinc-900 hover:bg-zinc-200 hover:scale-105"
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105"
                         }`}
                     aria-label={isPlaying ? "Pause" : "Play"}
                 >
@@ -124,9 +124,9 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
                 {/* Progress Section */}
                 <div className="flex-1 flex flex-col gap-2">
                     {/* Progress bar */}
-                    <div className="relative h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                    <div className="relative h-1.5 bg-secondary rounded-full overflow-hidden">
                         <div
-                            className="absolute inset-y-0 left-0 bg-white rounded-full transition-all duration-100"
+                            className="absolute inset-y-0 left-0 bg-primary rounded-full transition-all duration-100"
                             style={{ width: `${progress}%` }}
                         />
                         <input
@@ -140,7 +140,7 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
                     </div>
 
                     {/* Time display */}
-                    <div className="flex justify-between text-xs text-zinc-500 font-mono">
+                    <div className="flex justify-between text-xs text-muted-foreground font-mono">
                         <span>{formatTime(currentTime)}</span>
                         <span>{formatTime(duration)}</span>
                     </div>
@@ -151,7 +151,7 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
                     {/* Playback Speed */}
                     <button
                         onClick={cyclePlaybackRate}
-                        className="px-2.5 py-1.5 text-xs font-semibold text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors min-w-[44px]"
+                        className="px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground bg-secondary hover:bg-secondary/70 rounded-lg transition-colors min-w-[44px]"
                         title="Change playback speed"
                     >
                         {playbackRate}x
@@ -160,7 +160,7 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
                     {/* Mute Button */}
                     <button
                         onClick={toggleMute}
-                        className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                        className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
                         aria-label={isMuted ? "Unmute" : "Mute"}
                     >
                         {isMuted ? (
