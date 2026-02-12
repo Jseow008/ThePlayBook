@@ -106,7 +106,7 @@ export default function ContinueReadingPage() {
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* Header */}
-            <div className="bg-background/80 backdrop-blur-md sticky top-0 z-40">
+            <div className="bg-background/80 backdrop-blur-md sticky top-12 lg:top-0 z-40">
                 <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
