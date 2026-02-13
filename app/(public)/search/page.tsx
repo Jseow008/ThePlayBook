@@ -64,7 +64,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
             </p>
 
             {results.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {results.map((item) => (
                         <ContentCard key={item.id} item={item} />
                     ))}
@@ -93,7 +93,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
 // Loading skeleton for results
 function ResultsSkeleton() {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {[...Array(12)].map((_, i) => (
                 <div key={i} className="aspect-[2/3] bg-zinc-800/50 rounded-lg animate-pulse" />
             ))}
@@ -123,7 +123,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <div className="min-h-screen bg-background">
             {/* Search Header */}
             <div className="pt-8 pb-6 px-6 lg:px-12 xl:px-16">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-3xl mx-auto">
                     <div className="flex flex-col gap-4 mb-6">
                         <h1 className="text-3xl font-bold text-foreground font-display">
                             {category ? `${category} Content` : "Search"}
@@ -145,6 +145,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             category={category}
                             type={type}
                             placeholder={category ? `Search in ${category}...` : "Search by title, author, or keyword..."}
+                            autoFocus
                         />
                     </div>
 
@@ -166,7 +167,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     }}
                                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
                                         ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-secondary/30 text-muted-foreground border-border/70 hover:border-border hover:text-foreground"
+                                        : "bg-white/[0.05] text-muted-foreground border-transparent hover:bg-white/[0.08] hover:text-foreground"
                                         }`}
                                 >
                                     {t}
@@ -179,7 +180,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             {/* Results */}
             <div className="px-6 lg:px-12 xl:px-16 pb-12">
-                <div className="max-w-7xl mx-auto">
+                <div className="max-w-3xl mx-auto">
                     {hasSearch ? (
                         <Suspense fallback={<ResultsSkeleton />}>
                             <SearchResults query={query} category={category} type={type} />
@@ -205,7 +206,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                             <Link
                                                 key={cat}
                                                 href={`/search?category=${encodeURIComponent(cat as string)}`}
-                                                className="px-4 h-9 inline-flex items-center bg-secondary/30 hover:bg-secondary/50 text-foreground rounded-full text-sm font-medium transition-colors border border-border/70 hover:border-border"
+                                                className="px-4 h-9 inline-flex items-center hover:bg-secondary/30 text-foreground rounded-full text-sm font-medium transition-colors border border-border/70 hover:border-border"
                                             >
                                                 {cat}
                                             </Link>

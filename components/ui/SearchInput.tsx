@@ -13,13 +13,15 @@ interface SearchInputProps {
     category?: string;
     type?: string;
     placeholder?: string;
+    autoFocus?: boolean;
 }
 
 export function SearchInput({
     initialQuery = "",
     category,
     type,
-    placeholder = "Search by title, author, or keyword..."
+    placeholder = "Search by title, author, or keyword...",
+    autoFocus = false
 }: SearchInputProps) {
     const router = useRouter();
 
@@ -138,6 +140,7 @@ export function SearchInput({
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                         placeholder={placeholder}
+                        autoFocus={autoFocus}
                         className={cn(
                             "w-full h-14 pl-12 pr-12 rounded-xl bg-card border text-foreground placeholder:text-muted-foreground",
                             "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg",
