@@ -43,7 +43,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     if (items.length === 0) {
         return (
-            <div className="relative h-[85vh] min-h-[500px] w-full overflow-hidden bg-zinc-900 flex items-center justify-center">
+            <div className="relative h-[70vh] md:h-[80vh] lg:h-[85vh] min-h-[500px] w-full overflow-hidden bg-zinc-900 flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
@@ -66,7 +66,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const description = quickMode?.hook || quickMode?.big_idea || `Experience this ${APP_NAME} content today.`;
 
     return (
-        <div className="relative h-[85vh] min-h-[500px] w-full overflow-hidden bg-background">
+        <div className="relative h-[70vh] md:h-[80vh] lg:h-[85vh] min-h-[500px] w-full overflow-hidden bg-background">
             {/* Background Image Layer */}
             <div
                 className="absolute inset-0 w-full h-full"
@@ -159,7 +159,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Description */}
                         <p
                             className={cn(
-                                "text-base md:text-xl text-white/90 font-medium leading-relaxed drop-shadow-md max-w-xl transition-all duration-700 delay-300 line-clamp-3 md:line-clamp-none",
+                                "text-base md:text-xl text-white/90 font-medium leading-relaxed drop-shadow-md max-w-xl transition-all duration-700 delay-300",
                                 isTransitioning ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
                             )}
                         >
