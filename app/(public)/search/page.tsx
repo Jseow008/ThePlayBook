@@ -7,7 +7,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { Sparkles, Search } from "lucide-react";
+import { Sparkles, Search, ArrowLeft } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import Link from "next/link";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -121,102 +121,105 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Search Header */}
-            <div className="pt-8 pb-6 px-6 lg:px-12 xl:px-16">
-                <div className="max-w-3xl mx-auto">
-                    <div className="flex flex-col gap-4 mb-6">
-                        <h1 className="text-3xl font-bold text-foreground font-display">
-                            {category ? `${category} Content` : "Search"}
-                        </h1>
-                        {category && (
-                            <Link
-                                href="/categories"
-                                className="text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-                            >
-                                ← Browse all categories
-                            </Link>
-                        )}
-                    </div>
-
-                    {/* Smart Search Input */}
-                    <div className="mb-6">
-                        <SearchInput
-                            initialQuery={query || ""}
-                            category={category}
-                            type={type}
-                            placeholder={category ? `Search in ${category}...` : "Search by title, author, or keyword..."}
-                            autoFocus
-                        />
-                    </div>
-
-                    {/* Type Filters */}
-                    <div className="flex flex-wrap gap-2 mb-8">
-                        {contentTypes.map((t) => {
-                            const isActive = (type === t) || (!type && t === "All") || (type && type.toLowerCase() === t.toLowerCase()) || (t === "All" && type === "All");
-
-                            return (
-                                <Link
-                                    key={t}
-                                    href={{
-                                        pathname: '/search',
-                                        query: {
-                                            ...(query ? { q: query } : {}),
-                                            ...(category ? { category } : {}),
-                                            type: t === "All" ? undefined : t.toLowerCase()
-                                        }
-                                    }}
-                                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-white/[0.05] text-muted-foreground border-transparent hover:bg-white/[0.08] hover:text-foreground"
-                                        }`}
-                                >
-                                    {t}
-                                </Link>
-                            );
-                        })}
-                    </div>
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
                 </div>
-            </div>
-
-            {/* Results */}
-            <div className="px-6 lg:px-12 xl:px-16 pb-12">
-                <div className="max-w-3xl mx-auto">
-                    {hasSearch ? (
-                        <Suspense fallback={<ResultsSkeleton />}>
-                            <SearchResults query={query} category={category} type={type} />
-                        </Suspense>
-                    ) : (
-                        <div className="text-center py-16">
-                            <div className="inline-flex items-center justify-center p-4 bg-secondary/30 rounded-full mb-6 border border-border/70">
-                                <Sparkles className="size-8 text-primary" />
-                            </div>
-                            <p className="text-foreground text-xl font-medium mb-2">Discover Something New</p>
-                            <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                                Search for books, podcasts, and articles, or explore by category below.
-                            </p>
-
-                            {/* Category Suggestions */}
-                            {categories.length > 0 && (
-                                <div className="max-w-2xl mx-auto">
-                                    <p className="text-sm text-muted-foreground mb-4 uppercase tracking-wider">
-                                        Popular Categories
-                                    </p>
-                                    <div className="flex flex-wrap justify-center gap-2">
-                                        {categories.map((cat) => (
-                                            <Link
-                                                key={cat}
-                                                href={`/search?category=${encodeURIComponent(cat as string)}`}
-                                                className="px-4 h-9 inline-flex items-center hover:bg-secondary/30 text-foreground rounded-full text-sm font-medium transition-colors border border-border/70 hover:border-border"
-                                            >
-                                                {cat}
-                                            </Link>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                <div className="flex flex-col gap-4 mb-6">
+                    <h1 className="text-3xl font-bold text-foreground font-display">
+                        {category ? `${category} Content` : "Search"}
+                    </h1>
+                    {category && (
+                        <Link
+                            href="/categories"
+                            className="text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
+                        >
+                            ← Browse all categories
+                        </Link>
                     )}
                 </div>
+
+                {/* Smart Search Input */}
+                <div className="mb-6">
+                    <SearchInput
+                        initialQuery={query || ""}
+                        category={category}
+                        type={type}
+                        placeholder={category ? `Search in ${category}...` : "Search by title, author, or keyword..."}
+                        autoFocus
+                    />
+                </div>
+
+                {/* Type Filters */}
+                <div className="flex flex-wrap gap-2 mb-8">
+                    {contentTypes.map((t) => {
+                        const isActive = (type === t) || (!type && t === "All") || (type && type.toLowerCase() === t.toLowerCase()) || (t === "All" && type === "All");
+
+                        return (
+                            <Link
+                                key={t}
+                                href={{
+                                    pathname: '/search',
+                                    query: {
+                                        ...(query ? { q: query } : {}),
+                                        ...(category ? { category } : {}),
+                                        type: t === "All" ? undefined : t.toLowerCase()
+                                    }
+                                }}
+                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "bg-white/[0.05] text-muted-foreground border-transparent hover:bg-white/[0.08] hover:text-foreground"
+                                    }`}
+                            >
+                                {t}
+                            </Link>
+                        );
+                    })}
+                </div>
+
+                {/* Results */}
+                {hasSearch ? (
+                    <Suspense fallback={<ResultsSkeleton />}>
+                        <SearchResults query={query} category={category} type={type} />
+                    </Suspense>
+                ) : (
+                    <div className="text-center py-16">
+                        <div className="inline-flex items-center justify-center p-4 bg-secondary/30 rounded-full mb-6 border border-border/70">
+                            <Sparkles className="size-8 text-primary" />
+                        </div>
+                        <p className="text-foreground text-xl font-medium mb-2">Discover Something New</p>
+                        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                            Search for books, podcasts, and articles, or explore by category below.
+                        </p>
+
+                        {/* Category Suggestions */}
+                        {categories.length > 0 && (
+                            <div className="max-w-2xl mx-auto">
+                                <p className="text-sm text-muted-foreground mb-4 uppercase tracking-wider">
+                                    Popular Categories
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {categories.map((cat) => (
+                                        <Link
+                                            key={cat}
+                                            href={`/search?category=${encodeURIComponent(cat as string)}`}
+                                            className="px-4 h-9 inline-flex items-center hover:bg-secondary/30 text-foreground rounded-full text-sm font-medium transition-colors border border-border/70 hover:border-border"
+                                        >
+                                            {cat}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

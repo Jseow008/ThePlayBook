@@ -38,7 +38,7 @@ export function ContentPreview({
     return (
         <div className="min-h-screen bg-background text-foreground pb-28 lg:pb-20">
             {/* Container */}
-            <div className="max-w-3xl mx-auto px-5 sm:px-8 py-8">
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* ── Back to Library ── */}
                 <div className="mb-8">
                     <Link

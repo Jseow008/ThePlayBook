@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
     Activity,
+    ArrowLeft,
     Briefcase,
     Brain,
     CircleDollarSign,
@@ -90,16 +91,8 @@ export default async function CategoriesPage() {
         .sort((a, b) => categoryCounts[b] - categoryCounts[a]) // Soft by popularity
         .map((name, index) => {
             const count = categoryCounts[name];
-            let span = "col-span-1 row-span-1";
-
-            // Dynamic Sizing Logic
-            if (count >= 10 || index === 0) {
-                // Verified "Star" categories (or the top 1 if none > 10)
-                span = "md:col-span-2 md:row-span-2";
-            } else if (count >= 5 || index <= 2) {
-                // "Major" categories (or top 3)
-                span = "md:col-span-2";
-            }
+            // Uniform Grid Logic
+            const span = "col-span-1";
 
             const style = CATEGORY_STYLES[name] || {
                 icon: Tag,
@@ -116,22 +109,27 @@ export default async function CategoriesPage() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            {/* Header */}
-            <div className="pt-8 pb-6 px-6 lg:px-12 xl:px-16">
-                <div className="max-w-7xl mx-auto">
-                    <h1 className="text-3xl font-bold text-foreground mb-2 font-display">
-                        Browse Categories
-                    </h1>
-                    <p className="text-muted-foreground">
-                        Explore our curated library by topic
-                    </p>
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
                 </div>
-            </div>
+                <h1 className="text-3xl font-bold text-foreground mb-2 font-display">
+                    Browse Categories
+                </h1>
+                <p className="text-muted-foreground mb-8">
+                    Explore our curated library by topic
+                </p>
 
-            {/* Content */}
-            <div className="max-w-7xl mx-auto px-6 lg:px-12 xl:px-16 pb-20">
+                {/* Content */}
                 {categories.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-[180px] gap-4 grid-flow-dense">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[160px] gap-4">
                         {categories.map((category, index) => {
                             const Icon = category.icon;
                             // Stagger animation delay
@@ -143,19 +141,16 @@ export default async function CategoriesPage() {
                                     href={`/search?category=${encodeURIComponent(category.name)}`}
                                     className={`
                                         group relative overflow-hidden rounded-3xl border border-border/60
-                                        bg-secondary/20 backdrop-blur-xl transition-all duration-500
-                                        hover:scale-[1.02] hover:border-border hover:shadow-2xl hover:shadow-black/40
+                                        bg-secondary/20 backdrop-blur-xl transition-all duration-300
+                                        hover:scale-[1.02] hover:shadow-lg hover:${category.color.split(" ")[0].replace("text-", "border-")}
                                         animate-fade-in opacity-0
                                         flex flex-col justify-between p-6
-                                        ${category.span || "col-span-1 row-span-1"}
+                                        col-span-1
                                     `}
                                     style={{ animationDelay }}
                                 >
-                                    {/* Ambient Glow Background */}
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${category.color.split(" ")[1]} ${category.color.split(" ")[2]} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-
-                                    {/* Subtle permanent tint */}
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${category.color.split(" ")[1]} ${category.color.split(" ")[2]} opacity-[0.03] group-hover:opacity-0 transition-opacity duration-500`} />
+                                    {/* Subtle Hover Gradient (very light) */}
+                                    <div className={`absolute inset-0 bg-gradient-to-br ${category.color.split(" ")[1]} ${category.color.split(" ")[2]} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
 
                                     {/* Content */}
                                     <div className="relative z-10 flex items-start justify-between">
