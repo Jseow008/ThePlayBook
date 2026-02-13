@@ -235,7 +235,5 @@ These features are **not in MVP** but may be added later:
 1. **PDF Export** — Download content as PDF
 2. **Offline Cache** — IndexedDB for offline reading
 3. **Full-text Search** — Meilisearch integration
-4. **User Accounts** — For synced progress across devices
-5. **Comments** — Discussion on content items
-6. **Newsletter** — Email notifications for new content
-7. **Analytics** — View counts and reading time metrics
+4. **Newsletter** — Email notifications for new content
+5. **Analytics** — View counts and reading time metrics
