@@ -62,7 +62,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
         <section
             ref={sectionRef}
             className={cn(
-                "py-6 group/lane transition-all duration-700 transform",
+                "py-3 md:py-6 group/lane transition-all duration-700 transform",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
             )}
         >

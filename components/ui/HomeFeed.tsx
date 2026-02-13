@@ -31,11 +31,11 @@ export function HomeFeed({
             <HeroCarousel items={featuredItems} />
 
             <div className={cn(
-                "relative z-10 pb-16 space-y-8 transition-all duration-500",
+                "relative z-10 pb-16 space-y-4 md:space-y-8 transition-all duration-500",
                 featuredItems.length > 0 ? "-mt-8 pt-0" : "pt-24"
             )}>
                 {/* Standard Feed View */}
-                <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="space-y-4 md:space-y-8 animate-in fade-in duration-500">
                     {/* New / Latest Additions */}
                     <ContentLane
                         title={
