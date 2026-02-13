@@ -83,10 +83,10 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         isTransitioning ? "opacity-0" : "opacity-100"
                     )}
                 >
-                    {activeItem.cover_image_url ? (
+                    {(activeItem.hero_image_url || activeItem.cover_image_url) ? (
                         <div className="absolute inset-0">
                             <Image
-                                src={activeItem.cover_image_url}
+                                src={(activeItem.hero_image_url || activeItem.cover_image_url)!}
                                 alt={activeItem.title}
                                 fill
                                 priority={activeIndex === 0}

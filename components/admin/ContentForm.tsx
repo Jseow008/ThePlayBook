@@ -19,6 +19,7 @@ import {
     FileText,
     UploadCloud,
     Image as ImageIcon,
+    Monitor,
     Music,
 } from "lucide-react";
 import { ArtifactEditor, Artifact } from "./ArtifactEditor";
@@ -66,6 +67,7 @@ interface ContentFormData {
     category: string;
     source_url: string;
     cover_image_url: string;
+    hero_image_url: string;
     audio_url: string;
     duration_seconds: number | null;
     status: "draft" | "verified";
@@ -113,6 +115,7 @@ const defaultFormData: ContentFormData = {
     category: "",
     source_url: "",
     cover_image_url: "",
+    hero_image_url: "",
     audio_url: "",
     duration_seconds: null,
     status: "draft",
@@ -250,6 +253,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
     const [expandedSegment, setExpandedSegment] = useState<string | null>(null); // Use ID instead of index
     const [isUploading, setIsUploading] = useState(false);
+    const [isUploadingHero, setIsUploadingHero] = useState(false);
     const [isUploadingAudio, setIsUploadingAudio] = useState(false);
 
     // DnD Sensors
@@ -389,6 +393,38 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
         }
     };
 
+    const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploadingHero(true);
+        setError("");
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("/api/admin/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || "Upload failed");
+            }
+
+            const data = await response.json();
+            updateField("hero_image_url", data.url);
+        } catch (err: unknown) {
+            console.error("Hero image upload failed:", err);
+            const message = err instanceof Error ? err.message : "Failed to upload hero image. Please try again.";
+            setError(message);
+        } finally {
+            setIsUploadingHero(false);
+        }
+    };
+
     const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -446,6 +482,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
             duration_seconds: formData.duration_seconds || null,
             source_url: formData.source_url || null,
             cover_image_url: formData.cover_image_url || null,
+            hero_image_url: formData.hero_image_url || null,
             audio_url: formData.audio_url || null,
             category: formData.category || null,
         };
@@ -632,11 +669,12 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                         )}
                     </div>
 
-                    {/* Cover Image */}
+                    {/* Cover Image (Portrait - for Content Cards) */}
                     <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Cover Image
+                        <label className="block text-sm font-medium text-zinc-700 mb-1">
+                            Card Image (2:3 Portrait)
                         </label>
+                        <p className="text-xs text-zinc-400 mb-2">Portrait image for content cards. Recommended: 800×1200.</p>
                         <div className="space-y-4">
                             {/* Upload Area */}
                             <label
@@ -708,6 +746,82 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                             <p className="mt-1 text-sm text-red-600">{fieldErrors.cover_image_url}</p>
                         )}
                     </div>
+
+                    {/* Hero Image (Landscape - for Featured Carousel) */}
+                    {formData.is_featured && (
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-zinc-700 mb-1">
+                                Hero Image (16:9 Landscape)
+                            </label>
+                            <p className="text-xs text-zinc-400 mb-2">Landscape image for the homepage carousel. Recommended: 1920×1080.</p>
+                            <div className="space-y-4">
+                                {/* Upload Area */}
+                                <label
+                                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingHero
+                                            ? "bg-zinc-50 border-zinc-300"
+                                            : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
+                                        }`}
+                                >
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        {isUploadingHero ? (
+                                            <>
+                                                <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
+                                                <p className="text-sm text-zinc-500">Uploading...</p>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Monitor className="w-8 h-8 mb-2 text-zinc-400" />
+                                                <p className="text-sm text-zinc-500 font-medium">Click to upload hero image</p>
+                                                <p className="text-xs text-zinc-400 mt-1">16:9 landscape • PNG, JPG or WebP</p>
+                                            </>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={handleHeroImageUpload}
+                                        disabled={isUploadingHero}
+                                    />
+                                </label>
+
+                                {/* Manual URL Input */}
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                        <Monitor className="w-4 h-4 text-zinc-400" />
+                                    </div>
+                                    <input
+                                        type="url"
+                                        value={formData.hero_image_url}
+                                        onChange={(e) => updateField("hero_image_url", e.target.value)}
+                                        placeholder="Or paste hero image URL directly..."
+                                        className="w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                                    />
+                                </div>
+
+                                {/* Preview */}
+                                {formData.hero_image_url && (
+                                    <div className="relative w-full max-w-md aspect-video rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 shadow-sm">
+                                        <img
+                                            src={formData.hero_image_url}
+                                            alt="Hero Preview"
+                                            className="w-full h-full object-cover"
+                                            onError={(e) => {
+                                                (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225' viewBox='0 0 400 225'%3E%3Crect fill='%23f4f4f5' width='400' height='225'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1aa' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => updateField("hero_image_url", "")}
+                                            className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-red-600 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Audio File (Read For Me) */}
                     <div>

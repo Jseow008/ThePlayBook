@@ -23,6 +23,7 @@ export function ContentPreview({
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
     const [showAllTakeaways, setShowAllTakeaways] = useState(false);
+    const [showFullHook, setShowFullHook] = useState(false);
 
     // Filter out empty takeaways
     const activeTakeaways =
@@ -126,20 +127,28 @@ export function ContentPreview({
                     <div className="space-y-8">
                         {/* Hook */}
                         {quickMode.hook && (
-                            <blockquote className="text-base md:text-lg font-serif italic leading-relaxed text-muted-foreground pl-6 border-l-2 border-primary/30">
-                                &ldquo;{quickMode.hook}&rdquo;
-                            </blockquote>
+                            <div className="relative pl-5 py-4 pr-6 rounded-r-xl border-l-[3px] border-primary/50 bg-secondary/30">
+                                <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
+                                    {quickMode.hook.length > 150 && !showFullHook ? (
+                                        <>
+                                            {quickMode.hook.slice(0, 150)}...
+                                            <span className="inline-block ml-2">
+                                                <button
+                                                    onClick={() => setShowFullHook(true)}
+                                                    className="font-medium text-primary hover:underline text-sm"
+                                                >
+                                                    Read more
+                                                </button>
+                                            </span>
+                                        </>
+                                    ) : (
+                                        quickMode.hook
+                                    )}
+                                </p>
+                            </div>
                         )}
 
-                        {/* Big Idea */}
-                        <div className="bg-card/60 rounded-2xl p-6 sm:p-8 border border-border/60">
-                            <h3 className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">
-                                The Big Idea
-                            </h3>
-                            <p className="text-lg md:text-xl text-foreground leading-relaxed">
-                                {quickMode.big_idea}
-                            </p>
-                        </div>
+
 
                         {/* Key Takeaways */}
                         {activeTakeaways.length > 0 && (
@@ -195,19 +204,19 @@ export function ContentPreview({
             </div>
 
             {/* ── Sticky Mobile CTA ── */}
-            <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-lg border-t border-border/60 p-4 flex gap-3 safe-area-bottom">
+            <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 p-3 flex gap-3 safe-area-bottom">
                 <Link
                     href={`/read/${item.id}`}
-                    className="flex-1 inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground font-bold text-base transition-transform active:scale-95"
+                    className="flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-secondary-foreground font-semibold text-base border border-border/50 hover:bg-secondary/80 transition-all active:scale-95 shadow-sm"
                 >
-                    <BookOpen className="size-5" />
+                    <BookOpen className="size-4" />
                     Read
                 </Link>
                 {onSpinAgain && (
                     <button
                         onClick={onSpinAgain}
                         disabled={isSpinning}
-                        className="h-12 w-12 flex items-center justify-center rounded-xl bg-secondary/60 border border-border/50 text-foreground transition-all active:scale-95"
+                        className="h-11 w-11 flex items-center justify-center rounded-xl bg-secondary/40 border border-border/50 text-foreground transition-all active:scale-95"
                     >
                         <CtaIcon
                             className={`size-5 ${isSpinning ? "animate-spin" : ""}`}

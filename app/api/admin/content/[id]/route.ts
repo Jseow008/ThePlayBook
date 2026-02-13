@@ -18,6 +18,7 @@ const UpdateContentSchema = z.object({
     category: z.string().optional().nullable(),
     source_url: z.string().url().optional().nullable().or(z.literal("")),
     cover_image_url: z.string().url().optional().nullable().or(z.literal("")),
+    hero_image_url: z.string().url().optional().nullable().or(z.literal("")),
     audio_url: z.string().url().optional().nullable().or(z.literal("")),
     duration_seconds: z.number().int().positive().optional().nullable(),
     status: z.enum(["draft", "verified"]).optional(),
@@ -144,6 +145,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (contentData.category !== undefined) updateData.category = contentData.category || null;
         if (contentData.source_url !== undefined) updateData.source_url = contentData.source_url || null;
         if (contentData.cover_image_url !== undefined) updateData.cover_image_url = contentData.cover_image_url || null;
+        if (contentData.hero_image_url !== undefined) updateData.hero_image_url = contentData.hero_image_url || null;
         if (contentData.audio_url !== undefined) updateData.audio_url = contentData.audio_url || null;
         if (contentData.duration_seconds !== undefined) updateData.duration_seconds = contentData.duration_seconds;
         if (contentData.status !== undefined) updateData.status = contentData.status;

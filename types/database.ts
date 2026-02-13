@@ -32,6 +32,7 @@ export interface Database {
                     duration_seconds: number | null;
                     author: string | null;
                     cover_image_url: string | null;
+                    hero_image_url: string | null;
                     category: string | null;
                     is_featured: boolean;
                     audio_url: string | null;
@@ -49,6 +50,7 @@ export interface Database {
                     duration_seconds?: number | null;
                     author?: string | null;
                     cover_image_url?: string | null;
+                    hero_image_url?: string | null;
                     category?: string | null;
                     is_featured?: boolean;
                     audio_url?: string | null;
@@ -66,6 +68,7 @@ export interface Database {
                     duration_seconds?: number | null;
                     author?: string | null;
                     cover_image_url?: string | null;
+                    hero_image_url?: string | null;
                     category?: string | null;
                     is_featured?: boolean;
                     audio_url?: string | null;

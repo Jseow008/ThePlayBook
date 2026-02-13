@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
-import type { ContentItemWithSegments } from "@/types/domain";
+import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 
 /**
@@ -19,6 +19,7 @@ interface ReaderViewProps {
 }
 
 export function ReaderView({ content }: ReaderViewProps) {
+    const quickMode = content.quick_mode_json as QuickMode | null;
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(0);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const { saveReadingProgress } = useReadingProgress();
@@ -116,6 +117,18 @@ export function ReaderView({ content }: ReaderViewProps) {
                     segmentsTotal={content.segments.length}
                     segmentsRead={maxSegmentIndex + 1}
                 />
+
+                {/* Big Idea - Context before segments */}
+                {quickMode?.big_idea && (
+                    <div className="bg-card/40 rounded-xl p-6 sm:p-8 border border-border/40 mb-8">
+                        <h3 className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">
+                            The Big Idea
+                        </h3>
+                        <p className="text-lg sm:text-xl text-foreground/90 leading-relaxed">
+                            {quickMode.big_idea}
+                        </p>
+                    </div>
+                )}
 
                 {/* Divider */}
                 <div className="border-t border-border my-6" />
