@@ -68,7 +68,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
         >
             {/* Header */}
             <div className="flex items-center justify-between mb-4 px-6 lg:px-16">
-                <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2 font-display">
+                <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2 font-display tracking-tight">
                     {title}
                     {viewAllHref && (
                         <Link

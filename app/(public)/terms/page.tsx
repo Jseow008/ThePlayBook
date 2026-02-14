@@ -18,26 +18,29 @@ export default function TermsPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <main className="max-w-3xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
+            <main className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* Back link */}
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-12"
-                >
-                    <ArrowLeft className="size-4" />
-                    Back to Home
-                </Link>
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
+                </div>
 
                 {/* Header */}
                 <div className="mb-14">
-                    <h1 className="text-3xl md:text-4xl font-bold font-display mb-3">Terms of Service</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold font-display tracking-tight leading-tight mb-3">Terms of Service</h1>
                     <p className="text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
                 </div>
 
                 {/* Content */}
                 <div className="space-y-12">
                     <section>
-                        <h2 className="text-xl font-semibold mb-4 font-display">Welcome to NETFLUX</h2>
+                        <h2 className="text-xl font-semibold mb-4 font-display tracking-tight">Welcome to NETFLUX</h2>
                         <p className="text-muted-foreground leading-relaxed">
                             By accessing and using NETFLUX (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
                         </p>

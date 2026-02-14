@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, ListPlus, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
@@ -118,112 +118,108 @@ export default function MyListPage() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            {/* Header */}
-            <div className="sticky top-12 lg:top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border/70">
-                <div className="max-w-7xl mx-auto px-6 lg:px-16 py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <Link
-                                href="/"
-                                className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors rounded-md hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                            >
-                                <ArrowLeft className="size-5" />
-                            </Link>
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary/60 rounded-lg border border-border/70">
-                                    <ListPlus className="size-6 text-zinc-100" />
-                                </div>
-                                <div>
-                                    <h1 className="text-2xl font-bold text-foreground">My List</h1>
-                                    <p className="text-sm text-muted-foreground">
-                                        Content you&apos;ve saved for later
-                                    </p>
-                                </div>
-                            </div>
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
+                </div>
+
+                {/* Header */}
+                <div className="flex flex-col gap-2 mb-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">My List</h1>
                         </div>
 
-                        {/* Stats Summary */}
+                        {/* Stats Summary - Desktop only for now to save space on mobile */}
                         {!isLoading && allItems.length > 0 && (
-                            <div className="hidden md:flex items-center gap-6 text-sm text-muted-foreground">
-                                <div className="flex flex-col items-center">
-                                    <span className="font-bold text-foreground text-lg">{allItems.length}</span>
-                                    <span className="text-xs uppercase tracking-wider">Saved Items</span>
-                                </div>
+                            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 px-3 py-1 rounded-full border border-border/50">
+                                <span className="font-bold text-foreground">{allItems.length}</span>
+                                <span className="text-xs uppercase tracking-wider">Saved Items</span>
                             </div>
                         )}
                     </div>
-
-                    {/* Toolbar */}
-                    {!isLoading && allItems.length > 0 && (
-                        <div className="mt-2">
-                            <LibraryToolbar
-                                searchQuery={searchQuery}
-                                onSearchChange={setSearchQuery}
-                                activeFilter={activeFilter}
-                                onFilterChange={setActiveFilter}
-                                activeSort={activeSort}
-                                onSortChange={setActiveSort}
-                                className="pt-2"
-                            />
-                        </div>
-                    )}
+                    <p className="text-muted-foreground">
+                        Content you saved
+                    </p>
                 </div>
-            </div>
 
-            {/* Content */}
-            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8">
-                {isLoading ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                        {[...Array(8)].map((_, i) => (
-                            <div key={i} className="aspect-[2/3] bg-zinc-800/50 rounded-lg animate-pulse" />
-                        ))}
+                {/* Toolbar */}
+                {!isLoading && allItems.length > 0 && (
+                    <div className="mb-8">
+                        <LibraryToolbar
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            activeFilter={activeFilter}
+                            onFilterChange={setActiveFilter}
+                            activeSort={activeSort}
+                            onSortChange={setActiveSort}
+                            className="w-full"
+                        />
                     </div>
-                ) : allItems.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-center">
-                        <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
-                            <Plus className="size-10 text-muted-foreground" />
-                        </div>
-                        <h2 className="text-xl font-semibold text-foreground mb-2">
-                            Your list is empty
-                        </h2>
-                        <p className="text-muted-foreground mb-8 max-w-sm">
-                            Add books, podcasts, and articles to your list so you can easily find them later.
-                        </p>
-                        <Link
-                            href="/"
-                            className="inline-flex items-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                        >
-                            Browse Library
-                        </Link>
-                    </div>
-                ) : filteredItems.length === 0 ? (
-                    <div className="text-center py-20">
-                        <p className="text-muted-foreground">No items match your search.</p>
-                        <button
-                            onClick={() => { setSearchQuery(""); setActiveFilter("all"); }}
-                            className="mt-3 inline-flex h-9 items-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm text-foreground hover:bg-secondary/50 transition-colors"
-                        >
-                            Clear filters
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        <div className="mb-6 flex items-center justify-between">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                Showing {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
-                            </p>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                            {filteredItems.map((item) => (
-                                <ContentCard
-                                    key={item.id}
-                                    item={item}
-                                    onRemove={(id) => removeFromMyList(id)}
-                                />
+                )}
+
+                {/* Content */}
+                <div>
+                    {isLoading ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            {[...Array(8)].map((_, i) => (
+                                <div key={i} className="aspect-[2/3] bg-zinc-800/50 rounded-lg animate-pulse" />
                             ))}
                         </div>
-                    </>
-                )}
+                    ) : allItems.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
+                            <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
+                                <Plus className="size-10 text-muted-foreground" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-foreground mb-2">
+                                Your list is empty
+                            </h2>
+                            <p className="text-muted-foreground mb-8 max-w-sm">
+                                Add books, podcasts, and articles to your list so you can easily find them later.
+                            </p>
+                            <Link
+                                href="/"
+                                className="inline-flex items-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            >
+                                Browse Library
+                            </Link>
+                        </div>
+                    ) : filteredItems.length === 0 ? (
+                        <div className="text-center py-20">
+                            <p className="text-muted-foreground">No items match your search.</p>
+                            <button
+                                onClick={() => { setSearchQuery(""); setActiveFilter("all"); }}
+                                className="mt-3 inline-flex h-9 items-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm text-foreground hover:bg-secondary/50 transition-colors"
+                            >
+                                Clear filters
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="mb-4 flex items-center justify-between">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                                    Showing {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
+                                </p>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                {filteredItems.map((item) => (
+                                    <ContentCard
+                                        key={item.id}
+                                        item={item}
+                                        onRemove={(id) => removeFromMyList(id)}
+                                    />
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
         </div>
     );

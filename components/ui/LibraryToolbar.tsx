@@ -25,7 +25,7 @@ export function LibraryToolbar({
     return (
         <div className={cn("flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between py-4", className)}>
             {/* Search */}
-            <div className="relative w-full lg:w-96 group">
+            <div className="relative w-full lg:w-64 group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
                 <input
                     type="text"

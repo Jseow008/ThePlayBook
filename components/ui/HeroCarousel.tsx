@@ -115,7 +115,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             )}
                         >
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-display font-bold text-lg">
+                                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-brand font-bold text-lg">
                                     L
                                 </div>
                                 <span className="text-sm font-bold tracking-[0.2em] text-zinc-400 uppercase">
@@ -127,7 +127,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Title */}
                         <h1
                             className={cn(
-                                "text-3xl md:text-5xl lg:text-7xl font-display font-bold text-white leading-[1.1] tracking-tight drop-shadow-2xl transition-all duration-700 delay-100 origin-left max-w-5xl",
+                                "text-3xl md:text-5xl lg:text-7xl font-display font-bold text-white leading-[1.1] tracking-tight md:tracking-[-0.02em] drop-shadow-2xl transition-all duration-700 delay-100 origin-left max-w-5xl",
                                 isTransitioning ? "opacity-0 scale-95 translate-y-4" : "opacity-100 scale-100 translate-y-0"
                             )}
                         >
@@ -141,25 +141,29 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 isTransitioning ? "opacity-0" : "opacity-100"
                             )}
                         >
-                            <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded text-sm font-semibold text-white uppercase tracking-wide">
+                            <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded text-sm font-semibold text-white uppercase tracking-wide flex-shrink-0">
                                 {activeItem.type}
                             </span>
-                            {activeItem.author && (
-                                <span className="text-white/80 text-sm md:text-base">
-                                    by <span className="font-semibold text-white">{activeItem.author}</span>
-                                </span>
-                            )}
-                            {activeItem.category && (
-                                <span className="text-white/60 text-sm">
-                                    • {activeItem.category}
-                                </span>
-                            )}
+
+                            {/* Group Author and Category for better wrapping */}
+                            <span className="text-white/80 text-sm md:text-base leading-snug">
+                                {activeItem.author && (
+                                    <>
+                                        by <span className="font-semibold text-white">{activeItem.author}</span>
+                                    </>
+                                )}
+                                {activeItem.category && (
+                                    <span className="text-white/60 ml-2">
+                                        • {activeItem.category}
+                                    </span>
+                                )}
+                            </span>
                         </div>
 
                         {/* Description */}
                         <p
                             className={cn(
-                                "text-base md:text-xl text-white/90 font-medium leading-relaxed drop-shadow-md max-w-xl transition-all duration-700 delay-300",
+                                "hidden md:block text-base md:text-xl text-white/90 font-medium leading-relaxed drop-shadow-md max-w-xl transition-all duration-700 delay-300",
                                 isTransitioning ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
                             )}
                         >

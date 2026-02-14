@@ -55,7 +55,7 @@ export function ContentFilters() {
                     onChange={(e) => updateFilters("featured", e.target.checked ? "true" : "all")}
                     className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
                 />
-                <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900">
+                <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900 whitespace-nowrap">
                     Featured Only
                 </span>
             </label>

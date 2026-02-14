@@ -133,7 +133,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     </Link>
                 </div>
                 <div className="flex flex-col gap-4 mb-6">
-                    <h1 className="text-3xl font-bold text-foreground font-display">
+                    <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
                         {category ? `${category} Content` : "Search"}
                     </h1>
                     {category && (

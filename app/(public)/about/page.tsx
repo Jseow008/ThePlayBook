@@ -16,19 +16,22 @@ export const metadata = {
 export default function AboutPage() {
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <main className="max-w-3xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
+            <main className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* Back link */}
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-12"
-                >
-                    <ArrowLeft className="size-4" />
-                    Back to Home
-                </Link>
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
+                </div>
 
                 {/* Hero */}
                 <div className="text-center mb-20 space-y-6">
-                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-b from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent font-display tracking-tight leading-tight">
+                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-b from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent font-display tracking-tight md:tracking-[-0.02em] leading-tight">
                         About NETFLUX
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
@@ -89,20 +92,16 @@ export default function AboutPage() {
                 <hr className="border-border/50 mb-16" />
 
                 {/* Philosophy */}
+                {/* Philosophy */}
                 <section className="mb-20 bg-secondary/20 border border-border/50 rounded-2xl p-8 md:p-10">
-                    <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <Sparkles className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-bold mb-4 font-display">The Philosophy</h2>
-                            <blockquote className="text-foreground/90 text-lg italic leading-relaxed">
-                                &ldquo;The faintest ink is more powerful than the strongest memory.&rdquo;
-                            </blockquote>
-                            <p className="text-muted-foreground mt-4 leading-relaxed">
-                                Ideas are only valuable if we can access them when we need them. NETFLUX is a living document—a place to capture wisdom before it fades.
-                            </p>
-                        </div>
+                    <div>
+                        <h2 className="text-xl font-bold mb-4 font-display">The Philosophy</h2>
+                        <blockquote className="text-foreground/90 text-lg italic leading-relaxed">
+                            &ldquo;The faintest ink is more powerful than the strongest memory.&rdquo;
+                        </blockquote>
+                        <p className="text-muted-foreground mt-4 leading-relaxed">
+                            Ideas are only valuable if we can access them when we need them. NETFLUX is a living document—a place to capture wisdom before it fades.
+                        </p>
                     </div>
                 </section>
 
@@ -115,6 +114,15 @@ export default function AboutPage() {
                         Start Exploring
                     </Link>
                 </section>
+
+                {/* Footer nav */}
+                <div className="mt-16 pt-8 border-t border-border/40 flex items-center justify-between text-sm text-muted-foreground">
+                    <span>&copy; {new Date().getFullYear()} NETFLUX</span>
+                    <div className="flex gap-6">
+                        <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+                        <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+                    </div>
+                </div>
             </main>
         </div>
     );

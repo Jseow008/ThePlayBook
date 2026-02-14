@@ -22,8 +22,9 @@
 
 ### 1.2 Typography
 
-* **UI Font:** `Inter` (Variable) — Navigation, buttons, headings
-* **Headings:** `Outfit` (Sans-Serif) — Modern, geometric, premium
+* **UI Font:** `Inter` (Variable) — Navigation, buttons
+* **Headings:** `Inter` (Sans-Serif) — Clean, legible, tight tracking `[-0.02em]`
+* **Brand:** `Outfit` (Sans-Serif) — Logo, branding elements
 * **Body:** `Inter` (Sans-Serif) — Clean, legible
 * **Prose Font:** `System Serif` / `Georgia` — Deep Mode reading content
 * **Weights:** Regular (400), Medium (500), Semibold (600)

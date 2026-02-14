@@ -120,7 +120,7 @@ export default async function CategoriesPage() {
                         <span>Back to Library</span>
                     </Link>
                 </div>
-                <h1 className="text-3xl font-bold text-foreground mb-2 font-display">
+                <h1 className="text-3xl font-bold text-foreground mb-2 font-display tracking-tight leading-tight">
                     Browse Categories
                 </h1>
                 <p className="text-muted-foreground mb-8">

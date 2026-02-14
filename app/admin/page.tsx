@@ -10,6 +10,7 @@ import { Plus, BookOpen, Headphones, FileText, Pencil, Eye, ChevronLeft, Chevron
 import { DeleteContentButton } from "@/components/admin/DeleteContentButton";
 import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { ContentFilters } from "@/components/admin/ContentFilters";
+import { AdminSearch } from "@/components/admin/AdminSearch";
 import { APP_NAME } from "@/lib/brand";
 
 // Type icons mapping
@@ -47,13 +48,14 @@ function StatusBadge({ status, deleted }: { status: string; deleted: boolean }) 
 export default async function AdminDashboardPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; status?: string; featured?: string }>;
+    searchParams: Promise<{ page?: string; status?: string; featured?: string; q?: string }>;
 }) {
     const supabase = getAdminClient();
     const params = await searchParams;
     const page = Number(params?.page) || 1;
     const statusFilter = params?.status;
     const featuredFilter = params?.featured === "true";
+    const searchQuery = params?.q || "";
 
     const PAGE_SIZE = 10;
     const from = (page - 1) * PAGE_SIZE;
@@ -86,6 +88,10 @@ export default async function AdminDashboardPage({
         query = query.eq("is_featured", true);
     }
 
+    if (searchQuery) {
+        query = query.or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%`);
+    }
+
     // Pagination
     const { data: contentItems, count, error } = await query
         .order("created_at", { ascending: false })
@@ -107,6 +113,7 @@ export default async function AdminDashboardPage({
         queryParams.set("page", newPage.toString());
         if (statusFilter) queryParams.set("status", statusFilter);
         if (featuredFilter) queryParams.set("featured", "true");
+        if (searchQuery) queryParams.set("q", searchQuery);
         return `/admin?${queryParams.toString()}`;
     };
 
@@ -119,11 +126,12 @@ export default async function AdminDashboardPage({
                     <p className="text-muted-foreground mt-1">Manage your {APP_NAME} content</p>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <AdminSearch />
                     <ContentFilters />
                     <Link
                         href="/admin/content/new"
-                        className="focus-ring inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                        className="focus-ring inline-flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-medium rounded-lg hover:bg-primary/90 transition-colors whitespace-nowrap"
                     >
                         <Plus className="w-4 h-4" />
                         New Content
@@ -152,7 +160,7 @@ export default async function AdminDashboardPage({
                 <div className="px-6 py-4 border-b border-zinc-200 flex justify-between items-center bg-white">
                     <div className="flex items-center gap-2">
                         <h2 className="font-semibold text-zinc-900">All Content</h2>
-                        {(statusFilter || featuredFilter) && (
+                        {(statusFilter || featuredFilter || searchQuery) && (
                             <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-xs font-medium text-zinc-600">
                                 Filtered
                             </span>

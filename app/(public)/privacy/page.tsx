@@ -18,26 +18,29 @@ export default function PrivacyPage() {
 
     return (
         <div className="min-h-screen bg-background text-foreground">
-            <main className="max-w-3xl mx-auto px-6 lg:px-12 py-12 lg:py-20">
+            <main className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* Back link */}
-                <Link
-                    href="/"
-                    className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-12"
-                >
-                    <ArrowLeft className="size-4" />
-                    Back to Home
-                </Link>
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
+                </div>
 
                 {/* Header */}
                 <div className="mb-14">
-                    <h1 className="text-3xl md:text-4xl font-bold font-display mb-3">Privacy Policy</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold font-display tracking-tight leading-tight mb-3">Privacy Policy</h1>
                     <p className="text-sm text-muted-foreground">Last updated: {lastUpdated}</p>
                 </div>
 
                 {/* Content */}
                 <div className="space-y-12">
                     <section>
-                        <h2 className="text-xl font-semibold mb-4 font-display">Overview</h2>
+                        <h2 className="text-xl font-semibold mb-4 font-display tracking-tight">Overview</h2>
                         <div className="space-y-4 text-muted-foreground leading-relaxed">
                             <p>
                                 NETFLUX (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard information when you visit our website.

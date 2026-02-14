@@ -43,7 +43,7 @@ export function SegmentContent({
         <article className="min-h-[60vh] flex flex-col animate-fade-in">
             {/* Segment Title */}
             {segment.title && (
-                <h2 className="text-3xl md:text-4xl font-bold font-display text-foreground mb-8 tracking-tight leading-tight">
+                <h2 className="text-3xl md:text-4xl font-bold font-display text-foreground mb-8 tracking-tight md:tracking-[-0.02em] leading-tight">
                     {segment.title}
                 </h2>
             )}

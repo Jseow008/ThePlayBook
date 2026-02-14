@@ -104,7 +104,8 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   --font-sans: var(--font-inter);
-  --font-display: var(--font-outfit);
+  --font-display: var(--font-inter);
+  --font-brand: var(--font-outfit);
 }
 
 /* --------------------------------------------------------------------------
