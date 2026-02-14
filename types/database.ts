@@ -229,6 +229,13 @@ export interface Database {
                 Args: Record<string, never>;
                 Returns: boolean;
             };
+            get_category_stats: {
+                Args: Record<string, never>;
+                Returns: {
+                    category: string;
+                    count: number;
+                }[];
+            };
         };
         Enums: {
             content_status: ContentStatus;

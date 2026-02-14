@@ -6,7 +6,7 @@
  */
 
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ReaderView } from "@/components/reader/ReaderView";
 import type { ContentItemWithSegments, SegmentFull, ArtifactSummary, QuickMode } from "@/types/domain";
 
@@ -14,16 +14,18 @@ interface PageProps {
     params: Promise<{ id: string }>;
 }
 
+export const revalidate = 300;
+
 export default async function ReadPage({ params }: PageProps) {
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = createPublicServerClient();
 
     // Fetch content with segments and artifacts
     const { data: content, error } = await supabase
         .from("content_item")
         .select(`
-            *,
-            segments:segment(*),
+            id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url,
+            segments:segment(id, item_id, order_index, title, markdown_body, start_time_sec, end_time_sec, deleted_at),
             artifacts:artifact(id, type, payload_schema, version)
         `)
         .eq("id", id)

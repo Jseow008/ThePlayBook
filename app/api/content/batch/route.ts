@@ -1,10 +1,12 @@
-import { createClient } from "@/lib/supabase/server";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 const BatchRequestSchema = z.object({
     ids: z.array(z.string().uuid()).min(1).max(50),
 });
+
+const CONTENT_BATCH_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, created_at";
 
 /**
  * POST /api/content/batch
@@ -17,11 +19,11 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { ids } = BatchRequestSchema.parse(body);
 
-        const supabase = await createClient();
+        const supabase = createPublicServerClient();
 
         const { data, error } = await supabase
             .from("content_item")
-            .select("*")
+            .select(CONTENT_BATCH_SELECT)
             .in("id", ids)
             .eq("status", "verified")
             .is("deleted_at", null);
@@ -34,7 +36,11 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        return NextResponse.json(data || []);
+        return NextResponse.json(data || [], {
+            headers: {
+                "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300"
+            }
+        });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(

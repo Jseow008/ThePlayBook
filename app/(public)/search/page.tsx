@@ -5,7 +5,7 @@
  * Supports filtering by category and type.
  */
 
-import { createClient } from "@/lib/supabase/server";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { Sparkles, Search, ArrowLeft } from "lucide-react";
 import type { ContentItem } from "@/types/database";
@@ -17,9 +17,11 @@ interface SearchPageProps {
     searchParams: Promise<{ q?: string; category?: string; type?: string }>;
 }
 
+const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url, duration_seconds, created_at, quick_mode_json";
+
 // Separate component for results to enable Suspense
 async function SearchResults({ query, category, type }: { query?: string; category?: string; type?: string }) {
-    const supabase = await createClient();
+    const supabase = createPublicServerClient();
 
     let results: ContentItem[] = [];
     const hasSearch = (query && query.trim().length > 0) || category || type;
@@ -27,7 +29,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
     if (hasSearch) {
         let queryBuilder = supabase
             .from("content_item")
-            .select("*")
+            .select(CONTENT_CARD_SELECT)
             .eq("status", "verified")
             .is("deleted_at", null)
             .order("created_at", { ascending: false })
@@ -103,19 +105,13 @@ function ResultsSkeleton() {
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q: query, category, type } = await searchParams;
-    const supabase = await createClient();
+    const supabase = createPublicServerClient();
 
     const hasSearch = (query && query.trim().length > 0) || category || type;
 
-    // Fetch categories for suggestions
-    const { data: categoriesData } = await supabase
-        .from("content_item")
-        .select("category")
-        .eq("status", "verified")
-        .is("deleted_at", null)
-        .not("category", "is", null);
-
-    const categories = [...new Set((categoriesData as { category: string }[] || []).map(c => c.category).filter(Boolean))].slice(0, 8);
+    // Fetch categories for suggestions (RPC)
+    const { data: stats } = await supabase.rpc("get_category_stats");
+    const categories = ((stats as { category: string; count: number }[] | null) || []).map(s => s.category).slice(0, 8);
 
     const contentTypes = ["All", "Book", "Podcast", "Article"];
 

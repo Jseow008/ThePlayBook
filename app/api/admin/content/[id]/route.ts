@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
 
 // Zod schema for updating content
 const UpdateContentSchema = z.object({
@@ -242,6 +243,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
         }
 
+        revalidatePath("/");
+        revalidatePath("/search");
+        revalidatePath("/categories");
+        revalidatePath(`/preview/${id}`);
+        revalidatePath(`/read/${id}`);
+
         return NextResponse.json({
             success: true,
             data: {
@@ -288,6 +295,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         if (error) {
             throw error;
         }
+
+        revalidatePath("/");
+        revalidatePath("/search");
+        revalidatePath("/categories");
+        revalidatePath(`/preview/${id}`);
+        revalidatePath(`/read/${id}`);
 
         return NextResponse.json({
             success: true,

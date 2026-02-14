@@ -10,6 +10,7 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
+import { revalidatePath } from "next/cache";
 
 const FilterTypeEnum = z.enum(["author", "category", "title", "featured"]);
 
@@ -91,6 +92,8 @@ export async function POST(request: NextRequest) {
     if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    revalidatePath("/");
 
     return NextResponse.json(data, { status: 201 });
 }

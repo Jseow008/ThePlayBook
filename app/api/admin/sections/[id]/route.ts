@@ -10,6 +10,7 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
+import { revalidatePath } from "next/cache";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -74,6 +75,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({ error: "Section not found" }, { status: 404 });
     }
 
+    revalidatePath("/");
+
     return NextResponse.json(data);
 }
 
@@ -100,6 +103,8 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     if (!data) {
         return NextResponse.json({ error: "Section not found" }, { status: 404 });
     }
+
+    revalidatePath("/");
 
     return NextResponse.json({ success: true });
 }

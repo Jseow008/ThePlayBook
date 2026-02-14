@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ContentPreview } from "@/components/ui/ContentPreview";
 import type { ContentItem } from "@/types/database";
 
-export const revalidate = 60;
+export const revalidate = 300;
+
+const PREVIEW_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, created_at";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -11,11 +13,11 @@ interface PageProps {
 
 export default async function PreviewPage({ params }: PageProps) {
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = createPublicServerClient();
 
     const { data, error } = await supabase
         .from("content_item")
-        .select("*")
+        .select(PREVIEW_SELECT)
         .eq("id", id)
         .eq("status", "verified")
         .is("deleted_at", null)

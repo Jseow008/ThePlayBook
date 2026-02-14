@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 export async function GET() {
     try {
-        const supabase = await createClient();
+        const supabase = createPublicServerClient();
         const { error } = await supabase
             .from("content_item")
-            .select("id", { head: true, count: "exact" })
+            .select("id")
             .limit(1);
 
         if (error) {

@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { revalidatePath } from "next/cache";
 
 // Zod schema for creating content
 const CreateContentSchema = z.object({
@@ -182,6 +183,12 @@ export async function POST(request: NextRequest) {
                 throw artifactError;
             }
         }
+
+        revalidatePath("/");
+        revalidatePath("/search");
+        revalidatePath("/categories");
+        revalidatePath(`/preview/${contentItem.id}`);
+        revalidatePath(`/read/${contentItem.id}`);
 
         return NextResponse.json({
             success: true,
