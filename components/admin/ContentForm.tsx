@@ -6,7 +6,7 @@
  * Reusable form for creating and editing content items.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     Loader2,
@@ -255,6 +255,25 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingHero, setIsUploadingHero] = useState(false);
     const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+
+    // Auto-calculate duration based on words
+    useEffect(() => {
+        const WORDS_PER_MINUTE = 200;
+        const totalWords = formData.segments.reduce((acc, segment) => {
+            const words = segment.markdown_body?.trim().split(/\s+/).filter(w => w.length > 0).length || 0;
+            return acc + words;
+        }, 0);
+
+        if (totalWords > 0) {
+            const minutes = Math.ceil(totalWords / WORDS_PER_MINUTE);
+            const seconds = minutes * 60;
+
+            // Only update if different to avoid infinite loops (though unlikely with strict equality)
+            if (formData.duration_seconds !== seconds) {
+                setFormData(prev => ({ ...prev, duration_seconds: seconds }));
+            }
+        }
+    }, [formData.segments]); // Depend on segments
 
     // DnD Sensors
     const sensors = useSensors(
@@ -758,8 +777,8 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                                 {/* Upload Area */}
                                 <label
                                     className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingHero
-                                            ? "bg-zinc-50 border-zinc-300"
-                                            : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
+                                        ? "bg-zinc-50 border-zinc-300"
+                                        : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
                                         }`}
                                 >
                                     <div className="flex flex-col items-center justify-center pt-5 pb-6">

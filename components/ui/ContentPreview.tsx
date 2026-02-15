@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Clock, BookOpen, Sparkles, ChevronDown } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import type { ContentItem } from "@/types/database";
 import type { QuickMode } from "@/types/domain";
 
@@ -128,27 +131,27 @@ export function ContentPreview({
                         {/* Hook */}
                         {quickMode.hook && (
                             <div className="relative pl-5 py-4 pr-6 rounded-r-xl border-l-[3px] border-primary/50 bg-secondary/30">
-                                <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-                                    {quickMode.hook.length > 150 && !showFullHook ? (
-                                        <>
-                                            {quickMode.hook.slice(0, 150)}...
-                                            <span className="inline-block ml-2">
-                                                <button
-                                                    onClick={() => setShowFullHook(true)}
-                                                    className="font-medium text-primary hover:underline text-sm"
-                                                >
-                                                    Read more
-                                                </button>
-                                            </span>
-                                        </>
-                                    ) : (
-                                        quickMode.hook
-                                    )}
-                                </p>
+                                <div className={`text-base md:text-lg text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-p:leading-relaxed ${!showFullHook ? "line-clamp-3" : ""}`}>
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                        rehypePlugins={[rehypeSanitize]}
+                                        components={{
+                                            p: ({ children }) => <p className="inline">{children}</p>
+                                        }}
+                                    >
+                                        {quickMode.hook}
+                                    </ReactMarkdown>
+                                </div>
+                                {quickMode.hook.length > 150 && !showFullHook && (
+                                    <button
+                                        onClick={() => setShowFullHook(true)}
+                                        className="font-medium text-primary hover:underline text-sm mt-2"
+                                    >
+                                        Read more
+                                    </button>
+                                )}
                             </div>
                         )}
-
-
 
                         {/* Key Takeaways */}
                         {activeTakeaways.length > 0 && (
@@ -162,12 +165,20 @@ export function ContentPreview({
                                             key={index}
                                             className="flex gap-4 p-4 rounded-xl bg-card/40 hover:bg-card/60 border border-border/40 hover:border-border/60 transition-all duration-200"
                                         >
-                                            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">
+                                            <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold mt-0.5">
                                                 {index + 1}
                                             </span>
-                                            <p className="text-base text-foreground leading-relaxed pt-0.5">
-                                                {takeaway}
-                                            </p>
+                                            <div className="text-base text-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-0">
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    rehypePlugins={[rehypeSanitize]}
+                                                    components={{
+                                                        p: ({ children }) => <p className="m-0">{children}</p>
+                                                    }}
+                                                >
+                                                    {takeaway}
+                                                </ReactMarkdown>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
