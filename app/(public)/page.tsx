@@ -95,19 +95,12 @@ export default async function HomePage() {
         sectionResults.map((result) => [result.id, result.items])
     ) as Record<string, ContentItem[]>;
 
-    // 5. Personalized Recommendations - MOVED TO CLIENT SIDE (Use SWR/useEffect in a client component)
-    // To enable ISR, we cannot call getUser() here.
-    const recommendations: ContentItem[] = [];
-    const recommendationSource: string | undefined = undefined;
-
     return (
         <HomeFeed
             items={items}
             featuredItems={featuredItems}
             sections={sections}
             sectionItems={sectionItems}
-            recommendations={recommendations}
-            recommendationSource={recommendationSource}
         />
     );
 }
