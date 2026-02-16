@@ -54,7 +54,7 @@ export function ContentPreview({
                 </div>
 
                 {/* ── Hero: Cover + Info ── */}
-                <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-10">
+                <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-6">
                     {/* Cover Image */}
                     {item.cover_image_url && (
                         <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
@@ -127,7 +127,7 @@ export function ContentPreview({
 
                 {/* ── Quick Mode Content ── */}
                 {quickMode ? (
-                    <div className="space-y-8">
+                    <div className="space-y-5">
                         {/* Hook */}
                         {quickMode.hook && (
                             <div className="relative pl-5 py-4 pr-6 rounded-r-xl border-l-[3px] border-primary/50 bg-secondary/30">
@@ -142,7 +142,7 @@ export function ContentPreview({
                                         {quickMode.hook}
                                     </ReactMarkdown>
                                 </div>
-                                {quickMode.hook.length > 150 && !showFullHook && (
+                                {quickMode.hook.length > 300 && !showFullHook && (
                                     <button
                                         onClick={() => setShowFullHook(true)}
                                         className="font-medium text-primary hover:underline text-sm mt-2"
