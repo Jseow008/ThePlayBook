@@ -6,53 +6,79 @@ import type { ContentItem } from "@/types/database";
 import { ContentLane } from "@/components/ui/ContentLane";
 
 export function RecommendationsRow() {
-    const { completedIds, inProgressIds, isLoaded } = useReadingProgress();
-    const [items, setItems] = useState<ContentItem[]>([]);
-    const [sourceTitle, setSourceTitle] = useState<string>("");
+    const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
+
+    // Lane 1: "Because you read X"
+    const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
+    const [recentTitle, setRecentTitle] = useState<string>("");
+
+    // Lane 2: "Recommended for You"
+    const [generalItems, setGeneralItems] = useState<ContentItem[]>([]);
+
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (!isLoaded) return;
 
-        // Use completed books first, fall back to in-progress
-        const historyIds = completedIds.length > 0 ? completedIds : inProgressIds;
+        const performFetches = async () => {
+            // 1. Identify the "Source" book for Lane 1 (Most recent completed, or in-progress)
+            const mostRecentId = completedIds[0] || inProgressIds[0];
 
-        if (historyIds.length === 0) {
-            setIsLoading(false);
-            return;
-        }
+            // 2. Identify the "Cluster" for Lane 2 (All completed + My List)
+            // We use a Set to deduplicate
+            const clusterIds = Array.from(new Set([...completedIds, ...myListIds]));
 
-        const fetchRecommendations = async () => {
+            // If we have absolutely no history, stop
+            if (!mostRecentId && clusterIds.length === 0) {
+                setIsLoading(false);
+                return;
+            }
+
+            const promises = [];
+
+            // --- FETCH LANE 1 (Specific) ---
+            if (mostRecentId) {
+                // Fetch recommendations for this specific book
+                promises.push(
+                    fetch("/api/recommendations", {
+                        method: "POST",
+                        body: JSON.stringify({ completedIds: [mostRecentId] }),
+                    })
+                        .then(r => r.ok ? r.json() : [])
+                        .then(data => setRecentItems(data))
+                );
+
+                // Fetch title of this specific book
+                promises.push(
+                    fetch("/api/content/batch", {
+                        method: "POST",
+                        body: JSON.stringify({ ids: [mostRecentId] }),
+                    })
+                        .then(r => r.ok ? r.json() : [])
+                        .then(data => {
+                            if (data.length > 0) setRecentTitle(data[0].title);
+                        })
+                );
+            }
+
+            // --- FETCH LANE 2 (General) ---
+            // Only fetch if we have a cluster AND it's different/larger than just the single recent book
+            // (e.g. if I've only read 1 book, Lane 1 and Lane 2 would be identical, so skip Lane 2)
+            const isWorthFetchingGeneral = clusterIds.length > 1 || (clusterIds.length === 1 && clusterIds[0] !== mostRecentId);
+
+            if (isWorthFetchingGeneral) {
+                promises.push(
+                    fetch("/api/recommendations", {
+                        method: "POST",
+                        body: JSON.stringify({ completedIds: clusterIds }),
+                    })
+                        .then(r => r.ok ? r.json() : [])
+                        .then(data => setGeneralItems(data))
+                );
+            }
+
             try {
-                const response = await fetch("/api/recommendations", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ completedIds: historyIds }),
-                });
-
-                if (response.ok) {
-                    const data: ContentItem[] = await response.json();
-                    setItems(data);
-                }
-
-                // Also fetch the title of the most recent completed book for the lane header
-                if (historyIds.length > 0) {
-                    try {
-                        const batchRes = await fetch("/api/content/batch", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ ids: [historyIds[0]] }),
-                        });
-                        if (batchRes.ok) {
-                            const batchData: ContentItem[] = await batchRes.json();
-                            if (batchData.length > 0) {
-                                setSourceTitle(batchData[0].title);
-                            }
-                        }
-                    } catch {
-                        // Non-critical — just won't show dynamic title
-                    }
-                }
+                await Promise.all(promises);
             } catch (error) {
                 console.error("Failed to fetch recommendations", error);
             } finally {
@@ -60,10 +86,10 @@ export function RecommendationsRow() {
             }
         };
 
-        fetchRecommendations();
-    }, [completedIds, inProgressIds, isLoaded]);
+        performFetches();
+    }, [completedIds, inProgressIds, myListIds, isLoaded]);
 
-    if (!isLoaded || (completedIds.length === 0 && inProgressIds.length === 0 && !isLoading)) return null;
+    if (!isLoaded || (!recentItems.length && !generalItems.length && !isLoading)) return null;
 
     if (isLoading) {
         return (
@@ -80,16 +106,23 @@ export function RecommendationsRow() {
         );
     }
 
-    if (items.length === 0) return null;
-
-    const title = sourceTitle
-        ? `Because you enjoyed "${sourceTitle}"`
-        : "Recommended for You";
-
     return (
-        <ContentLane
-            title={title}
-            items={items}
-        />
+        <div className="space-y-8">
+            {/* Lane 1: Specific Context */}
+            {recentItems.length > 0 && (
+                <ContentLane
+                    title={recentTitle ? `Because you read "${recentTitle}"` : "Because of your recent reading"}
+                    items={recentItems}
+                />
+            )}
+
+            {/* Lane 2: General Taste */}
+            {generalItems.length > 0 && (
+                <ContentLane
+                    title="Recommended for You"
+                    items={generalItems}
+                />
+            )}
+        </div>
     );
 }

@@ -34,7 +34,7 @@ export function HomeFeed({
                 featuredItems.length > 0 ? "-mt-8 pt-0" : "pt-24"
             )}>
                 {/* Standard Feed View */}
-                <div className="space-y-4 md:space-y-8 animate-in fade-in duration-500">
+                <div className="space-y-4 md:space-y-1 animate-in fade-in duration-500">
                     {/* New / Latest Additions */}
                     <ContentLane
                         title={

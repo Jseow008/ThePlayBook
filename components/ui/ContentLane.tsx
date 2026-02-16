@@ -62,12 +62,12 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
         <section
             ref={sectionRef}
             className={cn(
-                "py-3 md:py-6 group/lane transition-all duration-700 transform",
+                "py-1 md:py-2 group/lane transition-all duration-700 transform",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
             )}
         >
             {/* Header */}
-            <div className="flex items-center justify-between mb-4 px-6 lg:px-16">
+            <div className="flex items-center justify-between mb-2 px-6 lg:px-16">
                 <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2 font-display tracking-tight">
                     {title}
                     {viewAllHref && (
