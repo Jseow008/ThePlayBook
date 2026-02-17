@@ -6,11 +6,12 @@
 
 import Link from "next/link";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { Plus, BookOpen, Headphones, FileText, Pencil, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, BookOpen, Headphones, FileText, Pencil, Eye } from "lucide-react";
 import { DeleteContentButton } from "@/components/admin/DeleteContentButton";
 import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { ContentFilters } from "@/components/admin/ContentFilters";
 import { AdminSearch } from "@/components/admin/AdminSearch";
+import { PaginationControls } from "@/components/admin/PaginationControls";
 import { APP_NAME } from "@/lib/brand";
 
 // Type icons mapping
@@ -57,7 +58,7 @@ export default async function AdminDashboardPage({
     const featuredFilter = params?.featured === "true";
     const searchQuery = params?.q || "";
 
-    const PAGE_SIZE = 10;
+    const PAGE_SIZE = 5;
     const from = (page - 1) * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
@@ -104,18 +105,6 @@ export default async function AdminDashboardPage({
 
     const items = contentItems || [];
     const totalPages = count ? Math.ceil(count / PAGE_SIZE) : 1;
-    const hasNextPage = page < totalPages;
-    const hasPrevPage = page > 1;
-
-    // Helper to build pagination links keeping current filters
-    const getPageLink = (newPage: number) => {
-        const queryParams = new URLSearchParams();
-        queryParams.set("page", newPage.toString());
-        if (statusFilter) queryParams.set("status", statusFilter);
-        if (featuredFilter) queryParams.set("featured", "true");
-        if (searchQuery) queryParams.set("q", searchQuery);
-        return `/admin?${queryParams.toString()}`;
-    };
 
     return (
         <div className="space-y-8">
@@ -265,37 +254,7 @@ export default async function AdminDashboardPage({
                 )}
 
                 {/* Pagination Controls */}
-                {items.length > 0 && (
-                    <div className="px-6 py-4 border-t border-border bg-muted/40 flex items-center justify-between">
-                        <Link
-                            href={hasPrevPage ? getPageLink(page - 1) : "#"}
-                            className={`flex items-center gap-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${hasPrevPage
-                                ? "bg-card border-border text-foreground hover:bg-accent"
-                                : "bg-muted border-border text-muted-foreground cursor-not-allowed"
-                                }`}
-                            aria-disabled={!hasPrevPage}
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                            Previous
-                        </Link>
-
-                        <div className="text-sm text-muted-foreground">
-                            Showing <span className="font-medium">{from + 1}</span> to <span className="font-medium">{Math.min(to + 1, count || 0)}</span> of <span className="font-medium">{count}</span> results
-                        </div>
-
-                        <Link
-                            href={hasNextPage ? getPageLink(page + 1) : "#"}
-                            className={`flex items-center gap-1 px-3 py-2 rounded-lg border text-sm font-medium transition-colors ${hasNextPage
-                                ? "bg-card border-border text-foreground hover:bg-accent"
-                                : "bg-muted border-border text-muted-foreground cursor-not-allowed"
-                                }`}
-                            aria-disabled={!hasNextPage}
-                        >
-                            Next
-                            <ChevronRight className="w-4 h-4" />
-                        </Link>
-                    </div>
-                )}
+                <PaginationControls currentPage={page} totalPages={totalPages} />
             </div>
         </div>
     );

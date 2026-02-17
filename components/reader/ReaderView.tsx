@@ -20,7 +20,7 @@ interface ReaderViewProps {
 
 export function ReaderView({ content }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
-    const [maxSegmentIndex, setMaxSegmentIndex] = useState(0);
+    const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const { saveReadingProgress } = useReadingProgress();
 

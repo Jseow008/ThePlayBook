@@ -173,15 +173,16 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                                     <span>Current: {completedCount}</span>
                                     <span>Goal: {nextThreshold}</span>
                                 </div>
-                                <div className="h-2.5 w-full bg-secondary/50 rounded-full overflow-hidden ring-1 ring-border/30">
+                                <div className="h-2.5 w-full bg-white/20 rounded-full overflow-hidden ring-1 ring-white/10">
                                     <div
-                                        className={`h-full ${badge.barColor} opacity-80 shadow-sm transition-all duration-1000 ease-out`}
-                                        style={{ width: `${progress}%` }}
+                                        className={`h-full ${badge.barColor} shadow-[0_0_10px_rgba(255,255,255,0.3)] transition-all duration-1000 ease-out relative`}
+                                        style={{ width: `${Math.max(5, progress)}%` }} // Ensure at least 5% is shown so the bar is visible
                                     />
                                 </div>
-                                <div className="text-xs text-muted-foreground text-center">
-                                    {nextThreshold - completedCount} more books to reach
-                                    <span className="font-semibold text-foreground ml-1">{progress === 100 ? "Max Level" : "next level"}</span>
+                                <div className="text-xs text-muted-foreground text-center mt-2">
+                                    <span className="font-medium text-foreground">{nextThreshold - completedCount}</span>
+                                    {nextThreshold - completedCount === 1 ? " more book" : " more books"} to reach&nbsp;
+                                    <span className="font-bold text-foreground">{progress === 100 ? "Max Level" : "next level"}</span>
                                 </div>
                             </div>
                         )}
