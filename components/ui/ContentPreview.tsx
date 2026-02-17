@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock, BookOpen, Sparkles, ChevronDown } from "lucide-react";
+import { ArrowLeft, Clock, BookOpen, Sparkles, ChevronDown, Bookmark, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { ContentItem } from "@/types/database";
 import type { QuickMode } from "@/types/domain";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 
 interface ContentPreviewProps {
     item: ContentItem;
@@ -29,6 +30,10 @@ export function ContentPreview({
     const [isTruncated, setIsTruncated] = useState(false);
     const [showAllTakeaways, setShowAllTakeaways] = useState(false);
     const [showFullHook, setShowFullHook] = useState(false);
+
+    // logic for "Save to My List"
+    const { isInMyList, toggleMyList } = useReadingProgress();
+    const isSaved = isInMyList(item.id);
 
     useEffect(() => {
         const checkTruncation = () => {
@@ -124,6 +129,28 @@ export function ContentPreview({
                                 <BookOpen className="size-5" />
                                 Read
                             </Link>
+
+                            {/* Save to My List Button */}
+                            <button
+                                onClick={() => toggleMyList(item.id)}
+                                className={`inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border font-bold text-base transition-all hover:scale-[1.02] active:scale-95 ${isSaved
+                                        ? "bg-secondary/50 border-primary/50 text-foreground hover:bg-secondary/70"
+                                        : "bg-background border-border hover:bg-secondary/30 text-muted-foreground hover:text-foreground"
+                                    }`}
+                            >
+                                {isSaved ? (
+                                    <>
+                                        <Check className="size-5 text-primary" />
+                                        <span>Saved to My List</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Bookmark className="size-5" />
+                                        <span>Save to My List</span>
+                                    </>
+                                )}
+                            </button>
+
                             {onSpinAgain && (
                                 <button
                                     onClick={onSpinAgain}
@@ -241,6 +268,17 @@ export function ContentPreview({
                     <BookOpen className="size-4" />
                     Read
                 </Link>
+
+                <button
+                    onClick={() => toggleMyList(item.id)}
+                    className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isSaved
+                            ? "bg-secondary/60 border-primary/50 text-primary"
+                            : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground"
+                        }`}
+                >
+                    {isSaved ? <Check className="size-5" /> : <Bookmark className="size-5" />}
+                </button>
+
                 {onSpinAgain && (
                     <button
                         onClick={onSpinAgain}

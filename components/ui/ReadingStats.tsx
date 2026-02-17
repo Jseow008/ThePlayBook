@@ -13,30 +13,31 @@ export function ReadingStats() {
     } = useReadingProgress();
 
     // Stats data with semantic colors
+    // Stats data with monochrome/neutral styling
     const stats = useMemo(() => [
         {
             label: "Books Read",
             value: completedCount,
             icon: Trophy,
-            color: "text-emerald-400",
-            bg: "bg-emerald-500/10",
-            border: "border-emerald-500/20"
+            color: "text-foreground", // White/Black
+            bg: "bg-secondary/40",
+            border: "border-border"
         },
         {
             label: "In Progress",
             value: inProgressCount,
             icon: BookOpen,
-            color: "text-amber-400",
-            bg: "bg-amber-500/10",
-            border: "border-amber-500/20"
+            color: "text-zinc-400", // Subtle grey/brown feel
+            bg: "bg-zinc-500/10",
+            border: "border-zinc-500/20"
         },
         {
             label: "Saved to List",
             value: myListCount,
             icon: Bookmark,
-            color: "text-blue-400",
-            bg: "bg-blue-500/10",
-            border: "border-blue-500/20"
+            color: "text-stone-400", // Warmer grey/brown
+            bg: "bg-stone-500/10",
+            border: "border-stone-500/20"
         }
     ], [completedCount, inProgressCount, myListCount]);
 

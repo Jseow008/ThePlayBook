@@ -1,18 +1,43 @@
 "use client";
 
 import { AuthUser as User } from "@supabase/supabase-js";
-import { Calendar, Mail, Award, Book, BookOpen, Sparkles } from "lucide-react";
+import { Calendar, Award, Book, BookOpen, Sparkles, Edit2, Check, User as UserIcon, Zap, Crown, Star } from "lucide-react";
 import { format } from "date-fns";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 interface ProfileHeaderProps {
     user: User;
 }
 
+const AVATAR_ICONS = [
+    { id: "user", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Javier", label: "Default" },
+    { id: "scholar", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Scholar", label: "Scholar" },
+    { id: "creative", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Creative", label: "Creative" },
+    { id: "tech", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Tech", label: "Tech" },
+    { id: "explorer", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Explorer", label: "Explorer" },
+    { id: "royal", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Royal", label: "Royal" },
+    { id: "zen", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Zen", label: "Zen" },
+    // Expanded selection
+    { id: "felix", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Felix", label: "Felix" },
+    { id: "aneka", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Aneka", label: "Aneka" },
+    { id: "milo", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Milo", label: "Milo" },
+    { id: "bella", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Bella", label: "Bella" },
+    { id: "leo", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Leo", label: "Leo" },
+    { id: "zoe", src: "https://api.dicebear.com/9.x/notionists/svg?seed=Zoe", label: "Zoe" },
+];
+
 export function ProfileHeader({ user }: ProfileHeaderProps) {
     const joinedDate = user.created_at ? new Date(user.created_at) : new Date();
     const { completedCount } = useReadingProgress();
+    const supabase = createClient();
+    const router = useRouter();
+
+    const [isEditing, setIsEditing] = useState(false);
+    const [selectedIconId, setSelectedIconId] = useState(user.user_metadata?.avatar_icon || "user");
+    const [isSaving, setIsSaving] = useState(false);
 
     // Determine badge and progress
     const { badge, progress, nextThreshold } = useMemo(() => {
@@ -38,106 +63,128 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
         return {
             badge: currentLevel,
             progress: progressPercent,
-            nextThreshold: nextLevel?.threshold
+            nextThreshold: nextLevel?.threshold,
+            nextTitle: nextLevel?.title
         };
     }, [completedCount]);
 
-    // Get distinct colors based on email hash (simple consistent color generator)
-    const getAvatarColor = (name: string) => {
-        const colors = [
-            "from-red-500 to-orange-500",
-            "from-orange-500 to-amber-500",
-            "from-amber-500 to-yellow-500",
-            "from-green-500 to-emerald-500",
-            "from-emerald-500 to-teal-500",
-            "from-teal-500 to-cyan-500",
-            "from-cyan-500 to-blue-500",
-            "from-blue-500 to-indigo-500",
-            "from-indigo-500 to-violet-500",
-            "from-violet-500 to-purple-500",
-            "from-purple-500 to-fuchsia-500",
-            "from-fuchsia-500 to-pink-500",
-            "from-pink-500 to-rose-500",
-        ];
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-            hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    const handleSaveAvatar = async () => {
+        setIsSaving(true);
+        try {
+            const { error } = await supabase.auth.updateUser({
+                data: { avatar_icon: selectedIconId }
+            });
+
+            if (error) throw error;
+            setIsEditing(false);
+            router.refresh(); // Refresh to show new avatar
+        } catch (e) {
+            console.error("Failed to update avatar", e);
+        } finally {
+            setIsSaving(false);
         }
-        return colors[Math.abs(hash) % colors.length];
     };
 
-    const avatarGradient = getAvatarColor(user.email || "User");
-    const displayName = user.user_metadata?.full_name || badge.title;
+    const displayName = user.user_metadata?.full_name || "Reader";
+    const activeAvatar = AVATAR_ICONS.find(i => i.id === selectedIconId) || AVATAR_ICONS[0];
 
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-secondary/80 to-secondary border border-border shadow-xl animate-fade-in">
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-20 pointer-events-none">
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary rounded-full blur-3xl opacity-10" />
-                <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-blue-500 rounded-full blur-3xl opacity-10" />
+        <div className="relative overflow-hidden rounded-2xl bg-card/50 border border-border/50 shadow-xl animate-fade-in group">
+            {/* Background Pattern - Subtle */}
+            <div className="absolute inset-0 opacity-10 pointer-events-none">
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary rounded-full blur-3xl opacity-5" />
+                <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-secondary rounded-full blur-3xl opacity-5" />
             </div>
 
             <div className="relative z-10 p-6 md:p-8">
-                {/* Main Content - Centered Layout */}
                 <div className="flex flex-col items-center text-center space-y-4">
-                    {/* Avatar */}
-                    <div className="relative">
-                        <div className={`w-24 h-24 md:w-28 md:h-28 rounded-full bg-gradient-to-br ${avatarGradient} flex items-center justify-center shadow-2xl ring-4 ring-background/50`}>
-                            {user.user_metadata?.avatar_url ? (
-                                <img
-                                    src={user.user_metadata.avatar_url}
-                                    alt={displayName}
-                                    className="w-full h-full object-cover rounded-full"
-                                />
-                            ) : (
-                                <span className="text-4xl md:text-5xl font-bold text-white drop-shadow-md">
-                                    {(user.email?.[0] || "U").toUpperCase()}
-                                </span>
-                            )}
+
+                    {/* Avatar with Edit Overlay */}
+                    <div className="relative group/avatar">
+                        <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-secondary/80 flex items-center justify-center shadow-2xl ring-4 ring-background/50 overflow-hidden">
+                            <img
+                                src={activeAvatar.src}
+                                alt={activeAvatar.label}
+                                className="w-full h-full object-cover scale-110"
+                            />
                         </div>
+
+                        <button
+                            onClick={() => setIsEditing(!isEditing)}
+                            className="absolute bottom-0 right-0 p-2 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-transform hover:scale-110"
+                            aria-label="Edit Avatar"
+                        >
+                            <Edit2 className="w-4 h-4" />
+                        </button>
                     </div>
 
-                    {/* User Name */}
-                    <div className="space-y-2">
+                    {/* Avatar Selection Area (Expandable) */}
+                    {isEditing && (
+                        <div className="flex flex-wrap justify-center gap-3 p-4 bg-secondary/30 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-2 max-w-sm">
+                            {AVATAR_ICONS.map((item) => (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setSelectedIconId(item.id)}
+                                    className={`relative w-12 h-12 rounded-full overflow-hidden transition-all ${selectedIconId === item.id
+                                        ? "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110 opacity-100"
+                                        : "opacity-60 hover:opacity-100 hover:scale-105"
+                                        }`}
+                                >
+                                    <img
+                                        src={item.src}
+                                        alt={item.label}
+                                        className="w-full h-full object-cover bg-secondary"
+                                    />
+                                </button>
+                            ))}
+                            <div className="w-full flex justify-center mt-2">
+                                <button
+                                    onClick={handleSaveAvatar}
+                                    disabled={isSaving}
+                                    className="px-4 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-full hover:bg-primary/90 transition-colors flex items-center gap-2"
+                                >
+                                    {isSaving ? "Saving..." : <><Check className="w-3 h-3" /> Save Avatar</>}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* User Identity */}
+                    <div className="space-y-1">
                         <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                             {displayName}
                         </h1>
-
-                        {/* Achievement Badge & Progress */}
-                        <div className="flex flex-col items-center gap-3 w-full max-w-[200px]">
-                            <div className={`inline-flex items-center gap-2 px-4 py-1.5 ${badge.bg} border ${badge.border} rounded-full transition-all duration-300`}>
-                                <badge.icon className={`w-4 h-4 ${badge.color}`} />
-                                <span className={`text-sm font-bold ${badge.color}`}>{badge.title}</span>
-                            </div>
-
-                            {nextThreshold && (
-                                <div className="w-full space-y-1.5">
-                                    <div className="flex justify-between text-[10px] font-medium text-muted-foreground px-1">
-                                        <span>{completedCount} / {nextThreshold} Books</span>
-                                        <span>{Math.round(progress)}%</span>
-                                    </div>
-                                    <div className="h-2 w-full bg-secondary/30 rounded-full overflow-hidden ring-1 ring-border/50">
-                                        <div
-                                            className={`h-full ${badge.barColor} transition-all duration-1000 ease-out shadow-sm`}
-                                            style={{ width: `${progress}%` }}
-                                        />
-                                    </div>
-                                </div>
-                            )}
+                        <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Member since {format(joinedDate, "MMMM yyyy")}</span>
                         </div>
                     </div>
 
-                    {/* User Details */}
-                    <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 text-muted-foreground text-sm pt-2">
-                        <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4" />
-                            <span>{user.email}</span>
+                    {/* Gamification Status */}
+                    <div className="w-full max-w-xs space-y-3 pt-2">
+                        <div className={`inline-flex items-center gap-2 px-4 py-1.5 ${badge.bg} border ${badge.border} rounded-full`}>
+                            <badge.icon className={`w-4 h-4 ${badge.color}`} />
+                            <span className={`text-sm font-bold ${badge.color}`}>{badge.title}</span>
                         </div>
-                        <div className="hidden sm:block w-1 h-1 bg-muted-foreground/50 rounded-full" />
-                        <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>Member since {format(joinedDate, "MMMM yyyy")}</span>
-                        </div>
+
+                        {nextThreshold !== undefined && (
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-xs font-medium text-muted-foreground/80 px-1">
+                                    <span>Current: {completedCount}</span>
+                                    <span>Goal: {nextThreshold}</span>
+                                </div>
+                                <div className="h-2.5 w-full bg-secondary/50 rounded-full overflow-hidden ring-1 ring-border/30">
+                                    <div
+                                        className={`h-full ${badge.barColor} opacity-80 shadow-sm transition-all duration-1000 ease-out`}
+                                        style={{ width: `${progress}%` }}
+                                    />
+                                </div>
+                                <div className="text-xs text-muted-foreground text-center">
+                                    {nextThreshold - completedCount} more books to reach
+                                    <span className="font-semibold text-foreground ml-1">{progress === 100 ? "Max Level" : "next level"}</span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { HeroCarousel } from "@/components/ui/HeroCarousel";
-import { ContinueReadingRow } from "@/components/ui/ContinueReadingRow";
+
 import { RecommendationsRow } from "@/components/ui/RecommendationsRow";
 import { ContentLane } from "@/components/ui/ContentLane";
 import type { ContentItem, HomepageSection } from "@/types/database";
@@ -45,8 +45,7 @@ export function HomeFeed({
                         items={items.slice(0, 10)}
                     />
 
-                    {/* Continue Reading */}
-                    <ContinueReadingRow />
+
 
                     {/* Personalized Recommendations */}
                     <RecommendationsRow />

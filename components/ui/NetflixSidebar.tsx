@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -34,6 +34,24 @@ export function NetflixSidebar() {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleMouseEnter = () => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+        }
+        hoverTimeoutRef.current = setTimeout(() => {
+            setIsExpanded(true);
+        }, 300); // 300ms delay
+    };
+
+    const handleMouseLeave = () => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
+        }
+        setIsExpanded(false);
+    };
 
     const { inProgressCount, completedCount, myListCount, isLoaded } = useReadingProgress();
 
@@ -70,8 +88,8 @@ export function NetflixSidebar() {
 
     return (
         <aside
-            onMouseEnter={() => setIsExpanded(true)}
-            onMouseLeave={() => setIsExpanded(false)}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             className={cn(
                 "fixed left-0 top-0 bottom-0 z-50 bg-background/95 backdrop-blur-md border-r border-border transition-all duration-300 hidden lg:flex flex-col",
                 isExpanded ? "w-56" : "w-16"
@@ -106,11 +124,12 @@ export function NetflixSidebar() {
             <nav className="flex-1 py-6 overflow-y-auto">
                 <ul className="space-y-1">
                     {navItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
                         return (
                             <li key={item.href}>
                                 <Link
                                     href={item.href}
+                                    title={!isExpanded ? item.label : undefined}
                                     className={cn(
                                         "flex items-center h-12 px-4 transition-colors",
                                         isExpanded ? "justify-start gap-3" : "justify-center",
@@ -145,40 +164,55 @@ export function NetflixSidebar() {
                 {/* My Library Section */}
                 <div className="space-y-1">
                     {/* My Library Header */}
-                    <button
-                        onClick={() => isExpanded && setIsLibraryOpen(!isLibraryOpen)}
-                        className={cn(
-                            "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                            isExpanded ? "justify-start gap-3" : "justify-center",
-                            (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-accent border-l-4 border-primary"
-                        )}
-                    >
-                        <div className="relative flex-shrink-0">
-                            <Library className="size-5" />
-                            {/* Badge for total items when collapsed */}
-                            {!isExpanded && isLoaded && totalLibraryItems > 0 && (
-                                <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
-                                    {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
-                                </span>
-                            )}
-                        </div>
-                        <span
+                    {/* My Library Header */}
+                    {isExpanded ? (
+                        <button
+                            onClick={() => setIsLibraryOpen(!isLibraryOpen)}
                             className={cn(
-                                "text-sm font-medium transition-opacity whitespace-nowrap flex-1 text-left",
-                                isExpanded ? "opacity-100" : "opacity-0 w-0"
+                                "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                                "justify-start gap-3",
+                                (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-accent border-l-4 border-primary"
                             )}
                         >
-                            My Library
-                        </span>
-                        {isExpanded && isLoaded && totalLibraryItems > 0 && (
-                            <ChevronDown
+                            <div className="relative flex-shrink-0">
+                                <Library className="size-5" />
+                            </div>
+                            <span
                                 className={cn(
-                                    "size-4 transition-transform",
-                                    isLibraryOpen && "rotate-180"
+                                    "text-sm font-medium transition-opacity whitespace-nowrap flex-1 text-left opacity-100"
                                 )}
-                            />
-                        )}
-                    </button>
+                            >
+                                My Library
+                            </span>
+                            {isExpanded && isLoaded && totalLibraryItems > 0 && (
+                                <ChevronDown
+                                    className={cn(
+                                        "size-4 transition-transform",
+                                        isLibraryOpen && "rotate-180"
+                                    )}
+                                />
+                            )}
+                        </button>
+                    ) : (
+                        <Link
+                            href="/library/reading"
+                            title="My Library"
+                            className={cn(
+                                "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 justify-center",
+                                (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-accent border-l-4 border-primary"
+                            )}
+                        >
+                            <div className="relative flex-shrink-0">
+                                <Library className="size-5" />
+                                {/* Badge for total items when collapsed */}
+                                {isLoaded && totalLibraryItems > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
+                                        {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
+                                    </span>
+                                )}
+                            </div>
+                        </Link>
+                    )}
 
                     {/* Library Sub-items (only when expanded and open) */}
                     {isExpanded && isLibraryOpen && isLoaded && (

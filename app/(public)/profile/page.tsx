@@ -15,54 +15,51 @@ export default async function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground pb-20">
-            {/* Header / Nav */}
-            <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
-                <div className="container max-w-5xl mx-auto px-4 h-16 flex items-center gap-4">
+        <div className="min-h-screen bg-background text-foreground">
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+                {/* Back to Library */}
+                <div className="mb-8">
                     <Link
                         href="/"
-                        className="p-2 hover:bg-accent rounded-full transition-colors text-muted-foreground hover:text-foreground"
-                        aria-label="Back to Home"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
                     >
-                        <ArrowLeft className="w-5 h-5" />
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
                     </Link>
-                    <span className="font-semibold text-lg tracking-tight">My Profile</span>
                 </div>
-            </div>
 
-            <main className="container max-w-5xl mx-auto px-4 pt-10 pb-8 space-y-12">
+                <main className="space-y-12">
+                    {/* 1. Profile Identity Header */}
+                    <section>
+                        <ProfileHeader user={user} />
+                    </section>
 
-                {/* 1. Profile Identity Header */}
-                <section>
-                    <ProfileHeader user={user} />
-                </section>
-
-                {/* 2. Reading Stats Dashboard */}
-                <section>
-                    <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                        Your Progress
-                    </h2>
-                    <ReadingStats />
-                </section>
-
-                {/* 3. Recent Activity */}
-                <section>
-                    <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold flex items-center gap-2">
-                            <History className="w-5 h-5 text-muted-foreground" />
-                            Jump Back In
+                    {/* 2. Reading Stats Dashboard */}
+                    <section>
+                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+                            Your Progress
                         </h2>
-                        <Link
-                            href="/library/reading"
-                            className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                        >
-                            View All History
-                        </Link>
-                    </div>
-                    <RecentActivity />
-                </section>
+                        <ReadingStats />
+                    </section>
 
-            </main>
+                    {/* 3. Recent Activity */}
+                    <section>
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xl font-bold flex items-center gap-2">
+                                <History className="w-5 h-5 text-muted-foreground" />
+                                Jump Back In
+                            </h2>
+                            <Link
+                                href="/library/reading"
+                                className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                            >
+                                View All History
+                            </Link>
+                        </div>
+                        <RecentActivity />
+                    </section>
+                </main>
+            </div>
         </div>
     );
 }
