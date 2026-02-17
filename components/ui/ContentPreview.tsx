@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Clock, BookOpen, Sparkles, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -25,8 +25,23 @@ export function ContentPreview({
     ctaIcon: CtaIcon = Sparkles,
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
+    const hookRef = useRef<HTMLDivElement>(null);
+    const [isTruncated, setIsTruncated] = useState(false);
     const [showAllTakeaways, setShowAllTakeaways] = useState(false);
     const [showFullHook, setShowFullHook] = useState(false);
+
+    useEffect(() => {
+        const checkTruncation = () => {
+            if (hookRef.current) {
+                const { scrollHeight, clientHeight } = hookRef.current;
+                setIsTruncated(scrollHeight > clientHeight);
+            }
+        };
+
+        checkTruncation();
+        window.addEventListener("resize", checkTruncation);
+        return () => window.removeEventListener("resize", checkTruncation);
+    }, [quickMode?.hook]);
 
     // Filter out empty takeaways
     const activeTakeaways =
@@ -131,7 +146,10 @@ export function ContentPreview({
                         {/* Hook */}
                         {quickMode.hook && (
                             <div className="relative pl-5 py-4 pr-6 rounded-r-xl border-l-[3px] border-primary/50 bg-secondary/30">
-                                <div className={`text-base md:text-lg text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-p:leading-relaxed ${!showFullHook ? "line-clamp-3" : ""}`}>
+                                <div
+                                    ref={hookRef}
+                                    className={`text-base md:text-lg text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-p:leading-relaxed ${!showFullHook ? "line-clamp-3" : ""}`}
+                                >
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
                                         rehypePlugins={[rehypeSanitize]}
@@ -142,7 +160,7 @@ export function ContentPreview({
                                         {quickMode.hook}
                                     </ReactMarkdown>
                                 </div>
-                                {quickMode.hook.length > 300 && !showFullHook && (
+                                {(isTruncated || showFullHook) && !showFullHook && (
                                     <button
                                         onClick={() => setShowFullHook(true)}
                                         className="font-medium text-primary hover:underline text-sm mt-2"
