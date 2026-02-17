@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileHeader } from "@/components/ui/ProfileHeader";
-import { ReadingStats } from "@/components/ui/ReadingStats";
+import { ReadingHeatmap } from "@/components/ui/ReadingHeatmap";
 import { RecentActivity } from "@/components/ui/RecentActivity";
 import { ArrowLeft, History } from "lucide-react";
 import Link from "next/link";
@@ -28,18 +28,15 @@ export default async function ProfilePage() {
                     </Link>
                 </div>
 
-                <main className="space-y-12">
+                <main className="space-y-6">
                     {/* 1. Profile Identity Header */}
                     <section>
                         <ProfileHeader user={user} />
                     </section>
 
-                    {/* 2. Reading Stats Dashboard */}
+                    {/* 2. Reading Momentum Heatmap */}
                     <section>
-                        <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                            Your Progress
-                        </h2>
-                        <ReadingStats />
+                        <ReadingHeatmap />
                     </section>
 
                     {/* 3. Recent Activity */}

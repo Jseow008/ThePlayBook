@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { APP_NAME } from "@/lib/brand";
+import { AVATAR_ICONS } from "@/lib/avatars";
 
 const navItems = [
     { icon: Search, label: "Search", href: "/search" },
@@ -301,9 +302,13 @@ export function NetflixSidebar() {
                         )}
                     >
                         <div className="size-8 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden border border-zinc-600 flex-shrink-0">
-                            {user.user_metadata?.avatar_url ? (
+                            {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
                                 <img
-                                    src={user.user_metadata.avatar_url}
+                                    src={
+                                        user.user_metadata?.avatar_icon
+                                            ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
+                                            : user.user_metadata.avatar_url
+                                    }
                                     alt={user.user_metadata.full_name || "User"}
                                     className="h-full w-full object-cover"
                                 />

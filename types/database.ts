@@ -222,6 +222,35 @@ export interface Database {
                     last_interacted_at?: string;
                 };
             };
+            reading_activity: {
+                Row: {
+                    id: string;
+                    user_id: string;
+                    activity_date: string;
+                    duration_seconds: number;
+                    pages_read: number;
+                    created_at: string;
+                    updated_at: string;
+                };
+                Insert: {
+                    id?: string;
+                    user_id: string;
+                    activity_date?: string;
+                    duration_seconds?: number;
+                    pages_read?: number;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+                Update: {
+                    id?: string;
+                    user_id?: string;
+                    activity_date?: string;
+                    duration_seconds?: number;
+                    pages_read?: number;
+                    created_at?: string;
+                    updated_at?: string;
+                };
+            };
         };
         Views: Record<string, never>;
         Functions: {

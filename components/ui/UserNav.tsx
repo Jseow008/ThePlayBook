@@ -7,6 +7,7 @@ import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { AVATAR_ICONS } from "@/lib/avatars";
 
 export function UserNav() {
     const router = useRouter();
@@ -95,9 +96,13 @@ export function UserNav() {
                 aria-controls="user-menu"
             >
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center border border-border overflow-hidden">
-                    {user.user_metadata?.avatar_url ? (
+                    {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
                         <img
-                            src={user.user_metadata.avatar_url}
+                            src={
+                                user.user_metadata?.avatar_icon
+                                    ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
+                                    : user.user_metadata.avatar_url
+                            }
                             alt={user.user_metadata.full_name || "User"}
                             className="h-full w-full object-cover"
                         />

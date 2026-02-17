@@ -5,6 +5,7 @@ import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useReadingTimer } from "@/hooks/useReadingTimer";
 
 /**
  * Reader View — Accordion Layout
@@ -23,6 +24,9 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const { saveReadingProgress } = useReadingProgress();
+
+    // Start tracking reading time
+    useReadingTimer(content.id);
 
     // Load progress from localStorage on mount
     useEffect(() => {
