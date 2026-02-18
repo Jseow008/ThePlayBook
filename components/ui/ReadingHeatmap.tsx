@@ -295,7 +295,7 @@ function ReadingBarChart({ data, range }: { data: { date: Date, dateStr: string,
                 if (range === 'week') showLabel = true;
 
                 // Format Logic
-                let label = format(day.date, 'EEE');
+                const label = format(day.date, 'EEE');
 
                 return (
                     <div key={day.dateStr} className="flex-1 min-w-[3px] flex flex-col items-center gap-2 group">
