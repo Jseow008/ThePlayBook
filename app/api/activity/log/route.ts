@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
         const { duration_seconds = 60, activity_date } = body;
+        const durationToAdd = Number(duration_seconds);
 
         // Use client provided date or fallback to server UTC today
         const today = activity_date || new Date().toISOString().split('T')[0];
@@ -24,35 +25,32 @@ export async function POST(req: NextRequest) {
         // for incrementing values without a raw RPC or two steps.
         // We will try a raw RPC call or a select-then-update approach for simplicity first, 
         // but raw SQL is better for concurrency.
-        // Let's use the rpc 'log_reading_activity' if we had one, but we don't.
-        // We will enable raw SQL execution via rpc or just use the upsert with a fixed value? 
-        // No, we need to ACCUMULATE time. 
 
         // Let's try to check if a row exists first.
-        const { data: existing } = await supabase
-            .from('reading_activity')
+        const { data: existing } = await (supabase
+            .from('reading_activity') as any)
             .select('id, duration_seconds')
             .eq('user_id', user.id)
             .eq('activity_date', today)
             .single();
 
         if (existing) {
-            const { error } = await supabase
-                .from('reading_activity')
+            const { error } = await (supabase
+                .from('reading_activity') as any)
                 .update({
-                    duration_seconds: existing.duration_seconds + duration_seconds,
+                    duration_seconds: (existing.duration_seconds || 0) + durationToAdd,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', existing.id);
 
             if (error) throw error;
         } else {
-            const { error } = await supabase
-                .from('reading_activity')
+            const { error } = await (supabase
+                .from('reading_activity') as any)
                 .insert({
                     user_id: user.id,
                     activity_date: today,
-                    duration_seconds: duration_seconds
+                    duration_seconds: durationToAdd
                 });
 
             if (error) throw error;
