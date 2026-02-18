@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Trophy } from "lucide-react";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
-import type { ContentItem } from "@/types/database";
+import { useBatchContentItems } from "@/hooks/use-content-queries";
 
 /**
  * Completed Page
@@ -15,60 +15,30 @@ import type { ContentItem } from "@/types/database";
  */
 export default function CompletedPage() {
     const { completedIds, isLoaded, refresh, removeFromProgress } = useReadingProgress();
-    const [allItems, setAllItems] = useState<ContentItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("all"); // 'all' | 'book' | 'podcast' | 'article'
     const [activeSort, setActiveSort] = useState<"newest" | "oldest" | "title">("newest");
 
+    const {
+        data: allItems = [],
+        isLoading,
+    } = useBatchContentItems(completedIds, { enabled: isLoaded });
+
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isLoaded || isLoading || completedIds.length === 0) return;
 
-        if (completedIds.length === 0) {
-            setIsLoading(false);
-            setAllItems([]);
-            return;
+        const validIds = new Set(allItems.map((item) => item.id));
+        const invalidIds = completedIds.filter((id) => !validIds.has(id));
+
+        if (invalidIds.length > 0) {
+            invalidIds.forEach((id) => {
+                localStorage.removeItem(`flux_progress_${id}`);
+            });
+            refresh();
         }
-
-        // Fetch content items for the completed IDs
-        const fetchItems = async () => {
-            try {
-                const response = await fetch("/api/content/batch", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ids: completedIds }),
-                });
-
-                if (response.ok) {
-                    const data: ContentItem[] = await response.json();
-
-                    // Identify items that are in localStorage but not in the DB
-                    const validIds = new Set(data.map(item => item.id));
-                    const invalidIds = completedIds.filter(id => !validIds.has(id));
-
-                    // Self-healing: Remove invalid entries from localStorage
-                    if (invalidIds.length > 0) {
-                        console.log("Cleaning up invalid completed items:", invalidIds);
-                        invalidIds.forEach(id => {
-                            localStorage.removeItem(`flux_progress_${id}`);
-                        });
-                        refresh();
-                    }
-
-                    // Store all items (client-side filtering is fast for <1000 items)
-                    setAllItems(data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch items:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchItems();
-    }, [completedIds, isLoaded, refresh]);
+    }, [allItems, completedIds, isLoaded, isLoading, refresh]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {
@@ -209,7 +179,6 @@ export default function CompletedPage() {
                                         showCompletedBadge
                                         onRemove={(id) => {
                                             removeFromProgress(id);
-                                            setAllItems(prev => prev.filter(i => i.id !== id));
                                         }}
                                     />
                                 ))}

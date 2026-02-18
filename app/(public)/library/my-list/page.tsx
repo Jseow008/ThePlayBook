@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
-import type { ContentItem } from "@/types/database";
+import { useBatchContentItems } from "@/hooks/use-content-queries";
 
 /**
  * My List Page
@@ -15,67 +15,27 @@ import type { ContentItem } from "@/types/database";
  */
 export default function MyListPage() {
     const { myListIds, isLoaded, removeFromMyList } = useReadingProgress();
-    const [allItems, setAllItems] = useState<ContentItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("all");
     const [activeSort, setActiveSort] = useState<"newest" | "oldest" | "title">("newest");
 
+    const {
+        data: allItems = [],
+        isLoading,
+    } = useBatchContentItems(myListIds, { enabled: isLoaded });
+
     useEffect(() => {
-        if (!isLoaded) return;
+        if (!isLoaded || isLoading || myListIds.length === 0) return;
 
-        if (myListIds.length === 0) {
-            setIsLoading(false);
-            setAllItems([]);
-            return;
+        const validIds = new Set(allItems.map((item) => item.id));
+        const invalidIds = myListIds.filter((id) => !validIds.has(id));
+
+        if (invalidIds.length > 0) {
+            invalidIds.forEach((id) => removeFromMyList(id));
         }
-
-        // Fetch content items for the my-list IDs
-        const fetchItems = async () => {
-            try {
-                const response = await fetch("/api/content/batch", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ids: myListIds }),
-                });
-
-                if (response.ok) {
-                    const data: ContentItem[] = await response.json();
-
-                    // Identify items that are in localStorage but not in the DB
-                    const validIds = new Set(data.map(item => item.id));
-                    const invalidIds = myListIds.filter(id => !validIds.has(id));
-
-                    // Self-healing: Remove invalid entries
-                    if (invalidIds.length > 0) {
-                        console.log("Cleaning up invalid My List items:", invalidIds);
-                        invalidIds.forEach(id => {
-                            // We use the hook's remove function but we need to do it carefully in loop
-                            // Actually, refresh logic handles basic loading, but we should remove invalid keys
-                            // Since My List is a single array key, we can update it once.
-                            // But `removeFromMyList` updates state and storage. Calling in loop is okay but might cause multiple renders.
-                            // Better: filter valid IDs and update storage manually if needed, or just let user see empty?
-                            // Actually, we should clean up.
-                            // The hook manages 'flux_mylist'.
-                            // Let's just call removeFromMyList for each invalid ID.
-                            removeFromMyList(id);
-                        });
-                    }
-
-                    // Store all items
-                    setAllItems(data);
-                }
-            } catch (error) {
-                console.error("Failed to fetch items:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchItems();
-    }, [myListIds, isLoaded, removeFromMyList]);
+    }, [allItems, isLoaded, isLoading, myListIds, removeFromMyList]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {

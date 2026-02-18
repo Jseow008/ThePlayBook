@@ -6,7 +6,6 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
-import { getAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Verify the current request has a valid admin session
@@ -21,19 +20,18 @@ export async function verifyAdminSession(): Promise<boolean> {
             return false;
         }
 
-        // Check if user has admin role in profiles table
-        // Use admin client to bypass RLS for role check
-        const adminClient = getAdminClient();
-        const { data: profile, error: profileError } = await adminClient
+        // Check admin role using user-scoped client (reduced privileged surface area)
+        const { data: profileRaw, error: profileError } = await supabase
             .from("profiles")
             .select("role")
             .eq("id", user.id)
             .single();
 
-        if (profileError || !profile) {
+        if (profileError || !profileRaw) {
             return false;
         }
 
+        const profile = profileRaw as { role?: string };
         return profile.role === "admin";
     } catch (error) {
         const maybeDynamicError = error as { digest?: string };

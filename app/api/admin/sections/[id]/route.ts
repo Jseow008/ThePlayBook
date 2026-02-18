@@ -11,6 +11,7 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 import { revalidatePath } from "next/cache";
+import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -32,20 +33,29 @@ const UpdateHomepageSectionSchema = z
     );
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+    const requestId = getRequestId();
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
     }
 
     const { id } = await params;
-    const body = await request.json();
+    let body: unknown;
+    try {
+        body = await request.json();
+    } catch (error) {
+        logApiError({
+            requestId,
+            route: "/api/admin/sections/[id]",
+            message: "Invalid JSON body for section update",
+            error,
+        });
+        return apiError("INVALID_JSON", "Invalid request body", 400, requestId);
+    }
     const parsed = UpdateHomepageSectionSchema.safeParse(body);
 
     if (!parsed.success) {
-        return NextResponse.json(
-            { error: "Invalid request payload", details: parsed.error.errors },
-            { status: 400 }
-        );
+        return apiError("VALIDATION_ERROR", "Invalid request payload", 400, requestId);
     }
 
     const supabase = getAdminClient();
@@ -68,11 +78,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         .maybeSingle();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        logApiError({
+            requestId,
+            route: "/api/admin/sections/[id]",
+            message: "Failed to update homepage section",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to update section", 500, requestId);
     }
 
     if (!data) {
-        return NextResponse.json({ error: "Section not found" }, { status: 404 });
+        return apiError("NOT_FOUND", "Section not found", 404, requestId);
     }
 
     revalidatePath("/");
@@ -81,9 +97,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(_request: NextRequest, { params }: RouteParams) {
+    const requestId = getRequestId();
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
     }
 
     const { id } = await params;
@@ -97,11 +114,17 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
         .maybeSingle();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        logApiError({
+            requestId,
+            route: "/api/admin/sections/[id]",
+            message: "Failed to delete homepage section",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to delete section", 500, requestId);
     }
 
     if (!data) {
-        return NextResponse.json({ error: "Section not found" }, { status: 404 });
+        return apiError("NOT_FOUND", "Section not found", 404, requestId);
     }
 
     revalidatePath("/");

@@ -93,6 +93,11 @@ export function useReadingProgress() {
         setIsLoaded(true);
     }, []);
 
+    const insertOrMoveToFront = useCallback((ids: string[], itemId: string) => {
+        const filtered = ids.filter((id) => id !== itemId);
+        return [itemId, ...filtered];
+    }, []);
+
     // Sync Helper: Upsert row to Supabase
     const syncItemToCloud = useCallback(async (itemId: string, isBookmarked?: boolean, progressData?: ReadingProgressData | null) => {
         if (!user) return;
@@ -267,19 +272,19 @@ export function useReadingProgress() {
 
         localStorage.removeItem(`flux_progress_${itemId}`);
 
-        // Trigger storage event for other components/tabs
-        window.dispatchEvent(new StorageEvent("storage", {
-            key: `flux_progress_${itemId}`,
-            newValue: null
-        }));
-
-        // Refresh local state
-        loadProgress();
+        // Update in-memory state without full localStorage rescan
+        setInProgressIds((prev) => prev.filter((id) => id !== itemId));
+        setCompletedIds((prev) => prev.filter((id) => id !== itemId));
+        setProgressMap((prev) => {
+            const next = { ...prev };
+            delete next[itemId];
+            return next;
+        });
 
         if (user) {
             syncItemToCloud(itemId, undefined, null);
         }
-    }, [loadProgress, user, syncItemToCloud]);
+    }, [user, syncItemToCloud]);
 
     // My List Actions
     const addToMyList = useCallback((itemId: string) => {
@@ -289,17 +294,12 @@ export function useReadingProgress() {
         if (!currentList.includes(itemId)) {
             const newList = [itemId, ...currentList]; // Add to top
             localStorage.setItem("flux_mylist", JSON.stringify(newList));
-
-            window.dispatchEvent(new StorageEvent("storage", {
-                key: "flux_mylist",
-                newValue: JSON.stringify(newList)
-            }));
-            loadProgress();
+            setMyListIds(newList);
 
             // Cloud Sync
             syncItemToCloud(itemId, true, undefined);
         }
-    }, [loadProgress, syncItemToCloud]);
+    }, [syncItemToCloud]);
 
     const removeFromMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
@@ -307,16 +307,11 @@ export function useReadingProgress() {
         const currentList = JSON.parse(localStorage.getItem("flux_mylist") || "[]");
         const newList = currentList.filter((id: string) => id !== itemId);
         localStorage.setItem("flux_mylist", JSON.stringify(newList));
-
-        window.dispatchEvent(new StorageEvent("storage", {
-            key: "flux_mylist",
-            newValue: JSON.stringify(newList)
-        }));
-        loadProgress();
+        setMyListIds(newList);
 
         // Cloud Sync
         syncItemToCloud(itemId, false, undefined);
-    }, [loadProgress, syncItemToCloud]);
+    }, [syncItemToCloud]);
 
     const toggleMyList = useCallback((itemId: string) => {
         if (myListIds.includes(itemId)) {
@@ -333,10 +328,19 @@ export function useReadingProgress() {
 
         localStorage.setItem(`flux_progress_${itemId}`, JSON.stringify(data));
 
-        loadProgress();
+        // Update in-memory state without full localStorage rescan
+        setProgressMap((prev) => ({ ...prev, [itemId]: data }));
+
+        if (data.isCompleted) {
+            setCompletedIds((prev) => insertOrMoveToFront(prev, itemId));
+            setInProgressIds((prev) => prev.filter((id) => id !== itemId));
+        } else {
+            setInProgressIds((prev) => insertOrMoveToFront(prev, itemId));
+            setCompletedIds((prev) => prev.filter((id) => id !== itemId));
+        }
 
         syncItemToCloud(itemId, undefined, data);
-    }, [loadProgress, syncItemToCloud]);
+    }, [insertOrMoveToFront, syncItemToCloud]);
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
 

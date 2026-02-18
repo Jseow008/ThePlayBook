@@ -1,95 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
-import type { ContentItem } from "@/types/database";
 import { ContentLane } from "@/components/ui/ContentLane";
+import { useBatchContentItems, useRecommendations } from "@/hooks/use-content-queries";
 
 export function RecommendationsRow() {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
 
-    // Lane 1: "Because you read X"
-    const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
-    const [recentTitle, setRecentTitle] = useState<string>("");
+    const mostRecentId = completedIds[0] || inProgressIds[0] || null;
+    const clusterIds = useMemo(
+        () => Array.from(new Set([...completedIds, ...myListIds])),
+        [completedIds, myListIds]
+    );
 
-    // Lane 2: "Recommended for You"
-    const [generalItems, setGeneralItems] = useState<ContentItem[]>([]);
+    const isWorthFetchingGeneral =
+        clusterIds.length > 1 || (clusterIds.length === 1 && clusterIds[0] !== mostRecentId);
 
-    const [isLoading, setIsLoading] = useState(true);
+    const { data: recentItems = [], isLoading: recentLoading } = useRecommendations(
+        mostRecentId ? [mostRecentId] : [],
+        { enabled: isLoaded && !!mostRecentId }
+    );
 
-    useEffect(() => {
-        if (!isLoaded) return;
+    const { data: recentTitleItems = [], isLoading: recentTitleLoading } = useBatchContentItems(
+        mostRecentId ? [mostRecentId] : [],
+        { enabled: isLoaded && !!mostRecentId }
+    );
 
-        const performFetches = async () => {
-            // 1. Identify the "Source" book for Lane 1 (Most recent completed, or in-progress)
-            const mostRecentId = completedIds[0] || inProgressIds[0];
+    const { data: generalItems = [], isLoading: generalLoading } = useRecommendations(
+        clusterIds,
+        { enabled: isLoaded && isWorthFetchingGeneral }
+    );
 
-            // 2. Identify the "Cluster" for Lane 2 (All completed + My List)
-            // We use a Set to deduplicate
-            const clusterIds = Array.from(new Set([...completedIds, ...myListIds]));
+    const recentTitle = recentTitleItems[0]?.title || "";
+    const isLoading = recentLoading || recentTitleLoading || generalLoading;
 
-            // If we have absolutely no history, stop
-            if (!mostRecentId && clusterIds.length === 0) {
-                setIsLoading(false);
-                return;
-            }
-
-            const promises = [];
-
-            // --- FETCH LANE 1 (Specific) ---
-            if (mostRecentId) {
-                // Fetch recommendations for this specific book
-                promises.push(
-                    fetch("/api/recommendations", {
-                        method: "POST",
-                        body: JSON.stringify({ completedIds: [mostRecentId] }),
-                    })
-                        .then(r => r.ok ? r.json() : [])
-                        .then(data => setRecentItems(data))
-                );
-
-                // Fetch title of this specific book
-                promises.push(
-                    fetch("/api/content/batch", {
-                        method: "POST",
-                        body: JSON.stringify({ ids: [mostRecentId] }),
-                    })
-                        .then(r => r.ok ? r.json() : [])
-                        .then(data => {
-                            if (data.length > 0) setRecentTitle(data[0].title);
-                        })
-                );
-            }
-
-            // --- FETCH LANE 2 (General) ---
-            // Only fetch if we have a cluster AND it's different/larger than just the single recent book
-            // (e.g. if I've only read 1 book, Lane 1 and Lane 2 would be identical, so skip Lane 2)
-            const isWorthFetchingGeneral = clusterIds.length > 1 || (clusterIds.length === 1 && clusterIds[0] !== mostRecentId);
-
-            if (isWorthFetchingGeneral) {
-                promises.push(
-                    fetch("/api/recommendations", {
-                        method: "POST",
-                        body: JSON.stringify({ completedIds: clusterIds }),
-                    })
-                        .then(r => r.ok ? r.json() : [])
-                        .then(data => setGeneralItems(data))
-                );
-            }
-
-            try {
-                await Promise.all(promises);
-            } catch (error) {
-                console.error("Failed to fetch recommendations", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        performFetches();
-    }, [completedIds, inProgressIds, myListIds, isLoaded]);
-
-    if (!isLoaded || (!recentItems.length && !generalItems.length && !isLoading)) return null;
+    if (!isLoaded || (!mostRecentId && clusterIds.length === 0)) return null;
+    if (!isLoading && !recentItems.length && !generalItems.length) return null;
 
     if (isLoading) {
         return (

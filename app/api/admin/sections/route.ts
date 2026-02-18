@@ -11,6 +11,7 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 import { revalidatePath } from "next/cache";
+import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 
 const FilterTypeEnum = z.enum(["author", "category", "title", "featured"]);
 
@@ -23,9 +24,10 @@ const CreateHomepageSectionSchema = z.object({
 });
 
 export async function GET() {
+    const requestId = getRequestId();
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
     }
 
     const supabase = getAdminClient();
@@ -35,25 +37,41 @@ export async function GET() {
         .order("order_index", { ascending: true });
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        logApiError({
+            requestId,
+            route: "/api/admin/sections",
+            message: "Failed to fetch homepage sections",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to fetch sections", 500, requestId);
     }
 
     return NextResponse.json(data);
 }
 
 export async function POST(request: NextRequest) {
+    const requestId = getRequestId();
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+        body = await request.json();
+    } catch (error) {
+        logApiError({
+            requestId,
+            route: "/api/admin/sections",
+            message: "Invalid JSON body for section create",
+            error,
+        });
+        return apiError("INVALID_JSON", "Invalid request body", 400, requestId);
+    }
+
     const parsed = CreateHomepageSectionSchema.safeParse(body);
     if (!parsed.success) {
-        return NextResponse.json(
-            { error: "Invalid request payload", details: parsed.error.errors },
-            { status: 400 }
-        );
+        return apiError("VALIDATION_ERROR", "Invalid request payload", 400, requestId);
     }
 
     const supabase = getAdminClient();
@@ -69,7 +87,13 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
 
         if (maxOrderError) {
-            return NextResponse.json({ error: maxOrderError.message }, { status: 500 });
+            logApiError({
+                requestId,
+                route: "/api/admin/sections",
+                message: "Failed to resolve max order index",
+                error: maxOrderError,
+            });
+            return apiError("INTERNAL_ERROR", "Failed to create section", 500, requestId);
         }
 
         finalOrderIndex = (maxOrder?.order_index ?? 0) + 1;
@@ -90,7 +114,13 @@ export async function POST(request: NextRequest) {
         .single();
 
     if (error) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        logApiError({
+            requestId,
+            route: "/api/admin/sections",
+            message: "Failed to insert homepage section",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to create section", 500, requestId);
     }
 
     revalidatePath("/");

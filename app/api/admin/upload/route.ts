@@ -1,15 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
+const ALLOWED_IMAGE_MIME = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/avif",
+]);
+
+function getSafeImageExtension(fileName: string) {
+    const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
+    return ALLOWED_IMAGE_EXTENSIONS.has(ext) ? ext : null;
+}
 
 export async function POST(req: NextRequest) {
+    const requestId = getRequestId();
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json(
-            { error: "Unauthorized" },
-            { status: 401 }
-        );
+        return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
     }
 
     try {
@@ -17,30 +31,25 @@ export async function POST(req: NextRequest) {
         const file = formData.get("file") as File;
 
         if (!file) {
-            return NextResponse.json(
-                { error: "No file provided" },
-                { status: 400 }
-            );
+            return apiError("VALIDATION_ERROR", "No file provided", 400, requestId);
         }
 
-        // Validate file type
-        if (!file.type.startsWith("image/")) {
-            return NextResponse.json(
-                { error: "Invalid file type. Only images are allowed." },
-                { status: 400 }
-            );
+        // Validate MIME + extension (defense in depth)
+        if (!ALLOWED_IMAGE_MIME.has(file.type)) {
+            return apiError("VALIDATION_ERROR", "Invalid file type. Only images are allowed.", 400, requestId);
+        }
+
+        const fileExt = getSafeImageExtension(file.name);
+        if (!fileExt) {
+            return apiError("VALIDATION_ERROR", "Invalid file extension.", 400, requestId);
         }
 
         // Validate file size (e.g., 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            return NextResponse.json(
-                { error: "File too large. Maximum size is 5MB." },
-                { status: 400 }
-            );
+        if (file.size > MAX_IMAGE_BYTES) {
+            return apiError("VALIDATION_ERROR", "File too large. Maximum size is 5MB.", 400, requestId);
         }
 
-        const fileExt = file.name.split(".").pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const fileName = `${Date.now()}-${crypto.randomUUID()}.${fileExt}`;
         const filePath = `covers/${fileName}`;
 
         // Upload using admin client (bypasses RLS)
@@ -52,11 +61,13 @@ export async function POST(req: NextRequest) {
             });
 
         if (uploadError) {
-            console.error("Supabase upload error:", uploadError);
-            return NextResponse.json(
-                { error: uploadError.message },
-                { status: 500 }
-            );
+            logApiError({
+                requestId,
+                route: "/api/admin/upload",
+                message: "Supabase image upload failed",
+                error: uploadError,
+            });
+            return apiError("INTERNAL_ERROR", "Upload failed", 500, requestId);
         }
 
         // Get public URL
@@ -67,10 +78,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ url: publicUrl });
 
     } catch (error) {
-        console.error("Upload handler error:", error);
-        return NextResponse.json(
-            { error: "Internal server error during upload" },
-            { status: 500 }
-        );
+        logApiError({
+            requestId,
+            route: "/api/admin/upload",
+            message: "Upload handler error",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Internal server error during upload", 500, requestId);
     }
 }

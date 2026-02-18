@@ -1,53 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
-import type { ContentItem } from "@/types/database";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { BookOpen } from "lucide-react";
 import Link from "next/link";
+import { useBatchContentItems } from "@/hooks/use-content-queries";
 
 export function RecentActivity() {
     const { inProgressIds, isLoaded } = useReadingProgress();
-    const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const recentIds = inProgressIds.slice(0, 3);
 
-    useEffect(() => {
-        if (!isLoaded) return;
-
-        if (inProgressIds.length === 0) {
-            setIsLoading(false);
-            return;
-        }
-
-        // Take only the top 3 most recent items for a cleaner look
-        const recentIds = inProgressIds.slice(0, 3);
-
-        const fetchItems = async () => {
-            try {
-                const response = await fetch("/api/content/batch", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ids: recentIds }),
-                });
-
-                if (response.ok) {
-                    const data: ContentItem[] = await response.json();
-                    // Sort by recency (matching the order of IDs in recentIds)
-                    const sorted = data.sort((a, b) => {
-                        return recentIds.indexOf(a.id) - recentIds.indexOf(b.id);
-                    });
-                    setRecentItems(sorted);
-                }
-            } catch (error) {
-                console.error("Failed to fetch recent items", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchItems();
-    }, [inProgressIds, isLoaded]);
+    const {
+        data: recentItems = [],
+        isLoading,
+    } = useBatchContentItems(recentIds, { enabled: isLoaded });
 
     if (!isLoaded || isLoading) {
         return (

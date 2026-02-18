@@ -10,6 +10,7 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 
 // Zod schema for updating content
 const UpdateContentSchema = z.object({
@@ -56,15 +57,13 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+    const requestId = getRequestId();
     const { id } = await params;
 
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json(
-            { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-            { status: 401 }
-        );
+        return apiError("UNAUTHORIZED", "Not authenticated", 401, requestId);
     }
 
     try {
@@ -84,10 +83,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
         if (contentError) {
             if (contentError.code === "PGRST116") {
-                return NextResponse.json(
-                    { success: false, error: { code: "NOT_FOUND", message: "Content not found" } },
-                    { status: 404 }
-                );
+                return apiError("NOT_FOUND", "Content not found", 404, requestId);
             }
             throw contentError;
         }
@@ -97,42 +93,43 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             data: contentItem,
         });
     } catch (error) {
-        console.error("Error fetching content:", error);
-        return NextResponse.json(
-            { success: false, error: { code: "INTERNAL_ERROR", message: "Failed to fetch content" } },
-            { status: 500 }
-        );
+        logApiError({
+            requestId,
+            route: "/api/admin/content/[id]",
+            message: "Error fetching content",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to fetch content", 500, requestId);
     }
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+    const requestId = getRequestId();
     const { id } = await params;
 
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json(
-            { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-            { status: 401 }
-        );
+        return apiError("UNAUTHORIZED", "Not authenticated", 401, requestId);
     }
 
     try {
-        const body = await request.json();
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch (error) {
+            logApiError({
+                requestId,
+                route: "/api/admin/content/[id]",
+                message: "Invalid JSON body for content update",
+                error,
+            });
+            return apiError("INVALID_JSON", "Invalid request body", 400, requestId);
+        }
         const parsed = UpdateContentSchema.safeParse(body);
 
         if (!parsed.success) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: {
-                        code: "VALIDATION_ERROR",
-                        message: "Invalid request",
-                        details: parsed.error.errors,
-                    },
-                },
-                { status: 400 }
-            );
+            return apiError("VALIDATION_ERROR", "Invalid request", 400, requestId);
         }
 
         const { segments, artifacts, ...contentData } = parsed.data;
@@ -257,30 +254,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             },
         });
     } catch (error) {
-        console.error("Error updating content:", error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: {
-                    code: "INTERNAL_ERROR",
-                    message: `Failed to update content: ${(error as Error).message}`
-                }
-            },
-            { status: 500 }
-        );
+        logApiError({
+            requestId,
+            route: "/api/admin/content/[id]",
+            message: "Error updating content",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to update content", 500, requestId);
     }
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+    const requestId = getRequestId();
     const { id } = await params;
 
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json(
-            { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-            { status: 401 }
-        );
+        return apiError("UNAUTHORIZED", "Not authenticated", 401, requestId);
     }
 
     try {
@@ -307,10 +298,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             message: "Content deleted successfully",
         });
     } catch (error) {
-        console.error("Error deleting content:", error);
-        return NextResponse.json(
-            { success: false, error: { code: "INTERNAL_ERROR", message: "Failed to delete content" } },
-            { status: 500 }
-        );
+        logApiError({
+            requestId,
+            route: "/api/admin/content/[id]",
+            message: "Error deleting content",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to delete content", 500, requestId);
     }
 }

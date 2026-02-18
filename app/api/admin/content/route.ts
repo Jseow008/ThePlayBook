@@ -9,6 +9,7 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 
 // Zod schema for creating content
 const CreateContentSchema = z.object({
@@ -50,13 +51,11 @@ const CreateContentSchema = z.object({
 });
 
 export async function GET() {
+    const requestId = getRequestId();
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json(
-            { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-            { status: 401 }
-        );
+        return apiError("UNAUTHORIZED", "Not authenticated", 401, requestId);
     }
 
     try {
@@ -77,43 +76,45 @@ export async function GET() {
             data: data || [],
         });
     } catch (error) {
-        console.error("Error fetching content:", error);
-        return NextResponse.json(
-            { success: false, error: { code: "INTERNAL_ERROR", message: "Failed to fetch content" } },
-            { status: 500 }
-        );
+        logApiError({
+            requestId,
+            route: "/api/admin/content",
+            message: "Error fetching content",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to fetch content", 500, requestId);
     }
 }
 
 export async function POST(request: NextRequest) {
+    const requestId = getRequestId();
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        return NextResponse.json(
-            { success: false, error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
-            { status: 401 }
-        );
+        return apiError("UNAUTHORIZED", "Not authenticated", 401, requestId);
     }
 
     try {
-        const body = await request.json();
+        let body: unknown;
+        try {
+            body = await request.json();
+        } catch (error) {
+            logApiError({
+                requestId,
+                route: "/api/admin/content",
+                message: "Invalid JSON body for content create",
+                error,
+            });
+            return apiError("INVALID_JSON", "Invalid request body", 400, requestId);
+        }
+
         const parsed = CreateContentSchema.safeParse(body);
 
         if (!parsed.success) {
-            return NextResponse.json(
-                {
-                    success: false,
-                    error: {
-                        code: "VALIDATION_ERROR",
-                        message: "Invalid request",
-                        details: parsed.error.errors,
-                    },
-                },
-                { status: 400 }
-            );
+            return apiError("VALIDATION_ERROR", "Invalid request", 400, requestId);
         }
 
-        const { segments, ...contentData } = parsed.data;
+        const { segments, artifacts, ...contentData } = parsed.data;
         const supabase = getAdminClient();
 
         // Create content item
@@ -163,7 +164,6 @@ export async function POST(request: NextRequest) {
         }
 
         // Create artifacts if provided
-        const artifacts = body.artifacts;
         if (artifacts && artifacts.length > 0) {
             const artifactsToInsert = artifacts.map((artifact: { type: string; payload_schema: object }) => ({
                 item_id: contentItem.id,
@@ -198,17 +198,12 @@ export async function POST(request: NextRequest) {
             },
         }, { status: 201 });
     } catch (error) {
-        console.error("Error creating content:", error);
-        return NextResponse.json(
-            {
-                success: false,
-                error: {
-                    code: "INTERNAL_ERROR",
-                    message: `Failed to create content: ${(error as any)?.message || "Unknown error"}`,
-                    details: error
-                }
-            },
-            { status: 500 }
-        );
+        logApiError({
+            requestId,
+            route: "/api/admin/content",
+            message: "Error creating content",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to create content", 500, requestId);
     }
 }

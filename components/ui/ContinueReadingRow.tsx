@@ -1,51 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
-import type { ContentItem } from "@/types/database";
 import { ContentLane } from "@/components/ui/ContentLane";
+import { useBatchContentItems } from "@/hooks/use-content-queries";
 
 export function ContinueReadingRow() {
     const { inProgressIds, isLoaded } = useReadingProgress();
-    const [items, setItems] = useState<ContentItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const ids = inProgressIds.slice(0, 10); // Limit to top 10 recent items
 
-    useEffect(() => {
-        if (!isLoaded) return;
-        if (inProgressIds.length === 0) {
-            setIsLoading(false);
-            return;
-        }
+    const { data: items = [], isLoading } = useBatchContentItems(ids, {
+        enabled: isLoaded,
+    });
 
-        const ids = inProgressIds.slice(0, 10); // Limit to top 10 recent items
-
-        const fetchItems = async () => {
-            try {
-                const response = await fetch("/api/content/batch", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ ids }),
-                });
-
-                if (response.ok) {
-                    const data: ContentItem[] = await response.json();
-                    // Sort by recency (matching the order of inProgressIds)
-                    const sorted = data.sort((a, b) => {
-                        return ids.indexOf(a.id) - ids.indexOf(b.id);
-                    });
-                    setItems(sorted);
-                }
-            } catch (error) {
-                console.error("Failed to fetch continue reading items", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchItems();
-    }, [inProgressIds, isLoaded]);
-
-    if (!isLoaded || (inProgressIds.length === 0 && !isLoading)) return null;
+    if (!isLoaded || ids.length === 0) return null;
 
     if (isLoading) {
         return (
@@ -62,7 +29,7 @@ export function ContinueReadingRow() {
         );
     }
 
-    if (items.length === 0) return null;
+    if (items.length === 0 && !isLoading) return null;
 
     return (
         <ContentLane

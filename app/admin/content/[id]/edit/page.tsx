@@ -5,7 +5,7 @@
  */
 
 import { notFound } from "next/navigation";
-import { getAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { Segment } from "@/types/database";
 
@@ -15,10 +15,10 @@ interface EditContentPageProps {
 
 export default async function EditContentPage({ params }: EditContentPageProps) {
     const { id } = await params;
-    const supabase = getAdminClient();
+    const supabase = await createClient();
 
     // Fetch content with segments and artifacts
-    const { data: contentItem, error } = await supabase
+    const { data: contentItemRaw, error } = await supabase
         .from("content_item")
         .select(`
             *,
@@ -29,9 +29,11 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
         .order("order_index", { referencedTable: "segment" })
         .single();
 
-    if (error || !contentItem) {
+    if (error || !contentItemRaw) {
         notFound();
     }
+
+    const contentItem = contentItemRaw as any;
 
     // Transform data for the form
     const formData = {
