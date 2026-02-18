@@ -326,7 +326,7 @@ function ReadingBarChart({ data, range }: { data: { date: Date, dateStr: string,
 
 
 function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr: string, isFuture?: boolean, duration: number }[] }) {
-    const [hoveredDay, setHoveredDay] = useState<{ day: typeof data[0], rect: DOMRect } | null>(null);
+    const [hoveredDay, setHoveredDay] = useState<{ day: typeof data[0], x: number, y: number } | null>(null);
 
     // Calculate weeks for the grid
     const weeks: any[][] = [];
@@ -413,8 +413,11 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
                                         className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] transition-colors ${day ? getCellColor(day) : 'bg-transparent'}`}
                                         onMouseEnter={(e) => {
                                             if (day) {
-                                                const rect = e.currentTarget.getBoundingClientRect();
-                                                setHoveredDay({ day, rect });
+                                                const target = e.currentTarget;
+                                                // Calculate center position relative to the container
+                                                const x = target.offsetLeft + target.offsetWidth / 2;
+                                                const y = target.offsetTop;
+                                                setHoveredDay({ day, x, y });
                                             }
                                         }}
                                         onMouseLeave={() => setHoveredDay(null)}
@@ -429,10 +432,10 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
             {/* Floating Tooltip */}
             {hoveredDay && (
                 <div
-                    className="fixed z-50 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]"
+                    className="absolute z-50 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]"
                     style={{
-                        left: hoveredDay.rect.left + hoveredDay.rect.width / 2,
-                        top: hoveredDay.rect.top - 8
+                        left: hoveredDay.x,
+                        top: hoveredDay.y - 8
                     }}
                 >
                     <div className="font-semibold mb-0.5">
