@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, Save } from "lucide-react";
+import { Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function ContentFilters() {
@@ -45,7 +45,7 @@ export function ContentFilters() {
                 }
             }
         }
-    }, []); // Run once on mount
+    }, [router, searchParams]); // Run once on mount
 
     // Save filters when they change, if permanent is enabled
     useEffect(() => {

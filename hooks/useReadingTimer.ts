@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from "react";
 export function useReadingTimer(contentId?: string) {
     const [secondsRead, setSecondsRead] = useState(0);
     const intervalRef = useRef<NodeJS.Timeout | null>(null);
-    const lastHeartbeatRef = useRef<number>(Date.now());
+
 
     // Accumulator for unsent seconds
     const pendingSecondsRef = useRef(0);

@@ -273,7 +273,7 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                 setFormData(prev => ({ ...prev, duration_seconds: seconds }));
             }
         }
-    }, [formData.segments]); // Depend on segments
+    }, [formData.segments, formData.duration_seconds]); // Depend on segments
 
     // DnD Sensors
     const sensors = useSensors(

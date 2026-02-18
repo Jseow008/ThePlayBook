@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
+
 import { AVATAR_ICONS } from "@/lib/avatars";
 
 export function UserNav() {

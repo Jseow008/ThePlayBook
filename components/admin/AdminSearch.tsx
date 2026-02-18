@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
+
 
 export function AdminSearch() {
     const router = useRouter();

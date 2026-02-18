@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { BookOpen, Headphones, Lightbulb, Sparkles, ArrowLeft } from "lucide-react";
+import { BookOpen, Headphones, Lightbulb, ArrowLeft } from "lucide-react";
 
 export const metadata = {
     title: "About | NETFLUX",

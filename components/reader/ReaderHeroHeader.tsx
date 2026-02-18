@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Share2, Clock, Volume2 } from "lucide-react";
+import { ArrowLeft, Share2, Clock } from "lucide-react";
 import { AudioPlayer } from "./AudioPlayer";
 import { APP_NAME } from "@/lib/brand";
 

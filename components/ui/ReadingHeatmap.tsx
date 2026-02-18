@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { format, subDays, eachDayOfInterval, isSameDay, startOfYear, endOfYear, getDay, subMonths, subWeeks } from "date-fns";
-import { createClient } from "@/lib/supabase/client";
-import { Flame, Calendar, Trophy, Info, BookOpen } from "lucide-react";
+import { format, subDays, eachDayOfInterval, isSameDay, startOfYear, endOfYear, getDay } from "date-fns";
+import { Flame, Info, BookOpen } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Button } from "./button";
 
 interface ActivityData {
@@ -286,7 +284,7 @@ function ReadingBarChart({ data, range }: { data: { date: Date, dateStr: string,
 
     return (
         <div className="w-full h-[160px] flex items-end justify-between gap-1 px-2 overflow-x-auto">
-            {data.map((day, i) => {
+            {data.map((day) => {
                 const heightPercent = Math.min((day.duration / maxDuration) * 100, 100);
                 const isToday = isSameDay(day.date, new Date());
 

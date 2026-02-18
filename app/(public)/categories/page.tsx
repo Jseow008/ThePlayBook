@@ -56,7 +56,7 @@ export default async function CategoriesPage() {
 
     // Prepare list for rendering
     const categories = ((data as { category: string; count: number }[] | null) || [])
-        .map((cat, index) => {
+        .map((cat) => {
             const name = cat.category;
             const count = cat.count;
 
@@ -99,7 +99,7 @@ export default async function CategoriesPage() {
                 {/* Content */}
                 {categories.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[140px] gap-3">
-                        {categories.map((category, index) => {
+                        {categories.map((category) => {
                             const Icon = category.icon;
                             return (
                                 <Link

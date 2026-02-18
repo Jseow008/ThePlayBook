@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthUser as User } from "@supabase/supabase-js";
-import { Calendar, Award, Book, BookOpen, Sparkles, Edit2, Check, User as UserIcon, Zap, Crown, Star } from "lucide-react";
+import { Calendar, Award, Book, BookOpen, Sparkles, Edit2, Check } from "lucide-react";
 import { format } from "date-fns";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useMemo, useState } from "react";

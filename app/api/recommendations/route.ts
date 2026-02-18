@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
 
         const supabase = createPublicServerClient();
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { data, error } = await (supabase.rpc as any)("match_recommendations", {
             completed_ids: completedIds,
             match_count: 6,
