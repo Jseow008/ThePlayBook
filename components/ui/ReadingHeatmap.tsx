@@ -228,12 +228,12 @@ export function ReadingHeatmap() {
             </div>
 
             {/* Stats Footer */}
-            <div className="grid grid-cols-3 gap-2 border-t border-border pt-4">
-                <div className="text-center group">
+            <div className="flex flex-row items-center justify-between border-t border-border pt-4 px-2">
+                <div className="flex-1 text-center group">
                     <p className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{stats.totalSessions}</p>
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Total Sessions</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Total Days Read</p>
                 </div>
-                <div className="text-center flex flex-col items-center group relative">
+                <div className="flex-1 text-center flex flex-col items-center group relative border-l border-r border-border/50">
                     <div className="relative mb-1">
                         <span className={`text-xl font-bold transition-all ${stats.currentStreak > 0 ? "text-orange-500" : "text-muted-foreground"}`}>
                             {stats.currentStreak}
@@ -244,7 +244,7 @@ export function ReadingHeatmap() {
                     </div>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">Current Streak</p>
                 </div>
-                <div className="text-center group">
+                <div className="flex-1 text-center group">
                     <p className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{stats.longestStreak}</p>
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Longest Streak</p>
                 </div>
