@@ -12,6 +12,7 @@ import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
 import { ContentFilters } from "@/components/admin/ContentFilters";
 import { AdminSearch } from "@/components/admin/AdminSearch";
 import { PaginationControls } from "@/components/admin/PaginationControls";
+import { SyncEmbeddingsButton } from "@/components/admin/SyncEmbeddingsButton";
 import { APP_NAME } from "@/lib/brand";
 
 // Type icons mapping
@@ -125,6 +126,7 @@ export default async function AdminDashboardPage({
                         <Plus className="w-4 h-4" />
                         New Content
                     </Link>
+                    <SyncEmbeddingsButton />
                 </div>
             </div>
 
