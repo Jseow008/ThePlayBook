@@ -40,7 +40,7 @@ export function RecommendationsRow() {
 
     if (isLoading) {
         return (
-            <section className="mb-10 space-y-4 animate-in fade-in duration-500">
+            <section className="space-y-4 animate-in fade-in duration-500">
                 <div className="flex items-center gap-2 px-6 lg:px-16">
                     <div className="h-7 w-64 bg-card/50 rounded-md animate-pulse" />
                 </div>
@@ -54,7 +54,7 @@ export function RecommendationsRow() {
     }
 
     return (
-        <div className="space-y-8">
+        <>
             {/* Lane 1: Specific Context */}
             {recentItems.length > 0 && (
                 <ContentLane
@@ -64,12 +64,12 @@ export function RecommendationsRow() {
             )}
 
             {/* Lane 2: General Taste */}
-            {generalItems.length > 0 && (
+            {isWorthFetchingGeneral && generalItems.length > 0 && (
                 <ContentLane
                     title="Recommended for You"
                     items={generalItems}
                 />
             )}
-        </div>
+        </>
     );
 }

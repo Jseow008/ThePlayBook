@@ -263,8 +263,18 @@ export function useReadingProgress() {
             }
         };
 
+        // Listen for custom event (same-tab sync)
+        const handleCustomUpdate = () => {
+            loadProgress();
+        };
+
         window.addEventListener("storage", handleStorage);
-        return () => window.removeEventListener("storage", handleStorage);
+        window.addEventListener("flux_progress_updated", handleCustomUpdate);
+
+        return () => {
+            window.removeEventListener("storage", handleStorage);
+            window.removeEventListener("flux_progress_updated", handleCustomUpdate);
+        };
     }, [loadProgress]);
 
     const removeFromProgress = useCallback((itemId: string) => {
@@ -284,6 +294,8 @@ export function useReadingProgress() {
         if (user) {
             syncItemToCloud(itemId, undefined, null);
         }
+
+        window.dispatchEvent(new Event("flux_progress_updated"));
     }, [user, syncItemToCloud]);
 
     // My List Actions
@@ -298,6 +310,8 @@ export function useReadingProgress() {
 
             // Cloud Sync
             syncItemToCloud(itemId, true, undefined);
+
+            window.dispatchEvent(new Event("flux_progress_updated"));
         }
     }, [syncItemToCloud]);
 
@@ -311,6 +325,8 @@ export function useReadingProgress() {
 
         // Cloud Sync
         syncItemToCloud(itemId, false, undefined);
+
+        window.dispatchEvent(new Event("flux_progress_updated"));
     }, [syncItemToCloud]);
 
     const toggleMyList = useCallback((itemId: string) => {
@@ -340,6 +356,8 @@ export function useReadingProgress() {
         }
 
         syncItemToCloud(itemId, undefined, data);
+
+        window.dispatchEvent(new Event("flux_progress_updated"));
     }, [insertOrMoveToFront, syncItemToCloud]);
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
