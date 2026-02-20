@@ -2,9 +2,7 @@
 import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
-
-import { Logo } from "@/components/ui/Logo";
-import Link from "next/link";
+import { MobileHeader } from "@/components/ui/MobileHeader";
 
 /**
  * Public Layout
@@ -36,12 +34,7 @@ export default async function PublicLayout({
 
 
             {/* Mobile Header */}
-            <header className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4">
-                <Link href="/">
-                    <Logo width={80} height={24} />
-                </Link>
-                <UserNav />
-            </header>
+            <MobileHeader />
 
             {/* Main Content */}
             <main className="lg:pl-16 pb-20 lg:pb-0">
