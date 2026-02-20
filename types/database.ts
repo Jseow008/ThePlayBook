@@ -1,279 +1,512 @@
-/**
- * Database Types - Auto-generated from Supabase schema
- * 
- * These types match the database schema defined in migrations.
- * In production, regenerate with: npx supabase gen types typescript
- */
-
 export type Json =
-    | string
-    | number
-    | boolean
-    | null
-    | { [key: string]: Json | undefined }
-    | Json[];
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
-export type ContentStatus = "draft" | "verified";
-export type ContentType = "podcast" | "book" | "article";
-export type ArtifactType = "checklist" | "plan" | "script";
-export type UserRole = "user" | "admin";
-
-export interface Database {
-    public: {
-        Tables: {
-            content_item: {
-                Row: {
-                    id: string;
-                    type: ContentType;
-                    title: string;
-                    source_url: string | null;
-                    status: ContentStatus;
-                    quick_mode_json: Json | null;
-                    duration_seconds: number | null;
-                    author: string | null;
-                    cover_image_url: string | null;
-                    hero_image_url: string | null;
-                    category: string | null;
-                    is_featured: boolean;
-                    audio_url: string | null;
-                    created_at: string;
-                    updated_at: string;
-                    deleted_at: string | null;
-                };
-                Insert: {
-                    id?: string;
-                    type: ContentType;
-                    title: string;
-                    source_url?: string | null;
-                    status?: ContentStatus;
-                    quick_mode_json?: Json | null;
-                    duration_seconds?: number | null;
-                    author?: string | null;
-                    cover_image_url?: string | null;
-                    hero_image_url?: string | null;
-                    category?: string | null;
-                    is_featured?: boolean;
-                    audio_url?: string | null;
-                    created_at?: string;
-                    updated_at?: string;
-                    deleted_at?: string | null;
-                };
-                Update: {
-                    id?: string;
-                    type?: ContentType;
-                    title?: string;
-                    source_url?: string | null;
-                    status?: ContentStatus;
-                    quick_mode_json?: Json | null;
-                    duration_seconds?: number | null;
-                    author?: string | null;
-                    cover_image_url?: string | null;
-                    hero_image_url?: string | null;
-                    category?: string | null;
-                    is_featured?: boolean;
-                    audio_url?: string | null;
-                    created_at?: string;
-                    updated_at?: string;
-                    deleted_at?: string | null;
-                };
-            };
-            segment: {
-                Row: {
-                    id: string;
-                    item_id: string;
-                    order_index: number;
-                    title: string | null;
-                    markdown_body: string;
-                    start_time_sec: number | null;
-                    end_time_sec: number | null;
-                    created_at: string;
-                    updated_at: string;
-                    deleted_at: string | null;
-                };
-                Insert: {
-                    id?: string;
-                    item_id: string;
-                    order_index: number;
-                    title?: string | null;
-                    markdown_body: string;
-                    start_time_sec?: number | null;
-                    end_time_sec?: number | null;
-                    created_at?: string;
-                    updated_at?: string;
-                    deleted_at?: string | null;
-                };
-                Update: {
-                    id?: string;
-                    item_id?: string;
-                    order_index?: number;
-                    title?: string | null;
-                    markdown_body?: string;
-                    start_time_sec?: number | null;
-                    end_time_sec?: number | null;
-                    created_at?: string;
-                    updated_at?: string;
-                    deleted_at?: string | null;
-                };
-            };
-            artifact: {
-                Row: {
-                    id: string;
-                    item_id: string;
-                    type: ArtifactType;
-                    payload_schema: Json;
-                    version: string;
-                    created_at: string;
-                    updated_at: string;
-                };
-                Insert: {
-                    id?: string;
-                    item_id: string;
-                    type: ArtifactType;
-                    payload_schema: Json;
-                    version?: string;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-                Update: {
-                    id?: string;
-                    item_id?: string;
-                    type?: ArtifactType;
-                    payload_schema?: Json;
-                    version?: string;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-            };
-            homepage_section: {
-                Row: {
-                    id: string;
-                    title: string;
-                    filter_type: "author" | "category" | "title" | "featured";
-                    filter_value: string;
-                    order_index: number;
-                    is_active: boolean;
-                    created_at: string;
-                    updated_at: string;
-                };
-                Insert: {
-                    id?: string;
-                    title: string;
-                    filter_type: "author" | "category" | "title" | "featured";
-                    filter_value: string;
-                    order_index?: number;
-                    is_active?: boolean;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-                Update: {
-                    id?: string;
-                    title?: string;
-                    filter_type?: "author" | "category" | "title" | "featured";
-                    filter_value?: string;
-                    order_index?: number;
-                    is_active?: boolean;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-            };
-            profiles: {
-                Row: {
-                    id: string;
-                    email: string | null;
-                    role: UserRole;
-                    created_at: string;
-                    updated_at: string;
-                };
-                Insert: {
-                    id: string;
-                    email?: string | null;
-                    role?: UserRole;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-                Update: {
-                    id?: string;
-                    email?: string | null;
-                    role?: UserRole;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-            };
-            user_library: {
-                Row: {
-                    user_id: string;
-                    content_id: string;
-                    is_bookmarked: boolean;
-                    progress: Json;
-                    last_interacted_at: string;
-                };
-                Insert: {
-                    user_id: string;
-                    content_id: string;
-                    is_bookmarked?: boolean;
-                    progress?: Json;
-                    last_interacted_at?: string;
-                };
-                Update: {
-                    user_id?: string;
-                    content_id?: string;
-                    is_bookmarked?: boolean;
-                    progress?: Json;
-                    last_interacted_at?: string;
-                };
-            };
-            reading_activity: {
-                Row: {
-                    id: string;
-                    user_id: string;
-                    activity_date: string;
-                    duration_seconds: number;
-                    pages_read: number;
-                    created_at: string;
-                    updated_at: string;
-                };
-                Insert: {
-                    id?: string;
-                    user_id: string;
-                    activity_date?: string;
-                    duration_seconds?: number;
-                    pages_read?: number;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-                Update: {
-                    id?: string;
-                    user_id?: string;
-                    activity_date?: string;
-                    duration_seconds?: number;
-                    pages_read?: number;
-                    created_at?: string;
-                    updated_at?: string;
-                };
-            };
-        };
-        Views: Record<string, never>;
-        Functions: {
-            is_admin: {
-                Args: Record<string, never>;
-                Returns: boolean;
-            };
-            get_category_stats: {
-                Args: Record<string, never>;
-                Returns: {
-                    category: string;
-                    count: number;
-                }[];
-            };
-        };
-        Enums: {
-            content_status: ContentStatus;
-            content_type: ContentType;
-            artifact_type: ArtifactType;
-            user_role: UserRole;
-        };
-    };
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.1"
+  }
+  public: {
+    Tables: {
+      artifact: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          payload_schema: Json
+          type: Database["public"]["Enums"]["artifact_type"]
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          payload_schema: Json
+          type: Database["public"]["Enums"]["artifact_type"]
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          payload_schema?: Json
+          type?: Database["public"]["Enums"]["artifact_type"]
+          updated_at?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "artifact_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_feedback: {
+        Row: {
+          content_id: string
+          created_at: string
+          details: string | null
+          id: string
+          is_positive: boolean
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          is_positive: boolean
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          is_positive?: boolean
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_feedback_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_item: {
+        Row: {
+          audio_url: string | null
+          author: string | null
+          category: string | null
+          cover_image_url: string | null
+          created_at: string
+          deleted_at: string | null
+          duration_seconds: number | null
+          embedding: string | null
+          hero_image_url: string | null
+          id: string
+          is_featured: boolean
+          quick_mode_json: Json | null
+          source_url: string | null
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+          updated_at: string
+        }
+        Insert: {
+          audio_url?: string | null
+          author?: string | null
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          duration_seconds?: number | null
+          embedding?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_featured?: boolean
+          quick_mode_json?: Json | null
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string | null
+          author?: string | null
+          category?: string | null
+          cover_image_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          duration_seconds?: number | null
+          embedding?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_featured?: boolean
+          quick_mode_json?: Json | null
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["content_status"]
+          title?: string
+          type?: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      homepage_section: {
+        Row: {
+          created_at: string | null
+          filter_type: string
+          filter_value: string
+          id: string
+          is_active: boolean
+          order_index: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          filter_type: string
+          filter_value: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          filter_type?: string
+          filter_value?: string
+          id?: string
+          is_active?: boolean
+          order_index?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reading_activity: {
+        Row: {
+          activity_date: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          pages_read: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_date?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          pages_read?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          pages_read?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      segment: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          end_time_sec: number | null
+          id: string
+          item_id: string
+          markdown_body: string
+          order_index: number
+          start_time_sec: number | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          end_time_sec?: number | null
+          id?: string
+          item_id: string
+          markdown_body: string
+          order_index: number
+          start_time_sec?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          end_time_sec?: number | null
+          id?: string
+          item_id?: string
+          markdown_body?: string
+          order_index?: number
+          start_time_sec?: number | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_library: {
+        Row: {
+          content_id: string
+          is_bookmarked: boolean | null
+          last_interacted_at: string | null
+          progress: Json | null
+          user_id: string
+        }
+        Insert: {
+          content_id: string
+          is_bookmarked?: boolean | null
+          last_interacted_at?: string | null
+          progress?: Json | null
+          user_id: string
+        }
+        Update: {
+          content_id?: string
+          is_bookmarked?: boolean | null
+          last_interacted_at?: string | null
+          progress?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_library_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      get_category_stats: {
+        Args: never
+        Returns: {
+          category: string
+          count: number
+        }[]
+      }
+      insert_generated_content: {
+        Args: {
+          p_author?: string
+          p_quick_mode_json?: Json
+          p_segments?: Json
+          p_status?: Database["public"]["Enums"]["content_status"]
+          p_title: string
+          p_type: Database["public"]["Enums"]["content_type"]
+        }
+        Returns: string
+      }
+      is_admin: { Args: never; Returns: boolean }
+      match_recommendations: {
+        Args: { completed_ids: string[]; match_count?: number }
+        Returns: {
+          audio_url: string
+          author: string
+          category: string
+          cover_image_url: string
+          created_at: string
+          deleted_at: string
+          duration_seconds: number
+          hero_image_url: string
+          id: string
+          is_featured: boolean
+          quick_mode_json: Json
+          similarity: number
+          source_url: string
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+          updated_at: string
+        }[]
+      }
+    }
+    Enums: {
+      artifact_type: "checklist" | "plan" | "script"
+      content_status: "draft" | "verified"
+      content_type: "podcast" | "book" | "article" | "video"
+      user_role: "user" | "admin"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+  | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+  : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])
+  ? (DefaultSchema["Tables"] &
+    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+      Row: infer R
+    }
+  ? R
+  : never
+  : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Insert: infer I
+  }
+  ? I
+  : never
+  : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+  | keyof DefaultSchema["Tables"]
+  | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+  : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+    Update: infer U
+  }
+  ? U
+  : never
+  : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+  | keyof DefaultSchema["Enums"]
+  | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+  : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+  | keyof DefaultSchema["CompositeTypes"]
+  | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+  : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+  : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      artifact_type: ["checklist", "plan", "script"],
+      content_status: ["draft", "verified"],
+      content_type: ["podcast", "book", "article", "video"],
+      user_role: ["user", "admin"],
+    },
+  },
+} as const;
+
+export type ContentType = Database["public"]["Enums"]["content_type"];
+export type ArtifactType = Database["public"]["Enums"]["artifact_type"];
+export type ContentStatus = Database["public"]["Enums"]["content_status"];
+export type UserRole = Database["public"]["Enums"]["user_role"];
 
 // Convenience types for table rows
 export type ContentItem = Database["public"]["Tables"]["content_item"]["Row"];
@@ -281,3 +514,5 @@ export type Segment = Database["public"]["Tables"]["segment"]["Row"];
 export type Artifact = Database["public"]["Tables"]["artifact"]["Row"];
 export type HomepageSection = Database["public"]["Tables"]["homepage_section"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type ContentFeedback = Database["public"]["Tables"]["content_feedback"]["Row"];
+

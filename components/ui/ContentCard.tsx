@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpen, Headphones, FileText, CheckCircle2, Trash2, Plus, Check } from "lucide-react";
+import { BookOpen, Headphones, FileText, CheckCircle2, Trash2, Plus, Check, Video } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { cn } from "@/lib/utils";
@@ -18,12 +18,13 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
     const isBookmarked = isInMyList(item.id);
     const progress = getProgress(item.id);
 
-    const typeIcon = {
+    const typeIcon: Record<ContentItem["type"], any> = {
         podcast: Headphones,
         book: BookOpen,
         article: FileText,
-    }[item.type];
-    const Icon = typeIcon || BookOpen;
+        video: Video,
+    };
+    const Icon = typeIcon[item.type] || BookOpen;
 
     // Calculate Progress Percentage
     const percentage = progress && progress.totalSegments

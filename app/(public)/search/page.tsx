@@ -8,7 +8,7 @@
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { Sparkles, Search, ArrowLeft } from "lucide-react";
-import type { ContentItem } from "@/types/database";
+import type { ContentItem, ContentType } from "@/types/database";
 import Link from "next/link";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Suspense } from "react";
@@ -40,7 +40,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
         }
 
         if (type && type !== "All") {
-            queryBuilder = queryBuilder.eq("type", type.toLowerCase());
+            queryBuilder = queryBuilder.eq("type", type.toLowerCase() as ContentType);
         }
 
         if (query && query.trim().length > 0) {
