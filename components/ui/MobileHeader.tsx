@@ -12,10 +12,7 @@ export function MobileHeader() {
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
 
-    // Completely hide on immersive routes
-    if (pathname.startsWith("/read")) {
-        return null;
-    }
+
 
     useEffect(() => {
         const handleScroll = () => {
@@ -41,6 +38,11 @@ export function MobileHeader() {
             window.removeEventListener("scroll", handleScroll);
         };
     }, [lastScrollY]);
+
+    // Completely hide on immersive routes
+    if (pathname.startsWith("/read")) {
+        return null;
+    }
 
     return (
         <header
