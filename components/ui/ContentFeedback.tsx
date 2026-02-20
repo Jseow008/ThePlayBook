@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ThumbsUp, ThumbsDown, X } from "lucide-react";
+import { ThumbsUp, ThumbsDown, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -182,17 +182,20 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                         <div className="flex flex-col gap-4">
                             <div className="flex flex-col gap-2">
                                 <label htmlFor="reason" className="text-sm font-medium text-foreground">Select an issue (Optional)</label>
-                                <select
-                                    id="reason"
-                                    value={reason}
-                                    onChange={(e) => setReason(e.target.value)}
-                                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <option value="" disabled>Select an option...</option>
-                                    {FEEDBACK_REASONS.map(r => (
-                                        <option key={r} value={r}>{r}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    <select
+                                        id="reason"
+                                        value={reason}
+                                        onChange={(e) => setReason(e.target.value)}
+                                        className="appearance-none flex h-10 w-full items-center justify-between rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        <option value="" disabled>Select an option...</option>
+                                        {FEEDBACK_REASONS.map(r => (
+                                            <option key={r} value={r}>{r}</option>
+                                        ))}
+                                    </select>
+                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none opacity-50" />
+                                </div>
                             </div>
 
                             <div className="flex flex-col gap-2">
