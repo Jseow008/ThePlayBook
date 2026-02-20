@@ -135,9 +135,6 @@ export function ReaderView({ content }: ReaderViewProps) {
                     </div>
                 )}
 
-                {/* Divider */}
-                <div className="border-t border-border my-6" />
-
                 {/* Accordion Sections */}
                 <SegmentAccordion
                     segments={content.segments}
