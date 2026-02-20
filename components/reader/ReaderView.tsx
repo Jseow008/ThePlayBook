@@ -6,6 +6,7 @@ import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReadingTimer } from "@/hooks/useReadingTimer";
+import { ContentFeedback } from "@/components/ui/ContentFeedback";
 
 /**
  * Reader View — Accordion Layout
@@ -109,7 +110,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     return (
         <div className="min-h-screen bg-background font-sans text-foreground">
-            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-24 sm:pt-12 lg:pb-12">
                 {/* Hero Header */}
                 <ReaderHeroHeader
                     title={content.title}
@@ -128,7 +129,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <h3 className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">
                             The Big Idea
                         </h3>
-                        <p className="text-lg sm:text-xl text-foreground/90 leading-relaxed">
+                        <p className="text-base sm:text-lg text-foreground/90 leading-relaxed">
                             {quickMode.big_idea}
                         </p>
                     </div>
@@ -143,6 +144,9 @@ export function ReaderView({ content }: ReaderViewProps) {
                     completedSegments={completedSegments}
                     onSegmentOpen={handleSegmentOpen}
                 />
+
+                {/* Content Feedback */}
+                <ContentFeedback contentId={content.id} />
             </div>
         </div>
     );
