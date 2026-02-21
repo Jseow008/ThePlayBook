@@ -9,6 +9,8 @@ import rehypeSanitize from "rehype-sanitize";
 import type { ContentItem } from "@/types/database";
 import type { QuickMode } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { ShareButton } from "@/components/ui/ShareButton";
+import { toast } from "sonner";
 
 interface ContentPreviewProps {
     item: ContentItem;
@@ -132,10 +134,13 @@ export function ContentPreview({
 
                             {/* Save to My List Button */}
                             <button
-                                onClick={() => toggleMyList(item.id)}
+                                onClick={() => {
+                                    toggleMyList(item.id);
+                                    toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                                }}
                                 className={`inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border font-bold text-base transition-all hover:scale-[1.02] active:scale-95 ${isSaved
-                                        ? "bg-secondary/50 border-primary/50 text-foreground hover:bg-secondary/70"
-                                        : "bg-background border-border hover:bg-secondary/30 text-muted-foreground hover:text-foreground"
+                                    ? "bg-secondary/50 border-primary/50 text-foreground hover:bg-secondary/70"
+                                    : "bg-background border-border hover:bg-secondary/30 text-muted-foreground hover:text-foreground"
                                     }`}
                             >
                                 {isSaved ? (
@@ -150,6 +155,14 @@ export function ContentPreview({
                                     </>
                                 )}
                             </button>
+
+                            {/* Share Button */}
+                            <ShareButton
+                                url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
+                                title={item.title}
+                                text={`Check out "${item.title}" on NETFLUX`}
+                                variant="pill"
+                            />
 
                             {onSpinAgain && (
                                 <button
@@ -270,14 +283,26 @@ export function ContentPreview({
                 </Link>
 
                 <button
-                    onClick={() => toggleMyList(item.id)}
+                    onClick={() => {
+                        toggleMyList(item.id);
+                        toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                    }}
                     className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isSaved
-                            ? "bg-secondary/60 border-primary/50 text-primary"
-                            : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground"
+                        ? "bg-secondary/60 border-primary/50 text-primary"
+                        : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground"
                         }`}
                 >
                     {isSaved ? <Check className="size-5" /> : <Bookmark className="size-5" />}
                 </button>
+
+                {/* Mobile Share */}
+                <ShareButton
+                    url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
+                    title={item.title}
+                    text={`Check out "${item.title}" on NETFLUX`}
+                    variant="icon"
+                    className="h-11 w-11 rounded-xl border border-border/50 bg-secondary/40"
+                />
 
                 {onSpinAgain && (
                     <button

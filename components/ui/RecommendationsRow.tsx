@@ -14,8 +14,7 @@ export function RecommendationsRow() {
         [completedIds, myListIds]
     );
 
-    const isWorthFetchingGeneral =
-        clusterIds.length > 1 || (clusterIds.length === 1 && clusterIds[0] !== mostRecentId);
+    const isWorthFetchingGeneral = clusterIds.length >= 5;
 
     const { data: recentItems = [], isLoading: recentLoading } = useRecommendations(
         mostRecentId ? [mostRecentId] : [],

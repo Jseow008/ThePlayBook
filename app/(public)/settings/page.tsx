@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, LogOut, Trash2, Shield, HelpCircle, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -40,7 +41,7 @@ export default function SettingsPage() {
         setTimeout(() => {
             setIsClearing(false);
             setConfirmClear(false);
-            // Optional: Show a toast here if we had a toast system
+            toast.success("Reading history cleared");
         }, 500);
     };
 

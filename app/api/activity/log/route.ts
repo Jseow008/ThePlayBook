@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 const ActivityLogSchema = z.object({
     duration_seconds: z.coerce.number().int().min(1).max(60 * 60 * 4).default(60),
@@ -20,6 +21,18 @@ export async function POST(req: NextRequest) {
 
     if (!user) {
         return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
+    }
+
+    // Rate limit: 30 requests per 60 seconds per IP
+    const rl = rateLimit(req, { limit: 30, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
+            }
+        );
     }
 
     try {

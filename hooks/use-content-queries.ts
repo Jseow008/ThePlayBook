@@ -26,6 +26,7 @@ export function useBatchContentItems(ids: string[], options?: { enabled?: boolea
             return sortByInputOrder(data, ids);
         },
         staleTime: 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }
 

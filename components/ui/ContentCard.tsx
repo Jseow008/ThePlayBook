@@ -6,6 +6,7 @@ import { BookOpen, Headphones, FileText, CheckCircle2, Trash2, Plus, Check, Vide
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface ContentCardProps {
     item: ContentItem;
@@ -83,7 +84,13 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
                 onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    toggleMyList(item.id);
+                    if (isBookmarked) {
+                        toggleMyList(item.id);
+                        toast.success("Removed from My List");
+                    } else {
+                        toggleMyList(item.id);
+                        toast.success("Added to My List");
+                    }
                 }}
                 className={cn(
                     "focus-ring absolute top-2 p-1.5 rounded-full shadow-lg z-20 transition-all duration-300 backdrop-blur-sm",

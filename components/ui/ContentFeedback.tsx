@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 interface ContentFeedbackProps {
     contentId: string;
@@ -89,6 +90,7 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                         is_positive: true
                     })
                 });
+                toast.success("Thanks for the feedback! 👍");
             } catch (err) {
                 console.error("Failed to submit upvote", err);
             } finally {
@@ -118,6 +120,7 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
         } finally {
             setIsSubmitting(false);
             setIsModalOpen(false);
+            toast.success("Feedback received. We'll use it to improve!");
             // Reset modal state
             setReason("");
             setDetails("");

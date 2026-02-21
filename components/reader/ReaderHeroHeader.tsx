@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Share2, Clock } from "lucide-react";
+import { ArrowLeft, Clock } from "lucide-react";
 import { AudioPlayer } from "./AudioPlayer";
 import { APP_NAME } from "@/lib/brand";
+import { ShareButton } from "@/components/ui/ShareButton";
 
 /**
  * Reader Hero Header
@@ -34,36 +34,11 @@ export function ReaderHeroHeader({
     segmentsTotal,
     segmentsRead,
 }: ReaderHeroHeaderProps) {
-    const [showCopiedToast, setShowCopiedToast] = useState(false);
-
     const progressPercent =
         segmentsTotal > 0
             ? Math.round((segmentsRead / segmentsTotal) * 100)
             : 0;
 
-    const handleShare = async () => {
-        const shareData = {
-            title,
-            text: `Read "${title}" on ${APP_NAME}`,
-            url: window.location.href,
-        };
-
-        try {
-            if (
-                navigator.share &&
-                navigator.canShare &&
-                navigator.canShare(shareData)
-            ) {
-                await navigator.share(shareData);
-            } else {
-                await navigator.clipboard.writeText(window.location.href);
-                setShowCopiedToast(true);
-                setTimeout(() => setShowCopiedToast(false), 2000);
-            }
-        } catch (err) {
-            console.error("Error sharing:", err);
-        }
-    };
 
     return (
         <header className="mb-8">
@@ -120,24 +95,12 @@ export function ReaderHeroHeader({
                         </span>
 
                         {/* Share Button */}
-                        <button
-                            onClick={handleShare}
-                            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                            title={
-                                showCopiedToast
-                                    ? "Link Copied!"
-                                    : "Share"
-                            }
-                        >
-                            <Share2 className="size-4" />
-                        </button>
-
-                        {/* Copied Toast */}
-                        {showCopiedToast && (
-                            <span className="text-xs text-green-400 font-medium animate-in fade-in">
-                                Copied!
-                            </span>
-                        )}
+                        <ShareButton
+                            url={typeof window !== "undefined" ? window.location.href : ""}
+                            title={title}
+                            text={`Read "${title}" on ${APP_NAME}`}
+                            variant="icon"
+                        />
                     </div>
                 </div>
             </div>

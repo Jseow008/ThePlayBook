@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 const PosFeedbackSchema = z.object({
     content_id: z.string().uuid("Invalid content ID"),
@@ -16,6 +17,15 @@ const DelSchema = z.object({
 
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 20 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
 
     try {
         const { searchParams } = new URL(request.url);
@@ -61,6 +71,15 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 20 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
 
     try {
         const supabase = await createClient();

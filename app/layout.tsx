@@ -4,6 +4,7 @@ import "./globals.css";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,7 +18,7 @@ const outfit = Outfit({
   display: "swap",
 });
 
-const siteUrl = "https://www.netflux.blog";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
 const description =
   "Curated summaries of podcasts, books, and articles. Read distilled wisdom for free.";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
       >
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
+        <Toaster theme="dark" position="bottom-center" richColors closeButton />
       </body>
     </html>
   );

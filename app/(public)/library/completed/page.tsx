@@ -36,6 +36,7 @@ export default function CompletedPage() {
             invalidIds.forEach((id) => {
                 localStorage.removeItem(`flux_progress_${id}`);
             });
+            window.dispatchEvent(new Event("flux_progress_updated"));
             refresh();
         }
     }, [allItems, completedIds, isLoaded, isLoading, refresh]);

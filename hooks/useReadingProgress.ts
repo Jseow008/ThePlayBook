@@ -116,6 +116,17 @@ export function useReadingProgress() {
                 currentProgress = stored ? JSON.parse(stored) : null;
             }
 
+            // If it's not bookmarked AND there is no progress, delete the row entirely
+            if (!currentBookmarkState && currentProgress === null) {
+                const { error } = await supabase
+                    .from("user_library")
+                    .delete()
+                    .match({ user_id: user.id, content_id: itemId });
+
+                if (error) console.error("Cloud sync delete error:", error);
+                return;
+            }
+
             // Construct payload
             const payload: any = {
                 user_id: user.id,
@@ -129,7 +140,7 @@ export function useReadingProgress() {
 
             // Only update progress if we have data or explicit null (to clear?) 
             if (currentProgress !== undefined) {
-                payload.progress = currentProgress === null ? {} : currentProgress;
+                payload.progress = currentProgress;
             }
 
             const { error } = await supabase
