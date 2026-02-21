@@ -110,13 +110,13 @@ export default async function AdminDashboardPage({
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
+            <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
+                <div className="flex-shrink-0">
                     <h1 className="text-2xl font-bold text-foreground">Content Dashboard</h1>
                     <p className="text-muted-foreground mt-1">Manage your {APP_NAME} content</p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="flex flex-wrap items-center justify-start xl:justify-end gap-3">
                     <AdminSearch />
                     <ContentFilters />
                     <Link
