@@ -120,6 +120,13 @@ export function ContentPreview({
                                         {segmentCount} sections
                                     </span>
                                 )}
+                            <ShareButton
+                                url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
+                                title={item.title}
+                                text={`Check out "${item.title}" on NETFLUX`}
+                                variant="icon"
+                                className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
+                            />
                         </div>
 
                         {/* CTA Buttons */}
@@ -155,14 +162,6 @@ export function ContentPreview({
                                     </>
                                 )}
                             </button>
-
-                            {/* Share Button */}
-                            <ShareButton
-                                url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
-                                title={item.title}
-                                text={`Check out "${item.title}" on NETFLUX`}
-                                variant="pill"
-                            />
 
                             {onSpinAgain && (
                                 <button
