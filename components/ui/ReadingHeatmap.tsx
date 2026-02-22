@@ -414,9 +414,12 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
                                         onMouseEnter={(e) => {
                                             if (day) {
                                                 const target = e.currentTarget;
-                                                // Calculate center position relative to the container
-                                                const x = target.offsetLeft + target.offsetWidth / 2;
-                                                const y = target.offsetTop;
+                                                const rect = target.getBoundingClientRect();
+
+                                                // Calculate center x and top y relative to viewport
+                                                const x = rect.left + (rect.width / 2);
+                                                const y = rect.top;
+
                                                 setHoveredDay({ day, x, y });
                                             }
                                         }}
@@ -432,7 +435,7 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
             {/* Floating Tooltip */}
             {hoveredDay && (
                 <div
-                    className="absolute z-50 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]"
+                    className="fixed z-[100] px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]"
                     style={{
                         left: hoveredDay.x,
                         top: hoveredDay.y - 8

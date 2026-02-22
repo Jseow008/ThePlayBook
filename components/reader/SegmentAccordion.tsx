@@ -84,7 +84,7 @@ export function SegmentAccordion({
                         <button
                             onClick={() => handleToggle(segment, index)}
                             className={cn(
-                                "w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left",
+                                "focus-ring w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left",
                                 "hover:bg-accent/40",
                                 isExpanded
                                     ? "bg-accent/50 border border-border"

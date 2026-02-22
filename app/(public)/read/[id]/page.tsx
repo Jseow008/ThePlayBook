@@ -1,10 +1,4 @@
-/**
- * Public Reader Page
- * 
- * Full content reader view.
- * Public access - no authentication required.
- */
-
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
@@ -13,7 +7,6 @@ import type { ContentItemWithSegments, SegmentFull, ArtifactSummary, QuickMode }
 import { APP_NAME } from "@/lib/brand";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
-
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -63,6 +56,39 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ReadPage({ params }: PageProps) {
     const { id } = await params;
+
+    return (
+        <Suspense fallback={<ReaderSkeleton />}>
+            <ReaderServer id={id} />
+        </Suspense>
+    );
+}
+
+function ReaderSkeleton() {
+    return (
+        <div className="min-h-screen bg-background text-foreground flex flex-col pt-16 lg:pt-0">
+            {/* Header Skeleton */}
+            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border shadow-sm items-center h-14 lg:h-16 px-4 lg:px-8 shrink-0 flex gap-4">
+                <div className="w-8 h-8 rounded-full bg-secondary animate-pulse" />
+                <div className="h-6 w-1/3 bg-secondary rounded animate-pulse" />
+                <div className="ml-auto w-24 h-8 bg-secondary rounded-full animate-pulse" />
+            </header>
+            {/* Content Skeleton */}
+            <main className="flex-1 overflow-y-auto min-h-0 bg-background custom-scrollbar w-full max-w-5xl mx-auto p-4 md:p-8 space-y-6">
+                <div className="h-10 w-2/3 bg-secondary rounded animate-pulse" />
+                <div className="h-4 w-1/3 bg-secondary rounded animate-pulse" />
+                <div className="mt-8 space-y-4">
+                    <div className="h-4 w-full bg-secondary rounded animate-pulse" />
+                    <div className="h-4 w-5/6 bg-secondary rounded animate-pulse" />
+                    <div className="h-4 w-full bg-secondary rounded animate-pulse" />
+                    <div className="h-4 w-4/5 bg-secondary rounded animate-pulse" />
+                </div>
+            </main>
+        </div>
+    );
+}
+
+async function ReaderServer({ id }: { id: string }) {
     const supabase = createPublicServerClient();
 
     // Fetch content with segments and artifacts
@@ -82,9 +108,6 @@ export default async function ReadPage({ params }: PageProps) {
     if (error || !content) {
         notFound();
     }
-
-    // Check Session - removed as not used
-    // const { data: { user } } = await supabase.auth.getUser();
 
     // Transform to domain type
     const contentAny = content as any;
@@ -114,8 +137,6 @@ export default async function ReadPage({ params }: PageProps) {
             })) as SegmentFull[],
         artifacts: (contentAny.artifacts as any[]) as ArtifactSummary[],
     };
-
-    // Gate removed - allow guest access
 
     return <ReaderView content={item} />;
 }

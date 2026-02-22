@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { HomeFeed } from "@/components/ui/HomeFeed";
 import type { ContentItem, HomepageSection } from "@/types/database";
@@ -13,7 +14,33 @@ export const revalidate = 300; // Revalidate every 5 minutes
 
 const CONTENT_CARD_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, is_featured, audio_url, created_at, updated_at, deleted_at";
 
-export default async function HomePage() {
+export default function HomePage() {
+    return (
+        <Suspense fallback={<HomeFeedSkeleton />}>
+            <HomeFeedServer />
+        </Suspense>
+    );
+}
+
+function HomeFeedSkeleton() {
+    return (
+        <div className="min-h-screen bg-background animate-pulse">
+            <div className="h-[60vh] md:h-[80vh] w-full bg-card/20" />
+            <div className="-mt-8 relative z-10 px-4 md:px-8 lg:px-16 space-y-8">
+                <div className="space-y-4">
+                    <div className="h-8 w-48 bg-card/30 rounded" />
+                    <div className="flex gap-4 overflow-hidden">
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <div key={i} className="flex-none w-[140px] md:w-[200px] lg:w-[240px] aspect-[2/3] bg-card/30 rounded-lg" />
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+async function HomeFeedServer() {
     const supabase = createPublicServerClient();
 
     // 1. Fetch Featured (for Hero)

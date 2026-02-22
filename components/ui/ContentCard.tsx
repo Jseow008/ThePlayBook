@@ -100,6 +100,7 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
                         : "bg-black/40 text-white hover:bg-black/70 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
                 )}
                 title={isBookmarked ? "Remove from My List" : "Add to My List"}
+                aria-label={isBookmarked ? "Remove from My List" : "Add to My List"}
             >
                 {isBookmarked ? (
                     <Check className="size-4" />
@@ -154,6 +155,7 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
                     }}
                     className="focus-ring absolute top-2 left-2 p-1.5 bg-black/50 hover:bg-red-500/80 rounded-full opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 z-20 backdrop-blur-sm"
                     title="Remove from progress"
+                    aria-label="Remove from progress"
                 >
                     <Trash2 className="size-4 text-white" />
                 </button>
