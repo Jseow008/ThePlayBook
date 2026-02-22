@@ -46,21 +46,24 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background text-foreground pb-20">
-            {/* Header */}
-            <div className="sticky top-0 z-30 border-b border-border bg-background/95 backdrop-blur-md">
-                <div className="container max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
-                    <Link
-                        href="/"
-                        className="p-2 hover:bg-accent rounded-full transition-colors text-muted-foreground hover:text-foreground"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </Link>
-                    <span className="font-semibold text-lg tracking-tight">Settings</span>
-                </div>
-            </div>
+        <div className="min-h-screen bg-background pb-20">
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12 space-y-8">
+                <div>
+                    {/* Back to Library */}
+                    <div className="mb-8">
+                        <Link
+                            href="/"
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                        >
+                            <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                            <span>Back to Library</span>
+                        </Link>
+                    </div>
 
-            <div className="container max-w-3xl mx-auto px-4 pt-10 pb-8 space-y-8">
+                    <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
+                        Settings
+                    </h1>
+                </div>
 
                 {/* Account Section */}
                 <section className="space-y-4">
