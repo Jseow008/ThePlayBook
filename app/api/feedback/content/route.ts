@@ -139,6 +139,15 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     const requestId = getRequestId();
 
+    // Rate limit: 20 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
     try {
         const supabase = await createClient();
         const { data: { user }, error: authError } = await supabase.auth.getUser();
