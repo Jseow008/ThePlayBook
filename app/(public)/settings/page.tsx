@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
+import { APP_NAME } from "@/lib/brand";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -77,7 +78,8 @@ export default function SettingsPage() {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `netflux-export-${new Date().toISOString().split('T')[0]}.json`;
+            const safeName = APP_NAME.toLowerCase().replace(/\s+/g, '-');
+            a.download = `${safeName}-export-${new Date().toISOString().split('T')[0]}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -291,7 +293,7 @@ export default function SettingsPage() {
                             </div>
                         </Link>
                         <div className="p-4 text-center text-xs text-muted-foreground bg-zinc-900/30">
-                            Version 1.0.0 • NETFLUX
+                            Version 1.0.0 • {APP_NAME}
                         </div>
                     </div>
                 </section>

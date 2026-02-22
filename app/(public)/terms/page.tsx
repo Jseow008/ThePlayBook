@@ -5,12 +5,13 @@
  * Uses semantic tokens throughout for consistency.
  */
 
+import { APP_NAME } from "@/lib/brand";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-    title: "Terms of Service | NETFLUX",
-    description: "Terms of service for using NETFLUX.",
+    title: `Terms of Service | ${APP_NAME}`,
+    description: `Terms of service for using ${APP_NAME}.`,
 };
 
 export default function TermsPage() {
@@ -40,9 +41,9 @@ export default function TermsPage() {
                 {/* Content */}
                 <div className="space-y-12">
                     <section>
-                        <h2 className="text-xl font-semibold mb-4 font-display tracking-tight">Welcome to NETFLUX</h2>
+                        <h2 className="text-xl font-semibold mb-4 font-display tracking-tight">Welcome to {APP_NAME}</h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            By accessing and using NETFLUX (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
+                            By accessing and using {APP_NAME} (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
                         </p>
                     </section>
 
@@ -51,7 +52,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Nature of Content</h2>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                            NETFLUX is a personal knowledge stream containing summaries, reflections, and insights derived from books, podcasts, articles, and other media. Please note:
+                            {APP_NAME} is a personal knowledge stream containing summaries, reflections, and insights derived from books, podcasts, articles, and other media. Please note:
                         </p>
                         <ul className="space-y-3 text-muted-foreground">
                             <li className="flex gap-3">
@@ -76,12 +77,12 @@ export default function TermsPage() {
 
                         <h3 className="text-base font-medium mb-2 text-foreground/90">Original Works</h3>
                         <p className="text-muted-foreground leading-relaxed mb-6">
-                            The books, podcasts, and other media summarized on NETFLUX are the intellectual property of their respective authors, publishers, and creators. All rights to original works remain with their owners.
+                            The books, podcasts, and other media summarized on {APP_NAME} are the intellectual property of their respective authors, publishers, and creators. All rights to original works remain with their owners.
                         </p>
 
                         <h3 className="text-base font-medium mb-2 text-foreground/90">Our Content</h3>
                         <p className="text-muted-foreground leading-relaxed">
-                            The summaries, commentary, and presentation on NETFLUX are original works created through personal reflection and analysis. This content is protected under applicable copyright laws.
+                            The summaries, commentary, and presentation on {APP_NAME} are original works created through personal reflection and analysis. This content is protected under applicable copyright laws.
                         </p>
                     </section>
 
@@ -90,7 +91,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Acceptable Use</h2>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                            You may use NETFLUX for personal, non-commercial purposes. You agree not to:
+                            You may use {APP_NAME} for personal, non-commercial purposes. You agree not to:
                         </p>
                         <ul className="space-y-2.5 text-muted-foreground">
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Reproduce, distribute, or republish content without permission</span></li>
@@ -123,7 +124,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Limitation of Liability</h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            To the fullest extent permitted by law, NETFLUX and its creator shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the Service.
+                            To the fullest extent permitted by law, {APP_NAME} and its creator shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the Service.
                         </p>
                     </section>
 
@@ -157,7 +158,7 @@ export default function TermsPage() {
 
                 {/* Footer nav */}
                 <div className="mt-16 pt-8 border-t border-border/40 flex items-center justify-between text-sm text-muted-foreground">
-                    <span>&copy; {new Date().getFullYear()} NETFLUX</span>
+                    <span>&copy; {new Date().getFullYear()} {APP_NAME}</span>
                     <div className="flex gap-6">
                         <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
                         <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>

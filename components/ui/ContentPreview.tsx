@@ -11,6 +11,7 @@ import type { QuickMode } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { toast } from "sonner";
+import { APP_NAME } from "@/lib/brand";
 
 interface ContentPreviewProps {
     item: ContentItem;
@@ -123,7 +124,7 @@ export function ContentPreview({
                             <ShareButton
                                 url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
                                 title={item.title}
-                                text={`Check out "${item.title}" on NETFLUX`}
+                                text={`Check out "${item.title}" on ${APP_NAME}`}
                                 variant="icon"
                                 className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
                             />
@@ -298,7 +299,7 @@ export function ContentPreview({
                 <ShareButton
                     url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
                     title={item.title}
-                    text={`Check out "${item.title}" on NETFLUX`}
+                    text={`Check out "${item.title}" on ${APP_NAME}`}
                     variant="icon"
                     className="h-11 w-11 rounded-xl border border-border/50 bg-secondary/40"
                 />

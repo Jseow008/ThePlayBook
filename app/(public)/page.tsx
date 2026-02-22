@@ -65,7 +65,7 @@ async function HomeFeedServer() {
         featuredData = fallbackData;
     }
 
-    // 2. Fetch All Items for "New on NETFLUX" row
+    // 2. Fetch All Items for "New on {APP_NAME}" row
     const { data: allItems } = await supabase
         .from("content_item")
         .select(CONTENT_CARD_SELECT)

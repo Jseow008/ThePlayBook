@@ -1,7 +1,7 @@
 /**
  * Edit Content Page
  * 
- * Edit existing content for NETFLUX.
+ * Edit existing content for {APP_NAME}.
  */
 
 import { notFound } from "next/navigation";

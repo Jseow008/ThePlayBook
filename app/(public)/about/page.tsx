@@ -1,16 +1,17 @@
 /**
  * About Page
  *
- * Information about NETFLUX and its mission.
+ * Information about ${APP_NAME} and its mission.
  * Lives inside the (public) layout for consistent sidebar/nav chrome.
  */
 
+import { APP_NAME } from "@/lib/brand";
 import Link from "next/link";
 import { BookOpen, Headphones, Lightbulb, ArrowLeft } from "lucide-react";
 
 export const metadata = {
-    title: "About | NETFLUX",
-    description: "Learn more about NETFLUX - your curated knowledge stream for books, podcasts, and ideas.",
+    title: `About | ${APP_NAME}`,
+    description: `Learn more about ${APP_NAME} - your curated knowledge stream for books, podcasts, and ideas.`,
 };
 
 export default function AboutPage() {
@@ -32,7 +33,7 @@ export default function AboutPage() {
                 {/* Hero */}
                 <div className="text-center mb-20 space-y-6">
                     <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-b from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent font-display tracking-tight md:tracking-[-0.02em] leading-tight">
-                        About NETFLUX
+                        About {APP_NAME}
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
                         A personal knowledge stream built to capture, distill, and revisit the best ideas from books, podcasts, and articles.
@@ -44,7 +45,7 @@ export default function AboutPage() {
                     <h2 className="text-2xl font-bold mb-5 font-display">The Mission</h2>
                     <div className="space-y-4 text-muted-foreground leading-relaxed">
                         <p>
-                            We consume so much content—podcasts during commutes, books before bed, articles throughout the day—but how much do we actually retain? NETFLUX exists to solve that problem.
+                            We consume so much content—podcasts during commutes, books before bed, articles throughout the day—but how much do we actually retain? {APP_NAME} exists to solve that problem.
                         </p>
                         <p>
                             Every entry here is a personal reflection: a distillation of key insights, memorable quotes, and actionable takeaways. It&apos;s not just a summary—it&apos;s a second brain for ideas worth remembering.
@@ -100,7 +101,7 @@ export default function AboutPage() {
                             &ldquo;The faintest ink is more powerful than the strongest memory.&rdquo;
                         </blockquote>
                         <p className="text-muted-foreground mt-4 leading-relaxed">
-                            Ideas are only valuable if we can access them when we need them. NETFLUX is a living document—a place to capture wisdom before it fades.
+                            Ideas are only valuable if we can access them when we need them. {APP_NAME} is a living document—a place to capture wisdom before it fades.
                         </p>
                     </div>
                 </section>
@@ -117,7 +118,7 @@ export default function AboutPage() {
 
                 {/* Footer nav */}
                 <div className="mt-16 pt-8 border-t border-border/40 flex items-center justify-between text-sm text-muted-foreground">
-                    <span>&copy; {new Date().getFullYear()} NETFLUX</span>
+                    <span>&copy; {new Date().getFullYear()} {APP_NAME}</span>
                     <div className="flex gap-6">
                         <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
                         <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>

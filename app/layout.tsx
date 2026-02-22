@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     "podcasts",
     "books",
     "learning",
-    "netflux",
+    APP_NAME.toLowerCase(),
   ],
   openGraph: {
     title: `${APP_NAME} | ${APP_TAGLINE}`,

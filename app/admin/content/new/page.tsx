@@ -1,7 +1,7 @@
 /**
  * New Content Page
  * 
- * Create new content for NETFLUX.
+ * Create new content for {APP_NAME}.
  */
 
 import { ContentForm } from "@/components/admin/ContentForm";

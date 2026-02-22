@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const quickMode = data.quick_mode_json as { big_idea?: string } | null;
     const description =
         quickMode?.big_idea ??
-        (data.author ? `${data.author} · ${data.category ?? "Reading"}` : data.category ?? "Read on NETFLUX");
+        (data.author ? `${data.author} · ${data.category ?? "Reading"}` : data.category ?? `Read on ${APP_NAME}`);
     const ogImage = data.cover_image_url ?? `${siteUrl}/images/og-image.png`;
 
     return {
