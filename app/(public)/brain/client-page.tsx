@@ -4,8 +4,6 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { BookOpen, Search, Filter, Trash2, ExternalLink } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { useDeleteHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -74,11 +72,12 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                        <Input
+                        <input
+                            type="text"
                             placeholder="Search your notes and highlights..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 bg-card/50 border-white/10"
+                            className="w-full h-10 pl-9 pr-4 rounded-md border border-white/10 bg-card/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary placeholder:text-muted-foreground/60"
                         />
                     </div>
                     {uniqueItems.length > 0 && (

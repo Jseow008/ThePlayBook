@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
-            ...rl.headers,
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
         );
     }
 
@@ -55,8 +55,8 @@ export async function POST(request: NextRequest) {
             return apiError("FORBIDDEN", `Maximum of ${HIGHLIGHT_LIMIT} highlights per item reached.`, 403, requestId);
         }
 
-        const { data, error } = await supabase
-            .from("user_highlights")
+        const { data, error } = await (supabase
+            .from("user_highlights") as any)
             .insert({
                 user_id: user.id,
                 content_item_id,

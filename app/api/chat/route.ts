@@ -1,118 +1,157 @@
 import { createClient } from "@/lib/supabase/server";
-import { type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
-import { streamText, tool } from "ai";
-import { z } from "zod";
+import { streamText } from "ai";
 import { apiError, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
-export const maxDuration = 30; // Allow 30s max for AI response
+export const maxDuration = 60; // Allow 60s max for AI response
 
 export async function POST(req: NextRequest) {
     const requestId = crypto.randomUUID();
 
     try {
+        // --- Auth ---
         const supabase = await createClient();
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        const {
+            data: { user },
+            error: authError,
+        } = await supabase.auth.getUser();
 
         if (authError || !user) {
             return apiError("UNAUTHORIZED", "Please log in to use Ask My Library", 401, requestId);
         }
 
-        const { messages } = await req.json();
-
-        // Get the last user message
-        const lastMessage = messages[messages.length - 1];
-        if (!lastMessage || lastMessage.role !== 'user') {
-            return apiError("VALIDATION_ERROR", "No user query provided", 400, requestId);
+        // --- Rate Limiting ---
+        const rl = rateLimit(req, { limit: 10, windowMs: 60_000 });
+        if (!rl.success) {
+            return NextResponse.json(
+                { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
+                {
+                    status: 429,
+                    headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60000) / 1000)) },
+                }
+            );
         }
-        const userQuery = lastMessage.content;
 
-        // 1. Generate an embedding for the user's question
-        const embeddingResponse = await fetch('https://api.openai.com/v1/embeddings', {
-            method: 'POST',
+        // --- Validate API Key ---
+        const openaiApiKey = process.env.OPENAI_API_KEY;
+        if (!openaiApiKey) {
+            logApiError({ requestId, route: "/api/chat", message: "OPENAI_API_KEY not configured", error: new Error("Missing env") });
+            return apiError("INTERNAL_ERROR", "AI service is not configured. Please contact an administrator.", 500, requestId);
+        }
+
+        // --- Parse & Validate Body ---
+        let body: { messages?: any[] };
+        try {
+            body = await req.json();
+        } catch {
+            return apiError("VALIDATION_ERROR", "Invalid JSON body", 400, requestId);
+        }
+
+        const { messages } = body;
+        if (!Array.isArray(messages) || messages.length === 0) {
+            return apiError("VALIDATION_ERROR", "Messages array is required", 400, requestId);
+        }
+
+        const lastMessage = messages[messages.length - 1];
+        if (!lastMessage || lastMessage.role !== "user" || typeof lastMessage.content !== "string") {
+            return apiError("VALIDATION_ERROR", "Last message must be a user message with text content", 400, requestId);
+        }
+
+        const userQuery = lastMessage.content.trim();
+        if (!userQuery || userQuery.length > 2000) {
+            return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
+        }
+
+        // --- Step 1: Generate Embedding for Question ---
+        const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
+            method: "POST",
             headers: {
-                'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json'
+                Authorization: `Bearer ${openaiApiKey}`,
+                "Content-Type": "application/json",
             },
             body: JSON.stringify({
                 input: userQuery,
-                model: 'text-embedding-3-small'
-            })
+                model: "text-embedding-3-small",
+            }),
         });
 
         if (!embeddingResponse.ok) {
-            console.error("Embedding API error:", await embeddingResponse.text());
-            return apiError("INTERNAL_ERROR", "Failed to generate question embedding", 500, requestId);
+            const errText = await embeddingResponse.text();
+            logApiError({ requestId, route: "/api/chat", message: "OpenAI Embedding API error", error: new Error(errText) });
+            return apiError("INTERNAL_ERROR", "Failed to process your question. Please try again.", 500, requestId);
         }
 
         const embeddingData = await embeddingResponse.json();
-        const queryEmbedding = embeddingData.data[0].embedding;
+        const queryEmbedding = embeddingData?.data?.[0]?.embedding;
 
-        // 2. Perform Vector Search (RAG)
-        // Call the RPC to find the most relevant segments in the user's library
-        // @ts-ignore - Supabase generated types cache mismatch for this RPC
-        const { data: relevantSegmentIds, error: rpcError } = await supabase.rpc(
-            "match_library_segments",
-            {
-                query_embedding: JSON.stringify(queryEmbedding), // Cast array to string for pgvector type mismatch
-                match_threshold: 0.7, // Adjust based on testing
-                match_count: 5,       // Top 5 chunks
-                p_user_id: user.id,
-            }
-        );
+        if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
+            logApiError({ requestId, route: "/api/chat", message: "Invalid embedding response structure", error: new Error("No embedding data") });
+            return apiError("INTERNAL_ERROR", "Failed to process your question. Please try again.", 500, requestId);
+        }
+
+        // --- Step 2: Vector Search (RAG) ---
+        // @ts-ignore — Supabase generated types may lag behind the actual RPC signature
+        const { data: matchedSegments, error: rpcError } = await supabase.rpc("match_library_segments", {
+            query_embedding: JSON.stringify(queryEmbedding),
+            match_threshold: 0.65,
+            match_count: 5,
+            p_user_id: user.id,
+        });
 
         if (rpcError) {
-            logApiError({
-                requestId,
-                route: "/api/chat",
-                message: "AskMyLibrary - vector search failed",
-                error: rpcError,
-            });
-            return apiError("INTERNAL_ERROR", "Failed to search library", 500, requestId);
+            logApiError({ requestId, route: "/api/chat", message: "Vector search RPC failed", error: rpcError });
+            return apiError("INTERNAL_ERROR", "Failed to search your library. Please try again.", 500, requestId);
         }
 
-        // 3. Prepare the Context
+        // --- Step 3: Fetch Segment Content ---
         let contextText = "";
 
-        if (relevantSegmentIds && (relevantSegmentIds as any[]).length > 0) {
-            // Fetch the actual text for these segments
-            const segmentIds = (relevantSegmentIds as any[]).map((s: any) => s.segment_id);
+        const segmentResults = matchedSegments as Array<{ segment_id: string; content_item_id: string; similarity: number }> | null;
 
-            const { data: segments } = await supabase
+        if (segmentResults && segmentResults.length > 0) {
+            const segmentIds = segmentResults.map((s) => s.segment_id);
+
+            const { data: segments, error: segFetchError } = await supabase
                 .from("segment")
-                .select(`
-                    markdown_body,
-                    content_item ( title )
-                `)
+                .select("id, markdown_body, content_item ( title )")
                 .in("id", segmentIds);
 
-            if (segments && segments.length > 0) {
-                contextText = segments.map((seg: any, i: number) => {
-                    const title = seg.content_item?.title || "Unknown Book";
-                    return `[Source ${i + 1}: ${title}]\n${seg.markdown_body}`;
-                }).join("\n\n---\n\n");
-            } else {
-                contextText = "No direct information found in the user's library for this query.";
+            if (segFetchError) {
+                logApiError({ requestId, route: "/api/chat", message: "Failed to fetch segment content", error: segFetchError });
+                // Non-fatal — continue with empty context
             }
-        } else {
-            contextText = "No direct information found in the user's library for this query.";
+
+            if (segments && segments.length > 0) {
+                contextText = segments
+                    .map((seg: any, i: number) => {
+                        const title = seg.content_item?.title || "Unknown Source";
+                        return `[Source ${i + 1}: "${title}"]\n${seg.markdown_body}`;
+                    })
+                    .join("\n\n---\n\n");
+            }
         }
 
-        // 4. Call LLM to Answer
-        const systemPrompt = `You are a helpful, intelligent "Second Brain" assistant. 
-Your primary goal is to answer the user's question based strictly on the provided context, which are excerpts from books the user has saved in their personal library.
+        if (!contextText) {
+            contextText = "No relevant information was found in the user's saved library for this question.";
+        }
+
+        // --- Step 4: Stream LLM Response ---
+        const systemPrompt = `You are a helpful and knowledgeable "Second Brain" assistant for a personal reading platform.
+Your role is to answer the user's questions based STRICTLY on the provided context excerpts from their saved library.
 
 Context Excerpts from User's Library:
 ===
 ${contextText}
 ===
 
-Instructions:
-1. Try to answer the question using ONLY the provided context.
-2. If the context does not contain the answer, politely inform the user that their current library does not contain information to answer this question. Do NOT hallucinate or answer from external general knowledge unless explicitly asked to expand.
-3. Keep the answer concise, insightful, and formatted cleanly in Markdown.
-4. When you use information from the context, please cite the source book title if it's naturally fitting.
-`;
+Rules:
+1. Answer ONLY based on the provided context. Never fabricate or use information from outside the context.
+2. If the context does not contain enough information to answer the question, say so honestly and suggest the user save more relevant content to their library.
+3. Keep answers concise, well-structured, and formatted in clean Markdown.
+4. Naturally cite the source title when referencing information (e.g., "According to *Atomic Habits*...").
+5. Be conversational and encouraging — help the user feel like their library is a powerful knowledge base.`;
 
         const result = streamText({
             model: openai("gpt-4o-mini"),
@@ -121,14 +160,13 @@ Instructions:
         });
 
         return result.toTextStreamResponse();
-
-    } catch (error: any) {
+    } catch (error: unknown) {
         logApiError({
             requestId,
             route: "/api/chat",
-            message: "AskMyLibrary Endpoint Error",
-            error: error,
+            message: "Unhandled error in Ask My Library endpoint",
+            error,
         });
-        return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);
+        return apiError("INTERNAL_ERROR", "An unexpected error occurred. Please try again.", 500, requestId);
     }
 }

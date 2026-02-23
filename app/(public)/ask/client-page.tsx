@@ -1,61 +1,109 @@
 "use client";
 
-import { useRef, useEffect } from "react";
-import { useChat } from "ai/react";
-import { Bot, User, Send, Sparkles, Loader2, BookOpen } from "lucide-react";
+import { useRef, useEffect, useState, type FormEvent } from "react";
+import { useChat, type UIMessage } from "@ai-sdk/react";
+import { TextStreamChatTransport } from "ai";
+import { Bot, User, Send, Sparkles, Loader2, BookOpen, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import Link from "next/link";
+
+// Create a transport that points to our API endpoint
+const chatTransport = new TextStreamChatTransport({ api: "/api/chat" });
 
 export function AskClientPage() {
-    const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
-        api: "/api/chat",
-        initialMessages: [
-            {
-                id: "welcome",
-                role: "assistant",
-                content: "Hi! I'm your Second Brain. Ask me anything about the books you've saved in your library, and I'll find the answers for you.",
-            },
-        ],
+    const {
+        messages,
+        sendMessage,
+        status,
+        error,
+    } = useChat({
+        transport: chatTransport,
     });
 
+    const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-    // Auto-scroll to bottom of chat
-    const scrollToBottom = () => {
+    // Auto-scroll to bottom when new messages arrive
+    useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
+
+    // Auto-resize textarea
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = "auto";
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 192)}px`;
+        }
+    }, [input]);
+
+    const isStreaming = status === "streaming" || status === "submitted";
+
+    const onSubmit = async (e?: FormEvent) => {
+        e?.preventDefault();
+        const trimmed = input.trim();
+        if (!trimmed || isStreaming) return;
+        setInput("");
+        // Reset textarea height
+        if (textareaRef.current) textareaRef.current.style.height = "auto";
+        await sendMessage({ text: trimmed });
     };
 
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
+    // Build display messages with a welcome message prepended
+    const displayMessages: Array<{ id: string; role: string; content: string }> = [
+        {
+            id: "welcome",
+            role: "assistant",
+            content: "Hi! I'm your Second Brain assistant. Ask me anything about the books you've saved in your library, and I'll find the answers for you.",
+        },
+        ...messages.map((m) => ({
+            id: m.id,
+            role: m.role,
+            content: m.parts
+                ?.filter((p) => p.type === "text")
+                .map((p) => (p as any).text)
+                .join("") || "",
+        })),
+    ];
 
     return (
         <div className="flex flex-col h-[100dvh] bg-background">
             {/* Header */}
             <header className="flex-shrink-0 h-16 border-b border-border bg-card/50 flex items-center px-4 sm:px-6 sticky top-0 z-10 backdrop-blur-md">
-                <div className="flex items-center gap-2">
-                    <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                        <Sparkles className="size-4.5 text-primary" />
+                <div className="max-w-3xl mx-auto w-full flex items-center gap-3">
+                    <Link
+                        href="/"
+                        className="size-8 rounded-lg bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+                        aria-label="Back to home"
+                    >
+                        <ArrowLeft className="size-4 text-muted-foreground" />
+                    </Link>
+                    <div className="flex items-center gap-2">
+                        <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <Sparkles className="size-4 text-primary" />
+                        </div>
+                        <h1 className="text-lg font-bold tracking-tight">Ask My Library</h1>
                     </div>
-                    <h1 className="text-lg font-bold tracking-tight">Ask My Library</h1>
                 </div>
             </header>
 
-            {/* Chat Area */}
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-32">
+            {/* Chat Message Area */}
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-44">
                 <div className="max-w-3xl mx-auto space-y-6">
-                    {messages.map((m: any) => (
+                    {displayMessages.map((m) => (
                         <div
                             key={m.id}
                             className={cn(
-                                "flex gap-4 w-full animate-in fade-in slide-in-from-bottom-2",
+                                "flex gap-3 w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
                                 m.role === "user" ? "justify-end" : "justify-start"
                             )}
                         >
                             {/* Assistant Avatar */}
                             {m.role === "assistant" && (
                                 <div className="flex-shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center mt-1">
-                                    <Bot className="size-4.5 text-primary" />
+                                    <Bot className="size-4 text-primary" />
                                 </div>
                             )}
 
@@ -71,7 +119,9 @@ export function AskClientPage() {
                                 <div
                                     className={cn(
                                         "prose prose-sm max-w-none",
-                                        m.role === "user" ? "text-primary-foreground dark:prose-invert" : "dark:prose-invert"
+                                        m.role === "user"
+                                            ? "text-primary-foreground [&_*]:text-primary-foreground"
+                                            : "dark:prose-invert"
                                     )}
                                 >
                                     {m.role === "user" ? (
@@ -80,29 +130,42 @@ export function AskClientPage() {
                                         <ReactMarkdown>{m.content}</ReactMarkdown>
                                     )}
                                 </div>
-
-                                {/* Citation Pattern matching if needed */}
-                                {/* For MVP, we let markdown handle standard links if the LLM generates them. */}
                             </div>
 
                             {/* User Avatar */}
                             {m.role === "user" && (
                                 <div className="flex-shrink-0 size-8 rounded-full bg-zinc-700 flex items-center justify-center mt-1">
-                                    <User className="size-4.5 text-zinc-300" />
+                                    <User className="size-4 text-zinc-300" />
                                 </div>
                             )}
                         </div>
                     ))}
 
-                    {/* Loading Indicator */}
-                    {isLoading && messages[messages.length - 1]?.role === "user" && (
-                        <div className="flex gap-4 w-full animate-in fade-in">
+                    {/* Streaming Indicator */}
+                    {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
+                        <div className="flex gap-3 w-full animate-in fade-in">
                             <div className="flex-shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                <Bot className="size-4.5 text-primary" />
+                                <Bot className="size-4 text-primary" />
                             </div>
                             <div className="bg-card border border-border/50 rounded-2xl rounded-tl-sm px-5 py-4 flex items-center gap-2">
                                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground font-medium">Reading your library...</span>
+                                <span className="text-sm text-muted-foreground font-medium">
+                                    Reading your library...
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Error State */}
+                    {error && (
+                        <div className="flex gap-3 w-full animate-in fade-in">
+                            <div className="flex-shrink-0 size-8 rounded-full bg-destructive/20 flex items-center justify-center">
+                                <Bot className="size-4 text-destructive" />
+                            </div>
+                            <div className="bg-destructive/10 border border-destructive/20 rounded-2xl rounded-tl-sm px-5 py-4">
+                                <p className="text-sm text-destructive font-medium">
+                                    Something went wrong. Please try asking again.
+                                </p>
                             </div>
                         </div>
                     )}
@@ -112,41 +175,46 @@ export function AskClientPage() {
             </main>
 
             {/* Input Fixed at Bottom */}
-            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-10 pb-6 px-4">
-                <div className="max-w-3xl mx-auto">
+            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-10 pb-6 px-4 pointer-events-none">
+                <div className="max-w-3xl mx-auto pointer-events-auto">
                     <form
-                        onSubmit={handleSubmit}
+                        onSubmit={onSubmit}
                         className="relative flex items-end gap-2 bg-card rounded-2xl border border-border/60 shadow-xl overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all"
                     >
                         <textarea
+                            ref={textareaRef}
                             value={input}
-                            onChange={handleInputChange}
+                            onChange={(e) => setInput(e.target.value)}
                             placeholder="Ask about your books..."
                             className="flex-1 max-h-48 min-h-[56px] w-full resize-none bg-transparent px-5 py-4 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 scrollbar-thin overflow-y-auto"
                             rows={1}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
                                     e.preventDefault();
-                                    if (input.trim() && !isLoading) {
-                                        handleSubmit(e as any);
-                                    }
+                                    onSubmit();
                                 }
                             }}
+                            aria-label="Ask a question about your library"
                         />
                         <div className="mb-2 mr-2">
                             <button
                                 type="submit"
-                                disabled={!input.trim() || isLoading}
+                                disabled={!input.trim() || isStreaming}
                                 className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors focus-ring"
+                                aria-label="Send message"
                             >
-                                <Send className="size-4 ml-0.5" />
+                                {isStreaming ? (
+                                    <Loader2 className="size-4 animate-spin" />
+                                ) : (
+                                    <Send className="size-4 ml-0.5" />
+                                )}
                             </button>
                         </div>
                     </form>
                     <div className="mt-3 text-center">
                         <p className="text-[0.65rem] text-muted-foreground font-medium flex items-center justify-center gap-1.5 opacity-60">
                             <BookOpen className="size-3" />
-                            Second Brain searches only your saved library content.
+                            Powered by OpenAI · Searches only your saved library.
                         </p>
                     </div>
                 </div>
