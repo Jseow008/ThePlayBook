@@ -284,6 +284,96 @@ export type Database = {
           },
         ]
       }
+      segment_embedding: {
+        Row: {
+          content_item_id: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          segment_id: string
+        }
+        Insert: {
+          content_item_id: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          segment_id: string
+        }
+        Update: {
+          content_item_id?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          segment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_embedding_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segment_embedding_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_highlights: {
+        Row: {
+          color: string | null
+          content_item_id: string
+          created_at: string | null
+          highlighted_text: string
+          id: string
+          note_body: string | null
+          segment_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          content_item_id: string
+          created_at?: string | null
+          highlighted_text: string
+          id?: string
+          note_body?: string | null
+          segment_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          content_item_id?: string
+          created_at?: string | null
+          highlighted_text?: string
+          id?: string
+          note_body?: string | null
+          segment_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_highlights_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_highlights_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_library: {
         Row: {
           content_id: string
@@ -340,6 +430,19 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
+      match_library_segments: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          p_user_id: string
+          query_embedding: string
+        }
+        Returns: {
+          content_item_id: string
+          segment_id: string
+          similarity: number
+        }[]
+      }
       match_recommendations: {
         Args: { completed_ids: string[]; match_count?: number }
         Returns: {
@@ -501,7 +604,7 @@ export const Constants = {
       user_role: ["user", "admin"],
     },
   },
-} as const;
+} as const
 
 export type ContentType = Database["public"]["Enums"]["content_type"];
 export type ArtifactType = Database["public"]["Enums"]["artifact_type"];
@@ -515,4 +618,4 @@ export type Artifact = Database["public"]["Tables"]["artifact"]["Row"];
 export type HomepageSection = Database["public"]["Tables"]["homepage_section"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type ContentFeedback = Database["public"]["Tables"]["content_feedback"]["Row"];
-
+export type UserHighlight = Database["public"]["Tables"]["user_highlights"]["Row"];

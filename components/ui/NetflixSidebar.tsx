@@ -17,6 +17,7 @@ import {
     ChevronDown,
     Plus,
     LayoutGrid,
+    Brain
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -25,7 +26,7 @@ import { AVATAR_ICONS } from "@/lib/avatars";
 
 const navItems = [
     { icon: Search, label: "Search", href: "/search" },
-    { icon: Home, label: "Home", href: "/" },
+    { icon: Home, label: "Home", href: "/browse" },
     { icon: LayoutGrid, label: "Browse Categories", href: "/categories" },
     { icon: Shuffle, label: "Surprise Me", href: "/random" },
 ];
@@ -99,7 +100,7 @@ export function NetflixSidebar() {
             {/* Logo */}
             {/* Logo */}
             <Link
-                href="/"
+                href="/browse"
                 className={cn(
                     "flex items-center h-16 px-4 border-b border-border transition-all duration-300",
                     isExpanded ? "justify-start gap-3" : "justify-center"
@@ -273,6 +274,20 @@ export function NetflixSidebar() {
                                         {completedCount}
                                     </span>
                                 )}
+                            </Link>
+
+                            {/* Second Brain */}
+                            <Link
+                                href="/brain"
+                                className={cn(
+                                    "flex items-center h-10 px-4 transition-colors rounded-md",
+                                    pathname === "/brain"
+                                        ? "text-foreground bg-accent"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                )}
+                            >
+                                <Brain className="size-4 mr-3 flex-shrink-0" />
+                                <span className="text-sm whitespace-nowrap flex-1">Second Brain</span>
                             </Link>
                         </div>
                     )}

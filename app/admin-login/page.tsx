@@ -153,7 +153,7 @@ export default function AdminLoginPage() {
                 {/* Back link */}
                 <div className="mt-6 text-center">
                     <Link
-                        href="/"
+                        href="/browse"
                         className="text-sm text-zinc-500 hover:text-zinc-700 transition-colors"
                     >
                         ← Back to {APP_NAME}

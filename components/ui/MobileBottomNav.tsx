@@ -19,7 +19,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
  */
 
 const navItems = [
-    { icon: Home, label: "Home", href: "/" },
+    { icon: Home, label: "Home", href: "/browse" },
     { icon: Search, label: "Search", href: "/search" },
     { icon: LayoutGrid, label: "Categories", href: "/categories" },
     { icon: Library, label: "My Library", href: "/library/my-list" },

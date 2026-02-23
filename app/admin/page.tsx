@@ -13,6 +13,7 @@ import { ContentFilters } from "@/components/admin/ContentFilters";
 import { AdminSearch } from "@/components/admin/AdminSearch";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { SyncEmbeddingsButton } from "@/components/admin/SyncEmbeddingsButton";
+import { SyncSegmentEmbeddingsButton } from "@/components/admin/SyncSegmentEmbeddingsButton";
 import { APP_NAME } from "@/lib/brand";
 
 // Type icons mapping
@@ -127,6 +128,7 @@ export default async function AdminDashboardPage({
                         New Content
                     </Link>
                     <SyncEmbeddingsButton />
+                    <SyncSegmentEmbeddingsButton />
                 </div>
             </div>
 

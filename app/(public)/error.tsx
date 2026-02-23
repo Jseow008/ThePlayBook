@@ -42,7 +42,7 @@ export default function PublicError({ error, reset }: ErrorProps) {
                         Try again
                     </button>
                     <Link
-                        href="/"
+                        href="/browse"
                         className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border text-sm font-medium hover:bg-secondary/50 transition-colors"
                     >
                         <Home className="size-4" />

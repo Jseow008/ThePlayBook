@@ -1,0 +1,53 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
+import { UserNav } from "@/components/ui/UserNav";
+import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
+import { MobileHeader } from "@/components/ui/MobileHeader";
+
+/**
+ * Public Layout Shell
+ * 
+ * Conditionally renders the Netflix-style app chrome (sidebar, nav, header).
+ * The landing page (/) renders standalone without any chrome.
+ * All other public pages get the full app experience.
+ */
+
+export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
+    const pathname = usePathname();
+    const isLandingPage = pathname === "/";
+
+    // Landing page: standalone layout (no sidebar, no bottom nav)
+    if (isLandingPage) {
+        return <>{children}</>;
+    }
+
+    return (
+        <div className="min-h-screen bg-background">
+            {/* Netflix-style Sidebar (hidden on mobile) */}
+            <NetflixSidebar />
+
+            {/* Desktop Top Right Auth (hidden on mobile) */}
+            <div className="hidden lg:flex fixed top-4 right-8 z-50">
+                <UserNav />
+            </div>
+
+            {/* Desktop Top Gradient (for better text ease) */}
+            <div className="hidden lg:block fixed top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent z-40 pointer-events-none" />
+
+            {/* Mobile Header */}
+            <MobileHeader />
+
+            {/* Main Content */}
+            <main className="lg:pl-16 pb-20 lg:pb-0">
+                {/* Mobile padding for fixed header */}
+                <div className="lg:hidden h-14" />
+                {children}
+            </main>
+
+            {/* Mobile Bottom Navigation */}
+            <MobileBottomNav />
+        </div>
+    );
+}

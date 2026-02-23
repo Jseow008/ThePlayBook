@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
         let body: unknown;
         try {
             body = await request.json();
-        } catch (error) {
+        } catch {
             return apiError("INVALID_JSON", "Invalid request body", 400, requestId);
         }
 
@@ -159,7 +159,7 @@ export async function DELETE(request: NextRequest) {
         let body: unknown;
         try {
             body = await request.json();
-        } catch (error) {
+        } catch {
             return apiError("INVALID_JSON", "Invalid request body", 400, requestId);
         }
 

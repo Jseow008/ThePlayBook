@@ -1,50 +1,17 @@
-
-import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
-import { UserNav } from "@/components/ui/UserNav";
-import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
-import { MobileHeader } from "@/components/ui/MobileHeader";
+import { PublicLayoutShell } from "@/components/ui/PublicLayoutShell";
 
 /**
  * Public Layout
  * 
- * Netflix-style layout with expandable sidebar and content area.
- * Used for landing page, preview pages, and collections.
+ * Wraps all public routes. The PublicLayoutShell client component
+ * conditionally renders sidebar/nav chrome based on the current route.
+ * Landing page (/) gets standalone layout, everything else gets full chrome.
  */
 
-export default async function PublicLayout({
+export default function PublicLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-
-
-    return (
-        <div className="min-h-screen bg-background">
-            {/* Netflix-style Sidebar (hidden on mobile) */}
-            <NetflixSidebar />
-
-            {/* Desktop Top Right Auth (hidden on mobile) */}
-            <div className="hidden lg:flex fixed top-4 right-8 z-50">
-                <UserNav />
-            </div>
-
-            {/* Desktop Top Gradient (for better text ease) */}
-            <div className="hidden lg:block fixed top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent z-40 pointer-events-none" />
-
-
-
-            {/* Mobile Header */}
-            <MobileHeader />
-
-            {/* Main Content */}
-            <main className="lg:pl-16 pb-20 lg:pb-0">
-                {/* Mobile padding for fixed header */}
-                <div className="lg:hidden h-14" />
-                {children}
-            </main>
-
-            {/* Mobile Bottom Navigation */}
-            <MobileBottomNav />
-        </div>
-    );
+    return <PublicLayoutShell>{children}</PublicLayoutShell>;
 }

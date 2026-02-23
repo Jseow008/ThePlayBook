@@ -58,7 +58,7 @@ export default async function AdminLayout({
                             </Link>
                             <div className="w-px h-6 bg-zinc-200 mx-2" />
                             <Link
-                                href="/"
+                                href="/browse"
                                 target="_blank"
                                 className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
                             >

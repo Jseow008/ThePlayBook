@@ -5,8 +5,10 @@ import { ChevronRight, CheckCircle2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
+import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import type { SegmentFull } from "@/types/domain";
+import type { HighlightWithContent } from "@/hooks/useHighlights";
 
 /**
  * Segment Accordion
@@ -22,12 +24,14 @@ interface SegmentAccordionProps {
     segments: SegmentFull[];
     completedSegments: Set<string>;
     onSegmentOpen: (segmentId: string, index: number) => void;
+    highlights?: HighlightWithContent[];
 }
 
 export function SegmentAccordion({
     segments,
     completedSegments,
     onSegmentOpen,
+    highlights = [],
 }: SegmentAccordionProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [fullyExpanded, setFullyExpanded] = useState<Set<string>>(new Set());
@@ -71,6 +75,27 @@ export function SegmentAccordion({
                 const isCompleted = completedSegments.has(segment.id);
                 const needsTruncation =
                     segment.markdown_body.length > TRUNCATION_LENGTH;
+
+                // Inject highlight markup
+                const segmentHighlights = highlights.filter(h => h.segment_id === segment.id);
+                let renderedMarkdown = segment.markdown_body;
+
+                if (segmentHighlights.length > 0) {
+                    segmentHighlights.forEach(h => {
+                        // Escape regex characters to safely match the exact string
+                        const escapedText = h.highlighted_text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        // Use a global RegExp. Note: This naive approach might fail if highlights span across multiple markdown blocks or contain markdown tokens, but it's okay for MVP.
+                        const regex = new RegExp(`(${escapedText})`, 'g');
+                        // Replace matches with a <mark> tag and attach tailwind classes
+                        renderedMarkdown = renderedMarkdown.replace(
+                            regex,
+                            `<mark class="bg-yellow-500/30 text-inherit rounded-sm px-0.5 mix-blend-luminosity dark:mix-blend-normal relative group">
+                                $1
+                                ${h.note_body ? `<span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block w-48 p-2 bg-zinc-800 text-white text-xs rounded-md shadow-xl z-50 whitespace-normal text-center">${h.note_body}</span>` : ''}
+                            </mark>`
+                        );
+                    });
+                }
 
                 return (
                     <div
@@ -164,9 +189,9 @@ export function SegmentAccordion({
                                         )}
                                         <ReactMarkdown
                                             remarkPlugins={[remarkGfm]}
-                                            rehypePlugins={[rehypeSanitize]}
+                                            rehypePlugins={[rehypeRaw, rehypeSanitize]}
                                         >
-                                            {segment.markdown_body}
+                                            {renderedMarkdown}
                                         </ReactMarkdown>
                                     </div>
 

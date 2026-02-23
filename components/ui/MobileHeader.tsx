@@ -51,7 +51,7 @@ export function MobileHeader() {
                 !isVisible ? "-translate-y-full" : "translate-y-0"
             )}
         >
-            <Link href="/">
+            <Link href="/browse">
                 <Logo width={80} height={24} />
             </Link>
             <UserNav />

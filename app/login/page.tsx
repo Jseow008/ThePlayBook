@@ -11,7 +11,7 @@ export default async function LoginPage({
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
             <Link
-                href="/"
+                href="/browse"
                 className="absolute top-8 left-8 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />

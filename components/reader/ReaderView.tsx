@@ -7,6 +7,9 @@ import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
+import { TextSelectionToolbar } from "./TextSelectionToolbar";
+import { NotesDrawer } from "./NotesDrawer";
+import { useHighlights } from "@/hooks/useHighlights";
 
 /**
  * Reader View — Accordion Layout
@@ -25,6 +28,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const { saveReadingProgress } = useReadingProgress();
+    const { data: highlights = [] } = useHighlights(content.id);
 
     // Start tracking reading time
     useReadingTimer(content.id);
@@ -140,10 +144,17 @@ export function ReaderView({ content }: ReaderViewProps) {
                     segments={content.segments}
                     completedSegments={completedSegments}
                     onSegmentOpen={handleSegmentOpen}
+                    highlights={highlights}
                 />
 
                 {/* Content Feedback */}
                 <ContentFeedback contentId={content.id} />
+
+                {/* Floating Action Menu for Highlights */}
+                <TextSelectionToolbar contentItemId={content.id} />
+
+                {/* Notes Drawer */}
+                <NotesDrawer contentItemId={content.id} />
             </div>
         </div>
     );

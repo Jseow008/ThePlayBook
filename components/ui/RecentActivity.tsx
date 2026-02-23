@@ -36,7 +36,7 @@ export function RecentActivity() {
                     Start reading books or listening to podcasts to see your progress here.
                 </p>
                 <Link
-                    href="/"
+                    href="/browse"
                     className="inline-flex items-center px-5 py-2.5 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-colors"
                 >
                     Browse Library

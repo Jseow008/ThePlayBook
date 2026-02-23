@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
@@ -27,7 +27,7 @@ function buildEmbeddingText(item: any): string {
     return parts.join("\n");
 }
 
-export async function POST(req: NextRequest) {
+export async function POST() {
     const requestId = getRequestId();
 
     try {

@@ -24,7 +24,7 @@ export default function NotFound() {
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <Link
-                        href="/"
+                        href="/browse"
                         className="inline-flex items-center gap-2 h-10 px-6 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
                         <Home className="size-4" />

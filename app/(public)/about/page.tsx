@@ -22,7 +22,7 @@ export default function AboutPage() {
                 {/* Back to Library */}
                 <div className="mb-8">
                     <Link
-                        href="/"
+                        href="/browse"
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
                     >
                         <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
@@ -109,7 +109,7 @@ export default function AboutPage() {
                 {/* CTA */}
                 <section className="text-center pb-8">
                     <Link
-                        href="/"
+                        href="/browse"
                         className="inline-flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground font-semibold rounded-full hover:bg-primary/90 transition-all shadow-lg hover:shadow-primary/20"
                     >
                         Start Exploring

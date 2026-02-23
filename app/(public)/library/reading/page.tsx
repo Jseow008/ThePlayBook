@@ -80,7 +80,7 @@ export default function ContinueReadingPage() {
                 {/* Back to Library */}
                 <div className="mb-8">
                     <Link
-                        href="/"
+                        href="/browse"
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
                     >
                         <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
@@ -143,7 +143,7 @@ export default function ContinueReadingPage() {
                                 Start reading any content and your progress will be saved here automatically.
                             </p>
                             <Link
-                                href="/"
+                                href="/browse"
                                 className="inline-flex items-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                             >
                                 Browse Library
