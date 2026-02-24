@@ -106,12 +106,6 @@ interface SegmentAccordionProps {
     highlights?: HighlightWithContent[];
 }
 
-// ─── Hover Tooltip for Notes ─────────────────────────────────────────────────
-interface NoteTooltip {
-    text: string;
-    x: number;
-    y: number;
-}
 
 export function SegmentAccordion({
     segments,
@@ -136,7 +130,6 @@ export function SegmentAccordion({
 
     // Track mouse entering/leaving the popover itself to prevent it from closing
     const popoverHoverRef = useRef(false);
-    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleToggle = useCallback(
         (segment: SegmentFull, index: number) => {
@@ -202,13 +195,10 @@ export function SegmentAccordion({
     }, [expandedId, segments, handleToggle]);
 
     // ── Handle Hover / Tap for Premium UI ────────────────────────────────
-    const handleNoteInteraction = useCallback((e: React.MouseEvent | React.TouchEvent, isHover: boolean) => {
+    const handleNoteInteraction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
         const target = (e.target as HTMLElement).closest("mark[data-id]");
 
         if (target) {
-            // Cancel pending closes
-            if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
-
             const id = target.getAttribute("data-id");
             const note = target.getAttribute("data-note");
             const color = target.getAttribute("data-color") || "yellow";
@@ -217,28 +207,21 @@ export function SegmentAccordion({
             if (id) { // Show popover for ALL highlights, even without notes
                 const rect = target.getBoundingClientRect();
 
-                if (activeHighlight?.id !== id || !isHover) {
-                    setActiveHighlight({
-                        id,
-                        text,
-                        note,
-                        color,
-                        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
-                    });
-                }
-            }
-        } else if (isHover) {
-            // Not over a mark. If we have an active highlight, start the close timer
-            if (activeHighlight && !popoverHoverRef.current && !closeTimeoutRef.current) {
-                closeTimeoutRef.current = setTimeout(() => {
-                    if (!popoverHoverRef.current) {
-                        setActiveHighlight(null);
+                setActiveHighlight((prev) => {
+                    if (prev?.id !== id) {
+                        return {
+                            id,
+                            text,
+                            note,
+                            color,
+                            rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
+                        };
                     }
-                    closeTimeoutRef.current = null;
-                }, 150); // Grace period
+                    return prev;
+                });
             }
         }
-    }, [activeHighlight]);
+    }, [setActiveHighlight]);
 
     // Also close on scroll to prevent drifting UI
     useEffect(() => {
@@ -341,9 +324,9 @@ export function SegmentAccordion({
                                         {/* Markdown Content */}
                                         <div
                                             data-segment-id={segment.id}
-                                            onMouseMove={(e) => handleNoteInteraction(e, true)}
-                                            onClick={(e) => handleNoteInteraction(e, false)}
-                                            onTouchEnd={(e) => handleNoteInteraction(e, false)}
+                                            onMouseMove={(e) => handleNoteInteraction(e)}
+                                            onClick={(e) => handleNoteInteraction(e)}
+                                            onTouchEnd={(e) => handleNoteInteraction(e)}
                                             className={cn(
                                                 "prose dark:prose-invert max-w-none relative transition-all duration-300",
                                                 `reader-size-${fontSize}`,

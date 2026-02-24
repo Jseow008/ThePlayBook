@@ -24,7 +24,7 @@ export default async function BrainPage() {
         `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(30);
 
     if (error) {
         console.error("Failed to load brain highlights:", error);

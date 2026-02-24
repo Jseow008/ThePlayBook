@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Minus, Plus, Sun, Moon, BookOpen, Maximize, Minimize, Rows4, Rows3, Rows2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useReaderSettings, type ReaderTheme, type LineHeight } from "@/hooks/useReaderSettings";
+import { useReaderSettings, type ReaderTheme } from "@/hooks/useReaderSettings";
 
 const themeOptions: { value: ReaderTheme; label: string; icon: typeof Sun; preview: string }[] = [
     { value: "light", label: "Light", icon: Sun, preview: "bg-[hsl(0,0%,98%)] border-gray-300" },

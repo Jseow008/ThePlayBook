@@ -5,7 +5,6 @@ test.describe('Authentication Flows', () => {
         await page.goto('/login');
 
         // Check if the login form/buttons are present
-        const heading = page.getByRole('heading', { name: /Welcome back/i, includeHidden: true });
         // The actual text might be different based on the design, so let's check for the Google button
         const googleButton = page.getByRole('button', { name: /Continue with Google/i }).or(page.locator('button:has-text("Google")'));
 

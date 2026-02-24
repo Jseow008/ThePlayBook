@@ -25,18 +25,9 @@ const COLORS = [
     { name: "purple", class: "bg-highlight-purple" },
 ];
 
-const BORDER_COLORS: Record<string, string> = {
-    yellow: "border-highlight-yellow",
-    blue: "border-highlight-blue",
-    green: "border-highlight-green",
-    red: "border-highlight-red",
-    purple: "border-highlight-purple",
-};
-
 export function HighlightBottomSheet({
     highlightId,
     noteBody,
-    highlightedText,
     currentColor,
     createdAt,
     onClose

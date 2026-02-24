@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2 } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
@@ -12,7 +11,6 @@ import type { User } from "@supabase/supabase-js";
 import { APP_NAME } from "@/lib/brand";
 
 export default function SettingsPage() {
-    const router = useRouter();
     const supabase = createClient();
     const { refresh } = useReadingProgress();
 

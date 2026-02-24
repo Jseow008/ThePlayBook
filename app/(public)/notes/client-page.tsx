@@ -162,7 +162,7 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
                                 {/* Highlight */}
                                 <div className="relative pl-3 border-l-2 border-yellow-500/50 mb-4 flex-1">
                                     <p className="text-[0.95rem] leading-relaxed text-foreground/90 italic">
-                                        "{item.highlighted_text}"
+                                        &ldquo;{item.highlighted_text}&rdquo;
                                     </p>
                                 </div>
 

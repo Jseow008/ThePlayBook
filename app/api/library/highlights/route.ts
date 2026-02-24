@@ -109,6 +109,16 @@ export async function GET(request: NextRequest) {
 
         const url = new URL(request.url);
         const contentItemId = url.searchParams.get("content_item_id");
+        const cursor = url.searchParams.get("cursor");
+        const limitParam = url.searchParams.get("limit");
+
+        let limit = 30;
+        if (limitParam) {
+            const parsedLimit = parseInt(limitParam, 10);
+            if (!isNaN(parsedLimit) && parsedLimit > 0 && parsedLimit <= 100) {
+                limit = parsedLimit;
+            }
+        }
 
         let query = supabase
             .from("user_highlights")
@@ -117,13 +127,15 @@ export async function GET(request: NextRequest) {
                 content_item ( id, title, author, cover_image_url )
             `)
             .eq("user_id", user.id)
-            .order("created_at", { ascending: false });
+            .order("created_at", { ascending: false })
+            .limit(limit);
 
         if (contentItemId) {
             query = query.eq("content_item_id", contentItemId);
-        } else {
-            // Cap global highlight fetch at 100 for performance on the /notes page
-            query = query.limit(100);
+        }
+
+        if (cursor) {
+            query = query.lt("created_at", cursor);
         }
 
         const { data, error } = await query;
@@ -133,7 +145,10 @@ export async function GET(request: NextRequest) {
             return apiError("INTERNAL_ERROR", "Failed to fetch highlights.", 500, requestId);
         }
 
-        return NextResponse.json({ data });
+        return NextResponse.json({
+            data,
+            nextCursor: data && data.length === limit ? (data as any)[data.length - 1].created_at : null
+        });
     } catch (error) {
         logApiError({ requestId, route: "GET /api/library/highlights", message: "Unexpected error", error });
         return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);

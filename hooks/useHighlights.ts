@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import type { UserHighlight } from "@/types/database";
 
 // Type for the API response which includes joined content item data
@@ -31,6 +31,34 @@ export function useHighlights(contentItemId?: string) {
             const { data } = await res.json();
             return data as HighlightWithContent[];
         },
+    });
+}
+
+// ----------------------------------------------------------------------------
+// Fetch Infinite Highlights
+// ----------------------------------------------------------------------------
+export function useInfiniteHighlights(contentItemId?: string) {
+    return useInfiniteQuery({
+        queryKey: ["highlights", "infinite", contentItemId],
+        queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<{ data: HighlightWithContent[], nextCursor: string | null }> => {
+            let url = contentItemId
+                ? `/api/library/highlights?content_item_id=${contentItemId}&limit=30`
+                : "/api/library/highlights?limit=30";
+
+            if (pageParam) {
+                url += `&cursor=${encodeURIComponent(pageParam)}`;
+            }
+
+            const res = await fetch(url);
+            if (!res.ok) {
+                if (res.status === 401) return { data: [], nextCursor: null }; // Not logged in
+                throw new Error("Failed to fetch highlights");
+            }
+
+            return await res.json();
+        },
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
     });
 }
 
@@ -138,6 +166,18 @@ export function useDeleteHighlight() {
                         queryKey,
                         oldData.filter((h: HighlightWithContent) => h.id !== deletedId)
                     );
+                } else if (oldData && typeof oldData === "object" && "pages" in oldData) {
+                    const infiniteData = oldData as { pages: { data: HighlightWithContent[]; nextCursor: string | null }[]; pageParams: unknown[] };
+                    queryClient.setQueryData(
+                        queryKey,
+                        {
+                            ...infiniteData,
+                            pages: infiniteData.pages.map(page => ({
+                                ...page,
+                                data: page.data.filter((h: HighlightWithContent) => h.id !== deletedId)
+                            }))
+                        }
+                    );
                 }
             });
 
@@ -198,20 +238,34 @@ export function useUpdateHighlight() {
 
             // Optimistically update the highlight across ALL matches
             previousData.forEach(([queryKey, oldData]) => {
+                const mapHighlight = (h: HighlightWithContent) => {
+                    if (h.id === updatedArgs.id) {
+                        return {
+                            ...h,
+                            note_body: updatedArgs.note_body !== undefined ? updatedArgs.note_body : h.note_body,
+                            color: updatedArgs.color !== undefined ? updatedArgs.color : h.color,
+                            updated_at: new Date().toISOString(),
+                        };
+                    }
+                    return h;
+                };
+
                 if (Array.isArray(oldData)) {
                     queryClient.setQueryData(
                         queryKey,
-                        oldData.map((h: HighlightWithContent) => {
-                            if (h.id === updatedArgs.id) {
-                                return {
-                                    ...h,
-                                    note_body: updatedArgs.note_body !== undefined ? updatedArgs.note_body : h.note_body,
-                                    color: updatedArgs.color !== undefined ? updatedArgs.color : h.color,
-                                    updated_at: new Date().toISOString(),
-                                };
-                            }
-                            return h;
-                        })
+                        oldData.map(mapHighlight)
+                    );
+                } else if (oldData && typeof oldData === "object" && "pages" in oldData) {
+                    const infiniteData = oldData as { pages: { data: HighlightWithContent[]; nextCursor: string | null }[]; pageParams: unknown[] };
+                    queryClient.setQueryData(
+                        queryKey,
+                        {
+                            ...infiniteData,
+                            pages: infiniteData.pages.map(page => ({
+                                ...page,
+                                data: page.data.map(mapHighlight)
+                            }))
+                        }
                     );
                 }
             });

@@ -3,16 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { LogOut, User as UserIcon, Settings, Brain, Sparkles } from "lucide-react";
+import { LogOut, User as UserIcon, Settings, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { signOutAction } from "@/lib/actions/auth";
 
 import { AVATAR_ICONS } from "@/lib/avatars";
 
 export function UserNav({ initialUser }: { initialUser: User | null }) {
-    const router = useRouter();
     const [user, setUser] = useState<User | null>(initialUser);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, type FormEvent } from "react";
-import { useChat, type UIMessage } from "@ai-sdk/react";
+import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
 import { Bot, User, Send, Sparkles, Loader2, BookOpen, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";

@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 import { getRequestId, apiError, logApiError } from "../api";
-import { NextResponse } from "next/server";
-
 describe("api utilities", () => {
     describe("getRequestId", () => {
         it("returns a string UUID", () => {

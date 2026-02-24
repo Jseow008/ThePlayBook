@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { formatDistanceToNow } from "date-fns";
 import { BookOpen, AlertCircle, Edit3, Trash2, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUpdateHighlight, useDeleteHighlight } from "@/hooks/useHighlights";
@@ -28,20 +27,10 @@ const COLORS = [
     { name: "purple", class: "bg-highlight-purple" },
 ];
 
-const BORDER_COLORS: Record<string, string> = {
-    yellow: "border-highlight-yellow",
-    blue: "border-highlight-blue",
-    green: "border-highlight-green",
-    red: "border-highlight-red",
-    purple: "border-highlight-purple",
-};
-
 export function HighlightPopover({
     highlightId,
     noteBody,
-    highlightedText,
     currentColor,
-    createdAt,
     position,
     onClose,
     onMouseEnter,
