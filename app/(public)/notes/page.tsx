@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { BrainClientPage } from "./client-page";
 
 export const metadata = {
-    title: "My Second Brain",
+    title: "Notes",
     description: "Manage your highlights, notes, and personal knowledge base.",
 };
 
@@ -12,7 +12,7 @@ export default async function BrainPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        redirect("/login?next=/brain");
+        redirect("/login?next=/notes");
     }
 
     // Pre-fetch global highlights

@@ -2,7 +2,7 @@
 
 > **Role:** Full-Stack Engineer  
 > **Objective:** Build Flux MVP  
-> **Definition of Done:** Founder can upload content via admin panel. Visitors can browse, read (Quick/Deep mode), track progress locally, and engage with interactive artifacts.
+> **Definition of Done:** Founder can upload content via admin panel. Visitors can browse, read (Quick/Deep mode), track progress locally, and engage with interactive artifacts. Users can sign in to sync their library, save highlights, take notes, ask AI questions about content, and track their reading heatmap.
 
 ---
 
@@ -16,36 +16,44 @@
 * [x] Set up Supabase project (hosted on Supabase Cloud)
 * [x] Configure Supabase Auth for user authentication
 * [x] Configure Supabase Storage for image uploads
+* [x] Configure Google OAuth with custom domain
+* [x] Setup robust Error and Loading boundaries
+* [x] Apply Content Security Policy (CSP) and API Rate Limiting
 
 ---
 
 ### Step 1: Database Schema ✓
 
-**Context:** Schema for content, segments, and artifacts.
+**Context:** Schema for content, segments, artifacts, user data, and AI features.
 
 * [x] **1.1 Migration: Content Tables**
-  * Created `content_item` table with fields: id, type, title, author, source_url, cover_image_url, category, quick_mode_json, status (draft/verified), duration_seconds, is_featured, timestamps
+  * Created `content_item` table with fields: id, type, title, author, source_url, cover_image_url, hero_image_url, audio_url, category, quick_mode_json, status (draft/verified), duration_seconds, is_featured, timestamps, embedding
   * Created `segment` table with fields: id, item_id, order_index, title, markdown_body, start_time_sec, end_time_sec
   * Created `artifact` table with fields: id, item_id, type (checklist/plan/script), payload_schema, version
 
-* [x] **1.2 Migration: Indexes**
+* [x] **1.2 Migration: User Data & AI Tables**
+  * Created `profiles` table to manage user roles
+  * Created `user_library`, `user_highlights`, and `reading_activity` for user engagement tracking
+  * Created `segment_embedding` and `content_feedback` for AI features
+  * Enabled pgvector extension for similarity search
+
+* [x] **1.3 Migration: Indexes**
   * Index on `content_item(status, deleted_at)` for public queries
   * Index on `content_item(category)` for category filtering
   * Index on `segment(item_id, order_index)` for ordered reads
   * Index on `artifact(item_id)` for artifact fetching
+  * HNSW index on `segment_embedding(embedding)` for fast vector search
 
-* [x] **1.3 Migration: RLS Policies**
+* [x] **1.4 Migration: RLS Policies**
   * Enabled RLS on all tables
   * Public SELECT on `content_item` where `status = 'verified'` AND `deleted_at IS NULL`
   * Public SELECT on `segment` where parent item is verified
-  * Public SELECT on `artifact` where parent item is verified
+  * Authenticated users can manage their own library, highlights, notes, and reading activity
   * Service role has full access (for admin operations)
 
-* [x] **1.4 Seed Data**
+* [x] **1.5 Seed Data**
   * Added sample content items across different categories
-  * Added segments for each item
-  * Added example artifacts (checklists)
-  * Variety: podcasts, books, articles
+  * Variety: podcasts, books, articles, video
 
 ---
 
@@ -56,7 +64,7 @@
 * [x] **2.1 Home Page (`/`)**
   * Hero carousel with featured content (is_featured flag)
   * Netflix-style horizontal scroll content lanes
-  * Category-based content organization
+  * Dynamic Homepage Section ordering
   * "New on Flux" lane for latest additions
   * ISR with 1-hour revalidation
 
@@ -66,36 +74,37 @@
   * Deep Mode view (full segmented content)
   * Toggle between modes
   * Sidebar navigation for segments
-  * Interactive artifacts (checklists with local progress)
+  * Interactive artifacts (checklists)
+  * Floating action menu (Share, Ask AI, Add to Library)
 
-* [x] **2.3 Category Lanes**
-  * Dynamic category grouping on homepage
-  * Ordered category display (Health, Fitness, Wealth, etc.)
-  * Horizontal scrollable lanes
+* [x] **2.3 User Interactions**
+  * Universal Share Button / OS native share sheet
+  * Dynamic Open Graph (OG) cards for social media
+  * PWA App Manifest compatibility
+  * Highlighting functionality with tooltips
 
-* [x] **2.4 Random Content (`/random`)**
-  * Redirects to a random published content item
-
-* [x] **2.5 Search (`/search`)**
-  * Basic search functionality
+* [x] **2.4 Search & AI (`/search` & `/ask`)**
+  * Basic semantic search functionality
+  * AI Chat interface for content Q&A
+  * Integration with LLMs & pgvector embeddings
 
 ---
 
-### Step 3: Local Progress Tracking ✓
+### Step 3: Authenticated User Experience ✓
 
-**Context:** Track reading and artifact progress without user accounts.
+**Context:** The personalized experience for signed-in users.
 
-* [x] **3.1 Checklist Progress Store**
-  * LocalStorage persistence for checklist item completion
-  * Track checked items per artifact
+* [x] **3.1 My Library (`/library`)**
+  * View bookmarked content items
+  * Resume reading progress across devices
 
-* [x] **3.2 Reading Progress**
-  * Track current segment while reading
-  * Auto-scroll to last position when returning
+* [x] **3.2 Notes / Second Brain (`/notes`)**
+  * Manage saved text highlights and user-created notes
+  * Sortable and color-coded note entries
 
-* [x] **3.3 Progress UI**
-  * Show progress indicators on cards
-  * Checklist completion state persisted locally
+* [x] **3.3 Reading Activity & Heatmap**
+  * Track reading sessions (>60s)
+  * Visualize activity frequency with a GitHub-style heatmap on the Settings page
 
 ---
 
@@ -132,11 +141,11 @@
 * [x] **5.2 Admin Dashboard**
   * List all content items (draft + verified)
   * Filter by status and featured flag
-  * Pagination support
-  * Quick stats and type icons
+  * Generative AI batch processing
+  * Vector embedding synchronization utilities
 
 * [x] **5.3 Content Editor**
-  * Form: title, author, type, category, source_url, cover_image
+  * Form: title, author, type, category, source_url, cover_image, hero_image, audio
   * Quick Mode editor (hook, big idea, takeaways)
   * Segment editor with drag-and-drop reordering
   * Artifact editor (checklist items)
@@ -151,7 +160,7 @@
 
 ---
 
-### Step 6: UI Polish ✓
+### Step 6: UI Polish & Hardening ✓
 
 * [x] **6.1 Netflix-Style Design**
   * Dark mode native theme
@@ -166,22 +175,19 @@
 
 * [x] **6.3 Micro-interactions**
   * Card hover animations
-  * Smooth transitions
-  * Loading states with skeletons
+  * Toast notifications for feedback
+  * Smooth transitions and popovers
+  * Loading states with UI-consistent skeletons
 
 ---
 
-## Phase 2: Enhancements (Post-MVP)
+## Phase 2: Future Enhancements (Post-MVP)
 
 Future features to consider:
 
 1. **PDF Export** — Download summaries as PDF
-2. **User Accounts** — Optional accounts for cross-device sync
-3. **Comments** — Discussion section on content
-4. **Newsletter** — Email signup for new content
-5. **Analytics** — View counts, popular content
-6. **AI Assistance** — Help generate summaries from transcripts
-7. **Full-text Search** — Meilisearch integration
+2. **Comments** — Discussion section on content
+3. **Newsletter** — Email signup for new content
 
 ---
 

@@ -11,7 +11,7 @@ const securityHeaders = [
   },
   {
     key: "Content-Security-Policy",
-    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://xmuqsgfxuaaophxnwure.supabase.co https://images.unsplash.com https://api.dicebear.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; connect-src 'self' https://xmuqsgfxuaaophxnwure.supabase.co wss://xmuqsgfxuaaophxnwure.supabase.co;"
+    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://xmuqsgfxuaaophxnwure.supabase.co https://images.unsplash.com https://api.dicebear.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; " + (process.env.NODE_ENV === "production" ? "upgrade-insecure-requests; " : "") + "connect-src 'self' https://xmuqsgfxuaaophxnwure.supabase.co wss://xmuqsgfxuaaophxnwure.supabase.co;"
   },
 ];
 

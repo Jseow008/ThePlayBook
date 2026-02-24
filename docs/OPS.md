@@ -57,6 +57,11 @@ psql $DATABASE_URL -f supabase/seed.sql
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_KEY=your-service-key
+
+# OAuth & API Additions
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+OPENAI_API_KEY=...
 ```
 
 > **Note:** These environment variables now point to the hosted Supabase instance. Get these values from your Supabase project dashboard.
@@ -89,6 +94,19 @@ SUPABASE_SERVICE_KEY=your-service-key
 ### 2.3 Domain & SSL
 
 Configured via Vercel dashboard. SSL is automatic.
+
+### 2.4 Google OAuth Setup (Custom Domain)
+
+To present the custom domain instead of the default `supabase.co` on the Google OAuth consent screen:
+1. Configure custom domain in Supabase project settings.
+2. Ensure Vercel custom domain redirects correctly.
+3. Add the custom domain callback URL to Google Cloud Platform OAuth Client ID (`https://customdomain.com/auth/v1/callback`).
+
+### 2.5 SEO & PWA Generation
+
+- **Robots & Sitemap**: `app/robots.ts` and `app/sitemap.ts` dynamically generate SEO metadata based on live content categories and dynamic routes.
+- **PWA Manifest**: `app/manifest.ts` generates standard PWA assets dynamically.
+- App icons and favicons are generated dynamically via Next.js metadata API where applicable.
 
 ---
 
@@ -131,9 +149,12 @@ Toggle the star icon next to content items to add/remove from homepage hero caro
 
 Change status from "Verified" to "Draft" to hide from public.
 
-### 3.5 Bulk Imports (Optional)
+### 3.5 Bulk Imports & AI Processing
 
 For large imports, use SQL scripts via `supabase/seed.sql` and apply with `psql`.
+
+**Syncing Embeddings:**
+After bulk uploads or edits, utilize the "Sync Missing Embeddings" button in the admin interface to submit unvectorized items to the AI pipeline for pgvector representation generation.
 
 ### 3.6 Admin Session Flow
 
@@ -259,17 +280,21 @@ Target sizes:
 | `/` | 1 hour (ISR) |
 | `/read/[id]` | 1 hour (ISR) |
 | `/admin/*` | No cache |
+| `/library`, `/notes`, `/ask` | Dynamic (No cache) |
 
 ---
 
-## 8. Security Checklist
+## 8. Security & Production Hardening Checklist
 
-- [ ] Admin users are managed in Supabase Auth and `profiles.role = 'admin'` is tightly controlled
-- [ ] `SUPABASE_SERVICE_KEY` is not exposed to client
-- [ ] RLS policies are enabled on all tables
-- [ ] Markdown content is sanitized before rendering
-- [ ] Admin routes check session cookie
-- [ ] Image uploads validated for type and size
+- [x] Admin users are managed in Supabase Auth and `profiles.role = 'admin'` is tightly controlled
+- [x] `SUPABASE_SERVICE_KEY` is not exposed to client
+- [x] RLS policies are enabled on all tables
+- [x] Markdown content is sanitized before rendering
+- [x] Admin routes check session cookie
+- [x] Image uploads validated for type and size
+- [x] **Content Security Policy (CSP)** via Next.js middleware headers.
+- [x] **API Rate Limiting** implemented on unprotected public routes and all admin APIs (e.g., upstash/ratelimit).
+- [x] Graceful Error Boundaries configured network-wide (`error.tsx`).
 
 ---
 
@@ -279,16 +304,19 @@ Target sizes:
 
 **content_item**
 - `id` (UUID, PK)
-- `type` (enum: podcast, book, article)
+- `type` (enum: podcast, book, article, video)
 - `title` (TEXT)
 - `author` (TEXT, nullable)
 - `source_url` (TEXT, nullable)
 - `cover_image_url` (TEXT, nullable)
+- `hero_image_url` (TEXT, nullable)
+- `audio_url` (TEXT, nullable)
 - `category` (TEXT, nullable)
 - `quick_mode_json` (JSONB, nullable)
 - `status` (enum: draft, verified)
 - `duration_seconds` (INTEGER, nullable)
 - `is_featured` (BOOLEAN, default false)
+- `embedding` (VECTOR, nullable)
 - `created_at`, `updated_at`, `deleted_at`
 
 **segment**
@@ -301,12 +329,44 @@ Target sizes:
 - `end_time_sec` (INTEGER, nullable)
 - `created_at`, `updated_at`, `deleted_at`
 
+**segment_embedding**
+- `id` (UUID, PK)
+- `segment_id` (UUID, FK → segment)
+- `content_item_id` (UUID, FK → content_item)
+- `embedding` (VECTOR)
+- `created_at`
+
 **artifact**
 - `id` (UUID, PK)
 - `item_id` (UUID, FK → content_item)
 - `type` (enum: checklist, plan, script)
 - `payload_schema` (JSONB)
 - `version` (TEXT, default '1.0.0')
+- `created_at`, `updated_at`
+
+**user_library**
+- `user_id` (UUID, FK → profiles)
+- `content_id` (UUID, FK → content_item)
+- `is_bookmarked` (BOOLEAN)
+- `progress` (JSONB)
+- `last_interacted_at` (TIMESTAMP)
+
+**user_highlights**
+- `id` (UUID, PK)
+- `user_id` (UUID, FK → profiles)
+- `content_item_id` (UUID, FK → content_item)
+- `segment_id` (UUID, FK → segment)
+- `highlighted_text` (TEXT)
+- `note_body` (TEXT, nullable)
+- `color` (TEXT, nullable)
+- `created_at`, `updated_at`
+
+**reading_activity**
+- `id` (UUID, PK)
+- `user_id` (UUID, FK → profiles)
+- `activity_date` (DATE)
+- `duration_seconds` (INTEGER)
+- `pages_read` (INTEGER)
 - `created_at`, `updated_at`
 
 ---
@@ -316,7 +376,6 @@ Target sizes:
 When scaling, consider:
 
 1. **CDN for images** — Move to Cloudflare or similar
-2. **Search** — Add Meilisearch for full-text search
-3. **Analytics** — Add Plausible or Posthog
-4. **Monitoring** — Add Sentry for error tracking
-5. **Email** — Add Resend for newsletters
+2. **Analytics** — Add Plausible or Posthog
+3. **Monitoring** — Add Sentry for error tracking
+4. **Email** — Add Resend for newsletters

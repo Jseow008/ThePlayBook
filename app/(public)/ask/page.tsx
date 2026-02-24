@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { AskClientPage } from "./client-page";
 
 export const metadata = {
-    title: "Ask My Library - Second Brain",
+    title: "Ask My Library - Notes",
     description: "Ask questions and get answers based on the books in your personal library.",
 };
 

@@ -13,6 +13,7 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
     const [highlights, setHighlights] = useState<HighlightWithContent[]>(initialHighlights as HighlightWithContent[]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedItem, setSelectedItem] = useState<string | "all">("all");
+    const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
 
     const deleteHighlight = useDeleteHighlight();
     const queryClient = useQueryClient();
@@ -28,9 +29,9 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
         return Array.from(map.values());
     }, [highlights]);
 
-    // Filter highlights
+    // Filter and sort highlights
     const filteredHighlights = useMemo(() => {
-        return highlights.filter((h) => {
+        const filtered = highlights.filter((h) => {
             const matchesSearch =
                 h.highlighted_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (h.note_body && h.note_body.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -39,7 +40,14 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
 
             return matchesSearch && matchesItem;
         });
-    }, [highlights, searchQuery, selectedItem]);
+
+        // Sort the filtered results based on timestamp
+        return filtered.sort((a, b) => {
+            const dateA = new Date(a.created_at || 0).getTime();
+            const dateB = new Date(b.created_at || 0).getTime();
+            return sortBy === "newest" ? dateB - dateA : dateA - dateB;
+        });
+    }, [highlights, searchQuery, selectedItem, sortBy]);
 
     const handleDelete = async (id: string) => {
         try {
@@ -55,7 +63,7 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
 
     return (
         <div className="min-h-screen bg-background font-sans text-foreground">
-            <main className="max-w-5xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+            <main className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* Back to Library */}
                 <div className="mb-8">
                     <Link
@@ -68,7 +76,7 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
                 </div>
                 <div className="flex flex-col gap-4 mb-8">
                     <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
-                        Second Brain
+                        Notes
                     </h1>
                 </div>
 
@@ -85,26 +93,38 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
                         />
                     </div>
                     {uniqueItems.length > 0 && (
-                        <div className="relative min-w-[200px]">
-                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                            <select
-                                value={selectedItem}
-                                onChange={(e) => setSelectedItem(e.target.value)}
-                                className="w-full h-10 pl-9 pr-4 rounded-md border border-white/10 bg-card/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
-                            >
-                                <option value="all">All Content</option>
-                                {uniqueItems.map((item) => (
-                                    <option key={item.id} value={item.id}>
-                                        {item.title.length > 30 ? item.title.substring(0, 30) + '...' : item.title}
-                                    </option>
-                                ))}
-                            </select>
+                        <div className="flex gap-4 min-w-[300px]">
+                            <div className="relative flex-1">
+                                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                                <select
+                                    value={selectedItem}
+                                    onChange={(e) => setSelectedItem(e.target.value)}
+                                    className="w-full h-10 pl-9 pr-4 rounded-md border border-white/10 bg-card/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                                >
+                                    <option value="all">All Content</option>
+                                    {uniqueItems.map((item) => (
+                                        <option key={item.id} value={item.id}>
+                                            {item.title.length > 30 ? item.title.substring(0, 30) + '...' : item.title}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="relative">
+                                <select
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value as "newest" | "oldest")}
+                                    className="h-10 px-4 rounded-md border border-white/10 bg-card/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary appearance-none cursor-pointer"
+                                >
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                </select>
+                            </div>
                         </div>
                     )}
                 </div>
 
                 {/* Content Area */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {filteredHighlights.length === 0 ? (
                         <div className="col-span-full py-16 flex flex-col items-center justify-center text-center text-muted-foreground border border-dashed border-white/10 rounded-2xl bg-card/20">
                             <BookOpen className="size-12 mb-4 opacity-20" />
@@ -112,7 +132,7 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
                             <p className="max-w-sm">
                                 {searchQuery || selectedItem !== "all"
                                     ? "No highlights match your current search filters."
-                                    : "You haven't highlighted anything yet. Read some content and select text to start building your second brain!"}
+                                    : "You haven't highlighted anything yet. Read some content and select text to start building your notes!"}
                             </p>
                         </div>
                     ) : (

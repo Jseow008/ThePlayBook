@@ -2,13 +2,26 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
-import { apiError, logApiError } from "@/lib/server/api";
+import { z } from "zod";
+import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 export const maxDuration = 60; // Allow 60s max for AI response
 
+const ChatMessageSchema = z.object({
+    role: z.enum(["system", "user", "assistant"]),
+    content: z.string().trim().min(1).max(2_000),
+});
+
+const ChatRequestSchema = z.object({
+    messages: z.array(ChatMessageSchema).min(1).max(20),
+});
+
+const MAX_TOTAL_MESSAGE_CHARS = 12_000;
+const MAX_CONTEXT_CHARS = 12_000;
+
 export async function POST(req: NextRequest) {
-    const requestId = crypto.randomUUID();
+    const requestId = getRequestId();
 
     try {
         // --- Auth ---
@@ -23,7 +36,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Rate Limiting ---
-        const rl = rateLimit(req, { limit: 10, windowMs: 60_000 });
+        const rl = rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
         if (!rl.success) {
             return NextResponse.json(
                 { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
@@ -42,20 +55,26 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Parse & Validate Body ---
-        let body: { messages?: any[] };
+        let body: unknown;
         try {
             body = await req.json();
         } catch {
-            return apiError("VALIDATION_ERROR", "Invalid JSON body", 400, requestId);
+            return apiError("INVALID_JSON", "Invalid JSON body", 400, requestId);
         }
 
-        const { messages } = body;
-        if (!Array.isArray(messages) || messages.length === 0) {
-            return apiError("VALIDATION_ERROR", "Messages array is required", 400, requestId);
+        const parsed = ChatRequestSchema.safeParse(body);
+        if (!parsed.success) {
+            return apiError("VALIDATION_ERROR", "Invalid chat payload", 400, requestId);
+        }
+
+        const { messages } = parsed.data;
+        const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
+        if (totalChars > MAX_TOTAL_MESSAGE_CHARS) {
+            return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
         const lastMessage = messages[messages.length - 1];
-        if (!lastMessage || lastMessage.role !== "user" || typeof lastMessage.content !== "string") {
+        if (!lastMessage || lastMessage.role !== "user") {
             return apiError("VALIDATION_ERROR", "Last message must be a user message with text content", 400, requestId);
         }
 
@@ -92,7 +111,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Step 2: Vector Search (RAG) ---
-        // @ts-ignore — Supabase generated types may lag behind the actual RPC signature
+        // @ts-expect-error — Supabase generated types may lag behind the actual RPC signature
         const { data: matchedSegments, error: rpcError } = await supabase.rpc("match_library_segments", {
             query_embedding: JSON.stringify(queryEmbedding),
             match_threshold: 0.65,
@@ -130,6 +149,10 @@ export async function POST(req: NextRequest) {
                         return `[Source ${i + 1}: "${title}"]\n${seg.markdown_body}`;
                     })
                     .join("\n\n---\n\n");
+
+                if (contextText.length > MAX_CONTEXT_CHARS) {
+                    contextText = contextText.slice(0, MAX_CONTEXT_CHARS);
+                }
             }
         }
 
@@ -138,7 +161,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Step 4: Stream LLM Response ---
-        const systemPrompt = `You are a helpful and knowledgeable "Second Brain" assistant for a personal reading platform.
+        const systemPrompt = `You are a helpful and knowledgeable "Notes" assistant for a personal reading platform.
 Your role is to answer the user's questions based STRICTLY on the provided context excerpts from their saved library.
 
 Context Excerpts from User's Library:

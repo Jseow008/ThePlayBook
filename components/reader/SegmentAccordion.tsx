@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { ChevronRight, CheckCircle2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
+import { HighlightPopover } from "./HighlightPopover";
+import { HighlightBottomSheet } from "./HighlightBottomSheet";
 import type { SegmentFull } from "@/types/domain";
 import type { HighlightWithContent } from "@/hooks/useHighlights";
 
@@ -29,16 +31,23 @@ function applyHighlightsToTextNode(text: string, highlights: HighlightWithConten
             const after = text.slice(idx + matchText.length);
 
             const noteAttr = h.note_body ? ` data-note="${h.note_body.replace(/"/g, "&quot;")}"` : "";
-
-            // 📚 Add subtle book icon next to the word if a note exists
-            const noteIconSvg = h.note_body
-                ? `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-block ml-1 mb-0.5 opacity-90"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>`
-                : "";
+            const idAttr = ` data-id="${h.id}"`;
+            const colorAttr = h.color ? ` data-color="${h.color}"` : "";
 
             // Use interactive cursor if it has a note
-            const bgClass = h.note_body ? "bg-blue-500/30 hover:bg-blue-500/40" : "bg-yellow-500/30 hover:bg-yellow-500/40";
+            const color = h.color || (h.note_body ? "blue" : "yellow");
+
+            const HIGHLIGHT_COLORS: Record<string, string> = {
+                yellow: "bg-yellow-500/30 hover:bg-yellow-500/40",
+                blue: "bg-blue-500/30 hover:bg-blue-500/40",
+                green: "bg-green-500/30 hover:bg-green-500/40",
+                red: "bg-red-500/30 hover:bg-red-500/40",
+                purple: "bg-purple-500/30 hover:bg-purple-500/40",
+            };
+
+            const bgClass = HIGHLIGHT_COLORS[color] || HIGHLIGHT_COLORS.yellow;
             const cursorClass = h.note_body ? "cursor-pointer" : "cursor-text";
-            const markHtml = `<mark class="${bgClass} text-inherit rounded-sm px-0.5 ${cursorClass} transition-colors"${noteAttr}>${match}${noteIconSvg}</mark>`;
+            const markHtml = `<mark class="${bgClass} text-inherit rounded-sm -mx-0.5 px-0.5 ${cursorClass} transition-colors"${idAttr}${colorAttr}${noteAttr}>${match}</mark>`;
 
             const newNodes: any[] = [];
             // Recursively process the text before the match
@@ -112,7 +121,20 @@ export function SegmentAccordion({
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [fullyExpanded, setFullyExpanded] = useState<Set<string>>(new Set());
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-    const [noteTooltip, setNoteTooltip] = useState<NoteTooltip | null>(null);
+
+    // --- Popover / Bottom Sheet State ---
+    const [activeHighlight, setActiveHighlight] = useState<{
+        id: string;
+        text: string;
+        note: string | null;
+        color: string;
+        createdAt?: string;
+        rect: { top: number; left: number; width: number; height: number };
+    } | null>(null);
+
+    // Track mouse entering/leaving the popover itself to prevent it from closing
+    const popoverHoverRef = useRef(false);
+    const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleToggle = useCallback(
         (segment: SegmentFull, index: number) => {
@@ -141,28 +163,55 @@ export function SegmentAccordion({
         });
     }, []);
 
-    // ── Hover handler for note tooltips ──────────────────────────────────
-    const handleMouseOver = useCallback((e: React.MouseEvent) => {
-        const target = (e.target as HTMLElement).closest("mark[data-note]");
+    // ── Handle Hover / Tap for Premium UI ────────────────────────────────
+    const handleNoteInteraction = useCallback((e: React.MouseEvent | React.TouchEvent, isHover: boolean) => {
+        const target = (e.target as HTMLElement).closest("mark[data-id]");
+
         if (target) {
+            // Cancel pending closes
+            if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
+
+            const id = target.getAttribute("data-id");
             const note = target.getAttribute("data-note");
-            if (note) {
+            const color = target.getAttribute("data-color") || "yellow";
+            const text = target.textContent?.trim() || "";
+
+            if (id) { // Show popover for ALL highlights, even without notes
                 const rect = target.getBoundingClientRect();
-                setNoteTooltip({
-                    text: note,
-                    x: rect.left + rect.width / 2,
-                    y: rect.top,
-                });
+
+                if (activeHighlight?.id !== id || !isHover) {
+                    setActiveHighlight({
+                        id,
+                        text,
+                        note,
+                        color,
+                        rect: { top: rect.top, left: rect.left, width: rect.width, height: rect.height }
+                    });
+                }
+            }
+        } else if (isHover) {
+            // Not over a mark. If we have an active highlight, start the close timer
+            if (activeHighlight && !popoverHoverRef.current && !closeTimeoutRef.current) {
+                closeTimeoutRef.current = setTimeout(() => {
+                    if (!popoverHoverRef.current) {
+                        setActiveHighlight(null);
+                    }
+                    closeTimeoutRef.current = null;
+                }, 150); // Grace period
             }
         }
-    }, []);
+    }, [activeHighlight]);
 
-    const handleMouseOut = useCallback((e: React.MouseEvent) => {
-        const target = (e.target as HTMLElement).closest("mark[data-note]");
-        if (target) {
-            setNoteTooltip(null);
-        }
-    }, []);
+    // Also close on scroll to prevent drifting UI
+    useEffect(() => {
+        const handleScroll = () => {
+            if (activeHighlight && !popoverHoverRef.current) {
+                setActiveHighlight(null);
+            }
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [activeHighlight]);
 
     return (
         <>
@@ -257,8 +306,9 @@ export function SegmentAccordion({
                                         {/* Markdown Content */}
                                         <div
                                             data-segment-id={segment.id}
-                                            onMouseOver={handleMouseOver}
-                                            onMouseOut={handleMouseOut}
+                                            onMouseMove={(e) => handleNoteInteraction(e, true)}
+                                            onClick={(e) => handleNoteInteraction(e, false)}
+                                            onTouchEnd={(e) => handleNoteInteraction(e, false)}
                                             className={cn(
                                                 "prose prose-sm dark:prose-invert max-w-none relative",
                                                 "prose-headings:text-foreground prose-headings:font-semibold prose-headings:text-base",
@@ -305,19 +355,32 @@ export function SegmentAccordion({
                 })}
             </div>
 
-            {/* React-controlled Note Tooltip (renders via portal-like fixed positioning) */}
-            {noteTooltip && (
-                <div
-                    className="fixed z-[100] max-w-xs px-3 py-2 bg-zinc-800 text-white text-xs rounded-lg shadow-xl border border-white/10 pointer-events-none animate-in fade-in zoom-in-95 duration-150"
-                    style={{
-                        top: `${noteTooltip.y - 8}px`,
-                        left: `${noteTooltip.x}px`,
-                        transform: "translate(-50%, -100%)",
-                    }}
-                >
-                    <p className="leading-relaxed whitespace-normal">{noteTooltip.text}</p>
-                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-zinc-800 border-b border-r border-white/10 rotate-45" />
-                </div>
+            {/* Premium UX Components */}
+            {activeHighlight && (
+                <>
+                    <HighlightPopover
+                        highlightId={activeHighlight.id}
+                        noteBody={activeHighlight.note}
+                        highlightedText={activeHighlight.text}
+                        currentColor={activeHighlight.color}
+                        position={activeHighlight.rect}
+                        createdAt={activeHighlight.createdAt}
+                        onClose={() => setActiveHighlight(null)}
+                        onMouseEnter={() => { popoverHoverRef.current = true; }}
+                        onMouseLeave={() => {
+                            popoverHoverRef.current = false;
+                            setActiveHighlight(null);
+                        }}
+                    />
+                    <HighlightBottomSheet
+                        highlightId={activeHighlight.id}
+                        noteBody={activeHighlight.note}
+                        highlightedText={activeHighlight.text}
+                        currentColor={activeHighlight.color}
+                        createdAt={activeHighlight.createdAt}
+                        onClose={() => setActiveHighlight(null)}
+                    />
+                </>
             )}
         </>
     );

@@ -155,6 +155,12 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
 
     return createPortal(
         <div
+            onMouseDown={(e) => {
+                // Prevent focus shifting which collapses text selection and closes the toolbar
+                if (!isAddingNote) {
+                    e.preventDefault();
+                }
+            }}
             className={cn(
                 "absolute z-[100] flex flex-col gap-2 -translate-x-1/2 -translate-y-full rounded-xl shadow-2xl bg-zinc-900 border border-white/10 p-1.5 transition-all duration-200 animate-in fade-in zoom-in-95",
                 isAddingNote ? "w-64" : "w-auto"

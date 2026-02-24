@@ -48,7 +48,7 @@ export default function AboutPage() {
                             We consume so much content—podcasts during commutes, books before bed, articles throughout the day—but how much do we actually retain? {APP_NAME} exists to solve that problem.
                         </p>
                         <p>
-                            Every entry here is a personal reflection: a distillation of key insights, memorable quotes, and actionable takeaways. It&apos;s not just a summary—it&apos;s a second brain for ideas worth remembering.
+                            Every entry here is a personal reflection: a distillation of key insights, memorable quotes, and actionable takeaways. It&apos;s not just a summary—it&apos;s a collection of notes for ideas worth remembering.
                         </p>
                     </div>
                 </section>

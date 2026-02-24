@@ -79,7 +79,7 @@ export function useCreateHighlight() {
                 segment_id: newArgs.segment_id || null,
                 highlighted_text: newArgs.highlighted_text,
                 note_body: newArgs.note_body || null,
-                color: newArgs.color || "yellow",
+                color: newArgs.color || (newArgs.note_body ? "blue" : "yellow"),
                 created_at: new Date().toISOString(),
                 updated_at: null,
                 content_item: null,
@@ -144,6 +144,81 @@ export function useDeleteHighlight() {
             return { previousData };
         },
         onError: (_err, _deletedId, context) => {
+            // Rollback to previous cache on failure
+            if (context?.previousData) {
+                context.previousData.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
+        },
+        onSettled: () => {
+            // Always refetch after mutation to ensure server consistency
+            queryClient.invalidateQueries({ queryKey: ["highlights"] });
+        },
+    });
+}
+
+// ----------------------------------------------------------------------------
+// Update Highlight
+// ----------------------------------------------------------------------------
+interface UpdateHighlightArgs {
+    id: string;
+    note_body?: string | null;
+    color?: string;
+}
+
+export function useUpdateHighlight() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (args: UpdateHighlightArgs) => {
+            const res = await fetch(`/api/library/highlights/${args.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    note_body: args.note_body,
+                    color: args.color,
+                }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData?.error?.message || "Failed to update highlight");
+            }
+
+            const { data } = await res.json();
+            return data as UserHighlight;
+        },
+        onMutate: async (updatedArgs) => {
+            // Cancel any in-flight refetches
+            await queryClient.cancelQueries({ queryKey: ["highlights"] });
+
+            // Snapshot current cache for rollback
+            const previousData = queryClient.getQueriesData({ queryKey: ["highlights"] });
+
+            // Optimistically update the highlight across ALL matches
+            previousData.forEach(([queryKey, oldData]) => {
+                if (Array.isArray(oldData)) {
+                    queryClient.setQueryData(
+                        queryKey,
+                        oldData.map((h: HighlightWithContent) => {
+                            if (h.id === updatedArgs.id) {
+                                return {
+                                    ...h,
+                                    note_body: updatedArgs.note_body !== undefined ? updatedArgs.note_body : h.note_body,
+                                    color: updatedArgs.color !== undefined ? updatedArgs.color : h.color,
+                                    updated_at: new Date().toISOString(),
+                                };
+                            }
+                            return h;
+                        })
+                    );
+                }
+            });
+
+            return { previousData };
+        },
+        onError: (_err, _updatedArgs, context) => {
             // Rollback to previous cache on failure
             if (context?.previousData) {
                 context.previousData.forEach(([queryKey, data]) => {

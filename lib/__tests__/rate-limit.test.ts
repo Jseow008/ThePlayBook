@@ -18,6 +18,13 @@ describe("rateLimit", () => {
         } as unknown as NextRequest;
     }
 
+    function createMockRequestWithHeaders(headers: Array<[string, string]>, path: string = "/api/test") {
+        return {
+            headers: new Map(headers),
+            nextUrl: { pathname: path },
+        } as unknown as NextRequest;
+    }
+
     it("allows requests under the limit", () => {
         const req = createMockRequest("1.1.1.1");
         const options = { limit: 2, windowMs: 1000 };
@@ -59,5 +66,23 @@ describe("rateLimit", () => {
         expect(rateLimit(req1, options).success).toBe(true);
         expect(rateLimit(req1, options).success).toBe(false);
         expect(rateLimit(req2, options).success).toBe(true);
+    });
+
+    it("falls back to anonymous when IP headers are invalid", () => {
+        const req = createMockRequestWithHeaders([["x-forwarded-for", "spoofed-value"]]);
+        const options = { limit: 1, windowMs: 1000 };
+
+        expect(rateLimit(req, options).success).toBe(true);
+        expect(rateLimit(req, options).success).toBe(false);
+    });
+
+    it("supports namespaced keys for independent buckets", () => {
+        const req = createMockRequest("8.8.8.8");
+
+        expect(rateLimit(req, { limit: 1, windowMs: 1000, key: "chat" }).success).toBe(true);
+        expect(rateLimit(req, { limit: 1, windowMs: 1000, key: "chat" }).success).toBe(false);
+
+        // Different key should be independent
+        expect(rateLimit(req, { limit: 1, windowMs: 1000, key: "highlights" }).success).toBe(true);
     });
 });

@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 const HIGHLIGHT_LIMIT = 50; // max highlights per content item
+const HIGHLIGHT_TEXT_MAX = 2_000;
+const NOTE_BODY_MAX = 4_000;
+const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple"]);
+
+const CreateHighlightSchema = z.object({
+    content_item_id: z.string().uuid(),
+    segment_id: z.string().uuid().optional().nullable(),
+    highlighted_text: z.string().trim().min(1).max(HIGHLIGHT_TEXT_MAX),
+    note_body: z.string().trim().max(NOTE_BODY_MAX).optional().nullable(),
+    color: HighlightColorSchema.optional(),
+});
 
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
@@ -25,24 +37,19 @@ export async function POST(request: NextRequest) {
             return apiError("UNAUTHORIZED", "Must be logged in to create a highlight.", 401, requestId);
         }
 
-        let body;
+        let body: unknown;
         try {
             body = await request.json();
         } catch {
             return apiError("INVALID_JSON", "Invalid JSON payload.", 400, requestId);
         }
 
-        const { content_item_id, segment_id, highlighted_text, note_body, color } = body as {
-            content_item_id?: string;
-            segment_id?: string;
-            highlighted_text?: string;
-            note_body?: string;
-            color?: string;
-        };
-
-        if (!content_item_id || !highlighted_text) {
-            return apiError("VALIDATION_ERROR", "Missing required fields (content_item_id, highlighted_text).", 400, requestId);
+        const parsed = CreateHighlightSchema.safeParse(body);
+        if (!parsed.success) {
+            return apiError("VALIDATION_ERROR", "Invalid highlight payload.", 400, requestId);
         }
+
+        const { content_item_id, segment_id, highlighted_text, note_body, color } = parsed.data;
 
         // Optional: Check quota per item to prevent massive abuse
         const { count } = await supabase
@@ -63,7 +70,7 @@ export async function POST(request: NextRequest) {
                 segment_id: segment_id ?? null,
                 highlighted_text,
                 note_body: note_body ?? null,
-                color: color || "yellow",
+                color: color ?? (note_body ? "blue" : "yellow"),
             })
             .select()
             .single();
@@ -115,7 +122,7 @@ export async function GET(request: NextRequest) {
         if (contentItemId) {
             query = query.eq("content_item_id", contentItemId);
         } else {
-            // Cap global highlight fetch at 100 for performance on the /brain page
+            // Cap global highlight fetch at 100 for performance on the /notes page
             query = query.limit(100);
         }
 

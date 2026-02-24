@@ -158,6 +158,7 @@ function LandingHeader() {
                             src="/images/netflux-logo.png"
                             alt={APP_NAME}
                             fill
+                            sizes="150px"
                             className="object-contain"
                             priority
                         />

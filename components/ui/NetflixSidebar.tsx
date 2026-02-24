@@ -17,7 +17,7 @@ import {
     ChevronDown,
     Plus,
     LayoutGrid,
-    Brain
+    StickyNote
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -113,6 +113,7 @@ export function NetflixSidebar() {
                             src="/images/netflux-logo.png"
                             alt={APP_NAME}
                             fill
+                            sizes="150px"
                             className="object-contain"
                             priority
                         />
@@ -276,18 +277,18 @@ export function NetflixSidebar() {
                                 )}
                             </Link>
 
-                            {/* Second Brain */}
+                            {/* Notes */}
                             <Link
-                                href="/brain"
+                                href="/notes"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
-                                    pathname === "/brain"
+                                    pathname === "/notes"
                                         ? "text-foreground bg-accent"
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <Brain className="size-4 mr-3 flex-shrink-0" />
-                                <span className="text-sm whitespace-nowrap flex-1">Second Brain</span>
+                                <StickyNote className="size-4 mr-3 flex-shrink-0" />
+                                <span className="text-sm whitespace-nowrap flex-1">Notes</span>
                             </Link>
                         </div>
                     )}

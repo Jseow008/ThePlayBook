@@ -34,37 +34,10 @@ export async function POST(request: NextRequest) {
 
         const supabase = getAdminClient();
 
-        // Find all segments that DO NOT have an embedding yet
-        // 1. Get all segment IDs that ALREADY have embeddings
-        const { data: existingEmbeddings, error: existingError } = await supabase
-            .from("segment_embedding")
-            .select("segment_id");
-
-        if (existingError) {
-            logApiError({ requestId, route: "/api/admin/embeddings/sync-segments", message: "Failed to fetch existing embeddings", error: existingError });
-            return apiError("INTERNAL_ERROR", "Failed to check existing segments", 500, requestId);
-        }
-
-        const existingIds = existingEmbeddings?.map(e => e.segment_id) || [];
-
-        // 2. Query segments that are NOT in existingIds
-        let query = supabase
-            .from("segment")
-            .select(`
-                id,
-                content_item_id,
-                markdown_body
-            `)
-            .limit(50);
-
-        // Supabase has limits on how large a "not in" query can be.
-        // For larger scales, a database RPC is better, but this handles MVP.
-        if (existingIds.length > 0) {
-            const formattedIds = `(${existingIds.join(',')})`;
-            query = query.not("id", "in", formattedIds);
-        }
-
-        const { data: segments, error: fetchError } = await query;
+        const { data: segments, error: fetchError } = await (supabase.rpc as any)(
+            "get_segments_missing_embeddings",
+            { p_limit: 50 }
+        );
 
         if (fetchError) {
             logApiError({ requestId, route: "/api/admin/embeddings/sync-segments", message: "Failed to fetch segments", error: fetchError });
@@ -128,7 +101,12 @@ export async function POST(request: NextRequest) {
 
                 successCount++;
             } catch (err) {
-                console.error(`Error embedding segment ${segment.id}:`, err);
+                logApiError({
+                    requestId,
+                    route: "/api/admin/embeddings/sync-segments",
+                    message: `Error embedding segment ${segment.id}`,
+                    error: err,
+                });
                 failedCount++;
             }
         }

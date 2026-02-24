@@ -56,7 +56,7 @@ export function AskClientPage() {
         {
             id: "welcome",
             role: "assistant",
-            content: "Hi! I'm your Second Brain assistant. Ask me anything about the books you've saved in your library, and I'll find the answers for you.",
+            content: "Hi! I'm your Notes assistant. Ask me anything about the books you've saved in your library, and I'll find the answers for you.",
         },
         ...messages.map((m) => ({
             id: m.id,

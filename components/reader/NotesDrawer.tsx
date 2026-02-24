@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, AlertCircle, Trash2, X, MessageSquareQuote } from "lucide-react";
+import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote } from "lucide-react";
 import { useHighlights, useDeleteHighlight } from "@/hooks/useHighlights";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -40,8 +40,8 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                 onClick={() => setIsOpen(true)}
                 className="fixed bottom-6 right-6 z-40 flex items-center gap-2 px-4 py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
             >
-                <BookOpen className="size-5" />
-                <span>My Notes</span>
+                <StickyNote className="size-5" />
+                <span>Notes</span>
                 {highlights && highlights.length > 0 && (
                     <span className="flex items-center justify-center w-5 h-5 ml-1 text-xs font-bold bg-white text-primary rounded-full">
                         {highlights.length}

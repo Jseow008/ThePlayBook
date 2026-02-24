@@ -35,15 +35,23 @@ export function useReadingTimer(contentId?: string) {
             }
         };
 
-        const sendHeartbeat = async () => {
+        const sendHeartbeat = async (isUnmount = false) => {
             const toSend = pendingSecondsRef.current;
 
-            // Threshold: If less than 60 seconds, discard this session.
+            if (toSend === 0) return;
+
+            // Threshold: If less than 60 seconds, discard on unmount, otherwise keep accumulating
             if (toSend < 60) {
-                pendingSecondsRef.current = 0;
+                if (isUnmount) {
+                    console.log(`[Timer] Discarding ${toSend}s (under 60s minimum)`);
+                    pendingSecondsRef.current = 0;
+                } else {
+                    console.log(`[Timer] Paused at ${toSend}s (waiting for 60s minimum)`);
+                }
                 return;
             }
 
+            console.log(`[Timer] Sending heartbeat for ${toSend}s`);
             try {
                 pendingSecondsRef.current = 0; // Reset pending
                 await fetch('/api/activity/log', {
@@ -66,24 +74,29 @@ export function useReadingTimer(contentId?: string) {
         // Window focus handling
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
+                console.log("[Timer] Tab focused, resuming timer.");
                 startTimer();
             } else {
+                console.log("[Timer] Tab blurred, pausing timer.");
                 stopTimer();
-                sendHeartbeat(); // Flush pending on blur
+                sendHeartbeat(false); // Flush pending on blur
             }
         };
+
+        const handleBeforeUnload = () => sendHeartbeat(true);
 
         // Start initially
         startTimer();
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('beforeunload', sendHeartbeat);
+        window.addEventListener('beforeunload', handleBeforeUnload);
 
         return () => {
+            console.log("[Timer] Component unmounting, final flush.");
             stopTimer();
-            sendHeartbeat();
+            sendHeartbeat(true);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('beforeunload', sendHeartbeat);
+            window.removeEventListener('beforeunload', handleBeforeUnload);
         };
     }, [contentId]);
 

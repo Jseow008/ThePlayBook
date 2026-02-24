@@ -62,24 +62,35 @@
 * Ordered by: Health, Fitness, Wealth, Finance, Productivity, etc.
 * "New on Flux" lane at top
 
-### 2.2 Reader (Desktop)
+### 2.3 Reader (Desktop)
 
 **3-Column Layout:**
 * Left: Segment navigation (`w-72`)
 * Center: Content area (`flex-1`, scrollable)
-* Right: Actions panel (`w-80`) — Mode toggle, artifacts, share
+* Right: Actions panel (`w-80`) — Mode toggle, artifacts, share, add to library
 
 **Header:**
 * Content title, author, duration
 * Back to home link
 * Progress indicator
 
-### 2.3 Reader (Mobile)
+### 2.4 Reader (Mobile)
 
 * Single column, document flow
 * Collapsible sidebar navigation
 * Bottom sheet for segment navigation
-* Floating action button for mode toggle
+* Floating action buttons (FABs) for mode toggle, sharing, and AI Chat
+
+### 2.5 My Library & Notes (`/library`, `/notes`)
+
+* Consistent subnav layouts matching `/search` and `/categories`.
+* Filterable lists of bookmarked items.
+* **Notes**: Accordion expanding UI for text highlights and markdown notes, color-coded per highlight user setting. Sortable by Last Interacted or Creation Timestamp.
+
+### 2.6 Settings & Heatmap (`/settings`)
+
+* Profile management.
+* GitHub-Style Activity Heatmap rendering past 12-months of valid `reading_activity`. User statistics (total hours, streaks).
 
 ---
 
@@ -179,6 +190,24 @@ Container: bg-card/50 rounded-lg p-4 border
 * Checked: Strikethrough text, checkmark
 * Mandatory: Special badge/indicator
 
+### 3.8 Notes & Highlights (Reader)
+
+* **Tooltip**: Highlight text invokes a floating tooltip with color options and a "Note" button.
+* **Colors**: Light yellow (default semi-transparent), green, pink, purple.
+* **Simplified UI**: Extraneous icons omitted for a clean markdown reading experience.
+
+### 3.9 Universal Share
+
+* **Mobile**: Invokes native `navigator.share()` API (Share Sheet).
+* **Desktop**: Copies a context-aware link to clipboard with `sonner` toast confirmation.
+* Integrates with dynamic generic Next.js `metadata` providing customized Open Graph images.
+
+### 3.10 Ask AI (Chat Interface)
+
+* **Layout**: Sticky bottom text input, scrolling message list.
+* **Message Bubbles**: Distinct styles for User (solid primary) vs AI (muted border).
+* **Citations**: AI responses include markdown links to specific segments for deep linking.
+
 ---
 
 ## 4. Micro-Interactions
@@ -186,7 +215,8 @@ Container: bg-card/50 rounded-lg p-4 border
 * **Tech:** CSS transitions only (`transition-all duration-200`)
 * **Card Hover:** Subtle lift (`-translate-y-1`)
 * **Button Press:** Scale down (`scale-95`)
-* **Loading:** Skeleton pulses for cards, spinner for actions
+* **Loading:** Global consistent skeleton pulses
+* **Toasts**: Non-blocking slide-in notifications via `sonner` at bottom-right.
 * **Carousel:** Auto-rotate every 5 seconds, pause on hover
 
 ---
@@ -257,13 +287,18 @@ Container: h-[85vh] centered, dark bg with overlay
 ```
 Note: NO admin button is shown to regular users.
 
-### General Empty States (e.g., empty category)
+### General Empty States (e.g., empty category / library)
 ```
 Container: centered, muted
 ├── Large Icon (size-12, muted)
-├── Heading: "No content yet"
+├── Heading: "No content yet" or "Your library is empty"
 └── Subtext: "Check back soon for new summaries"
 ```
+
+### Loading & Error Boundaries
+* Built via Next.js `loading.tsx` and `error.tsx`
+* **Loading Skeletons**: Precise architectural matches to loaded content (avoids layout shift)
+* **Error Bounds**: Aesthetic "Oops" pages with a clear "Try Again" or "Return Home" CTA.
 
 ---
 
@@ -276,6 +311,7 @@ Functional design for admin panel:
 * Table for content list with pagination
 * Drag-and-drop segment reordering
 * Artifact editor with add/remove items
+* AI Processing Status bars and "Sync Missing Embeddings" operations
 * Image upload with preview
 * Status badges (draft/verified)
 * Featured toggle button

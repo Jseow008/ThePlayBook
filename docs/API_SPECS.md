@@ -5,9 +5,9 @@
 
 ---
 
-## 1. Public Data Access
+## 1. Public & Authenticated Data Access
 
-Public content is fetched directly from Supabase using the anon key with RLS policies. No custom API routes needed for reads.
+Public content is fetched directly from Supabase using the anon key with RLS policies. No custom API routes needed for simple reads. However, specific features like AI chat, library management, and progress tracking use dedicated API routes.
 
 ### 1.1 Content List Query
 
@@ -55,7 +55,30 @@ const { data } = await supabase
 
 ---
 
-## 2. Admin API Endpoints
+## 2. Authenticated API Endpoints
+
+These endpoints are used by authenticated regular users (or visitors acting upon the AI chat).
+
+### 2.1 AI Chat (`/api/chat`)
+
+**POST** `/api/chat`
+
+Streaming endpoint for Ask AI feature. Handles AI responses based on vector similarity search against content embeddings.
+
+### 2.2 Library & Progress (`/api/library/*`)
+
+- **POST / DELETE** `/api/library/bookmarks`: Add or remove content items from the user's library.
+- **GET / POST / PUT / DELETE** `/api/library/highlights`: Manage text highlights and notes for read segments.
+
+### 2.3 Reading Activity (`/api/activity/track`)
+
+**POST** `/api/activity/track`
+
+Records users' valid reading sessions (duration > 60s) to populate the Reading Heatmap on their profile.
+
+---
+
+## 3. Admin API Endpoints
 
 All admin endpoints require a valid Supabase session and an admin role (`profiles.role = 'admin'`).
 
@@ -90,10 +113,12 @@ Signs out the current Supabase session for the active admin user.
 z.object({
   title: z.string().min(1),
   author: z.string().optional(),
-  type: z.enum(['podcast', 'book', 'article']),
+  type: z.enum(['podcast', 'book', 'article', 'video']),
   category: z.string().optional(),
   source_url: z.string().url().optional(),
   cover_image_url: z.string().url().optional(),
+  hero_image_url: z.string().url().optional(),
+  audio_url: z.string().url().optional(),
   duration_seconds: z.number().int().positive().optional(),
   is_featured: z.boolean().default(false),
   quick_mode_json: z.object({
@@ -234,7 +259,7 @@ z.object({
 
 ---
 
-### 2.8 Image Upload
+### 3.8 Image Upload
 
 **POST** `/api/admin/upload`
 
@@ -252,7 +277,14 @@ Upload an image to Supabase Storage.
 
 ---
 
-## 3. Response Standards
+### 3.9 AI Operations
+
+- **POST** `/api/admin/embeddings/sync`: Regenerates global embeddings for all items.
+- **POST** `/api/admin/embeddings/sync-segments`: Synchronizes vector embeddings for missing segments.
+
+---
+
+## 4. Response Standards
 
 ### 3.1 Success Response
 
@@ -289,34 +321,36 @@ Upload an image to Supabase Storage.
 
 ## 4. Security
 
-### 4.1 Admin Authentication
+### 5.1 Admin Authentication
 
-- Authentication is handled by Supabase Auth.
+- Authentication is handled by Supabase Auth (with Google OAuth support).
 - Authorization is enforced by checking `profiles.role = 'admin'`.
 - Admin APIs validate role server-side before using service-role operations.
 
-### 4.2 Input Validation
+### 5.2 Input Validation
 
 All inputs validated with Zod before processing.
 
-### 4.3 Database Access
+### 5.3 Database Access
 
-The database is hosted on **Supabase Cloud** (`xmuqsgfxuaaophxnwure.supabase.co`).
+The database is hosted on **Supabase Cloud**.
 
 - Admin endpoints use Supabase service role key for full access
 - Public queries use anon key with RLS policies
+- Authenticated endpoints enforce user isolation (users only access their own library, notes, activity)
 - Image uploads stored in Supabase Storage bucket
 
 ---
 
-## 5. Type Definitions
+## 6. Type Definitions
 
 ```typescript
 // /types/database.ts
 
 export type ContentStatus = "draft" | "verified";
-export type ContentType = "podcast" | "book" | "article";
+export type ContentType = "podcast" | "book" | "article" | "video";
 export type ArtifactType = "checklist" | "plan" | "script";
+export type UserRole = "user" | "admin";
 
 export interface ContentItem {
   id: string;
@@ -325,11 +359,14 @@ export interface ContentItem {
   author?: string;
   source_url?: string;
   cover_image_url?: string;
+  hero_image_url?: string;
+  audio_url?: string;
   category?: string;
   quick_mode_json?: QuickModeContent;
   status: ContentStatus;
   duration_seconds?: number;
   is_featured: boolean;
+  embedding?: string;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -373,8 +410,42 @@ export interface ChecklistPayload {
   }>;
 }
 
+export interface ItemProgress {
+  [itemId: string]: boolean;
+}
+
 export interface ContentItemWithSegments extends ContentItem {
   segments: Segment[];
   artifacts: Artifact[];
+}
+
+export interface UserLibrary {
+  user_id: string;
+  content_id: string;
+  is_bookmarked?: boolean;
+  progress?: any;
+  last_interacted_at?: string;
+}
+
+export interface UserHighlight {
+  id: string;
+  user_id: string;
+  content_item_id: string;
+  segment_id?: string;
+  highlighted_text: string;
+  note_body?: string;
+  color?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ReadingActivity {
+  id: string;
+  user_id: string;
+  activity_date: string;
+  duration_seconds: number;
+  pages_read: number;
+  created_at: string;
+  updated_at: string;
 }
 ```
