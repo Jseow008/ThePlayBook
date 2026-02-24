@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 /* ==========================================================================
    Flux Design System - Dark Mode Native
@@ -106,6 +107,7 @@
   --font-sans: var(--font-inter);
   --font-display: var(--font-inter);
   --font-brand: var(--font-outfit);
+  --font-serif: var(--font-serif);
 }
 
 /* --------------------------------------------------------------------------
@@ -150,15 +152,19 @@ body {
 
 /* Deep Mode - Serif font for reader body with generous sizing */
 .prose-deep {
-  font-family: var(--font-serif), ui-serif, Georgia, serif;
-  font-size: 1.2rem;
-  line-height: 1.85;
+  font-family: Georgia, Garamond, Palatino, var(--font-serif), serif;
+  font-size: 1.125rem;
+  /* 18px for Mobile */
+  line-height: 1.5;
+  /* Optimal line spacing */
 }
 
 @media (min-width: 768px) {
   .prose-deep {
-    font-size: 1.35rem;
-    line-height: 1.9;
+    font-size: 1.25rem;
+    /* 20px for Desktop */
+    line-height: 1.6;
+    /* Slight increase for wider desktop lines */
   }
 }
 

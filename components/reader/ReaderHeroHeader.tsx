@@ -66,7 +66,7 @@ export function ReaderHeroHeader({
                 {/* Cover Image */}
                 {coverImageUrl && (
                     <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
-                        <div className="aspect-[2/3] sm:aspect-auto sm:h-full rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative">
+                        <div className="aspect-[2/3] w-[140px] sm:w-full rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative">
                             <Image
                                 src={coverImageUrl}
                                 alt={title}

@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeSanitize from "rehype-sanitize";
 import { cn } from "@/lib/utils";
 import type { SegmentFull } from "@/types/domain";
@@ -65,7 +66,7 @@ export function SegmentContent({
                 )}
             >
                 <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
                     rehypePlugins={[rehypeSanitize]}
                 >
                     {segment.markdown_body}

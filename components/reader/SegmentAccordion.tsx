@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { ChevronRight, CheckCircle2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import { HighlightPopover } from "./HighlightPopover";
@@ -228,7 +229,7 @@ export function SegmentAccordion({
 
                     // Inject highlight markup using safe Remark plugin instead of regex string replacement
                     const segmentHighlights = highlights.filter(h => h.segment_id === segment.id);
-                    const remarkPlugins: any[] = [remarkGfm];
+                    const remarkPlugins: any[] = [remarkGfm, remarkBreaks];
                     if (segmentHighlights.length > 0) {
                         remarkPlugins.push(createRemarkHighlightPlugin(segmentHighlights));
                     }
@@ -310,17 +311,17 @@ export function SegmentAccordion({
                                             onClick={(e) => handleNoteInteraction(e, false)}
                                             onTouchEnd={(e) => handleNoteInteraction(e, false)}
                                             className={cn(
-                                                "prose prose-sm dark:prose-invert max-w-none relative",
+                                                "prose dark:prose-invert max-w-none relative prose-deep",
                                                 "prose-headings:text-foreground prose-headings:font-semibold prose-headings:text-base",
-                                                "prose-p:text-foreground/85 prose-p:leading-relaxed prose-p:text-[0.925rem]",
+                                                "prose-p:text-foreground/95", // higher opacity, letting prose-deep handle sizes
                                                 "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
                                                 "prose-strong:text-foreground",
-                                                "prose-blockquote:border-l-primary/40 prose-blockquote:text-muted-foreground prose-blockquote:text-sm",
-                                                "prose-ul:text-foreground/85 prose-ol:text-foreground/85",
-                                                "prose-li:text-[0.925rem] prose-li:marker:text-muted-foreground",
+                                                "prose-blockquote:border-l-primary/40 prose-blockquote:text-muted-foreground prose-blockquote:text-sm md:prose-blockquote:text-base",
+                                                "prose-ul:text-foreground/95 prose-ol:text-foreground/95",
+                                                "prose-li:marker:text-muted-foreground",
                                                 !isFullyExpanded &&
                                                 needsTruncation &&
-                                                "max-h-[6.5rem] overflow-hidden"
+                                                "max-h-[8.5rem] overflow-hidden"
                                             )}
                                         >
                                             {/* Fade-out gradient for truncated content */}

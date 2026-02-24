@@ -82,7 +82,7 @@ export function ContentPreview({
                     {/* Cover Image */}
                     {item.cover_image_url && (
                         <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
-                            <div className="aspect-[2/3] w-full max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 relative group">
+                            <div className="aspect-[2/3] w-[140px] sm:w-full max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 relative group">
                                 <Image
                                     src={item.cover_image_url}
                                     alt={item.title}
