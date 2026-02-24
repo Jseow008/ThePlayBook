@@ -12,7 +12,7 @@
    -------------------------------------------------------------------------- */
 
 :root {
-  /* Dark mode is default (Dark Mode Native) */
+  /* Dark mode is the default — browsing UI is always dark */
   --background: 240 10% 3.9%;
   --foreground: 0 0% 98%;
 
@@ -44,35 +44,69 @@
   --radius: 0.5rem;
 }
 
-/* Light mode override (optional) */
-.light {
-  --background: 0 0% 100%;
+/* --------------------------------------------------------------------------
+   Reader-scoped theme overrides
+   Applied via class on the reader wrapper element only
+   -------------------------------------------------------------------------- */
+
+.reader-light {
+  --background: 0 0% 98%;
   --foreground: 240 10% 3.9%;
-
-  --card: 0 0% 100%;
+  --card: 0 0% 96%;
   --card-foreground: 240 10% 3.9%;
-
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 3.9%;
-
   --primary: 240 5.9% 10%;
   --primary-foreground: 0 0% 98%;
-
   --secondary: 240 4.8% 95.9%;
   --secondary-foreground: 240 5.9% 10%;
-
   --muted: 240 4.8% 95.9%;
   --muted-foreground: 240 3.8% 46.1%;
-
   --accent: 240 4.8% 95.9%;
   --accent-foreground: 240 5.9% 10%;
-
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
-
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
   --ring: 240 5.9% 10%;
+}
+
+.reader-sepia {
+  --background: 36 33% 94%;
+  --foreground: 24 10% 15%;
+  --card: 36 30% 90%;
+  --card-foreground: 24 10% 15%;
+  --popover: 36 33% 94%;
+  --popover-foreground: 24 10% 15%;
+  --primary: 24 10% 15%;
+  --primary-foreground: 36 33% 94%;
+  --secondary: 36 20% 88%;
+  --secondary-foreground: 24 10% 20%;
+  --muted: 36 20% 88%;
+  --muted-foreground: 24 5% 45%;
+  --accent: 36 20% 88%;
+  --accent-foreground: 24 10% 20%;
+  --border: 36 15% 82%;
+  --input: 36 15% 82%;
+  --ring: 24 10% 15%;
+}
+
+.reader-dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 6%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 240 5.9% 10%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
 }
 
 /* --------------------------------------------------------------------------
@@ -150,22 +184,55 @@ body {
   --tw-prose-td-borders: hsl(var(--border));
 }
 
-/* Deep Mode - Serif font for reader body with generous sizing */
-.prose-deep {
-  font-family: Georgia, Garamond, Palatino, var(--font-serif), serif;
-  font-size: 1.125rem;
-  /* 18px for Mobile */
+/* Reader Typography Utilities */
+.reader-size-small {
+  font-size: 0.875rem;
+  /* 14px */
   line-height: 1.5;
-  /* Optimal line spacing */
 }
 
 @media (min-width: 768px) {
-  .prose-deep {
-    font-size: 1.25rem;
-    /* 20px for Desktop */
-    line-height: 1.6;
-    /* Slight increase for wider desktop lines */
+  .reader-size-small {
+    font-size: 1rem;
+    line-height: 1.5;
+    /* 16px */
   }
+}
+
+.reader-size-medium {
+  font-size: 1rem;
+  /* 16px */
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  .reader-size-medium {
+    font-size: 1.125rem;
+    line-height: 1.6;
+    /* 18px */
+  }
+}
+
+.reader-size-large {
+  font-size: 1.125rem;
+  /* 18px */
+  line-height: 1.6;
+}
+
+@media (min-width: 768px) {
+  .reader-size-large {
+    font-size: 1.25rem;
+    line-height: 1.7;
+    /* 20px */
+  }
+}
+
+.reader-font-serif {
+  font-family: Georgia, Garamond, Palatino, var(--font-serif), serif;
+}
+
+.reader-font-sans {
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* --------------------------------------------------------------------------

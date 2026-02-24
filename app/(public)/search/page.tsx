@@ -73,7 +73,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
                 </div>
             ) : (
                 <div className="text-center py-20 animate-in fade-in zoom-in-95 duration-300">
-                    <div className="inline-flex items-center justify-center p-6 bg-zinc-800/30 rounded-full mb-6 border border-zinc-800">
+                    <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border">
                         <Search className="size-10 text-muted-foreground" />
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">No results found</h3>
@@ -97,7 +97,7 @@ function ResultsSkeleton() {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {[...Array(12)].map((_, i) => (
-                <div key={i} className="aspect-[2/3] bg-zinc-800/50 rounded-lg animate-pulse" />
+                <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
             ))}
         </div>
     );
@@ -171,7 +171,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 }}
                                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
                                     ? "bg-primary text-primary-foreground border-primary"
-                                    : "bg-white/[0.05] text-muted-foreground border-transparent hover:bg-white/[0.08] hover:text-foreground"
+                                    : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
                                     }`}
                             >
                                 {t}

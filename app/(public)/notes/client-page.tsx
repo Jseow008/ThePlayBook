@@ -185,7 +185,7 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
                                             handleDelete(item.id);
                                         }}
                                         disabled={deleteHighlight.isPending}
-                                        className="p-1.5 text-muted-foreground/60 hover:text-white hover:bg-destructive/80 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus-ring"
+                                        className="p-1.5 text-muted-foreground/60 hover:text-foreground hover:bg-destructive/80 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus-ring"
                                         aria-label="Delete note"
                                     >
                                         <Trash2 className="size-4" />

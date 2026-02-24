@@ -70,7 +70,7 @@ export function HomeFeed({
             <footer className="border-t border-border py-4 lg:py-7 px-6 lg:px-16 mt-12 bg-card/20">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center text-black font-display font-bold">
+                        <div className="w-6 h-6 bg-foreground rounded-md flex items-center justify-center text-background font-display font-bold">
                             L
                         </div>
                         <p>© 2026 {APP_NAME}</p>

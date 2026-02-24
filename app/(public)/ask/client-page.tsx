@@ -121,7 +121,7 @@ export function AskClientPage() {
                                         "prose prose-sm max-w-none",
                                         m.role === "user"
                                             ? "text-primary-foreground [&_*]:text-primary-foreground"
-                                            : "dark:prose-invert"
+                                            : ""
                                     )}
                                 >
                                     {m.role === "user" ? (
@@ -134,8 +134,8 @@ export function AskClientPage() {
 
                             {/* User Avatar */}
                             {m.role === "user" && (
-                                <div className="flex-shrink-0 size-8 rounded-full bg-zinc-700 flex items-center justify-center mt-1">
-                                    <User className="size-4 text-zinc-300" />
+                                <div className="flex-shrink-0 size-8 rounded-full bg-secondary flex items-center justify-center mt-1">
+                                    <User className="size-4 text-secondary-foreground" />
                                 </div>
                             )}
                         </div>

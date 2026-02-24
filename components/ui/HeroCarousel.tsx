@@ -43,13 +43,13 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     if (items.length === 0) {
         return (
-            <div className="relative h-[70vh] md:h-[80vh] lg:h-[85vh] min-h-[500px] w-full overflow-hidden bg-zinc-900 flex items-center justify-center">
+            <div className="relative h-[70vh] md:h-[80vh] lg:h-[85vh] min-h-[500px] w-full overflow-hidden bg-card flex items-center justify-center">
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
                         {APP_NAME}
                     </h1>
-                    <p className="text-xl text-zinc-300 max-w-2xl mx-auto bg-black/40 p-4 rounded-xl backdrop-blur-sm">
+                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto bg-black/40 p-4 rounded-xl backdrop-blur-sm">
                         A curated stream of insights from books, podcasts, and articles. Check back soon for featured content.
                     </p>
                 </div>
@@ -84,21 +84,31 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                     )}
                 >
                     {(activeItem.hero_image_url || activeItem.cover_image_url) ? (
-                        <div className="absolute inset-0">
-                            <Image
-                                src={(activeItem.hero_image_url || activeItem.cover_image_url)!}
-                                alt={activeItem.title}
-                                fill
-                                priority={activeIndex === 0}
-                                className="object-cover object-[50%_20%]"
-                            />
-                            {/* Vignette Overlay (Top/Bottom) */}
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-background" />
-                            {/* Vignette Overlay (Left/Right) - Heavy on left for text */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
-                        </div>
+                        <>
+                            {/* The Image Container - Anchored Right */}
+                            <div className="absolute top-0 right-0 bottom-0 w-full md:w-[85%] lg:w-[75%] xl:w-[65%]">
+                                <Image
+                                    src={(activeItem.hero_image_url || activeItem.cover_image_url)!}
+                                    alt={activeItem.title}
+                                    fill
+                                    priority={activeIndex === 0}
+                                    className="object-cover object-[50%_20%]"
+                                />
+                            </div>
+
+                            {/* Full-screen Gradient Overlay to Blend Image into Background */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent via-[40%] to-[80%] md:bg-gradient-to-r md:from-background md:via-background md:to-transparent md:via-[15%] md:to-[60%] lg:via-[25%] lg:to-[70%] xl:via-[35%] xl:to-[80%] pointer-events-none" />
+
+                            {/* Top Vignette for Navbar Contrast */}
+                            <div className="absolute inset-x-0 top-0 h-[40%] bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+
+                            {/* Supplementary horizontal text darkening for highly-lit images */}
+                            <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent md:w-[60%] pointer-events-none" />
+                            {/* Right-side vignette to soften the screen edge */}
+                            <div className="absolute inset-y-0 right-0 w-[15%] bg-gradient-to-l from-black/40 to-transparent pointer-events-none" />
+                        </>
                     ) : (
-                        <div className="w-full h-full bg-zinc-900" />
+                        <div className="w-full h-full bg-card" />
                     )}
                 </div>
             </div>
@@ -118,7 +128,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-brand font-bold text-lg">
                                     L
                                 </div>
-                                <span className="text-sm font-bold tracking-[0.2em] text-zinc-400 uppercase">
+                                <span className="text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">
                                     FEATURED
                                 </span>
                             </div>
@@ -186,7 +196,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             </Link>
                             <Link
                                 href={`/preview/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-2 md:gap-3 bg-zinc-500/70 text-white px-6 py-2 md:px-8 md:py-3 rounded md:rounded-md text-base md:text-xl font-semibold hover:bg-zinc-500/50 transition hover:scale-105 active:scale-95 backdrop-blur-sm"
+                                className="focus-ring flex items-center gap-2 md:gap-3 bg-secondary text-secondary-foreground px-6 py-2 md:px-8 md:py-3 rounded md:rounded-md text-base md:text-xl font-semibold hover:bg-secondary/80 transition hover:scale-105 active:scale-95 backdrop-blur-sm"
                             >
                                 <Info className="w-5 h-5 md:w-7 md:h-7" />
                                 More Info
@@ -212,7 +222,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             "w-12 h-1 rounded-sm transition-all duration-300",
                             index === activeIndex
                                 ? "bg-white opacity-100"
-                                : "bg-zinc-600 opacity-50 hover:bg-zinc-400"
+                                : "bg-muted-foreground/50 opacity-50 hover:bg-muted-foreground"
                         )}
                         aria-label={`Go to item ${index + 1}`}
                     />

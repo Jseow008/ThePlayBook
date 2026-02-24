@@ -33,8 +33,6 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
                 <UserNav />
             </div>
 
-            {/* Desktop Top Gradient (for better text ease) */}
-            <div className="hidden lg:block fixed top-0 left-0 right-0 h-32 bg-gradient-to-b from-black/60 to-transparent z-40 pointer-events-none" />
 
             {/* Mobile Header */}
             <MobileHeader />

@@ -82,7 +82,7 @@ export function ContentPreview({
                     {/* Cover Image */}
                     {item.cover_image_url && (
                         <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
-                            <div className="aspect-[2/3] w-[140px] sm:w-full max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/40 border border-white/10 relative group">
+                            <div className="aspect-[2/3] w-[140px] sm:w-full max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/20 border border-border relative group">
                                 <Image
                                     src={item.cover_image_url}
                                     alt={item.title}
@@ -192,7 +192,7 @@ export function ContentPreview({
                             <div className="relative pl-5 py-4 pr-6 rounded-r-xl border-l-[3px] border-primary/50 bg-secondary/30">
                                 <div
                                     ref={hookRef}
-                                    className={`text-base md:text-lg text-muted-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-p:leading-relaxed ${!showFullHook ? "line-clamp-3" : ""}`}
+                                    className={`text-base md:text-lg text-muted-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-0 prose-p:leading-relaxed ${!showFullHook ? "line-clamp-3" : ""}`}
                                 >
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
@@ -230,7 +230,7 @@ export function ContentPreview({
                                             <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold mt-0.5">
                                                 {index + 1}
                                             </span>
-                                            <div className="text-base text-foreground leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-0">
+                                            <div className="text-base text-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-0">
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
                                                     rehypePlugins={[rehypeSanitize]}

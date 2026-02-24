@@ -130,7 +130,7 @@ export default function MyListPage() {
                     {isLoading ? (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                             {[...Array(8)].map((_, i) => (
-                                <div key={i} className="aspect-[2/3] bg-zinc-800/50 rounded-lg animate-pulse" />
+                                <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
                             ))}
                         </div>
                     ) : allItems.length === 0 ? (

@@ -129,7 +129,7 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
                     {item.title}
                 </h3>
                 {item.author && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {item.author}
                     </p>
                 )}

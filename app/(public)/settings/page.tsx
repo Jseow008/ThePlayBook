@@ -196,6 +196,7 @@ export default function SettingsPage() {
                     </div>
                 </section>
 
+
                 {/* Account Section */}
                 <section className="space-y-4">
                     <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider px-2">
@@ -248,7 +249,7 @@ export default function SettingsPage() {
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left group"
                         >
                             <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg transition-colors ${confirmClear ? "bg-red-500/10 text-red-500" : "bg-zinc-800 rounded-lg text-zinc-400"}`}>
+                                <div className={`p-2 rounded-lg transition-colors ${confirmClear ? "bg-red-500/10 text-red-500" : "bg-secondary text-muted-foreground"}`}>
                                     {confirmClear ? <AlertTriangle className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
                                 </div>
                                 <div>
@@ -275,7 +276,7 @@ export default function SettingsPage() {
                             className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-zinc-800 rounded-lg text-zinc-400">
+                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
                                     <Shield className="w-5 h-5" />
                                 </div>
                                 <span className="font-medium">Privacy Policy</span>
@@ -286,13 +287,13 @@ export default function SettingsPage() {
                             className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-zinc-800 rounded-lg text-zinc-400">
+                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
                                     <HelpCircle className="w-5 h-5" />
                                 </div>
                                 <span className="font-medium">Terms of Service</span>
                             </div>
                         </Link>
-                        <div className="p-4 text-center text-xs text-muted-foreground bg-zinc-900/30">
+                        <div className="p-4 text-center text-xs text-muted-foreground bg-secondary/30">
                             Version 1.0.0 • {APP_NAME}
                         </div>
                     </div>

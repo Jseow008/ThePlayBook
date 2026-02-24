@@ -31,7 +31,7 @@ export default async function LoginPage({
 
                 <div className="grid gap-4">
                     {error === "AuthCodeError" && (
-                        <div className="p-3 text-sm text-red-500 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900 rounded-md">
+                        <div className="p-3 text-sm text-red-500 bg-red-900/10 border border-red-900 rounded-md">
                             Authentication failed. Please try again.
                         </div>
                     )}

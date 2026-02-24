@@ -52,7 +52,7 @@ export function SegmentContent({
             {/* Markdown Content */}
             <div
                 className={cn(
-                    "prose prose-lg sm:prose-xl md:prose-2xl dark:prose-invert max-w-none flex-1",
+                    "prose prose-lg sm:prose-xl md:prose-2xl max-w-none flex-1",
                     isDeepMode && "prose-deep",
                     "prose-headings:text-foreground prose-headings:font-semibold",
                     "prose-p:text-foreground prose-p:leading-relaxed prose-p:text-[1.175rem] prose-p:md:text-[1.35rem]",

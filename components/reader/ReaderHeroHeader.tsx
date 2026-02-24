@@ -7,6 +7,7 @@ import { ArrowLeft, Clock } from "lucide-react";
 import { AudioPlayer } from "./AudioPlayer";
 import { APP_NAME } from "@/lib/brand";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 
 /**
  * Reader Hero Header
@@ -104,6 +105,9 @@ export function ReaderHeroHeader({
                         <span className="px-3 py-1.5 rounded-lg bg-secondary text-xs font-bold uppercase tracking-wider text-muted-foreground border border-border">
                             {type}
                         </span>
+
+                        {/* Display Settings */}
+                        <ReaderSettingsMenu />
 
                         {/* Share Button */}
                         <ShareButton

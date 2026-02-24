@@ -233,7 +233,7 @@ export function NetflixSidebar() {
                                 <Plus className="size-4 mr-3 flex-shrink-0" />
                                 <span className="text-sm whitespace-nowrap flex-1">My List</span>
                                 {myListCount > 0 && (
-                                    <span className="text-xs bg-zinc-700 text-zinc-300 px-1.5 py-0.5 rounded-full font-medium">
+                                    <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-medium">
                                         {myListCount}
                                     </span>
                                 )}
@@ -317,7 +317,7 @@ export function NetflixSidebar() {
                             isExpanded ? "justify-start" : "justify-center"
                         )}
                     >
-                        <div className="size-8 rounded-full bg-zinc-700 flex items-center justify-center overflow-hidden border border-zinc-600 flex-shrink-0">
+                        <div className="size-8 rounded-full bg-secondary flex items-center justify-center overflow-hidden border border-border flex-shrink-0">
                             {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
                                 <img
                                     src={
@@ -329,7 +329,7 @@ export function NetflixSidebar() {
                                     className="h-full w-full object-cover"
                                 />
                             ) : (
-                                <span className="text-xs font-medium text-zinc-300">
+                                <span className="text-xs font-medium text-secondary-foreground">
                                     {(user.email?.[0] || "U").toUpperCase()}
                                 </span>
                             )}

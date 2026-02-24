@@ -47,13 +47,13 @@ export function SyncEmbeddingsButton() {
             <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="focus-ring inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                className="focus-ring inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-800 text-zinc-100 font-medium rounded-lg hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
                 <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
                 {isSyncing ? "Syncing Embeddings..." : "Sync Embedding"}
             </button>
             {statusText && (
-                <span className="absolute top-full mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-500 animate-in fade-in slide-in-from-top-1 whitespace-nowrap z-10">
+                <span className="absolute top-full mt-2 text-xs font-medium text-emerald-500 animate-in fade-in slide-in-from-top-1 whitespace-nowrap z-10">
                     {statusText}
                 </span>
             )}

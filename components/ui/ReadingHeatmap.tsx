@@ -307,7 +307,7 @@ function ReadingBarChart({ data, range }: { data: { date: Date, dateStr: string,
                                     }`}
                             />
                             {/* Tooltip on hover */}
-                            <div className="absolute bottom-0 left-0 w-full opacity-0 group-hover:opacity-100 bg-black/60 text-white text-[10px] flex items-center justify-center p-1 transition-opacity z-10 whitespace-nowrap">
+                            <div className="absolute bottom-0 left-0 w-full opacity-0 group-hover:opacity-100 bg-popover/90 text-popover-foreground text-[10px] flex items-center justify-center p-1 transition-opacity z-10 whitespace-nowrap">
                                 {Math.round(day.duration / 60)}m
                             </div>
                         </div>

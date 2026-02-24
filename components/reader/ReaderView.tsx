@@ -6,6 +6,7 @@ import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReadingTimer } from "@/hooks/useReadingTimer";
+import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
@@ -29,6 +30,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const { saveReadingProgress } = useReadingProgress();
     const { data: highlights = [] } = useHighlights(content.id);
+    const { readerTheme } = useReaderSettings();
 
     // Start tracking reading time
     useReadingTimer(content.id);
@@ -113,7 +115,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, [completedSegments, maxSegmentIndex, content.id, content.segments.length, saveReadingProgress]);
 
     return (
-        <div className="min-h-screen bg-background font-sans text-foreground">
+        <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme}`}>
             <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-24 sm:pt-12 lg:pb-12">
                 {/* Hero Header */}
                 <ReaderHeroHeader

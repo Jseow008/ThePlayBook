@@ -11,6 +11,7 @@ import { HighlightPopover } from "./HighlightPopover";
 import { HighlightBottomSheet } from "./HighlightBottomSheet";
 import type { SegmentFull } from "@/types/domain";
 import type { HighlightWithContent } from "@/hooks/useHighlights";
+import { useReaderSettings } from "@/hooks/useReaderSettings";
 
 // ─── Safe Recursive AST Highlighting ───────────────────────────────────────
 function applyHighlightsToTextNode(text: string, highlights: HighlightWithContent[]): any[] {
@@ -122,6 +123,7 @@ export function SegmentAccordion({
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [fullyExpanded, setFullyExpanded] = useState<Set<string>>(new Set());
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const { fontSize, fontFamily } = useReaderSettings();
 
     // --- Popover / Bottom Sheet State ---
     const [activeHighlight, setActiveHighlight] = useState<{
@@ -275,7 +277,7 @@ export function SegmentAccordion({
                                 {/* Title */}
                                 <span
                                     className={cn(
-                                        "flex-1 font-medium text-[0.95rem] leading-snug transition-colors",
+                                        "flex-1 font-semibold text-base md:text-lg leading-snug transition-colors",
                                         isExpanded
                                             ? "text-foreground"
                                             : "text-foreground/80"
@@ -311,7 +313,9 @@ export function SegmentAccordion({
                                             onClick={(e) => handleNoteInteraction(e, false)}
                                             onTouchEnd={(e) => handleNoteInteraction(e, false)}
                                             className={cn(
-                                                "prose dark:prose-invert max-w-none relative prose-deep",
+                                                "prose dark:prose-invert max-w-none relative transition-all duration-300",
+                                                `reader-size-${fontSize}`,
+                                                `reader-font-${fontFamily}`,
                                                 "prose-headings:text-foreground prose-headings:font-semibold prose-headings:text-base",
                                                 "prose-p:text-foreground/95", // higher opacity, letting prose-deep handle sizes
                                                 "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
