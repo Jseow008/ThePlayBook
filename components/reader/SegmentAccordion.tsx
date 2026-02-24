@@ -40,11 +40,11 @@ function applyHighlightsToTextNode(text: string, highlights: HighlightWithConten
             const color = h.color || (h.note_body ? "blue" : "yellow");
 
             const HIGHLIGHT_COLORS: Record<string, string> = {
-                yellow: "bg-yellow-500/30 hover:bg-yellow-500/40",
-                blue: "bg-blue-500/30 hover:bg-blue-500/40",
-                green: "bg-green-500/30 hover:bg-green-500/40",
-                red: "bg-red-500/30 hover:bg-red-500/40",
-                purple: "bg-purple-500/30 hover:bg-purple-500/40",
+                yellow: "bg-highlight-yellow hover:bg-highlight-yellow-hover",
+                blue: "bg-highlight-blue hover:bg-highlight-blue-hover",
+                green: "bg-highlight-green hover:bg-highlight-green-hover",
+                red: "bg-highlight-red hover:bg-highlight-red-hover",
+                purple: "bg-highlight-purple hover:bg-highlight-purple-hover",
             };
 
             const bgClass = HIGHLIGHT_COLORS[color] || HIGHLIGHT_COLORS.yellow;
@@ -98,12 +98,11 @@ function createRemarkHighlightPlugin(highlights: HighlightWithContent[]) {
  * Expanded content is truncated by default with a "Read More" option.
  */
 
-const TRUNCATION_LENGTH = 200;
-
 interface SegmentAccordionProps {
     segments: SegmentFull[];
     completedSegments: Set<string>;
     onSegmentOpen: (segmentId: string, index: number) => void;
+    onSegmentComplete?: (segmentId: string, index: number) => void;
     highlights?: HighlightWithContent[];
 }
 
@@ -118,12 +117,12 @@ export function SegmentAccordion({
     segments,
     completedSegments,
     onSegmentOpen,
+    onSegmentComplete,
     highlights = [],
 }: SegmentAccordionProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
-    const [fullyExpanded, setFullyExpanded] = useState<Set<string>>(new Set());
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-    const { fontSize, fontFamily } = useReaderSettings();
+    const { fontSize, fontFamily, lineHeight } = useReaderSettings();
 
     // --- Popover / Bottom Sheet State ---
     const [activeHighlight, setActiveHighlight] = useState<{
@@ -142,29 +141,65 @@ export function SegmentAccordion({
     const handleToggle = useCallback(
         (segment: SegmentFull, index: number) => {
             const isOpening = expandedId !== segment.id;
-            setExpandedId(isOpening ? segment.id : null);
 
             if (isOpening) {
+                // First open the section so the DOM starts transitioning
+                setExpandedId(segment.id);
                 onSegmentOpen(segment.id, index);
-                // Scroll into view after the expand animation starts
-                requestAnimationFrame(() => {
+
+                // Wait for the PREVIOUS section to finish collapsing (300ms transition)
+                // before calculating the final scroll position.
+                setTimeout(() => {
                     const el = itemRefs.current.get(segment.id);
                     if (el) {
-                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        // Get position relative to viewport, subtract a comfy offset
+                        // for the fixed nav (usually ~80-100px)
+                        const y = el.getBoundingClientRect().top + window.scrollY - 100;
+                        window.scrollTo({ top: y, behavior: "smooth" });
                     }
-                });
+                }, 310); // Slightly longer than the 300ms CSS duration
+            } else {
+                // Just close it if clicking the active one
+                setExpandedId(null);
             }
         },
         [expandedId, onSegmentOpen]
     );
 
-    const handleReadMore = useCallback((segmentId: string) => {
-        setFullyExpanded((prev) => {
-            const next = new Set(prev);
-            next.add(segmentId);
-            return next;
-        });
-    }, []);
+    // ── Keyboard Navigation (Left/Right Arrows) ──────────────────────────
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't trigger if user is typing in an input/textarea
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                return;
+            }
+
+            if (e.key === "ArrowRight") {
+                e.preventDefault();
+                if (!expandedId) {
+                    // Open first segment
+                    handleToggle(segments[0], 0);
+                } else {
+                    const currentIndex = segments.findIndex((s) => s.id === expandedId);
+                    if (currentIndex !== -1 && currentIndex < segments.length - 1) {
+                        handleToggle(segments[currentIndex + 1], currentIndex + 1);
+                    }
+                }
+            } else if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                const currentIndex = segments.findIndex((s) => s.id === expandedId);
+                if (currentIndex > 0) {
+                    handleToggle(segments[currentIndex - 1], currentIndex - 1);
+                } else if (currentIndex === 0) {
+                    // Close the first segment if pressed left while on it
+                    handleToggle(segments[0], 0);
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [expandedId, segments, handleToggle]);
 
     // ── Handle Hover / Tap for Premium UI ────────────────────────────────
     const handleNoteInteraction = useCallback((e: React.MouseEvent | React.TouchEvent, isHover: boolean) => {
@@ -219,15 +254,12 @@ export function SegmentAccordion({
     return (
         <>
             <div className="space-y-2">
-                <h3 className="text-xs font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4 px-1">
+                <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4 px-1">
                     Sections
                 </h3>
                 {segments.map((segment, index) => {
                     const isExpanded = expandedId === segment.id;
-                    const isFullyExpanded = fullyExpanded.has(segment.id);
                     const isCompleted = completedSegments.has(segment.id);
-                    const needsTruncation =
-                        segment.markdown_body.length > TRUNCATION_LENGTH;
 
                     // Inject highlight markup using safe Remark plugin instead of regex string replacement
                     const segmentHighlights = highlights.filter(h => h.segment_id === segment.id);
@@ -277,7 +309,7 @@ export function SegmentAccordion({
                                 {/* Title */}
                                 <span
                                     className={cn(
-                                        "flex-1 font-semibold text-base md:text-lg leading-snug transition-colors",
+                                        "flex-1 font-semibold text-sm md:text-base leading-snug transition-colors",
                                         isExpanded
                                             ? "text-foreground"
                                             : "text-foreground/80"
@@ -316,22 +348,16 @@ export function SegmentAccordion({
                                                 "prose dark:prose-invert max-w-none relative transition-all duration-300",
                                                 `reader-size-${fontSize}`,
                                                 `reader-font-${fontFamily}`,
+                                                `reader-spacing-${lineHeight}`,
                                                 "prose-headings:text-foreground prose-headings:font-semibold prose-headings:text-base",
                                                 "prose-p:text-foreground/95", // higher opacity, letting prose-deep handle sizes
                                                 "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
                                                 "prose-strong:text-foreground",
                                                 "prose-blockquote:border-l-primary/40 prose-blockquote:text-muted-foreground prose-blockquote:text-sm md:prose-blockquote:text-base",
                                                 "prose-ul:text-foreground/95 prose-ol:text-foreground/95",
-                                                "prose-li:marker:text-muted-foreground",
-                                                !isFullyExpanded &&
-                                                needsTruncation &&
-                                                "max-h-[8.5rem] overflow-hidden"
+                                                "prose-li:marker:text-muted-foreground"
                                             )}
                                         >
-                                            {/* Fade-out gradient for truncated content */}
-                                            {!isFullyExpanded && needsTruncation && (
-                                                <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
-                                            )}
                                             <ReactMarkdown
                                                 remarkPlugins={remarkPlugins as any}
                                                 rehypePlugins={[rehypeRaw]}
@@ -340,18 +366,41 @@ export function SegmentAccordion({
                                             </ReactMarkdown>
                                         </div>
 
-                                        {/* Read More Button */}
-                                        {needsTruncation && !isFullyExpanded && (
+                                        {/* Explicit Complete Action */}
+                                        <div className="mt-8 flex justify-center">
                                             <button
-                                                onClick={() =>
-                                                    handleReadMore(segment.id)
-                                                }
-                                                className="mt-3 text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center gap-1"
+                                                onClick={() => {
+                                                    // Trigger completion callback
+                                                    if (onSegmentComplete) {
+                                                        onSegmentComplete(segment.id, index);
+                                                    }
+
+                                                    // Auto-advance to next segment if not the last one
+                                                    if (index < segments.length - 1) {
+                                                        const nextSegment = segments[index + 1];
+                                                        handleToggle(nextSegment, index + 1);
+                                                    }
+                                                }}
+                                                className={cn(
+                                                    "px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2",
+                                                    isCompleted
+                                                        ? "bg-green-500/15 text-green-500 hover:bg-green-500/25"
+                                                        : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-md shadow-primary/20"
+                                                )}
                                             >
-                                                Read more
-                                                <ChevronRight className="size-3.5" />
+                                                {isCompleted ? (
+                                                    <>
+                                                        <CheckCircle2 className="size-4" />
+                                                        Completed
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <CheckCircle2 className="size-4" />
+                                                        Mark as Completed & Continue
+                                                    </>
+                                                )}
                                             </button>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

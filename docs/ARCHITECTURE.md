@@ -216,7 +216,7 @@ export interface ChecklistProgress {
 
 ### 5.2 Remote User Progress (Supabase `user_library`)
 
-- Once authenticated, user interactions hit the `user_library` and `reading_activity` tables directly for persisting reading locations and history. Reading activity accumulates on the server over >60 second thresholds to map out a GitHub-style activity Heatmap.
+- Once authenticated, user interactions hit the `user_library` and `reading_activity` tables directly for persisting reading locations and history. Reading activity accumulates locally and triggers an atomic database save on tab blur or page close (via RPC `increment_reading_activity` with a 60-second minimum threshold) to map out a GitHub-style activity Heatmap. This local-first checkpointing minimizes serverless function invocations and database connection pool exhaustion.
 
 ---
 

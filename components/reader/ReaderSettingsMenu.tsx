@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Type, Minus, Plus, Sun, Moon, BookOpen } from "lucide-react";
+import { Minus, Plus, Sun, Moon, BookOpen, Maximize, Minimize, Rows4, Rows3, Rows2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useReaderSettings, type ReaderTheme } from "@/hooks/useReaderSettings";
+import { useReaderSettings, type ReaderTheme, type LineHeight } from "@/hooks/useReaderSettings";
 
 const themeOptions: { value: ReaderTheme; label: string; icon: typeof Sun; preview: string }[] = [
     { value: "light", label: "Light", icon: Sun, preview: "bg-[hsl(0,0%,98%)] border-gray-300" },
@@ -13,8 +13,40 @@ const themeOptions: { value: ReaderTheme; label: string; icon: typeof Sun; previ
 
 export function ReaderSettingsMenu() {
     const [isOpen, setIsOpen] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-    const { fontSize, fontFamily, readerTheme, setFontSize, setFontFamily, setReaderTheme } = useReaderSettings();
+    const { fontSize, fontFamily, readerTheme, lineHeight, setFontSize, setFontFamily, setReaderTheme, setLineHeight } = useReaderSettings();
+
+    // Track Fullscreen status
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener("fullscreenchange", handleFullscreenChange);
+        return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    }, []);
+
+    // Handle Escape key to close menu
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && isOpen) {
+                setIsOpen(false);
+            }
+        };
+        if (isOpen) {
+            document.addEventListener("keydown", handleKeyDown);
+        }
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen]);
+
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch((err) => console.error(err));
+        } else if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+        setIsOpen(false); // Close menu after toggling
+    };
 
     // Close on click outside
     useEffect(() => {
@@ -57,7 +89,7 @@ export function ReaderSettingsMenu() {
                 aria-label="Display Settings"
                 aria-expanded={isOpen}
             >
-                <Type className="size-4" />
+                <span className="font-serif italic font-bold text-[1.1rem] leading-none mb-0.5 mt-0.5">Aa</span>
             </button>
 
             {/* Dropdown Menu */}
@@ -145,6 +177,62 @@ export function ReaderSettingsMenu() {
                                     <Plus className="size-4" />
                                 </button>
                             </div>
+                        </div>
+
+                        {/* Line Height Selection */}
+                        <div className="space-y-2">
+                            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Spacing
+                            </span>
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    onClick={() => setLineHeight("compact")}
+                                    className={cn(
+                                        "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                                        lineHeight === "compact"
+                                            ? "bg-primary/10 border-primary text-primary text-secondary-foreground"
+                                            : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                    )}
+                                    title="Compact Spacing"
+                                >
+                                    <Rows4 className="size-4" />
+                                </button>
+                                <button
+                                    onClick={() => setLineHeight("default")}
+                                    className={cn(
+                                        "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                                        lineHeight === "default"
+                                            ? "bg-primary/10 border-primary text-primary"
+                                            : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                    )}
+                                    title="Default Spacing"
+                                >
+                                    <Rows3 className="size-4" />
+                                </button>
+                                <button
+                                    onClick={() => setLineHeight("relaxed")}
+                                    className={cn(
+                                        "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                                        lineHeight === "relaxed"
+                                            ? "bg-primary/10 border-primary text-primary"
+                                            : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                                    )}
+                                    title="Relaxed Spacing"
+                                >
+                                    <Rows2 className="size-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Fullscreen Toggle */}
+                        <div className="pt-2 mt-2 border-t border-border/50">
+                            <button
+                                onClick={toggleFullscreen}
+                                className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                            >
+                                <span>{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+                                {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+                            </button>
                         </div>
                     </div>
                 </div>

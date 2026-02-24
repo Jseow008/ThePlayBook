@@ -6,24 +6,25 @@ import { createClient } from "@/lib/supabase/client";
 import { LogOut, User as UserIcon, Settings, Brain, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { signOutAction } from "@/lib/actions/auth";
 
 import { AVATAR_ICONS } from "@/lib/avatars";
 
-export function UserNav() {
+export function UserNav({ initialUser }: { initialUser: User | null }) {
     const router = useRouter();
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(initialUser);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
 
+    // Sync state when initialUser prop changes (e.g. after profile edit + refresh)
+    useEffect(() => {
+        setUser(initialUser);
+    }, [initialUser]);
+
     useEffect(() => {
         const supabase = createClient();
-
-        const fetchUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            setUser(user);
-        };
-        fetchUser();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
@@ -66,11 +67,8 @@ export function UserNav() {
     }, [isOpen]);
 
     const handleSignOut = async () => {
-        const supabase = createClient();
-        await supabase.auth.signOut();
         setIsOpen(false);
-        router.refresh(); // Clear server component cache
-        router.push("/login");
+        await signOutAction();
     };
 
     if (!user) {
@@ -97,14 +95,16 @@ export function UserNav() {
             >
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center border border-border overflow-hidden">
                     {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
-                        <img
+                        <Image
                             src={
                                 user.user_metadata?.avatar_icon
                                     ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
                                     : user.user_metadata.avatar_url
                             }
                             alt={user.user_metadata.full_name || "User"}
-                            className="h-full w-full object-cover"
+                            fill
+                            sizes="32px"
+                            className="object-cover rounded-full"
                         />
                     ) : (
                         <span className="text-xs font-medium text-primary">

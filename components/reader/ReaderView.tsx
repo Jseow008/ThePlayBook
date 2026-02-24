@@ -30,7 +30,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const { saveReadingProgress } = useReadingProgress();
     const { data: highlights = [] } = useHighlights(content.id);
-    const { readerTheme } = useReaderSettings();
+    const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
 
     // Start tracking reading time
     useReadingTimer(content.id);
@@ -80,16 +80,22 @@ export function ReaderView({ content }: ReaderViewProps) {
         return () => window.removeEventListener("storage", handleStorage);
     }, [content.id]);
 
-    // Handle segment open — mark as completed and track progress
+    // Handle segment open — only track max index for progress visibility
     const handleSegmentOpen = (segmentId: string, index: number) => {
-        // Mark completed
+        // Update max opened index
+        setMaxSegmentIndex((prev) => Math.max(prev, index));
+    };
+
+    // Handle explicit segment completion
+    const handleSegmentComplete = (segmentId: string, index: number) => {
+        // Mark explicitly completed
         setCompletedSegments((prev) => {
             const next = new Set(prev);
             next.add(segmentId);
             return next;
         });
 
-        // Update max
+        // Update max opened index just in case
         setMaxSegmentIndex((prev) => Math.max(prev, index));
     };
 
@@ -114,8 +120,30 @@ export function ReaderView({ content }: ReaderViewProps) {
         return () => clearTimeout(timeoutId);
     }, [completedSegments, maxSegmentIndex, content.id, content.segments.length, saveReadingProgress]);
 
+    // ── Keyboard Shortcuts (Fullscreen) ──────────────────────────
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't trigger if user is typing in an input/textarea
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                return;
+            }
+
+            if (e.key.toLowerCase() === "f") {
+                e.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch((err) => console.error(err));
+                } else if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     return (
-        <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme}`}>
+        <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
             <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-24 sm:pt-12 lg:pb-12">
                 {/* Hero Header */}
                 <ReaderHeroHeader
@@ -132,12 +160,12 @@ export function ReaderView({ content }: ReaderViewProps) {
                 {/* Big Idea - Context before segments */}
                 {quickMode?.big_idea && (
                     <div className="bg-card/40 rounded-xl p-6 sm:p-8 border border-border/40 mb-8">
-                        <h3 className="text-xs font-bold text-primary uppercase tracking-[0.2em] mb-3">
+                        <h3 className="text-sm font-bold text-primary uppercase tracking-[0.2em] mb-3">
                             The Big Idea
                         </h3>
-                        <p className="text-base sm:text-lg text-foreground/90 leading-relaxed">
+                        <div className={`reader-size-${fontSize} text-foreground/90 leading-relaxed font-medium`}>
                             {quickMode.big_idea}
-                        </p>
+                        </div>
                     </div>
                 )}
 
@@ -146,6 +174,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     segments={content.segments}
                     completedSegments={completedSegments}
                     onSegmentOpen={handleSegmentOpen}
+                    onSegmentComplete={handleSegmentComplete}
                     highlights={highlights}
                 />
 

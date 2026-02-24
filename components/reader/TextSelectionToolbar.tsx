@@ -179,7 +179,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-colors"
                         aria-label="Highlight text"
                     >
-                        <Highlighter className="size-4 text-yellow-400" />
+                        <Highlighter className="size-4 text-highlight-yellow" />
                         Highlight
                     </button>
                     <div className="w-px h-4 bg-white/20 mx-1" />
@@ -188,7 +188,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white hover:bg-white/10 rounded-lg transition-colors"
                         aria-label="Add note"
                     >
-                        <Edit3 className="size-4 text-blue-400" />
+                        <Edit3 className="size-4 text-highlight-blue" />
                         Add Note
                     </button>
                 </div>

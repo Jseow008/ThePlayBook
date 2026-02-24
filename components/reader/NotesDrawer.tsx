@@ -22,6 +22,19 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
         setMounted(true);
     }, []);
 
+    // Handle Escape key to close drawer
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && isOpen) {
+                setIsOpen(false);
+            }
+        };
+        if (isOpen) {
+            document.addEventListener("keydown", handleKeyDown);
+        }
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen]);
+
     const handleDelete = async (id: string) => {
         try {
             await deleteHighlight.mutateAsync(id);

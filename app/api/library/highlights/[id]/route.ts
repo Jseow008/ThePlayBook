@@ -9,7 +9,7 @@ interface RouteParams {
 }
 
 const HighlightIdSchema = z.string().uuid();
-const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple"]);
+const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
 const UpdateHighlightSchema = z
     .object({
         note_body: z.string().trim().max(4_000).nullable().optional(),

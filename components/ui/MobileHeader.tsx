@@ -6,8 +6,9 @@ import Link from "next/link";
 import { UserNav } from "@/components/ui/UserNav";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
+import type { User } from "@supabase/supabase-js";
 
-export function MobileHeader() {
+export function MobileHeader({ initialUser }: { initialUser: User | null }) {
     const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
@@ -54,7 +55,7 @@ export function MobileHeader() {
             <Link href="/browse">
                 <Logo width={80} height={24} />
             </Link>
-            <UserNav />
+            <UserNav initialUser={initialUser} />
         </header>
     );
 }

@@ -70,11 +70,11 @@ Streaming endpoint for Ask AI feature. Handles AI responses based on vector simi
 - **POST / DELETE** `/api/library/bookmarks`: Add or remove content items from the user's library.
 - **GET / POST / PUT / DELETE** `/api/library/highlights`: Manage text highlights and notes for read segments.
 
-### 2.3 Reading Activity (`/api/activity/track`)
+### 2.3 Reading Activity (`/api/activity/log`)
 
-**POST** `/api/activity/track`
+**POST** `/api/activity/log`
 
-Records users' valid reading sessions (duration > 60s) to populate the Reading Heatmap on their profile.
+Records users' valid reading sessions to populate the Reading Heatmap on their profile. Uses a local-first checkpointing architecture where time is accumulated in the browser and only synced on tab blur or page close (with a minimum 60s threshold) via the `increment_reading_activity` RPC. This architecture optimizes serverless invocations and protects database connection pools.
 
 ---
 

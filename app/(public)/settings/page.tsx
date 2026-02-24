@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2 } from "lucide-react";
+import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { toast } from "sonner";
@@ -96,9 +97,7 @@ export default function SettingsPage() {
 
     const handleSignOut = async () => {
         setIsSigningOut(true);
-        await (supabase.auth as any).signOut();
-        router.push("/login"); // Redirect to login after sign out
-        router.refresh();
+        await signOutAction();
     };
 
     const handleClearHistory = () => {

@@ -103,7 +103,7 @@
   * Sortable and color-coded note entries
 
 * [x] **3.3 Reading Activity & Heatmap**
-  * Track reading sessions (>60s)
+  * Track reading sessions locally with a 60s minimum threshold before atomic database saves on tab blur/close to optimize serverless usage.
   * Visualize activity frequency with a GitHub-style heatmap on the Settings page
 
 ---

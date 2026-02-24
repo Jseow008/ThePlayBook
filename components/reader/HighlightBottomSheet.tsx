@@ -18,19 +18,19 @@ interface HighlightBottomSheetProps {
 }
 
 const COLORS = [
-    { name: "yellow", class: "bg-yellow-400" },
-    { name: "blue", class: "bg-blue-400" },
-    { name: "green", class: "bg-green-400" },
-    { name: "red", class: "bg-red-400" },
-    { name: "purple", class: "bg-purple-400" },
+    { name: "yellow", class: "bg-highlight-yellow" },
+    { name: "blue", class: "bg-highlight-blue" },
+    { name: "green", class: "bg-highlight-green" },
+    { name: "red", class: "bg-highlight-red" },
+    { name: "purple", class: "bg-highlight-purple" },
 ];
 
 const BORDER_COLORS: Record<string, string> = {
-    yellow: "border-yellow-500/50",
-    blue: "border-blue-500/50",
-    green: "border-green-500/50",
-    red: "border-red-500/50",
-    purple: "border-purple-500/50",
+    yellow: "border-highlight-yellow",
+    blue: "border-highlight-blue",
+    green: "border-highlight-green",
+    red: "border-highlight-red",
+    purple: "border-highlight-purple",
 };
 
 export function HighlightBottomSheet({

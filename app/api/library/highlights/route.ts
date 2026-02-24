@@ -7,7 +7,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 const HIGHLIGHT_LIMIT = 50; // max highlights per content item
 const HIGHLIGHT_TEXT_MAX = 2_000;
 const NOTE_BODY_MAX = 4_000;
-const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple"]);
+const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
 
 const CreateHighlightSchema = z.object({
     content_item_id: z.string().uuid(),

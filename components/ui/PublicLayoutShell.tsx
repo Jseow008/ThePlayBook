@@ -5,6 +5,7 @@ import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { MobileHeader } from "@/components/ui/MobileHeader";
+import type { User } from "@supabase/supabase-js";
 
 /**
  * Public Layout Shell
@@ -14,7 +15,7 @@ import { MobileHeader } from "@/components/ui/MobileHeader";
  * All other public pages get the full app experience.
  */
 
-export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
+export function PublicLayoutShell({ children, initialUser }: { children: React.ReactNode, initialUser: User | null }) {
     const pathname = usePathname();
     const isLandingPage = pathname === "/";
 
@@ -26,16 +27,16 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen bg-background">
             {/* Netflix-style Sidebar (hidden on mobile) */}
-            <NetflixSidebar />
+            <NetflixSidebar initialUser={initialUser} />
 
             {/* Desktop Top Right Auth (hidden on mobile) */}
             <div className="hidden lg:flex fixed top-4 right-8 z-50">
-                <UserNav />
+                <UserNav initialUser={initialUser} />
             </div>
 
 
             {/* Mobile Header */}
-            <MobileHeader />
+            <MobileHeader initialUser={initialUser} />
 
             {/* Main Content */}
             <main className="lg:pl-16 pb-20 lg:pb-0">

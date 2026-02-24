@@ -87,6 +87,13 @@
   --border: 36 15% 82%;
   --input: 36 15% 82%;
   --ring: 24 10% 15%;
+
+  /* Highlights - Sepia Theme (Warm, slightly desaturated) */
+  --highlight-yellow: 40 80% 50%;
+  --highlight-blue: 210 70% 55%;
+  --highlight-green: 140 60% 45%;
+  --highlight-red: 5 75% 60%;
+  --highlight-purple: 280 65% 60%;
 }
 
 .reader-dark {
@@ -107,6 +114,13 @@
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
+
+  /* Highlights - Dark Theme (Bright, saturated) */
+  --highlight-yellow: 45 100% 50%;
+  --highlight-blue: 217 100% 65%;
+  --highlight-green: 142 76% 50%;
+  --highlight-red: 0 100% 65%;
+  --highlight-purple: 270 100% 70%;
 }
 
 /* --------------------------------------------------------------------------
@@ -185,30 +199,127 @@ body {
 }
 
 /* Reader Typography Utilities */
+.reader-spacing-compact {
+  --reader-line-height: 1.4;
+}
+
+.reader-spacing-default {
+  --reader-line-height: 1.6;
+}
+
+.reader-spacing-relaxed {
+  --reader-line-height: 1.85;
+}
+
 .reader-size-small {
   font-size: 0.875rem;
   /* 14px */
-  line-height: 1.5;
+  line-height: var(--reader-line-height, 1.5);
 }
 
 @media (min-width: 768px) {
   .reader-size-small {
     font-size: 1rem;
-    line-height: 1.5;
+    line-height: var(--reader-line-height, 1.5);
     /* 16px */
   }
 }
 
+/* --------------------------------------------------------------------------
+   5. HIGHLIGHT UTILITIES
+   -------------------------------------------------------------------------- */
+
+.bg-highlight-yellow {
+  background-color: hsl(var(--highlight-yellow) / 0.3);
+}
+
+.hover\:bg-highlight-yellow-hover:hover {
+  background-color: hsl(var(--highlight-yellow) / 0.4);
+}
+
+.text-highlight-yellow {
+  color: hsl(var(--highlight-yellow));
+}
+
+.border-highlight-yellow {
+  border-color: hsl(var(--highlight-yellow) / 0.3);
+}
+
+.bg-highlight-blue {
+  background-color: hsl(var(--highlight-blue) / 0.3);
+}
+
+.hover\:bg-highlight-blue-hover:hover {
+  background-color: hsl(var(--highlight-blue) / 0.4);
+}
+
+.text-highlight-blue {
+  color: hsl(var(--highlight-blue));
+}
+
+.border-highlight-blue {
+  border-color: hsl(var(--highlight-blue) / 0.3);
+}
+
+.bg-highlight-green {
+  background-color: hsl(var(--highlight-green) / 0.3);
+}
+
+.hover\:bg-highlight-green-hover:hover {
+  background-color: hsl(var(--highlight-green) / 0.4);
+}
+
+.text-highlight-green {
+  color: hsl(var(--highlight-green));
+}
+
+.border-highlight-green {
+  border-color: hsl(var(--highlight-green) / 0.3);
+}
+
+.bg-highlight-red {
+  background-color: hsl(var(--highlight-red) / 0.3);
+}
+
+.hover\:bg-highlight-red-hover:hover {
+  background-color: hsl(var(--highlight-red) / 0.4);
+}
+
+.text-highlight-red {
+  color: hsl(var(--highlight-red));
+}
+
+.border-highlight-red {
+  border-color: hsl(var(--highlight-red) / 0.3);
+}
+
+.bg-highlight-purple {
+  background-color: hsl(var(--highlight-purple) / 0.3);
+}
+
+.hover\:bg-highlight-purple-hover:hover {
+  background-color: hsl(var(--highlight-purple) / 0.4);
+}
+
+.text-highlight-purple {
+  color: hsl(var(--highlight-purple));
+}
+
+.border-highlight-purple {
+  border-color: hsl(var(--highlight-purple) / 0.3);
+}
+
+
 .reader-size-medium {
   font-size: 1rem;
   /* 16px */
-  line-height: 1.5;
+  line-height: var(--reader-line-height, 1.6);
 }
 
 @media (min-width: 768px) {
   .reader-size-medium {
     font-size: 1.125rem;
-    line-height: 1.6;
+    line-height: var(--reader-line-height, 1.6);
     /* 18px */
   }
 }
@@ -216,13 +327,13 @@ body {
 .reader-size-large {
   font-size: 1.125rem;
   /* 18px */
-  line-height: 1.6;
+  line-height: var(--reader-line-height, 1.7);
 }
 
 @media (min-width: 768px) {
   .reader-size-large {
     font-size: 1.25rem;
-    line-height: 1.7;
+    line-height: var(--reader-line-height, 1.7);
     /* 20px */
   }
 }

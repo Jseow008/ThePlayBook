@@ -31,11 +31,11 @@ const navItems = [
     { icon: Shuffle, label: "Surprise Me", href: "/random" },
 ];
 
-export function NetflixSidebar() {
+export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
     const pathname = usePathname();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(initialUser);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleMouseEnter = () => {
@@ -57,14 +57,13 @@ export function NetflixSidebar() {
 
     const { inProgressCount, completedCount, myListCount, isLoaded } = useReadingProgress();
 
+    // Sync state when initialUser prop changes (e.g. after profile edit + refresh)
+    useEffect(() => {
+        setUser(initialUser);
+    }, [initialUser]);
+
     useEffect(() => {
         const supabase = createClient();
-
-        const fetchUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            setUser(user);
-        };
-        fetchUser();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             (event, session) => {
@@ -317,16 +316,18 @@ export function NetflixSidebar() {
                             isExpanded ? "justify-start" : "justify-center"
                         )}
                     >
-                        <div className="size-8 rounded-full bg-secondary flex items-center justify-center overflow-hidden border border-border flex-shrink-0">
+                        <div className="size-8 rounded-full bg-secondary flex items-center justify-center overflow-hidden border border-border flex-shrink-0 relative">
                             {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
-                                <img
+                                <Image
                                     src={
                                         user.user_metadata?.avatar_icon
                                             ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
                                             : user.user_metadata.avatar_url
                                     }
                                     alt={user.user_metadata.full_name || "User"}
-                                    className="h-full w-full object-cover"
+                                    fill
+                                    sizes="32px"
+                                    className="object-cover rounded-full"
                                 />
                             ) : (
                                 <span className="text-xs font-medium text-secondary-foreground">
