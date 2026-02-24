@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { BookOpen, AlertCircle, Trash2, X, MessageSquareQuote } from "lucide-react";
 import { useHighlights, useDeleteHighlight } from "@/hooks/useHighlights";
 import { formatDistanceToNow } from "date-fns";
@@ -13,8 +14,13 @@ interface NotesDrawerProps {
 
 export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
     const [isOpen, setIsOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const { data: highlights, isLoading, error } = useHighlights(contentItemId);
     const deleteHighlight = useDeleteHighlight();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleDelete = async (id: string) => {
         try {
@@ -25,7 +31,9 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
         }
     };
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <>
             {/* Floating Toggle Button */}
             <button
@@ -100,9 +108,13 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                                     className="group relative flex flex-col gap-3 p-4 rounded-xl bg-card border border-border/40 hover:border-border transition-colors"
                                 >
                                     <button
-                                        onClick={() => handleDelete(item.id)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            handleDelete(item.id);
+                                        }}
                                         disabled={deleteHighlight.isPending}
-                                        className="absolute top-3 right-3 p-1.5 text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 rounded-md opacity-0 group-hover:opacity-100 transition-all focus-ring"
+                                        className="absolute top-2 right-2 p-2.5 z-10 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 rounded-md transition-all focus-ring"
                                         aria-label="Delete highlight"
                                     >
                                         <Trash2 className="size-4" />
@@ -131,6 +143,7 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                     )}
                 </div>
             </div>
-        </>
+        </>,
+        document.body
     );
 }

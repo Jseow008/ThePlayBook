@@ -5,7 +5,7 @@
  */
 
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { Plus, BookOpen, Headphones, FileText, Pencil, Eye } from "lucide-react";
 import { DeleteContentButton } from "@/components/admin/DeleteContentButton";
 import { FeaturedToggle } from "@/components/admin/FeaturedToggle";
@@ -53,7 +53,7 @@ export default async function AdminDashboardPage({
 }: {
     searchParams: Promise<{ page?: string; status?: string; featured?: string; q?: string }>;
 }) {
-    const supabase = await createClient();
+    const supabase = getAdminClient();
     const params = await searchParams;
     const page = Number(params?.page) || 1;
     const statusFilter = params?.status;

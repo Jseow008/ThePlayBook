@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { format, subDays, eachDayOfInterval, isSameDay, startOfYear, endOfYear, getDay } from "date-fns";
 import { Flame, Info, BookOpen } from "lucide-react";
 import Link from "next/link";
@@ -327,6 +328,11 @@ function ReadingBarChart({ data, range }: { data: { date: Date, dateStr: string,
 
 function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr: string, isFuture?: boolean, duration: number }[] }) {
     const [hoveredDay, setHoveredDay] = useState<{ day: typeof data[0], x: number, y: number } | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // Calculate weeks for the grid
     const weeks: any[][] = [];
@@ -379,7 +385,7 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
     };
 
     return (
-        <div className="w-full overflow-x-auto pb-2 relative">
+        <div className="w-full overflow-x-auto pb-2 relative outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg">
             <div className="min-w-max">
                 {/* Month Labels Row */}
                 <div className="flex gap-[3px] mb-1 ml-8">
@@ -407,25 +413,41 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
                     <div className="flex gap-[3px]">
                         {weeks.map((week, i) => (
                             <div key={i} className="flex flex-col gap-[3px]">
-                                {week.map((day, idx) => (
-                                    <div
-                                        key={day ? day.dateStr : `pad-${i}-${idx}`}
-                                        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] transition-colors ${day ? getCellColor(day) : 'bg-transparent'}`}
-                                        onMouseEnter={(e) => {
-                                            if (day) {
+                                {week.map((day, idx) => {
+                                    if (!day) {
+                                        return <div key={`pad-${i}-${idx}`} className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] bg-transparent" aria-hidden="true" />;
+                                    }
+
+                                    const mins = Math.round(day.duration / 60);
+                                    const dateFormatted = format(day.date, 'MMMM d, yyyy');
+                                    const label = mins > 0
+                                        ? `${mins} minutes read on ${dateFormatted}`
+                                        : `No reading recorded on ${dateFormatted}`;
+
+                                    return (
+                                        <button
+                                            key={day.dateStr}
+                                            aria-label={label}
+                                            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-[2px] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-card ${getCellColor(day)}`}
+                                            onMouseEnter={(e) => {
                                                 const target = e.currentTarget;
                                                 const rect = target.getBoundingClientRect();
-
-                                                // Calculate center x and top y relative to viewport
-                                                const x = rect.left + (rect.width / 2);
-                                                const y = rect.top;
-
+                                                const x = rect.left + window.scrollX + (rect.width / 2);
+                                                const y = rect.top + window.scrollY;
                                                 setHoveredDay({ day, x, y });
-                                            }
-                                        }}
-                                        onMouseLeave={() => setHoveredDay(null)}
-                                    />
-                                ))}
+                                            }}
+                                            onMouseLeave={() => setHoveredDay(null)}
+                                            onFocus={(e) => {
+                                                const target = e.currentTarget;
+                                                const rect = target.getBoundingClientRect();
+                                                const x = rect.left + window.scrollX + (rect.width / 2);
+                                                const y = rect.top + window.scrollY;
+                                                setHoveredDay({ day, x, y });
+                                            }}
+                                            onBlur={() => setHoveredDay(null)}
+                                        />
+                                    );
+                                })}
                             </div>
                         ))}
                     </div>
@@ -433,9 +455,9 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
             </div>
 
             {/* Floating Tooltip */}
-            {hoveredDay && (
+            {isMounted && hoveredDay && createPortal(
                 <div
-                    className="fixed z-[100] px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]"
+                    className="absolute z-[100] px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]"
                     style={{
                         left: hoveredDay.x,
                         top: hoveredDay.y - 8
@@ -449,7 +471,8 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
                     </div>
                     {/* Arrow */}
                     <div className="w-2 h-2 bg-popover border-r border-b border-border absolute bottom-0 translate-y-1/2 rotate-45 transform left-1/2 -translate-x-1/2"></div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

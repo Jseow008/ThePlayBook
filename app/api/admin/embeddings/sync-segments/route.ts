@@ -1,14 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 const EMBEDDING_DIMENSIONS = 1536;
 
 export const maxDuration = 300; // Allow 5 minutes max for syncing
 
-export async function POST() {
+export async function POST(request: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 3 requests per 60 seconds per IP (expensive AI operation)
+    const rl = rateLimit(request, { limit: 3, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
 
     try {
         // Verify admin session

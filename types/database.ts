@@ -421,6 +421,7 @@ export type Database = {
       insert_generated_content: {
         Args: {
           p_author?: string
+          p_category?: string
           p_quick_mode_json?: Json
           p_segments?: Json
           p_status?: Database["public"]["Enums"]["content_status"]

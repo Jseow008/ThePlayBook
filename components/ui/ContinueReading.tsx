@@ -16,8 +16,11 @@ export function ContinueReading({ allItems }: ContinueReadingProps) {
         setIsMounted(true);
 
         // Find all progress keys in localStorage
-        const progressKeys = Object.keys(localStorage)
-            .filter(key => key.startsWith("flux_progress_"));
+        const progressKeys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith("flux_progress_")) progressKeys.push(k);
+        }
 
         // Extract IDs and get corresponding items
         const inProgress = progressKeys

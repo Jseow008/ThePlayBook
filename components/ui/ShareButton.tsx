@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Share2, Check, Link } from "lucide-react";
+import { Share2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -93,7 +93,7 @@ export function ShareButton({
                 </>
             ) : (
                 <>
-                    <Link className="size-4" />
+                    <Share2 className="size-4" />
                     Share
                 </>
             )}

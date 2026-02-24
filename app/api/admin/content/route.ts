@@ -10,6 +10,7 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 // Zod schema for creating content
 const CreateContentSchema = z.object({
@@ -50,8 +51,18 @@ const CreateContentSchema = z.object({
     })).optional().nullable(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 20 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
@@ -88,6 +99,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 10 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 10, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {

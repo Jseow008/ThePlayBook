@@ -42,6 +42,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             title,
             description,
             url: `${siteUrl}/read/${id}`,
+            siteName: APP_NAME,
             images: [{ url: ogImage, width: 1200, height: 630, alt: data.title }],
             type: "article",
         },

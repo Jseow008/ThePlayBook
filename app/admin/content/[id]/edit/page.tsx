@@ -5,7 +5,7 @@
  */
 
 import { notFound } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminClient } from "@/lib/supabase/admin";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { Segment } from "@/types/database";
 
@@ -15,7 +15,7 @@ interface EditContentPageProps {
 
 export default async function EditContentPage({ params }: EditContentPageProps) {
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = getAdminClient();
 
     // Fetch content with segments and artifacts
     const { data: contentItemRaw, error } = await supabase

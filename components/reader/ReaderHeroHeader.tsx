@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
 import { AudioPlayer } from "./AudioPlayer";
@@ -39,6 +41,12 @@ export function ReaderHeroHeader({
             ? Math.round((segmentsRead / segmentsTotal) * 100)
             : 0;
 
+    // Safe URL for sharing — avoids SSR hydration mismatch
+    const [shareUrl, setShareUrl] = useState("");
+    useEffect(() => {
+        setShareUrl(window.location.href);
+    }, []);
+
 
     return (
         <header className="mb-8">
@@ -58,11 +66,14 @@ export function ReaderHeroHeader({
                 {/* Cover Image */}
                 {coverImageUrl && (
                     <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
-                        <div className="aspect-[2/3] sm:aspect-auto sm:h-full rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10">
-                            <img
+                        <div className="aspect-[2/3] sm:aspect-auto sm:h-full rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative">
+                            <Image
                                 src={coverImageUrl}
                                 alt={title}
-                                className="w-full h-full object-cover"
+                                fill
+                                sizes="(max-width: 640px) 100vw, 224px"
+                                priority
+                                className="object-cover"
                             />
                         </div>
                     </div>
@@ -96,7 +107,7 @@ export function ReaderHeroHeader({
 
                         {/* Share Button */}
                         <ShareButton
-                            url={typeof window !== "undefined" ? window.location.href : ""}
+                            url={shareUrl}
                             title={title}
                             text={`Read "${title}" on ${APP_NAME}`}
                             variant="icon"

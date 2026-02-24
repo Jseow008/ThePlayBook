@@ -140,16 +140,6 @@ export function UserNav() {
                     </Link>
 
                     <Link
-                        href="/brain"
-                        role="menuitem"
-                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full focus:bg-accent focus:text-accent-foreground outline-none"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        <Brain className="h-4 w-4" />
-                        <span>Second Brain</span>
-                    </Link>
-
-                    <Link
                         href="/ask"
                         role="menuitem"
                         className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full focus:bg-accent focus:text-accent-foreground outline-none"

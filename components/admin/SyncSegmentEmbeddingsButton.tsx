@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 export function SyncSegmentEmbeddingsButton() {
     const [isSyncing, setIsSyncing] = useState(false);
@@ -47,14 +47,13 @@ export function SyncSegmentEmbeddingsButton() {
             <button
                 onClick={handleSync}
                 disabled={isSyncing}
-                className="focus-ring inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap border border-indigo-200 dark:border-indigo-800"
+                className="focus-ring inline-flex items-center justify-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-medium rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
                 <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
                 {isSyncing ? "Syncing Segments..." : "Sync AI Segments"}
-                <Sparkles className="w-3.5 h-3.5 ml-0.5 opacity-70" />
             </button>
             {statusText && (
-                <span className="absolute top-full mt-2 text-xs font-medium text-indigo-600 dark:text-indigo-400 animate-in fade-in slide-in-from-top-1 whitespace-nowrap z-10 bg-white dark:bg-zinc-900 px-2 py-1 flex rounded-md shadow-sm border border-zinc-200 dark:border-zinc-800">
+                <span className="absolute top-full mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-500 animate-in fade-in slide-in-from-top-1 whitespace-nowrap z-10">
                     {statusText}
                 </span>
             )}

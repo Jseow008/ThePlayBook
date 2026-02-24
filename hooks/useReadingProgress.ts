@@ -45,8 +45,13 @@ export function useReadingProgress() {
         if (typeof window === "undefined") return;
 
         // 1. Load Reading Progress
-        const progressKeys = Object.keys(localStorage)
-            .filter(key => key.startsWith("flux_progress_"));
+        const progressKeys: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("flux_progress_")) {
+                progressKeys.push(key);
+            }
+        }
 
         const inProgress: { id: string; lastReadAt: string }[] = [];
         const completed: { id: string; lastReadAt: string }[] = [];
@@ -203,7 +208,11 @@ export function useReadingProgress() {
             const cloudContentIds = new Set(rows.map(r => r.content_id));
 
             // Push missing Progress
-            const localKeys = Object.keys(localStorage).filter(k => k.startsWith("flux_progress_"));
+            const localKeys: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith("flux_progress_")) localKeys.push(k);
+            }
             localKeys.forEach(key => {
                 const id = key.replace("flux_progress_", "");
                 if (!cloudContentIds.has(id)) {
@@ -248,11 +257,12 @@ export function useReadingProgress() {
 
                 // 1. Clear LocalStorage
                 localStorage.removeItem("flux_mylist");
-                Object.keys(localStorage).forEach(key => {
-                    if (key.startsWith("flux_progress_")) {
-                        localStorage.removeItem(key);
-                    }
-                });
+                const keysToRemove: string[] = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith("flux_progress_")) keysToRemove.push(k);
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
 
                 // 2. Clear State
                 setInProgressIds([]);

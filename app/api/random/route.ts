@@ -1,12 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 /**
  * GET /api/random
  * 
  * Returns a random published content item.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+    // Rate limit: 15 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 15, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
     const supabase = createPublicServerClient();
 
     // Get total published count first (cheap head request)

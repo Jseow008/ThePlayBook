@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
@@ -20,6 +21,16 @@ function getSafeImageExtension(fileName: string) {
 
 export async function POST(req: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 5 requests per 60 seconds per IP
+    const rl = rateLimit(req, { limit: 5, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
     // Verify admin session
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {

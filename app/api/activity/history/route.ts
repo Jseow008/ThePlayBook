@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 const HistoryQuerySchema = z
     .object({
@@ -32,6 +33,15 @@ export async function GET(req: NextRequest) {
 
     if (!user) {
         return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
+    }
+
+    // Rate limit: 20 requests per 60 seconds per IP
+    const rl = rateLimit(req, { limit: 20, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
     }
 
     try {

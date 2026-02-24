@@ -48,6 +48,14 @@ export default async function LandingPageRoute() {
         redirect("/browse");
     }
 
+    return (
+        <Suspense fallback={<LandingLoadingSkeleton />}>
+            <LandingPageData />
+        </Suspense>
+    );
+}
+
+async function LandingPageData() {
     // Fetch some real content to showcase
     const publicSupabase = createPublicServerClient();
 
@@ -68,21 +76,28 @@ export default async function LandingPageRoute() {
         .is("deleted_at", null);
 
     return (
-        <Suspense fallback={<LandingLoadingSkeleton />}>
-            <LandingPage
-                previewItems={(previewItems || []) as ContentItem[]}
-                categories={(categoryStats as { category: string; count: number }[] | null) || []}
-                totalContentCount={totalContent || 0}
-                totalCategoryCount={categoryStats?.length || 0}
-            />
-        </Suspense>
+        <LandingPage
+            previewItems={(previewItems || []) as ContentItem[]}
+            categories={(categoryStats as { category: string; count: number }[] | null) || []}
+            totalContentCount={totalContent || 0}
+            totalCategoryCount={categoryStats?.length || 0}
+        />
     );
 }
 
 function LandingLoadingSkeleton() {
     return (
-        <div className="min-h-screen bg-background">
-            <div className="h-screen animate-pulse bg-card/10" />
+        <div className="min-h-screen bg-background relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-background to-zinc-900" />
+            <div className="relative z-10 h-screen animate-pulse bg-card/10 flex flex-col items-center justify-center p-6">
+                {/* Skeleton Hero Layout to make it feel less jarring */}
+                <div className="h-12 w-3/4 max-w-2xl bg-white/5 rounded-lg mb-6" />
+                <div className="h-6 w-1/2 max-w-md bg-white/5 rounded-lg mb-12" />
+                <div className="flex gap-4">
+                    <div className="h-12 w-36 bg-white/5 rounded-full" />
+                    <div className="h-12 w-48 bg-white/10 rounded-full" />
+                </div>
+            </div>
         </div>
     );
 }

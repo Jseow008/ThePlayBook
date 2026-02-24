@@ -64,10 +64,44 @@ export function useCreateHighlight() {
             const { data } = await res.json();
             return data as UserHighlight;
         },
-        onSuccess: (newHighlight, variables) => {
-            // Invalidate the specific item highlights and global highlights
+        onMutate: async (newArgs) => {
+            // Cancel in-flight refetches so they don't overwrite our optimistic data
+            await queryClient.cancelQueries({ queryKey: ["highlights", newArgs.content_item_id] });
+
+            // Snapshot for rollback
+            const previousData = queryClient.getQueryData<HighlightWithContent[]>(["highlights", newArgs.content_item_id]);
+
+            // Create a temporary optimistic highlight
+            const optimisticHighlight: HighlightWithContent = {
+                id: `temp-${Date.now()}`,
+                user_id: "",
+                content_item_id: newArgs.content_item_id,
+                segment_id: newArgs.segment_id || null,
+                highlighted_text: newArgs.highlighted_text,
+                note_body: newArgs.note_body || null,
+                color: newArgs.color || "yellow",
+                created_at: new Date().toISOString(),
+                updated_at: null,
+                content_item: null,
+            };
+
+            // Append optimistic highlight to cache
+            queryClient.setQueryData<HighlightWithContent[]>(
+                ["highlights", newArgs.content_item_id],
+                (old) => [...(old || []), optimisticHighlight]
+            );
+
+            return { previousData };
+        },
+        onError: (_err, newArgs, context) => {
+            // Rollback on failure
+            if (context?.previousData) {
+                queryClient.setQueryData(["highlights", newArgs.content_item_id], context.previousData);
+            }
+        },
+        onSettled: (_data, _err, variables) => {
+            // Always refetch to reconcile with server truth (replaces temp ID with real one)
             queryClient.invalidateQueries({ queryKey: ["highlights", variables.content_item_id] });
-            queryClient.invalidateQueries({ queryKey: ["highlights", undefined] });
         },
     });
 }
@@ -90,8 +124,35 @@ export function useDeleteHighlight() {
 
             return id;
         },
-        onSuccess: () => {
-            // Invalidate all highlight queries since we don't know which item this belonged to easily here
+        onMutate: async (deletedId) => {
+            // Cancel any in-flight refetches so they don't overwrite our optimistic update
+            await queryClient.cancelQueries({ queryKey: ["highlights"] });
+
+            // Snapshot current cache for rollback
+            const previousData = queryClient.getQueriesData({ queryKey: ["highlights"] });
+
+            // Optimistically remove the highlight from ALL explicitly matched queries
+            previousData.forEach(([queryKey, oldData]) => {
+                if (Array.isArray(oldData)) {
+                    queryClient.setQueryData(
+                        queryKey,
+                        oldData.filter((h: HighlightWithContent) => h.id !== deletedId)
+                    );
+                }
+            });
+
+            return { previousData };
+        },
+        onError: (_err, _deletedId, context) => {
+            // Rollback to previous cache on failure
+            if (context?.previousData) {
+                context.previousData.forEach(([queryKey, data]) => {
+                    queryClient.setQueryData(queryKey, data);
+                });
+            }
+        },
+        onSettled: () => {
+            // Always refetch after mutation to ensure server consistency
             queryClient.invalidateQueries({ queryKey: ["highlights"] });
         },
     });

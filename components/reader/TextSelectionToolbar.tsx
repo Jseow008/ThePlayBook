@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Highlighter, Edit3, X, Check } from "lucide-react";
 import { useCreateHighlight } from "@/hooks/useHighlights";
 import { toast } from "sonner";
@@ -19,11 +20,17 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
 
     const [isAddingNote, setIsAddingNote] = useState(false);
     const [noteText, setNoteText] = useState("");
+    const [mounted, setMounted] = useState(false);
 
     // Store reference to selection before input focus steals it
     const selectionRangeRef = useRef<Range | null>(null);
 
     const createHighlight = useCreateHighlight();
+
+    // Prevent hydration errors by only rendering on client
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // 1. Detect Selection
     useEffect(() => {
@@ -144,10 +151,12 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
     const top = selectionInfo.rect.top + window.scrollY - 10;
     const left = selectionInfo.rect.left + selectionInfo.rect.width / 2;
 
-    return (
+    if (!mounted) return null;
+
+    return createPortal(
         <div
             className={cn(
-                "absolute z-50 flex flex-col gap-2 -translate-x-1/2 -translate-y-full rounded-xl shadow-2xl bg-zinc-900 border border-white/10 p-1.5 transition-all duration-200 animate-in fade-in zoom-in-95",
+                "absolute z-[100] flex flex-col gap-2 -translate-x-1/2 -translate-y-full rounded-xl shadow-2xl bg-zinc-900 border border-white/10 p-1.5 transition-all duration-200 animate-in fade-in zoom-in-95",
                 isAddingNote ? "w-64" : "w-auto"
             )}
             style={{
@@ -210,6 +219,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
 
             {/* Little caret pointing down at the selection */}
             <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-zinc-900 border-b border-r border-white/10 rotate-45" />
-        </div>
+        </div>,
+        document.body
     );
 }

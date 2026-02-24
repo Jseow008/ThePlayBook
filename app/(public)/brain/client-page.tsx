@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { BookOpen, Search, Filter, Trash2, ExternalLink } from "lucide-react";
+import { BookOpen, Search, Filter, Trash2, ExternalLink, ArrowLeft } from "lucide-react";
 import { useDeleteHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,19 +55,23 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
 
     return (
         <div className="min-h-screen bg-background font-sans text-foreground">
-            {/* Header */}
-            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-white/5">
-                <div className="max-w-5xl mx-auto px-5 sm:px-6 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                            <BookOpen className="size-4.5 text-primary" />
-                        </div>
-                        <h1 className="text-xl font-bold tracking-tight">Second Brain</h1>
-                    </div>
+            <main className="max-w-5xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/browse"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
                 </div>
-            </header>
+                <div className="flex flex-col gap-4 mb-8">
+                    <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
+                        Second Brain
+                    </h1>
+                </div>
 
-            <main className="max-w-5xl mx-auto px-5 sm:px-6 py-8">
                 {/* Search & Filter Bar */}
                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
                     <div className="relative flex-1">

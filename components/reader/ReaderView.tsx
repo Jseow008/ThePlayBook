@@ -149,13 +149,11 @@ export function ReaderView({ content }: ReaderViewProps) {
 
                 {/* Content Feedback */}
                 <ContentFeedback contentId={content.id} />
-
-                {/* Floating Action Menu for Highlights */}
-                <TextSelectionToolbar contentItemId={content.id} />
-
-                {/* Notes Drawer */}
-                <NotesDrawer contentItemId={content.id} />
             </div>
+
+            {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
+            <TextSelectionToolbar contentItemId={content.id} />
+            <NotesDrawer contentItemId={content.id} />
         </div>
     );
 }

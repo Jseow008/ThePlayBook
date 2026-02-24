@@ -7,6 +7,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface ProfileHeaderProps {
     user: User;
@@ -87,10 +88,12 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                     {/* Avatar with Edit Overlay */}
                     <div className="relative group/avatar">
                         <div className="w-24 h-24 md:w-28 md:h-28 rounded-full bg-secondary/80 flex items-center justify-center shadow-2xl ring-4 ring-background/50 overflow-hidden">
-                            <img
+                            <Image
                                 src={activeAvatar.src}
                                 alt={activeAvatar.label}
-                                className="w-full h-full object-cover scale-110"
+                                fill
+                                sizes="112px"
+                                className="object-cover scale-110"
                             />
                         </div>
 
@@ -115,10 +118,12 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                                         : "opacity-60 hover:opacity-100 hover:scale-105"
                                         }`}
                                 >
-                                    <img
+                                    <Image
                                         src={item.src}
                                         alt={item.label}
-                                        className="w-full h-full object-cover bg-secondary"
+                                        fill
+                                        sizes="48px"
+                                        className="object-cover bg-secondary"
                                     />
                                 </button>
                             ))}

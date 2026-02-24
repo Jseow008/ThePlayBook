@@ -12,6 +12,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { rateLimit } from "@/lib/server/rate-limit";
 
 const FilterTypeEnum = z.enum(["author", "category", "title", "featured"]);
 
@@ -23,8 +24,18 @@ const CreateHomepageSectionSchema = z.object({
     is_active: z.boolean().optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 20 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
         return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
@@ -51,6 +62,16 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
+
+    // Rate limit: 10 requests per 60 seconds per IP
+    const rl = rateLimit(request, { limit: 10, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
         return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);

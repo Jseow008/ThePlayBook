@@ -60,5 +60,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.9,
     }));
 
-    return [...staticRoutes, ...contentRoutes];
+    // Fetch distinct categories for category pages
+    const { data: categories } = await supabase
+        .from("content_item")
+        .select("category")
+        .eq("status", "verified")
+        .is("deleted_at", null)
+        .not("category", "is", null);
+
+    const uniqueCategories = [
+        ...new Set((categories ?? []).map((c) => c.category).filter(Boolean)),
+    ];
+
+    const categoryRoutes: MetadataRoute.Sitemap = uniqueCategories.map((cat) => ({
+        url: `${siteUrl}/categories/${encodeURIComponent(cat as string)}`,
+        lastModified: new Date(),
+        changeFrequency: "daily",
+        priority: 0.7,
+    }));
+
+    return [...staticRoutes, ...contentRoutes, ...categoryRoutes];
 }
