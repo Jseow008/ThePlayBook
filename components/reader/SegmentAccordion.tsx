@@ -131,6 +131,9 @@ export function SegmentAccordion({
     // Track mouse entering/leaving the popover itself to prevent it from closing
     const popoverHoverRef = useRef(false);
 
+    // Track touch interactions to differentiate between a tap and a scroll
+    const touchStartPos = useRef<{ x: number, y: number } | null>(null);
+
     const handleToggle = useCallback(
         (segment: SegmentFull, index: number) => {
             const isOpening = expandedId !== segment.id;
@@ -142,7 +145,11 @@ export function SegmentAccordion({
 
                 // Wait for the PREVIOUS section to finish collapsing (300ms transition)
                 // before calculating the final scroll position.
+                const initialScrollY = window.scrollY;
                 setTimeout(() => {
+                    // Abort scroll if the user manually started scrolling during the animation
+                    if (Math.abs(window.scrollY - initialScrollY) > 50) return;
+
                     const el = itemRefs.current.get(segment.id);
                     if (el) {
                         // Get position relative to viewport, subtract a comfy offset
@@ -196,6 +203,22 @@ export function SegmentAccordion({
 
     // ── Handle Hover / Tap for Premium UI ────────────────────────────────
     const handleNoteInteraction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        // If it's a touch event, distinguish between a tap and a scroll
+        if (e.type === 'touchend') {
+            const touch = (e as React.TouchEvent).changedTouches[0];
+            const start = touchStartPos.current;
+            if (start) {
+                const distanceX = Math.abs(touch.clientX - start.x);
+                const distanceY = Math.abs(touch.clientY - start.y);
+                // If the user's finger moved more than ~10px, treat it as a scroll/swipe, not a tap
+                if (distanceX > 10 || distanceY > 10) {
+                    touchStartPos.current = null;
+                    return;
+                }
+            }
+            touchStartPos.current = null;
+        }
+
         const target = (e.target as HTMLElement).closest("mark[data-id]");
 
         if (target) {
@@ -264,10 +287,10 @@ export function SegmentAccordion({
                                 onClick={() => handleToggle(segment, index)}
                                 className={cn(
                                     "focus-ring w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left",
-                                    "hover:bg-accent/40",
+                                    "md:hover:bg-accent/40 active:scale-[0.99] active:bg-accent/60",
                                     isExpanded
                                         ? "bg-accent/50 border border-border"
-                                        : "bg-card/60 border border-transparent hover:border-border"
+                                        : "bg-card/60 border border-transparent md:hover:border-border"
                                 )}
                                 aria-expanded={isExpanded}
                             >
@@ -326,6 +349,10 @@ export function SegmentAccordion({
                                             data-segment-id={segment.id}
                                             onMouseMove={(e) => handleNoteInteraction(e)}
                                             onClick={(e) => handleNoteInteraction(e)}
+                                            onTouchStart={(e) => {
+                                                const touch = e.touches[0];
+                                                touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+                                            }}
                                             onTouchEnd={(e) => handleNoteInteraction(e)}
                                             className={cn(
                                                 "prose dark:prose-invert max-w-none relative transition-all duration-300",
