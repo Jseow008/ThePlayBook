@@ -389,6 +389,9 @@ export function SegmentAccordion({
                                                     if (index < segments.length - 1) {
                                                         const nextSegment = segments[index + 1];
                                                         handleToggle(nextSegment, index + 1);
+                                                    } else {
+                                                        // Last segment — just collapse
+                                                        setExpandedId(null);
                                                     }
                                                 }}
                                                 className={cn(
@@ -403,10 +406,15 @@ export function SegmentAccordion({
                                                         <CheckCircle2 className="size-4" />
                                                         Completed
                                                     </>
-                                                ) : (
+                                                ) : index < segments.length - 1 ? (
                                                     <>
                                                         <CheckCircle2 className="size-4" />
                                                         Mark as Completed & Continue
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <CheckCircle2 className="size-4" />
+                                                        Finish Reading
                                                     </>
                                                 )}
                                             </button>

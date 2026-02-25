@@ -8,6 +8,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
+import { CompletionCard } from "./CompletionCard";
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
@@ -99,6 +100,9 @@ export function ReaderView({ content }: ReaderViewProps) {
         setMaxSegmentIndex((prev) => Math.max(prev, index));
     };
 
+    // Derive book completion state
+    const isBookCompleted = completedSegments.size >= content.segments.length && content.segments.length > 0;
+
     // Save progress on changes (debounced)
     useEffect(() => {
         const timeoutId = setTimeout(() => {
@@ -178,8 +182,17 @@ export function ReaderView({ content }: ReaderViewProps) {
                     highlights={highlights}
                 />
 
-                {/* Content Feedback */}
-                <ContentFeedback contentId={content.id} />
+                {/* Completion Card or Content Feedback */}
+                {isBookCompleted ? (
+                    <CompletionCard
+                        contentId={content.id}
+                        title={content.title}
+                        author={content.author}
+                        segmentCount={content.segments.length}
+                    />
+                ) : (
+                    <ContentFeedback contentId={content.id} />
+                )}
             </div>
 
             {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
