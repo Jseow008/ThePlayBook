@@ -41,7 +41,7 @@ export function PublicLayoutShell({ children, initialUser }: { children: React.R
             {/* Main Content */}
             <main className="lg:pl-16 pb-20 lg:pb-0">
                 {/* Mobile padding for fixed header */}
-                <div className="lg:hidden h-14" />
+                {!pathname.startsWith("/read") && <div className="lg:hidden h-14" />}
                 {children}
             </main>
 
