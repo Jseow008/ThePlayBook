@@ -52,7 +52,7 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
             <button
                 onClick={() => setIsOpen(true)}
                 style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-                className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-40 flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
+                className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-40 flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
             >
                 <StickyNote className="size-5 shrink-0" />
                 <span className="hidden sm:inline">Notes</span>
