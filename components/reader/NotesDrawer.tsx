@@ -52,15 +52,15 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
             <button
                 onClick={() => setIsOpen(true)}
                 style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-                className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-40 flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem] relative"
+                className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-40 flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
             >
                 <StickyNote className="size-5 shrink-0" />
+                <span className="hidden sm:inline">Notes</span>
                 {highlights && highlights.length > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 sm:static sm:mt-0 sm:mr-0 flex items-center justify-center w-5 h-5 sm:ml-1 text-[10px] sm:text-xs font-bold bg-white text-primary rounded-full shadow-sm border border-primary/10">
+                    <span className="absolute -top-1 -right-1 sm:static sm:-top-auto sm:-right-auto flex items-center justify-center w-5 h-5 sm:ml-1 text-xs font-bold bg-destructive text-destructive-foreground rounded-full shadow-sm">
                         {highlights.length}
                     </span>
                 )}
-                <span className="hidden sm:inline">Notes</span>
             </button>
 
             {/* Backdrop */}
