@@ -7,6 +7,7 @@ import { useHighlights, useDeleteHighlight } from "@/hooks/useHighlights";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { motion } from "framer-motion";
 
 interface NotesDrawerProps {
     contentItemId: string;
@@ -17,9 +18,23 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
     const [mounted, setMounted] = useState(false);
     const { data: highlights, isLoading, error } = useHighlights(contentItemId);
     const deleteHighlight = useDeleteHighlight();
+    const [isMobile, setIsMobile] = useState(false);
+    const [isDismissed, setIsDismissed] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
 
     useEffect(() => {
         setMounted(true);
+        if (typeof window !== "undefined") {
+            const checkMobile = () => setIsMobile(window.innerWidth < 640);
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+
+            if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {
+                setIsDismissed(true);
+            }
+
+            return () => window.removeEventListener('resize', checkMobile);
+        }
     }, []);
 
     // Handle Escape key to close drawer
@@ -49,19 +64,58 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
     return createPortal(
         <>
             {/* Floating Toggle Button */}
-            <button
-                onClick={() => setIsOpen(true)}
-                style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
-                className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-40 flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
-            >
-                <StickyNote className="size-5 shrink-0" />
-                <span className="hidden sm:inline">Notes</span>
-                {highlights && highlights.length > 0 && (
-                    <span className="absolute -top-1 -right-1 sm:static sm:-top-auto sm:-right-auto flex items-center justify-center w-5 h-5 sm:ml-1 text-xs font-bold bg-destructive text-destructive-foreground rounded-full shadow-sm">
-                        {highlights.length}
-                    </span>
-                )}
-            </button>
+            {!isDismissed && (
+                <motion.div
+                    drag={isMobile}
+                    dragMomentum={false}
+                    dragElastic={0.1}
+                    onDragStart={() => setIsDragging(true)}
+                    onDragEnd={() => {
+                        // Small timeout to prevent the onClick from firing immediately after drag
+                        setTimeout(() => setIsDragging(false), 100);
+                    }}
+                    style={{ marginBottom: 'env(safe-area-inset-bottom)', touchAction: 'none' }}
+                    className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-40 flex flex-col items-end gap-2"
+                >
+                    {/* Close button - only visible on mobile */}
+                    {isMobile && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setIsDismissed(true);
+                                localStorage.setItem('flux_notes_fab_dismissed', 'true');
+                                toast.success("Notes icon hidden", {
+                                    action: {
+                                        label: "Undo",
+                                        onClick: () => {
+                                            setIsDismissed(false);
+                                            localStorage.removeItem('flux_notes_fab_dismissed');
+                                        }
+                                    }
+                                });
+                            }}
+                            className="bg-background/80 backdrop-blur-md p-1.5 rounded-full border border-border shadow-sm text-muted-foreground hover:text-foreground transition-colors mr-1"
+                            aria-label="Hide notes button"
+                        >
+                            <X className="size-3.5" />
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            if (!isDragging) setIsOpen(true);
+                        }}
+                        className="relative flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
+                    >
+                        <StickyNote className="size-5 shrink-0" />
+                        <span className="hidden sm:inline">Notes</span>
+                        {highlights && highlights.length > 0 && (
+                            <span className="absolute -top-1 -right-1 sm:static sm:-top-auto sm:-right-auto flex items-center justify-center w-5 h-5 sm:ml-1 text-xs font-bold bg-destructive text-destructive-foreground rounded-full shadow-sm">
+                                {highlights.length}
+                            </span>
+                        )}
+                    </button>
+                </motion.div>
+            )}
 
             {/* Backdrop */}
             <div
