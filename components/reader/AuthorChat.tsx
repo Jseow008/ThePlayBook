@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
 import { Bot, User, Send, Loader2, X, Sparkles } from "lucide-react";
@@ -21,6 +22,9 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
             body: { contentId, authorName, bookTitle },
         })
     ).current;
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
 
     const {
         messages,
@@ -81,22 +85,24 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
         })),
     ];
 
-    return (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300">
+    if (!mounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300">
             {/* Header */}
-            <header className="flex-shrink-0 h-14 border-b border-border/50 flex items-center justify-between px-4 sm:px-6">
-                <div className="flex items-center gap-3">
-                    <div className="size-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <header className="flex-shrink-0 h-14 border-b border-border/50 flex items-center justify-between px-4 sm:px-6 gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className="shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center">
                         <Sparkles className="size-4 text-primary" />
                     </div>
-                    <div>
-                        <h2 className="text-sm font-bold text-foreground leading-tight">{authorName}</h2>
-                        <p className="text-[0.65rem] text-muted-foreground leading-none mt-0.5">Author Persona · AI</p>
+                    <div className="flex-1 min-w-0">
+                        <h2 className="text-sm font-bold text-foreground leading-tight truncate">{authorName}</h2>
+                        <p className="text-[0.65rem] text-muted-foreground leading-none mt-0.5 truncate">Author Persona &middot; AI</p>
                     </div>
                 </div>
                 <button
                     onClick={onClose}
-                    className="size-8 rounded-lg bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+                    className="shrink-0 size-8 rounded-lg bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
                     aria-label="Close chat"
                 >
                     <X className="size-4 text-muted-foreground" />
@@ -245,6 +251,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

@@ -33,7 +33,13 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                 setIsDismissed(true);
             }
 
-            return () => window.removeEventListener('resize', checkMobile);
+            const handleUnhide = () => setIsDismissed(false);
+            window.addEventListener('flux_notes_fab_unhide', handleUnhide);
+
+            return () => {
+                window.removeEventListener('resize', checkMobile);
+                window.removeEventListener('flux_notes_fab_unhide', handleUnhide);
+            };
         }
     }, []);
 

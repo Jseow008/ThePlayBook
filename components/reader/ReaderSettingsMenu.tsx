@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Minus, Plus, Sun, Moon, BookOpen, Maximize, Minimize, Rows4, Rows3, Rows2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReaderSettings, type ReaderTheme } from "@/hooks/useReaderSettings";
@@ -16,6 +17,18 @@ export function ReaderSettingsMenu() {
     const [isFullscreen, setIsFullscreen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const { fontSize, fontFamily, readerTheme, lineHeight, setFontSize, setFontFamily, setReaderTheme, setLineHeight } = useReaderSettings();
+    const [isMobile, setIsMobile] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+        if (typeof window !== "undefined") {
+            const checkMobile = () => setIsMobile(window.innerWidth < 640);
+            checkMobile();
+            window.addEventListener('resize', checkMobile);
+            return () => window.removeEventListener('resize', checkMobile);
+        }
+    }, []);
 
     // Track Fullscreen status
     useEffect(() => {
@@ -77,6 +90,149 @@ export function ReaderSettingsMenu() {
         else if (fontSize === "medium") setFontSize("large");
     };
 
+    const menuContent = (
+        <div className="space-y-4">
+            {/* Theme Selection */}
+            <div className="space-y-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Theme
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                    {themeOptions.map((option) => (
+                        <button
+                            key={option.value}
+                            onClick={() => setReaderTheme(option.value)}
+                            className={cn(
+                                "flex flex-col items-center gap-1.5 py-2 px-2 rounded-lg text-xs font-medium border transition-all",
+                                readerTheme === option.value
+                                    ? "border-primary ring-1 ring-primary text-primary"
+                                    : "border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            )}
+                        >
+                            <div className={cn("w-8 h-5 rounded border", option.preview)} />
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Font Family Selection */}
+            <div className="space-y-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Font
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                    <button
+                        onClick={() => setFontFamily("sans")}
+                        className={cn(
+                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
+                            fontFamily === "sans"
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )}
+                    >
+                        <span className="font-sans">Sans</span>
+                    </button>
+                    <button
+                        onClick={() => setFontFamily("serif")}
+                        className={cn(
+                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
+                            fontFamily === "serif"
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )}
+                    >
+                        <span className="font-serif">Serif</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Font Size Selection */}
+            <div className="space-y-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Size
+                </span>
+                <div className="flex items-center justify-between bg-secondary/50 rounded-lg border border-border/50 p-1">
+                    <button
+                        onClick={handleDecreaseSize}
+                        disabled={fontSize === "small"}
+                        className="p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        aria-label="Decrease font size"
+                    >
+                        <Minus className="size-4" />
+                    </button>
+                    <span className="text-sm font-medium text-foreground w-16 text-center capitalize">
+                        {fontSize}
+                    </span>
+                    <button
+                        onClick={handleIncreaseSize}
+                        disabled={fontSize === "large"}
+                        className="p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        aria-label="Increase font size"
+                    >
+                        <Plus className="size-4" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Line Height Selection */}
+            <div className="space-y-2">
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Spacing
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                    <button
+                        onClick={() => setLineHeight("compact")}
+                        className={cn(
+                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                            lineHeight === "compact"
+                                ? "bg-primary/10 border-primary text-primary text-secondary-foreground"
+                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )}
+                        title="Compact Spacing"
+                    >
+                        <Rows4 className="size-4" />
+                    </button>
+                    <button
+                        onClick={() => setLineHeight("default")}
+                        className={cn(
+                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                            lineHeight === "default"
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )}
+                        title="Default Spacing"
+                    >
+                        <Rows3 className="size-4" />
+                    </button>
+                    <button
+                        onClick={() => setLineHeight("relaxed")}
+                        className={cn(
+                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                            lineHeight === "relaxed"
+                                ? "bg-primary/10 border-primary text-primary"
+                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
+                        )}
+                        title="Relaxed Spacing"
+                    >
+                        <Rows2 className="size-4" />
+                    </button>
+                </div>
+            </div>
+
+            {/* Fullscreen Toggle */}
+            <div className="hidden sm:block pt-2 mt-2 border-t border-border/50">
+                <button
+                    onClick={toggleFullscreen}
+                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                    <span>{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
+                    {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <div className="relative" ref={menuRef}>
             {/* Trigger Button */}
@@ -92,165 +248,24 @@ export function ReaderSettingsMenu() {
                 <span className="font-serif italic font-bold text-[1.1rem] leading-none mb-0.5 mt-0.5">Aa</span>
             </button>
 
-            {/* Dropdown Menu / Bottom Sheet */}
-            {isOpen && (
-                <>
-                    {/* Mobile Backdrop */}
-                    <div
-                        className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm sm:hidden animate-in fade-in"
-                        onClick={() => setIsOpen(false)}
-                    />
-
-                    {/* Menu Container */}
-                    <div className={cn(
-                        "z-50 bg-card border-border p-4 shadow-2xl animate-fade-in sm:origin-top-right",
-                        // Mobile: Bottom Sheet
-                        "fixed inset-x-0 bottom-0 w-full rounded-t-2xl border-t pb-[max(1.5rem,env(safe-area-inset-bottom))]",
-                        // Desktop: Dropdown
-                        "sm:absolute sm:right-0 sm:mt-2 sm:w-64 sm:rounded-xl sm:border sm:bottom-auto sm:inset-x-auto sm:pb-4"
-                    )}>
-                        <div className="space-y-4">
-                            {/* Theme Selection */}
-                            <div className="space-y-2">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                    Theme
-                                </span>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {themeOptions.map((option) => (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => setReaderTheme(option.value)}
-                                            className={cn(
-                                                "flex flex-col items-center gap-1.5 py-2 px-2 rounded-lg text-xs font-medium border transition-all",
-                                                readerTheme === option.value
-                                                    ? "border-primary ring-1 ring-primary text-primary"
-                                                    : "border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                            )}
-                                        >
-                                            <div className={cn("w-8 h-5 rounded border", option.preview)} />
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Font Family Selection */}
-                            <div className="space-y-2">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                    Font
-                                </span>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={() => setFontFamily("sans")}
-                                        className={cn(
-                                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
-                                            fontFamily === "sans"
-                                                ? "bg-primary/10 border-primary text-primary"
-                                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                        )}
-                                    >
-                                        <span className="font-sans">Sans</span>
-                                    </button>
-                                    <button
-                                        onClick={() => setFontFamily("serif")}
-                                        className={cn(
-                                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
-                                            fontFamily === "serif"
-                                                ? "bg-primary/10 border-primary text-primary"
-                                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                        )}
-                                    >
-                                        <span className="font-serif">Serif</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Font Size Selection */}
-                            <div className="space-y-2">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                    Size
-                                </span>
-                                <div className="flex items-center justify-between bg-secondary/50 rounded-lg border border-border/50 p-1">
-                                    <button
-                                        onClick={handleDecreaseSize}
-                                        disabled={fontSize === "small"}
-                                        className="p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                        aria-label="Decrease font size"
-                                    >
-                                        <Minus className="size-4" />
-                                    </button>
-                                    <span className="text-sm font-medium text-foreground w-16 text-center capitalize">
-                                        {fontSize}
-                                    </span>
-                                    <button
-                                        onClick={handleIncreaseSize}
-                                        disabled={fontSize === "large"}
-                                        className="p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                        aria-label="Increase font size"
-                                    >
-                                        <Plus className="size-4" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Line Height Selection */}
-                            <div className="space-y-2">
-                                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                    Spacing
-                                </span>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <button
-                                        onClick={() => setLineHeight("compact")}
-                                        className={cn(
-                                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
-                                            lineHeight === "compact"
-                                                ? "bg-primary/10 border-primary text-primary text-secondary-foreground"
-                                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                        )}
-                                        title="Compact Spacing"
-                                    >
-                                        <Rows4 className="size-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setLineHeight("default")}
-                                        className={cn(
-                                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
-                                            lineHeight === "default"
-                                                ? "bg-primary/10 border-primary text-primary"
-                                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                        )}
-                                        title="Default Spacing"
-                                    >
-                                        <Rows3 className="size-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setLineHeight("relaxed")}
-                                        className={cn(
-                                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
-                                            lineHeight === "relaxed"
-                                                ? "bg-primary/10 border-primary text-primary"
-                                                : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                        )}
-                                        title="Relaxed Spacing"
-                                    >
-                                        <Rows2 className="size-4" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Fullscreen Toggle */}
-                            <div className="hidden sm:block pt-2 mt-2 border-t border-border/50">
-                                <button
-                                    onClick={toggleFullscreen}
-                                    className="w-full flex items-center justify-between p-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                                >
-                                    <span>{isFullscreen ? "Exit Fullscreen" : "Fullscreen"}</span>
-                                    {isFullscreen ? <Minimize className="size-4" /> : <Maximize className="size-4" />}
-                                </button>
-                            </div>
+            {/* Menu Render via Portal or inline */}
+            {isOpen && mounted && (
+                isMobile ? createPortal(
+                    <>
+                        <div
+                            className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm animate-in fade-in"
+                            onClick={() => setIsOpen(false)}
+                        />
+                        <div className="fixed inset-x-0 bottom-0 z-[101] w-full bg-card border-t border-border p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300">
+                            {menuContent}
                         </div>
+                    </>,
+                    document.body
+                ) : (
+                    <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl p-4 z-50 animate-fade-in origin-top-right">
+                        {menuContent}
                     </div>
-                </>
+                )
             )}
         </div>
     );

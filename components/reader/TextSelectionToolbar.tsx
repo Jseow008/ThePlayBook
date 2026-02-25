@@ -109,7 +109,20 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 segment_id: selectionInfo.segmentId,
                 highlighted_text: selectionInfo.text,
             });
-            toast.success("Highlight saved");
+
+            if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {
+                toast.success("Highlight saved", {
+                    action: {
+                        label: "Show Notes Button",
+                        onClick: () => {
+                            localStorage.removeItem('flux_notes_fab_dismissed');
+                            window.dispatchEvent(new Event('flux_notes_fab_unhide'));
+                        }
+                    }
+                });
+            } else {
+                toast.success("Highlight saved");
+            }
 
             // Clear selection
             window.getSelection()?.removeAllRanges();
@@ -128,7 +141,20 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 highlighted_text: selectionInfo.text,
                 note_body: noteText.trim(),
             });
-            toast.success("Highlight & Note saved");
+
+            if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {
+                toast.success("Highlight & Note saved", {
+                    action: {
+                        label: "Show Notes Button",
+                        onClick: () => {
+                            localStorage.removeItem('flux_notes_fab_dismissed');
+                            window.dispatchEvent(new Event('flux_notes_fab_unhide'));
+                        }
+                    }
+                });
+            } else {
+                toast.success("Highlight & Note saved");
+            }
 
             // Cleanup
             setNoteText("");
