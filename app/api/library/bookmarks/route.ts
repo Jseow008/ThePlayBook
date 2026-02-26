@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
 
         const { content_item_id } = parsed.data;
 
-        const { error } = await supabase
-            .from("user_library")
+        const { error } = await (supabase
+            .from("user_library") as any)
             .upsert(
                 {
                     user_id: user.id,
@@ -102,8 +102,8 @@ export async function DELETE(request: NextRequest) {
 
         const { content_item_id } = parsed.data;
 
-        const { data: existing, error: fetchError } = await supabase
-            .from("user_library")
+        const { data: existing, error: fetchError } = await (supabase
+            .from("user_library") as any)
             .select("progress")
             .eq("user_id", user.id)
             .eq("content_id", content_item_id)
@@ -132,8 +132,8 @@ export async function DELETE(request: NextRequest) {
                 return apiError("INTERNAL_ERROR", "Failed to remove bookmark.", 500, requestId);
             }
         } else {
-            const { error: updateError } = await supabase
-                .from("user_library")
+            const { error: updateError } = await (supabase
+                .from("user_library") as any)
                 .update({ is_bookmarked: false, last_interacted_at: new Date().toISOString() })
                 .eq("user_id", user.id)
                 .eq("content_id", content_item_id);
