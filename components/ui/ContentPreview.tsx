@@ -97,18 +97,18 @@ export function ContentPreview({
                     )}
 
                     {/* Title, Author & CTA */}
-                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                    <div className="flex-1 flex flex-col justify-center items-center sm:items-start text-center sm:text-left min-w-0">
                         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-foreground tracking-tight md:tracking-[-0.02em] leading-[1.15] mb-2">
                             {item.title}
                         </h1>
                         {item.author && (
-                            <p className="text-lg text-muted-foreground font-medium mb-4 truncate">
+                            <p className="text-lg text-muted-foreground font-medium mb-4">
                                 {item.author}
                             </p>
                         )}
 
                         {/* Metadata Pills */}
-                        <div className="flex flex-wrap items-center gap-2 mb-6">
+                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-6">
                             {item.duration_seconds && (
                                 <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
                                     <Clock className="size-3" />
