@@ -121,7 +121,7 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-20 lg:pb-40">
+        <div className="min-h-screen bg-background pb-8 lg:pb-24">
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12 space-y-8">
                 <div>
                     {/* Back to Library */}
