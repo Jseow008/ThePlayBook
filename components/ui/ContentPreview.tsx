@@ -63,7 +63,7 @@ export function ContentPreview({
     const hasHidden = activeTakeaways.length > VISIBLE_COUNT;
 
     return (
-        <div className="min-h-screen bg-background text-foreground pb-28 lg:pb-20">
+        <div className="min-h-screen bg-background text-foreground pb-10 lg:pb-8">
             {/* Container */}
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* ── Back to Library ── */}
