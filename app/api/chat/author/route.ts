@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic } from "@ai-sdk/anthropic";
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import { streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
@@ -9,16 +9,13 @@ import { rateLimit } from "@/lib/server/rate-limit";
 export const maxDuration = 60;
 
 // ---------------------------------------------------------------------------
-// Validation — only validate the extra fields we need; messages are handled
-// by the AI SDK's own `convertToModelMessages()` which understands the
-// `parts`-based UI format natively.
+// Validation
 // ---------------------------------------------------------------------------
 
 const AuthorChatBodySchema = z.object({
     contentId: z.string().uuid(),
     authorName: z.string().trim().min(1).max(200),
     bookTitle: z.string().trim().min(1).max(500),
-    // messages validated structurally below, not via Zod
     messages: z.array(z.any()).min(1).max(30),
 });
 
@@ -26,35 +23,42 @@ const AuthorChatBodySchema = z.object({
 // Cost & Abuse Constants
 // ---------------------------------------------------------------------------
 
-/** Only send the last N messages as conversation history (sliding window).
- *  This caps input tokens on long chats and keeps costs predictable. */
+/** Only send the last N messages as conversation history (sliding window). */
 const MAX_HISTORY_MESSAGES = 6;
 
 /** Max chars of book content injected into the system prompt. */
 const MAX_CONTEXT_CHARS = 12_000;
 
-/** Max output tokens the model is allowed to generate per response.
- *  Forces brevity and controls cost per completion. */
+/** Max output tokens the model is allowed to generate per response. */
 const MAX_OUTPUT_TOKENS = 600;
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Extract plain text from a UI message (handles both `parts` and legacy `content` formats). */
+/** Extract plain text from a message (handles both `parts` and legacy `content` formats). */
 function getMessageText(msg: Record<string, unknown>): string {
-    // Newer format: parts array with { type: "text", text: "..." }
     if (Array.isArray(msg.parts)) {
         return msg.parts
             .filter((p: any) => p.type === "text" && typeof p.text === "string")
             .map((p: any) => p.text as string)
             .join("");
     }
-    // Legacy format: { content: "..." }
     if (typeof msg.content === "string") {
         return msg.content;
     }
     return "";
+}
+
+/** Convert UI messages (parts-based) to the simple {role, content} format that streamText accepts. */
+function normalizeMessages(rawMessages: any[]): Array<{ role: "user" | "assistant"; content: string }> {
+    return rawMessages
+        .filter((m: any) => m.role === "user" || m.role === "assistant")
+        .map((m: any) => ({
+            role: m.role as "user" | "assistant",
+            content: getMessageText(m),
+        }))
+        .filter((m) => m.content.length > 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -110,29 +114,27 @@ export async function POST(req: NextRequest) {
 
         const { contentId, authorName, bookTitle, messages: rawMessages } = parsed.data;
 
+        // --- Normalize messages from UI format to simple {role, content} ---
+        const allMessages = normalizeMessages(rawMessages);
+
+        if (allMessages.length === 0) {
+            return apiError("VALIDATION_ERROR", "No valid messages provided", 400, requestId);
+        }
+
         // --- Validate last message is from user ---
-        const lastRaw = rawMessages[rawMessages.length - 1];
-        if (!lastRaw || lastRaw.role !== "user") {
+        const lastMsg = allMessages[allMessages.length - 1];
+        if (lastMsg.role !== "user") {
             return apiError("VALIDATION_ERROR", "Last message must be a user message", 400, requestId);
         }
 
-        // --- Guard: max character length across all messages ---
-        const totalTextChars = rawMessages.reduce((sum: number, m: any) => sum + getMessageText(m).length, 0);
+        // --- Guard: max character length ---
+        const totalTextChars = allMessages.reduce((sum, m) => sum + m.content.length, 0);
         if (totalTextChars > 20_000) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
         // --- Sliding Context Window: only keep last N messages ---
-        const recentMessages = rawMessages.slice(-MAX_HISTORY_MESSAGES);
-
-        // --- Convert UI messages → Model messages using AI SDK utility ---
-        let modelMessages;
-        try {
-            modelMessages = await convertToModelMessages(recentMessages as UIMessage[]);
-        } catch (convErr: unknown) {
-            logApiError({ requestId, route: "/api/chat/author", message: "Message conversion failed", error: convErr });
-            return apiError("VALIDATION_ERROR", "Invalid message format", 400, requestId);
-        }
+        const messages = allMessages.slice(-MAX_HISTORY_MESSAGES);
 
         // --- Fetch Book Segments for Context ---
         const { data: segments, error: segError } = await supabase
@@ -177,11 +179,11 @@ ${contextText}
 6. Match ${authorName}'s real-world communication style, vocabulary, and tone as closely as possible.
 </rules>`;
 
-        // --- Stream with Claude 3.5 Haiku ---
+        // --- Stream with Claude Haiku 4.5 ---
         const result = streamText({
-            model: anthropic("claude-3-5-haiku-latest"),
+            model: anthropic("claude-haiku-4-5-20251001"),
             system: systemPrompt,
-            messages: modelMessages,
+            messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
         });
 
