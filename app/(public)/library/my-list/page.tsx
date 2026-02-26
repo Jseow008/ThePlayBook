@@ -77,7 +77,7 @@ export default function MyListPage() {
     }, [allItems, activeFilter, searchQuery, activeSort, myListIds]);
 
     return (
-        <div className="min-h-screen bg-background pb-20">
+        <div className="min-h-screen bg-background pb-20 lg:pb-40">
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* Back to Library */}
                 <div className="mb-8">

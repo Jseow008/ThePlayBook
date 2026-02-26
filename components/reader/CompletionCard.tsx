@@ -61,7 +61,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
         <>
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-8">
                 {/* ── Celebration Header ────────────────────────────────────── */}
-                <div className="text-center mb-10">
+                <div className="text-center mb-6">
                     <div className="inline-flex items-center justify-center size-16 rounded-full bg-green-500/15 mb-4">
                         <PartyPopper className="size-7 text-green-500" />
                     </div>
@@ -76,7 +76,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                 </div>
 
                 {/* ── Action Cards ──────────────────────────────────────────── */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                     {/* Card A: Talk to Author */}
                     <button
                         onClick={() => setShowChat(true)}

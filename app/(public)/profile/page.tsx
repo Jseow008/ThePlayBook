@@ -15,7 +15,7 @@ export default async function ProfilePage() {
     }
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className="min-h-screen bg-background text-foreground pb-20 lg:pb-40">
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
                 {/* Back to Library */}
                 <div className="mb-8">

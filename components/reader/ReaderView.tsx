@@ -148,7 +148,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
-            <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-24 sm:pt-12 lg:pb-12">
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-20 sm:pt-12 lg:pb-40">
                 {/* Hero Header */}
                 <ReaderHeroHeader
                     title={content.title}

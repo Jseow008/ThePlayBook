@@ -130,7 +130,7 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
     if (!isLoggedIn) return null;
 
     return (
-        <div className="flex flex-col items-center justify-center pt-8 pb-12 mt-8 border-t border-border/40">
+        <div className="flex flex-col items-center justify-center pt-8 pb-4 mt-8 border-t border-border/40">
             <p className="text-sm font-medium text-muted-foreground mb-4">
                 Was the content good?
             </p>

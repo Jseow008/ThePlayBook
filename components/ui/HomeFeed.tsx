@@ -30,7 +30,7 @@ export function HomeFeed({
             <HeroCarousel items={featuredItems} />
 
             <div className={cn(
-                "relative z-10 pb-16 space-y-4 md:space-y-8 transition-all duration-500",
+                "relative z-10 pb-20 lg:pb-40 space-y-4 md:space-y-8 transition-all duration-500",
                 featuredItems.length > 0 ? "-mt-8 pt-0" : "pt-24"
             )}>
                 {/* Standard Feed View */}
@@ -67,7 +67,7 @@ export function HomeFeed({
             </div>
 
             {/* Footer */}
-            <footer className="border-t border-border py-4 lg:py-7 px-6 lg:px-16 mt-12 bg-card/20">
+            <footer className="border-t border-border py-4 lg:py-7 px-6 lg:px-16 mt-8 bg-card/20">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-foreground rounded-md flex items-center justify-center text-background font-display font-bold">
