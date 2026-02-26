@@ -1,5 +1,26 @@
 import type { NextConfig } from "next";
 
+const isProduction = process.env.NODE_ENV === "production";
+const scriptSrc = isProduction
+  ? "script-src 'self' 'unsafe-inline';"
+  : "script-src 'self' 'unsafe-eval' 'unsafe-inline';";
+
+function getSupabaseOrigin(): string {
+  const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!envUrl) return "https://xmuqsgfxuaaophxnwure.supabase.co";
+
+  try {
+    const parsed = new URL(envUrl);
+    return parsed.origin;
+  } catch {
+    return "https://xmuqsgfxuaaophxnwure.supabase.co";
+  }
+}
+
+const supabaseOrigin = getSupabaseOrigin();
+const supabaseWssOrigin = supabaseOrigin.replace(/^https:/, "wss:");
+const supabaseHostname = new URL(supabaseOrigin).hostname;
+
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -11,7 +32,12 @@ const securityHeaders = [
   },
   {
     key: "Content-Security-Policy",
-    value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://xmuqsgfxuaaophxnwure.supabase.co https://images.unsplash.com https://api.dicebear.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; " + (process.env.NODE_ENV === "production" ? "upgrade-insecure-requests; " : "") + "connect-src 'self' https://xmuqsgfxuaaophxnwure.supabase.co wss://xmuqsgfxuaaophxnwure.supabase.co;"
+    value:
+      "default-src 'self'; " +
+      scriptSrc +
+      ` style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: ${supabaseOrigin} https://images.unsplash.com https://api.dicebear.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; ` +
+      (isProduction ? "upgrade-insecure-requests; " : "") +
+      `connect-src 'self' ${supabaseOrigin} ${supabaseWssOrigin};`,
   },
 ];
 
@@ -23,7 +49,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "xmuqsgfxuaaophxnwure.supabase.co",
+        hostname: supabaseHostname,
       },
       {
         protocol: "https",

@@ -101,13 +101,11 @@ export default function SectionsPage() {
 
     async function handleDelete(id: string) {
         try {
-            console.log("Deleting section:", id);
             const res = await fetch(`/api/admin/sections/${id}`, {
                 method: "DELETE",
             });
 
             if (res.ok) {
-                console.log("Section deleted");
                 setSections((prev) => prev.filter((s) => s.id !== id));
                 setDeletingId(null);
             } else {

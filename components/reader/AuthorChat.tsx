@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, type FormEvent } from "react";
+import { useRef, useEffect, useState, useMemo, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
@@ -16,12 +16,14 @@ interface AuthorChatProps {
 }
 
 export function AuthorChat({ contentId, authorName, bookTitle, onClose }: AuthorChatProps) {
-    const transport = useRef(
-        new TextStreamChatTransport({
-            api: "/api/chat/author",
-            body: { contentId, authorName, bookTitle },
-        })
-    ).current;
+    const transport = useMemo(
+        () =>
+            new TextStreamChatTransport({
+                api: "/api/chat/author",
+                body: { contentId, authorName, bookTitle },
+            }),
+        [contentId, authorName, bookTitle]
+    );
 
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
@@ -226,7 +228,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder={`Ask ${authorName} anything...`}
-                            className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-5 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 scrollbar-thin overflow-y-auto"
+                            className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 scrollbar-thin overflow-y-auto"
                             rows={1}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {

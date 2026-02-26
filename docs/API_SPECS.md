@@ -449,3 +449,71 @@ export interface ReadingActivity {
   updated_at: string;
 }
 ```
+
+---
+
+## 7. Additional Implemented Endpoints (Codebase Synced)
+
+The following routes are currently implemented and should be treated as active contracts.
+
+### 7.1 Public/Authenticated Utility APIs
+
+- **GET** `/api/random`
+  - Returns a random verified content item (via RPC `get_random_verified_content`).
+  - Rate limited.
+
+- **POST** `/api/content/batch`
+  - Fetches multiple verified content items by UUID list (`ids`, max 50).
+  - Used by library/history UIs to hydrate multiple cards efficiently.
+  - Rate limited.
+
+- **POST** `/api/recommendations`
+  - Body: `{ completedIds: string[] }`.
+  - Returns personalized recommendations from RPC `match_recommendations`.
+  - Rate limited.
+
+### 7.2 Authenticated User APIs
+
+- **GET** `/api/activity/history`
+  - Returns reading activity rows for current user.
+  - Optional query params: `start`, `end` (`YYYY-MM-DD`) with bounded range validation.
+  - Rate limited.
+
+- **GET / POST / DELETE** `/api/feedback/content`
+  - Reads/upserts/removes per-user content feedback.
+  - POST payload:
+    ```ts
+    {
+      content_id: string; // uuid
+      is_positive: boolean;
+      reason?: string | null;
+      details?: string | null;
+    }
+    ```
+  - DELETE payload:
+    ```ts
+    {
+      content_id: string; // uuid
+    }
+    ```
+  - Rate limited.
+
+### 7.3 AI APIs
+
+- **POST** `/api/chat/author`
+  - Auth-required author-persona conversational endpoint.
+  - Uses Anthropic streaming responses.
+  - Enforces payload validation, message windowing, context truncation, and per-user rate limiting.
+
+### 7.4 Admin APIs (Protected)
+
+- **GET / POST** `/api/admin/sections`
+  - Manage homepage lane/section configuration.
+
+- **PUT / DELETE** `/api/admin/sections/[id]`
+  - Update or remove a specific homepage section.
+
+- **POST** `/api/admin/upload-audio`
+  - Upload audio assets to storage for media-enabled content.
+
+> Note: All `/api/admin/*` endpoints require a valid admin session and server-side role verification.

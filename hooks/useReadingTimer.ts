@@ -43,15 +43,11 @@ export function useReadingTimer(contentId?: string) {
             // Threshold: If less than 60 seconds, discard on unmount, otherwise keep accumulating
             if (toSend < 60) {
                 if (isUnmount) {
-                    console.log(`[Timer] Discarding ${toSend}s (under 60s minimum)`);
                     pendingSecondsRef.current = 0;
-                } else {
-                    console.log(`[Timer] Paused at ${toSend}s (waiting for 60s minimum)`);
                 }
                 return;
             }
 
-            console.log(`[Timer] Sending heartbeat for ${toSend}s`);
             try {
                 pendingSecondsRef.current = 0; // Reset pending
                 await fetch('/api/activity/log', {
@@ -74,10 +70,8 @@ export function useReadingTimer(contentId?: string) {
         // Window focus handling
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
-                console.log("[Timer] Tab focused, resuming timer.");
                 startTimer();
             } else {
-                console.log("[Timer] Tab blurred, pausing timer.");
                 stopTimer();
                 sendHeartbeat(false); // Flush pending on blur
             }
@@ -92,7 +86,6 @@ export function useReadingTimer(contentId?: string) {
         window.addEventListener('beforeunload', handleBeforeUnload);
 
         return () => {
-            console.log("[Timer] Component unmounting, final flush.");
             stopTimer();
             sendHeartbeat(true);
             document.removeEventListener('visibilitychange', handleVisibilityChange);

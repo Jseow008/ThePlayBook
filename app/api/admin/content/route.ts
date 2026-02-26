@@ -16,7 +16,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 const CreateContentSchema = z.object({
     title: z.string().min(1, "Title is required"),
     author: z.string().optional().nullable(),
-    type: z.enum(["podcast", "book", "article"]),
+    type: z.enum(["podcast", "book", "article", "video"]),
     category: z.string().optional().nullable(),
     source_url: z.string().url().optional().nullable().or(z.literal("")),
     cover_image_url: z.string().url().optional().nullable().or(z.literal("")),
