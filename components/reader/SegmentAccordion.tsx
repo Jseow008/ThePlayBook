@@ -8,13 +8,13 @@ import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import { HighlightPopover } from "./HighlightPopover";
-import { HighlightBottomSheet } from "./HighlightBottomSheet";
 import type { SegmentFull } from "@/types/domain";
 import type { HighlightWithContent } from "@/hooks/useHighlights";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // ─── Safe Recursive AST Highlighting ───────────────────────────────────────
-function applyHighlightsToTextNode(text: string, highlights: HighlightWithContent[]): any[] {
+function applyHighlightsToTextNode(text: string, highlights: HighlightWithContent[], interactive: boolean = true): any[] {
     if (!text) return [];
 
     // Sort highlights: longest first. Single characters are allowed but 
@@ -48,16 +48,16 @@ function applyHighlightsToTextNode(text: string, highlights: HighlightWithConten
             };
 
             const bgClass = HIGHLIGHT_COLORS[color] || HIGHLIGHT_COLORS.yellow;
-            const cursorClass = h.note_body ? "cursor-pointer" : "cursor-text";
+            const cursorClass = interactive && h.note_body ? "cursor-pointer" : "cursor-text";
             const markHtml = `<mark class="${bgClass} text-inherit rounded-sm -mx-0.5 px-0.5 ${cursorClass} transition-colors"${idAttr}${colorAttr}${noteAttr}>${match}</mark>`;
 
             const newNodes: any[] = [];
             // Recursively process the text before the match
-            if (before) newNodes.push(...applyHighlightsToTextNode(before, highlights));
+            if (before) newNodes.push(...applyHighlightsToTextNode(before, highlights, interactive));
             // Add the matched highlight HTML
             newNodes.push({ type: "html", value: markHtml });
             // Recursively process the text after the match
-            if (after) newNodes.push(...applyHighlightsToTextNode(after, highlights));
+            if (after) newNodes.push(...applyHighlightsToTextNode(after, highlights, interactive));
 
             return newNodes;
         }
@@ -67,14 +67,14 @@ function applyHighlightsToTextNode(text: string, highlights: HighlightWithConten
     return [{ type: "text", value: text }];
 }
 
-function wrapTextNodesWithHighlights(node: any, highlights: HighlightWithContent[]) {
+function wrapTextNodesWithHighlights(node: any, highlights: HighlightWithContent[], interactive: boolean = true) {
     if (node.children) {
         const newChildren: any[] = [];
         for (const child of node.children) {
             if (child.type === "text") {
-                newChildren.push(...applyHighlightsToTextNode(child.value, highlights));
+                newChildren.push(...applyHighlightsToTextNode(child.value, highlights, interactive));
             } else {
-                wrapTextNodesWithHighlights(child, highlights);
+                wrapTextNodesWithHighlights(child, highlights, interactive);
                 newChildren.push(child);
             }
         }
@@ -83,10 +83,10 @@ function wrapTextNodesWithHighlights(node: any, highlights: HighlightWithContent
 }
 
 // ─── Custom Remark Plugin to apply highlights safely ───────────────
-function createRemarkHighlightPlugin(highlights: HighlightWithContent[]) {
+function createRemarkHighlightPlugin(highlights: HighlightWithContent[], interactive: boolean = true) {
     return () => (tree: any) => {
         if (!highlights || highlights.length === 0) return;
-        wrapTextNodesWithHighlights(tree, highlights);
+        wrapTextNodesWithHighlights(tree, highlights, interactive);
     };
 }
 
@@ -117,6 +117,7 @@ export function SegmentAccordion({
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
+    const isDesktop = useMediaQuery("(min-width: 640px)");
 
     // --- Popover / Bottom Sheet State ---
     const [activeHighlight, setActiveHighlight] = useState<{
@@ -203,6 +204,8 @@ export function SegmentAccordion({
 
     // ── Handle Hover / Tap for Premium UI ────────────────────────────────
     const handleNoteInteraction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+        if (!isDesktop) return;
+
         // If it's a touch event, distinguish between a tap and a scroll
         if (e.type === 'touchend') {
             const touch = (e as React.TouchEvent).changedTouches[0];
@@ -244,7 +247,7 @@ export function SegmentAccordion({
                 });
             }
         }
-    }, [setActiveHighlight]);
+    }, [isDesktop, setActiveHighlight]);
 
     // Also close on scroll to prevent drifting UI
     useEffect(() => {
@@ -271,7 +274,7 @@ export function SegmentAccordion({
                     const segmentHighlights = highlights.filter(h => h.segment_id === segment.id);
                     const remarkPlugins: any[] = [remarkGfm, remarkBreaks];
                     if (segmentHighlights.length > 0) {
-                        remarkPlugins.push(createRemarkHighlightPlugin(segmentHighlights));
+                        remarkPlugins.push(createRemarkHighlightPlugin(segmentHighlights, isDesktop));
                     }
 
                     return (
@@ -427,32 +430,22 @@ export function SegmentAccordion({
                 })}
             </div>
 
-            {/* Premium UX Components */}
-            {activeHighlight && (
-                <>
-                    <HighlightPopover
-                        highlightId={activeHighlight.id}
-                        noteBody={activeHighlight.note}
-                        highlightedText={activeHighlight.text}
-                        currentColor={activeHighlight.color}
-                        position={activeHighlight.rect}
-                        createdAt={activeHighlight.createdAt}
-                        onClose={() => setActiveHighlight(null)}
-                        onMouseEnter={() => { popoverHoverRef.current = true; }}
-                        onMouseLeave={() => {
-                            popoverHoverRef.current = false;
-                            setActiveHighlight(null);
-                        }}
-                    />
-                    <HighlightBottomSheet
-                        highlightId={activeHighlight.id}
-                        noteBody={activeHighlight.note}
-                        highlightedText={activeHighlight.text}
-                        currentColor={activeHighlight.color}
-                        createdAt={activeHighlight.createdAt}
-                        onClose={() => setActiveHighlight(null)}
-                    />
-                </>
+            {/* Premium UX Components — Desktop-only popover for highlight interactions */}
+            {isDesktop && activeHighlight && (
+                <HighlightPopover
+                    highlightId={activeHighlight.id}
+                    noteBody={activeHighlight.note}
+                    highlightedText={activeHighlight.text}
+                    currentColor={activeHighlight.color}
+                    position={activeHighlight.rect}
+                    createdAt={activeHighlight.createdAt}
+                    onClose={() => setActiveHighlight(null)}
+                    onMouseEnter={() => { popoverHoverRef.current = true; }}
+                    onMouseLeave={() => {
+                        popoverHoverRef.current = false;
+                        setActiveHighlight(null);
+                    }}
+                />
             )}
         </>
     );

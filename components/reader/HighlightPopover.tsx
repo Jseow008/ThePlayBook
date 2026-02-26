@@ -76,9 +76,6 @@ export function HighlightPopover({
 
     if (!mounted || !position) return null;
 
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
-    if (isMobile) return null;
-
     const top = position.top + window.scrollY;
     const left = position.left + window.scrollX + (position.width / 2);
 

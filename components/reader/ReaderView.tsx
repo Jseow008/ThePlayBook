@@ -12,6 +12,7 @@ import { CompletionCard } from "./CompletionCard";
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 /**
  * Reader View — Accordion Layout
@@ -32,6 +33,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const { saveReadingProgress } = useReadingProgress();
     const { data: highlights = [] } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
+    const isDesktop = useMediaQuery("(min-width: 640px)");
 
     // Start tracking reading time
     useReadingTimer(content.id);
@@ -196,7 +198,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             </div>
 
             {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
-            <TextSelectionToolbar contentItemId={content.id} />
+            {isDesktop && <TextSelectionToolbar contentItemId={content.id} />}
             <NotesDrawer contentItemId={content.id} />
         </div>
     );
