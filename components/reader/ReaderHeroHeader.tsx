@@ -67,7 +67,7 @@ export function ReaderHeroHeader({
                 {/* Cover Image */}
                 {coverImageUrl && (
                     <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
-                        <div className="aspect-[2/3] w-[140px] sm:w-full rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative">
+                        <div className="aspect-[2/3] w-[140px] sm:w-full rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative mx-auto sm:mx-0">
                             <Image
                                 src={coverImageUrl}
                                 alt={title}
@@ -81,7 +81,7 @@ export function ReaderHeroHeader({
                 )}
 
                 {/* Title & Info */}
-                <div className="flex-1 flex flex-col justify-center min-w-0">
+                <div className="flex-1 flex flex-col justify-center items-center sm:items-start text-center sm:text-left min-w-0">
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-[1.15] mb-2">
                         {title}
                     </h1>
@@ -92,7 +92,7 @@ export function ReaderHeroHeader({
                     )}
 
                     {/* Metadata Row */}
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
                         {/* Duration Badge */}
                         {durationSeconds && (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs font-medium text-muted-foreground border border-border">
