@@ -93,7 +93,7 @@ export function HighlightBottomSheet({
     };
 
     return createPortal(
-        <div className="fixed inset-0 z-[200] flex flex-col justify-end pointer-events-none">
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end pointer-events-none sm:hidden">
             {/* Backdrop overlay */}
             <div
                 className={cn(
@@ -127,7 +127,7 @@ export function HighlightBottomSheet({
                         </div>
 
                         {/* Content Body */}
-                        <div className="px-6 py-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar overscroll-contain flex-1">
+                        <div className="px-6 py-5 flex flex-col gap-6 overflow-y-auto custom-scrollbar flex-1">
                             {/* Color Picker */}
                             <div className="flex flex-col gap-2">
                                 <span className="text-sm font-medium text-muted-foreground">Highlight Color</span>
@@ -193,7 +193,7 @@ export function HighlightBottomSheet({
 
                         {/* Content Body */}
                         {noteBody && (
-                            <div className="px-6 py-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar overscroll-contain">
+                            <div className="px-6 py-5 flex flex-col gap-4 overflow-y-auto custom-scrollbar">
                                 <div className="text-base text-foreground leading-relaxed whitespace-pre-wrap">
                                     {noteBody}
                                 </div>

@@ -53,7 +53,7 @@ Flux is a **curated content platform** with public browsing and personalized use
 | **Database** | Supabase (PostgreSQL, pgvector) | Content storage & Vector Similarity |
 | **Storage** | Supabase Storage (Hosted) | Image/media uploads |
 | **Auth** | Supabase Auth (Hosted) | Email/Google OAuth authentication |
-| **AI LLMs** | Vercel AI SDK (`ai`), `@ai-sdk/anthropic`, `@ai-sdk/openai` | Author Chat (Claude Haiku 4.5), Embeddings & Search (OpenAI) |
+| **AI LLMs** | Langchain/OpenAI | Content Generation & Chat Inference |
 | **Local Storage** | localStorage | Guest checklist state, temporary cache |
 | **Drag & Drop** | dnd-kit | Segment reordering in admin |
 | **Validation** | Zod | Runtime type validation |
@@ -285,6 +285,6 @@ Categories for organizing content lanes on homepage:
 These features are **not in MVP** but may be added later:
 
 1. **PDF Export** — Download content as PDF
-2. **Offline Cache** — Advanced IndexedDB for full offline caching (Service Workers). Scaffolding exists (`hooks/use-offline-item.ts`, `idb-keyval` dependency) but is not yet wired into the reader.
+2. **Offline Cache** — Advanced IndexedDB for full offline caching (Service Workers)
 3. **Comments** — Discussion section on content
 4. **Newsletter** — Email notifications for new content

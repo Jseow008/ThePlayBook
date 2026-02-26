@@ -65,14 +65,6 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
         }
     };
 
-    // Lock body scroll when drawer is open
-    useEffect(() => {
-        if (!isOpen) return;
-        const original = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = original; };
-    }, [isOpen]);
-
     if (!mounted) return null;
 
     return createPortal(
@@ -163,7 +155,7 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-5 scrollbar-thin overscroll-contain">
+                <div className="flex-1 overflow-y-auto p-5 scrollbar-thin">
                     {isLoading ? (
                         <div className="flex flex-col gap-4 animate-pulse">
                             {[1, 2, 3].map((i) => (

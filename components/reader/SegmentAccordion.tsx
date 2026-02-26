@@ -12,7 +12,6 @@ import { HighlightBottomSheet } from "./HighlightBottomSheet";
 import type { SegmentFull } from "@/types/domain";
 import type { HighlightWithContent } from "@/hooks/useHighlights";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 // ─── Safe Recursive AST Highlighting ───────────────────────────────────────
 function applyHighlightsToTextNode(text: string, highlights: HighlightWithContent[]): any[] {
@@ -118,7 +117,6 @@ export function SegmentAccordion({
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
-    const isMobile = useMediaQuery("(max-width: 639px)");
 
     // --- Popover / Bottom Sheet State ---
     const [activeHighlight, setActiveHighlight] = useState<{
@@ -429,18 +427,9 @@ export function SegmentAccordion({
                 })}
             </div>
 
-            {/* Premium UX Components — only mount the appropriate one for the viewport */}
+            {/* Premium UX Components */}
             {activeHighlight && (
-                isMobile ? (
-                    <HighlightBottomSheet
-                        highlightId={activeHighlight.id}
-                        noteBody={activeHighlight.note}
-                        highlightedText={activeHighlight.text}
-                        currentColor={activeHighlight.color}
-                        createdAt={activeHighlight.createdAt}
-                        onClose={() => setActiveHighlight(null)}
-                    />
-                ) : (
+                <>
                     <HighlightPopover
                         highlightId={activeHighlight.id}
                         noteBody={activeHighlight.note}
@@ -455,7 +444,15 @@ export function SegmentAccordion({
                             setActiveHighlight(null);
                         }}
                     />
-                )
+                    <HighlightBottomSheet
+                        highlightId={activeHighlight.id}
+                        noteBody={activeHighlight.note}
+                        highlightedText={activeHighlight.text}
+                        currentColor={activeHighlight.color}
+                        createdAt={activeHighlight.createdAt}
+                        onClose={() => setActiveHighlight(null)}
+                    />
+                </>
             )}
         </>
     );

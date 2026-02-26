@@ -100,20 +100,6 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
         };
     }, [isAddingNote]);
 
-    // Dismiss toolbar on scroll to prevent it drifting away from selection
-    useEffect(() => {
-        if (!selectionInfo || isAddingNote) return;
-
-        const handleScroll = () => {
-            setSelectionInfo(null);
-            selectionRangeRef.current = null;
-            window.getSelection()?.removeAllRanges();
-        };
-
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, [selectionInfo, isAddingNote]);
-
     if (!selectionInfo) return null;
 
     const handleHighlight = async () => {
