@@ -1,27 +1,65 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 export const maxDuration = 60;
 
-const ChatMessageSchema = z.object({
-    role: z.enum(["system", "user", "assistant"]),
-    content: z.string().trim().min(1).max(2_000),
-});
+// ---------------------------------------------------------------------------
+// Validation — only validate the extra fields we need; messages are handled
+// by the AI SDK's own `convertToModelMessages()` which understands the
+// `parts`-based UI format natively.
+// ---------------------------------------------------------------------------
 
-const AuthorChatRequestSchema = z.object({
-    messages: z.array(ChatMessageSchema).min(1).max(20),
+const AuthorChatBodySchema = z.object({
     contentId: z.string().uuid(),
     authorName: z.string().trim().min(1).max(200),
     bookTitle: z.string().trim().min(1).max(500),
+    // messages validated structurally below, not via Zod
+    messages: z.array(z.any()).min(1).max(30),
 });
 
-const MAX_TOTAL_MESSAGE_CHARS = 12_000;
-const MAX_CONTEXT_CHARS = 16_000;
+// ---------------------------------------------------------------------------
+// Cost & Abuse Constants
+// ---------------------------------------------------------------------------
+
+/** Only send the last N messages as conversation history (sliding window).
+ *  This caps input tokens on long chats and keeps costs predictable. */
+const MAX_HISTORY_MESSAGES = 6;
+
+/** Max chars of book content injected into the system prompt. */
+const MAX_CONTEXT_CHARS = 12_000;
+
+/** Max output tokens the model is allowed to generate per response.
+ *  Forces brevity and controls cost per completion. */
+const MAX_OUTPUT_TOKENS = 600;
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Extract plain text from a UI message (handles both `parts` and legacy `content` formats). */
+function getMessageText(msg: Record<string, unknown>): string {
+    // Newer format: parts array with { type: "text", text: "..." }
+    if (Array.isArray(msg.parts)) {
+        return msg.parts
+            .filter((p: any) => p.type === "text" && typeof p.text === "string")
+            .map((p: any) => p.text as string)
+            .join("");
+    }
+    // Legacy format: { content: "..." }
+    if (typeof msg.content === "string") {
+        return msg.content;
+    }
+    return "";
+}
+
+// ---------------------------------------------------------------------------
+// Handler
+// ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
     const requestId = getRequestId();
@@ -38,7 +76,7 @@ export async function POST(req: NextRequest) {
             return apiError("UNAUTHORIZED", "Please log in to use this feature", 401, requestId);
         }
 
-        // --- Rate Limiting ---
+        // --- Rate Limiting (10 messages / minute / user) ---
         const rl = rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
         if (!rl.success) {
             return NextResponse.json(
@@ -51,9 +89,8 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Validate API Key ---
-        const openaiApiKey = process.env.OPENAI_API_KEY;
-        if (!openaiApiKey) {
-            logApiError({ requestId, route: "/api/chat/author", message: "OPENAI_API_KEY not configured", error: new Error("Missing env") });
+        if (!process.env.ANTHROPIC_API_KEY) {
+            logApiError({ requestId, route: "/api/chat/author", message: "ANTHROPIC_API_KEY not configured", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "AI service is not configured.", 500, requestId);
         }
 
@@ -65,20 +102,36 @@ export async function POST(req: NextRequest) {
             return apiError("INVALID_JSON", "Invalid JSON body", 400, requestId);
         }
 
-        const parsed = AuthorChatRequestSchema.safeParse(body);
+        const parsed = AuthorChatBodySchema.safeParse(body);
         if (!parsed.success) {
+            logApiError({ requestId, route: "/api/chat/author", message: "Validation failed", error: new Error(parsed.error.message) });
             return apiError("VALIDATION_ERROR", "Invalid chat payload", 400, requestId);
         }
 
-        const { messages, contentId, authorName, bookTitle } = parsed.data;
-        const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
-        if (totalChars > MAX_TOTAL_MESSAGE_CHARS) {
+        const { contentId, authorName, bookTitle, messages: rawMessages } = parsed.data;
+
+        // --- Validate last message is from user ---
+        const lastRaw = rawMessages[rawMessages.length - 1];
+        if (!lastRaw || lastRaw.role !== "user") {
+            return apiError("VALIDATION_ERROR", "Last message must be a user message", 400, requestId);
+        }
+
+        // --- Guard: max character length across all messages ---
+        const totalTextChars = rawMessages.reduce((sum: number, m: any) => sum + getMessageText(m).length, 0);
+        if (totalTextChars > 20_000) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
-        const lastMessage = messages[messages.length - 1];
-        if (!lastMessage || lastMessage.role !== "user") {
-            return apiError("VALIDATION_ERROR", "Last message must be a user message", 400, requestId);
+        // --- Sliding Context Window: only keep last N messages ---
+        const recentMessages = rawMessages.slice(-MAX_HISTORY_MESSAGES);
+
+        // --- Convert UI messages → Model messages using AI SDK utility ---
+        let modelMessages;
+        try {
+            modelMessages = await convertToModelMessages(recentMessages as UIMessage[]);
+        } catch (convErr: unknown) {
+            logApiError({ requestId, route: "/api/chat/author", message: "Message conversion failed", error: convErr });
+            return apiError("VALIDATION_ERROR", "Invalid message format", 400, requestId);
         }
 
         // --- Fetch Book Segments for Context ---
@@ -108,27 +161,28 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        // --- Stream LLM Response with Author Persona ---
-        const systemPrompt = `You are ${authorName}, the author of "${bookTitle}". The user has just finished reading your work and wants to discuss it with you.
+        // --- System Prompt (optimized for persona + cost control) ---
+        const systemPrompt = `You are ${authorName}, the author of "${bookTitle}". The reader has just finished your work and wants to discuss it with you.
 
-Your Complete Work:
-===
+<your_work>
 ${contextText}
-===
+</your_work>
 
-Rules:
-1. Stay fully in character as ${authorName}. Speak in the first person as the author. Never break character or refer to yourself as an AI.
-2. Answer questions based on the ideas, arguments, and framework presented in your book above.
-3. If asked about topics beyond the scope of the book, you may offer your perspective as ${authorName} would, but clearly note when you're extrapolating beyond what's written.
-4. Be conversational, intellectually engaging, and thought-provoking. Challenge the user's thinking when appropriate.
-5. Use ${authorName}'s characteristic communication style and vocabulary as much as possible.
-6. Keep responses concise but substantive. Format in clean Markdown when helpful.
-7. If the user highlights a specific passage or concept, reference it directly and expand on it.`;
+<rules>
+1. STAY IN CHARACTER at all times. You are ${authorName}. Speak in the first person. Never mention being an AI, a language model, or an assistant.
+2. Draw answers from the ideas, arguments, and frameworks in your work above. When referencing a concept, be specific.
+3. If asked about topics unrelated to your book (e.g., writing code, composing emails, homework help), politely decline: "That's outside the scope of what I write about. Let's stay on the ideas in my book."
+4. Keep responses SHORT — 2-3 paragraphs maximum. This is a lively intellectual conversation, not a lecture.
+5. Be intellectually challenging. Ask the reader follow-up questions. Push back on lazy thinking.
+6. Match ${authorName}'s real-world communication style, vocabulary, and tone as closely as possible.
+</rules>`;
 
+        // --- Stream with Claude 3.5 Haiku ---
         const result = streamText({
-            model: openai("gpt-4o-mini"),
+            model: anthropic("claude-3-5-haiku-latest"),
             system: systemPrompt,
-            messages,
+            messages: modelMessages,
+            maxOutputTokens: MAX_OUTPUT_TOKENS,
         });
 
         return result.toTextStreamResponse();

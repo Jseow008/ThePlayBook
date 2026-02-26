@@ -16,6 +16,7 @@ export function ReaderSettingsMenu() {
     const [isOpen, setIsOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const portalRef = useRef<HTMLDivElement>(null);
     const { fontSize, fontFamily, readerTheme, lineHeight, setFontSize, setFontFamily, setReaderTheme, setLineHeight } = useReaderSettings();
     const [isMobile, setIsMobile] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -64,7 +65,10 @@ export function ReaderSettingsMenu() {
     // Close on click outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent | TouchEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+            const target = event.target as Node;
+            const insideTrigger = menuRef.current?.contains(target);
+            const insidePortal = portalRef.current?.contains(target);
+            if (!insideTrigger && !insidePortal) {
                 setIsOpen(false);
             }
         };
@@ -256,7 +260,7 @@ export function ReaderSettingsMenu() {
                             className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm animate-in fade-in"
                             onClick={() => setIsOpen(false)}
                         />
-                        <div className="fixed inset-x-0 bottom-0 z-[101] w-full bg-card border-t border-border p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300">
+                        <div ref={portalRef} className="fixed inset-x-0 bottom-0 z-[101] w-full bg-card border-t border-border p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300">
                             {menuContent}
                         </div>
                     </>,
