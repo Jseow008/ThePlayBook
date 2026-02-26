@@ -3,6 +3,12 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import {
+    upsertUserLibrary,
+    getUserLibraryRow,
+    updateUserLibrary,
+    deleteUserLibrary,
+} from "@/lib/server/user-library-repository";
 
 const BookmarkPayloadSchema = z.object({
     content_item_id: z.string().uuid(),
@@ -43,17 +49,12 @@ export async function POST(request: NextRequest) {
 
         const { content_item_id } = parsed.data;
 
-        const { error } = await (supabase
-            .from("user_library") as any)
-            .upsert(
-                {
-                    user_id: user.id,
-                    content_id: content_item_id,
-                    is_bookmarked: true,
-                    last_interacted_at: new Date().toISOString(),
-                },
-                { onConflict: "user_id,content_id" }
-            );
+        const { error } = await upsertUserLibrary(supabase, {
+            user_id: user.id,
+            content_id: content_item_id,
+            is_bookmarked: true,
+            last_interacted_at: new Date().toISOString(),
+        });
 
         if (error) {
             logApiError({ requestId, route: "POST /api/library/bookmarks", message: "Error creating bookmark", error, userId: user.id });
@@ -102,12 +103,11 @@ export async function DELETE(request: NextRequest) {
 
         const { content_item_id } = parsed.data;
 
-        const { data: existing, error: fetchError } = await (supabase
-            .from("user_library") as any)
-            .select("progress")
-            .eq("user_id", user.id)
-            .eq("content_id", content_item_id)
-            .maybeSingle();
+        const { data: existing, error: fetchError } = await getUserLibraryRow(
+            supabase,
+            user.id,
+            content_item_id
+        );
 
         if (fetchError) {
             logApiError({ requestId, route: "DELETE /api/library/bookmarks", message: "Error fetching bookmark row", error: fetchError, userId: user.id });
@@ -121,22 +121,19 @@ export async function DELETE(request: NextRequest) {
         const hasProgress = existing.progress !== null;
 
         if (!hasProgress) {
-            const { error: deleteError } = await supabase
-                .from("user_library")
-                .delete()
-                .eq("user_id", user.id)
-                .eq("content_id", content_item_id);
+            const { error: deleteError } = await deleteUserLibrary(supabase, user.id, content_item_id);
 
             if (deleteError) {
                 logApiError({ requestId, route: "DELETE /api/library/bookmarks", message: "Error deleting bookmark row", error: deleteError, userId: user.id });
                 return apiError("INTERNAL_ERROR", "Failed to remove bookmark.", 500, requestId);
             }
         } else {
-            const { error: updateError } = await (supabase
-                .from("user_library") as any)
-                .update({ is_bookmarked: false, last_interacted_at: new Date().toISOString() })
-                .eq("user_id", user.id)
-                .eq("content_id", content_item_id);
+            const { error: updateError } = await updateUserLibrary(
+                supabase,
+                user.id,
+                content_item_id,
+                { is_bookmarked: false, last_interacted_at: new Date().toISOString() }
+            );
 
             if (updateError) {
                 logApiError({ requestId, route: "DELETE /api/library/bookmarks", message: "Error updating bookmark row", error: updateError, userId: user.id });

@@ -45,11 +45,12 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
     const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const mainRef = useRef<HTMLDivElement>(null);
 
-    // Auto-scroll
+    // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages, status]);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -77,7 +78,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
         `What's a common misconception about your ideas?`,
     ];
 
-    // Build display messages with a welcome
+    // Build display messages with a welcome message prepended
     const displayMessages: Array<{ id: string; role: string; content: string }> = [
         {
             id: "welcome",
@@ -97,8 +98,10 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
     if (!mounted) return null;
 
     return createPortal(
+        // Outer shell: fixed full-screen, flex column — single source of truth for layout
         <div className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300">
-            {/* Header */}
+
+            {/* ── Header (flex-shrink-0) ── */}
             <header className="flex-shrink-0 h-14 border-b border-border/50 flex items-center justify-between px-4 sm:px-6 gap-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center">
@@ -118,9 +121,12 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                 </button>
             </header>
 
-            {/* Messages */}
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-36">
-                <div className="max-w-2xl mx-auto space-y-5">
+            {/* ── Messages (flex-1, scrolls independently) ── */}
+            <main
+                ref={mainRef}
+                className="flex-1 overflow-y-auto overscroll-contain"
+            >
+                <div className="max-w-2xl mx-auto px-4 sm:px-6 py-5 space-y-5">
                     {displayMessages.map((m) => (
                         <div
                             key={m.id}
@@ -136,7 +142,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                             )}
                             <div
                                 className={cn(
-                                    "max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-4 shadow-sm",
+                                    "max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3.5 shadow-sm",
                                     m.role === "user"
                                         ? "bg-primary text-primary-foreground rounded-tr-sm"
                                         : "bg-card border border-border/50 rounded-tl-sm text-foreground"
@@ -165,7 +171,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                         </div>
                     ))}
 
-                    {/* Suggested Questions (only when no user messages yet) */}
+                    {/* Suggested Questions — shown only before first user message */}
                     {messages.length === 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
                             {suggestedQuestions.map((q, i) => (
@@ -183,28 +189,26 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                         </div>
                     )}
 
-                    {/* Streaming Indicator */}
+                    {/* Streaming indicator */}
                     {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
                         <div className="flex gap-3 w-full animate-in fade-in">
                             <div className="flex-shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center">
                                 <Bot className="size-4 text-primary" />
                             </div>
-                            <div className="bg-card border border-border/50 rounded-2xl rounded-tl-sm px-5 py-4 flex items-center gap-2">
+                            <div className="bg-card border border-border/50 rounded-2xl rounded-tl-sm px-4 py-3.5 flex items-center gap-2">
                                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground font-medium">
-                                    Thinking...
-                                </span>
+                                <span className="text-sm text-muted-foreground font-medium">Thinking...</span>
                             </div>
                         </div>
                     )}
 
-                    {/* Error State */}
+                    {/* Error state */}
                     {error && (
                         <div className="flex gap-3 w-full animate-in fade-in">
                             <div className="flex-shrink-0 size-8 rounded-full bg-destructive/20 flex items-center justify-center">
                                 <Bot className="size-4 text-destructive" />
                             </div>
-                            <div className="bg-destructive/10 border border-destructive/20 rounded-2xl rounded-tl-sm px-5 py-4">
+                            <div className="bg-destructive/10 border border-destructive/20 rounded-2xl rounded-tl-sm px-4 py-3.5">
                                 <p className="text-sm text-destructive font-medium">
                                     Something went wrong. Please try asking again.
                                 </p>
@@ -212,23 +216,24 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                         </div>
                     )}
 
+                    {/* Scroll anchor */}
                     <div ref={messagesEndRef} />
                 </div>
             </main>
 
-            {/* Input */}
-            <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-background via-background to-transparent pt-8 pb-6 px-4 pointer-events-none">
-                <div className="max-w-2xl mx-auto pointer-events-auto">
+            {/* ── Input (flex-shrink-0, part of the flex column — never overlaps messages) ── */}
+            <div className="flex-shrink-0 border-t border-border/50 bg-background px-4 sm:px-6 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+                <div className="max-w-2xl mx-auto">
                     <form
                         onSubmit={onSubmit}
-                        className="relative flex items-end gap-2 bg-card rounded-2xl border border-border/60 shadow-xl overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all"
+                        className="relative flex items-end gap-2 bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all"
                     >
                         <textarea
                             ref={textareaRef}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder={`Ask ${authorName} anything...`}
-                            className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 scrollbar-thin overflow-y-auto"
+                            className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto"
                             rows={1}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter" && !e.shiftKey) {
@@ -242,7 +247,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                             <button
                                 type="submit"
                                 disabled={!input.trim() || isStreaming}
-                                className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors focus-ring"
+                                className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
                                 aria-label="Send message"
                             >
                                 {isStreaming ? (
@@ -253,11 +258,9 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                             </button>
                         </div>
                     </form>
-                    <div className="mt-2 text-center">
-                        <p className="text-[0.6rem] text-muted-foreground opacity-50">
-                            AI persona · Responses are generated, not from the actual author
-                        </p>
-                    </div>
+                    <p className="text-[0.6rem] text-muted-foreground opacity-50 text-center mt-2">
+                        AI persona · Responses are generated, not from the actual author
+                    </p>
                 </div>
             </div>
         </div>,
