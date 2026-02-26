@@ -81,12 +81,12 @@ export function ReaderHeroHeader({
                 )}
 
                 {/* Title & Info */}
-                <div className="flex-1 flex flex-col justify-center items-center sm:items-start text-center sm:text-left min-w-0">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-[1.15] mb-2">
+                <div className="flex-1 flex flex-col justify-center min-w-0">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground tracking-tight leading-[1.15] mb-2 text-center sm:text-left">
                         {title}
                     </h1>
                     {author && (
-                        <p className="text-base sm:text-lg text-muted-foreground mb-5">
+                        <p className="text-base sm:text-lg text-muted-foreground mb-5 text-center sm:text-left">
                             {author}
                         </p>
                     )}

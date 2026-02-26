@@ -97,12 +97,12 @@ export function ContentPreview({
                     )}
 
                     {/* Title, Author & CTA */}
-                    <div className="flex-1 flex flex-col justify-center items-center sm:items-start text-center sm:text-left min-w-0">
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-foreground tracking-tight md:tracking-[-0.02em] leading-[1.15] mb-2">
+                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-foreground tracking-tight md:tracking-[-0.02em] leading-[1.15] mb-2 text-center sm:text-left">
                             {item.title}
                         </h1>
                         {item.author && (
-                            <p className="text-lg text-muted-foreground font-medium mb-4">
+                            <p className="text-lg text-muted-foreground font-medium mb-4 truncate text-center sm:text-left">
                                 {item.author}
                             </p>
                         )}
