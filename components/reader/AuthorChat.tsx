@@ -26,6 +26,13 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
+    // Lock body scroll while chat overlay is open
+    useEffect(() => {
+        const original = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => { document.body.style.overflow = original; };
+    }, []);
+
     const {
         messages,
         sendMessage,
@@ -110,7 +117,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
             </header>
 
             {/* Messages */}
-            <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-48">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-36">
                 <div className="max-w-2xl mx-auto space-y-5">
                     {displayMessages.map((m) => (
                         <div
