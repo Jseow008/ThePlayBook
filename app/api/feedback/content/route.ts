@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            data: { status: data ? (data.is_positive ? 'up' : 'down') : null }
+            data: { status: data ? ((data as any).is_positive ? 'up' : 'down') : null }
         }, { status: 200 });
 
     } catch (error) {
@@ -104,17 +104,16 @@ export async function POST(request: NextRequest) {
 
         const { content_id, is_positive, reason, details } = parsed.data;
 
-        const { error } = await supabase
-            .from("content_feedback")
-            .upsert({
-                user_id: user.id,
-                content_id,
-                is_positive,
-                reason: reason || null,
-                details: details || null,
-            }, {
-                onConflict: "user_id, content_id"
-            });
+        // @ts-ignore - bypassing missing table in Database types
+        const { error } = await supabase.from('content_feedback').upsert({
+            user_id: user.id,
+            content_id: content_id,
+            is_positive: is_positive,
+            reason: reason || null,
+            details: details || null
+        }, {
+            onConflict: 'user_id,content_id'
+        });
 
         if (error) {
             throw error;

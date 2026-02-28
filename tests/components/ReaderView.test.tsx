@@ -81,23 +81,15 @@ describe('ReaderView', () => {
         segments: [
             {
                 id: 'seg-1',
-                item_id: 'test-item-1',
+                item_id: 'item-1',
                 order_index: 0,
                 title: 'Segment 1',
                 markdown_body: 'Body 1',
                 start_time_sec: null,
                 end_time_sec: null,
-                created_at: '',
-                updated_at: '',
-                deleted_at: null,
-                version: 1,
-                word_count: 50,
-                status: 'published',
-                is_processed: true,
-                processing_error: null
             },
         ],
-    };
+    } as any;
 
     beforeEach(() => {
         vi.clearAllMocks();

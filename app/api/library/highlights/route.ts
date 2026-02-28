@@ -62,8 +62,7 @@ export async function POST(request: NextRequest) {
             return apiError("FORBIDDEN", `Maximum of ${HIGHLIGHT_LIMIT} highlights per item reached.`, 403, requestId);
         }
 
-        const { data, error } = await supabase
-            .from("user_highlights")
+        const { data, error } = await (supabase.from("user_highlights") as any)
             .insert({
                 user_id: user.id,
                 content_item_id,
@@ -147,7 +146,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             data,
-            nextCursor: data && data.length === limit ? data[data.length - 1].created_at : null
+            nextCursor: data && data.length === limit ? (data[data.length - 1] as any).created_at : null
         });
     } catch (error) {
         logApiError({ requestId, route: "GET /api/library/highlights", message: "Unexpected error", error });

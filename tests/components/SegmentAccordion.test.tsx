@@ -26,14 +26,6 @@ describe('SegmentAccordion', () => {
             markdown_body: 'This is the body of the first segment.',
             start_time_sec: null,
             end_time_sec: null,
-            created_at: '',
-            updated_at: '',
-            deleted_at: null,
-            version: 1,
-            word_count: 8,
-            status: 'published',
-            is_processed: true,
-            processing_error: null
         },
         {
             id: 'seg-2',
@@ -43,14 +35,6 @@ describe('SegmentAccordion', () => {
             markdown_body: 'The real meat of the content.',
             start_time_sec: null,
             end_time_sec: null,
-            created_at: '',
-            updated_at: '',
-            deleted_at: null,
-            version: 1,
-            word_count: 6,
-            status: 'published',
-            is_processed: true,
-            processing_error: null
         },
     ];
 

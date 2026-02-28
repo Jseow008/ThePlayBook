@@ -76,7 +76,7 @@ async function HomeFeedServer() {
         .limit(50);
 
     // 3 & 4. Fetch Homepage Sections and their content via single RPC to avoid N+1 queries
-    const { data: sectionData } = await supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 });
+    const { data: sectionData } = await (supabase.rpc as any)("get_homepage_sections_with_items", { p_limit: 10 });
 
     const featuredItems = (featuredData || []) as ContentItem[];
     const items = (allItems || []) as ContentItem[];

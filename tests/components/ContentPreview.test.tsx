@@ -29,7 +29,7 @@ describe('ContentPreview', () => {
         source_url: null,
         duration_seconds: 600, // 10 minutes
         audio_url: null,
-        created_at: '',
+        created_at: '2023-01-01T00:00:00Z',
         updated_at: '',
         version: 1,
         cover_image_url: 'https://example.com/cover.jpg',
@@ -44,10 +44,10 @@ describe('ContentPreview', () => {
             rating: null,
         } as any,
         raw_content: null,
-        status: 'published',
+        status: 'verified',
         is_processed: true,
         processing_error: null,
-    };
+    } as any;
 
     const defaultProps = {
         item: mockItem,

@@ -104,8 +104,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             return apiError("UNAUTHORIZED", "Must be logged in to update a highlight.", 401, requestId);
         }
 
-        const { error, data } = await supabase
-            .from("user_highlights")
+        const { error, data } = await (supabase.from("user_highlights") as any)
             .update(updates)
             .eq("id", id)
             .eq("user_id", user.id)

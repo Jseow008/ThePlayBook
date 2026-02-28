@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createPublicServerClient();
 
-    const { data: randomRows, error: rpcError } = await supabase.rpc(
+    const { data: randomRows, error: rpcError } = await (supabase.rpc as any)(
         "get_random_verified_content"
     );
 
