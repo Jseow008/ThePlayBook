@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 3 requests per 60 seconds per IP (expensive AI operation)
-    const rl = rateLimit(request, { limit: 3, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 3, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },

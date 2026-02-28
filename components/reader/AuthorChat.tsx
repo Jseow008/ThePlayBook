@@ -99,7 +99,12 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
 
     return createPortal(
         // Outer shell: fixed full-screen, flex column — single source of truth for layout
-        <div className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300">
+        <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Chat with ${authorName} persona`}
+            className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300"
+        >
 
             {/* ── Header (flex-shrink-0) ── */}
             <header className="flex-shrink-0 h-14 border-b border-border/50 flex items-center justify-between px-4 sm:px-6 gap-4">

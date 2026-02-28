@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const requestId = getRequestId();
 
     // Rate limit: 10 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 10, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 10, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -111,7 +111,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
     const requestId = getRequestId();
 
     // Rate limit: 10 requests per 60 seconds per IP
-    const rl = rateLimit(_request, { limit: 10, windowMs: 60_000 });
+    const rl = await rateLimit(_request, { limit: 10, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },

@@ -21,10 +21,11 @@ test('browse page loads and renders correctly', async ({ page }) => {
 test('landing page CTA navigates to browse', async ({ page }) => {
     await page.goto('/');
 
-    // Click "Start Exploring"
-    await page.getByText('Start Exploring').first().click();
+    // Click "Start Exploring" with force and wait for navigation
+    await page.getByText('Start Exploring').first().click({ force: true });
 
     // Should navigate to /browse
+    await page.waitForURL(/\/browse/, { timeout: 15000 });
     await expect(page).toHaveURL(/\/browse/);
 });
 

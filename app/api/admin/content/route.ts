@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 20 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 20, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 10 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 10, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 10, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -139,8 +139,8 @@ export async function POST(request: NextRequest) {
         const supabase = getAdminClient();
 
         // Create content item
-        const { data: contentItem, error: contentError } = await (supabase
-            .from("content_item") as any)
+        const { data: contentItem, error: contentError } = await supabase
+            .from("content_item")
             .insert({
                 title: contentData.title,
                 author: contentData.author || null,
@@ -173,8 +173,8 @@ export async function POST(request: NextRequest) {
                 end_time_sec: segment.end_time_sec || null,
             }));
 
-            const { error: segmentError } = await (supabase
-                .from("segment") as any)
+            const { error: segmentError } = await supabase
+                .from("segment")
                 .insert(segmentsToInsert);
 
             if (segmentError) {
@@ -193,8 +193,8 @@ export async function POST(request: NextRequest) {
                 version: "1.0.0",
             }));
 
-            const { error: artifactError } = await (supabase
-                .from("artifact") as any)
+            const { error: artifactError } = await supabase
+                .from("artifact")
                 .insert(artifactsToInsert);
 
             if (artifactError) {

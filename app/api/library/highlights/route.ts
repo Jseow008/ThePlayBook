@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const requestId = getRequestId();
 
     // 1. Rate Limiting: 30 requests per minute
-    const rl = rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
             return apiError("FORBIDDEN", `Maximum of ${HIGHLIGHT_LIMIT} highlights per item reached.`, 403, requestId);
         }
 
-        const { data, error } = await (supabase
-            .from("user_highlights") as any)
+        const { data, error } = await supabase
+            .from("user_highlights")
             .insert({
                 user_id: user.id,
                 content_item_id,
@@ -91,7 +91,7 @@ export async function GET(request: NextRequest) {
     const requestId = getRequestId();
 
     // 1. Rate Limiting: 50 requests per minute
-    const rl = rateLimit(request, { limit: 50, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 50, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             data,
-            nextCursor: data && data.length === limit ? (data as any)[data.length - 1].created_at : null
+            nextCursor: data && data.length === limit ? data[data.length - 1].created_at : null
         });
     } catch (error) {
         logApiError({ requestId, route: "GET /api/library/highlights", message: "Unexpected error", error });

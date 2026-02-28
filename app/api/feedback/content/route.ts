@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 20 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 20, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -42,8 +42,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, data: { status: null } }, { status: 200 });
         }
 
-        const { data, error } = await (supabase
-            .from("content_feedback") as any)
+        const { data, error } = await supabase
+            .from("content_feedback")
             .select("is_positive")
             .eq("user_id", user.id)
             .eq("content_id", contentId)
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 20 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 20, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -104,8 +104,8 @@ export async function POST(request: NextRequest) {
 
         const { content_id, is_positive, reason, details } = parsed.data;
 
-        const { error } = await (supabase
-            .from("content_feedback") as any)
+        const { error } = await supabase
+            .from("content_feedback")
             .upsert({
                 user_id: user.id,
                 content_id,
@@ -140,7 +140,7 @@ export async function DELETE(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 20 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 20, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -171,8 +171,8 @@ export async function DELETE(request: NextRequest) {
 
         const { content_id } = parsed.data;
 
-        const { error } = await (supabase
-            .from("content_feedback") as any)
+        const { error } = await supabase
+            .from("content_feedback")
             .delete()
             .match({
                 user_id: user.id,

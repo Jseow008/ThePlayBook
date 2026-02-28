@@ -25,64 +25,64 @@ describe("rateLimit", () => {
         } as unknown as NextRequest;
     }
 
-    it("allows requests under the limit", () => {
+    it("allows requests under the limit", async () => {
         const req = createMockRequest("1.1.1.1");
         const options = { limit: 2, windowMs: 1000 };
 
-        expect(rateLimit(req, options).success).toBe(true);
-        expect(rateLimit(req, options).success).toBe(true);
+        expect((await rateLimit(req, options)).success).toBe(true);
+        expect((await rateLimit(req, options)).success).toBe(true);
     });
 
-    it("blocks requests over the limit", () => {
+    it("blocks requests over the limit", async () => {
         const req = createMockRequest("2.2.2.2");
         const options = { limit: 2, windowMs: 1000 };
 
-        rateLimit(req, options);
-        rateLimit(req, options);
+        await rateLimit(req, options);
+        await rateLimit(req, options);
 
-        const result = rateLimit(req, options);
+        const result = await rateLimit(req, options);
         expect(result.success).toBe(false);
         expect(result.retryAfterMs).toBeGreaterThan(0);
         expect(result.retryAfterMs).toBeLessThanOrEqual(1000);
     });
 
-    it("allows requests after the window expires", () => {
+    it("allows requests after the window expires", async () => {
         const req = createMockRequest("3.3.3.3");
         const options = { limit: 1, windowMs: 1000 };
 
-        expect(rateLimit(req, options).success).toBe(true);
-        expect(rateLimit(req, options).success).toBe(false);
+        expect((await rateLimit(req, options)).success).toBe(true);
+        expect((await rateLimit(req, options)).success).toBe(false);
 
         vi.advanceTimersByTime(1001);
 
-        expect(rateLimit(req, options).success).toBe(true);
+        expect((await rateLimit(req, options)).success).toBe(true);
     });
 
-    it("tracks different IPs separately", () => {
+    it("tracks different IPs separately", async () => {
         const req1 = createMockRequest("4.4.4.4");
         const req2 = createMockRequest("5.5.5.5");
         const options = { limit: 1, windowMs: 1000 };
 
-        expect(rateLimit(req1, options).success).toBe(true);
-        expect(rateLimit(req1, options).success).toBe(false);
-        expect(rateLimit(req2, options).success).toBe(true);
+        expect((await rateLimit(req1, options)).success).toBe(true);
+        expect((await rateLimit(req1, options)).success).toBe(false);
+        expect((await rateLimit(req2, options)).success).toBe(true);
     });
 
-    it("falls back to anonymous when IP headers are invalid", () => {
+    it("falls back to anonymous when IP headers are invalid", async () => {
         const req = createMockRequestWithHeaders([["x-forwarded-for", "spoofed-value"]]);
         const options = { limit: 1, windowMs: 1000 };
 
-        expect(rateLimit(req, options).success).toBe(true);
-        expect(rateLimit(req, options).success).toBe(false);
+        expect((await rateLimit(req, options)).success).toBe(true);
+        expect((await rateLimit(req, options)).success).toBe(false);
     });
 
-    it("supports namespaced keys for independent buckets", () => {
+    it("supports namespaced keys for independent buckets", async () => {
         const req = createMockRequest("8.8.8.8");
 
-        expect(rateLimit(req, { limit: 1, windowMs: 1000, key: "chat" }).success).toBe(true);
-        expect(rateLimit(req, { limit: 1, windowMs: 1000, key: "chat" }).success).toBe(false);
+        expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "chat" })).success).toBe(true);
+        expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "chat" })).success).toBe(false);
 
         // Different key should be independent
-        expect(rateLimit(req, { limit: 1, windowMs: 1000, key: "highlights" }).success).toBe(true);
+        expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "highlights" })).success).toBe(true);
     });
 });

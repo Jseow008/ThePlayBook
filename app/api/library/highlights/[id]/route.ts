@@ -23,7 +23,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const requestId = getRequestId();
 
     // 1. Rate Limiting: 30 requests per minute
-    const rl = rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -66,7 +66,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const requestId = getRequestId();
 
     // 1. Rate Limiting: 30 requests per minute
-    const rl = rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -104,8 +104,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             return apiError("UNAUTHORIZED", "Must be logged in to update a highlight.", 401, requestId);
         }
 
-        const { error, data } = await (supabase
-            .from("user_highlights") as any)
+        const { error, data } = await supabase
+            .from("user_highlights")
             .update(updates)
             .eq("id", id)
             .eq("user_id", user.id)

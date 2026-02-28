@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Rate Limiting ---
-        const rl = rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
+        const rl = await rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
         if (!rl.success) {
             return NextResponse.json(
                 { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
@@ -176,8 +176,18 @@ Rules:
 4. Naturally cite the source title when referencing information (e.g., "According to *Atomic Habits*...").
 5. Be conversational and encouraging — help the user feel like their library is a powerful knowledge base.`;
 
+        const provider = process.env.AI_PROVIDER || "openai";
+        let aiModel;
+
+        if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
+            const { anthropic } = await import("@ai-sdk/anthropic");
+            aiModel = anthropic(process.env.AI_MODEL || "claude-3-haiku-20240307");
+        } else {
+            aiModel = openai(process.env.AI_MODEL || "gpt-4o-mini");
+        }
+
         const result = streamText({
-            model: openai("gpt-4o-mini"),
+            model: aiModel,
             system: systemPrompt,
             messages,
         });

@@ -75,53 +75,31 @@ async function HomeFeedServer() {
         .order("created_at", { ascending: false })
         .limit(50);
 
-    // 3. Fetch Homepage Sections (admin-controlled)
-    const { data: sectionsData } = await supabase
-        .from("homepage_section")
-        .select("id, title, filter_type, filter_value, order_index, is_active")
-        .eq("is_active", true)
-        .order("order_index", { ascending: true });
+    // 3 & 4. Fetch Homepage Sections and their content via single RPC to avoid N+1 queries
+    const { data: sectionData } = await supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 });
 
     const featuredItems = (featuredData || []) as ContentItem[];
     const items = (allItems || []) as ContentItem[];
-    const sections = (sectionsData || []) as HomepageSection[];
 
-    // 4. Fetch content for each section
-    const sectionResults = await Promise.all(sections.map(async (section) => {
-        let query = supabase
-            .from("content_item")
-            .select(CONTENT_CARD_SELECT)
-            .eq("status", "verified")
-            .is("deleted_at", null)
-            .order("created_at", { ascending: false })
-            .limit(10);
+    // Parse the RPC results into the shape expected by the frontend
+    const sections: HomepageSection[] = [];
+    const sectionItems: Record<string, ContentItem[]> = {};
 
-        // Apply filter based on section type
-        switch (section.filter_type) {
-            case "author":
-                query = query.ilike("author", `%${section.filter_value}%`);
-                break;
-            case "title":
-                query = query.ilike("title", `%${section.filter_value}%`);
-                break;
-            case "category":
-                query = query.eq("category", section.filter_value);
-                break;
-            case "featured":
-                query = query.eq("is_featured", true);
-                break;
+    if (sectionData) {
+        // The RPC returns { section_id, section_title, filter_type, filter_value, order_index, is_active, items }
+        for (const row of sectionData) {
+            sections.push({
+                id: row.section_id,
+                title: row.section_title,
+                filter_type: row.filter_type,
+                filter_value: row.filter_value,
+                order_index: row.order_index,
+                is_active: row.is_active,
+            } as HomepageSection);
+
+            sectionItems[row.section_id] = (row.items || []) as ContentItem[];
         }
-
-        const { data } = await query;
-        return {
-            id: section.id,
-            items: (data || []) as ContentItem[],
-        };
-    }));
-
-    const sectionItems = Object.fromEntries(
-        sectionResults.map((result) => [result.id, result.items])
-    ) as Record<string, ContentItem[]>;
+    }
 
     return (
         <HomeFeed

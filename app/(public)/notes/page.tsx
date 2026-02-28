@@ -19,7 +19,11 @@ export default async function BrainPage() {
     const { data: highlights, error } = await supabase
         .from("user_highlights")
         .select(`
-            *,
+            id,
+            highlighted_text,
+            note_body,
+            color,
+            created_at,
             content_item ( id, title, author, cover_image_url )
         `)
         .eq("user_id", user.id)

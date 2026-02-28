@@ -260,13 +260,13 @@ export function ReaderSettingsMenu() {
                             className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm animate-in fade-in"
                             onClick={() => setIsOpen(false)}
                         />
-                        <div ref={portalRef} className="fixed inset-x-0 bottom-0 z-[101] w-full bg-card border-t border-border p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300">
+                        <div ref={portalRef} role="dialog" aria-modal="true" aria-label="Reader Settings" className="fixed inset-x-0 bottom-0 z-[101] w-full bg-card border-t border-border p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300">
                             {menuContent}
                         </div>
                     </>,
                     document.body
                 ) : (
-                    <div className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl p-4 z-50 animate-fade-in origin-top-right">
+                    <div role="dialog" aria-modal="true" aria-label="Reader Settings" className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl p-4 z-50 animate-fade-in origin-top-right">
                         {menuContent}
                     </div>
                 )

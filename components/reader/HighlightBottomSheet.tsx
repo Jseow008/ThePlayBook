@@ -105,6 +105,9 @@ export function HighlightBottomSheet({
 
             {/* Bottom Sheet Modal */}
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={isEditing ? "Edit Highlight" : "Highlight details"}
                 className={cn(
                     "bg-popover text-popover-foreground w-full rounded-t-3xl shadow-[0_-8px_30px_rgba(0,0,0,0.12)] border-t border-border/50 relative pointer-events-auto transform transition-transform duration-300 ease-out flex flex-col max-h-[85vh]",
                     isClosing ? "translate-y-full" : "translate-y-0"
@@ -121,7 +124,7 @@ export function HighlightBottomSheet({
                         {/* Header */}
                         <div className="px-6 pb-4 flex items-center justify-between border-b border-border/30 shrink-0">
                             <span className="text-lg font-semibold">Edit Highlight</span>
-                            <button onClick={() => setIsEditing(false)} className="p-1 rounded-full bg-muted/50 text-muted-foreground hover:bg-muted">
+                            <button onClick={() => setIsEditing(false)} aria-label="Cancel editing" className="p-1 rounded-full bg-muted/50 text-muted-foreground hover:bg-muted">
                                 <X className="size-5" />
                             </button>
                         </div>
@@ -131,10 +134,13 @@ export function HighlightBottomSheet({
                             {/* Color Picker */}
                             <div className="flex flex-col gap-2">
                                 <span className="text-sm font-medium text-muted-foreground">Highlight Color</span>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3" role="radiogroup" aria-label="Highlight colors">
                                     {COLORS.map((c) => (
                                         <button
                                             key={c.name}
+                                            role="radio"
+                                            aria-checked={editColor === c.name}
+                                            aria-label={`Color ${c.name}`}
                                             onClick={() => setEditColor(c.name)}
                                             className={cn(
                                                 "w-8 h-8 rounded-full border-2 transition-all shadow-sm",
@@ -150,6 +156,7 @@ export function HighlightBottomSheet({
                             <div className="flex flex-col gap-2">
                                 <span className="text-sm font-medium text-muted-foreground">Note (Optional)</span>
                                 <textarea
+                                    autoFocus
                                     value={editNote}
                                     onChange={(e) => setEditNote(e.target.value)}
                                     placeholder="Add your thoughts about this highlight..."

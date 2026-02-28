@@ -17,7 +17,7 @@ const BookmarkPayloadSchema = z.object({
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
 
-    const rl = rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
     const requestId = getRequestId();
 
-    const rl = rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },

@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 10 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 10, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 10, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait and try again." } },
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
 
         const supabase = createPublicServerClient();
 
-        const { data, error } = await (supabase.rpc as any)("match_recommendations", {
+        const { data, error } = await supabase.rpc("match_recommendations", {
             completed_ids: completedIds,
             match_count: 10,
         });

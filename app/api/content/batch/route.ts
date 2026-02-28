@@ -17,7 +17,7 @@ const CONTENT_BATCH_SELECT = "id, type, title, source_url, status, quick_mode_js
  */
 export async function POST(request: NextRequest) {
     // Rate limit: 30 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },

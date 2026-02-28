@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Rate limit: 30 requests per 60 seconds per IP
-    const rl = rateLimit(req, { limit: 30, windowMs: 60_000 });
+    const rl = await rateLimit(req, { limit: 30, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
         const activityDate = parsed.data.activity_date ?? getUtcDateString();
 
-        const { error } = await (supabase.rpc as any)("increment_reading_activity", {
+        const { error } = await supabase.rpc("increment_reading_activity", {
             p_activity_date: activityDate,
             p_duration_seconds: parsed.data.duration_seconds,
         });

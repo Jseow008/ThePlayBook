@@ -16,10 +16,8 @@ test.describe('Authentication Flows', () => {
         await page.goto('/admin');
 
         // We should be redirected since there's no active session
-        await expect(page).not.toHaveURL(/\/admin$/);
-
-        // It likely redirects to /admin-login
-        const url = page.url();
-        expect(url.includes('/admin-login') || url.includes('/login')).toBeTruthy();
+        // Next.js might redirect to /login?next=/admin which will fail a strict regex,
+        // so we check if the URL path contains /login or /admin-login
+        await expect(page).toHaveURL(/.*login.*/);
     });
 });

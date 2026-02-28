@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Rate limit: 20 requests per 60 seconds per IP
-    const rl = rateLimit(req, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(req, { limit: 20, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },

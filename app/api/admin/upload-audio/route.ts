@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 5 requests per 60 seconds per IP
-    const rl = rateLimit(req, { limit: 5, windowMs: 60_000 });
+    const rl = await rateLimit(req, { limit: 5, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },

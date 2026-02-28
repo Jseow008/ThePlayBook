@@ -16,7 +16,11 @@ const AuthorChatBodySchema = z.object({
     contentId: z.string().uuid(),
     authorName: z.string().trim().min(1).max(200),
     bookTitle: z.string().trim().min(1).max(500),
-    messages: z.array(z.any()).min(1).max(30),
+    messages: z.array(z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string().optional(),
+        parts: z.array(z.any()).optional() // Since @ai-sdk/react uses parts or content
+    })).min(1).max(30),
 });
 
 // ---------------------------------------------------------------------------
@@ -81,7 +85,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Rate Limiting (10 messages / minute / user) ---
-        const rl = rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
+        const rl = await rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
         if (!rl.success) {
             return NextResponse.json(
                 { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
@@ -93,8 +97,8 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Validate API Key ---
-        if (!process.env.ANTHROPIC_API_KEY) {
-            logApiError({ requestId, route: "/api/chat/author", message: "ANTHROPIC_API_KEY not configured", error: new Error("Missing env") });
+        if (!process.env.ANTHROPIC_API_KEY && !process.env.OPENAI_API_KEY) {
+            logApiError({ requestId, route: "/api/chat/author", message: "API Keys not configured", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "AI service is not configured.", 500, requestId);
         }
 
@@ -179,9 +183,20 @@ ${contextText}
 6. Match ${authorName}'s real-world communication style, vocabulary, and tone as closely as possible.
 </rules>`;
 
-        // --- Stream with Claude Haiku 4.5 ---
+        // --- Select Model Dynamically based on ENV vars ---
+        let aiModel;
+        const provider = process.env.AI_PROVIDER || "anthropic";
+
+        if (provider === "openai" && process.env.OPENAI_API_KEY) {
+            const { openai } = await import("@ai-sdk/openai");
+            aiModel = openai(process.env.AI_MODEL || "gpt-4o-mini");
+        } else {
+            aiModel = anthropic(process.env.AI_MODEL || "claude-3-haiku-20240307");
+        }
+
+        // --- Stream ---
         const result = streamText({
-            model: anthropic("claude-haiku-4-5-20251001"),
+            model: aiModel,
             system: systemPrompt,
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,

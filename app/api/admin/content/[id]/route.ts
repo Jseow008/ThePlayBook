@@ -67,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Rate limit: 20 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 20, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Rate limit: 10 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 10, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 10, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
@@ -182,7 +182,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             version: "1.0.0",
         }));
 
-        const { error: updateGraphError } = await (supabase.rpc as any)("admin_update_content_graph", {
+        const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", {
             p_content_id: id,
             p_content_patch: contentPatch,
             p_segments: segments ?? null,
@@ -225,7 +225,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Rate limit: 10 requests per 60 seconds per IP
-    const rl = rateLimit(request, { limit: 10, windowMs: 60_000 });
+    const rl = await rateLimit(request, { limit: 10, windowMs: 60_000 });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
