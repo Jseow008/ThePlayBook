@@ -309,6 +309,16 @@ body {
   border-color: hsl(var(--highlight-purple) / 0.3);
 }
 
+/* Key Insight (Author provided) */
+.key-insight {
+  background-color: hsl(var(--highlight-yellow) / 0.15);
+  border-left: 3px solid hsl(var(--highlight-yellow));
+  padding-left: 0.25rem;
+  border-radius: 0.125rem;
+  color: inherit;
+  font-weight: 500;
+}
+
 
 .reader-size-medium {
   font-size: 1rem;

@@ -32,11 +32,16 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const { saveReadingProgress } = useReadingProgress();
     const { data: highlights = [] } = useHighlights(content.id);
-    const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
+    const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
 
     // Start tracking reading time
     useReadingTimer(content.id);
+
+    // Sync reader settings from cloud on mount
+    useEffect(() => {
+        syncFromCloud();
+    }, [syncFromCloud]);
 
     // Load progress from localStorage on mount
     useEffect(() => {

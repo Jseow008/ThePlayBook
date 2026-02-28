@@ -5,6 +5,7 @@ import { ChevronRight, CheckCircle2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import { motion } from "framer-motion";
 import rehypeRaw from "rehype-raw";
 import { cn } from "@/lib/utils";
 import { HighlightPopover } from "./HighlightPopover";
@@ -12,6 +13,7 @@ import type { SegmentFull } from "@/types/domain";
 import type { HighlightWithContent } from "@/hooks/useHighlights";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { calculateReadingTime } from "@/lib/utils";
 
 // ─── Safe Recursive AST Highlighting ───────────────────────────────────────
 function applyHighlightsToTextNode(text: string, highlights: HighlightWithContent[], interactive: boolean = true): any[] {
@@ -311,21 +313,38 @@ export function SegmentAccordion({
                                     {isCompleted ? (
                                         <CheckCircle2 className="size-4.5" />
                                     ) : (
-                                        index + 1
+                                        (index + 1).toString().padStart(2, "0")
                                     )}
                                 </span>
 
-                                {/* Title */}
-                                <span
+                                <div
                                     className={cn(
-                                        "flex-1 font-semibold text-sm md:text-base leading-snug transition-colors",
-                                        isExpanded
-                                            ? "text-foreground"
-                                            : "text-foreground/80"
+                                        "flex items-center gap-3 md:gap-4 flex-1 text-left",
+                                        isExpanded ? "text-primary" : "text-muted-foreground"
                                     )}
                                 >
-                                    {segment.title || `Section ${index + 1}`}
-                                </span>
+                                    <div className="flex flex-col gap-0.5">
+                                        {/* Segment Title */}
+                                        <h3 className="font-semibold text-base sm:text-lg leading-snug">
+                                            {segment.title || `Segment ${index + 1}`}
+                                        </h3>
+
+                                        {/* Reading Time / Duration */}
+                                        <div className="text-xs text-muted-foreground opacity-80 flex items-center gap-2">
+                                            <span>
+                                                {calculateReadingTime(segment.markdown_body)} min read
+                                            </span>
+                                            {segment.start_time_sec !== null && segment.end_time_sec !== null && (
+                                                <>
+                                                    <span className="text-[10px]">•</span>
+                                                    <span>
+                                                        {Math.round((segment.end_time_sec - segment.start_time_sec) / 60)} min audio
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
 
                                 {/* Chevron */}
                                 <ChevronRight
@@ -348,15 +367,36 @@ export function SegmentAccordion({
                                 <div className="overflow-hidden">
                                     <div className="px-4 pt-3 pb-5 ml-[3.25rem]">
                                         {/* Markdown Content */}
-                                        <div
+                                        <motion.div
                                             data-segment-id={segment.id}
-                                            onMouseMove={(e) => handleNoteInteraction(e)}
-                                            onClick={(e) => handleNoteInteraction(e)}
-                                            onTouchStart={(e) => {
+                                            drag="x"
+                                            dragConstraints={{ left: 0, right: 0 }}
+                                            dragElastic={0.2}
+                                            onDragEnd={(e, info) => {
+                                                const offset = info.offset.x;
+                                                const velocity = info.velocity.x;
+
+                                                if (offset < -50 || velocity < -500) {
+                                                    // Swipe left -> Next segment
+                                                    if (index < segments.length - 1) {
+                                                        const nextSegment = segments[index + 1];
+                                                        handleToggle(nextSegment, index + 1);
+                                                    }
+                                                } else if (offset > 50 || velocity > 500) {
+                                                    // Swipe right -> Prev segment
+                                                    if (index > 0) {
+                                                        const prevSegment = segments[index - 1];
+                                                        handleToggle(prevSegment, index - 1);
+                                                    }
+                                                }
+                                            }}
+                                            onMouseMove={handleNoteInteraction as any}
+                                            onClick={handleNoteInteraction as any}
+                                            onTouchStart={(e: any) => {
                                                 const touch = e.touches[0];
                                                 touchStartPos.current = { x: touch.clientX, y: touch.clientY };
                                             }}
-                                            onTouchEnd={(e) => handleNoteInteraction(e)}
+                                            onTouchEnd={(e: any) => handleNoteInteraction(e)}
                                             className={cn(
                                                 "prose dark:prose-invert max-w-none relative transition-all duration-300",
                                                 `reader-size-${fontSize}`,
@@ -377,7 +417,7 @@ export function SegmentAccordion({
                                             >
                                                 {segment.markdown_body}
                                             </ReactMarkdown>
-                                        </div>
+                                        </motion.div>
 
                                         {/* Explicit Complete Action */}
                                         <div className="mt-8 flex justify-center">
@@ -431,22 +471,24 @@ export function SegmentAccordion({
             </div>
 
             {/* Premium UX Components — Desktop-only popover for highlight interactions */}
-            {isDesktop && activeHighlight && (
-                <HighlightPopover
-                    highlightId={activeHighlight.id}
-                    noteBody={activeHighlight.note}
-                    highlightedText={activeHighlight.text}
-                    currentColor={activeHighlight.color}
-                    position={activeHighlight.rect}
-                    createdAt={activeHighlight.createdAt}
-                    onClose={() => setActiveHighlight(null)}
-                    onMouseEnter={() => { popoverHoverRef.current = true; }}
-                    onMouseLeave={() => {
-                        popoverHoverRef.current = false;
-                        setActiveHighlight(null);
-                    }}
-                />
-            )}
+            {
+                isDesktop && activeHighlight && (
+                    <HighlightPopover
+                        highlightId={activeHighlight.id}
+                        noteBody={activeHighlight.note}
+                        highlightedText={activeHighlight.text}
+                        currentColor={activeHighlight.color}
+                        position={activeHighlight.rect}
+                        createdAt={activeHighlight.createdAt}
+                        onClose={() => setActiveHighlight(null)}
+                        onMouseEnter={() => { popoverHoverRef.current = true; }}
+                        onMouseLeave={() => {
+                            popoverHoverRef.current = false;
+                            setActiveHighlight(null);
+                        }}
+                    />
+                )
+            }
         </>
     );
 }
