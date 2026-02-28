@@ -129,6 +129,7 @@ erDiagram
         uuid id PK
         string email
         string role "user|admin"
+        jsonb reader_settings "user preferences for reading"
     }
 
     User_Library {
@@ -217,6 +218,11 @@ export interface ChecklistProgress {
 ### 5.2 Remote User Progress (Supabase `user_library`)
 
 - Once authenticated, user interactions hit the `user_library` and `reading_activity` tables directly for persisting reading locations and history. Reading activity accumulates locally and triggers an atomic database save on tab blur or page close (via RPC `increment_reading_activity` with a 60-second minimum threshold) to map out a GitHub-style activity Heatmap. This local-first checkpointing minimizes serverless function invocations and database connection pool exhaustion.
+- **Reading Position Sync**: The `useReadingProgress` hook captures the `lastSegmentIndex` locally, but cross-checks with `user_library.progress` upon initial mount, prioritizing the data entry with the most recent `last_interacted_at` / `lastReadAt` timestamp to ensure seamless cross-device reading experiences.
+
+### 5.3 Reader Preferences (Supabase `profiles`)
+
+- User reading preferences (font size, typography, line height, and theme) are managed by `useReaderSettings` via `zustand` and `localStorage`, but instantly dispatch a background sync to `profiles.reader_settings` upon any change, allowing a seamless reading environment across devices and sessions.
 
 ---
 

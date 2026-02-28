@@ -71,13 +71,16 @@
 
 **Header:**
 * Content title, author, duration
+* Live 'Time Spent Reading' active timer (`useReadingTimer`)
+* Browser tab title organically mirrors `$ProgressLevel%` reading completion
 * Back to home link
-* Progress indicator
+* Progress indicator bar at bottom of header
 
 ### 2.4 Reader (Mobile)
 
 * Single column, document flow
-* Collapsible sidebar navigation
+* Swipe-to-navigate between active segments (`framer-motion` drag gestures)
+* Collapsible sidebar navigation (hamburger menu)
 * Bottom sheet for segment navigation
 * Floating action buttons (FABs) for mode toggle, sharing, and AI Chat
 
@@ -133,9 +136,10 @@ Wrapper: relative h-[60vh] w-full
 
 ```
 Base: flex items-center gap-3 p-3 rounded-md
-├── Order number or icon
+├── Order number inside badge (01, 02 format)
 ├── Segment title (truncated)
-└── Progress indicator (optional)
+├── Estimated Reading Time (e.g. "3 min read")
+└── Progress indicator (check icon when completed)
 ```
 
 **States:**
@@ -194,6 +198,7 @@ Container: bg-card/50 rounded-lg p-4 border
 
 * **Tooltip**: Highlight text invokes a floating tooltip with color options and a "Note" button.
 * **Colors**: Light yellow (default semi-transparent), green, pink, purple.
+* **Key Insights**: Content creators can pre-highlight essential passages using standard `<mark class="key-insight">` or `==text==` tags, rendered distinctly via specialized CSS.
 * **Simplified UI**: Extraneous icons omitted for a clean markdown reading experience.
 
 ### 3.9 Universal Share
