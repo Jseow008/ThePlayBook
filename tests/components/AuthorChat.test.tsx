@@ -67,6 +67,66 @@ describe('AuthorChat', () => {
         expect(mockSendMessage).toHaveBeenCalledWith({ text: 'Hello there' });
     });
 
+    it('renders assistant message from content when parts are undefined', () => {
+        (useChat as any).mockReturnValue({
+            messages: [
+                {
+                    id: 'm1',
+                    role: 'assistant',
+                    content: 'Message from content fallback',
+                },
+            ],
+            sendMessage: vi.fn(),
+            status: 'ready',
+            error: null,
+        });
+
+        render(<AuthorChat {...defaultProps} />);
+        expect(screen.getByText('Message from content fallback')).toBeInTheDocument();
+    });
+
+    it('prefers text assembled from parts over content', () => {
+        (useChat as any).mockReturnValue({
+            messages: [
+                {
+                    id: 'm2',
+                    role: 'assistant',
+                    content: 'Should not be shown',
+                    parts: [
+                        { type: 'text', text: 'Message from ' },
+                        { type: 'text', text: 'parts' },
+                    ],
+                },
+            ],
+            sendMessage: vi.fn(),
+            status: 'ready',
+            error: null,
+        });
+
+        render(<AuthorChat {...defaultProps} />);
+        expect(screen.getByText('Message from parts')).toBeInTheDocument();
+        expect(screen.queryByText('Should not be shown')).not.toBeInTheDocument();
+    });
+
+    it('falls back to content when parts exist but contain no text parts', () => {
+        (useChat as any).mockReturnValue({
+            messages: [
+                {
+                    id: 'm3',
+                    role: 'assistant',
+                    content: 'Fallback when parts has no text',
+                    parts: [{ type: 'tool-invocation', toolName: 'search', args: {} }],
+                },
+            ],
+            sendMessage: vi.fn(),
+            status: 'ready',
+            error: null,
+        });
+
+        render(<AuthorChat {...defaultProps} />);
+        expect(screen.getByText('Fallback when parts has no text')).toBeInTheDocument();
+    });
+
     it('displays error state when error occurs', () => {
         (useChat as any).mockReturnValue({
             messages: [],

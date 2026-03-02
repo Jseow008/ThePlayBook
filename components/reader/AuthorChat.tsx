@@ -85,14 +85,18 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
             role: "assistant",
             content: `I'm ${authorName}. You've just finished reading my work, *${bookTitle}*. I'd love to hear your thoughts — ask me anything, challenge my ideas, or let's explore a concept together.`,
         },
-        ...messages.map((m) => ({
-            id: m.id,
-            role: m.role,
-            content: m.parts
+        ...messages.map((m) => {
+            const partsText = m.parts
                 ?.filter((p) => p.type === "text")
                 .map((p) => (p as any).text)
-                .join("") || "",
-        })),
+                .join("") || "";
+
+            return {
+                id: m.id,
+                role: m.role,
+                content: partsText || m.content || "",
+            };
+        }),
     ];
 
     if (!mounted) return null;

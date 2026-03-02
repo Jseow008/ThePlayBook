@@ -58,14 +58,18 @@ export function AskClientPage() {
             role: "assistant",
             content: "Hi! I'm your Notes assistant. Ask me anything about the books you've saved in your library, and I'll find the answers for you.",
         },
-        ...messages.map((m) => ({
-            id: m.id,
-            role: m.role,
-            content: m.parts
+        ...messages.map((m) => {
+            const partsText = m.parts
                 ?.filter((p) => p.type === "text")
                 .map((p) => (p as any).text)
-                .join("") || "",
-        })),
+                .join("") || "";
+
+            return {
+                id: m.id,
+                role: m.role,
+                content: partsText || m.content || "",
+            };
+        }),
     ];
 
     return (
