@@ -78,6 +78,20 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
         `What's a common misconception about your ideas?`,
     ];
 
+    const getMessageText = (m: (typeof messages)[number]): string => {
+        const partsText = m.parts
+            ?.filter((p): p is { type: "text"; text: string } =>
+                p.type === "text" && typeof (p as { text?: unknown }).text === "string"
+            )
+            .map((p) => p.text)
+            .join("") || "";
+
+        if (partsText) return partsText;
+
+        const maybeContent = (m as unknown as { content?: unknown }).content;
+        return typeof maybeContent === "string" ? maybeContent : "";
+    };
+
     // Build display messages with a welcome message prepended
     const displayMessages: Array<{ id: string; role: string; content: string }> = [
         {
@@ -86,15 +100,10 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
             content: `I'm ${authorName}. You've just finished reading my work, *${bookTitle}*. I'd love to hear your thoughts — ask me anything, challenge my ideas, or let's explore a concept together.`,
         },
         ...messages.map((m) => {
-            const partsText = m.parts
-                ?.filter((p) => p.type === "text")
-                .map((p) => (p as any).text)
-                .join("") || "";
-
             return {
                 id: m.id,
                 role: m.role,
-                content: partsText || m.content || "",
+                content: getMessageText(m),
             };
         }),
     ];

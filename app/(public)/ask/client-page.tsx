@@ -51,6 +51,20 @@ export function AskClientPage() {
         await sendMessage({ text: trimmed });
     };
 
+    const getMessageText = (m: (typeof messages)[number]): string => {
+        const partsText = m.parts
+            ?.filter((p): p is { type: "text"; text: string } =>
+                p.type === "text" && typeof (p as { text?: unknown }).text === "string"
+            )
+            .map((p) => p.text)
+            .join("") || "";
+
+        if (partsText) return partsText;
+
+        const maybeContent = (m as unknown as { content?: unknown }).content;
+        return typeof maybeContent === "string" ? maybeContent : "";
+    };
+
     // Build display messages with a welcome message prepended
     const displayMessages: Array<{ id: string; role: string; content: string }> = [
         {
@@ -59,15 +73,10 @@ export function AskClientPage() {
             content: "Hi! I'm your Notes assistant. Ask me anything about the books you've saved in your library, and I'll find the answers for you.",
         },
         ...messages.map((m) => {
-            const partsText = m.parts
-                ?.filter((p) => p.type === "text")
-                .map((p) => (p as any).text)
-                .join("") || "";
-
             return {
                 id: m.id,
                 role: m.role,
-                content: partsText || m.content || "",
+                content: getMessageText(m),
             };
         }),
     ];
