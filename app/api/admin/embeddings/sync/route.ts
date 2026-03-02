@@ -7,6 +7,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
+const MAX_ITEMS_PER_REQUEST = 25;
 
 function buildEmbeddingText(item: any): string {
     const parts: string[] = [];
@@ -60,7 +61,8 @@ export async function POST(request: NextRequest) {
             .select("id, title, author, type, category, quick_mode_json")
             .eq("status", "verified")
             .is("deleted_at", null)
-            .is("embedding", null);
+            .is("embedding", null)
+            .limit(MAX_ITEMS_PER_REQUEST);
 
         if (fetchError) {
             logApiError({ requestId, route: "/api/admin/embeddings/sync", message: "Failed to fetch content items", error: fetchError });
@@ -119,7 +121,8 @@ export async function POST(request: NextRequest) {
             results: {
                 processed: items.length,
                 success: successCount,
-                failed: failedCount
+                failed: failedCount,
+                has_more_to_process: items.length === MAX_ITEMS_PER_REQUEST,
             }
         });
 

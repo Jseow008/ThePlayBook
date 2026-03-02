@@ -13,6 +13,8 @@ export function useReadingTimer(contentId?: string) {
 
     // Accumulator for unsent seconds
     const pendingSecondsRef = useRef(0);
+    // Disable server syncing after unauthorized response to avoid repeated 401 spam for guests.
+    const trackingEnabledRef = useRef(true);
 
     useEffect(() => {
         if (!contentId) return;
@@ -36,6 +38,8 @@ export function useReadingTimer(contentId?: string) {
         };
 
         const sendHeartbeat = async (isUnmount = false) => {
+            if (!trackingEnabledRef.current) return;
+
             const toSend = pendingSecondsRef.current;
 
             if (toSend === 0) return;
@@ -50,16 +54,25 @@ export function useReadingTimer(contentId?: string) {
 
             try {
                 pendingSecondsRef.current = 0; // Reset pending
-                await fetch('/api/activity/log', {
+                const response = await fetch('/api/activity/log', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     keepalive: true, // Ensure request survives page unload
                     body: JSON.stringify({
                         duration_seconds: toSend,
                         content_id: contentId,
-                        activity_date: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+                        activity_date: new Date().toISOString().split('T')[0],
                     })
                 });
+
+                if (response.status === 401 || response.status === 403) {
+                    trackingEnabledRef.current = false;
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`Failed to log activity (${response.status})`);
+                }
             } catch (error) {
                 console.error("Failed to send reading heartbeat", error);
                 // Ideally restore pending seconds on failure, but for simple analytics it's okay to drop

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
+type FeedbackStatusRow = { is_positive: boolean };
+
 const PosFeedbackSchema = z.object({
     content_id: z.string().uuid("Invalid content ID"),
     is_positive: z.boolean(),
@@ -42,8 +44,8 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, data: { status: null } }, { status: 200 });
         }
 
-        const { data, error } = await supabase
-            .from("content_feedback")
+        const { data, error } = await (supabase
+            .from("content_feedback") as any)
             .select("is_positive")
             .eq("user_id", user.id)
             .eq("content_id", contentId)
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            data: { status: data ? ((data as any).is_positive ? 'up' : 'down') : null }
+            data: { status: data ? ((data as FeedbackStatusRow).is_positive ? 'up' : 'down') : null }
         }, { status: 200 });
 
     } catch (error) {
@@ -104,8 +106,7 @@ export async function POST(request: NextRequest) {
 
         const { content_id, is_positive, reason, details } = parsed.data;
 
-        // @ts-ignore - bypassing missing table in Database types
-        const { error } = await supabase.from('content_feedback').upsert({
+        const { error } = await (supabase.from('content_feedback') as any).upsert({
             user_id: user.id,
             content_id: content_id,
             is_positive: is_positive,

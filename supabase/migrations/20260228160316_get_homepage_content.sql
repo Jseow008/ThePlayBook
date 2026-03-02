@@ -1,16 +1,18 @@
 -- Migration: Create RPC for getting homepage sections and their content
 -- This replaces the N+1 queries on the HomeFeedServer
 
+DROP FUNCTION IF EXISTS get_homepage_sections_with_items(integer);
+
 CREATE OR REPLACE FUNCTION get_homepage_sections_with_items(
   p_limit INT DEFAULT 10
 )
 RETURNS TABLE (
   section_id UUID,
   section_title TEXT,
-  filter_type TEXT,
-  filter_value TEXT,
-  order_index INT,
-  is_active BOOLEAN,
+  filter_type_out TEXT,
+  filter_value_out TEXT,
+  order_index_out INT,
+  is_active_out BOOLEAN,
   items JSONB
 )
 LANGUAGE plpgsql
@@ -61,10 +63,10 @@ BEGIN
 
     section_id := v_section.id;
     section_title := v_section.title;
-    filter_type := v_section.filter_type;
-    filter_value := v_section.filter_value;
-    order_index := v_section.order_index;
-    is_active := v_section.is_active;
+    filter_type_out := v_section.filter_type;
+    filter_value_out := v_section.filter_value;
+    order_index_out := v_section.order_index;
+    is_active_out := v_section.is_active;
     items := COALESCE(v_items, '[]'::jsonb);
     RETURN NEXT;
   END LOOP;

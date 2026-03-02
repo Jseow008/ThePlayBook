@@ -20,6 +20,10 @@ function getSupabaseOrigin(): string {
 const supabaseOrigin = getSupabaseOrigin();
 const supabaseWssOrigin = supabaseOrigin.replace(/^https:/, "wss:");
 const supabaseHostname = new URL(supabaseOrigin).hostname;
+const appOrigin =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "http://localhost:3000";
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -43,9 +47,10 @@ const securityHeaders = [
 
 const corsHeaders = [
   { key: "Access-Control-Allow-Credentials", value: "true" },
-  { key: "Access-Control-Allow-Origin", value: process.env.NEXT_PUBLIC_APP_URL || "*" },
+  { key: "Access-Control-Allow-Origin", value: appOrigin },
   { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
   { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
+  { key: "Vary", value: "Origin" },
 ];
 
 const nextConfig: NextConfig = {

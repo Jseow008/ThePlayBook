@@ -35,6 +35,10 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
     // Only show progress bar if started, not completed, and has valid percentage
     const showProgress = progress && !progress.isCompleted && percentage > 0;
 
+    // Calculate if the item is considered "NEW"
+    const isNew = new Date(item.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const renderNewBadge = isNew && !showCompletedBadge;
+
     return (
         <div className="group relative block aspect-[2/3] w-full bg-card rounded-md overflow-hidden transition-transform duration-300 hover:scale-105 hover:z-10">
             {/* Main Link Overlay */}
@@ -60,17 +64,11 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
             )}
 
             {/* NEW Badge */}
-            {(() => {
-                const isNew = new Date(item.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-                if (isNew && !showCompletedBadge) {
-                    return (
-                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-rose-600/90 backdrop-blur-md text-white text-[10px] font-bold tracking-wider rounded-sm shadow-sm z-20 pointer-events-none border border-white/10">
-                            NEW
-                        </div>
-                    );
-                }
-                return null;
-            })()}
+            {renderNewBadge && (
+                <div className="absolute top-2 left-2 px-2 py-0.5 bg-rose-600/90 backdrop-blur-md text-white text-[10px] font-bold tracking-wider rounded-sm shadow-sm z-20 pointer-events-none border border-white/10">
+                    NEW
+                </div>
+            )}
 
             {/* Completed Badge */}
             {showCompletedBadge && (
@@ -109,30 +107,50 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
                 )}
             </button>
 
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
-
-            {/* Bottom Info - Always visible */}
-            <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/90 to-transparent pointer-events-none pb-4">
-                <div className="flex items-center gap-2 mb-1">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                        {item.type}
-                        {item.category && (
-                            <>
-                                <span className="text-muted-foreground">•</span>
-                                <span className="text-foreground/80">{item.category}</span>
-                            </>
-                        )}
-                    </p>
-                </div>
-                <h3 className="font-medium text-sm text-white line-clamp-2 group-hover:text-primary transition-colors">
-                    {item.title}
-                </h3>
-                {item.author && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">
+            {/* Author (Top) */}
+            {item.author && (
+                <div className="absolute top-0 inset-x-0 pt-10 pb-8 px-8 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none z-30 flex justify-center">
+                    <p className="text-[10px] md:text-[11px] font-medium text-white/90 uppercase tracking-[0.15em] text-center break-words whitespace-normal transform-gpu translate-z-0 drop-shadow-md leading-relaxed">
                         {item.author}
                     </p>
-                )}
+                </div>
+            )}
+
+            {/* Hover Overlay */}
+            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-md" />
+
+            {/* Bottom Info - Big Title & Fading Meta */}
+            <div className="absolute inset-x-0 bottom-0 p-4 pt-20 bg-gradient-to-t from-black/95 via-black/70 to-transparent pointer-events-none z-30 pb-5">
+                <div className="flex flex-col justify-end gap-1.5 h-full">
+                    {/* Title */}
+                    <h3 className="font-serif font-medium text-sm md:text-base text-white/95 line-clamp-3 leading-snug drop-shadow-xl group-hover:text-white transition-colors w-full">
+                        {item.title}
+                    </h3>
+
+                    {/* Fading Metadata */}
+                    <div className="w-full">
+                        <p className="text-[10px] text-white/70 uppercase tracking-widest flex items-center gap-1.5 font-medium drop-shadow-md">
+                            {item.type}
+                            {item.category && (
+                                <>
+                                    <span className="opacity-40">•</span>
+                                    <span>{item.category}</span>
+                                </>
+                            )}
+                            {item.duration_seconds && (
+                                <>
+                                    <span className="opacity-40">•</span>
+                                    <span className="whitespace-nowrap flex-shrink-0">
+                                        {Math.round(item.duration_seconds / 60) < 60
+                                            ? `${Math.round(item.duration_seconds / 60)} min`
+                                            : `${Math.floor(Math.round(item.duration_seconds / 60) / 60)}h ${Math.round(item.duration_seconds / 60) % 60 > 0 ? `${Math.round(item.duration_seconds / 60) % 60}m` : ""
+                                            }`}
+                                    </span>
+                                </>
+                            )}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             {/* Progress Bar */}

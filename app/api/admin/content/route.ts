@@ -12,6 +12,14 @@ import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
+const AdminContentListQuerySchema = z.object({
+    status: z.enum(["draft", "verified", "deleted"]).optional(),
+    type: z.enum(["podcast", "book", "article", "video"]).optional(),
+    featured: z.boolean().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+    offset: z.coerce.number().int().min(0).default(0),
+});
+
 // Zod schema for creating content
 const CreateContentSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -70,12 +78,52 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+        const { searchParams } = new URL(request.url);
+        const rawFeatured = searchParams.get("featured");
+
+        if (rawFeatured !== null && rawFeatured !== "true" && rawFeatured !== "false") {
+            return apiError("VALIDATION_ERROR", "Invalid featured query. Use true or false.", 400, requestId);
+        }
+
+        const parsedQuery = AdminContentListQuerySchema.safeParse({
+            status: searchParams.get("status") ?? undefined,
+            type: searchParams.get("type") ?? undefined,
+            featured: rawFeatured === null ? undefined : rawFeatured === "true",
+            limit: searchParams.get("limit") ?? undefined,
+            offset: searchParams.get("offset") ?? undefined,
+        });
+
+        if (!parsedQuery.success) {
+            return apiError("VALIDATION_ERROR", "Invalid query parameters", 400, requestId);
+        }
+
+        const { status, type, featured, limit, offset } = parsedQuery.data;
         const supabase = getAdminClient();
 
-        const { data, error } = await supabase
+        let query = supabase
             .from("content_item")
-            .select("id, title, type, author, category, status, is_featured, created_at, updated_at, deleted_at")
-            .order("created_at", { ascending: false });
+            .select("id, title, type, author, category, status, is_featured, created_at, updated_at, deleted_at", { count: "exact" });
+
+        if (status === "deleted") {
+            query = query.not("deleted_at", "is", null);
+        } else {
+            query = query.is("deleted_at", null);
+            if (status) {
+                query = query.eq("status", status);
+            }
+        }
+
+        if (type) {
+            query = query.eq("type", type);
+        }
+
+        if (featured !== undefined) {
+            query = query.eq("is_featured", featured);
+        }
+
+        const { data, error, count } = await query
+            .order("created_at", { ascending: false })
+            .range(offset, offset + limit - 1);
 
 
         if (error) {
@@ -85,6 +133,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             data: data || [],
+            pagination: {
+                total: count ?? 0,
+                limit,
+                offset,
+            },
         });
     } catch (error) {
         logApiError({

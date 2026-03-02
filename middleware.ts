@@ -4,9 +4,11 @@ import { createServerClient } from "@supabase/ssr";
 
 export async function middleware(request: NextRequest) {
     const supabaseResponse = await updateSession(request);
+    const pathname = request.nextUrl.pathname;
+    const isAdminApiRoute = pathname.startsWith('/api/admin');
 
     // Check if the route is an admin route
-    if (request.nextUrl.pathname.startsWith('/admin') || request.nextUrl.pathname.startsWith('/api/admin')) {
+    if (pathname.startsWith('/admin') || isAdminApiRoute) {
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,6 +24,12 @@ export async function middleware(request: NextRequest) {
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
+            if (isAdminApiRoute) {
+                return NextResponse.json(
+                    { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
+                    { status: 401 }
+                );
+            }
             return NextResponse.redirect(new URL('/login?next=' + request.nextUrl.pathname, request.url));
         }
 
@@ -33,6 +41,12 @@ export async function middleware(request: NextRequest) {
             .single();
 
         if (!profile || profile.role !== 'admin') {
+            if (isAdminApiRoute) {
+                return NextResponse.json(
+                    { error: { code: "FORBIDDEN", message: "Admin access required" } },
+                    { status: 403 }
+                );
+            }
             return NextResponse.redirect(new URL('/', request.url));
         }
     }

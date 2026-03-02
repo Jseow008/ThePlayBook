@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { motion } from "framer-motion";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { cn } from "@/lib/utils";
 import { HighlightPopover } from "./HighlightPopover";
 import type { SegmentFull } from "@/types/domain";
@@ -91,6 +92,23 @@ function createRemarkHighlightPlugin(highlights: HighlightWithContent[], interac
         wrapTextNodesWithHighlights(tree, highlights, interactive);
     };
 }
+
+const HIGHLIGHT_SANITIZE_SCHEMA = {
+    ...defaultSchema,
+    tagNames: [...(defaultSchema.tagNames || []), "mark"],
+    attributes: {
+        ...defaultSchema.attributes,
+        mark: [
+            ...((defaultSchema.attributes && "mark" in defaultSchema.attributes
+                ? defaultSchema.attributes.mark
+                : []) || []),
+            "className",
+            "data-id",
+            "data-color",
+            "data-note",
+        ],
+    },
+};
 
 /**
  * Segment Accordion
@@ -413,7 +431,7 @@ export function SegmentAccordion({
                                         >
                                             <ReactMarkdown
                                                 remarkPlugins={remarkPlugins as any}
-                                                rehypePlugins={[rehypeRaw]}
+                                                rehypePlugins={[rehypeRaw, [rehypeSanitize, HIGHLIGHT_SANITIZE_SCHEMA]]}
                                             >
                                                 {segment.markdown_body}
                                             </ReactMarkdown>

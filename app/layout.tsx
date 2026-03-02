@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Outfit, Lora } from "next/font/google";
+import { Inter, Outfit, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
@@ -19,7 +19,7 @@ const outfit = Outfit({
   display: "swap",
 });
 
-const lora = Lora({
+const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
   display: "swap",
@@ -87,7 +87,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.variable} ${outfit.variable} ${lora.variable} font-sans antialiased isolate`}
+        className={`${inter.variable} ${outfit.variable} ${playfair.variable} font-sans antialiased isolate`}
       >
         <AmbientBackground />
         <MotionProvider>
