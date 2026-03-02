@@ -63,9 +63,6 @@ export const metadata: Metadata = {
     description,
     images: ["/images/og-image.png"],
   },
-  alternates: {
-    canonical: "/",
-  },
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent",

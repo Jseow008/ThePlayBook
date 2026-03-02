@@ -191,7 +191,7 @@ ${contextText}
             const { openai } = await import("@ai-sdk/openai");
             aiModel = openai(process.env.AI_MODEL || "gpt-4o-mini");
         } else {
-            aiModel = anthropic(process.env.AI_MODEL || "claude-3-haiku-20240307");
+            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
         }
 
         // --- Stream ---

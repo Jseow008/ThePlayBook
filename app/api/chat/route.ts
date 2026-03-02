@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Step 2: Vector Search (RAG) ---
-        const { data: matchedSegments, error: rpcError } = await supabase.rpc("match_library_segments", {
+        const { data: matchedSegments, error: rpcError } = await (supabase.rpc as any)("match_library_segments", {
             query_embedding: JSON.stringify(queryEmbedding),
             match_threshold: 0.65,
             match_count: 5,
@@ -183,12 +183,12 @@ Rules:
 4. Naturally cite the source title when referencing information (e.g., "According to *Atomic Habits*...").
 5. Be conversational and encouraging — help the user feel like their library is a powerful knowledge base.`;
 
-        const provider = process.env.AI_PROVIDER || "openai";
+        const provider = process.env.AI_PROVIDER || (process.env.ANTHROPIC_API_KEY ? "anthropic" : "openai");
         let aiModel;
 
         if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
             const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(process.env.AI_MODEL || "claude-3-haiku-20240307");
+            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
         } else {
             aiModel = openai(process.env.AI_MODEL || "gpt-4o-mini");
         }

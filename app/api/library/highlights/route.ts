@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
         const { data, error } = await supabase
             .from("user_highlights")
-            .insert(payload)
+            .insert(payload as any)
             .select()
             .single();
 
@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
         }
 
         const nextCursor = data && data.length === limit
-            ? data[data.length - 1]?.created_at ?? null
+            ? (data[data.length - 1] as any)?.created_at ?? null
             : null;
 
         return NextResponse.json({ data, nextCursor });

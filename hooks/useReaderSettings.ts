@@ -59,8 +59,7 @@ const pushToCloud = async (settings: Partial<ReaderSettingsState>) => {
             lineHeight: settings.lineHeight,
         };
 
-        await supabase
-            .from("profiles")
+        await (supabase.from("profiles") as any)
             .update({ reader_settings: payload })
             .eq("id", session.user.id);
     } catch (err) {

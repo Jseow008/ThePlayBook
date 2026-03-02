@@ -81,25 +81,25 @@ export function ContentFilters() {
     };
 
     return (
-        <div className="flex items-center gap-4 bg-white p-2 rounded-lg border border-zinc-200 shadow-sm">
-            <div className="px-2 text-zinc-400">
+        <div className="flex items-center gap-4 bg-background p-2 rounded-lg border border-border shadow-sm">
+            <div className="px-2 text-muted-foreground">
                 <Filter className="w-4 h-4" />
             </div>
 
-            <div className="h-6 w-px bg-zinc-200"></div>
+            <div className="h-6 w-px bg-border"></div>
 
             {/* Status Filter */}
             <select
                 value={currentStatus}
                 onChange={(e) => updateFilters("status", e.target.value)}
-                className="bg-transparent text-sm font-medium text-zinc-700 focus:outline-none cursor-pointer hover:text-zinc-900"
+                className="bg-transparent text-sm font-medium text-muted-foreground focus:outline-none cursor-pointer hover:text-foreground"
             >
                 <option value="all">All Status</option>
                 <option value="verified">Published</option>
                 <option value="draft">Drafts</option>
             </select>
 
-            <div className="h-6 w-px bg-zinc-200"></div>
+            <div className="h-6 w-px bg-border"></div>
 
             {/* Featured Filter */}
             <label className="flex items-center gap-2 cursor-pointer group select-none">
@@ -107,14 +107,14 @@ export function ContentFilters() {
                     type="checkbox"
                     checked={isFeatured}
                     onChange={(e) => updateFilters("featured", e.target.checked ? "true" : "all")}
-                    className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
+                    className="w-4 h-4 rounded border-input text-primary focus:ring-ring cursor-pointer"
                 />
-                <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900 whitespace-nowrap">
+                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground whitespace-nowrap">
                     Featured Only
                 </span>
             </label>
 
-            <div className="h-6 w-px bg-zinc-200"></div>
+            <div className="h-6 w-px bg-border"></div>
 
             {/* Permanent Filter Toggle */}
             <label className="flex items-center gap-2 cursor-pointer group select-none" title="Remember these filters">
@@ -122,9 +122,9 @@ export function ContentFilters() {
                     type="checkbox"
                     checked={isPermanent}
                     onChange={(e) => setIsPermanent(e.target.checked)}
-                    className="w-4 h-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 cursor-pointer"
+                    className="w-4 h-4 rounded border-input text-primary focus:ring-ring cursor-pointer"
                 />
-                <span className="text-sm font-medium text-zinc-700 group-hover:text-zinc-900 whitespace-nowrap flex items-center gap-1">
+                <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground whitespace-nowrap flex items-center gap-1">
                     Permanent
                 </span>
             </label>

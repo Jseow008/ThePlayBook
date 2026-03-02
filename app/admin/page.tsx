@@ -27,7 +27,7 @@ const typeIcons = {
 function StatusBadge({ status, deleted }: { status: string; deleted: boolean }) {
     if (deleted) {
         return (
-            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-500/15 text-red-300 border border-red-500/30">
+            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
                 Deleted
             </span>
         );
@@ -134,127 +134,138 @@ export default async function AdminDashboardPage({
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-                    <p className="text-sm font-medium text-zinc-500">Total Content</p>
-                    <p className="text-3xl font-bold text-zinc-900 mt-1">{totalItems}</p>
+                <div className="bg-card text-card-foreground rounded-xl border border-border p-6 shadow-sm relative overflow-hidden">
+                    <div className="relative z-10">
+                        <p className="text-sm font-medium text-muted-foreground">Total Content</p>
+                        <p className="text-3xl font-bold mt-1">{totalItems}</p>
+                    </div>
+                    <BookOpen className="absolute -bottom-4 -right-4 w-24 h-24 text-muted/20 z-0" strokeWidth={1} />
                 </div>
-                <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-                    <p className="text-sm font-medium text-zinc-500">Published</p>
-                    <p className="text-3xl font-bold text-emerald-600 mt-1">{publishedItems}</p>
+                <div className="bg-card text-card-foreground rounded-xl border border-border p-6 shadow-sm relative overflow-hidden">
+                    <div className="relative z-10">
+                        <p className="text-sm font-medium text-muted-foreground">Published</p>
+                        <p className="text-3xl font-bold text-emerald-600 mt-1">{publishedItems}</p>
+                    </div>
+                    <BookOpen className="absolute -bottom-4 -right-4 w-24 h-24 text-emerald-500/5 z-0" strokeWidth={1} />
                 </div>
-                <div className="bg-white rounded-xl border border-zinc-200 p-6 shadow-sm">
-                    <p className="text-sm font-medium text-zinc-500">Drafts</p>
-                    <p className="text-3xl font-bold text-amber-500 mt-1">{draftItems}</p>
+                <div className="bg-card text-card-foreground rounded-xl border border-border p-6 shadow-sm relative overflow-hidden">
+                    <div className="relative z-10">
+                        <p className="text-sm font-medium text-muted-foreground">Drafts</p>
+                        <p className="text-3xl font-bold text-amber-500 mt-1">{draftItems}</p>
+                    </div>
+                    <FileText className="absolute -bottom-4 -right-4 w-24 h-24 text-amber-500/5 z-0" strokeWidth={1} />
                 </div>
             </div>
 
             {/* Content Table */}
-            <div className="bg-white rounded-xl border border-zinc-200 overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-zinc-200 flex justify-between items-center bg-white">
+            <div className="bg-card text-card-foreground rounded-xl border border-border overflow-hidden shadow-sm">
+                <div className="px-6 py-4 border-b border-border flex justify-between items-center bg-card">
                     <div className="flex items-center gap-2">
-                        <h2 className="font-semibold text-zinc-900">All Content</h2>
+                        <h2 className="font-semibold text-foreground">All Content</h2>
                         {(statusFilter || featuredFilter || searchQuery) && (
-                            <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-xs font-medium text-zinc-600">
+                            <span className="px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground">
                                 Filtered
                             </span>
                         )}
                     </div>
-                    <span className="text-sm text-zinc-500">
+                    <span className="text-sm text-muted-foreground">
                         Page {page} of {totalPages}
                     </span>
                 </div>
 
                 {items.length === 0 ? (
-                    <div className="px-6 py-12 text-center bg-white">
-                        <BookOpen className="w-12 h-12 text-zinc-300 mx-auto mb-4" />
-                        <p className="text-zinc-500 mb-4">No content found matching your filters</p>
+                    <div className="px-6 py-12 text-center bg-card">
+                        <BookOpen className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                        <p className="text-muted-foreground mb-4">No content found matching your filters</p>
                         <Link
                             href="/admin"
-                            className="focus-ring inline-flex items-center gap-2 text-zinc-900 font-medium hover:underline rounded-sm"
+                            className="focus-ring inline-flex items-center gap-2 text-foreground font-medium hover:underline rounded-sm"
                         >
                             Clear filters
                         </Link>
                     </div>
                 ) : (
-                    <>
-                        {/* Table Header - Fixed columns for alignment */}
-                        <div className="grid grid-cols-[48px_1fr_80px_100px_120px] gap-4 px-6 py-3 bg-zinc-50 border-b border-zinc-200 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                            <div>Type</div>
-                            <div>Details</div>
-                            <div className="text-center">Featured</div>
-                            <div>Status</div>
-                            <div className="text-right">Actions</div>
+                    <div className="overflow-x-auto">
+                        <div className="min-w-[800px]">
+                            {/* Table Header - Fixed columns for alignment */}
+                            <div className="grid grid-cols-[48px_1fr_80px_100px_120px] gap-4 px-6 py-3 bg-muted/50 border-b border-border text-xs font-semibold text-muted-foreground uppercase tracking-wider sticky top-0 z-10">
+                                <div>Type</div>
+                                <div>Details</div>
+                                <div className="text-center">Featured</div>
+                                <div>Status</div>
+                                <div className="text-right">Actions</div>
+                            </div>
+
+                            <div className="divide-y divide-border bg-card text-card-foreground">
+                                {items.map((item: any) => {
+                                    const TypeIcon = typeIcons[item.type as keyof typeof typeIcons] || FileText;
+                                    const isDeleted = !!item.deleted_at;
+
+                                    return (
+                                        <div
+                                            key={item.id}
+                                            className={`grid grid-cols-[48px_1fr_80px_100px_120px] items-center gap-4 px-6 py-4 hover:bg-muted/30 transition-colors ${isDeleted ? "opacity-50 grayscale" : ""}`}
+                                        >
+                                            {/* Type Icon */}
+                                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                                                <TypeIcon className="w-5 h-5" />
+                                            </div>
+
+                                            {/* Content Info */}
+                                            <div className="min-w-0">
+                                                <p className="font-medium text-foreground truncate">
+                                                    {item.title}
+                                                </p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {item.author || "Unknown author"} • {new Date(item.created_at).toLocaleDateString()}
+                                                </p>
+                                            </div>
+
+                                            {/* Featured Toggle */}
+                                            <div className="flex justify-center">
+                                                {!isDeleted && (
+                                                    <FeaturedToggle
+                                                        contentId={item.id}
+                                                        isFeatured={item.is_featured}
+                                                        title={item.title}
+                                                    />
+                                                )}
+                                            </div>
+
+                                            {/* Status */}
+                                            <div>
+                                                <StatusBadge status={item.status} deleted={isDeleted} />
+                                            </div>
+
+                                            {/* Actions */}
+                                            <div className="flex items-center justify-end gap-1">
+                                                {!isDeleted && (
+                                                    <>
+                                                        <Link
+                                                            href={`/read/${item.id}`}
+                                                            target="_blank"
+                                                            className="focus-ring p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                                                            title="Preview"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </Link>
+                                                        <Link
+                                                            href={`/admin/content/${item.id}/edit`}
+                                                            className="focus-ring p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                                                            title="Edit"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Link>
+                                                        <DeleteContentButton contentId={item.id} contentTitle={item.title} />
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
-
-                        <div className="divide-y divide-zinc-100 bg-white">
-                            {items.map((item: any) => {
-                                const TypeIcon = typeIcons[item.type as keyof typeof typeIcons] || FileText;
-                                const isDeleted = !!item.deleted_at;
-
-                                return (
-                                    <div
-                                        key={item.id}
-                                        className={`grid grid-cols-[48px_1fr_80px_100px_120px] items-center gap-4 px-6 py-4 hover:bg-zinc-50/50 transition-colors ${isDeleted ? "opacity-50 grayscale" : ""}`}
-                                    >
-                                        {/* Type Icon */}
-                                        <div className="w-10 h-10 rounded-lg bg-zinc-100 flex items-center justify-center flex-shrink-0 text-zinc-500">
-                                            <TypeIcon className="w-5 h-5" />
-                                        </div>
-
-                                        {/* Content Info */}
-                                        <div className="min-w-0">
-                                            <p className="font-medium text-zinc-900 truncate">
-                                                {item.title}
-                                            </p>
-                                            <p className="text-sm text-zinc-500">
-                                                {item.author || "Unknown author"} • {new Date(item.created_at).toLocaleDateString()}
-                                            </p>
-                                        </div>
-
-                                        {/* Featured Toggle */}
-                                        <div className="flex justify-center">
-                                            {!isDeleted && (
-                                                <FeaturedToggle
-                                                    contentId={item.id}
-                                                    isFeatured={item.is_featured}
-                                                    title={item.title}
-                                                />
-                                            )}
-                                        </div>
-
-                                        {/* Status */}
-                                        <div>
-                                            <StatusBadge status={item.status} deleted={isDeleted} />
-                                        </div>
-
-                                        {/* Actions */}
-                                        <div className="flex items-center justify-end gap-1">
-                                            {!isDeleted && (
-                                                <>
-                                                    <Link
-                                                        href={`/read/${item.id}`}
-                                                        target="_blank"
-                                                        className="focus-ring p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
-                                                        title="Preview"
-                                                    >
-                                                        <Eye className="w-4 h-4" />
-                                                    </Link>
-                                                    <Link
-                                                        href={`/admin/content/${item.id}/edit`}
-                                                        className="focus-ring p-2 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
-                                                        title="Edit"
-                                                    >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </Link>
-                                                    <DeleteContentButton contentId={item.id} contentTitle={item.title} />
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </>
+                    </div>
                 )}
 
                 {/* Pagination Controls */}

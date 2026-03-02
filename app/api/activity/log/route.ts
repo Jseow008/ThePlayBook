@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
         const activityDate = parsed.data.activity_date ?? getUtcDateString();
 
-        const { error } = await supabase.rpc("increment_reading_activity", {
+        const { error } = await (supabase.rpc as any)("increment_reading_activity", {
             p_activity_date: activityDate,
             p_duration_seconds: parsed.data.duration_seconds,
         });

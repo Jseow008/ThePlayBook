@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
-import { AlertCircle, RotateCcw, Home } from "lucide-react";
+import { AlertCircle, RotateCcw } from "lucide-react";
 
 interface ErrorProps {
     error: Error & { digest?: string };

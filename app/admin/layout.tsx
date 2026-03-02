@@ -26,7 +26,7 @@ export default async function AdminLayout({
     }
 
     return (
-        <div className="min-h-screen bg-zinc-50 text-zinc-900 light">
+        <div className="min-h-screen bg-background text-foreground light">
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-zinc-200 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
