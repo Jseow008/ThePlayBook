@@ -3,8 +3,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import type { Database } from "@/types/database";
 
-type FeedbackStatusRow = { is_positive: boolean };
+type ContentFeedbackInsert = Database["public"]["Tables"]["content_feedback"]["Insert"];
 
 const PosFeedbackSchema = z.object({
     content_id: z.string().uuid("Invalid content ID"),
@@ -44,20 +45,20 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: true, data: { status: null } }, { status: 200 });
         }
 
-        const { data, error } = await (supabase
-            .from("content_feedback") as any)
+        const { data, error } = await supabase
+            .from("content_feedback")
             .select("is_positive")
             .eq("user_id", user.id)
             .eq("content_id", contentId)
-            .single();
+            .maybeSingle();
 
-        if (error && error.code !== "PGRST116") { // 116 = no rows returned
+        if (error) {
             throw error;
         }
 
         return NextResponse.json({
             success: true,
-            data: { status: data ? ((data as FeedbackStatusRow).is_positive ? 'up' : 'down') : null }
+            data: { status: data ? (data.is_positive ? "up" : "down") : null }
         }, { status: 200 });
 
     } catch (error) {
@@ -106,14 +107,16 @@ export async function POST(request: NextRequest) {
 
         const { content_id, is_positive, reason, details } = parsed.data;
 
-        const { error } = await (supabase.from('content_feedback') as any).upsert({
+        const payload: ContentFeedbackInsert = {
             user_id: user.id,
             content_id: content_id,
             is_positive: is_positive,
             reason: reason || null,
             details: details || null
-        }, {
-            onConflict: 'user_id,content_id'
+        };
+
+        const { error } = await supabase.from("content_feedback").upsert(payload, {
+            onConflict: "user_id,content_id"
         });
 
         if (error) {

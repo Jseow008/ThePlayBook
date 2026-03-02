@@ -14,6 +14,31 @@ const eslintConfig = defineConfig([
       "react-hooks/purity": "off",
     },
   },
+  {
+    files: [
+      "app/api/library/**/*.ts",
+      "app/api/feedback/content/route.ts",
+      "app/api/activity/log/route.ts",
+      "app/api/random/route.ts",
+      "app/(public)/browse/page.tsx",
+      "hooks/useReaderSettings.ts",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
+  {
+    files: ["tests/**/*.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
+    files: ["**/*.test.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

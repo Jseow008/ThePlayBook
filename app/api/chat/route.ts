@@ -19,6 +19,10 @@ const ChatRequestSchema = z.object({
 
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
 const MAX_CONTEXT_CHARS = 12_000;
+type SegmentWithTitle = {
+    markdown_body: string;
+    content_item: { title: string | null } | Array<{ title: string | null }> | null;
+};
 
 export async function POST(req: NextRequest) {
     const requestId = getRequestId();
@@ -111,7 +115,6 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Step 2: Vector Search (RAG) ---
-        // @ts-expect-error — Supabase generated types may lag behind the actual RPC signature
         const { data: matchedSegments, error: rpcError } = await supabase.rpc("match_library_segments", {
             query_embedding: JSON.stringify(queryEmbedding),
             match_threshold: 0.65,
@@ -143,9 +146,13 @@ export async function POST(req: NextRequest) {
             }
 
             if (segments && segments.length > 0) {
-                contextText = segments
-                    .map((seg: any, i: number) => {
-                        const title = seg.content_item?.title || "Unknown Source";
+                const segmentRows = segments as SegmentWithTitle[];
+                contextText = segmentRows
+                    .map((seg, i: number) => {
+                        const contentItem = Array.isArray(seg.content_item)
+                            ? seg.content_item[0]
+                            : seg.content_item;
+                        const title = contentItem?.title || "Unknown Source";
                         return `[Source ${i + 1}: "${title}"]\n${seg.markdown_body}`;
                     })
                     .join("\n\n---\n\n");

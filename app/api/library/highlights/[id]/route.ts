@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import type { Database } from "@/types/database";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -10,6 +11,7 @@ interface RouteParams {
 
 const HighlightIdSchema = z.string().uuid();
 const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
+type HighlightUpdate = Database["public"]["Tables"]["user_highlights"]["Update"];
 const UpdateHighlightSchema = z
     .object({
         note_body: z.string().trim().max(4_000).nullable().optional(),
@@ -93,7 +95,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         }
 
         // Extract allowed fields
-        const updates: Record<string, string | null> = {};
+        const updates: Pick<HighlightUpdate, "note_body" | "color"> = {};
         if (parsed.data.note_body !== undefined) updates.note_body = parsed.data.note_body;
         if (parsed.data.color !== undefined) updates.color = parsed.data.color;
 
@@ -104,7 +106,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             return apiError("UNAUTHORIZED", "Must be logged in to update a highlight.", 401, requestId);
         }
 
-        const { error, data } = await (supabase.from("user_highlights") as any)
+        const { error, data } = await supabase
+            .from("user_highlights")
             .update(updates)
             .eq("id", id)
             .eq("user_id", user.id)

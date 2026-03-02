@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { HomeFeed } from "@/components/ui/HomeFeed";
-import type { ContentItem, HomepageSection } from "@/types/database";
+import type { ContentItem, Database, HomepageSection } from "@/types/database";
 
 /**
  * Browse Page (Content Dashboard)
@@ -14,6 +14,7 @@ import type { ContentItem, HomepageSection } from "@/types/database";
 export const revalidate = 300; // Revalidate every 5 minutes
 
 const CONTENT_CARD_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, is_featured, audio_url, created_at, updated_at, deleted_at";
+type HomepageSectionsRpcRow = Database["public"]["Functions"]["get_homepage_sections_with_items"]["Returns"][number];
 
 export default function BrowsePage() {
     return (
@@ -76,7 +77,7 @@ async function HomeFeedServer() {
         .limit(50);
 
     // 3 & 4. Fetch Homepage Sections and their content via single RPC to avoid N+1 queries
-    const { data: sectionData } = await (supabase.rpc as any)("get_homepage_sections_with_items", { p_limit: 10 });
+    const { data: sectionData } = await supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 });
 
     const featuredItems = (featuredData || []) as ContentItem[];
     const items = (allItems || []) as ContentItem[];
@@ -87,17 +88,18 @@ async function HomeFeedServer() {
 
     if (sectionData) {
         // The RPC returns { section_id, section_title, filter_type, filter_value, order_index, is_active, items }
-        for (const row of sectionData) {
+        const rows = sectionData as HomepageSectionsRpcRow[];
+        for (const row of rows) {
             sections.push({
                 id: row.section_id,
                 title: row.section_title,
-                filter_type: row.filter_type,
-                filter_value: row.filter_value,
-                order_index: row.order_index,
-                is_active: row.is_active,
+                filter_type: row.filter_type_out,
+                filter_value: row.filter_value_out,
+                order_index: row.order_index_out,
+                is_active: row.is_active_out,
             } as HomepageSection);
 
-            sectionItems[row.section_id] = (row.items || []) as ContentItem[];
+            sectionItems[row.section_id] = (Array.isArray(row.items) ? row.items : []) as ContentItem[];
         }
     }
 

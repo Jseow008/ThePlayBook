@@ -3,11 +3,13 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import type { Database } from "@/types/database";
 
 const HIGHLIGHT_LIMIT = 50; // max highlights per content item
 const HIGHLIGHT_TEXT_MAX = 2_000;
 const NOTE_BODY_MAX = 4_000;
 const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
+type HighlightInsert = Database["public"]["Tables"]["user_highlights"]["Insert"];
 
 const CreateHighlightSchema = z.object({
     content_item_id: z.string().uuid(),
@@ -62,15 +64,18 @@ export async function POST(request: NextRequest) {
             return apiError("FORBIDDEN", `Maximum of ${HIGHLIGHT_LIMIT} highlights per item reached.`, 403, requestId);
         }
 
-        const { data, error } = await (supabase.from("user_highlights") as any)
-            .insert({
-                user_id: user.id,
-                content_item_id,
-                segment_id: segment_id ?? null,
-                highlighted_text,
-                note_body: note_body ?? null,
-                color: color ?? (note_body ? "blue" : "yellow"),
-            })
+        const payload: HighlightInsert = {
+            user_id: user.id,
+            content_item_id,
+            segment_id: segment_id ?? null,
+            highlighted_text,
+            note_body: note_body ?? null,
+            color: color ?? (note_body ? "blue" : "yellow"),
+        };
+
+        const { data, error } = await supabase
+            .from("user_highlights")
+            .insert(payload)
             .select()
             .single();
 
@@ -144,10 +149,11 @@ export async function GET(request: NextRequest) {
             return apiError("INTERNAL_ERROR", "Failed to fetch highlights.", 500, requestId);
         }
 
-        return NextResponse.json({
-            data,
-            nextCursor: data && data.length === limit ? (data[data.length - 1] as any).created_at : null
-        });
+        const nextCursor = data && data.length === limit
+            ? data[data.length - 1]?.created_at ?? null
+            : null;
+
+        return NextResponse.json({ data, nextCursor });
     } catch (error) {
         logApiError({ requestId, route: "GET /api/library/highlights", message: "Unexpected error", error });
         return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);

@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     const supabase = createPublicServerClient();
 
-    const { data: randomRows, error: rpcError } = await (supabase.rpc as any)(
+    const { data: randomRows, error: rpcError } = await supabase.rpc(
         "get_random_verified_content"
     );
 
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         return apiError("INTERNAL_ERROR", "Failed to fetch content", 500, requestId);
     }
 
-    const randomRow = Array.isArray(randomRows) ? randomRows[0] : null;
+    const randomRow = randomRows?.[0] ?? null;
     if (!randomRow) {
         return apiError("NOT_FOUND", "No content available", 404, requestId);
     }

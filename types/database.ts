@@ -188,6 +188,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          reader_settings: Json | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
         }
@@ -195,6 +196,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id: string
+          reader_settings?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
@@ -202,6 +204,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          reader_settings?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
         }
@@ -411,12 +414,68 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_update_content_graph: {
+        Args: {
+          p_artifacts?: Json
+          p_content_id: string
+          p_content_patch?: Json
+          p_segments?: Json
+        }
+        Returns: undefined
+      }
       get_category_stats: {
         Args: never
         Returns: {
           category: string
           count: number
         }[]
+      }
+      get_homepage_sections_with_items: {
+        Args: {
+          p_limit?: number
+        }
+        Returns: {
+          filter_type_out: string
+          filter_value_out: string
+          is_active_out: boolean
+          items: Json
+          order_index_out: number
+          section_id: string
+          section_title: string
+        }[]
+      }
+      get_random_verified_content: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          author: string | null
+          category: string | null
+          cover_image_url: string | null
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          quick_mode_json: Json | null
+          source_url: string | null
+          status: Database["public"]["Enums"]["content_status"]
+          title: string
+          type: Database["public"]["Enums"]["content_type"]
+        }[]
+      }
+      get_segments_missing_embeddings: {
+        Args: {
+          p_limit?: number
+        }
+        Returns: {
+          content_item_id: string
+          id: string
+          markdown_body: string
+        }[]
+      }
+      increment_reading_activity: {
+        Args: {
+          p_activity_date: string
+          p_duration_seconds: number
+        }
+        Returns: undefined
       }
       insert_generated_content: {
         Args: {
