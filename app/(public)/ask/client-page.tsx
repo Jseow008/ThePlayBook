@@ -3,7 +3,7 @@
 import { useRef, useEffect, useState, type FormEvent } from "react";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
-import { Bot, User, Send, Sparkles, Loader2, BookOpen, ArrowLeft } from "lucide-react";
+import { Bot, User, Send, BotMessageSquare, Loader2, BookOpen, ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
@@ -95,7 +95,7 @@ export function AskClientPage() {
                     </Link>
                     <div className="flex items-center gap-2">
                         <div className="size-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                            <Sparkles className="size-4 text-primary" />
+                            <BotMessageSquare className="size-4 text-primary" />
                         </div>
                         <h1 className="text-lg font-bold tracking-tight">Ask My Library</h1>
                     </div>

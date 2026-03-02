@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useMemo, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
-import { Bot, User, Send, Loader2, X, Sparkles } from "lucide-react";
+import { Bot, User, Send, Loader2, X, BotMessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
@@ -123,7 +123,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
             <header className="flex-shrink-0 h-14 border-b border-border/50 flex items-center justify-between px-4 sm:px-6 gap-4">
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div className="shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        <Sparkles className="size-4 text-primary" />
+                        <BotMessageSquare className="size-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
                         <h2 className="text-sm font-bold text-foreground leading-tight truncate">{authorName}</h2>
