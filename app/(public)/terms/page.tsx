@@ -7,7 +7,6 @@
 
 import { APP_NAME } from "@/lib/brand";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
     title: `Terms of Service | ${APP_NAME}`,
@@ -20,17 +19,7 @@ export default function TermsPage() {
     return (
         <div className="min-h-screen bg-background text-foreground">
             <main className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
-                {/* Back link */}
-                {/* Back to Library */}
-                <div className="mb-8">
-                    <Link
-                        href="/browse"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
-                    >
-                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span>Back to Library</span>
-                    </Link>
-                </div>
+
 
                 {/* Header */}
                 <div className="mb-14">

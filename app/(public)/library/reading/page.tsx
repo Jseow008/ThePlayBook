@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -76,17 +76,8 @@ export default function ContinueReadingPage() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
-                {/* Back to Library */}
-                <div className="mb-8">
-                    <Link
-                        href="/browse"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
-                    >
-                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span>Back to Library</span>
-                    </Link>
-                </div>
+            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
+
 
                 {/* Header */}
                 <div className="flex flex-col gap-2 mb-4">
@@ -126,7 +117,7 @@ export default function ContinueReadingPage() {
                 {/* Content */}
                 <div>
                     {isLoading ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                             {[...Array(8)].map((_, i) => (
                                 <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
                             ))}
@@ -166,7 +157,7 @@ export default function ContinueReadingPage() {
                                     Showing {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
                                 </p>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                                 {filteredItems.map((item) => (
                                     <ContentCard
                                         key={item.id}

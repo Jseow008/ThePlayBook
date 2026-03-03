@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Clock, BookOpen, Sparkles, ChevronDown, Bookmark, Check } from "lucide-react";
+import { Clock, BookOpen, Sparkles, ChevronDown, Bookmark, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -66,16 +66,7 @@ export function ContentPreview({
         <div className="min-h-screen bg-background text-foreground pb-10 lg:pb-8">
             {/* Container */}
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
-                {/* ── Back to Library ── */}
-                <div className="mb-8">
-                    <Link
-                        href="/browse"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
-                    >
-                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span>Back to Library</span>
-                    </Link>
-                </div>
+
 
                 {/* ── Hero: Cover + Info ── */}
                 <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-6">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { ThumbsUp, ThumbsDown, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,20 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    // Lock body scroll while modal is open
+    useEffect(() => {
+        if (isModalOpen) {
+            const original = document.body.style.overflow;
+            document.body.style.overflow = "hidden";
+            return () => { document.body.style.overflow = original; };
+        }
+    }, [isModalOpen]);
 
     // Form state
     const [reason, setReason] = useState("");
@@ -163,9 +178,9 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                 </button>
             </div>
 
-            {/* Modal Overlay */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            {/* Modal Overlay via Portal */}
+            {isModalOpen && mounted && createPortal(
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
                     <div
                         className="bg-card w-full max-w-md rounded-xl shadow-xl border border-border p-6 flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200"
                         role="dialog"
@@ -229,7 +244,8 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                             </Button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

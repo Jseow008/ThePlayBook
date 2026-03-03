@@ -7,7 +7,7 @@
 
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { Sparkles, Search, ArrowLeft } from "lucide-react";
+import { Compass, Search } from "lucide-react";
 import type { ContentItem, ContentType } from "@/types/database";
 import Link from "next/link";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -57,8 +57,8 @@ async function SearchResults({ query, category, type }: { query?: string; catego
     }
 
     return (
-        <>
-            <p className="text-muted-foreground mb-6">
+        <div className="animate-in fade-in duration-500">
+            <p className="text-muted-foreground mb-8 text-lg font-medium">
                 {results.length} result{results.length !== 1 ? "s" : ""}
                 {query && ` for "${query}"`}
                 {category && ` in ${category}`}
@@ -66,7 +66,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
             </p>
 
             {results.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
                     {results.map((item) => (
                         <ContentCard key={item.id} item={item} />
                     ))}
@@ -88,14 +88,14 @@ async function SearchResults({ query, category, type }: { query?: string; catego
                     </Link>
                 </div>
             )}
-        </>
+        </div>
     );
 }
 
 // Loading skeleton for results
 function ResultsSkeleton() {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
             {[...Array(12)].map((_, i) => (
                 <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
             ))}
@@ -117,20 +117,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     return (
         <div className="min-h-screen bg-background pb-8 lg:pb-24">
-            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
-                {/* Back to Library */}
-                <div className="mb-8">
-                    <Link
-                        href="/browse"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
-                    >
-                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
-                        <span>Back to Library</span>
-                    </Link>
-                </div>
-                <div className="flex flex-col gap-4 mb-6">
+            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
+
+                <div className="flex flex-col gap-2 mb-8 mt-2 md:mt-4">
                     <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
-                        {category ? `${category} Content` : "Search"}
+                        {category ? `${category} Content` : "What do you want to learn?"}
                     </h1>
                     {category && (
                         <Link
@@ -143,7 +134,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
 
                 {/* Smart Search Input */}
-                <div className="mb-6">
+                <div className="max-w-4xl w-full mb-8 relative z-10">
                     <SearchInput
                         initialQuery={query || ""}
                         category={category}
@@ -154,7 +145,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
 
                 {/* Type Filters */}
-                <div className="flex flex-wrap gap-2 mb-8">
+                <div className="flex flex-wrap justify-start gap-2 mb-12 relative z-10">
                     {contentTypes.map((t) => {
                         const isActive = (type === t) || (!type && t === "All") || (type && type.toLowerCase() === t.toLowerCase()) || (t === "All" && type === "All");
 
@@ -186,22 +177,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         <SearchResults query={query} category={category} type={type} />
                     </Suspense>
                 ) : (
-                    <div className="text-center py-16">
+                    <div className="py-12 animate-in fade-in duration-500">
                         <div className="inline-flex items-center justify-center p-4 bg-secondary/30 rounded-full mb-6 border border-border/70">
-                            <Sparkles className="size-8 text-primary" />
+                            <Compass className="size-8 text-primary" />
                         </div>
                         <p className="text-foreground text-xl font-medium mb-2">Discover Something New</p>
-                        <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                        <p className="text-muted-foreground mb-8 max-w-md">
                             Search for books, podcasts, and articles, or explore by category below.
                         </p>
 
                         {/* Category Suggestions */}
                         {categories.length > 0 && (
-                            <div className="max-w-2xl mx-auto">
-                                <p className="text-sm text-muted-foreground mb-4 uppercase tracking-wider">
+                            <div className="max-w-4xl">
+                                <p className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-semibold">
                                     Popular Categories
                                 </p>
-                                <div className="flex flex-wrap justify-center gap-2">
+                                <div className="flex flex-wrap justify-start gap-2">
                                     {categories.map((cat) => (
                                         <Link
                                             key={cat}

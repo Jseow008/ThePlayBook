@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { ArrowLeft, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2 } from "lucide-react";
+import { LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2 } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -124,16 +124,7 @@ export default function SettingsPage() {
         <div className="min-h-screen bg-background pb-8 lg:pb-24">
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12 space-y-8">
                 <div>
-                    {/* Back to Library */}
-                    <div className="mb-8">
-                        <Link
-                            href="/browse"
-                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
-                        >
-                            <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
-                            <span>Back to Library</span>
-                        </Link>
-                    </div>
+
 
                     <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
                         Settings

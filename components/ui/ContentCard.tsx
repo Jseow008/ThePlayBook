@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpen, Headphones, FileText, CheckCircle2, Trash2, Plus, Check, Video } from "lucide-react";
+import { BookOpen, Headphones, FileText, CheckCircle2, Trash2, Bookmark, Video } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { cn } from "@/lib/utils";
@@ -101,9 +101,9 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
                 aria-label={isBookmarked ? "Remove from My List" : "Add to My List"}
             >
                 {isBookmarked ? (
-                    <Check className="size-4" />
+                    <Bookmark className="size-5" fill="currentColor" />
                 ) : (
-                    <Plus className="size-4" />
+                    <Bookmark className="size-5" />
                 )}
             </button>
 

@@ -46,7 +46,7 @@ export default function PublicError({ error, reset }: ErrorProps) {
                         className="inline-flex items-center gap-2 h-10 px-5 rounded-full border border-border text-sm font-medium hover:bg-secondary/50 transition-colors"
                     >
                         <Home className="size-4" />
-                        Back to Library
+                        Home
                     </Link>
                 </div>
             </div>

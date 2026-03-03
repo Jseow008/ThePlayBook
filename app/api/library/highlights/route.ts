@@ -75,7 +75,8 @@ export async function POST(request: NextRequest) {
 
         const { data, error } = await supabase
             .from("user_highlights")
-            .insert(payload as any)
+            // @ts-expect-error - types for user_highlights might be outdated
+            .insert(payload)
             .select()
             .single();
 

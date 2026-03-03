@@ -105,11 +105,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                     <div
                         ref={scrollRef}
                         onScroll={handleScroll}
-                        className="flex gap-4 overflow-x-auto px-6 lg:px-16 scroll-smooth pt-4 pb-12 scrollbar-hide"
-                        style={{
-                            marginBottom: '-30px',
-                            clipPath: 'inset(0 0 20px 0)'
-                        }}
+                        className="flex gap-4 overflow-x-auto px-6 lg:px-16 scroll-smooth pt-4 pb-4 scrollbar-hide"
                     >
                         {items.map((item) => (
                             <div key={item.id} className="min-w-[200px] w-[200px] md:min-w-[240px] md:w-[240px]">
