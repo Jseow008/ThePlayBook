@@ -7,7 +7,7 @@
 
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { Compass, Search } from "lucide-react";
+import { Search, TrendingUp } from "lucide-react";
 import type { ContentItem, ContentType } from "@/types/database";
 import Link from "next/link";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -109,9 +109,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     const hasSearch = (query && query.trim().length > 0) || category || type;
 
-    // Fetch categories for suggestions (RPC)
-    const { data: stats } = await supabase.rpc("get_category_stats");
-    const categories = ((stats as { category: string; count: number }[] | null) || []).map(s => s.category).slice(0, 8);
+    // Fetch trending content for empty state
+    // @ts-expect-error - types for rpc might be outdated
+    const { data: trendingData } = await supabase.rpc("get_trending_content", { p_limit: 12 });
+    const trendingItems = (trendingData || []) as unknown as ContentItem[];
 
     const contentTypes = ["All", "Book", "Podcast", "Article"];
 
@@ -176,37 +177,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     <Suspense fallback={<ResultsSkeleton />}>
                         <SearchResults query={query} category={category} type={type} />
                     </Suspense>
-                ) : (
-                    <div className="py-12 animate-in fade-in duration-500">
-                        <div className="inline-flex items-center justify-center p-4 bg-secondary/30 rounded-full mb-6 border border-border/70">
-                            <Compass className="size-8 text-primary" />
+                ) : trendingItems.length > 0 ? (
+                    <div className="animate-in fade-in duration-500">
+                        <div className="flex items-center gap-2 mb-6">
+                            <TrendingUp className="size-5 text-primary" />
+                            <h2 className="text-lg font-semibold text-foreground">Trending Now</h2>
                         </div>
-                        <p className="text-foreground text-xl font-medium mb-2">Discover Something New</p>
-                        <p className="text-muted-foreground mb-8 max-w-md">
-                            Search for books, podcasts, and articles, or explore by category below.
-                        </p>
-
-                        {/* Category Suggestions */}
-                        {categories.length > 0 && (
-                            <div className="max-w-4xl">
-                                <p className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-semibold">
-                                    Popular Categories
-                                </p>
-                                <div className="flex flex-wrap justify-start gap-2">
-                                    {categories.map((cat) => (
-                                        <Link
-                                            key={cat}
-                                            href={`/search?category=${encodeURIComponent(cat as string)}`}
-                                            className="px-4 h-9 inline-flex items-center hover:bg-secondary/30 text-foreground rounded-full text-sm font-medium transition-colors border border-border/70 hover:border-border"
-                                        >
-                                            {cat}
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+                            {trendingItems.map((item) => (
+                                <ContentCard key={item.id} item={item} />
+                            ))}
+                        </div>
                     </div>
-                )}
+                ) : null}
             </div>
         </div>
     );
