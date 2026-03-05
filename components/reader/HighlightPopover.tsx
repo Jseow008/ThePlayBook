@@ -43,6 +43,10 @@ export function HighlightPopover({
     const [editNote, setEditNote] = useState(noteBody || "");
     const [editColor, setEditColor] = useState(currentColor || "yellow");
 
+    // Local state to mirror props so that saves immediately reflect in UI
+    const [localNoteBody, setLocalNoteBody] = useState(noteBody);
+    const [localColor, setLocalColor] = useState(currentColor || "yellow");
+
     const updateHighlight = useUpdateHighlight();
     const deleteHighlight = useDeleteHighlight();
 
@@ -61,6 +65,12 @@ export function HighlightPopover({
             if (path.includes(popoverRef.current) || popoverRef.current.contains(e.target as Node)) {
                 return;
             }
+
+            // Do not close if the user is currently editing a note to prevent accidental data loss
+            if (isEditing) {
+                return;
+            }
+
             onClose();
         };
 
@@ -72,7 +82,7 @@ export function HighlightPopover({
             clearTimeout(timeout);
             window.removeEventListener('click', handleClickOutside);
         };
-    }, [mounted, onClose]);
+    }, [mounted, onClose, isEditing]);
 
     if (!mounted || !position) return null;
 
@@ -87,6 +97,11 @@ export function HighlightPopover({
                 color: editColor,
             });
             toast.success("Highlight updated");
+
+            // Update local state to mirror the change immediately without needing a remount/refetch cycle
+            setLocalNoteBody(editNote.trim() === "" ? null : editNote.trim());
+            setLocalColor(editColor);
+
             setIsEditing(false);
             if (editNote.trim() === "") {
                 onClose();
@@ -110,7 +125,13 @@ export function HighlightPopover({
         <div
             ref={popoverRef}
             onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
+            onMouseLeave={() => {
+                // Do not instantly dismiss the popover if the mouse leaves while editing 
+                // (e.g., if the user moves mouse away while typing)
+                if (!isEditing && onMouseLeave) {
+                    onMouseLeave();
+                }
+            }}
             className="absolute z-[100] transform -translate-x-1/2 -translate-y-full w-72 origin-bottom animate-in fade-in zoom-in-95 duration-200 pb-2.5"
             style={{ top, left }}
         >
@@ -143,8 +164,9 @@ export function HighlightPopover({
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => {
-                                        setEditNote(noteBody || "");
-                                        setEditColor(currentColor || "yellow");
+                                        // Reset edits back to the local mirrored state
+                                        setEditNote(localNoteBody || "");
+                                        setEditColor(localColor || "yellow");
                                         setIsEditing(false);
                                     }}
                                     className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
@@ -166,12 +188,12 @@ export function HighlightPopover({
                     <>
                         <div className="px-3 py-2 flex items-center justify-between bg-muted/30">
                             <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                                {noteBody ? (
+                                {localNoteBody ? (
                                     <BookOpen className="size-3.5 text-blue-500" />
                                 ) : (
                                     <AlertCircle className="size-3.5 text-yellow-500" />
                                 )}
-                                <span>{noteBody ? 'Your Note' : 'Highlight'}</span>
+                                <span>{localNoteBody ? 'Your Note' : 'Highlight'}</span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <button
@@ -190,10 +212,10 @@ export function HighlightPopover({
                                 </button>
                             </div>
                         </div>
-                        {noteBody && (
+                        {localNoteBody && (
                             <div className="p-3 text-sm flex flex-col gap-2 max-h-48 overflow-y-auto custom-scrollbar border-t border-border/30">
                                 <div className="font-medium text-foreground leading-relaxed whitespace-pre-wrap">
-                                    {noteBody}
+                                    {localNoteBody}
                                 </div>
                             </div>
                         )}

@@ -5,7 +5,6 @@ import { ChevronRight, CheckCircle2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
-import { motion } from "framer-motion";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { cn } from "@/lib/utils";
@@ -152,9 +151,6 @@ export function SegmentAccordion({
     // Track mouse entering/leaving the popover itself to prevent it from closing
     const popoverHoverRef = useRef(false);
 
-    // Track touch interactions to differentiate between a tap and a scroll
-    const touchStartPos = useRef<{ x: number, y: number } | null>(null);
-
     const handleToggle = useCallback(
         (segment: SegmentFull, index: number) => {
             const isOpening = expandedId !== segment.id;
@@ -223,24 +219,8 @@ export function SegmentAccordion({
     }, [expandedId, segments, handleToggle]);
 
     // ── Handle Hover / Tap for Premium UI ────────────────────────────────
-    const handleNoteInteraction = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    const handleNoteInteraction = useCallback((e: React.MouseEvent) => {
         if (!isDesktop) return;
-
-        // If it's a touch event, distinguish between a tap and a scroll
-        if (e.type === 'touchend') {
-            const touch = (e as React.TouchEvent).changedTouches[0];
-            const start = touchStartPos.current;
-            if (start) {
-                const distanceX = Math.abs(touch.clientX - start.x);
-                const distanceY = Math.abs(touch.clientY - start.y);
-                // If the user's finger moved more than ~10px, treat it as a scroll/swipe, not a tap
-                if (distanceX > 10 || distanceY > 10) {
-                    touchStartPos.current = null;
-                    return;
-                }
-            }
-            touchStartPos.current = null;
-        }
 
         const target = (e.target as HTMLElement).closest("mark[data-id]");
 
@@ -385,36 +365,10 @@ export function SegmentAccordion({
                                 <div className="overflow-hidden">
                                     <div className="px-4 pt-3 pb-5 ml-[3.25rem]">
                                         {/* Markdown Content */}
-                                        <motion.div
+                                        <div
                                             data-segment-id={segment.id}
-                                            drag="x"
-                                            dragConstraints={{ left: 0, right: 0 }}
-                                            dragElastic={0.2}
-                                            onDragEnd={(e, info) => {
-                                                const offset = info.offset.x;
-                                                const velocity = info.velocity.x;
-
-                                                if (offset < -50 || velocity < -500) {
-                                                    // Swipe left -> Next segment
-                                                    if (index < segments.length - 1) {
-                                                        const nextSegment = segments[index + 1];
-                                                        handleToggle(nextSegment, index + 1);
-                                                    }
-                                                } else if (offset > 50 || velocity > 500) {
-                                                    // Swipe right -> Prev segment
-                                                    if (index > 0) {
-                                                        const prevSegment = segments[index - 1];
-                                                        handleToggle(prevSegment, index - 1);
-                                                    }
-                                                }
-                                            }}
-                                            onMouseMove={handleNoteInteraction as any}
-                                            onClick={handleNoteInteraction as any}
-                                            onTouchStart={(e: any) => {
-                                                const touch = e.touches[0];
-                                                touchStartPos.current = { x: touch.clientX, y: touch.clientY };
-                                            }}
-                                            onTouchEnd={(e: any) => handleNoteInteraction(e)}
+                                            onMouseMove={handleNoteInteraction}
+                                            onClick={handleNoteInteraction}
                                             className={cn(
                                                 "prose dark:prose-invert max-w-none relative transition-all duration-300",
                                                 `reader-size-${fontSize}`,
@@ -435,7 +389,7 @@ export function SegmentAccordion({
                                             >
                                                 {segment.markdown_body}
                                             </ReactMarkdown>
-                                        </motion.div>
+                                        </div>
 
                                         {/* Explicit Complete Action */}
                                         <div className="mt-8 flex justify-center">

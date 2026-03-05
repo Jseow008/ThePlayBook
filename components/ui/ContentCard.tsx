@@ -155,9 +155,9 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
 
             {/* Progress Bar */}
             {showProgress && (
-                <div className="absolute inset-x-0 bottom-0 h-2 bg-muted/50 z-20">
+                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/40 z-20 backdrop-blur-sm">
                     <div
-                        className="h-full bg-primary/90 transition-all duration-300"
+                        className="h-full bg-white transition-all duration-300 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                         style={{ width: `${percentage}%` }}
                     />
                 </div>

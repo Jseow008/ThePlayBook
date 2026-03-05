@@ -14,8 +14,10 @@ import {
     Microscope,
     Scale,
     Smile,
+    Crosshair,
     Tag,
-    LayoutGrid
+    LayoutGrid,
+    Cross
 } from "lucide-react";
 
 /**
@@ -40,6 +42,7 @@ const CATEGORY_STYLES: Record<string, { icon: any, color: string }> = {
     "Technology": { icon: Laptop, color: "text-foreground/80 group-hover:text-foreground" },
     "Lifestyle": { icon: Smile, color: "text-foreground/80 group-hover:text-foreground" },
     "Travel": { icon: Globe, color: "text-foreground/80 group-hover:text-foreground" },
+    "Christian": { icon: Crosshair, color: "text-foreground/80 group-hover:text-foreground" },
 };
 
 // Fallback colors for new categories
