@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import {
     Activity,
+    ArrowLeft,
     Briefcase,
     Brain,
     CircleDollarSign,
@@ -14,10 +15,8 @@ import {
     Microscope,
     Scale,
     Smile,
-    Crosshair,
     Tag,
-    LayoutGrid,
-    Cross
+    LayoutGrid
 } from "lucide-react";
 
 /**
@@ -42,7 +41,6 @@ const CATEGORY_STYLES: Record<string, { icon: any, color: string }> = {
     "Technology": { icon: Laptop, color: "text-foreground/80 group-hover:text-foreground" },
     "Lifestyle": { icon: Smile, color: "text-foreground/80 group-hover:text-foreground" },
     "Travel": { icon: Globe, color: "text-foreground/80 group-hover:text-foreground" },
-    "Christian": { icon: Crosshair, color: "text-foreground/80 group-hover:text-foreground" },
 };
 
 // Fallback colors for new categories
@@ -80,8 +78,17 @@ export default async function CategoriesPage() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
-
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+                {/* Back to Library */}
+                <div className="mb-8">
+                    <Link
+                        href="/browse"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/50 hover:bg-secondary text-sm font-medium text-muted-foreground hover:text-foreground transition-all group"
+                    >
+                        <ArrowLeft className="size-4 group-hover:-translate-x-0.5 transition-transform" />
+                        <span>Back to Library</span>
+                    </Link>
+                </div>
                 <h1 className="text-3xl font-bold text-foreground mb-2 font-display tracking-tight leading-tight">
                     Browse Categories
                 </h1>
@@ -91,7 +98,7 @@ export default async function CategoriesPage() {
 
                 {/* Content */}
                 {categories.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 auto-rows-[140px] gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[140px] gap-3">
                         {categories.map((category) => {
                             const Icon = category.icon;
                             return (

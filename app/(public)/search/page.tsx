@@ -66,7 +66,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
             </p>
 
             {results.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
                     {results.map((item) => (
                         <ContentCard key={item.id} item={item} />
                     ))}
@@ -95,7 +95,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
 // Loading skeleton for results
 function ResultsSkeleton() {
     return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
             {[...Array(12)].map((_, i) => (
                 <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
             ))}
@@ -183,7 +183,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             <TrendingUp className="size-5 text-primary" />
                             <h2 className="text-lg font-semibold text-foreground">Trending Now</h2>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
                             {trendingItems.map((item) => (
                                 <ContentCard key={item.id} item={item} />
                             ))}

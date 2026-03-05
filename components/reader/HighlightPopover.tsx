@@ -47,6 +47,12 @@ export function HighlightPopover({
     const [localNoteBody, setLocalNoteBody] = useState(noteBody);
     const [localColor, setLocalColor] = useState(currentColor || "yellow");
 
+    // Keep local state in sync if props change externally (e.g. from network refetch)
+    useEffect(() => {
+        setLocalNoteBody(noteBody);
+        setLocalColor(currentColor || "yellow");
+    }, [noteBody, currentColor]);
+
     const updateHighlight = useUpdateHighlight();
     const deleteHighlight = useDeleteHighlight();
 
@@ -63,6 +69,12 @@ export function HighlightPopover({
             if (!popoverRef.current) return;
             const path = e.composedPath ? (e.composedPath() as Node[]) : [];
             if (path.includes(popoverRef.current) || popoverRef.current.contains(e.target as Node)) {
+                return;
+            }
+
+            // Ignore clicks directly on highlight text, as the SegmentAccordion logic handles those
+            const target = e.target as HTMLElement;
+            if (target && typeof target.closest === "function" && target.closest("mark[data-id]")) {
                 return;
             }
 
@@ -197,7 +209,11 @@ export function HighlightPopover({
                             </div>
                             <div className="flex items-center gap-1">
                                 <button
-                                    onClick={() => setIsEditing(true)}
+                                    onClick={() => {
+                                        setEditNote(localNoteBody || "");
+                                        setEditColor(localColor || "yellow");
+                                        setIsEditing(true);
+                                    }}
                                     className="p-1 text-muted-foreground hover:text-foreground hover:bg-border/50 rounded transition-colors"
                                     title="Edit Color or Note"
                                 >
