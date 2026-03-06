@@ -4,7 +4,6 @@ import "./globals.css";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { MotionProvider } from "@/components/providers/motion-provider";
 import { Toaster } from "sonner";
 
 const inter = Inter({
@@ -87,9 +86,7 @@ export default function RootLayout({
         className={`${inter.variable} ${outfit.variable} ${playfair.variable} font-sans antialiased isolate`}
       >
         <AmbientBackground />
-        <MotionProvider>
-          <QueryProvider>{children}</QueryProvider>
-        </MotionProvider>
+        <QueryProvider>{children}</QueryProvider>
         <Toaster theme="dark" position="bottom-center" richColors closeButton />
       </body>
     </html>
