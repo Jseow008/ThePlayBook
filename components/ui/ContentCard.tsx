@@ -61,7 +61,7 @@ export function ContentCard({
                         src={item.cover_image_url}
                         alt={item.title}
                         fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="object-cover transition-transform duration-300 group-hover:scale-110"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
                     />
                 </div>
@@ -127,7 +127,7 @@ export function ContentCard({
             )}
 
             {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-md" />
+            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-md" />
 
             {/* Bottom Info - Big Title & Fading Meta */}
             <div className="absolute inset-x-0 bottom-0 p-4 pt-20 bg-gradient-to-t from-black/95 via-black/70 to-transparent pointer-events-none z-30 pb-5">

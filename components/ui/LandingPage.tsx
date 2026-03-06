@@ -82,18 +82,19 @@ const PROOF_POINTS = [
   "Return anytime",
 ] as const;
 
-const KNOWLEDGE_FEATURES = [
-  {
-    icon: RotateCcw,
-    title: "Continue where you left off",
-    description: "Pick up unfinished reads without losing your place or your context.",
-    image: "/images/Continue Reading.png"
-  },
+const CORE_ANCHOR_FEATURE = {
+  icon: RotateCcw,
+  title: "Reading view",
+  description: "Read in clear, structured sections designed for focus.",
+  image: "/images/Reading Experience Section Reader View.png"
+} as const;
+
+const CORE_SUPPORT_FEATURES = [
   {
     icon: BookMarked,
-    title: "Save important reads",
-    description: "Build a library around the ideas you want close at hand.",
-    image: "/images/Notes.png"
+    title: "Preview before you commit",
+    description: "See the main idea and understand the thesis before you dive in.",
+    image: "/images/Reading Experience Section Info View.png"
   },
   {
     icon: NotebookPen,
@@ -103,8 +104,8 @@ const KNOWLEDGE_FEATURES = [
   },
   {
     icon: Sparkles,
-    title: "Ask your library",
-    description: "Bring past insights back into focus when you need clarity or action.",
+    title: "Ask the author",
+    description: "Ask the author(s) questions about what you just read.",
     image: "/images/AI Chat .png"
   },
 ] as const;
@@ -241,8 +242,7 @@ export function LandingPage({
 
         <ProblemSolutionSection />
         <HowItWorksSection />
-        <ReadingExperienceSection heroItem={heroItem} />
-        <KnowledgeLayerSection />
+        <CorePlatformFeaturesSection />
 
         {curatedCategories.length > 0 ? <TopicMapSection categories={curatedCategories} /> : null}
 
@@ -568,149 +568,82 @@ function HowItWorksSection() {
 }
 
 /* ==========================================================================
-   Reading Experience
+   Combined Core Platform Features
    ========================================================================== */
 
-function ReadingExperienceSection({ heroItem }: { heroItem: ContentItem | null }) {
-  return (
-    <section className="py-24 sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-16 px-6 lg:px-8 lg:grid-cols-[1fr_1.1fr] lg:items-center">
-        <Reveal>
-          <SectionIntro
-            label="Reading, upgraded"
-            title="Built for understanding, not just browsing."
-            body={`${APP_NAME} is not a content feed dressed up as a library. It is a reading experience designed to surface the core idea quickly, guide you through the important details, and make useful knowledge easier to revisit later.`}
-          />
-
-          <div className="mt-10 space-y-6">
-            {[
-              "See the main idea before you commit",
-              "Read in clear, structured sections",
-              "Capture what matters without breaking focus",
-              "Pick up where you left off",
-            ].map((point, i) => (
-              <Reveal key={point} delay={0.1 + i * 0.08}>
-                <div className="flex items-center gap-4">
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-white/10 text-white">
-                    <ArrowRight className="size-3" />
-                  </div>
-                  <span className="text-lg text-zinc-300">{point}</span>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.15}>
-          <div className="relative rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.01] p-6 shadow-2xl sm:p-8">
-            <div className="relative grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-              {/* Product screenshot */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-black shadow-[0_20px_40px_-10px_rgba(0,0,0,0.5)]">
-                <div className="relative aspect-[1996/1794]">
-                  <Image
-                    src="/images/Reading Experience Section Reader View.png"
-                    alt="Flux reading and browsing product screenshot"
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    loading="lazy"
-                    className="object-cover object-left-top opacity-95 transition-transform duration-700 hover:scale-[1.02]"
-                  />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-transparent" />
-                </div>
-              </div>
-
-              {/* Info cards */}
-              <div className="flex flex-col gap-6">
-                <div className="flex-1 rounded-[2rem] border border-white/10 bg-black/40 p-6 flex flex-col justify-center">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">
-                    Reader preview
-                  </p>
-                  <h3 className="mt-4 font-serif text-2xl font-bold tracking-tight text-white">
-                    {heroItem?.title ?? "A reading flow built for clarity"}
-                  </h3>
-                  <p className="mt-4 text-sm leading-relaxed text-zinc-400">
-                    See the thesis early, move through the structure clearly, and save what matters without leaving the reading flow.
-                  </p>
-                </div>
-
-                <div className="relative flex-[1.5] overflow-hidden rounded-[2rem] border border-white/10 bg-black/40 flex flex-col">
-                  {/* Top image half */}
-                  <div className="relative aspect-square w-full overflow-hidden border-b border-white/5 bg-zinc-900/50">
-                    <Image
-                      src="/images/Reading Experience Section Info View.png"
-                      alt="Flux author and metadata info view"
-                      fill
-                      sizes="300px"
-                      className="object-cover object-top opacity-90"
-                    />
-                  </div>
-                  {/* Bottom text half */}
-                  <div className="p-6">
-                    <p className="relative z-10 text-xs font-semibold uppercase tracking-[0.2em] text-white/50 mb-4">
-                      What compounds
-                    </p>
-                    <div className="relative z-10 space-y-3 text-sm leading-relaxed text-zinc-300">
-                      <p className="flex gap-3 items-start"><Sparkles className="size-4 shrink-0 mt-0.5 text-white/40" /> Progress that survives across sessions.</p>
-                      <p className="flex gap-3 items-start"><BookMarked className="size-4 shrink-0 mt-0.5 text-white/40" /> Notes and highlights stay attached.</p>
-                      <p className="flex gap-3 items-start"><RotateCcw className="size-4 shrink-0 mt-0.5 text-white/40" /> A stronger return path into ideas.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-/* ==========================================================================
-   Knowledge Layer
-   ========================================================================== */
-
-function KnowledgeLayerSection() {
+function CorePlatformFeaturesSection() {
   return (
     <section className="bg-black py-24 sm:py-32">
       <Reveal>
         <div className="relative mx-auto max-w-7xl overflow-hidden rounded-[3rem] border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.01] px-6 lg:px-8 p-10 sm:p-14 lg:p-16">
           <div className="pointer-events-none absolute inset-0 rounded-[3rem] bg-emerald-500/5 blur-[60px]" />
-          <div className="relative z-10 grid gap-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
-            <SectionIntro
-              label="Compounding value"
-              title="What you read becomes more useful over time."
-              body={`${APP_NAME} helps you build a personal layer around the ideas you consume, so saved highlights, unfinished reads, and past insights stay close at hand instead of disappearing into memory.`}
-            />
+          <div className="relative z-10 grid gap-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              {KNOWLEDGE_FEATURES.map((feature, i) => (
-                <Reveal key={feature.title} delay={0.1 + i * 0.08}>
-                  <div className="group relative overflow-hidden flex flex-col h-full rounded-[2rem] border border-white/10 bg-black/80 transition-all hover:bg-zinc-900/90 hover:-translate-y-1 hover:shadow-2xl hover:border-white/20">
-                    {/* Top Image Section */}
-                    <div className="relative aspect-video w-full shrink-0 border-b border-white/5 bg-zinc-950 overflow-hidden">
-                      <Image
-                        src={feature.image}
-                        alt={`Screenshot illustrating ${feature.title}`}
-                        fill
-                        sizes="(max-width: 640px) 100vw, 350px"
-                        className="object-cover object-center opacity-80 transition-transform duration-700 group-hover:scale-105 group-hover:opacity-100"
-                      />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            {/* Left: Introduction */}
+            <div className="max-w-md">
+              <SectionIntro
+                label="Reading, upgraded"
+                title="Built for understanding, not just browsing."
+                body={`${APP_NAME} helps you build a personal layer around the ideas you consume. Discover the core idea quickly, and make what you read more useful over time.`}
+              />
+            </div>
 
-                      {/* Floating Icon */}
-                      <div className="absolute bottom-4 left-6 flex size-12 items-center justify-center rounded-2xl border border-white/10 bg-black/60 backdrop-blur-md shadow-lg transition-colors group-hover:bg-white/10">
-                        <feature.icon className="size-5 text-zinc-300 group-hover:text-white transition-colors" />
+            {/* Right: The Asymmetrical Bento layout */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:items-stretch">
+
+              {/* Left Sub-column (The Anchor) */}
+              <Reveal delay={0.1}>
+                <div className="group relative overflow-hidden flex flex-col h-full rounded-[2rem] border border-white/10 bg-black/80 transition-all hover:bg-zinc-900/90 hover:shadow-2xl hover:border-white/20">
+                  {/* Anchor Image Section - large natural dimension */}
+                  <div className="relative aspect-[1996/1794] w-full shrink-0 border-b border-white/5 bg-zinc-950 overflow-hidden">
+                    <Image
+                      src={CORE_ANCHOR_FEATURE.image}
+                      alt={`Screenshot illustrating ${CORE_ANCHOR_FEATURE.title}`}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover object-top opacity-90 transition-transform duration-300 group-hover:scale-105 group-hover:opacity-100"
+                    />
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                  </div>
+
+                  {/* Anchor Text Section */}
+                  <div className="flex flex-col flex-1 p-8 pt-6">
+                    <h3 className="text-2xl font-semibold text-white tracking-tight">{CORE_ANCHOR_FEATURE.title}</h3>
+                    <p className="mt-3 text-base leading-relaxed text-zinc-400">{CORE_ANCHOR_FEATURE.description}</p>
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* Right Sub-column (The Support Stack) */}
+              <div className="flex flex-col gap-6">
+                {CORE_SUPPORT_FEATURES.map((feature, i) => (
+                  <Reveal key={feature.title} delay={0.15 + i * 0.08}>
+                    <div className="group relative overflow-hidden flex flex-row items-center p-3 gap-5 rounded-[2rem] border border-white/10 bg-black/80 transition-all hover:bg-zinc-900/90 hover:shadow-xl hover:border-white/20">
+                      {/* Compact Image Thumbnail (Left) */}
+                      <div className="relative w-24 h-24 shrink-0 rounded-2xl border border-white/5 bg-zinc-950 overflow-hidden">
+                        <Image
+                          src={feature.image}
+                          alt={`Screenshot illustrating ${feature.title}`}
+                          fill
+                          sizes="96px"
+                          className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
+                        />
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+
+                        <div className="absolute bottom-2 left-2 flex w-6 h-6 items-center justify-center rounded-lg border border-white/10 bg-black/50 backdrop-blur-md">
+                          <feature.icon className="w-3 h-3 text-zinc-300" />
+                        </div>
+                      </div>
+
+                      {/* Compact Text Section (Right) */}
+                      <div className="flex flex-col flex-1 pr-4 py-2">
+                        <h3 className="text-[15px] font-semibold text-white tracking-tight leading-snug">{feature.title}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-zinc-400">{feature.description}</p>
                       </div>
                     </div>
-
-                    {/* Bottom Text Section */}
-                    <div className="flex flex-col flex-1 p-6 pt-5">
-                      <h3 className="text-xl font-semibold text-white tracking-tight">{feature.title}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-zinc-400">{feature.description}</p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
+                  </Reveal>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -718,6 +651,10 @@ function KnowledgeLayerSection() {
     </section>
   );
 }
+
+/* ==========================================================================
+   Knowledge Layer
+   ========================================================================== */
 
 /* ==========================================================================
    Topic Map
