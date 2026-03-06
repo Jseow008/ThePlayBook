@@ -126,7 +126,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         >
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-brand font-bold text-lg">
-                                    L
+                                    {APP_NAME.charAt(0)}
                                 </div>
                                 <span className="text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">
                                     FEATURED

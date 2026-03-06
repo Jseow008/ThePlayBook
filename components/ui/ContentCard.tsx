@@ -12,9 +12,17 @@ interface ContentCardProps {
     item: ContentItem;
     showCompletedBadge?: boolean;
     onRemove?: (id: string) => void;
+    hideProgressBar?: boolean;
+    hideBookmark?: boolean;
 }
 
-export function ContentCard({ item, showCompletedBadge = false, onRemove }: ContentCardProps) {
+export function ContentCard({
+    item,
+    showCompletedBadge = false,
+    onRemove,
+    hideProgressBar = false,
+    hideBookmark = false
+}: ContentCardProps) {
     const { isInMyList, toggleMyList, getProgress } = useReadingProgress();
     const isBookmarked = isInMyList(item.id);
     const progress = getProgress(item.id);
@@ -33,7 +41,7 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
         : 0;
 
     // Only show progress bar if started, not completed, and has valid percentage
-    const showProgress = progress && !progress.isCompleted && percentage > 0;
+    const showProgress = !hideProgressBar && progress && !progress.isCompleted && percentage > 0;
 
     // Calculate if the item is considered "NEW"
     const isNew = new Date(item.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -78,34 +86,36 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
             )}
 
             {/* Bookmark Button */}
-            <button
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (isBookmarked) {
-                        toggleMyList(item.id);
-                        toast.success("Removed from My List");
-                    } else {
-                        toggleMyList(item.id);
-                        toast.success("Added to My List");
-                    }
-                }}
-                className={cn(
-                    "focus-ring absolute top-2 p-1.5 rounded-full shadow-lg z-20 transition-all duration-300 backdrop-blur-sm",
-                    showCompletedBadge ? "right-10" : "right-2",
-                    isBookmarked
-                        ? "bg-primary text-primary-foreground opacity-100"
-                        : "bg-black/40 text-white hover:bg-black/70 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
-                )}
-                title={isBookmarked ? "Remove from My List" : "Add to My List"}
-                aria-label={isBookmarked ? "Remove from My List" : "Add to My List"}
-            >
-                {isBookmarked ? (
-                    <Bookmark className="size-5" fill="currentColor" />
-                ) : (
-                    <Bookmark className="size-5" />
-                )}
-            </button>
+            {!hideBookmark && (
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (isBookmarked) {
+                            toggleMyList(item.id);
+                            toast.success("Removed from My List");
+                        } else {
+                            toggleMyList(item.id);
+                            toast.success("Added to My List");
+                        }
+                    }}
+                    className={cn(
+                        "focus-ring absolute top-2 p-1.5 rounded-full shadow-lg z-20 transition-all duration-300 backdrop-blur-sm",
+                        showCompletedBadge ? "right-10" : "right-2",
+                        isBookmarked
+                            ? "bg-primary text-primary-foreground opacity-100"
+                            : "bg-black/40 text-white hover:bg-black/70 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    )}
+                    title={isBookmarked ? "Remove from My List" : "Add to My List"}
+                    aria-label={isBookmarked ? "Remove from My List" : "Add to My List"}
+                >
+                    {isBookmarked ? (
+                        <Bookmark className="size-5" fill="currentColor" />
+                    ) : (
+                        <Bookmark className="size-5" />
+                    )}
+                </button>
+            )}
 
             {/* Author (Top) */}
             {item.author && (
@@ -155,7 +165,7 @@ export function ContentCard({ item, showCompletedBadge = false, onRemove }: Cont
 
             {/* Progress Bar */}
             {showProgress && (
-                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/40 z-20 backdrop-blur-sm">
+                <div className="absolute inset-x-0 bottom-0 h-1.5 bg-black/40 z-40 backdrop-blur-sm">
                     <div
                         className="h-full bg-white transition-all duration-300 shadow-[0_0_8px_rgba(255,255,255,0.8)]"
                         style={{ width: `${percentage}%` }}

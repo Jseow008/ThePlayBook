@@ -249,16 +249,11 @@ export function SegmentAccordion({
         }
     }, [isDesktop, setActiveHighlight]);
 
-    // Also close on scroll to prevent drifting UI, but use a threshold to ignore micro-scrolls (e.g. from trackpads)
+    // Also close on scroll to prevent drifting UI
     useEffect(() => {
-        let lastScrollY = window.scrollY;
         const handleScroll = () => {
             if (activeHighlight && !popoverHoverRef.current) {
-                if (Math.abs(window.scrollY - lastScrollY) > 50) {
-                    setActiveHighlight(null);
-                }
-            } else {
-                lastScrollY = window.scrollY;
+                setActiveHighlight(null);
             }
         };
         window.addEventListener('scroll', handleScroll, { passive: true });
@@ -451,7 +446,6 @@ export function SegmentAccordion({
             {
                 isDesktop && activeHighlight && (
                     <HighlightPopover
-                        key={activeHighlight.id}
                         highlightId={activeHighlight.id}
                         noteBody={activeHighlight.note}
                         highlightedText={activeHighlight.text}

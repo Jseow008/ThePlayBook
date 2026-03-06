@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
 
         return NextResponse.json({
             success: true,
-            data: { status: data ? ((data as any).is_positive ? "up" : "down") : null }
+            data: { status: data ? ((data as { is_positive?: boolean | null }).is_positive ? "up" : "down") : null }
         }, { status: 200 });
 
     } catch (error) {
@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
             details: details || null
         };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const { error } = await supabase.from("content_feedback").upsert(payload as any, {
             onConflict: "user_id,content_id"
         });

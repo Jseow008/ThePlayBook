@@ -27,7 +27,7 @@ const playfair = Playfair_Display({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
 const description =
-  "Curated summaries of podcasts, books, and articles. Read distilled wisdom for free.";
+  "The world's best ideas, distilled into structured, actionable knowledge you can retain and use.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

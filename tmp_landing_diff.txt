@@ -1,0 +1,1525 @@
+diff --git a/components/ui/LandingPage.tsx b/components/ui/LandingPage.tsx
+index 29233fa..00e21d4 100644
+--- a/components/ui/LandingPage.tsx
++++ b/components/ui/LandingPage.tsx
+@@ -1,805 +1,784 @@
+ "use client";
+ 
+-import { useState, useEffect, useRef } from "react";
+-import Link from "next/link";
++import { useEffect, useRef, useState } from "react";
+ import Image from "next/image";
++import Link from "next/link";
+ import {
+-    BookOpen,
+-    Headphones,
+-    FileText,
+-    Zap,
+-    CheckSquare,
+-    BarChart3,
+-    Sparkles,
+-    Library,
+-    ArrowRight,
+-    ChevronDown,
+-    Activity,
+-    Brain,
+-    CircleDollarSign,
+-    Dumbbell,
+-    Briefcase,
+-    Lightbulb,
+-    Heart,
+-    Microscope,
+-    Laptop,
+-    Smile,
+-    Scale,
+-    Globe,
+-    Tag,
+-    Network,
+-    Waves,
+-    LayoutGrid,
++  Activity,
++  ArrowRight,
++  BookMarked,
++  BookOpen,
++  Brain,
++  Briefcase,
++  CircleDollarSign,
++  Compass,
++  Dumbbell,
++  Globe,
++  Heart,
++  Laptop,
++  Lightbulb,
++  Microscope,
++  NotebookPen,
++  Scale,
++  Search,
++  Smile,
++  Sparkles,
+ } from "lucide-react";
+ import { APP_NAME } from "@/lib/brand";
++import { cn } from "@/lib/utils";
+ import type { ContentItem } from "@/types/database";
+ 
+-// ----- Types -----
+-
+ interface LandingPageProps {
+-    previewItems: ContentItem[];
+-    categories: { category: string; count: number }[];
+-    totalContentCount: number;
+-    totalCategoryCount?: number;
++  previewItems: ContentItem[];
++  categories: { category: string; count: number }[];
++  totalContentCount: number;
++  totalCategoryCount?: number;
+ }
+ 
+-// ----- Category Icon Map -----
+-
+-const CATEGORY_ICONS: Record<string, React.ElementType> = {
+-    Mindset: Brain,
+-    Health: Activity,
+-    Wealth: CircleDollarSign,
+-    Business: Briefcase,
+-    Philosophy: Lightbulb,
+-    Fitness: Dumbbell,
+-    Finance: Scale,
+-    Productivity: Briefcase,
+-    Relationships: Heart,
+-    Science: Microscope,
+-    Technology: Laptop,
+-    Lifestyle: Smile,
+-    Travel: Globe,
+-};
+-
+-// ----- Intersection Observer Hook -----
+-
+-function useInView(options?: IntersectionObserverInit) {
+-    const ref = useRef<HTMLDivElement>(null);
+-    const [isVisible, setIsVisible] = useState(false);
+-
+-    useEffect(() => {
+-        const el = ref.current;
+-        if (!el) return;
+-
+-        const observer = new IntersectionObserver(([entry]) => {
+-            if (entry.isIntersecting) {
+-                setIsVisible(true);
+-                observer.unobserve(el);
+-            }
+-        }, { threshold: 0.15, ...options });
+-
+-        observer.observe(el);
+-        return () => observer.disconnect();
+-    }, [options]);
+-
+-    return { ref, isVisible };
+-}
+-
+-// ===================================================================
+-// MAIN COMPONENT
+-// ===================================================================
++const CATEGORY_ICONS = {
++  Mindset: Brain,
++  Health: Activity,
++  Wealth: CircleDollarSign,
++  Business: Briefcase,
++  Philosophy: Lightbulb,
++  Fitness: Dumbbell,
++  Finance: Scale,
++  Productivity: Briefcase,
++  Relationships: Heart,
++  Science: Microscope,
++  Technology: Laptop,
++  Lifestyle: Smile,
++  Travel: Globe,
++} as const;
++
++const PROOF_POINTS = [
++  "Curated summaries",
++  "Structured reading",
++  "Highlights and notes",
++  "Return anytime",
++] as const;
++
++const WORKFLOW_STEPS = [
++  {
++    title: "Discover",
++    body: "Find high-signal ideas across books, podcasts, and articles.",
++    icon: Search,
++  },
++  {
++    title: "Read",
++    body: "Move through a clear reading flow built for comprehension, not clutter.",
++    icon: BookOpen,
++  },
++  {
++    title: "Save",
++    body: "Keep highlights, notes, and progress without breaking momentum.",
++    icon: NotebookPen,
++  },
++  {
++    title: "Return",
++    body: "Come back to what matters when you need clarity, context, or action.",
++    icon: BookMarked,
++  },
++] as const;
++
++const PERSONAL_LAYER_POINTS = [
++  {
++    title: "Continue where you left off",
++    body: "Pick up any unfinished read without losing your place.",
++    icon: Compass,
++  },
++  {
++    title: "Save important reads",
++    body: "Build a library around the ideas you want close at hand.",
++    icon: BookMarked,
++  },
++  {
++    title: "Highlight and annotate",
++    body: "Capture the passages worth remembering while you read.",
++    icon: NotebookPen,
++  },
++  {
++    title: "Ask your library",
++    body: "Use AI retrieval to bring past insights back into focus.",
++    icon: Sparkles,
++  },
++] as const;
++
++const FEATURE_REASONS = [
++  "A strong place to begin if you want a high-signal entry into the library.",
++  "Built for readers who want the thesis fast without losing the shape of the idea.",
++  "A concise, structured read designed to stay useful after the first pass.",
++] as const;
++
++function useInView() {
++  const ref = useRef<HTMLDivElement>(null);
++  const [isVisible, setIsVisible] = useState(false);
++
++  useEffect(() => {
++    const element = ref.current;
++    if (!element) return;
++
++    const observer = new IntersectionObserver(
++      ([entry]) => {
++        if (entry.isIntersecting) {
++          setIsVisible(true);
++          observer.unobserve(element);
++        }
++      },
++      { threshold: 0.18 }
++    );
+ 
+-export function LandingPage({ previewItems, categories, totalContentCount, totalCategoryCount }: LandingPageProps) {
+-    return (
+-        <>
+-            {/* Fixed Header */}
+-            <LandingHeader />
++    observer.observe(element);
++    return () => observer.disconnect();
++  }, []);
+ 
+-            <main className="min-h-screen bg-background text-foreground">
+-                {/* Hero */}
+-                <HeroSection totalContentCount={totalContentCount} totalCategoryCount={totalCategoryCount} />
++  return { ref, isVisible };
++}
+ 
+-                {/* Why Netflux? — Brand Story */}
+-                <WhyNetfluxSection />
++function typeLabel(type: ContentItem["type"]) {
++  return type.charAt(0).toUpperCase() + type.slice(1);
++}
+ 
+-                {/* How It Works */}
+-                <HowItWorksSection />
++function formatMinutes(seconds: number | null) {
++  if (!seconds || seconds <= 0) return "Short read";
++  const minutes = Math.max(1, Math.round(seconds / 60));
++  return `${minutes} min`;
++}
+ 
+-                {/* Features */}
+-                <FeaturesSection />
++function BrandWordmark({ compact = false }: { compact?: boolean }) {
++  return (
++    <span
++      className={cn(
++        "font-brand font-semibold uppercase tracking-[0.28em] text-foreground",
++        compact ? "text-sm" : "text-base"
++      )}
++    >
++      {APP_NAME}
++    </span>
++  );
++}
+ 
+-                {/* Content Preview */}
+-                {previewItems.length > 0 && (
+-                    <ContentPreviewSection items={previewItems} />
+-                )}
++function SectionIntro({
++  label,
++  title,
++  body,
++  align = "left",
++}: {
++  label: string;
++  title: string;
++  body?: string;
++  align?: "left" | "center";
++}) {
++  return (
++    <div className={cn("max-w-3xl", align === "center" && "mx-auto text-center")}>
++      <p className="mb-4 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">
++        {label}
++      </p>
++      <h2 className="font-serif text-4xl tracking-tight text-foreground sm:text-5xl md:text-6xl">
++        {title}
++      </h2>
++      {body ? (
++        <p className="mt-5 max-w-2xl text-base leading-8 text-muted-foreground sm:text-lg">
++          {body}
++        </p>
++      ) : null}
++    </div>
++  );
++}
+ 
+-                {/* Content Types */}
+-                <ContentTypesSection />
++function SoftPanel({
++  children,
++  className,
++}: {
++  children: React.ReactNode;
++  className?: string;
++}) {
++  return (
++    <div
++      className={cn(
++        "rounded-[28px] border border-white/10 bg-white/[0.04] shadow-[0_30px_90px_rgba(0,0,0,0.24)] backdrop-blur-md",
++        className
++      )}
++    >
++      {children}
++    </div>
++  );
++}
+ 
+-                {/* Categories */}
+-                {categories.length > 0 && (
+-                    <CategoriesSection categories={categories} />
+-                )}
++function MotionSection({ children }: { children: React.ReactNode }) {
++  const { ref, isVisible } = useInView();
++
++  return (
++    <div
++      ref={ref}
++      className={cn(
++        "transition-all duration-700",
++        isVisible ? "translate-y-0 opacity-100" : "translate-y-8 opacity-0"
++      )}
++    >
++      {children}
++    </div>
++  );
++}
+ 
+-                {/* Final CTA */}
+-                <FinalCTASection />
++function getArtwork(item: ContentItem) {
++  return item.hero_image_url || item.cover_image_url || "/images/screenshot_homepage.png";
++}
+ 
+-                {/* Footer */}
+-                <LandingFooter />
+-            </main>
+-        </>
+-    );
++function getFeatureReason(index: number) {
++  return FEATURE_REASONS[index] ?? FEATURE_REASONS[FEATURE_REASONS.length - 1];
+ }
+ 
+-// ===================================================================
+-// HEADER
+-// ===================================================================
++export function LandingPage({
++  previewItems,
++  categories,
++  totalContentCount,
++  totalCategoryCount,
++}: LandingPageProps) {
++  const heroItem = previewItems[0] ?? null;
++  const featuredItems = previewItems.slice(0, 3);
++  const topicItems = [...categories].sort((a, b) => b.count - a.count).slice(0, 10);
++
++  return (
++    <>
++      <LandingHeader />
++      <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
++        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(219,196,152,0.12),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(91,109,140,0.16),transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%)]" />
++        <div className="pointer-events-none absolute inset-0 opacity-[0.03] [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:72px_72px]" />
++
++        <HeroSection
++          heroItem={heroItem}
++          totalContentCount={totalContentCount}
++          totalCategoryCount={totalCategoryCount ?? categories.length}
++        />
++
++        {featuredItems.length > 0 ? <FeaturedReadsSection items={featuredItems} /> : null}
++
++        <EditorialSplitSection />
++        <HowFluxWorksSection />
++        <ReadingExperienceSection sampleItem={heroItem} />
++        <PersonalKnowledgeSection />
++
++        {topicItems.length > 0 ? <TopicMapSection items={topicItems} /> : null}
++
++        <FinalCTASection featuredItem={featuredItems[0] ?? null} />
++        <LandingFooter />
++      </main>
++    </>
++  );
++}
+ 
+ function LandingHeader() {
+-    const [scrolled, setScrolled] = useState(false);
+-
+-    useEffect(() => {
+-        const handleScroll = () => setScrolled(window.scrollY > 50);
+-        window.addEventListener("scroll", handleScroll, { passive: true });
+-        return () => window.removeEventListener("scroll", handleScroll);
+-    }, []);
+-
+-    return (
+-        <header
+-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
+-                ? "bg-background/80 backdrop-blur-xl border-b border-white/[0.08] shadow-2xl"
+-                : "bg-transparent"
+-                }`}
+-        >
+-            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+-                <Link href="/" className="flex items-center gap-2.5">
+-                    <div className="relative h-7 w-28">
+-                        <Image
+-                            src="/images/netflux-logo.png"
+-                            alt={APP_NAME}
+-                            fill
+-                            sizes="150px"
+-                            className="object-contain"
+-                            priority
+-                        />
+-                    </div>
+-                </Link>
+-
+-                <div className="flex items-center gap-4">
+-                    <Link
+-                        href="/browse"
+-                        className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors inline-flex"
+-                    >
+-                        Browse
+-                    </Link>
+-                    <Link
+-                        href="/login"
+-                        className="inline-flex items-center px-4 py-2 rounded-full bg-white text-black text-sm font-semibold hover:bg-white/90 transition-all hover:scale-105 active:scale-95"
+-                    >
+-                        Sign In
+-                    </Link>
+-                </div>
+-            </div>
+-        </header>
+-    );
++  const [scrolled, setScrolled] = useState(false);
++
++  useEffect(() => {
++    const onScroll = () => setScrolled(window.scrollY > 24);
++    window.addEventListener("scroll", onScroll, { passive: true });
++    return () => window.removeEventListener("scroll", onScroll);
++  }, []);
++
++  return (
++    <header
++      className={cn(
++        "fixed inset-x-0 top-0 z-50 transition-all duration-300",
++        scrolled
++          ? "border-b border-white/10 bg-background/80 shadow-[0_12px_40px_rgba(0,0,0,0.26)] backdrop-blur-xl"
++          : "bg-transparent"
++      )}
++    >
++      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:px-6 lg:px-8">
++        <Link href="/" className="inline-flex items-center gap-3">
++          <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-white/[0.05]">
++            <Sparkles className="size-4 text-[hsl(39,38%,76%)]" />
++          </div>
++          <BrandWordmark />
++        </Link>
++
++        <div className="flex items-center gap-3 sm:gap-4">
++          <Link
++            href="/browse"
++            className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
++          >
++            Browse
++          </Link>
++          <Link
++            href="/login"
++            className="inline-flex h-10 items-center justify-center rounded-full border border-white/12 px-4 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.04]"
++          >
++            Sign In
++          </Link>
++        </div>
++      </div>
++    </header>
++  );
+ }
+ 
+-// ===================================================================
+-// HERO SECTION
+-// ===================================================================
+-
+-function HeroSection({ totalContentCount, totalCategoryCount }: { totalContentCount: number; totalCategoryCount?: number }) {
+-    return (
+-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+-            {/* Flow gradient background */}
+-            <div className="absolute inset-0">
+-                <div className="absolute inset-0 bg-gradient-to-br from-zinc-950 via-background to-zinc-900" />
+-                {/* Flowing gradient blobs with CSS animation */}
+-                <div
+-                    className="landing-hero-flow-1 absolute top-[-20%] left-[-10%] w-[800px] h-[800px] rounded-full blur-[120px] opacity-60"
+-                    style={{
+-                        background: "radial-gradient(circle, rgba(139,92,246,0.12) 0%, rgba(59,130,246,0.06) 50%, transparent 70%)",
+-                    }}
+-                />
+-                <div
+-                    className="landing-hero-flow-2 absolute bottom-[-20%] right-[-10%] w-[700px] h-[700px] rounded-full blur-[100px] opacity-50"
+-                    style={{
+-                        background: "radial-gradient(circle, rgba(59,130,246,0.10) 0%, rgba(16,185,129,0.05) 50%, transparent 70%)",
+-                    }}
+-                />
+-                <div
+-                    className="landing-hero-flow-3 absolute top-[20%] right-[10%] w-[500px] h-[500px] rounded-full blur-[80px] opacity-40"
+-                    style={{
+-                        background: "radial-gradient(circle, rgba(236,72,153,0.08) 0%, rgba(139,92,246,0.04) 50%, transparent 70%)",
+-                    }}
+-                />
++function HeroSection({
++  heroItem,
++  totalContentCount,
++  totalCategoryCount,
++}: {
++  heroItem: ContentItem | null;
++  totalContentCount: number;
++  totalCategoryCount: number;
++}) {
++  const primaryHref = heroItem ? `/read/${heroItem.id}` : "/browse";
++
++  return (
++    <section className="relative px-5 pb-24 pt-28 sm:px-6 sm:pb-28 sm:pt-32 lg:px-8 lg:pb-32 lg:pt-36">
++      <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
++        <div className="max-w-2xl">
++          <p className="mb-6 text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">
++            Curated knowledge platform
++          </p>
++          <h1 className="font-serif text-5xl leading-[0.94] tracking-tight text-foreground sm:text-6xl lg:text-[5.5rem]">
++            The world&apos;s best ideas, distilled.
++          </h1>
++          <p className="mt-7 max-w-xl text-lg leading-8 text-muted-foreground sm:text-xl">
++            {APP_NAME} transforms books, podcasts, and articles into structured,
++            actionable knowledge you can actually retain and use.
++          </p>
++
++          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
++            <Link
++              href={primaryHref}
++              className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.01] hover:bg-primary/92"
++            >
++              Start Reading
++              <ArrowRight className="size-4" />
++            </Link>
++            <Link
++              href="/browse"
++              className="inline-flex h-12 items-center justify-center rounded-full border border-white/12 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-white/[0.04]"
++            >
++              Browse the Library
++            </Link>
++          </div>
++
++          <p className="mt-5 text-sm text-muted-foreground">
++            No paywall to start. Just high-signal ideas worth keeping.
++          </p>
++
++          <div className="mt-10 flex flex-wrap gap-3">
++            {PROOF_POINTS.map((point) => (
++              <span
++                key={point}
++                className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-sm text-muted-foreground"
++              >
++                {point}
++              </span>
++            ))}
++          </div>
++
++          <div className="mt-12 grid gap-4 sm:grid-cols-2">
++            <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-5">
++              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">Library depth</p>
++              <p className="mt-3 font-serif text-4xl text-foreground">{totalContentCount}+</p>
++              <p className="mt-2 text-sm leading-7 text-muted-foreground">
++                Curated summaries designed for fast understanding and long-term return.
++              </p>
+             </div>
+-
+-            {/* Grain / Noise texture overlay */}
+-            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-[0.035]" aria-hidden="true">
+-                <filter id="hero-grain">
+-                    <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" />
+-                    <feColorMatrix type="saturate" values="0" />
+-                </filter>
+-                <rect width="100%" height="100%" filter="url(#hero-grain)" />
+-            </svg>
+-
+-            {/* Subtle grid pattern */}
+-            <div
+-                className="absolute inset-0 opacity-[0.025]"
+-                style={{
+-                    backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+-                    backgroundSize: "64px 64px",
+-                }}
+-            />
+-
+-            <div className="relative z-10 max-w-4xl mx-auto px-6 text-center pt-20">
+-
+-                {/* Headline */}
+-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
+-                    <span className="text-foreground">The world&apos;s best ideas.</span>
+-                    <br />
+-                    <span className="bg-gradient-to-r from-zinc-200 via-zinc-400 to-zinc-300 bg-clip-text text-transparent">
+-                        Distilled. Actionable. Free.
+-                    </span>
+-                </h1>
+-
+-                {/* Subheadline */}
+-                <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+-                    Structured summaries of top books, podcasts, and articles — with built-in checklists to turn ideas into action.
+-                </p>
+-
+-                {/* CTAs */}
+-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-14">
+-                    <a
+-                        href="#why-netflux"
+-                        className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full border border-white/10 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-white/20 transition-all"
+-                    >
+-                        Why {APP_NAME}?
+-                        <ChevronDown className="size-4" />
+-                    </a>
+-                    <Link
+-                        href="/browse"
+-                        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-white text-black text-base font-semibold hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-white/10"
+-                    >
+-                        Start Exploring
+-                        <ArrowRight className="size-4" />
+-                    </Link>
++            <div className="rounded-[22px] border border-white/10 bg-white/[0.025] p-5">
++              <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">Domains covered</p>
++              <p className="mt-3 font-serif text-4xl text-foreground">{totalCategoryCount}+</p>
++              <p className="mt-2 text-sm leading-7 text-muted-foreground">
++                From health and wealth to philosophy, productivity, science, and beyond.
++              </p>
++            </div>
++          </div>
++        </div>
++
++        <div className="relative">
++          <div className="pointer-events-none absolute -left-12 top-12 hidden h-56 w-56 rounded-full bg-[hsl(39,38%,76%)]/10 blur-3xl lg:block" />
++          <div className="pointer-events-none absolute -bottom-10 right-0 hidden h-56 w-56 rounded-full bg-slate-400/10 blur-3xl lg:block" />
++
++          <div className="relative rounded-[34px] border border-white/10 bg-[linear-gradient(145deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-4 shadow-[0_40px_100px_rgba(0,0,0,0.28)]">
++            <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
++              <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-black/30">
++                <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-4 text-xs uppercase tracking-[0.22em] text-white/70">
++                  <span>Product preview</span>
++                  <span>Browse + Read</span>
+                 </div>
+-
+-                {/* Glassmorphism Stats Bar */}
+-                <div className="inline-flex flex-wrap items-center justify-center gap-6 sm:gap-8 px-8 py-4 rounded-2xl bg-white/[0.04] border border-white/[0.08] backdrop-blur-xl">
+-                    <div className="flex items-center gap-2.5">
+-                        <div className="p-1.5 rounded-lg bg-blue-500/10">
+-                            <BookOpen className="size-4 text-blue-400" />
+-                        </div>
+-                        <div className="text-left">
+-                            <p className="text-sm font-semibold text-foreground">{totalContentCount}+</p>
+-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Summaries</p>
+-                        </div>
++                <div className="relative aspect-[1.05/1]">
++                  <Image
++                    src="/images/screenshot_homepage.png"
++                    alt="Flux browsing experience"
++                    fill
++                    sizes="(min-width: 1024px) 620px, 100vw"
++                    className="object-cover object-left-top opacity-90"
++                    priority
++                  />
++                  <div className="absolute inset-0 bg-gradient-to-tr from-black/75 via-black/30 to-transparent" />
++                </div>
++              </div>
++
++              <div className="grid gap-4">
++                <SoftPanel className="p-5">
++                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">Selected read</p>
++                  <h2 className="mt-3 font-serif text-3xl tracking-tight text-foreground">
++                    {heroItem?.title ?? "Structured reading, without the noise"}
++                  </h2>
++                  <p className="mt-4 text-sm leading-7 text-muted-foreground">
++                    Start with a distilled read, move through the main idea clearly, then save what matters for later.
++                  </p>
++                  {heroItem ? (
++                    <div className="mt-5 flex flex-wrap gap-2 text-xs uppercase tracking-[0.22em] text-muted-foreground/75">
++                      <span>{typeLabel(heroItem.type)}</span>
++                      <span>{formatMinutes(heroItem.duration_seconds)}</span>
++                    </div>
++                  ) : null}
++                </SoftPanel>
++
++                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
++                  <SoftPanel className="p-5">
++                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">Why it works</p>
++                    <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
++                      <p>See the core thesis before you commit.</p>
++                      <p>Read in structured sections that keep context intact.</p>
+                     </div>
+-                    <div className="w-px h-8 bg-white/[0.08] hidden sm:block" />
+-                    <div className="flex items-center gap-2.5">
+-                        <div className="p-1.5 rounded-lg bg-purple-500/10">
+-                            <LayoutGrid className="size-4 text-purple-400" />
+-                        </div>
+-                        <div className="text-left">
+-                            <p className="text-sm font-semibold text-foreground">{totalCategoryCount || 12}+</p>
+-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Categories</p>
+-                        </div>
++                  </SoftPanel>
++                  <SoftPanel className="p-5">
++                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">What compounds</p>
++                    <div className="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
++                      <p>Highlights, notes, saved reads, and return-ready progress.</p>
+                     </div>
++                  </SoftPanel>
+                 </div>
++              </div>
+             </div>
+-
+-            {/* Scroll indicator */}
+-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+-                <ChevronDown className="size-5 text-muted-foreground/50" />
+-            </div>
+-
+-        </section>
+-    );
++          </div>
++        </div>
++      </div>
++    </section>
++  );
+ }
+ 
+-// ===================================================================
+-// WHY NETFLUX? — BRAND STORY SECTION
+-// ===================================================================
+-
+-function WhyNetfluxSection() {
+-    const { ref, isVisible } = useInView();
+-
+-    return (
+-        <section id="why-netflux" ref={ref} className="py-24 sm:py-32 px-6 scroll-mt-16 relative overflow-hidden">
+-            {/* Subtle gradient accent */}
+-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent" />
+-
+-            <div className="relative max-w-4xl mx-auto">
+-                {/* Section header */}
+-                <div className={`text-center mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
+-                    <p className="text-xs font-bold text-primary/60 uppercase tracking-[0.25em] mb-6">
+-                        The Name
+-                    </p>
+-                    <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight">
+-                        Why <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">{APP_NAME}</span>?
+-                    </h2>
+-                </div>
+-
+-                {/* Two-column etymology cards */}
+-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+-                    {/* NET card */}
+-                    <div
+-                        className={`group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8 backdrop-blur-sm transition-all duration-700 hover:border-blue-500/20 hover:bg-white/[0.05] ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                        style={{ transitionDelay: "150ms" }}
+-                    >
+-                        {/* Glow effect on hover */}
+-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+-                        <div className="relative">
+-                            <div className="flex items-center gap-3 mb-5">
+-                                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/10">
+-                                    <Network className="size-5 text-blue-400" />
+-                                </div>
+-                                <span className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">NET</span>
+-                            </div>
+-                            <p className="text-xs font-medium text-blue-400/70 uppercase tracking-[0.2em] mb-3">
+-                                noun. A network. An interconnected system.
+-                            </p>
+-                            <p className="text-base sm:text-[17px] text-muted-foreground leading-relaxed">
+-                                Your reading doesn&apos;t exist in isolation. Every book connects to a podcast, every article builds on a philosophy. {APP_NAME} captures it all in one unified stream — a network of the world&apos;s best ideas.
+-                            </p>
+-                        </div>
+-                    </div>
+-
+-                    {/* FLUX card */}
+-                    <div
+-                        className={`group relative rounded-2xl border border-white/[0.08] bg-white/[0.03] p-8 backdrop-blur-sm transition-all duration-700 hover:border-purple-500/20 hover:bg-white/[0.05] ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                        style={{ transitionDelay: "300ms" }}
+-                    >
+-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/[0.05] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+-                        <div className="relative">
+-                            <div className="flex items-center gap-3 mb-5">
+-                                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/10">
+-                                    <Waves className="size-5 text-purple-400" />
+-                                </div>
+-                                <span className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">FLUX</span>
+-                            </div>
+-                            <p className="text-xs font-medium text-purple-400/70 uppercase tracking-[0.2em] mb-3">
+-                                noun. A state of continuous change and flow.
+-                            </p>
+-                            <p className="text-base sm:text-[17px] text-muted-foreground leading-relaxed">
+-                                Inspired by the psychology of Flow — that rare state when learning feels effortless. We designed every interaction to keep knowledge moving: from page, to mind, to action.
+-                            </p>
+-                        </div>
++function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
++  return (
++    <section className="px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
++      <MotionSection>
++        <div className="mx-auto max-w-7xl">
++          <SectionIntro
++            label="Start here"
++            title="A few ideas worth your attention right now."
++            body="A curated selection of high-signal reads to help you think better, work better, and live with more intention."
++          />
++
++          <div className="mt-12 grid gap-5 lg:grid-cols-3">
++            {items.map((item, index) => (
++              <Link key={item.id} href={`/read/${item.id}`} className="group block">
++                <div className="overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.03] transition-transform duration-300 group-hover:-translate-y-1">
++                  <div className="relative aspect-[4/3] overflow-hidden border-b border-white/10">
++                    <Image
++                      src={getArtwork(item)}
++                      alt={item.title}
++                      fill
++                      sizes="(min-width: 1024px) 400px, 100vw"
++                      className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
++                    />
++                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
++                    <div className="absolute inset-x-0 bottom-0 p-5">
++                      <div className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.22em] text-white/72">
++                        <span>{typeLabel(item.type)}</span>
++                        <span>{formatMinutes(item.duration_seconds)}</span>
++                      </div>
++                      <h3 className="mt-3 font-serif text-2xl tracking-tight text-white">{item.title}</h3>
+                     </div>
+-                </div>
+-
+-                {/* Combined meaning */}
+-                <div
+-                    className={`text-center transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                    style={{ transitionDelay: "450ms" }}
+-                >
+-                    <div className="inline-flex flex-col items-center gap-3 px-8 py-5 rounded-2xl bg-white/[0.03] border border-white/[0.06] backdrop-blur-sm">
+-                        <p className="text-lg sm:text-xl font-semibold">
+-                            <span className="text-blue-400">Net</span><span className="text-purple-400">flux</span>
+-                            <span className="text-muted-foreground font-normal"> — A network of ideas in constant flow.</span>
+-                        </p>
+-                        <p className="text-xs text-muted-foreground/70">
+-                            Not a clone of anything. A new way to consume knowledge.
+-                        </p>
++                  </div>
++                  <div className="p-6">
++                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">Why start here</p>
++                    <p className="mt-3 text-sm leading-7 text-muted-foreground">{getFeatureReason(index)}</p>
++                    <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-foreground">
++                      Read now
++                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                     </div>
++                  </div>
+                 </div>
+-            </div>
+-        </section>
+-    );
++              </Link>
++            ))}
++          </div>
++        </div>
++      </MotionSection>
++    </section>
++  );
+ }
+ 
+-// ===================================================================
+-// HOW IT WORKS
+-// ===================================================================
+-
+-function HowItWorksSection() {
+-    const { ref, isVisible } = useInView();
+-
+-    const steps = [
+-        {
+-            icon: BookOpen,
+-            number: "01",
+-            title: "Choose Your Topic",
+-            description: "Organized by the problem you want to solve — Health, Wealth, Mindset, and more. No browsing by ISBN.",
+-            accent: "from-white/[0.08] to-transparent",
+-        },
+-        {
+-            icon: Zap,
+-            number: "02",
+-            title: "Skim or Deep-Dive",
+-            description: "Get the highlights in 2 minutes with Quick Mode, or read the full structured summary with Deep Mode.",
+-            accent: "from-white/[0.08] to-transparent",
+-        },
+-        {
+-            icon: CheckSquare,
+-            number: "03",
+-            title: "Turn Knowledge Into Action",
+-            description: "Every summary comes with actionable checklists. Don't just read about a morning routine — start tracking it.",
+-            accent: "from-white/[0.08] to-transparent",
+-        },
+-    ];
+-
+-    return (
+-        <section id="how-it-works" className="py-24 sm:py-32 px-6 scroll-mt-16">
+-            <div className="max-w-6xl mx-auto">
+-                <div
+-                    ref={ref}
+-                    className={`text-center mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                >
+-                    <p className="text-xs font-bold text-primary/60 uppercase tracking-[0.25em] mb-4">
+-                        How It Works
+-                    </p>
+-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+-                        Knowledge in three steps
+-                    </h2>
+-                </div>
+-
+-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+-                    {steps.map((step, i) => (
+-                        <div
+-                            key={step.number}
+-                            className={`relative group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 transition-all duration-700 hover:border-white/[0.12] hover:bg-white/[0.04] ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                            style={{ transitionDelay: `${i * 150}ms` }}
+-                        >
+-                            {/* Gradient glow */}
+-                            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${step.accent} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+-
+-                            <div className="relative">
+-                                <span className="text-sm font-mono text-zinc-400 mb-4 block font-medium">{step.number}</span>
+-                                <div className="p-3 rounded-xl bg-white/[0.05] w-fit mb-5">
+-                                    <step.icon className="size-6 text-foreground" />
+-                                </div>
+-                                <h3 className="text-lg font-semibold mb-3">{step.title}</h3>
+-                                <p className="text-base text-muted-foreground leading-relaxed">{step.description}</p>
+-                            </div>
+-                        </div>
+-                    ))}
+-                </div>
+-            </div>
+-        </section>
+-    );
++function EditorialSplitSection() {
++  return (
++    <section className="px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
++      <MotionSection>
++        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-2 lg:gap-12">
++          <div className="rounded-[30px] bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.015))] p-8 sm:p-10">
++            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">Why Flux</p>
++            <h2 className="mt-6 font-serif text-4xl tracking-tight text-foreground sm:text-5xl">
++              Most people consume more than they remember.
++            </h2>
++            <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
++              Podcasts, books, and articles can be full of value, but most of it disappears as quickly as it arrives.
++              The problem is rarely access. It&apos;s retention.
++            </p>
++          </div>
++
++          <div className="rounded-[30px] border border-white/10 bg-white/[0.03] p-8 sm:p-10">
++            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">The answer</p>
++            <h2 className="mt-6 font-serif text-4xl tracking-tight text-foreground sm:text-5xl">
++              {APP_NAME} turns information into something you can keep.
++            </h2>
++            <p className="mt-6 max-w-xl text-base leading-8 text-muted-foreground sm:text-lg">
++              Each piece is distilled into a clear reading experience built for understanding, recall, and reuse, so the
++              best ideas stay available when they matter.
++            </p>
++          </div>
++        </div>
++      </MotionSection>
++    </section>
++  );
+ }
+ 
+-// ===================================================================
+-// FEATURES SECTION
+-// ===================================================================
+-
+-function FeaturesSection() {
+-    const { ref, isVisible } = useInView();
+-
+-    const features = [
+-        {
+-            icon: Headphones,
+-            title: "Audio Summaries",
+-            description: "Listen on the go. Every summary has an audio version.",
+-        },
+-        {
+-            icon: BarChart3,
+-            title: "Reading Heatmap & Stats",
+-            description: "Track your reading habits with GitHub-style heatmaps and streaks.",
+-        },
+-        {
+-            icon: Sparkles,
+-            title: "Smart Recommendations",
+-            description: "\"Because you read X\" — AI-powered suggestions based on your history.",
+-        },
+-        {
+-            icon: Library,
+-            title: "Personal Library",
+-            description: "My List, In Progress, Completed — organize your knowledge journey.",
+-        },
+-    ];
+-
+-    return (
+-        <section className="py-24 sm:py-32 px-6 bg-white/[0.01]">
+-            <div className="max-w-6xl mx-auto">
+-                <div
+-                    ref={ref}
+-                    className={`text-center mb-16 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                >
+-                    <p className="text-xs font-bold text-primary/60 uppercase tracking-[0.25em] mb-4">
+-                        The Experience
+-                    </p>
+-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+-                        More than just summaries
+-                    </h2>
+-                    <p className="text-muted-foreground text-base max-w-lg mx-auto">
+-                        A complete system for consuming, tracking, and acting on knowledge.
+-                    </p>
+-                </div>
+-
+-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+-                    {features.map((feature, i) => (
+-                        <div
+-                            key={feature.title}
+-                            className={`group flex gap-5 p-6 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.10] transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                            style={{ transitionDelay: `${i * 100}ms` }}
+-                        >
+-                            <div className="p-3 rounded-lg bg-white/[0.05] h-fit group-hover:bg-white/[0.08] transition-colors">
+-                                <feature.icon className="size-5 text-foreground" />
+-                            </div>
+-                            <div>
+-                                <h3 className="text-base font-semibold mb-1.5">{feature.title}</h3>
+-                                <p className="text-base text-muted-foreground leading-relaxed">{feature.description}</p>
+-                            </div>
+-                        </div>
+-                    ))}
++function HowFluxWorksSection() {
++  return (
++    <section className="px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
++      <MotionSection>
++        <div className="mx-auto max-w-7xl">
++          <SectionIntro
++            label="How it works"
++            title="A better loop for learning from what you consume."
++            body="Flux is designed to move ideas from discovery to understanding to long-term usefulness."
++          />
++
++          <div className="mt-12 grid gap-4 lg:grid-cols-4">
++            {WORKFLOW_STEPS.map((step, index) => (
++              <div
++                key={step.title}
++                className="rounded-[24px] border border-white/10 bg-white/[0.03] p-6 transition-colors hover:bg-white/[0.05]"
++              >
++                <div className="flex items-center justify-between">
++                  <div className="flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
++                    <step.icon className="size-5 text-[hsl(39,38%,76%)]" />
++                  </div>
++                  <span className="text-xs uppercase tracking-[0.24em] text-muted-foreground/60">0{index + 1}</span>
+                 </div>
+-            </div>
+-        </section>
+-    );
++                <h3 className="mt-8 text-2xl font-medium text-foreground">{step.title}</h3>
++                <p className="mt-4 text-sm leading-7 text-muted-foreground">{step.body}</p>
++              </div>
++            ))}
++          </div>
++        </div>
++      </MotionSection>
++    </section>
++  );
+ }
+ 
+-// ===================================================================
+-// CONTENT PREVIEW
+-// ===================================================================
+-
+-function ContentPreviewSection({ items }: { items: ContentItem[] }) {
+-    const { ref, isVisible } = useInView();
+-
+-    return (
+-        <section className="py-24 sm:py-32 px-6">
+-            <div className="max-w-6xl mx-auto">
+-                <div
+-                    ref={ref}
+-                    className={`text-center mb-12 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                >
+-                    <p className="text-xs font-bold text-primary/60 uppercase tracking-[0.25em] mb-4">
+-                        Real Content
+-                    </p>
+-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+-                        Dive in — it&apos;s all free
+-                    </h2>
+-                    <p className="text-muted-foreground text-base max-w-lg mx-auto">
+-                        No paywall. No trial. Just curated knowledge, ready to explore.
+-                    </p>
+-                </div>
+-
+-                <div className="relative overflow-hidden -mx-6 px-6 sm:-mx-0 sm:px-0 pb-8 group">
+-                    <div className={`landing-carousel-track flex w-max gap-4 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`} style={{ transitionDelay: "200ms" }}>
+-                        {[...items, ...items, ...items, ...items].slice(0, Math.max(12, items.length * 2)).map((item, index) => (
+-                            <Link
+-                                key={`${item.id}-${index}`}
+-                                href={`/read/${item.id}`}
+-                                className="relative flex-none w-[60vw] sm:w-[35vw] md:w-[28vw] lg:w-[15vw] xl:w-[14vw] aspect-[2/3] rounded-xl overflow-hidden border border-white/[0.06] bg-card hover:border-white/[0.15] transition-all duration-300 hover:-translate-y-1 block"
+-                                style={{ perspective: "600px" }}
+-                            >
+-                                {item.cover_image_url ? (
+-                                    <Image
+-                                        src={item.cover_image_url}
+-                                        alt={item.title}
+-                                        fill
+-                                        className="object-cover transition-transform duration-500 hover:scale-105 hover:[transform:rotateY(2deg)]"
+-                                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 16vw"
+-                                    />
+-                                ) : (
+-                                    <div className="absolute inset-0 bg-gradient-to-br from-zinc-800 to-zinc-900" />
+-                                )}
+-                                {/* Overlay */}
+-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+-                                {/* Content */}
+-                                <div className="absolute bottom-0 left-0 right-0 p-3 pointer-events-none">
+-                                    <span className="text-[10px] uppercase tracking-wider text-zinc-400 font-medium">
+-                                        {item.type}
+-                                    </span>
+-                                    <h3 className="text-xs sm:text-sm font-semibold text-white line-clamp-2 leading-tight mt-0.5">
+-                                        {item.title}
+-                                    </h3>
+-                                </div>
+-                            </Link>
+-                        ))}
+-                    </div>
++function ReadingExperienceSection({ sampleItem }: { sampleItem: ContentItem | null }) {
++  return (
++    <section className="px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
++      <MotionSection>
++        <div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
++          <SectionIntro
++            label="Reading, upgraded"
++            title="Built for understanding, not just browsing."
++            body="Flux is not a content feed dressed up as a library. It is a reading experience designed to surface the core idea quickly, guide you through the important details, and make useful knowledge easier to revisit later."
++          />
++
++          <div className="rounded-[32px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.045),rgba(255,255,255,0.02))] p-5 sm:p-6">
++            <div className="rounded-[26px] border border-white/10 bg-black/25 p-5 sm:p-6">
++              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5">
++                <div>
++                  <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">Reader preview</p>
++                  <h3 className="mt-2 font-serif text-2xl tracking-tight text-foreground">
++                    {sampleItem?.title ?? "A reading experience built for clarity"}
++                  </h3>
+                 </div>
+-
+-                <div className={`text-center mt-10 transition-all duration-700 ${isVisible ? "opacity-100" : "opacity-0"}`} style={{ transitionDelay: "400ms" }}>
+-                    <Link
+-                        href="/browse"
+-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/10 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-white/20 transition-all hover:scale-105"
+-                    >
+-                        Browse All Content
+-                        <ArrowRight className="size-4" />
+-                    </Link>
++                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-xs uppercase tracking-[0.22em] text-muted-foreground/70">
++                  <Compass className="size-3.5" />
++                  <span>Resume ready</span>
+                 </div>
+-            </div>
+-        </section>
+-    );
+-}
+-
+-// ===================================================================
+-// CONTENT TYPES
+-// ===================================================================
+-
+-function ContentTypesSection() {
+-    const { ref, isVisible } = useInView();
+-
+-    const types = [
+-        {
+-            icon: BookOpen,
+-            title: "Books",
+-            description: "Chapter-by-chapter breakdowns with key takeaways and actionable insights.",
+-            accent: "from-blue-500/10 to-transparent",
+-            iconColor: "text-blue-400",
+-        },
+-        {
+-            icon: Headphones,
+-            title: "Podcasts",
+-            description: "Episode summaries and key insights from the world's top shows.",
+-            accent: "from-purple-500/10 to-transparent",
+-            iconColor: "text-purple-400",
+-        },
+-        {
+-            icon: FileText,
+-            title: "Articles",
+-            description: "Condensed versions of long-form pieces — the signal without the noise.",
+-            accent: "from-emerald-500/10 to-transparent",
+-            iconColor: "text-emerald-400",
+-        },
+-    ];
+-
+-    return (
+-        <section className="py-24 sm:py-32 px-6 bg-white/[0.01]">
+-            <div className="max-w-5xl mx-auto">
+-                <div
+-                    ref={ref}
+-                    className={`text-center mb-14 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                >
+-                    <p className="text-xs font-bold text-primary/60 uppercase tracking-[0.25em] mb-4">
+-                        What We Cover
++              </div>
++
++              <div className="mt-5 grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
++                <div className="space-y-4">
++                  <div className="rounded-[22px] border border-white/10 bg-white/[0.03] p-5">
++                    <p className="text-xs uppercase tracking-[0.22em] text-muted-foreground/70">What you get first</p>
++                    <p className="mt-3 text-base leading-8 text-foreground/92">
++                      The main idea, the essential takeaways, and a cleaner path through the material than the raw source usually offers.
+                     </p>
+-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+-                        Three formats. One stream.
+-                    </h2>
++                  </div>
++                  <div className="grid gap-3 sm:grid-cols-2">
++                    {[
++                      "See the thesis early",
++                      "Read in clear sections",
++                      "Capture key passages",
++                      "Return without friction",
++                    ].map((point) => (
++                      <div
++                        key={point}
++                        className="rounded-[18px] border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-muted-foreground"
++                      >
++                        {point}
++                      </div>
++                    ))}
++                  </div>
+                 </div>
+ 
+-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+-                    {types.map((type, i) => (
+-                        <div
+-                            key={type.title}
+-                            className={`relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 text-center transition-all duration-700 hover:border-white/[0.12] ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-                            style={{ transitionDelay: `${i * 150}ms` }}
+-                        >
+-                            <div className={`absolute inset-0 rounded-2xl bg-gradient-to-b ${type.accent} opacity-50`} />
+-                            <div className="relative">
+-                                <div className="p-4 rounded-xl bg-white/[0.05] w-fit mx-auto mb-5">
+-                                    <type.icon className={`size-7 ${type.iconColor}`} />
+-                                </div>
+-                                <h3 className="text-lg font-semibold mb-2">{type.title}</h3>
+-                                <p className="text-sm text-muted-foreground leading-relaxed">{type.description}</p>
+-                            </div>
+-                        </div>
+-                    ))}
++                <div className="relative overflow-hidden rounded-[24px] border border-white/10 bg-black/30">
++                  <Image
++                    src="/images/screenshot_homepage.png"
++                    alt="Flux reading and browsing screenshot"
++                    fill
++                    sizes="(min-width: 1024px) 520px, 100vw"
++                    className="object-cover object-left-top opacity-85"
++                  />
++                  <div className="absolute inset-0 bg-gradient-to-tr from-black/82 via-black/45 to-transparent" />
++                  <div className="absolute inset-x-0 bottom-0 p-5">
++                    <p className="text-xs uppercase tracking-[0.22em] text-white/65">Designed for repeat use</p>
++                    <p className="mt-3 max-w-xs text-sm leading-7 text-white/82">
++                      Read once for clarity. Return later for action, notes, context, and retrieval.
++                    </p>
++                  </div>
+                 </div>
++              </div>
+             </div>
+-        </section>
+-    );
++          </div>
++        </div>
++      </MotionSection>
++    </section>
++  );
+ }
+ 
+-// ===================================================================
+-// CATEGORIES
+-// ===================================================================
+-
+-function CategoriesSection({ categories }: { categories: { category: string; count: number }[] }) {
+-    const { ref, isVisible } = useInView();
++function PersonalKnowledgeSection() {
++  return (
++    <section className="px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
++      <MotionSection>
++        <div className="mx-auto overflow-hidden rounded-[36px] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.05),rgba(255,255,255,0.015))] px-6 py-10 sm:px-8 sm:py-12 lg:max-w-7xl lg:px-12">
++          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
++            <SectionIntro
++              label="Compounding value"
++              title="What you read becomes more useful over time."
++              body="Flux helps you build a personal layer around the ideas you consume, so saved highlights, unfinished reads, and past insights stay close at hand instead of disappearing into memory."
++            />
+ 
+-    return (
+-        <section className="py-24 sm:py-32 px-6">
+-            <div className="max-w-5xl mx-auto">
++            <div className="grid gap-4 sm:grid-cols-2">
++              {PERSONAL_LAYER_POINTS.map((point) => (
+                 <div
+-                    ref={ref}
+-                    className={`text-center mb-12 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
++                  key={point.title}
++                  className="rounded-[24px] border border-white/10 bg-black/18 p-6 transition-colors hover:bg-black/24"
+                 >
+-                    <p className="text-xs font-bold text-primary/60 uppercase tracking-[0.25em] mb-4">
+-                        Browse By Life Area
+-                    </p>
+-                    <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
+-                        Organized by the problem you want to solve
+-                    </h2>
+-                    <p className="text-muted-foreground text-base max-w-lg mx-auto">
+-                        Not by book title. Not by author. By what matters to you.
+-                    </p>
+-                </div>
+-
+-                <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`} style={{ transitionDelay: "200ms" }}>
+-                    {categories.map((cat) => {
+-                        const Icon = CATEGORY_ICONS[cat.category] || Tag;
+-                        return (
+-                            <Link
+-                                key={cat.category}
+-                                href={`/search?category=${encodeURIComponent(cat.category)}`}
+-                                className="group flex items-center gap-3 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/[0.12] transition-all"
+-                            >
+-                                <div className="p-2 rounded-lg bg-white/[0.05] group-hover:bg-white/[0.08] transition-colors">
+-                                    <Icon className="size-4 text-zinc-300 group-hover:text-white transition-colors" />
+-                                </div>
+-                                <div className="flex-1 min-w-0">
+-                                    <span className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
+-                                        {cat.category}
+-                                    </span>
+-                                </div>
+-                                <span className="text-xs text-zinc-500 font-medium">{cat.count}</span>
+-                            </Link>
+-                        );
+-                    })}
++                  <div className="flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
++                    <point.icon className="size-5 text-[hsl(39,38%,76%)]" />
++                  </div>
++                  <h3 className="mt-6 text-2xl font-medium text-foreground">{point.title}</h3>
++                  <p className="mt-3 text-sm leading-7 text-muted-foreground">{point.body}</p>
+                 </div>
++              ))}
+             </div>
+-        </section>
+-    );
++          </div>
++        </div>
++      </MotionSection>
++    </section>
++  );
+ }
+ 
+-// ===================================================================
+-// FINAL CTA
+-// ===================================================================
+-
+-function FinalCTASection() {
+-    const { ref, isVisible } = useInView();
++function TopicMapSection({ items }: { items: { category: string; count: number }[] }) {
++  return (
++    <section className="px-5 py-20 sm:px-6 sm:py-24 lg:px-8 lg:py-28">
++      <MotionSection>
++        <div className="mx-auto max-w-7xl">
++          <SectionIntro
++            label="Explore by domain"
++            title="Browse the ideas shaping how people think, work, and live."
++            body="Move through the library by theme, from health and wealth to philosophy, productivity, science, and beyond."
++            align="center"
++          />
++
++          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
++            {items.map((item) => {
++              const Icon = CATEGORY_ICONS[item.category as keyof typeof CATEGORY_ICONS] ?? Sparkles;
++
++              return (
++                <Link
++                  key={item.category}
++                  href={`/search?category=${encodeURIComponent(item.category)}`}
++                  className="group rounded-[22px] border border-white/10 bg-white/[0.02] p-5 transition-colors hover:bg-white/[0.05]"
++                >
++                  <div className="flex items-center justify-between gap-3">
++                    <div className="flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]">
++                      <Icon className="size-5 text-[hsl(39,38%,76%)]" />
++                    </div>
++                    <span className="text-xs uppercase tracking-[0.22em] text-muted-foreground/65">{item.count}</span>
++                  </div>
++                  <h3 className="mt-6 text-xl font-medium text-foreground">{item.category}</h3>
++                  <p className="mt-2 text-sm leading-7 text-muted-foreground">Start with what matters most to you.</p>
++                </Link>
++              );
++            })}
++          </div>
++        </div>
++      </MotionSection>
++    </section>
++  );
++}
+ 
+-    return (
+-        <section className="relative min-h-[60vh] flex flex-col items-center justify-center py-24 px-6 overflow-hidden bg-gradient-to-b from-background to-zinc-950/50">
+-            {/* Ambient background glow for visual interest */}
+-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+-                <div className="w-[800px] h-[400px] bg-blue-500/5 rounded-full blur-[120px]" />
++function FinalCTASection({ featuredItem }: { featuredItem: ContentItem | null }) {
++  return (
++    <section className="px-5 pb-18 pt-20 sm:px-6 sm:pb-24 sm:pt-24 lg:px-8 lg:pb-28 lg:pt-28">
++      <MotionSection>
++        <div className="mx-auto max-w-7xl rounded-[34px] border border-white/10 bg-[linear-gradient(150deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))] p-8 sm:p-10 lg:p-14">
++          <div className="grid gap-10 lg:grid-cols-[1fr_auto] lg:items-center">
++            <div className="max-w-2xl">
++              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-muted-foreground/70">Start now</p>
++              <h2 className="mt-5 font-serif text-4xl tracking-tight text-foreground sm:text-5xl md:text-6xl">
++                Build a library of ideas worth keeping.
++              </h2>
++              <p className="mt-5 text-base leading-8 text-muted-foreground sm:text-lg">
++                Start with a few great reads, then turn them into something you can return to, apply, and build on over time.
++              </p>
+             </div>
+ 
+-            <div
+-                ref={ref}
+-                className={`relative z-10 max-w-3xl mx-auto text-center transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+-            >
+-                <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-6">
+-                    Stop reading about reading.
+-                    <br />
+-                    <span className="bg-gradient-to-r from-zinc-300 to-zinc-500 bg-clip-text text-transparent">
+-                        Start reading what matters.
+-                    </span>
+-                </h2>
+-
+-                <p className="text-muted-foreground text-base sm:text-lg mb-10 max-w-xl mx-auto">
+-                    All content is free. Create an account to track your progress, build your library, and get personalized recommendations.
+-                </p>
+-
+-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+-                    <Link
+-                        href="/browse"
+-                        className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-white text-black text-base font-semibold hover:bg-white/90 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-white/10"
+-                    >
+-                        Explore the Library
+-                        <ArrowRight className="size-4" />
+-                    </Link>
+-                    <Link
+-                        href="/login"
+-                        className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full border border-white/10 text-sm font-medium text-muted-foreground hover:text-foreground hover:border-white/20 transition-all"
+-                    >
+-                        Create Free Account
+-                    </Link>
+-                </div>
++            <div className="flex flex-col gap-4 sm:flex-row lg:flex-col">
++              <Link
++                href="/browse"
++                className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-transform hover:scale-[1.01] hover:bg-primary/92"
++              >
++                Browse the Library
++              </Link>
++              <Link
++                href={featuredItem ? `/read/${featuredItem.id}` : "/browse"}
++                className="inline-flex h-12 items-center justify-center rounded-full border border-white/12 px-6 text-sm font-semibold text-foreground transition-colors hover:bg-white/[0.04]"
++              >
++                Start with Featured Reads
++              </Link>
+             </div>
+-        </section>
+-    );
++          </div>
++        </div>
++      </MotionSection>
++    </section>
++  );
+ }
+ 
+-// ===================================================================
+-// FOOTER
+-// ===================================================================
+-
+ function LandingFooter() {
+-    return (
+-        <footer className="py-12 px-6">
+-            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+-                <div className="flex items-center gap-2">
+-                    <BookOpen className="size-4 text-muted-foreground" />
+-                    <span className="text-sm text-muted-foreground">
+-                        {APP_NAME} — Curated Knowledge Stream
+-                    </span>
+-                </div>
+-
+-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
+-                    <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+-                    <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+-                    <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+-                </div>
+-            </div>
+-        </footer>
+-    );
++  return (
++    <footer className="px-5 pb-10 sm:px-6 lg:px-8">
++      <div className="mx-auto flex max-w-7xl flex-col gap-5 border-t border-white/8 pt-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
++        <div className="flex items-center gap-3">
++          <BrandWordmark compact />
++          <span>Distilled ideas. Applied better.</span>
++        </div>
++
++        <div className="flex flex-wrap gap-5">
++          <Link href="/browse" className="transition-colors hover:text-foreground">
++            Browse
++          </Link>
++          <Link href="/about" className="transition-colors hover:text-foreground">
++            About
++          </Link>
++          <Link href="/privacy" className="transition-colors hover:text-foreground">
++            Privacy
++          </Link>
++          <Link href="/terms" className="transition-colors hover:text-foreground">
++            Terms
++          </Link>
++        </div>
++      </div>
++    </footer>
++  );
+ }

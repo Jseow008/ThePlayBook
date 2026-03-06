@@ -71,7 +71,7 @@ export function HomeFeed({
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-foreground rounded-md flex items-center justify-center text-background font-display font-bold">
-                            L
+                            {APP_NAME.charAt(0)}
                         </div>
                         <p>© 2026 {APP_NAME}</p>
                     </div>

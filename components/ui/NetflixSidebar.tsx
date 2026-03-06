@@ -109,7 +109,7 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
                     <div className="relative h-8 w-32 transition-opacity duration-300 opacity-100">
                         {/* Full Logo when expanded */}
                         <Image
-                            src="/images/netflux-logo.png"
+                            src="/images/flux-logo.png"
                             alt={APP_NAME}
                             fill
                             sizes="150px"
@@ -296,7 +296,7 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
 
             {/* Sign In / User Profile */}
             {!user ? (
-                <div className="p-4 border-t border-border">
+                <div className="p-4">
                     <Link
                         href="/login"
                         className={cn(
@@ -308,7 +308,7 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
                     </Link>
                 </div>
             ) : (
-                <div className="p-4 border-t border-border">
+                <div className="p-4">
                     <Link
                         href="/profile"
                         className={cn(
