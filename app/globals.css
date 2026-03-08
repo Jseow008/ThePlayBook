@@ -511,7 +511,9 @@ body {
   .landing-hero-flow-1,
   .landing-hero-flow-2,
   .landing-hero-flow-3,
-  .landing-carousel-track {
+  .landing-carousel-track,
+  .animate-fade-in {
     animation: none;
+    opacity: 1;
   }
 }

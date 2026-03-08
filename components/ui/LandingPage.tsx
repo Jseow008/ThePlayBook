@@ -211,12 +211,12 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
 function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-background/82 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="inline-flex items-center gap-2">
           <Logo width={88} height={24} />
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/browse"
             className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
@@ -225,7 +225,7 @@ function LandingHeader() {
           </Link>
           <Link
             href="/login"
-            className="inline-flex items-center rounded-full border border-white/[0.08] px-4 py-2 text-sm font-semibold text-foreground transition-all hover:bg-white/[0.04]"
+            className="inline-flex items-center rounded-full border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-white/[0.04] sm:px-4 sm:py-2 sm:text-sm"
           >
             Sign In
           </Link>
@@ -301,7 +301,6 @@ function HeroSection() {
                 alt="Flux dashboard desktop experience"
                 fill
                 priority
-                quality={72}
                 sizes="(max-width: 1024px) 0px, 700px"
                 className="object-cover opacity-90"
               />
@@ -313,7 +312,6 @@ function HeroSection() {
                 src="/images/Mobile Reader View.png"
                 alt="Flux mobile reader experience"
                 fill
-                quality={70}
                 sizes="140px"
                 className="object-cover"
               />
@@ -452,15 +450,14 @@ function CorePlatformFeaturesSection() {
               />
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:items-stretch">
+            <div className="grid gap-6 sm:grid-cols-2 lg:items-center">
               <FadeIn delayMs={100}>
-                <div className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-2xl">
+                <div className="group flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-2xl">
                   <div className="relative aspect-[1996/1794] w-full shrink-0 overflow-hidden border-b border-white/5 bg-zinc-950">
                     <Image
                       src={CORE_ANCHOR_FEATURE.image}
                       alt={`Screenshot illustrating ${CORE_ANCHOR_FEATURE.title}`}
                       fill
-                      quality={72}
                       sizes="(max-width: 640px) 100vw, 50vw"
                       className="object-cover object-top opacity-90 transition-transform duration-300 group-hover:scale-105 group-hover:opacity-100"
                     />
@@ -487,7 +484,6 @@ function CorePlatformFeaturesSection() {
                           src={feature.image}
                           alt={`Screenshot illustrating ${feature.title}`}
                           fill
-                          quality={72}
                           sizes="96px"
                           className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
                         />
