@@ -325,6 +325,12 @@ function HeroSection() {
 }
 
 function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
+  if (items.length === 0) return null;
+
+  // Duplicate items for seamless CSS loop. Keep multiplier low.
+  const multiplier = Math.max(2, Math.ceil(16 / Math.max(1, items.length)));
+  const displayItems = Array.from({ length: multiplier }).flatMap(() => items);
+
   return (
     <section id="featured-reads" className="scroll-mt-20 overflow-hidden bg-black/50 py-24 sm:py-32">
       <FadeIn className="mx-auto mb-16 max-w-7xl px-6">
@@ -335,12 +341,12 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
         />
       </FadeIn>
 
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="-mx-6 overflow-x-auto px-6 pb-4">
-          <div className="flex min-w-max gap-4 sm:gap-6">
-            {items.map((item) => (
+      <FadeIn delayMs={100}>
+        <div className="relative mx-auto flex w-full max-w-7xl overflow-hidden pb-8 py-4">
+          <div className="landing-carousel-track flex w-max items-center gap-4 px-4 sm:gap-6 sm:px-6">
+            {displayItems.map((item, index) => (
               <div
-                key={item.id}
+                key={`${item.id}-${index}`}
                 className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
                 <ContentCard
@@ -353,7 +359,7 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
             ))}
           </div>
         </div>
-      </div>
+      </FadeIn>
     </section>
   );
 }

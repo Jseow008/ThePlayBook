@@ -165,7 +165,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     audioUrl={content.audio_url}
                     durationSeconds={content.duration_seconds}
                     segmentsTotal={content.segments.length}
-                    segmentsRead={maxSegmentIndex + 1}
+                    segmentsRead={completedSegments.size}
                 />
 
                 {/* Big Idea - Context before segments */}
