@@ -74,7 +74,7 @@ const CORE_ANCHOR_FEATURE = {
   icon: RotateCcw,
   title: "Reading view",
   description: "Read in clear, structured sections designed for focus.",
-  image: "/images/Reading Experience Section Reader View.png",
+  image: "/images/reading-experience-reader-view.png",
 } as const;
 
 const CORE_SUPPORT_FEATURES = [
@@ -82,19 +82,19 @@ const CORE_SUPPORT_FEATURES = [
     icon: BookMarked,
     title: "Preview the thesis",
     description: "See the main idea and understand the thesis before you dive in.",
-    image: "/images/Reading Experience Section Info View.png",
+    image: "/images/reading-experience-info-view.png",
   },
   {
     icon: NotebookPen,
     title: "Highlight and annotate",
     description: "Capture the passages worth remembering while you read.",
-    image: "/images/Highlighting & Annotation.png",
+    image: "/images/highlighting-and-annotation.png",
   },
   {
     icon: Sparkles,
     title: "Ask follow-up questions",
     description: "Ask the author(s) questions about what you just read.",
-    image: "/images/AI Chat .png",
+    image: "/images/ai-chat.png",
   },
 ] as const;
 
@@ -241,26 +241,26 @@ function HeroSection() {
 
       <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-6 lg:px-8 lg:grid-cols-[1fr_1fr] lg:items-center">
         <div className="max-w-2xl">
-          <FadeIn delayMs={40}>
+          <div>
             <p className="mb-8 text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
               Curated knowledge platform
             </p>
-          </FadeIn>
+          </div>
 
-          <FadeIn delayMs={120}>
+          <div>
             <h1 className="font-serif text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-7xl lg:text-[5.5rem]">
               Read the best ideas without losing what matters.
             </h1>
-          </FadeIn>
+          </div>
 
-          <FadeIn delayMs={200}>
+          <div>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-zinc-400 sm:text-xl">
               {APP_NAME} turns books, podcasts, and articles into structured reading
               experiences you can highlight, revisit, and actually use.
             </p>
-          </FadeIn>
+          </div>
 
-          <FadeIn delayMs={280} className="mt-10">
+          <div className="mt-10">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link
                 href="/login"
@@ -286,14 +286,14 @@ function HeroSection() {
                 </span>
               ))}
             </div>
-          </FadeIn>
+          </div>
         </div>
 
-        <FadeIn delayMs={180} className="relative hidden lg:block">
+        <div className="relative hidden lg:block">
           <div className="relative z-20 w-full">
             <div className="relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
               <Image
-                src="/images/Hero Section.png"
+                src="/images/hero-section.png"
                 alt="Flux dashboard desktop experience"
                 fill
                 priority
@@ -305,7 +305,7 @@ function HeroSection() {
 
             <div className="absolute -bottom-8 -left-6 z-30 aspect-[1206/2306] w-[140px] overflow-hidden rounded-[1.25rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.4)]">
               <Image
-                src="/images/Mobile Reader View.png"
+                src="/images/mobile-reader-view.png"
                 alt="Flux mobile reader experience"
                 fill
                 sizes="140px"
@@ -314,7 +314,7 @@ function HeroSection() {
               <div className="absolute top-0 left-1/2 h-3 w-14 -translate-x-1/2 rounded-b-lg bg-[#1c1c1e]" />
             </div>
           </div>
-        </FadeIn>
+        </div>
       </div>
     </section>
   );
