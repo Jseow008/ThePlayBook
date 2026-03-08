@@ -64,9 +64,9 @@ const CURATED_CATEGORY_ORDER = [
 ] as const;
 
 const PROOF_POINTS = [
-  "Curated summaries",
-  "Structured reading",
+  "Structured summaries",
   "Highlights and notes",
+  "Ask the author",
   "Return anytime",
 ] as const;
 
@@ -80,7 +80,7 @@ const CORE_ANCHOR_FEATURE = {
 const CORE_SUPPORT_FEATURES = [
   {
     icon: BookMarked,
-    title: "Preview before you commit",
+    title: "Preview the thesis",
     description: "See the main idea and understand the thesis before you dive in.",
     image: "/images/Reading Experience Section Info View.png",
   },
@@ -92,7 +92,7 @@ const CORE_SUPPORT_FEATURES = [
   },
   {
     icon: Sparkles,
-    title: "Ask the author",
+    title: "Ask follow-up questions",
     description: "Ask the author(s) questions about what you just read.",
     image: "/images/AI Chat .png",
   },
@@ -192,13 +192,9 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(221,197,160,0.08),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(91,109,140,0.10),transparent_24%)]" />
 
         <HeroSection />
-
-        {featuredItems.length > 0 ? <FeaturedReadsSection items={featuredItems} /> : null}
-
-        <ProblemSolutionSection />
-        <HowItWorksSection />
         <CorePlatformFeaturesSection />
 
+        {featuredItems.length > 0 ? <FeaturedReadsSection items={featuredItems} /> : null}
         {curatedCategories.length > 0 ? <TopicMapSection categories={curatedCategories} /> : null}
 
         <FinalCTASection />
@@ -212,20 +208,20 @@ function LandingHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-background/82 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="inline-flex items-center gap-2">
+        <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-sm">
           <Logo width={88} height={24} />
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/browse"
-            className="hidden text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+            className="focus-ring hidden rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
           >
             Browse
           </Link>
           <Link
             href="/login"
-            className="inline-flex items-center rounded-full border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-white/[0.04] sm:px-4 sm:py-2 sm:text-sm"
+            className="focus-ring inline-flex items-center rounded-full border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-white/[0.04] sm:px-4 sm:py-2 sm:text-sm"
           >
             Sign In
           </Link>
@@ -253,14 +249,14 @@ function HeroSection() {
 
           <FadeIn delayMs={120}>
             <h1 className="font-serif text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-7xl lg:text-[5.5rem]">
-              The world&apos;s best ideas, distilled.
+              Read the best ideas without losing what matters.
             </h1>
           </FadeIn>
 
           <FadeIn delayMs={200}>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-zinc-400 sm:text-xl">
-              {APP_NAME} transforms books, podcasts, and articles into structured,
-              actionable knowledge you can actually retain and use.
+              {APP_NAME} turns books, podcasts, and articles into structured reading
+              experiences you can highlight, revisit, and actually use.
             </p>
           </FadeIn>
 
@@ -268,7 +264,7 @@ function HeroSection() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link
                 href="/login"
-                className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-transform hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]"
+                className="focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-transform hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]"
               >
                 <span className="relative z-10">Start Reading</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
@@ -276,7 +272,7 @@ function HeroSection() {
               </Link>
               <Link
                 href="/browse"
-                className="inline-flex items-center justify-center rounded-full border border-white/10 px-8 py-4 text-base font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
+                className="focus-ring inline-flex items-center justify-center rounded-full border border-white/10 px-8 py-4 text-base font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
               >
                 Browse the Library
               </Link>
@@ -336,8 +332,8 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       <FadeIn className="mx-auto mb-16 max-w-7xl px-6">
         <SectionIntro
           label="Start here"
-          title="A few ideas worth your attention right now."
-          body="A curated selection of high-signal reads to help you think better, work better, and live with more intention."
+          title="Start with something worth your time."
+          body="A living library of high-signal ideas across books, podcasts, and articles."
         />
       </FadeIn>
 
@@ -364,82 +360,7 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
   );
 }
 
-function ProblemSolutionSection() {
-  return (
-    <section className="relative overflow-hidden py-24 sm:py-32">
-      <div className="relative z-10 mx-auto grid max-w-7xl gap-8 px-6 md:grid-cols-2 md:gap-12 lg:px-8">
-        <FadeIn>
-          <div className="rounded-[32px] border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.01] p-10 sm:p-12">
-            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">
-              Why {APP_NAME}
-            </p>
-            <h2 className="mt-8 text-balance font-serif text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Most people consume more than they remember.
-            </h2>
-            <p className="mt-6 text-lg leading-relaxed text-zinc-400">
-              Podcasts, books, and articles can be full of value, but most of it disappears as quickly as it arrives.
-              The problem is rarely access. It&apos;s retention.
-            </p>
-          </div>
-        </FadeIn>
 
-        <FadeIn delayMs={120}>
-          <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-black p-10 shadow-2xl sm:p-12">
-            <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-emerald-500/8 blur-[60px]" />
-
-            <div className="relative z-10">
-              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-white/50">
-                The answer
-              </p>
-              <h2 className="mt-8 text-balance font-serif text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                {APP_NAME} turns information into something you can keep.
-              </h2>
-              <p className="mt-6 text-lg leading-relaxed text-zinc-400">
-                Each piece is distilled into a clear reading experience built for understanding, recall, and reuse, so the
-                best ideas stay available when they matter.
-              </p>
-            </div>
-          </div>
-        </FadeIn>
-      </div>
-    </section>
-  );
-}
-
-function HowItWorksSection() {
-  return (
-    <section className="bg-black py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <FadeIn>
-          <SectionIntro
-            label="How it works"
-            title="A better loop for learning from what you consume."
-            body={`${APP_NAME} is designed to move ideas from discovery to understanding to long-term usefulness.`}
-          />
-        </FadeIn>
-
-        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {WORKFLOW_STEPS.map((step, index) => (
-            <FadeIn key={step.number} delayMs={index * 80}>
-              <div className="group flex h-full flex-col gap-6 rounded-3xl border border-white/10 bg-white/[0.03] p-8 transition-colors hover:bg-white/[0.06]">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-sm font-medium text-zinc-500">{step.number}</span>
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-colors group-hover:bg-white/10">
-                    <step.icon className="size-5 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-zinc-400">{step.description}</p>
-                </div>
-              </div>
-            </FadeIn>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function CorePlatformFeaturesSection() {
   return (
@@ -450,9 +371,9 @@ function CorePlatformFeaturesSection() {
           <div className="relative z-10 grid gap-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
             <div className="max-w-md">
               <SectionIntro
-                label="Reading, upgraded"
-                title="Built for understanding, not just browsing."
-                body={`${APP_NAME} helps you build a personal layer around the ideas you consume. Discover the core idea quickly, and make what you read more useful over time.`}
+                label="How Flux helps"
+                title="From first insight to lasting reference."
+                body="Preview the core idea, read in clean sections, mark what matters, and come back when the idea becomes useful."
               />
             </div>
 
@@ -527,8 +448,8 @@ function TopicMapSection({ categories }: { categories: { category: string; count
         <FadeIn>
           <SectionIntro
             label="Explore by domain"
-            title="Browse the ideas shaping how people think, work, and live."
-            body="Move through the library by theme. Start with what matters most to you."
+            title="Browse by what you want to get better at."
+            body="Explore ideas across mindset, health, business, productivity, philosophy, and more."
             centered
           />
         </FadeIn>
@@ -569,28 +490,28 @@ function FinalCTASection() {
       <FadeIn>
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center lg:px-8">
           <h2 className="font-serif text-5xl font-bold tracking-tight text-white sm:text-6xl md:text-7xl">
-            Build a library of ideas worth keeping.
+            Build a personal library of ideas you&apos;ll actually return to.
           </h2>
 
           <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-zinc-400 sm:text-xl">
-            Start with a few great reads, then turn them into something you can return to, apply, and build on over time.
+            Start reading, save what matters, and turn insight into something durable.
           </p>
 
           <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
             <Link
-              href="/browse"
-              className="group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-transform hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]"
+              href="/login"
+              className="focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-transform hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]"
             >
-              <span className="relative z-10">Browse the Library</span>
+              <span className="relative z-10">Start Reading</span>
               <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
               <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-200 to-white opacity-0 transition-opacity group-hover:opacity-100" />
             </Link>
-            <a
-              href="#featured-reads"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-8 py-4 text-base font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
+            <Link
+              href="/browse"
+              className="focus-ring inline-flex items-center gap-2 rounded-full border border-white/10 px-8 py-4 text-base font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
             >
-              Start with Featured Reads
-            </a>
+              Browse the Library
+            </Link>
           </div>
 
           <p className="mt-12 text-sm font-semibold uppercase tracking-widest text-zinc-500">
@@ -611,13 +532,13 @@ function LandingFooter() {
         </div>
 
         <div className="flex items-center gap-6 text-sm text-muted-foreground/60">
-          <Link href="/about" className="transition-colors hover:text-foreground">
+          <Link href="/about" className="focus-ring rounded-sm transition-colors hover:text-foreground">
             About
           </Link>
-          <Link href="/privacy" className="transition-colors hover:text-foreground">
+          <Link href="/privacy" className="focus-ring rounded-sm transition-colors hover:text-foreground">
             Privacy
           </Link>
-          <Link href="/terms" className="transition-colors hover:text-foreground">
+          <Link href="/terms" className="focus-ring rounded-sm transition-colors hover:text-foreground">
             Terms
           </Link>
         </div>
