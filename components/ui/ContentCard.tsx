@@ -197,9 +197,9 @@ function BaseContentCard({
             </div>
 
             {showProgress ? (
-                <div className="absolute inset-x-0 bottom-0 z-40 h-1.5 bg-black/40 backdrop-blur-sm">
+                <div className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/40 backdrop-blur-sm">
                     <div
-                        className="h-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
+                        className="h-full rounded-b-[5px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
@@ -220,6 +220,7 @@ function BaseContentCard({
                 </button>
             ) : null}
 
+            <div className="pointer-events-none absolute inset-0 z-30 rounded-md border border-white/15 transition-colors" />
             <div className="pointer-events-none absolute inset-0 z-30 rounded-md border-2 border-transparent transition-colors group-hover:border-primary/75" />
         </div>
     );
