@@ -501,9 +501,9 @@ The following routes are currently implemented and should be treated as active c
 ### 7.3 AI APIs
 
 - **POST** `/api/chat/author`
-  - Auth-required author-persona conversational endpoint.
+  - Public author-persona conversational endpoint.
   - Uses Anthropic streaming responses.
-  - Enforces payload validation, message windowing, context truncation, and per-user rate limiting.
+  - Enforces payload validation, message windowing, context truncation, and hybrid throttling (`user.id` for signed-in users, IP-based buckets for guests).
 
 ### 7.4 Admin APIs (Protected)
 

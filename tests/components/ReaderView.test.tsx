@@ -69,6 +69,7 @@ describe('ReaderView', () => {
         version: 1,
         source_id: 'src1',
         audio_url: null,
+        embedding: null,
         estimated_reading_time_minutes: 10,
         quick_mode_json: { big_idea: 'The giant idea' } as any,
         publish_date: null,

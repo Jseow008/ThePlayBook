@@ -2,16 +2,23 @@
 import { renderHook, act } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { useReadingProgress } from "../useReadingProgress";
+
+let authStateChangeHandler: ((event: string, session: any) => void) | null = null;
+
 // Mock Supabase client
 vi.mock("@/lib/supabase/client", () => {
     const mockAuth = {
-        onAuthStateChange: vi.fn(() => ({
-            data: {
-                subscription: {
-                    unsubscribe: vi.fn(),
+        onAuthStateChange: vi.fn((callback: (event: string, session: any) => void) => {
+            authStateChangeHandler = callback;
+            return {
+                data: {
+                    subscription: {
+                        unsubscribe: vi.fn(),
+                    },
                 },
-            },
-        })),
+            };
+        }),
+        getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
     };
     const mockSupabase = {
         auth: mockAuth,
@@ -48,6 +55,7 @@ Object.defineProperty(window, 'localStorage', {
 
 describe("useReadingProgress", () => {
     beforeEach(() => {
+        authStateChangeHandler = null;
         window.localStorage.clear();
         vi.clearAllMocks();
     });
@@ -129,5 +137,27 @@ describe("useReadingProgress", () => {
 
         expect(result.current.myListIds).not.toContain("item-10");
         expect(result.current.isInMyList("item-10")).toBe(false);
+    });
+
+    it("preserves guest progress and my list on sign out", () => {
+        localStorage.setItem("flux_progress_item-1", JSON.stringify({
+            itemId: "item-1",
+            completed: ["seg-1"],
+            lastSegmentIndex: 0,
+            lastReadAt: new Date().toISOString(),
+            isCompleted: false,
+        }));
+        localStorage.setItem("flux_mylist", JSON.stringify(["item-9"]));
+
+        const { result } = renderHook(() => useReadingProgress());
+
+        act(() => {
+            authStateChangeHandler?.("SIGNED_OUT", null);
+        });
+
+        expect(localStorage.getItem("flux_progress_item-1")).not.toBeNull();
+        expect(localStorage.getItem("flux_mylist")).toBe(JSON.stringify(["item-9"]));
+        expect(result.current.inProgressIds).toEqual(["item-1"]);
+        expect(result.current.myListIds).toEqual(["item-9"]);
     });
 });

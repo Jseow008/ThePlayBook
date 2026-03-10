@@ -11,10 +11,14 @@ export type HighlightWithContent = UserHighlight & {
     } | null;
 };
 
+interface UseHighlightsOptions {
+    initialData?: HighlightWithContent[];
+}
+
 // ----------------------------------------------------------------------------
 // Fetch Highlights
 // ----------------------------------------------------------------------------
-export function useHighlights(contentItemId?: string) {
+export function useHighlights(contentItemId?: string, options?: UseHighlightsOptions) {
     return useQuery({
         queryKey: ["highlights", contentItemId],
         queryFn: async (): Promise<HighlightWithContent[]> => {
@@ -31,6 +35,7 @@ export function useHighlights(contentItemId?: string) {
             const { data } = await res.json();
             return data as HighlightWithContent[];
         },
+        initialData: options?.initialData,
     });
 }
 
@@ -71,6 +76,8 @@ interface CreateHighlightArgs {
     highlighted_text: string;
     note_body?: string;
     color?: string;
+    anchor_start?: number;
+    anchor_end?: number;
 }
 
 export function useCreateHighlight() {
@@ -93,11 +100,9 @@ export function useCreateHighlight() {
             return data as UserHighlight;
         },
         onMutate: async (newArgs) => {
-            // Cancel in-flight refetches so they don't overwrite our optimistic data
-            await queryClient.cancelQueries({ queryKey: ["highlights", newArgs.content_item_id] });
+            await queryClient.cancelQueries({ queryKey: ["highlights"] });
 
-            // Snapshot for rollback
-            const previousData = queryClient.getQueryData<HighlightWithContent[]>(["highlights", newArgs.content_item_id]);
+            const previousData = queryClient.getQueriesData({ queryKey: ["highlights"] });
 
             // Create a temporary optimistic highlight
             const optimisticHighlight: HighlightWithContent = {
@@ -108,28 +113,38 @@ export function useCreateHighlight() {
                 highlighted_text: newArgs.highlighted_text,
                 note_body: newArgs.note_body || null,
                 color: newArgs.color || (newArgs.note_body ? "blue" : "yellow"),
+                anchor_start: newArgs.anchor_start ?? null,
+                anchor_end: newArgs.anchor_end ?? null,
                 created_at: new Date().toISOString(),
                 updated_at: null,
                 content_item: null,
             };
 
-            // Append optimistic highlight to cache
-            queryClient.setQueryData<HighlightWithContent[]>(
-                ["highlights", newArgs.content_item_id],
-                (old) => [...(old || []), optimisticHighlight]
-            );
+            previousData.forEach(([queryKey, oldData]) => {
+                if (!Array.isArray(oldData)) return;
+
+                const queryContentId = queryKey[1];
+                if (queryContentId !== undefined && queryContentId !== newArgs.content_item_id) {
+                    return;
+                }
+
+                queryClient.setQueryData<HighlightWithContent[]>(
+                    queryKey,
+                    [optimisticHighlight, ...oldData]
+                );
+            });
 
             return { previousData };
         },
-        onError: (_err, newArgs, context) => {
-            // Rollback on failure
-            if (context?.previousData) {
-                queryClient.setQueryData(["highlights", newArgs.content_item_id], context.previousData);
-            }
+        onError: (_err, _newArgs, context) => {
+            if (!context?.previousData) return;
+
+            context.previousData.forEach(([queryKey, data]) => {
+                queryClient.setQueryData(queryKey, data);
+            });
         },
-        onSettled: (_data, _err, variables) => {
-            // Always refetch to reconcile with server truth (replaces temp ID with real one)
-            queryClient.invalidateQueries({ queryKey: ["highlights", variables.content_item_id] });
+        onSettled: () => {
+            queryClient.invalidateQueries({ queryKey: ["highlights"] });
         },
     });
 }

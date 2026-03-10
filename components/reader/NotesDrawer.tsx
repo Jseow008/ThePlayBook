@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 
 interface NotesDrawerProps {
     contentItemId: string;
@@ -195,7 +196,12 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                                     </button>
 
                                     {/* The Highlight */}
-                                    <div className="relative pl-3 border-l-2 border-yellow-500/50 pr-6">
+                                    <div
+                                        className={cn(
+                                            "relative pl-3 border-l-2 pr-6",
+                                            HIGHLIGHT_COLOR_CLASSES[normalizeHighlightColor(item.color)].border
+                                        )}
+                                    >
                                         <p className="text-[0.95rem] leading-relaxed text-foreground/90 italic">
                                             &ldquo;{item.highlighted_text}&rdquo;
                                         </p>

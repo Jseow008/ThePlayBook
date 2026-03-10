@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Highlighter, Edit3, X, Check } from "lucide-react";
 import { useCreateHighlight } from "@/hooks/useHighlights";
@@ -11,19 +11,61 @@ interface TextSelectionToolbarProps {
     contentItemId: string;
 }
 
+function findSegmentElement(node: Node | null): HTMLElement | null {
+    let current: HTMLElement | null =
+        node instanceof HTMLElement ? node : node?.parentElement ?? null;
+
+    while (current && current !== document.body) {
+        if (current.hasAttribute("data-segment-id")) {
+            return current;
+        }
+        current = current.parentElement;
+    }
+
+    return null;
+}
+
+function getTrimmedSelection(range: Range, segmentElement: HTMLElement) {
+    const rawText = range.toString();
+    const trimmedText = rawText.trim();
+
+    if (!trimmedText) {
+        return null;
+    }
+
+    const leadingWhitespace = rawText.match(/^\s*/)?.[0].length ?? 0;
+    const trailingWhitespace = rawText.match(/\s*$/)?.[0].length ?? 0;
+
+    const prefixRange = range.cloneRange();
+    prefixRange.selectNodeContents(segmentElement);
+    prefixRange.setEnd(range.startContainer, range.startOffset);
+
+    const selectionStart = prefixRange.toString().length + leadingWhitespace;
+    const selectionEnd = prefixRange.toString().length + rawText.length - trailingWhitespace;
+
+    if (selectionEnd <= selectionStart) {
+        return null;
+    }
+
+    return {
+        text: trimmedText,
+        anchorStart: selectionStart,
+        anchorEnd: selectionEnd,
+    };
+}
+
 export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProps) {
     const [selectionInfo, setSelectionInfo] = useState<{
         text: string;
         rect: DOMRect;
-        segmentId?: string;
+        segmentId: string;
+        anchorStart: number;
+        anchorEnd: number;
     } | null>(null);
 
     const [isAddingNote, setIsAddingNote] = useState(false);
     const [noteText, setNoteText] = useState("");
     const [mounted, setMounted] = useState(false);
-
-    // Store reference to selection before input focus steals it
-    const selectionRangeRef = useRef<Range | null>(null);
 
     const createHighlight = useCreateHighlight();
 
@@ -43,40 +85,34 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
 
             if (!selection || selection.isCollapsed || selection.toString().trim().length === 0) {
                 setSelectionInfo(null);
-                selectionRangeRef.current = null;
                 return;
             }
 
-            // Ensure selection is within our Markdown content area
             const range = selection.getRangeAt(0);
-            const container = range.commonAncestorContainer;
+            const startSegment = findSegmentElement(range.startContainer);
+            const endSegment = findSegmentElement(range.endContainer);
 
-            // Traverse up to find data-segment-id
-            let node: Node | null = container;
-            let segmentId: string | undefined;
-
-            while (node && node !== document.body) {
-                if (node instanceof HTMLElement && node.hasAttribute("data-segment-id")) {
-                    segmentId = node.getAttribute("data-segment-id") || undefined;
-                    break;
-                }
-                node = node.parentNode;
-            }
-
-            // Only show if we selected text inside a valid segment container
-            if (segmentId) {
-                const rect = range.getBoundingClientRect();
-                // Store the range so we can restore it if needed
-                selectionRangeRef.current = range.cloneRange();
-                setSelectionInfo({
-                    text: selection.toString().trim(),
-                    rect,
-                    segmentId,
-                });
-            } else {
+            if (!startSegment || !endSegment || startSegment !== endSegment) {
                 setSelectionInfo(null);
-                selectionRangeRef.current = null;
+                return;
             }
+
+            const segmentId = startSegment.getAttribute("data-segment-id");
+            const trimmedSelection = getTrimmedSelection(range, startSegment);
+
+            if (!segmentId || !trimmedSelection) {
+                setSelectionInfo(null);
+                return;
+            }
+
+            const rect = range.getBoundingClientRect();
+            setSelectionInfo({
+                text: trimmedSelection.text,
+                rect,
+                segmentId,
+                anchorStart: trimmedSelection.anchorStart,
+                anchorEnd: trimmedSelection.anchorEnd,
+            });
         };
 
         // Debounce slightly to avoid aggressive layout thrashing
@@ -108,6 +144,8 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 content_item_id: contentItemId,
                 segment_id: selectionInfo.segmentId,
                 highlighted_text: selectionInfo.text,
+                anchor_start: selectionInfo.anchorStart,
+                anchor_end: selectionInfo.anchorEnd,
             });
 
             if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {
@@ -140,6 +178,8 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 segment_id: selectionInfo.segmentId,
                 highlighted_text: selectionInfo.text,
                 note_body: noteText.trim(),
+                anchor_start: selectionInfo.anchorStart,
+                anchor_end: selectionInfo.anchorEnd,
             });
 
             if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {

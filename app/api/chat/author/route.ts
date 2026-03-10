@@ -8,6 +8,9 @@ import { rateLimit } from "@/lib/server/rate-limit";
 
 export const maxDuration = 60;
 
+const AUTHENTICATED_LIMIT = { limit: 10, windowMs: 60_000 } as const;
+const GUEST_LIMIT = { limit: 3, windowMs: 60_000 } as const;
+
 // ---------------------------------------------------------------------------
 // Validation
 // ---------------------------------------------------------------------------
@@ -73,25 +76,35 @@ export async function POST(req: NextRequest) {
     const requestId = getRequestId();
 
     try {
-        // --- Auth ---
+        // --- Optional Auth ---
         const supabase = await createClient();
         const {
             data: { user },
-            error: authError,
         } = await supabase.auth.getUser();
 
-        if (authError || !user) {
-            return apiError("UNAUTHORIZED", "Please log in to use this feature", 401, requestId);
-        }
-
-        // --- Rate Limiting (10 messages / minute / user) ---
-        const rl = await rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
+        // --- Rate Limiting ---
+        const rl = user
+            ? await rateLimit(req, {
+                ...AUTHENTICATED_LIMIT,
+                key: "author-chat:user",
+                identifier: user.id,
+            })
+            : await rateLimit(req, {
+                ...GUEST_LIMIT,
+                key: "author-chat:guest",
+            });
         if (!rl.success) {
+            const retryAfterSeconds = Math.max(1, Math.ceil((rl.retryAfterMs ?? 60000) / 1000));
             return NextResponse.json(
-                { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
+                {
+                    error: {
+                        code: "RATE_LIMITED",
+                        message: `Too many requests. Please wait ${retryAfterSeconds} second${retryAfterSeconds === 1 ? "" : "s"} and try again.`,
+                    }
+                },
                 {
                     status: 429,
-                    headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60000) / 1000)) },
+                    headers: { "Retry-After": String(retryAfterSeconds) },
                 }
             );
         }

@@ -4,19 +4,17 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { BookOpen, Search, Filter, Trash2, ExternalLink } from "lucide-react";
-import { useDeleteHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
+import { useDeleteHighlight, useHighlights, type HighlightWithContent } from "@/hooks/useHighlights";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
+import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 
-export function BrainClientPage({ initialHighlights }: { initialHighlights: any[] }) {
-    // We start with server-rendered highlights but we can let React Query take over if needed
-    const [highlights, setHighlights] = useState<HighlightWithContent[]>(initialHighlights as HighlightWithContent[]);
+export function BrainClientPage({ initialHighlights }: { initialHighlights: HighlightWithContent[] }) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedItem, setSelectedItem] = useState<string | "all">("all");
     const [sortBy, setSortBy] = useState<"newest" | "oldest">("newest");
-
+    const { data: highlights = [] } = useHighlights(undefined, { initialData: initialHighlights });
     const deleteHighlight = useDeleteHighlight();
-    const queryClient = useQueryClient();
 
     // Extract unique books for filter
     const uniqueItems = useMemo(() => {
@@ -52,10 +50,7 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
     const handleDelete = async (id: string) => {
         try {
             await deleteHighlight.mutateAsync(id);
-            // Optimistic local update
-            setHighlights((prev) => prev.filter((h) => h.id !== id));
             toast.success("Highlight deleted");
-            queryClient.invalidateQueries({ queryKey: ["highlights"] });
         } catch (error: any) {
             toast.error(error.message || "Failed to delete highlight");
         }
@@ -151,7 +146,12 @@ export function BrainClientPage({ initialHighlights }: { initialHighlights: any[
                                 )}
 
                                 {/* Highlight */}
-                                <div className="relative pl-3 border-l-2 border-yellow-500/50 mb-4 flex-1">
+                                <div
+                                    className={cn(
+                                        "relative pl-3 border-l-2 mb-4 flex-1",
+                                        HIGHLIGHT_COLOR_CLASSES[normalizeHighlightColor(item.color)].border
+                                    )}
+                                >
                                     <p className="text-[0.95rem] leading-relaxed text-foreground/90 italic">
                                         &ldquo;{item.highlighted_text}&rdquo;
                                     </p>

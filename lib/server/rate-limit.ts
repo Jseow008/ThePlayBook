@@ -9,6 +9,8 @@ interface RateLimitOptions {
     windowMs: number;
     /** Optional extra key namespace (e.g. user id, action name) */
     key?: string;
+    /** Optional explicit identifier override for the rate-limit bucket */
+    identifier?: string;
 }
 
 interface RateLimitResult {
@@ -41,14 +43,17 @@ function getClientIdentifier(req: NextRequest): string {
     return "anonymous";
 }
 
+function getRateLimitKey(req: NextRequest, options: RateLimitOptions): string {
+    const identity = options.identifier ?? getClientIdentifier(req);
+    return `${req.nextUrl.pathname}::${options.key ?? "global"}::${identity}`;
+}
+
 // Module-level fallback store
 const store = new Map<string, number[]>();
 
 function fallbackRateLimit(req: NextRequest, options: RateLimitOptions): RateLimitResult {
-    const { limit, windowMs, key } = options;
-    const clientId = getClientIdentifier(req);
-
-    const rateKey = `${req.nextUrl.pathname}::${key ?? "global"}::${clientId}`;
+    const { limit, windowMs } = options;
+    const rateKey = getRateLimitKey(req, options);
     const now = Date.now();
     const windowStart = now - windowMs;
 
@@ -82,9 +87,8 @@ const ratelimits = new Map<string, Ratelimit>(); // Cache for different limiters
  * Falls back to in-memory sliding window if Upstash is not configured.
  */
 export async function rateLimit(req: NextRequest, options: RateLimitOptions): Promise<RateLimitResult> {
-    const { limit, windowMs, key } = options;
-    const clientId = getClientIdentifier(req);
-    const rateKey = `${req.nextUrl.pathname}::${key ?? "global"}::${clientId}`;
+    const { limit, windowMs } = options;
+    const rateKey = getRateLimitKey(req, options);
 
     if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
         return fallbackRateLimit(req, options);

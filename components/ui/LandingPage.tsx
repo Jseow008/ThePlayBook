@@ -68,7 +68,6 @@ const PROOF_POINTS = [
   "Structured summaries",
   "Highlights and notes",
   "Ask the author",
-  "Return anytime",
 ] as const;
 
 const CORE_ANCHOR_FEATURE = {
@@ -135,14 +134,14 @@ function SectionIntro({
 }) {
   return (
     <div className={cn("max-w-3xl", centered && "mx-auto text-center")}>
-      <p className="mb-4 text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
+      <p className="mb-4 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
         {label}
       </p>
-      <h2 className="font-serif text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl">
+      <h2 className="font-serif text-4xl font-bold leading-[1.02] tracking-[-0.035em] text-white sm:text-5xl md:text-[3.65rem]">
         {title}
       </h2>
       {body ? (
-        <p className="mt-6 text-base leading-relaxed text-zinc-400 sm:text-xl">{body}</p>
+        <p className="mt-6 text-base leading-8 text-zinc-300 sm:text-[1.15rem]">{body}</p>
       ) : null}
     </div>
   );
@@ -216,19 +215,19 @@ function HeroSection() {
       <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-6 lg:px-8 lg:grid-cols-[1fr_1fr] lg:items-center">
         <div className="max-w-2xl">
           <div>
-            <p className="mb-8 text-xs font-semibold uppercase tracking-[0.3em] text-white/50">
+            <p className="mb-8 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
               Curated knowledge platform
             </p>
           </div>
 
           <div>
-            <h1 className="font-serif text-5xl font-bold leading-[1.05] tracking-tight text-white sm:text-7xl lg:text-[5.5rem]">
+            <h1 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-7xl lg:text-[5.15rem]">
               Read the best ideas without losing what matters.
             </h1>
           </div>
 
           <div>
-            <p className="mt-8 max-w-xl text-lg leading-relaxed text-zinc-400 sm:text-xl">
+            <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
               {APP_NAME} turns books, podcasts, and articles into structured reading
               experiences you can highlight, revisit, and actually use.
             </p>
@@ -252,7 +251,7 @@ function HeroSection() {
               </Link>
             </div>
 
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-medium text-zinc-500">
+            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-medium text-zinc-400">
               {PROOF_POINTS.map((point) => (
                 <span key={point} className="inline-flex items-center gap-2">
                   <span className="size-1.5 rounded-full bg-white/20" />
@@ -372,7 +371,7 @@ function CorePlatformFeaturesSection() {
                     <h3 className="text-2xl font-semibold tracking-tight text-white">
                       {CORE_ANCHOR_FEATURE.title}
                     </h3>
-                    <p className="mt-3 text-base leading-relaxed text-zinc-400">
+                    <p className="mt-3 text-base leading-8 text-zinc-300">
                       {CORE_ANCHOR_FEATURE.description}
                     </p>
                   </div>
@@ -400,10 +399,10 @@ function CorePlatformFeaturesSection() {
                       </div>
 
                       <div className="flex flex-1 flex-col py-2 pr-4">
-                        <h3 className="text-[15px] font-semibold leading-snug tracking-tight text-white">
+                        <h3 className="text-base font-semibold leading-snug tracking-[-0.01em] text-white">
                           {feature.title}
                         </h3>
-                        <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+                        <p className="mt-1 text-sm leading-7 text-zinc-300">
                           {feature.description}
                         </p>
                       </div>
@@ -445,7 +444,7 @@ function TopicMapSection({ categories }: { categories: { category: string; count
                   <div className="rounded-2xl bg-black/40 p-4 shadow-inner transition-colors group-hover:bg-black/60">
                     <Icon className="size-6 text-zinc-400 transition-colors group-hover:text-white" />
                   </div>
-                  <span className="text-sm font-semibold tracking-wide text-zinc-300 transition-colors group-hover:text-white">
+                  <span className="text-[0.95rem] font-semibold tracking-[0.01em] text-zinc-300 transition-colors group-hover:text-white">
                     {item.category}
                   </span>
                 </Link>
@@ -467,11 +466,11 @@ function FinalCTASection() {
 
       <FadeIn>
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center lg:px-8">
-          <h2 className="font-serif text-5xl font-bold tracking-tight text-white sm:text-6xl md:text-7xl">
+          <h2 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl md:text-[5.5rem]">
             Build a personal library of ideas you&apos;ll actually return to.
           </h2>
 
-          <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-zinc-400 sm:text-xl">
+          <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
             Start reading, save what matters, and turn insight into something durable.
           </p>
 
@@ -492,7 +491,7 @@ function FinalCTASection() {
             </Link>
           </div>
 
-          <p className="mt-12 text-sm font-semibold uppercase tracking-widest text-zinc-500">
+          <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">
             Read less noise. Keep more signal.
           </p>
         </div>

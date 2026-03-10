@@ -2,38 +2,19 @@
 
 import { useEffect, useState, useRef } from "react";
 import { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
 import { LogOut, User as UserIcon, Settings, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { signOutAction } from "@/lib/actions/auth";
 
 import { AVATAR_ICONS } from "@/lib/avatars";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 export function UserNav({ initialUser }: { initialUser: User | null }) {
-    const [user, setUser] = useState<User | null>(initialUser);
+    const user = useAuthUser(initialUser);
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
-
-    // Sync state when initialUser prop changes (e.g. after profile edit + refresh)
-    useEffect(() => {
-        setUser(initialUser);
-    }, [initialUser]);
-
-    useEffect(() => {
-        const supabase = createClient();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (event, session) => {
-                setUser(session?.user ?? null);
-            }
-        );
-
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, []);
 
     // Close dropdown when clicking outside
     useEffect(() => {

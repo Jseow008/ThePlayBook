@@ -1,5 +1,4 @@
 import { PublicLayoutShell } from "@/components/ui/PublicLayoutShell";
-import { createClient } from "@/lib/supabase/server";
 
 /**
  * Public Layout
@@ -9,13 +8,10 @@ import { createClient } from "@/lib/supabase/server";
  * Landing page (/) gets standalone layout, everything else gets full chrome.
  */
 
-export default async function PublicLayout({
+export default function PublicLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    return <PublicLayoutShell initialUser={user}>{children}</PublicLayoutShell>;
+    return <PublicLayoutShell initialUser={null}>{children}</PublicLayoutShell>;
 }

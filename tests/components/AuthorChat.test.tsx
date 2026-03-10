@@ -138,4 +138,38 @@ describe('AuthorChat', () => {
         render(<AuthorChat {...defaultProps} />);
         expect(screen.getByText(/Something went wrong/i)).toBeInTheDocument();
     });
+
+    it('renders structured API error messages', () => {
+        (useChat as any).mockReturnValue({
+            messages: [],
+            sendMessage: vi.fn(),
+            status: 'error',
+            error: new Error(JSON.stringify({
+                error: {
+                    code: 'INTERNAL_ERROR',
+                    message: 'AI service is not configured.',
+                },
+            })),
+        });
+
+        render(<AuthorChat {...defaultProps} />);
+        expect(screen.getByText('AI service is not configured.')).toBeInTheDocument();
+    });
+
+    it('renders rate limit message from structured API errors', () => {
+        (useChat as any).mockReturnValue({
+            messages: [],
+            sendMessage: vi.fn(),
+            status: 'error',
+            error: new Error(JSON.stringify({
+                error: {
+                    code: 'RATE_LIMITED',
+                    message: 'Too many requests. Please wait 20 seconds and try again.',
+                },
+            })),
+        });
+
+        render(<AuthorChat {...defaultProps} />);
+        expect(screen.getByText('Too many requests. Please wait 20 seconds and try again.')).toBeInTheDocument();
+    });
 });

@@ -45,42 +45,30 @@ function HomeFeedSkeleton() {
 async function HomeFeedServer() {
     const supabase = createPublicServerClient();
 
-    // 1. Fetch Featured (for Hero)
-    let { data: featuredData } = await supabase
-        .from("content_item")
-        .select(CONTENT_CARD_SELECT)
-        .eq("status", "verified")
-        .eq("is_featured", true)
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-    // Fallback: If no featured items, grab the latest 5 items so the Hero isn't empty
-    if (!featuredData || featuredData.length === 0) {
-        const { data: fallbackData } = await supabase
+    const [featuredResult, latestResult, sectionsResult] = await Promise.all([
+        supabase
+            .from("content_item")
+            .select(CONTENT_CARD_SELECT)
+            .eq("status", "verified")
+            .eq("is_featured", true)
+            .is("deleted_at", null)
+            .order("created_at", { ascending: false })
+            .limit(5),
+        supabase
             .from("content_item")
             .select(CONTENT_CARD_SELECT)
             .eq("status", "verified")
             .is("deleted_at", null)
             .order("created_at", { ascending: false })
-            .limit(5);
-        featuredData = fallbackData;
-    }
+            .limit(10),
+        supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 }),
+    ]);
 
-    // 2. Fetch All Items for "New on {APP_NAME}" row
-    const { data: allItems } = await supabase
-        .from("content_item")
-        .select(CONTENT_CARD_SELECT)
-        .eq("status", "verified")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-    // 3 & 4. Fetch Homepage Sections and their content via single RPC to avoid N+1 queries
-    const { data: sectionData } = await supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 });
-
-    const featuredItems = (featuredData || []) as ContentItem[];
-    const items = (allItems || []) as ContentItem[];
+    const items = (latestResult.data || []) as ContentItem[];
+    const featuredItems = ((featuredResult.data && featuredResult.data.length > 0)
+        ? featuredResult.data
+        : items.slice(0, 5)) as ContentItem[];
+    const sectionData = sectionsResult.data;
 
     // Parse the RPC results into the shape expected by the frontend
     const sections: HomepageSection[] = [];

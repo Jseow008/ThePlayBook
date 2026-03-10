@@ -254,25 +254,11 @@ export function useReadingProgress() {
             setUser(session?.user || null);
             if (event === 'SIGNED_OUT') {
                 hasSyncedRef.current = false;
-
-                // 1. Clear LocalStorage
-                localStorage.removeItem("flux_mylist");
-                const keysToRemove: string[] = [];
-                for (let i = 0; i < localStorage.length; i++) {
-                    const k = localStorage.key(i);
-                    if (k && k.startsWith("flux_progress_")) keysToRemove.push(k);
-                }
-                keysToRemove.forEach(k => localStorage.removeItem(k));
-
-                // 2. Clear State
-                setInProgressIds([]);
-                setCompletedIds([]);
-                setMyListIds([]);
-                setProgressMap({});
+                loadProgress();
             }
         });
         return () => subscription.unsubscribe();
-    }, [supabase]);
+    }, [supabase, loadProgress]);
 
     useEffect(() => {
         loadProgress();

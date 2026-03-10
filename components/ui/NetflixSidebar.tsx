@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { User } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -23,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { APP_NAME } from "@/lib/brand";
 import { AVATAR_ICONS } from "@/lib/avatars";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 const navItems = [
     { icon: Search, label: "Search", href: "/search" },
@@ -35,8 +35,8 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
     const pathname = usePathname();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-    const [user, setUser] = useState<User | null>(initialUser);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const user = useAuthUser(initialUser);
 
     const handleMouseEnter = () => {
         if (hoverTimeoutRef.current) {
@@ -61,27 +61,6 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
             ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
             : user?.user_metadata?.avatar_url;
     const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
-
-    // Sync state when initialUser prop changes (e.g. after profile edit + refresh)
-    useEffect(() => {
-        setUser(initialUser);
-    }, [initialUser]);
-
-    useEffect(() => {
-        const supabase = createClient();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (event, session) => {
-                setUser(session?.user ?? null);
-            }
-        );
-
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, []);
-
-
 
     // Close library when sidebar collapses
     useEffect(() => {

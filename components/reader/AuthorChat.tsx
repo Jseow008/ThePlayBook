@@ -15,6 +15,35 @@ interface AuthorChatProps {
     onClose: () => void;
 }
 
+const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
+
+function getDisplayErrorMessage(error: unknown): string {
+    if (!(error instanceof Error) || !error.message) {
+        return FALLBACK_CHAT_ERROR;
+    }
+
+    try {
+        const parsed = JSON.parse(error.message) as {
+            error?: {
+                code?: string;
+                message?: string;
+            };
+        };
+
+        if (parsed.error?.code === "RATE_LIMITED") {
+            return parsed.error.message ?? "You're sending messages too quickly. Please wait a moment and try again.";
+        }
+
+        if (parsed.error?.message) {
+            return parsed.error.message;
+        }
+    } catch {
+        // Non-JSON transport errors fall back below.
+    }
+
+    return FALLBACK_CHAT_ERROR;
+}
+
 export function AuthorChat({ contentId, authorName, bookTitle, onClose }: AuthorChatProps) {
     const transport = useMemo(
         () =>
@@ -41,6 +70,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
         status,
         error,
     } = useChat({ transport });
+    const displayErrorMessage = useMemo(() => getDisplayErrorMessage(error), [error]);
 
     const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -228,7 +258,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                             </div>
                             <div className="bg-destructive/10 border border-destructive/20 rounded-2xl rounded-tl-sm px-4 py-3.5">
                                 <p className="text-sm text-destructive font-medium">
-                                    Something went wrong. Please try asking again.
+                                    {displayErrorMessage}
                                 </p>
                             </div>
                         </div>

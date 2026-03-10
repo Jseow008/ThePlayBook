@@ -85,4 +85,20 @@ describe("rateLimit", () => {
         // Different key should be independent
         expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "highlights" })).success).toBe(true);
     });
+
+    it("supports explicit identifiers that bypass shared IP bucketing", async () => {
+        const req = createMockRequest("9.9.9.9");
+        const options = { limit: 1, windowMs: 1000, key: "chat", identifier: "user-1" };
+
+        expect((await rateLimit(req, options)).success).toBe(true);
+        expect((await rateLimit(req, options)).success).toBe(false);
+        expect((await rateLimit(req, { ...options, identifier: "user-2" })).success).toBe(true);
+    });
+
+    it("still uses IP bucketing for guests when no explicit identifier is provided", async () => {
+        const req = createMockRequest("10.10.10.10");
+
+        expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "author-chat:guest" })).success).toBe(true);
+        expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "author-chat:guest" })).success).toBe(false);
+    });
 });

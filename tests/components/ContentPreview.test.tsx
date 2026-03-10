@@ -29,6 +29,7 @@ describe('ContentPreview', () => {
         source_url: null,
         duration_seconds: 600, // 10 minutes
         audio_url: null,
+        embedding: null,
         created_at: '2023-01-01T00:00:00Z',
         updated_at: '',
         version: 1,

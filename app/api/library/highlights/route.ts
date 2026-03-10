@@ -17,7 +17,20 @@ const CreateHighlightSchema = z.object({
     highlighted_text: z.string().trim().min(1).max(HIGHLIGHT_TEXT_MAX),
     note_body: z.string().trim().max(NOTE_BODY_MAX).optional().nullable(),
     color: HighlightColorSchema.optional(),
-});
+    anchor_start: z.number().int().min(0).optional(),
+    anchor_end: z.number().int().min(1).optional(),
+}).refine(
+    (data) =>
+        (data.anchor_start === undefined && data.anchor_end === undefined)
+        || (
+            data.anchor_start !== undefined
+            && data.anchor_end !== undefined
+            && data.anchor_end > data.anchor_start
+        ),
+    {
+        message: "Anchor offsets must be provided as a valid pair.",
+    }
+);
 
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
@@ -51,7 +64,7 @@ export async function POST(request: NextRequest) {
             return apiError("VALIDATION_ERROR", "Invalid highlight payload.", 400, requestId);
         }
 
-        const { content_item_id, segment_id, highlighted_text, note_body, color } = parsed.data;
+        const { content_item_id, segment_id, highlighted_text, note_body, color, anchor_start, anchor_end } = parsed.data;
 
         // Optional: Check quota per item to prevent massive abuse
         const { count } = await supabase
@@ -71,6 +84,8 @@ export async function POST(request: NextRequest) {
             highlighted_text,
             note_body: note_body ?? null,
             color: color ?? (note_body ? "blue" : "yellow"),
+            anchor_start: anchor_start ?? null,
+            anchor_end: anchor_end ?? null,
         };
 
         const { data, error } = await supabase

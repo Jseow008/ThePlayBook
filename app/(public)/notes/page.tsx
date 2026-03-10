@@ -20,6 +20,8 @@ export default async function BrainPage() {
         .from("user_highlights")
         .select(`
             id,
+            anchor_start,
+            anchor_end,
             highlighted_text,
             note_body,
             color,

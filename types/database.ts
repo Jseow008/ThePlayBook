@@ -328,6 +328,8 @@ export type Database = {
       }
       user_highlights: {
         Row: {
+          anchor_end: number | null
+          anchor_start: number | null
           color: string | null
           content_item_id: string
           created_at: string | null
@@ -339,6 +341,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anchor_end?: number | null
+          anchor_start?: number | null
           color?: string | null
           content_item_id: string
           created_at?: string | null
@@ -350,6 +354,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anchor_end?: number | null
+          anchor_start?: number | null
           color?: string | null
           content_item_id?: string
           created_at?: string | null

@@ -13,6 +13,8 @@ import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { HighlightPopover } from "./HighlightPopover";
+import { HighlightBottomSheet } from "./HighlightBottomSheet";
 
 /**
  * Reader View — Accordion Layout
@@ -30,10 +32,21 @@ export function ReaderView({ content }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
+    const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+    const [activeHighlightPosition, setActiveHighlightPosition] = useState<{
+        top: number;
+        left: number;
+        width: number;
+        height: number;
+    } | null>(null);
+    const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const { saveReadingProgress } = useReadingProgress();
     const { data: highlights = [] } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
+    const activeHighlight = activeHighlightId
+        ? highlights.find((highlight) => highlight.id === activeHighlightId) ?? null
+        : null;
 
     // Start tracking reading time
     useReadingTimer(content.id);
@@ -87,6 +100,12 @@ export function ReaderView({ content }: ReaderViewProps) {
         window.addEventListener("storage", handleStorage);
         return () => window.removeEventListener("storage", handleStorage);
     }, [content.id]);
+
+    useEffect(() => {
+        if (!activeHighlightId || activeHighlight) return;
+        setActiveHighlightId(null);
+        setActiveHighlightPosition(null);
+    }, [activeHighlightId, activeHighlight]);
 
     // Handle segment open — only track max index for progress visibility
     const handleSegmentOpen = (segmentId: string, index: number) => {
@@ -153,6 +172,23 @@ export function ReaderView({ content }: ReaderViewProps) {
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!isDesktop || !activeHighlightId || isPopoverHovered) return;
+            setActiveHighlightId(null);
+            setActiveHighlightPosition(null);
+        };
+
+        window.addEventListener("scroll", handleScroll, { passive: true });
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [activeHighlightId, isDesktop, isPopoverHovered]);
+
+    const closeActiveHighlight = () => {
+        setActiveHighlightId(null);
+        setActiveHighlightPosition(null);
+        setIsPopoverHovered(false);
+    };
+
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
             <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-8 sm:pt-12 lg:pb-24">
@@ -187,6 +223,10 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onSegmentOpen={handleSegmentOpen}
                     onSegmentComplete={handleSegmentComplete}
                     highlights={highlights}
+                    onHighlightActivate={(highlightId, position) => {
+                        setActiveHighlightId(highlightId);
+                        setActiveHighlightPosition(position);
+                    }}
                 />
 
                 {/* Completion Card or Content Feedback */}
@@ -203,8 +243,34 @@ export function ReaderView({ content }: ReaderViewProps) {
             </div>
 
             {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
+            {/* Deferred mobile alternative: introduce a separate post-selection CTA instead of replacing the native iOS menu. */}
             {isDesktop && <TextSelectionToolbar contentItemId={content.id} />}
             <NotesDrawer contentItemId={content.id} />
+            {isDesktop && activeHighlight && activeHighlightPosition && (
+                <HighlightPopover
+                    highlightId={activeHighlight.id}
+                    noteBody={activeHighlight.note_body}
+                    highlightedText={activeHighlight.highlighted_text}
+                    currentColor={activeHighlight.color || "yellow"}
+                    position={activeHighlightPosition}
+                    createdAt={activeHighlight.created_at || undefined}
+                    onClose={closeActiveHighlight}
+                    onMouseEnter={() => setIsPopoverHovered(true)}
+                    onMouseLeave={() => {
+                        setIsPopoverHovered(false);
+                        closeActiveHighlight();
+                    }}
+                />
+            )}
+            {!isDesktop && activeHighlight && (
+                <HighlightBottomSheet
+                    noteBody={activeHighlight.note_body}
+                    highlightedText={activeHighlight.highlighted_text}
+                    currentColor={activeHighlight.color || "yellow"}
+                    createdAt={activeHighlight.created_at || undefined}
+                    onClose={closeActiveHighlight}
+                />
+            )}
         </div>
     );
 }

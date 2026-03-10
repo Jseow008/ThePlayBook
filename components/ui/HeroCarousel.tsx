@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Info, BookOpen } from "lucide-react";
@@ -16,6 +16,32 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const [activeIndex, setActiveIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [scrollY, setScrollY] = useState(0);
+    const autoRotateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const clearAutoRotate = useCallback(() => {
+        if (!autoRotateTimeoutRef.current) return;
+        clearTimeout(autoRotateTimeoutRef.current);
+        autoRotateTimeoutRef.current = null;
+    }, []);
+
+    const clearTransition = useCallback(() => {
+        if (!transitionTimeoutRef.current) return;
+        clearTimeout(transitionTimeoutRef.current);
+        transitionTimeoutRef.current = null;
+    }, []);
+
+    const queueTransition = useCallback((getNextIndex: (prev: number) => number, durationMs: number) => {
+        clearAutoRotate();
+        clearTransition();
+        setIsTransitioning(true);
+
+        transitionTimeoutRef.current = setTimeout(() => {
+            setActiveIndex((prev) => getNextIndex(prev));
+            setIsTransitioning(false);
+            transitionTimeoutRef.current = null;
+        }, durationMs);
+    }, [clearAutoRotate, clearTransition]);
 
     // Parallax Scroll Effect
     useEffect(() => {
@@ -26,20 +52,23 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Auto-rotate every 5 seconds per design spec
     useEffect(() => {
         if (items.length <= 1) return;
 
-        const interval = setInterval(() => {
-            setIsTransitioning(true);
-            setTimeout(() => {
-                setActiveIndex((prev) => (prev + 1) % items.length);
-                setIsTransitioning(false);
-            }, 800); // Slightly longer transition sync
+        clearAutoRotate();
+        autoRotateTimeoutRef.current = setTimeout(() => {
+            queueTransition((prev) => (prev + 1) % items.length, 800);
         }, 5000);
 
-        return () => clearInterval(interval);
-    }, [items.length]);
+        return clearAutoRotate;
+    }, [activeIndex, items.length, clearAutoRotate, queueTransition]);
+
+    useEffect(() => {
+        return () => {
+            clearAutoRotate();
+            clearTransition();
+        };
+    }, [clearAutoRotate, clearTransition]);
 
     if (items.length === 0) {
         return (
@@ -212,12 +241,10 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                 {items.map((_, index) => (
                     <button
                         key={index}
+                        type="button"
                         onClick={() => {
-                            setIsTransitioning(true);
-                            setTimeout(() => {
-                                setActiveIndex(index);
-                                setIsTransitioning(false);
-                            }, 300);
+                            if (index === activeIndex) return;
+                            queueTransition(() => index, 300);
                         }}
                         className={cn(
                             "w-12 h-1 rounded-sm transition-all duration-300",

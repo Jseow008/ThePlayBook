@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, AlertCircle, Edit3, Trash2, Check, X } from "lucide-react";
+import { BookOpen, AlertCircle, Edit3, Trash2, Check, X, Highlighter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUpdateHighlight, useDeleteHighlight } from "@/hooks/useHighlights";
 import { toast } from "sonner";
+import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 
 interface HighlightPopoverProps {
     highlightId: string;
@@ -19,75 +20,71 @@ interface HighlightPopoverProps {
     onMouseLeave?: () => void;
 }
 
-const COLORS = [
-    { name: "yellow", class: "bg-highlight-yellow" },
-    { name: "blue", class: "bg-highlight-blue" },
-    { name: "green", class: "bg-highlight-green" },
-    { name: "red", class: "bg-highlight-red" },
-    { name: "purple", class: "bg-highlight-purple" },
-];
+const COLORS = ["yellow", "blue", "green", "red", "purple"] as const;
 
 export function HighlightPopover({
     highlightId,
     noteBody,
+    highlightedText,
     currentColor,
     position,
     onClose,
     onMouseEnter,
-    onMouseLeave
+    onMouseLeave,
 }: HighlightPopoverProps) {
     const [mounted, setMounted] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
-
     const [isEditing, setIsEditing] = useState(false);
     const [editNote, setEditNote] = useState(noteBody || "");
-    const [editColor, setEditColor] = useState(currentColor || "yellow");
-
-    // Local state to mirror props so that saves immediately reflect in UI
+    const [editColor, setEditColor] = useState(normalizeHighlightColor(currentColor));
     const [localNoteBody, setLocalNoteBody] = useState(noteBody);
-    const [localColor, setLocalColor] = useState(currentColor || "yellow");
-
+    const [localColor, setLocalColor] = useState(normalizeHighlightColor(currentColor));
     const updateHighlight = useUpdateHighlight();
     const deleteHighlight = useDeleteHighlight();
 
-    // Prevent hydration errors
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    // Global click-outside listener to close popover
+    useEffect(() => {
+        const normalizedColor = normalizeHighlightColor(currentColor);
+        setEditNote(noteBody || "");
+        setEditColor(normalizedColor);
+        setLocalNoteBody(noteBody);
+        setLocalColor(normalizedColor);
+        setIsEditing(false);
+    }, [currentColor, highlightId, noteBody]);
+
     useEffect(() => {
         if (!mounted) return;
 
-        const handleClickOutside = (e: MouseEvent) => {
+        const handleClickOutside = (event: MouseEvent) => {
             if (!popoverRef.current) return;
-            const path = e.composedPath ? (e.composedPath() as Node[]) : [];
-            if (path.includes(popoverRef.current) || popoverRef.current.contains(e.target as Node)) {
+
+            const path = event.composedPath ? (event.composedPath() as Node[]) : [];
+            if (path.includes(popoverRef.current) || popoverRef.current.contains(event.target as Node)) {
                 return;
             }
 
-            // Do not close if the user is currently editing a note to prevent accidental data loss
-            if (isEditing) {
-                return;
-            }
-
+            if (isEditing) return;
             onClose();
         };
 
         const timeout = setTimeout(() => {
-            window.addEventListener('click', handleClickOutside);
+            window.addEventListener("click", handleClickOutside);
         }, 10);
 
         return () => {
             clearTimeout(timeout);
-            window.removeEventListener('click', handleClickOutside);
+            window.removeEventListener("click", handleClickOutside);
         };
-    }, [mounted, onClose, isEditing]);
+    }, [isEditing, mounted, onClose]);
 
-    if (!mounted || !position) return null;
+    if (!mounted) return null;
 
     const top = position.top + window.scrollY;
     const left = position.left + window.scrollX + (position.width / 2);
+    const colorClasses = HIGHLIGHT_COLOR_CLASSES[localColor];
 
     const handleSave = async () => {
         try {
@@ -96,16 +93,11 @@ export function HighlightPopover({
                 note_body: editNote.trim() === "" ? null : editNote.trim(),
                 color: editColor,
             });
-            toast.success("Highlight updated");
 
-            // Update local state to mirror the change immediately without needing a remount/refetch cycle
             setLocalNoteBody(editNote.trim() === "" ? null : editNote.trim());
             setLocalColor(editColor);
-
             setIsEditing(false);
-            if (editNote.trim() === "") {
-                onClose();
-            }
+            toast.success("Highlight updated");
         } catch (error: any) {
             toast.error(error.message || "Failed to update highlight");
         }
@@ -126,18 +118,19 @@ export function HighlightPopover({
             ref={popoverRef}
             onMouseEnter={onMouseEnter}
             onMouseLeave={() => {
-                // Do not instantly dismiss the popover if the mouse leaves while editing 
-                // (e.g., if the user moves mouse away while typing)
                 if (!isEditing && onMouseLeave) {
                     onMouseLeave();
                 }
             }}
-            className="absolute z-[100] transform -translate-x-1/2 -translate-y-full w-72 origin-bottom animate-in fade-in zoom-in-95 duration-200 pb-2.5"
+            className="absolute z-[100] transform -translate-x-1/2 -translate-y-full w-80 origin-bottom animate-in fade-in zoom-in-95 duration-200 pb-2.5"
             style={{ top, left }}
         >
             <div className="bg-popover/95 backdrop-blur-md text-popover-foreground rounded-xl shadow-2xl border border-border/50 overflow-hidden flex flex-col pointer-events-auto">
                 {isEditing ? (
                     <div className="p-3 flex flex-col gap-3">
+                        <div className={cn("rounded-lg border p-3 text-sm italic text-foreground/85", colorClasses.border)}>
+                            &ldquo;{highlightedText}&rdquo;
+                        </div>
                         <textarea
                             autoFocus
                             value={editNote}
@@ -148,25 +141,24 @@ export function HighlightPopover({
                         />
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5">
-                                {COLORS.map((c) => (
+                                {COLORS.map((color) => (
                                     <button
-                                        key={c.name}
-                                        onClick={() => setEditColor(c.name)}
+                                        key={color}
+                                        onClick={() => setEditColor(color)}
                                         className={cn(
                                             "w-5 h-5 rounded-full border-2 transition-all",
-                                            c.class,
-                                            editColor === c.name ? "border-foreground shadow-sm scale-110" : "border-transparent opacity-50 hover:opacity-100"
+                                            HIGHLIGHT_COLOR_CLASSES[color].accent,
+                                            editColor === color ? "border-foreground shadow-sm scale-110" : "border-transparent opacity-50 hover:opacity-100"
                                         )}
-                                        aria-label={`Set color to ${c.name}`}
+                                        aria-label={`Set color to ${color}`}
                                     />
                                 ))}
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => {
-                                        // Reset edits back to the local mirrored state
                                         setEditNote(localNoteBody || "");
-                                        setEditColor(localColor || "yellow");
+                                        setEditColor(localColor);
                                         setIsEditing(false);
                                     }}
                                     className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
@@ -193,7 +185,7 @@ export function HighlightPopover({
                                 ) : (
                                     <AlertCircle className="size-3.5 text-yellow-500" />
                                 )}
-                                <span>{localNoteBody ? 'Your Note' : 'Highlight'}</span>
+                                <span>{localNoteBody ? "Your Note" : "Highlight"}</span>
                             </div>
                             <div className="flex items-center gap-1">
                                 <button
@@ -212,18 +204,26 @@ export function HighlightPopover({
                                 </button>
                             </div>
                         </div>
-                        {localNoteBody && (
-                            <div className="p-3 text-sm flex flex-col gap-2 max-h-48 overflow-y-auto custom-scrollbar border-t border-border/30">
-                                <div className="font-medium text-foreground leading-relaxed whitespace-pre-wrap">
+                        <div className="p-3 flex flex-col gap-3 border-t border-border/30">
+                            <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                                <Highlighter className={cn("size-3.5", HIGHLIGHT_COLOR_CLASSES[localColor].text)} />
+                                <span>{localColor} highlight</span>
+                            </div>
+                            <div className={cn("rounded-lg border p-3 text-sm italic text-foreground/90", colorClasses.border)}>
+                                &ldquo;{highlightedText}&rdquo;
+                            </div>
+                            {localNoteBody ? (
+                                <div className="rounded-lg bg-muted/40 p-3 text-sm leading-relaxed whitespace-pre-wrap text-foreground">
                                     {localNoteBody}
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <p className="text-sm text-muted-foreground">No note attached to this highlight.</p>
+                            )}
+                        </div>
                     </>
                 )}
             </div>
 
-            {/* The little pointer arrow */}
             <div className="w-3 h-3 bg-popover/95 backdrop-blur-md border-b border-r border-border/50 absolute bottom-1 translate-y-1/2 rotate-45 transform left-1/2 -translate-x-1/2 pointer-events-none" />
         </div>,
         document.body

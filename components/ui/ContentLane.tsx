@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ interface ContentLaneProps {
 export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
-    const [showRightArrow, setShowRightArrow] = useState(true);
+    const [showRightArrow, setShowRightArrow] = useState(false);
 
     const scroll = (direction: "left" | "right") => {
         if (!scrollRef.current) return;
@@ -28,12 +28,15 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
         });
     };
 
-    const handleScroll = () => {
-        if (!scrollRef.current) return;
-        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+    const updateArrowState = useCallback(() => {
+        const container = scrollRef.current;
+        if (!container) return;
+
+        const { scrollLeft, scrollWidth, clientWidth } = container;
+        const hasOverflow = scrollWidth > clientWidth + 20;
         setShowLeftArrow(scrollLeft > 20);
-        setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 20);
-    };
+        setShowRightArrow(hasOverflow && scrollLeft < scrollWidth - clientWidth - 20);
+    }, []);
 
     const [isVisible, setIsVisible] = useState(false);
     const sectionRef = useRef<HTMLElement>(null);
@@ -55,6 +58,20 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
 
         return () => observer.disconnect();
     }, []);
+
+    useEffect(() => {
+        const container = scrollRef.current;
+        if (!container) return;
+
+        updateArrowState();
+        container.addEventListener("scroll", updateArrowState, { passive: true });
+        window.addEventListener("resize", updateArrowState);
+
+        return () => {
+            container.removeEventListener("scroll", updateArrowState);
+            window.removeEventListener("resize", updateArrowState);
+        };
+    }, [items.length, updateArrowState]);
 
     if (items.length === 0) return null;
 
@@ -87,6 +104,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
             <div className="relative">
                 {/* Left Arrow */}
                 <button
+                    type="button"
                     onClick={() => scroll("left")}
                     aria-label="Scroll left"
                     className={cn(
@@ -104,7 +122,6 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                 <div className="relative w-full overflow-hidden">
                     <div
                         ref={scrollRef}
-                        onScroll={handleScroll}
                         className="flex gap-4 overflow-x-auto px-6 lg:px-16 scroll-smooth pt-4 pb-4 scrollbar-hide"
                     >
                         {items.map((item) => (
@@ -117,6 +134,7 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
 
                 {/* Right Arrow */}
                 <button
+                    type="button"
                     onClick={() => scroll("right")}
                     aria-label="Scroll right"
                     className={cn(
