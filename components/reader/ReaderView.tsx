@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
@@ -39,6 +39,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         height: number;
     } | null>(null);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
+    const popoverPortalRef = useRef<HTMLDivElement>(null);
     const { saveReadingProgress } = useReadingProgress();
     const { data: highlights = [] } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
@@ -190,6 +191,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
+            <div ref={popoverPortalRef} aria-hidden="true" />
             <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-8 sm:pt-12 lg:pb-24">
                 {/* Hero Header */}
                 <ReaderHeroHeader
@@ -245,13 +247,14 @@ export function ReaderView({ content }: ReaderViewProps) {
             {/* Deferred mobile alternative: introduce a separate post-selection CTA instead of replacing the native iOS menu. */}
             {isDesktop && <TextSelectionToolbar contentItemId={content.id} />}
             <NotesDrawer contentItemId={content.id} />
-            {isDesktop && activeHighlight && activeHighlightPosition && (
+            {isDesktop && activeHighlight && activeHighlightPosition && popoverPortalRef.current && (
                 <HighlightPopover
                     highlightId={activeHighlight.id}
                     noteBody={activeHighlight.note_body}
                     highlightedText={activeHighlight.highlighted_text}
                     currentColor={activeHighlight.color || "yellow"}
                     position={activeHighlightPosition}
+                    portalContainer={popoverPortalRef.current}
                     createdAt={activeHighlight.created_at || undefined}
                     onClose={closeActiveHighlight}
                     onMouseEnter={() => setIsPopoverHovered(true)}
