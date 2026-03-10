@@ -13,6 +13,7 @@ import {
   Heart,
   Laptop,
   Lightbulb,
+  Landmark,
   Microscope,
   NotebookPen,
   RotateCcw,
@@ -48,6 +49,7 @@ const CATEGORY_ICONS = {
   Technology: Laptop,
   Lifestyle: Smile,
   Travel: Globe,
+  Politics: Landmark,
 } as const;
 
 const CURATED_CATEGORY_ORDER = [
@@ -61,6 +63,7 @@ const CURATED_CATEGORY_ORDER = [
   "Relationships",
   "Technology",
   "Lifestyle",
+  "Politics",
 ] as const;
 
 const PROOF_POINTS = [
