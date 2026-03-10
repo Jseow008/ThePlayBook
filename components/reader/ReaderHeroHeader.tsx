@@ -8,6 +8,7 @@ import { APP_NAME } from "@/lib/brand";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 import { useReadingTimer } from "@/hooks/useReadingTimer";
+import { clampReadingProgressPercent } from "@/lib/reading-progress";
 
 /**
  * Reader Hero Header
@@ -37,10 +38,7 @@ export function ReaderHeroHeader({
     segmentsTotal,
     segmentsRead,
 }: ReaderHeroHeaderProps) {
-    const progressPercent =
-        segmentsTotal > 0
-            ? Math.round((segmentsRead / segmentsTotal) * 100)
-            : 0;
+    const progressPercent = clampReadingProgressPercent(segmentsRead, segmentsTotal);
 
     // Use the existing reading timer, passing contentId (from window.location or props if available later. Here we can use undefined as it's optional)
     // Actually we should get contentId from url but for timer display we don't strictly need it to just show elapsed time

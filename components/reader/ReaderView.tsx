@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
@@ -15,6 +15,8 @@ import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { HighlightPopover } from "./HighlightPopover";
 import { HighlightBottomSheet } from "./HighlightBottomSheet";
+import type { ReadingProgressData } from "@/lib/reading-progress";
+import { normalizeReadingProgress } from "@/lib/reading-progress";
 
 /**
  * Reader View — Accordion Layout
@@ -32,6 +34,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
+    const [hydratedProgressKey, setHydratedProgressKey] = useState<string | null>(null);
     const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
     const [activeHighlightPosition, setActiveHighlightPosition] = useState<{
         top: number;
@@ -44,6 +47,10 @@ export function ReaderView({ content }: ReaderViewProps) {
     const { data: highlights = [] } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
+    const validSegmentIds = useMemo(
+        () => new Set(content.segments.map((segment) => segment.id)),
+        [content.segments]
+    );
     const activeHighlight = activeHighlightId
         ? highlights.find((highlight) => highlight.id === activeHighlightId) ?? null
         : null;
@@ -56,50 +63,77 @@ export function ReaderView({ content }: ReaderViewProps) {
         syncFromCloud();
     }, [syncFromCloud]);
 
-    // Load progress from localStorage on mount
+    // Load progress from localStorage on mount and when content changes.
     useEffect(() => {
+        const resetProgressState = () => {
+            setCompletedSegments(new Set());
+            setMaxSegmentIndex(-1);
+            setHydratedProgressKey(content.id);
+        };
+
         const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
-        if (savedProgress) {
-            try {
-                const parsed = JSON.parse(savedProgress);
-                if (parsed.completed) {
-                    setCompletedSegments(new Set(parsed.completed));
-                }
-                if (typeof parsed.maxSegmentIndex === "number") {
-                    setMaxSegmentIndex(parsed.maxSegmentIndex);
-                }
-            } catch (e) {
-                console.error("Failed to parse progress", e);
-            }
+        if (!savedProgress) {
+            resetProgressState();
+            return;
         }
-    }, [content.id]);
+
+        try {
+            const parsed = JSON.parse(savedProgress) as Partial<ReadingProgressData>;
+            const { progress, didChange } = normalizeReadingProgress({
+                progress: parsed,
+                itemId: content.id,
+                totalSegments: content.segments.length,
+                validSegmentIds,
+            });
+
+            setCompletedSegments(new Set(progress.completed));
+            setMaxSegmentIndex(progress.maxSegmentIndex ?? progress.lastSegmentIndex);
+            setHydratedProgressKey(content.id);
+
+            if (didChange) {
+                saveReadingProgress(content.id, progress);
+            }
+        } catch (e) {
+            console.error("Failed to parse progress", e);
+            resetProgressState();
+        }
+    }, [content.id, content.segments.length, saveReadingProgress, validSegmentIds]);
 
     // Listen for cross-tab sync
     useEffect(() => {
         const handleStorage = (e: StorageEvent) => {
             if (e.key === `flux_progress_${content.id}`) {
                 const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
-                if (savedProgress) {
-                    try {
-                        const { completed } = JSON.parse(savedProgress);
-                        if (completed) {
-                            setCompletedSegments((prev) => {
-                                if (prev.size !== completed.length) {
-                                    return new Set(completed);
-                                }
-                                return prev;
-                            });
-                        }
-                    } catch (e) {
-                        console.error("Failed to parse progress", e);
+                if (!savedProgress) {
+                    setCompletedSegments(new Set());
+                    setMaxSegmentIndex(-1);
+                    return;
+                }
+
+                try {
+                    const parsed = JSON.parse(savedProgress) as Partial<ReadingProgressData>;
+                    const { progress, didChange } = normalizeReadingProgress({
+                        progress: parsed,
+                        itemId: content.id,
+                        totalSegments: content.segments.length,
+                        validSegmentIds,
+                    });
+
+                    setCompletedSegments(new Set(progress.completed));
+                    setMaxSegmentIndex(progress.maxSegmentIndex ?? progress.lastSegmentIndex);
+
+                    if (didChange) {
+                        saveReadingProgress(content.id, progress);
                     }
+                } catch (e) {
+                    console.error("Failed to parse progress", e);
                 }
             }
         };
 
         window.addEventListener("storage", handleStorage);
         return () => window.removeEventListener("storage", handleStorage);
-    }, [content.id]);
+    }, [content.id, content.segments.length, saveReadingProgress, validSegmentIds]);
 
     useEffect(() => {
         if (!activeHighlightId || activeHighlight) return;
@@ -131,24 +165,39 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Save progress on changes (debounced)
     useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            const isCompleted = completedSegments.size >= content.segments.length;
+        if (hydratedProgressKey !== content.id) {
+            return;
+        }
 
-            const progressData = {
-                completed: Array.from(completedSegments),
-                lastSegmentIndex: maxSegmentIndex,
-                maxSegmentIndex,
-                lastReadAt: new Date().toISOString(),
-                isCompleted,
+        const timeoutId = setTimeout(() => {
+            const { progress } = normalizeReadingProgress({
+                progress: {
+                    completed: Array.from(completedSegments),
+                    lastSegmentIndex: maxSegmentIndex,
+                    maxSegmentIndex,
+                    lastReadAt: new Date().toISOString(),
+                    isCompleted: false,
+                    itemId: content.id,
+                    totalSegments: content.segments.length,
+                },
                 itemId: content.id,
                 totalSegments: content.segments.length,
-            };
+                validSegmentIds,
+            });
 
-            saveReadingProgress(content.id, progressData);
+            saveReadingProgress(content.id, progress);
         }, 1000);
 
         return () => clearTimeout(timeoutId);
-    }, [completedSegments, maxSegmentIndex, content.id, content.segments.length, saveReadingProgress]);
+    }, [
+        completedSegments,
+        content.id,
+        content.segments.length,
+        hydratedProgressKey,
+        maxSegmentIndex,
+        saveReadingProgress,
+        validSegmentIds,
+    ]);
 
     // ── Keyboard Shortcuts (Fullscreen) ──────────────────────────
     useEffect(() => {

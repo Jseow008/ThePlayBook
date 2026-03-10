@@ -3,19 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { AuthUser as User } from "@supabase/supabase-js";
-
-/**
- * Reading progress data stored in localStorage
- */
-export interface ReadingProgressData {
-    itemId: string;
-    completed: string[]; // Array of completed segment IDs
-    lastSegmentIndex: number;
-    lastReadAt: string;
-    isCompleted: boolean;
-    totalSegments?: number; // Optional total segments count for percentage calculation
-    maxSegmentIndex?: number; // The furthest segment index reached
-}
+import type { ReadingProgressData } from "@/lib/reading-progress";
 
 interface UserLibraryRow {
     content_id: string;
