@@ -169,7 +169,7 @@ describe('SegmentAccordion', () => {
         expect(mark?.textContent).toBe('Beta');
     });
 
-    it('activates mobile highlight details on tap', () => {
+    it('does not activate mobile highlight details on tap', () => {
         mockedUseMediaQuery.mockReturnValue(false);
 
         const onHighlightActivate = vi.fn();
@@ -199,14 +199,6 @@ describe('SegmentAccordion', () => {
         fireEvent.click(screen.getByText('Introduction').closest('button')!);
         fireEvent.click(container.querySelector('mark[data-id="highlight-3"]')!);
 
-        expect(onHighlightActivate).toHaveBeenCalledWith(
-            'highlight-3',
-            expect.objectContaining({
-                top: expect.any(Number),
-                left: expect.any(Number),
-                width: expect.any(Number),
-                height: expect.any(Number),
-            })
-        );
+        expect(onHighlightActivate).not.toHaveBeenCalled();
     });
 });
