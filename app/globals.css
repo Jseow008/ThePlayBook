@@ -265,6 +265,10 @@ body {
   border-color: hsl(var(--highlight-yellow) / 0.3);
 }
 
+.bg-highlight-swatch-yellow {
+  background-color: hsl(var(--highlight-yellow));
+}
+
 .bg-highlight-blue {
   background-color: hsl(var(--highlight-blue) / 0.3);
 }
@@ -279,6 +283,10 @@ body {
 
 .border-highlight-blue {
   border-color: hsl(var(--highlight-blue) / 0.3);
+}
+
+.bg-highlight-swatch-blue {
+  background-color: hsl(var(--highlight-blue));
 }
 
 .bg-highlight-green {
@@ -297,6 +305,10 @@ body {
   border-color: hsl(var(--highlight-green) / 0.3);
 }
 
+.bg-highlight-swatch-green {
+  background-color: hsl(var(--highlight-green));
+}
+
 .bg-highlight-red {
   background-color: hsl(var(--highlight-red) / 0.3);
 }
@@ -313,6 +325,10 @@ body {
   border-color: hsl(var(--highlight-red) / 0.3);
 }
 
+.bg-highlight-swatch-red {
+  background-color: hsl(var(--highlight-red));
+}
+
 .bg-highlight-purple {
   background-color: hsl(var(--highlight-purple) / 0.3);
 }
@@ -327,6 +343,10 @@ body {
 
 .border-highlight-purple {
   border-color: hsl(var(--highlight-purple) / 0.3);
+}
+
+.bg-highlight-swatch-purple {
+  background-color: hsl(var(--highlight-purple));
 }
 
 /* Key Insight (Author provided) */

@@ -425,11 +425,11 @@ export function SegmentAccordion({
                         >
                             <div className="overflow-hidden">
                                 <div className="px-4 pt-3 pb-5 ml-[3.25rem]">
-                                    <div
-                                        data-segment-id={segment.id}
-                                        onMouseMove={isDesktop ? activateHighlight : undefined}
-                                        onClick={activateHighlight}
-                                        className={cn(
+                                        <div
+                                            data-segment-id={segment.id}
+                                            onMouseMove={isDesktop ? activateHighlight : undefined}
+                                            onClick={isDesktop ? activateHighlight : undefined}
+                                            className={cn(
                                             "prose dark:prose-invert max-w-none relative transition-all duration-300",
                                             `reader-size-${fontSize}`,
                                             `reader-font-${fontFamily}`,

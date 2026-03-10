@@ -15,6 +15,7 @@ interface HighlightPopoverProps {
     currentColor: string;
     createdAt?: string;
     position: { top: number; left: number; width: number; height: number };
+    portalContainer: HTMLElement;
     onClose: () => void;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
@@ -28,6 +29,7 @@ export function HighlightPopover({
     highlightedText,
     currentColor,
     position,
+    portalContainer,
     onClose,
     onMouseEnter,
     onMouseLeave,
@@ -146,9 +148,11 @@ export function HighlightPopover({
                                         key={color}
                                         onClick={() => setEditColor(color)}
                                         className={cn(
-                                            "w-5 h-5 rounded-full border-2 transition-all",
-                                            HIGHLIGHT_COLOR_CLASSES[color].accent,
-                                            editColor === color ? "border-foreground shadow-sm scale-110" : "border-transparent opacity-50 hover:opacity-100"
+                                            "w-5 h-5 rounded-full border-2 transition-all ring-offset-2 ring-offset-popover",
+                                            HIGHLIGHT_COLOR_CLASSES[color].swatch,
+                                            editColor === color
+                                                ? "border-white shadow-sm scale-110 ring-2 ring-white/65 opacity-100"
+                                                : "border-white/15 opacity-85 hover:opacity-100 hover:border-white/40"
                                         )}
                                         aria-label={`Set color to ${color}`}
                                     />
@@ -226,6 +230,6 @@ export function HighlightPopover({
 
             <div className="w-3 h-3 bg-popover/95 backdrop-blur-md border-b border-r border-border/50 absolute bottom-1 translate-y-1/2 rotate-45 transform left-1/2 -translate-x-1/2 pointer-events-none" />
         </div>,
-        document.body
+        portalContainer
     );
 }

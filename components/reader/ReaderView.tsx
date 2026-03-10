@@ -14,7 +14,6 @@ import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { HighlightPopover } from "./HighlightPopover";
-import { HighlightBottomSheet } from "./HighlightBottomSheet";
 
 /**
  * Reader View — Accordion Layout
@@ -260,15 +259,6 @@ export function ReaderView({ content }: ReaderViewProps) {
                         setIsPopoverHovered(false);
                         closeActiveHighlight();
                     }}
-                />
-            )}
-            {!isDesktop && activeHighlight && (
-                <HighlightBottomSheet
-                    noteBody={activeHighlight.note_body}
-                    highlightedText={activeHighlight.highlighted_text}
-                    currentColor={activeHighlight.color || "yellow"}
-                    createdAt={activeHighlight.created_at || undefined}
-                    onClose={closeActiveHighlight}
                 />
             )}
         </div>
