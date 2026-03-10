@@ -56,6 +56,11 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
     };
 
     const { inProgressCount, completedCount, myListCount, isLoaded } = useReadingProgress();
+    const avatarSrc =
+        user?.user_metadata?.avatar_icon
+            ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
+            : user?.user_metadata?.avatar_url;
+    const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
 
     // Sync state when initialUser prop changes (e.g. after profile edit + refresh)
     useEffect(() => {
@@ -112,6 +117,7 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
                             src="/images/flux-logo.png"
                             alt={APP_NAME}
                             fill
+                            unoptimized
                             sizes="150px"
                             className="object-contain"
                             priority
@@ -319,14 +325,11 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
                         <div className="size-8 rounded-full bg-secondary flex items-center justify-center overflow-hidden border border-border flex-shrink-0 relative">
                             {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
                                 <Image
-                                    src={
-                                        user.user_metadata?.avatar_icon
-                                            ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
-                                            : user.user_metadata.avatar_url
-                                    }
+                                    src={avatarSrc!}
                                     alt={user.user_metadata.full_name || "User"}
                                     fill
                                     sizes="32px"
+                                    unoptimized={avatarIsDicebear}
                                     className="object-cover rounded-full"
                                 />
                             ) : (

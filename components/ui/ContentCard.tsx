@@ -170,18 +170,18 @@ function BaseContentCard({
                     </h3>
 
                     <div className="w-full">
-                        <p className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-widest text-white/70 drop-shadow-md">
-                            {item.type}
+                        <p className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] font-medium uppercase leading-relaxed tracking-[0.12em] text-white/70 drop-shadow-md md:tracking-widest">
+                            <span>{item.type}</span>
                             {item.category ? (
-                                <>
+                                <span className="flex items-center gap-1.5">
                                     <span className="opacity-40">•</span>
                                     <span>{item.category}</span>
-                                </>
+                                </span>
                             ) : null}
                             {item.duration_seconds ? (
-                                <>
+                                <span className="flex items-center gap-1.5 whitespace-nowrap">
                                     <span className="opacity-40">•</span>
-                                    <span className="whitespace-nowrap flex-shrink-0">
+                                    <span>
                                         {Math.round(item.duration_seconds / 60) < 60
                                             ? `${Math.round(item.duration_seconds / 60)} min`
                                             : `${Math.floor(Math.round(item.duration_seconds / 60) / 60)}h ${Math.round(item.duration_seconds / 60) % 60 > 0
@@ -189,7 +189,7 @@ function BaseContentCard({
                                                 : ""
                                             }`}
                                     </span>
-                                </>
+                                </span>
                             ) : null}
                         </p>
                     </div>

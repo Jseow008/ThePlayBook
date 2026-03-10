@@ -4,7 +4,6 @@ import {
   Activity,
   ArrowRight,
   BookMarked,
-  BookOpen,
   Brain,
   Briefcase,
   CircleDollarSign,
@@ -18,7 +17,6 @@ import {
   NotebookPen,
   RotateCcw,
   Scale,
-  Search,
   Smile,
   Sparkles,
 } from "lucide-react";
@@ -98,33 +96,6 @@ const CORE_SUPPORT_FEATURES = [
     title: "Ask follow-up questions",
     description: "Ask the author(s) questions about what you just read.",
     image: "/images/ai-chat.png",
-  },
-] as const;
-
-const WORKFLOW_STEPS = [
-  {
-    number: "01",
-    title: "Discover",
-    description: "Find high-signal ideas across books, podcasts, and articles.",
-    icon: Search,
-  },
-  {
-    number: "02",
-    title: "Read",
-    description: "Get the core thesis, key takeaways, and structured depth without the noise.",
-    icon: BookOpen,
-  },
-  {
-    number: "03",
-    title: "Save",
-    description: "Keep highlights, notes, and reading progress in one place.",
-    icon: BookMarked,
-  },
-  {
-    number: "04",
-    title: "Return",
-    description: "Revisit what matters when you need clarity, context, or action.",
-    icon: RotateCcw,
   },
 ] as const;
 
@@ -300,6 +271,7 @@ function HeroSection() {
                 alt="Flux dashboard desktop experience"
                 fill
                 priority
+                unoptimized
                 sizes="(max-width: 1024px) 0px, 700px"
                 className="object-cover opacity-90"
               />
@@ -311,6 +283,7 @@ function HeroSection() {
                 src="/images/mobile-reader-view.png"
                 alt="Flux mobile reader experience"
                 fill
+                unoptimized
                 sizes="140px"
                 className="object-cover"
               />
@@ -388,6 +361,7 @@ function CorePlatformFeaturesSection() {
                       src={CORE_ANCHOR_FEATURE.image}
                       alt={`Screenshot illustrating ${CORE_ANCHOR_FEATURE.title}`}
                       fill
+                      unoptimized
                       sizes="(max-width: 640px) 100vw, 50vw"
                       className="object-cover object-top opacity-90 transition-transform duration-300 group-hover:scale-105 group-hover:opacity-100"
                     />
@@ -414,6 +388,7 @@ function CorePlatformFeaturesSection() {
                           src={feature.image}
                           alt={`Screenshot illustrating ${feature.title}`}
                           fill
+                          unoptimized
                           sizes="96px"
                           className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
                         />

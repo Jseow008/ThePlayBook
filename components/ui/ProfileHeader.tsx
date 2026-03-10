@@ -93,6 +93,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                                 alt={activeAvatar.label}
                                 fill
                                 sizes="112px"
+                                unoptimized
                                 className="object-cover scale-110"
                             />
                         </div>
@@ -123,6 +124,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                                         alt={item.label}
                                         fill
                                         sizes="48px"
+                                        unoptimized
                                         className="object-cover bg-secondary"
                                     />
                                 </button>

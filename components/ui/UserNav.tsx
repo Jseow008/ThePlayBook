@@ -69,6 +69,12 @@ export function UserNav({ initialUser }: { initialUser: User | null }) {
         await signOutAction();
     };
 
+    const avatarSrc =
+        user?.user_metadata?.avatar_icon
+            ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
+            : user?.user_metadata?.avatar_url;
+    const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
+
     if (!user) {
         return (
             <Link
@@ -94,14 +100,11 @@ export function UserNav({ initialUser }: { initialUser: User | null }) {
                 <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center border border-border overflow-hidden">
                     {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
                         <Image
-                            src={
-                                user.user_metadata?.avatar_icon
-                                    ? (AVATAR_ICONS.find(i => i.id === user.user_metadata.avatar_icon)?.src || AVATAR_ICONS[0].src)
-                                    : user.user_metadata.avatar_url
-                            }
+                            src={avatarSrc!}
                             alt={user.user_metadata.full_name || "User"}
                             fill
                             sizes="32px"
+                            unoptimized={avatarIsDicebear}
                             className="object-cover rounded-full"
                         />
                     ) : (

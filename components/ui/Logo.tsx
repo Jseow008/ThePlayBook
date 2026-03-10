@@ -31,6 +31,7 @@ export function Logo({
         src="/images/flux-logo.png"
         alt={`${APP_NAME} logo`}
         fill
+        unoptimized
         sizes={`${calculatedWidth}px`}
         priority={priority}
         className="object-contain object-left"

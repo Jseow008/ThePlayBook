@@ -92,6 +92,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                     alt={activeItem.title}
                                     fill
                                     priority={activeIndex === 0}
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 85vw, 65vw"
                                     className="object-cover object-[50%_20%]"
                                 />
                             </div>
