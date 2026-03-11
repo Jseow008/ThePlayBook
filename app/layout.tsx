@@ -5,6 +5,8 @@ import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -88,6 +90,8 @@ export default function RootLayout({
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
         <Toaster theme="dark" position="bottom-center" richColors closeButton />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
