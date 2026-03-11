@@ -20,6 +20,16 @@ describe("AppOnboardingTour", () => {
         expect(screen.getByTestId("app-onboarding-body")).toHaveClass("min-h-0", "overflow-hidden");
         expect(screen.getByTestId("app-onboarding-footer")).toHaveClass("flex-none");
         expect(screen.getByTestId("app-onboarding-track")).toHaveClass("min-w-0");
+        const mobileCards = screen.getAllByTestId("app-onboarding-mobile-card");
+        const mobileFrames = screen.getAllByTestId("app-onboarding-mobile-media-frame");
+        expect(mobileCards).toHaveLength(6);
+        expect(mobileFrames).toHaveLength(6);
+        mobileCards.forEach((card) => {
+            expect(card).toHaveClass("h-full", "flex-col", "lg:h-auto");
+        });
+        mobileFrames.forEach((frame) => {
+            expect(frame).toHaveClass("h-[15.75rem]", "sm:h-[17rem]", "lg:hidden");
+        });
         expect(screen.queryByText("Swipe or click through")).not.toBeInTheDocument();
         expect(screen.queryByText("Built for the real app")).not.toBeInTheDocument();
     });

@@ -184,6 +184,9 @@ export function AppOnboardingTour({
                         }}
                     >
                         {slides.map((slide, index) => {
+                            const desktopImageSrc = slide.desktopImageSrc || slide.imageSrc;
+                            const isDesktopChatSlide = desktopImageSrc.includes("ai-chat");
+
                             return (
                                 <section
                                     key={slide.title}
@@ -193,37 +196,40 @@ export function AppOnboardingTour({
                                 >
                                     <div className="h-full overflow-hidden pr-1 sm:pr-0">
                                         <div className="mx-auto flex h-full w-full max-w-6xl flex-col justify-center py-1 lg:py-3">
-                                            <div className="grid w-full gap-4 rounded-[1.75rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:gap-5 sm:rounded-[2rem] sm:p-6 lg:grid-cols-[0.96fr_1.04fr] lg:items-center lg:gap-7 lg:p-7">
-                                                <div className="flex min-w-0 flex-col justify-center gap-4 lg:gap-6">
-                                                    <div>
+                                            <div
+                                                className="flex h-full w-full flex-col gap-4 rounded-[1.75rem] border border-white/10 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] p-4 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:gap-5 sm:rounded-[2rem] sm:p-6 lg:grid lg:h-auto lg:grid-cols-[0.96fr_1.04fr] lg:items-center lg:gap-7 lg:p-7"
+                                                data-testid="app-onboarding-mobile-card"
+                                            >
+                                                <div className="flex min-w-0 flex-none flex-col justify-start gap-4 lg:gap-6">
+                                                    <div className="min-h-[9.75rem] sm:min-h-[10.5rem] lg:min-h-0">
                                                         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-white/55">
                                                             {slide.eyebrow}
                                                         </p>
                                                         <h2
                                                             id={index === activeIndex ? "app-onboarding-title" : undefined}
-                                                            className="mt-3 max-w-[18rem] font-serif text-[2.35rem] font-bold leading-[0.92] tracking-[-0.045em] text-white sm:max-w-[20rem] sm:text-[2.65rem] lg:mt-3 lg:max-w-[26rem] lg:text-[2.7rem]"
+                                                            className="mt-3 max-w-[16rem] font-serif text-[2.2rem] font-bold leading-[0.92] tracking-[-0.045em] text-white sm:max-w-[18rem] sm:text-[2.45rem] lg:mt-3 lg:max-w-[26rem] lg:text-[2.7rem]"
                                                         >
                                                             {slide.title}
                                                         </h2>
-                                                        <p className="mt-3 max-w-[33rem] text-[0.98rem] leading-7 text-white/72 sm:text-[1.02rem] sm:leading-7 lg:mt-3 lg:max-w-[29rem] lg:text-[1rem] lg:leading-7">
+                                                        <p className="mt-3 max-w-[33rem] text-[0.96rem] leading-[1.75] text-white/72 sm:text-[1rem] sm:leading-[1.8] lg:mt-3 lg:max-w-[29rem] lg:text-[1rem] lg:leading-7">
                                                             {slide.body}
                                                         </p>
                                                     </div>
                                                 </div>
 
-                                                <div className="relative min-w-0 overflow-hidden rounded-[1.4rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] p-3 sm:rounded-[1.6rem] sm:p-4 lg:self-center lg:rounded-[1.5rem] lg:p-3">
+                                                <div className="relative min-w-0 flex-none overflow-hidden rounded-[1.4rem] border border-white/10 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),rgba(255,255,255,0.02))] p-3 sm:rounded-[1.6rem] sm:p-4 lg:self-center lg:rounded-[1.5rem] lg:p-3">
                                                     {slide.imageSrc ? (
                                                         <>
-                                                            <div className="relative aspect-[16/9] overflow-hidden rounded-[1.15rem] border border-white/10 bg-black/30 lg:hidden">
+                                                            <div
+                                                                className="relative h-[15.75rem] overflow-hidden rounded-[1.15rem] border border-white/10 bg-black/30 sm:h-[17rem] lg:hidden"
+                                                                data-testid="app-onboarding-mobile-media-frame"
+                                                            >
                                                                 <Image
                                                                     src={slide.imageSrc}
                                                                     alt={slide.imageAlt}
                                                                     fill
                                                                     sizes="100vw"
-                                                                    className={cn(
-                                                                        "object-cover object-top",
-                                                                        slide.imageSrc.includes("ai-chat") && "object-contain bg-[#0b1220] p-3"
-                                                                    )}
+                                                                    className="object-cover object-top"
                                                                     priority={index === 0}
                                                                 />
                                                                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent" />
@@ -234,13 +240,13 @@ export function AppOnboardingTour({
                                                                 data-testid="app-onboarding-desktop-image-frame"
                                                             >
                                                                 <Image
-                                                                    src={slide.desktopImageSrc || slide.imageSrc}
+                                                                    src={desktopImageSrc}
                                                                     alt={slide.imageAlt}
                                                                     fill
                                                                     sizes="50vw"
                                                                     className={cn(
                                                                         "object-cover object-top",
-                                                                        (slide.desktopImageSrc || slide.imageSrc).includes("ai-chat") && "object-contain bg-[#0b1220] p-4"
+                                                                        isDesktopChatSlide && "object-contain bg-[#0b1220] p-4"
                                                                     )}
                                                                     priority={index === 0}
                                                                 />
