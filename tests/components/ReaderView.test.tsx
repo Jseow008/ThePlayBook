@@ -1,7 +1,9 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { ReaderView } from '@/components/reader/ReaderView';
 import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
+
+const notesDrawerSpy = vi.hoisted(() => vi.fn());
 
 // Mock child components to isolate ReaderView testing
 vi.mock('@/components/reader/ReaderHeroHeader', () => ({
@@ -13,7 +15,10 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
 }));
 
 vi.mock('@/components/reader/NotesDrawer', () => ({
-    NotesDrawer: () => <div data-testid="mock-notes-drawer" />
+    NotesDrawer: (props: any) => {
+        notesDrawerSpy(props);
+        return <div data-testid="mock-notes-drawer" />;
+    }
 }));
 
 vi.mock('@/components/reader/TextSelectionToolbar', () => ({
@@ -94,6 +99,7 @@ describe('ReaderView', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        notesDrawerSpy.mockClear();
         localStorage.clear();
     });
 
@@ -113,5 +119,18 @@ describe('ReaderView', () => {
         render(<ReaderView content={mockContent} />);
         expect(screen.getByText('The giant idea')).toBeInTheDocument();
         expect(screen.getByText('The Big Idea')).toBeInTheDocument();
+    });
+
+    it('passes an in-reader portal container to NotesDrawer', async () => {
+        render(<ReaderView content={mockContent} />);
+
+        await waitFor(() => {
+            expect(notesDrawerSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    contentItemId: 'test-item-1',
+                    portalContainer: expect.any(HTMLDivElement),
+                })
+            );
+        });
     });
 });

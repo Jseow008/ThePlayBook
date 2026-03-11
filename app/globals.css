@@ -41,6 +41,13 @@
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
 
+  /* Highlight fallbacks for portaled reader UI outside theme scope */
+  --highlight-yellow: 45 100% 50%;
+  --highlight-blue: 217 100% 65%;
+  --highlight-green: 142 76% 50%;
+  --highlight-red: 0 100% 65%;
+  --highlight-purple: 270 100% 70%;
+
   --radius: 0.5rem;
 }
 
