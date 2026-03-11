@@ -7,13 +7,21 @@ export const metadata = {
     description: "Ask questions and get answers based on the books in your personal library.",
 };
 
-export default async function AskPage() {
+interface AskPageProps {
+    searchParams?: Promise<{
+        returnTo?: string;
+    }>;
+}
+
+export default async function AskPage({ searchParams }: AskPageProps) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+    const resolvedSearchParams = await searchParams;
+    const returnTo = resolvedSearchParams?.returnTo;
 
     if (!user) {
         redirect("/login?next=/ask");
     }
 
-    return <AskClientPage />;
+    return <AskClientPage returnTo={returnTo} />;
 }

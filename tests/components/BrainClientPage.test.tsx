@@ -231,4 +231,15 @@ describe("BrainClientPage", () => {
             })
         );
     });
+
+    it("starts with the notes AI panel open when initialAskOpen is true", async () => {
+        render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+
+        expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
+        expect(
+            screen
+                .getAllByRole("button", { name: /close notes ai/i })
+                .find((button) => button.getAttribute("aria-pressed") === "true")
+        ).toBeTruthy();
+    });
 });

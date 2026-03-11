@@ -43,6 +43,18 @@ describe("AskClientPage", () => {
         expect(screen.getByRole("button", { name: "Compare different perspectives from my saved books." })).toBeInTheDocument();
     });
 
+    it("uses the default back link when no return context is provided", () => {
+        render(<AskClientPage />);
+
+        expect(screen.getAllByRole("link")[0]).toHaveAttribute("href", "/");
+    });
+
+    it("uses the notes back link when return context is provided", () => {
+        render(<AskClientPage returnTo="/notes?ask=1" />);
+
+        expect(screen.getAllByRole("link")[0]).toHaveAttribute("href", "/notes?ask=1");
+    });
+
     it("sends the selected starter prompt", () => {
         const mockSendMessage = vi.fn();
         (useChat as any).mockReturnValue({

@@ -61,7 +61,11 @@ function getDisplayErrorMessage(error: unknown): string {
     return FALLBACK_CHAT_ERROR;
 }
 
-export function AskClientPage() {
+interface AskClientPageProps {
+    returnTo?: string;
+}
+
+export function AskClientPage({ returnTo }: AskClientPageProps) {
     const {
         messages,
         sendMessage,
@@ -129,6 +133,8 @@ export function AskClientPage() {
         .reverse()
         .find((message) => message.role === "assistant")?.id;
     const isEmptyState = displayMessages.length === 0;
+    const backHref = returnTo || "/";
+    const backLabel = returnTo ? "Back to notes" : "Back to home";
 
     return (
         <div className="flex h-[100dvh] flex-col bg-background">
@@ -136,9 +142,9 @@ export function AskClientPage() {
                 <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
                         <Link
-                            href="/"
+                            href={backHref}
                             className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/60 transition-colors hover:bg-muted"
-                            aria-label="Back to home"
+                            aria-label={backLabel}
                         >
                             <ArrowLeft className="size-4 text-muted-foreground" />
                         </Link>

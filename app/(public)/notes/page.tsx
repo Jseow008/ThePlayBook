@@ -8,9 +8,16 @@ export const metadata = {
     description: "Manage your highlights, notes, and personal knowledge base.",
 };
 
-export default async function BrainPage() {
+interface BrainPageProps {
+    searchParams?: Promise<{
+        ask?: string;
+    }>;
+}
+
+export default async function BrainPage({ searchParams }: BrainPageProps) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
+    const resolvedSearchParams = await searchParams;
 
     if (!user) {
         redirect("/login?next=/notes");
@@ -47,5 +54,5 @@ export default async function BrainPage() {
                 : null,
     };
 
-    return <BrainClientPage initialPage={initialPage} />;
+    return <BrainClientPage initialPage={initialPage} initialAskOpen={resolvedSearchParams?.ask === "1"} />;
 }

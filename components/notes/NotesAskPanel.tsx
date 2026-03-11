@@ -45,6 +45,8 @@ const FOLLOW_UP_ACTIONS = [
     },
 ] as const;
 
+const NOTES_RETURN_TARGET = "/notes?ask=1";
+
 export interface NotesChatScope {
     highlightIds: string[];
     noteCount: number;
@@ -218,60 +220,68 @@ export function NotesAskPanel({
             )}
         >
             <header className={cn(
-                "flex items-start justify-between gap-3 border-b border-border/50 px-4 py-4",
+                "border-b border-border/50 px-4 py-4",
                 isSidebar && "px-5 py-5"
             )}>
-                <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-                            <BotMessageSquare className="size-4 text-primary" />
+                <div className={cn(
+                    "flex items-start justify-between gap-3",
+                    isSidebar && "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4"
+                )}>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+                                <BotMessageSquare className="size-4 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                                <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">
+                                    Ask These Notes
+                                </h2>
+                                <p className="text-xs text-foreground/80">
+                                    {isSidebar ? "Notes-scoped copilot" : "Answers grounded in the notes currently in view"}
+                                </p>
+                            </div>
                         </div>
-                        <div className="min-w-0">
-                            <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">
-                                Ask These Notes
-                            </h2>
-                            <p className="text-xs text-foreground/80">
-                                {isSidebar ? "Notes-scoped copilot" : "Answers grounded in the notes currently in view"}
-                            </p>
-                        </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.72rem] text-muted-foreground">
-                        <span className="rounded-full border border-white/10 bg-background/70 px-2.5 py-1">
-                            {activeScope.noteCount} notes in scope
-                        </span>
-                        {activeScope.totalMatches > activeScope.noteCount && (
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.72rem] text-muted-foreground">
                             <span className="rounded-full border border-white/10 bg-background/70 px-2.5 py-1">
-                                using 40 most recent
+                                {activeScope.noteCount} notes in scope
                             </span>
+                            {activeScope.totalMatches > activeScope.noteCount && (
+                                <span className="rounded-full border border-white/10 bg-background/70 px-2.5 py-1">
+                                    using 40 most recent
+                                </span>
+                            )}
+                        </div>
+                        {scopeSummary && (
+                            <p className={cn(
+                                "mt-2 text-xs leading-relaxed text-muted-foreground",
+                                isSidebar && "line-clamp-2 max-w-full"
+                            )}>
+                                {scopeSummary}
+                            </p>
                         )}
                     </div>
-                    {scopeSummary && (
-                        <p className={cn(
-                            "mt-2 text-xs leading-relaxed text-muted-foreground",
-                            isSidebar && "line-clamp-2"
-                        )}>
-                            {scopeSummary}
-                        </p>
-                    )}
-                </div>
 
-                <div className="flex items-center gap-1">
-                    <Link
-                        href="/ask"
-                        className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
-                    >
-                        {isSidebar ? "Full screen" : "Full Ask"}
-                    </Link>
-                    {!isSidebar && (
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
-                            aria-label="Close notes AI panel"
+                    <div className={cn(
+                        "flex items-center gap-1",
+                        isSidebar && "row-span-2 self-start justify-self-end"
+                    )}>
+                        <Link
+                            href={`/ask?returnTo=${encodeURIComponent(NOTES_RETURN_TARGET)}`}
+                            className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
                         >
-                            <X className="size-4" />
-                        </button>
-                    )}
+                            {isSidebar ? "Full screen" : "Full Ask"}
+                        </Link>
+                        {!isSidebar && (
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground"
+                                aria-label="Close notes AI panel"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </header>
 

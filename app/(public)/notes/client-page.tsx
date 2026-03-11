@@ -32,6 +32,7 @@ type ColorFilter = "all" | "yellow" | "blue" | "green" | "red" | "purple";
 
 interface BrainClientPageProps {
     initialPage: HighlightsPage;
+    initialAskOpen?: boolean;
 }
 
 const COLOR_FILTER_OPTIONS: Array<{ value: ColorFilter; label: string }> = [
@@ -83,13 +84,13 @@ function buildScopeSummary({
     return parts.join(" • ") || "All content";
 }
 
-export function BrainClientPage({ initialPage }: BrainClientPageProps) {
+export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainClientPageProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedItem, setSelectedItem] = useState<string | "all">("all");
     const [selectedType, setSelectedType] = useState<ItemTypeFilter>("all");
     const [selectedColor, setSelectedColor] = useState<ColorFilter>("all");
     const [sortBy, setSortBy] = useState<SortDirection>("newest");
-    const [isAskOpen, setIsAskOpen] = useState(false);
+    const [isAskOpen, setIsAskOpen] = useState(initialAskOpen);
     const deleteHighlight = useDeleteHighlight();
     const {
         data,
