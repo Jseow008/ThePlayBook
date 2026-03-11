@@ -9,67 +9,14 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { OnboardingStatus } from "@/lib/onboarding";
+import type { OnboardingSlide, OnboardingStatus } from "@/lib/onboarding";
 
 interface AppOnboardingTourProps {
     isOpen: boolean;
     isSaving: boolean;
     onFinish: (status: OnboardingStatus) => void | Promise<void>;
+    slides: OnboardingSlide[];
 }
-
-interface TourSlide {
-    body: string;
-    desktopImageSrc?: string;
-    eyebrow: string;
-    imageAlt?: string;
-    imageSrc?: string;
-    title: string;
-}
-
-const TOUR_SLIDES: TourSlide[] = [
-    {
-        eyebrow: "Browse",
-        title: "Find your next read.",
-        body: "Scan the home feed, open something promising, and start with ideas that already feel worth your time.",
-        imageSrc: "/images/hero-section.png",
-        imageAlt: "Flux browse home feed",
-    },
-    {
-        eyebrow: "Preview",
-        title: "Preview the thesis first.",
-        body: "See the main idea before you commit so you know what the piece is really trying to teach.",
-        imageSrc: "/images/reading-experience-info-view.png",
-        imageAlt: "Preview screen showing the main idea and thesis",
-    },
-    {
-        eyebrow: "Read",
-        title: "Read in clean sections.",
-        body: "Move through a focused reader built to make long ideas easier to follow and easier to retain.",
-        imageSrc: "/images/reading-experience-reader-view.png",
-        imageAlt: "Reader view with structured sections",
-    },
-    {
-        eyebrow: "Highlight",
-        title: "Save what matters.",
-        body: "Highlight the lines and add notes to keep the most useful parts easy to revisit later.",
-        imageSrc: "/images/highlighting-and-annotation.png",
-        imageAlt: "Highlighted passages and notes inside the reader",
-    },
-    {
-        eyebrow: "Notes",
-        title: "Use notes as memory.",
-        body: "Revisit your highlights and commentary when you want the strongest ideas back in one place.",
-        imageSrc: "/images/notes.png",
-        imageAlt: "View with saved highlights and notes",
-    },
-    {
-        eyebrow: "Ask",
-        title: "Ask anything.",
-        body: "Discuss in-depth, compare ideas, and get answers after each read or in your notes.",
-        imageSrc: "/images/ai-chat.png",
-        imageAlt: "Ask My Library chat interface",
-    },
-];
 
 function getFocusableElements(container: HTMLElement | null) {
     if (!container) return [];
@@ -81,20 +28,25 @@ function getFocusableElements(container: HTMLElement | null) {
     ).filter((element) => !element.hasAttribute("disabled") && element.tabIndex !== -1);
 }
 
-export function AppOnboardingTour({ isOpen, isSaving, onFinish }: AppOnboardingTourProps) {
+export function AppOnboardingTour({
+    isOpen,
+    isSaving,
+    onFinish,
+    slides,
+}: AppOnboardingTourProps) {
     const [activeIndex, setActiveIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const touchStartXRef = useRef<number | null>(null);
 
-    const isLastSlide = activeIndex === TOUR_SLIDES.length - 1;
+    const isLastSlide = activeIndex === slides.length - 1;
     const progressLabel = useMemo(
-        () => `Slide ${activeIndex + 1} of ${TOUR_SLIDES.length}`,
-        [activeIndex]
+        () => `Slide ${activeIndex + 1} of ${slides.length}`,
+        [activeIndex, slides.length]
     );
 
     const goToNextSlide = () => {
-        setActiveIndex((current) => Math.min(current + 1, TOUR_SLIDES.length - 1));
+        setActiveIndex((current) => Math.min(current + 1, slides.length - 1));
     };
 
     const goToPreviousSlide = () => {
@@ -138,13 +90,13 @@ export function AppOnboardingTour({ isOpen, isSaving, onFinish }: AppOnboardingT
 
             if (event.key === "ArrowRight") {
                 event.preventDefault();
-                goToNextSlide();
+                setActiveIndex((current) => Math.min(current + 1, slides.length - 1));
                 return;
             }
 
             if (event.key === "ArrowLeft") {
                 event.preventDefault();
-                goToPreviousSlide();
+                setActiveIndex((current) => Math.max(current - 1, 0));
                 return;
             }
 
@@ -168,7 +120,7 @@ export function AppOnboardingTour({ isOpen, isSaving, onFinish }: AppOnboardingT
 
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onFinish]);
+    }, [isOpen, onFinish, slides.length]);
 
     if (!isOpen || !mounted) {
         return null;
@@ -231,7 +183,7 @@ export function AppOnboardingTour({ isOpen, isSaving, onFinish }: AppOnboardingT
                             }
                         }}
                     >
-                        {TOUR_SLIDES.map((slide, index) => {
+                        {slides.map((slide, index) => {
                             return (
                                 <section
                                     key={slide.title}
@@ -265,7 +217,7 @@ export function AppOnboardingTour({ isOpen, isSaving, onFinish }: AppOnboardingT
                                                             <div className="relative aspect-[16/9] overflow-hidden rounded-[1.15rem] border border-white/10 bg-black/30 lg:hidden">
                                                                 <Image
                                                                     src={slide.imageSrc}
-                                                                    alt={slide.imageAlt || slide.title}
+                                                                    alt={slide.imageAlt}
                                                                     fill
                                                                     sizes="100vw"
                                                                     className={cn(
@@ -283,7 +235,7 @@ export function AppOnboardingTour({ isOpen, isSaving, onFinish }: AppOnboardingT
                                                             >
                                                                 <Image
                                                                     src={slide.desktopImageSrc || slide.imageSrc}
-                                                                    alt={slide.imageAlt || slide.title}
+                                                                    alt={slide.imageAlt}
                                                                     fill
                                                                     sizes="50vw"
                                                                     className={cn(
@@ -312,7 +264,7 @@ export function AppOnboardingTour({ isOpen, isSaving, onFinish }: AppOnboardingT
                 >
                     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex items-center gap-2" role="tablist" aria-label="Tour slides">
-                            {TOUR_SLIDES.map((slide, index) => (
+                            {slides.map((slide, index) => (
                                 <button
                                     key={slide.title}
                                     type="button"

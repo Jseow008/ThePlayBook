@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ImgHTMLAttributes } from "react";
 import { AppOnboardingTour } from "@/components/ui/AppOnboardingTour";
+import { APP_ONBOARDING_SLIDES } from "@/lib/onboarding";
 import { vi } from "vitest";
 
 vi.mock("next/image", () => ({
@@ -14,7 +15,7 @@ vi.mock("next/image", () => ({
 
 describe("AppOnboardingTour", () => {
     it("renders a viewport-safe body and pinned footer shell for mobile", () => {
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 
         expect(screen.getByTestId("app-onboarding-body")).toHaveClass("min-h-0", "overflow-hidden");
         expect(screen.getByTestId("app-onboarding-footer")).toHaveClass("flex-none");
@@ -24,13 +25,13 @@ describe("AppOnboardingTour", () => {
     });
 
     it("does not render per-slide decorative icons", () => {
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 
         expect(document.body.querySelectorAll('[data-testid^="app-onboarding-slide-"] svg')).toHaveLength(0);
     });
 
     it("uses the expected workflow screenshots", () => {
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 
         const imageSources = Array.from(document.body.querySelectorAll("img")).map((image) =>
             image.getAttribute("src")
@@ -47,7 +48,7 @@ describe("AppOnboardingTour", () => {
     });
 
     it("uses the shorter desktop screenshot frame instead of the old tall min-height", () => {
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 
         const frames = screen.getAllByTestId("app-onboarding-desktop-image-frame");
 
@@ -58,7 +59,7 @@ describe("AppOnboardingTour", () => {
     });
 
     it("moves between slides using next, back, and dot navigation", () => {
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 
         expect(screen.getByText("Find your next read.")).toBeInTheDocument();
 
@@ -74,7 +75,7 @@ describe("AppOnboardingTour", () => {
 
     it("sends dismissed when skipped and completed on the final slide", () => {
         const onFinish = vi.fn();
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={onFinish} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={onFinish} slides={APP_ONBOARDING_SLIDES} />);
 
         fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
         expect(onFinish).toHaveBeenCalledWith("dismissed");
@@ -90,7 +91,7 @@ describe("AppOnboardingTour", () => {
     });
 
     it("changes slides from swipe gestures", () => {
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 
         const track = screen.getByTestId("app-onboarding-track");
 
@@ -104,7 +105,7 @@ describe("AppOnboardingTour", () => {
     });
 
     it("keeps keyboard focus inside the dialog when tabbing", () => {
-        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} />);
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 
         const skipButton = screen.getByRole("button", { name: "Skip tour" });
         const nextButton = screen.getByRole("button", { name: "Next" });
@@ -117,4 +118,5 @@ describe("AppOnboardingTour", () => {
         fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
         expect(nextButton).toHaveFocus();
     });
+
 });

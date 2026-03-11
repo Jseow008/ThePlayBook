@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import type { ImgHTMLAttributes } from "react";
+import type { ImgHTMLAttributes, ReactNode } from "react";
 import { AppOnboardingGate } from "@/components/ui/AppOnboardingGate";
+import { GUEST_ONBOARDING_STORAGE_KEY, createGuestOnboardingEntry } from "@/lib/onboarding";
 import { vi } from "vitest";
 
 const {
@@ -36,6 +37,15 @@ vi.mock("next/image", () => ({
     },
 }));
 
+vi.mock("react-dom", async () => {
+    const actual = await vi.importActual<typeof import("react-dom")>("react-dom");
+
+    return {
+        ...actual,
+        createPortal: (node: ReactNode) => node,
+    };
+});
+
 vi.mock("@/hooks/useAuthUser", () => ({
     useAuthUser: () => authUserState.value,
 }));
@@ -63,14 +73,17 @@ describe("AppOnboardingGate", () => {
         rpcMock.mockResolvedValue({ error: null });
         routerReplaceMock.mockReset();
         rpcMock.mockClear();
+        window.localStorage.clear();
     });
 
-    it("does not render the tour for signed-out visitors", () => {
+    it("opens the shared tour for a signed-out visitor who has not seen it", async () => {
         authUserState.value = null;
 
         render(<AppOnboardingGate initialUser={null} />);
 
-        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        expect(await screen.findByRole("dialog")).toBeInTheDocument();
+        expect(screen.getByText("Find your next read.")).toBeInTheDocument();
+        expect(rpcMock).not.toHaveBeenCalled();
     });
 
     it("opens the tour for a signed-in user who has not seen it", async () => {
@@ -137,5 +150,31 @@ describe("AppOnboardingGate", () => {
         });
 
         expect(routerReplaceMock).toHaveBeenCalledWith("/browse", { scroll: false });
+    });
+
+    it("persists guest dismissal locally without calling the account RPC", async () => {
+        authUserState.value = null;
+
+        render(<AppOnboardingGate initialUser={null} />);
+
+        fireEvent.click(await screen.findByRole("button", { name: "Skip tour" }));
+
+        await waitFor(() => {
+            expect(window.localStorage.getItem(GUEST_ONBOARDING_STORAGE_KEY)).not.toBeNull();
+        });
+
+        expect(rpcMock).not.toHaveBeenCalled();
+    });
+
+    it("still opens the signed-in tour after login even if the guest local state was seen", async () => {
+        window.localStorage.setItem(
+            GUEST_ONBOARDING_STORAGE_KEY,
+            JSON.stringify(createGuestOnboardingEntry("completed"))
+        );
+
+        render(<AppOnboardingGate initialUser={null} />);
+
+        expect(await screen.findByRole("dialog")).toBeInTheDocument();
+        expect(screen.getByText("Find your next read.")).toBeInTheDocument();
     });
 });

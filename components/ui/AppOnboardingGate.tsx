@@ -5,11 +5,15 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
+    APP_ONBOARDING_SLIDES,
     APP_ONBOARDING_QUERY_PARAM,
     APP_ONBOARDING_REPLAY_VALUE,
     APP_ONBOARDING_TOUR_KEY,
     APP_ONBOARDING_VERSION,
+    GUEST_ONBOARDING_STORAGE_KEY,
+    createGuestOnboardingEntry,
     hasSeenOnboardingVersion,
+    hasSeenGuestOnboarding,
     type OnboardingStatus,
 } from "@/lib/onboarding";
 import { createClient } from "@/lib/supabase/client";
@@ -17,6 +21,7 @@ import type { Database } from "@/types/database";
 import { AppOnboardingTour } from "@/components/ui/AppOnboardingTour";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type ActiveTour = "account" | "guest" | null;
 
 export function AppOnboardingGate({ initialUser }: { initialUser: User | null }) {
     const pathname = usePathname();
@@ -25,6 +30,7 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
     const user = useAuthUser(initialUser);
     const [isOpen, setIsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [activeTour, setActiveTour] = useState<ActiveTour>(null);
 
     const isBrowseRoute = pathname === "/browse";
     const replayRequested = searchParams.get(APP_ONBOARDING_QUERY_PARAM) === APP_ONBOARDING_REPLAY_VALUE;
@@ -35,11 +41,16 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
         async function loadOnboardingState() {
             if (!isBrowseRoute) {
                 setIsOpen(false);
+                setActiveTour(null);
                 return;
             }
 
             if (!user) {
-                setIsOpen(false);
+                const guestStorageValue = window.localStorage.getItem(GUEST_ONBOARDING_STORAGE_KEY);
+                const hasSeenGuestTour = hasSeenGuestOnboarding(guestStorageValue);
+
+                setActiveTour(hasSeenGuestTour ? null : "guest");
+                setIsOpen(!hasSeenGuestTour);
                 return;
             }
 
@@ -63,7 +74,9 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
                 APP_ONBOARDING_VERSION
             );
 
-            setIsOpen(replayRequested || !hasSeenCurrentVersion);
+            const shouldOpen = replayRequested || !hasSeenCurrentVersion;
+            setActiveTour(shouldOpen ? "account" : null);
+            setIsOpen(shouldOpen);
         }
 
         void loadOnboardingState();
@@ -86,7 +99,7 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
         setIsSaving(true);
 
         try {
-            if (user) {
+            if (activeTour === "account" && user) {
                 const supabase = createClient();
                 const { error } = await supabase.rpc("set_onboarding_state", {
                     p_tour: APP_ONBOARDING_TOUR_KEY,
@@ -97,13 +110,26 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
                 if (error) {
                     console.error("Failed to persist onboarding state", error);
                 }
+            } else if (activeTour === "guest") {
+                window.localStorage.setItem(
+                    GUEST_ONBOARDING_STORAGE_KEY,
+                    JSON.stringify(createGuestOnboardingEntry(status))
+                );
             }
         } finally {
             setIsOpen(false);
+            setActiveTour(null);
             clearReplayParam();
             setIsSaving(false);
         }
     };
 
-    return <AppOnboardingTour isOpen={isOpen} isSaving={isSaving} onFinish={handleFinish} />;
+    return (
+        <AppOnboardingTour
+            isOpen={isOpen}
+            isSaving={isSaving}
+            onFinish={handleFinish}
+            slides={APP_ONBOARDING_SLIDES}
+        />
+    );
 }
