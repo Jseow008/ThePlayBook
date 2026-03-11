@@ -228,6 +228,10 @@ Monitor:
 - Active connections
 - Storage usage
 
+### 5.2.1 Internal/Test Accounts
+
+Mark any production testing account with `profiles.is_internal = true` so admin insights exclude its bookmarks, highlights, feedback, and future content-level reading activity.
+
 ### 5.3 Health Check
 
 **GET** `/api/health`

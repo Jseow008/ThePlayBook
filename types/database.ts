@@ -90,6 +90,76 @@ export type Database = {
           },
         ]
       }
+      content_reader_daily: {
+        Row: {
+          activity_date: string
+          content_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          activity_date?: string
+          content_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          content_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reader_daily_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_reading_activity: {
+        Row: {
+          activity_date: string
+          content_id: string
+          created_at: string
+          duration_seconds: number
+          id: string
+          reader_count: number
+          updated_at: string
+        }
+        Insert: {
+          activity_date?: string
+          content_id: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          reader_count?: number
+          updated_at?: string
+        }
+        Update: {
+          activity_date?: string
+          content_id?: string
+          created_at?: string
+          duration_seconds?: number
+          id?: string
+          reader_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_reading_activity_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_item: {
         Row: {
           audio_url: string | null
@@ -188,6 +258,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          is_internal: boolean
           reader_settings: Json | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
@@ -196,6 +267,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id: string
+          is_internal?: boolean
           reader_settings?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -204,6 +276,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          is_internal?: boolean
           reader_settings?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -479,6 +552,14 @@ export type Database = {
       increment_reading_activity: {
         Args: {
           p_activity_date: string
+          p_duration_seconds: number
+        }
+        Returns: undefined
+      }
+      log_reading_activity: {
+        Args: {
+          p_activity_date: string
+          p_content_id: string
           p_duration_seconds: number
         }
         Returns: undefined
