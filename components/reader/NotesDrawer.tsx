@@ -216,72 +216,69 @@ export function NotesDrawer({
                                     <div
                                         key={item.id}
                                         className={cn(
-                                            "group relative border-b border-border/25 py-1.5",
+                                            "group relative border-b border-border/15 py-1",
                                             index === 0 && "pt-0",
                                             index === highlights.length - 1 && "border-b-0 pb-0"
                                         )}
                                     >
-                                        <span
-                                            aria-hidden="true"
-                                            className={cn(
-                                                "absolute left-0 top-3 bottom-3 w-px rounded-full transition-opacity duration-200",
-                                                HIGHLIGHT_COLOR_CLASSES[color].swatch,
-                                                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-70"
-                                            )}
-                                        />
-
                                         <button
+                                            data-highlight-row="true"
+                                            data-active={isActive ? "true" : "false"}
                                             onClick={() => handleJump(item.id)}
                                             aria-label={`${itemLabel} ${sectionTitle}`}
                                             className={cn(
-                                                "focus-ring w-full rounded-xl px-4 py-3 pr-20 text-left transition-colors duration-150",
+                                                "focus-ring relative w-full rounded-lg pl-5 pr-14 py-2.5 text-left transition-colors duration-150",
                                                 isActive
-                                                    ? "bg-card/60"
-                                                    : "bg-transparent hover:bg-card/35"
+                                                    ? "bg-card/50"
+                                                    : "bg-card/[0.14] hover:bg-card/[0.28]"
                                             )}
                                         >
-                                            <div className="flex items-start gap-3">
-                                                <span
-                                                    className={cn(
-                                                        "mt-1.5 inline-flex h-2 w-2 shrink-0 rounded-full",
-                                                        HIGHLIGHT_COLOR_CLASSES[color].swatch
-                                                    )}
-                                                    aria-hidden="true"
-                                                />
+                                            <span
+                                                data-highlight-rail="true"
+                                                aria-hidden="true"
+                                                className={cn(
+                                                    "absolute left-0 top-2.5 bottom-2.5 w-[3px] rounded-full transition-opacity duration-150",
+                                                    HIGHLIGHT_COLOR_CLASSES[color].swatch,
+                                                    isActive ? "opacity-100" : "opacity-85 group-hover:opacity-100"
+                                                )}
+                                            />
 
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex flex-wrap items-center gap-1.5 text-[0.72rem] leading-5 text-muted-foreground/85">
-                                                        <span className="truncate font-medium text-foreground/72">
-                                                            {sectionTitle}
-                                                        </span>
-                                                        <span className="text-muted-foreground/35">•</span>
-                                                        <span>{itemLabel}</span>
-                                                        <span className="text-muted-foreground/35">•</span>
-                                                        <span
-                                                            title={item.created_at
-                                                                ? `Saved ${formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}`
-                                                                : undefined}
-                                                        >
-                                                            {item.created_at
-                                                                ? format(new Date(item.created_at), "MMM d, h:mm a")
-                                                                : "Just now"}
-                                                        </span>
-                                                    </div>
-
-                                                    <p className="mt-1.5 text-[0.98rem] leading-6 text-foreground/95 italic">
-                                                        &ldquo;{item.highlighted_text}&rdquo;
-                                                    </p>
-
-                                                    {noteText && (
-                                                        <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
-                                                            {noteText}
-                                                        </p>
-                                                    )}
+                                            <div className="min-w-0">
+                                                <div className="flex min-w-0 items-center gap-2 pr-6 text-[0.72rem] leading-5 text-muted-foreground/70">
+                                                    <span className="min-w-0 truncate font-medium text-foreground/82">
+                                                        {sectionTitle}
+                                                    </span>
+                                                    <span className="shrink-0 text-muted-foreground/30">•</span>
+                                                    <span className="shrink-0 text-muted-foreground/62">{itemLabel}</span>
+                                                    <span className="shrink-0 text-muted-foreground/30">•</span>
+                                                    <span
+                                                        className="shrink-0 text-muted-foreground/56"
+                                                        title={item.created_at
+                                                            ? `Saved ${formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}`
+                                                            : undefined}
+                                                    >
+                                                        {item.created_at
+                                                            ? format(new Date(item.created_at), "MMM d, h:mm a")
+                                                            : "Just now"}
+                                                    </span>
                                                 </div>
+
+                                                <p
+                                                    data-highlight-quote="true"
+                                                    className="mt-1 max-w-[31ch] text-[0.94rem] leading-[1.7] text-foreground/96 italic"
+                                                >
+                                                    &ldquo;{item.highlighted_text}&rdquo;
+                                                </p>
+
+                                                {noteText && (
+                                                    <p className="mt-1 whitespace-pre-wrap text-[0.86rem] leading-5 text-muted-foreground/78">
+                                                        {noteText}
+                                                    </p>
+                                                )}
                                             </div>
                                         </button>
 
-                                        <div className="absolute right-2 top-2.5 flex items-center gap-0.5">
+                                        <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
@@ -289,8 +286,8 @@ export function NotesDrawer({
                                                     handleJump(item.id);
                                                 }}
                                                 className={cn(
-                                                    "focus-ring rounded-md p-1.5 text-muted-foreground/45 transition-all hover:bg-secondary/60 hover:text-foreground",
-                                                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                                                    "focus-ring rounded-md p-1.5 text-muted-foreground/38 transition-all hover:bg-secondary/45 hover:text-foreground/85",
+                                                    isActive ? "opacity-85" : "opacity-50 group-hover:opacity-85 focus-visible:opacity-85"
                                                 )}
                                                 aria-label={`Jump to ${sectionTitle}`}
                                             >
@@ -304,7 +301,7 @@ export function NotesDrawer({
                                                     handleDelete(item.id);
                                                 }}
                                                 disabled={deleteHighlight.isPending}
-                                                className="focus-ring rounded-md p-1.5 text-muted-foreground/45 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                                className="focus-ring rounded-md p-1.5 text-muted-foreground/38 transition-colors hover:bg-destructive/10 hover:text-destructive"
                                                 aria-label={`Delete ${itemLabel.toLowerCase()} from ${sectionTitle}`}
                                             >
                                                 <Trash2 className="size-3.5" />

@@ -108,12 +108,20 @@ describe("NotesDrawer", () => {
 
         fireEvent.click(await screen.findByRole("button", { name: /open notes drawer/i }));
 
-        expect(await screen.findByText(/highlighted passage/i)).toBeInTheDocument();
+        const activeRow = screen.getByRole("button", { name: /note introduction/i });
+        const quote = await screen.findByText(/highlighted passage/i);
+
+        expect(activeRow).toHaveAttribute("data-active", "true");
+        expect(activeRow.className).not.toContain("border");
+        expect(activeRow.className).toContain("bg-card/50");
+        expect(quote).toBeInTheDocument();
         expect(screen.getByText("My note body")).toBeInTheDocument();
         expect(screen.getByText("Introduction")).toBeInTheDocument();
         expect(screen.getByText("Note")).toBeInTheDocument();
         expect(screen.getAllByText("Highlight").length).toBeGreaterThan(0);
         expect(screen.getAllByText(/Mar/).length).toBeGreaterThan(0);
+        expect(document.querySelectorAll('[data-highlight-rail="true"]').length).toBe(highlights.length);
+        expect(document.querySelector('[data-highlight-quote="true"]')?.className).toContain("text-[0.94rem]");
         expect(screen.queryByText("?")).not.toBeInTheDocument();
     });
 
