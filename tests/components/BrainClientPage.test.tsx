@@ -31,6 +31,8 @@ const {
     },
 }));
 
+const notesAskPanelMock = vi.fn();
+
 vi.mock("@/hooks/useHighlights", () => ({
     useInfiniteHighlights: () => infiniteHighlightsState.value,
     useDeleteHighlight: () => ({
@@ -43,6 +45,13 @@ vi.mock("sonner", () => ({
     toast: {
         success: toastSuccessMock,
         error: toastErrorMock,
+    },
+}));
+
+vi.mock("@/components/notes/NotesAskPanel", () => ({
+    NotesAskPanel: (props: any) => {
+        notesAskPanelMock(props);
+        return <div data-testid="notes-ask-panel">Notes AI Panel</div>;
     },
 }));
 
@@ -124,6 +133,7 @@ describe("BrainClientPage", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        notesAskPanelMock.mockClear();
         fetchNextPageMock.mockResolvedValue(undefined);
         infiniteHighlightsState.value = {
             data: {
@@ -196,5 +206,29 @@ describe("BrainClientPage", () => {
         await waitFor(() => {
             expect(fetchNextPageMock).toHaveBeenCalled();
         });
+    });
+
+    it("opens the notes AI panel with the current filtered scope", async () => {
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        fireEvent.click(screen.getByRole("button", { name: /ask these notes/i }));
+
+        expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
+        expect(
+            screen
+                .getAllByRole("button", { name: /close notes ai/i })
+                .find((button) => button.getAttribute("aria-pressed") === "true")
+        ).toBeTruthy();
+        expect(notesAskPanelMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                currentScope: expect.objectContaining({
+                    noteCount: 3,
+                    totalMatches: 3,
+                    highlightIds: ["highlight-1", "highlight-2", "highlight-3"],
+                    summary: "All content",
+                }),
+                onClose: expect.any(Function),
+            })
+        );
     });
 });
