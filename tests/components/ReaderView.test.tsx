@@ -3,7 +3,39 @@ import { ReaderView } from '@/components/reader/ReaderView';
 import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
 
-const notesDrawerSpy = vi.hoisted(() => vi.fn());
+const {
+    notesDrawerSpy,
+    routerReplaceMock,
+    searchParamsState,
+    highlightsState,
+} = vi.hoisted(() => ({
+    notesDrawerSpy: vi.fn(),
+    routerReplaceMock: vi.fn(),
+    searchParamsState: { value: '' },
+    highlightsState: {
+        value: [] as Array<{
+            id: string;
+            user_id: string;
+            content_item_id: string;
+            segment_id: string | null;
+            highlighted_text: string;
+            note_body: string | null;
+            color: string | null;
+            anchor_start: number | null;
+            anchor_end: number | null;
+            created_at: string | null;
+            updated_at: string | null;
+            content_item: null;
+            segment: null;
+        }>,
+    },
+}));
+
+vi.mock('next/navigation', () => ({
+    usePathname: () => '/read/test-item-1',
+    useRouter: () => ({ replace: routerReplaceMock }),
+    useSearchParams: () => new URLSearchParams(searchParamsState.value),
+}));
 
 // Mock child components to isolate ReaderView testing
 vi.mock('@/components/reader/ReaderHeroHeader', () => ({
@@ -44,7 +76,11 @@ vi.mock('@/hooks/useReadingTimer', () => ({
 }));
 
 vi.mock('@/hooks/useHighlights', () => ({
-    useHighlights: () => ({ data: [] }),
+    useHighlights: () => ({
+        data: highlightsState.value,
+        isLoading: false,
+        error: null,
+    }),
 }));
 
 vi.mock('@/hooks/useReaderSettings', () => ({
@@ -100,7 +136,12 @@ describe('ReaderView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         notesDrawerSpy.mockClear();
+        routerReplaceMock.mockClear();
+        searchParamsState.value = '';
+        highlightsState.value = [];
+        window.scrollTo = vi.fn();
         localStorage.clear();
+        document.body.innerHTML = '';
     });
 
     it('renders the layout components including header, accordion, and drawers', () => {
@@ -128,7 +169,7 @@ describe('ReaderView', () => {
             expect(notesDrawerSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     highlights: [],
-                    isLoading: undefined,
+                    isLoading: false,
                     hasError: false,
                     activeHighlightId: null,
                     onHighlightJump: expect.any(Function),
@@ -140,6 +181,46 @@ describe('ReaderView', () => {
                     ],
                 })
             );
+        });
+    });
+
+    it('consumes a highlightId URL param and clears it after jumping', async () => {
+        searchParamsState.value = 'highlightId=highlight-1';
+        highlightsState.value = [
+            {
+                id: 'highlight-1',
+                user_id: 'user-1',
+                content_item_id: 'test-item-1',
+                segment_id: 'seg-1',
+                highlighted_text: 'Body 1',
+                note_body: null,
+                color: 'yellow',
+                anchor_start: 0,
+                anchor_end: 6,
+                created_at: '2026-03-11T12:00:00.000Z',
+                updated_at: null,
+                content_item: null,
+                segment: null,
+            },
+        ];
+
+        const mark = document.createElement('mark');
+        mark.setAttribute('data-id', 'highlight-1');
+        mark.textContent = 'Body 1';
+        document.body.appendChild(mark);
+
+        render(<ReaderView content={mockContent} />);
+
+        await waitFor(() => {
+            expect(notesDrawerSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    activeHighlightId: 'highlight-1',
+                })
+            );
+        });
+
+        await waitFor(() => {
+            expect(routerReplaceMock).toHaveBeenCalledWith('/read/test-item-1', { scroll: false });
         });
     });
 });

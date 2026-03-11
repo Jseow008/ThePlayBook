@@ -55,6 +55,7 @@ describe("NotesDrawer", () => {
             created_at: "2026-03-11T12:00:00.000Z",
             updated_at: null,
             content_item: null,
+            segment: null,
         },
         {
             id: "highlight-2",
@@ -69,6 +70,7 @@ describe("NotesDrawer", () => {
             created_at: "2026-03-10T12:00:00.000Z",
             updated_at: null,
             content_item: null,
+            segment: null,
         },
         {
             id: "highlight-3",
@@ -83,6 +85,7 @@ describe("NotesDrawer", () => {
             created_at: "2026-03-09T12:00:00.000Z",
             updated_at: null,
             content_item: null,
+            segment: null,
         },
     ];
 

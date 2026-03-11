@@ -144,7 +144,8 @@ export async function GET(request: NextRequest) {
             .from("user_highlights")
             .select(`
                 *,
-                content_item ( id, title, author, cover_image_url )
+                content_item ( id, title, author, cover_image_url ),
+                segment ( id, title )
             `)
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })

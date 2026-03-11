@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BrainClientPage } from "./client-page";
+import type { HighlightsPage } from "@/hooks/useHighlights";
 
 export const metadata = {
     title: "Notes",
@@ -20,13 +21,15 @@ export default async function BrainPage() {
         .from("user_highlights")
         .select(`
             id,
+            segment_id,
             anchor_start,
             anchor_end,
             highlighted_text,
             note_body,
             color,
             created_at,
-            content_item ( id, title, author, cover_image_url )
+            content_item ( id, title, author, cover_image_url ),
+            segment ( id, title )
         `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
@@ -36,5 +39,13 @@ export default async function BrainPage() {
         console.error("Failed to load brain highlights:", error);
     }
 
-    return <BrainClientPage initialHighlights={highlights || []} />;
+    const initialPage: HighlightsPage = {
+        data: (highlights || []) as HighlightsPage["data"],
+        nextCursor:
+            highlights && highlights.length === 30
+                ? (highlights[highlights.length - 1] as { created_at?: string | null })?.created_at ?? null
+                : null,
+    };
+
+    return <BrainClientPage initialPage={initialPage} />;
 }

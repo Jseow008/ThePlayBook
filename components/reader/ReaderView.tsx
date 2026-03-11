@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
@@ -46,10 +47,14 @@ export function ReaderView({ content }: ReaderViewProps) {
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const popoverHighlight = popoverHighlightId
         ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
         : null;
     const spotlightTimeoutRef = useRef<number | null>(null);
+    const handledUrlHighlightRef = useRef<string | null>(null);
     const sectionMeta = useMemo(
         () =>
             content.segments.map((segment, index) => ({
@@ -210,6 +215,12 @@ export function ReaderView({ content }: ReaderViewProps) {
         };
     }, []);
 
+    useEffect(() => {
+        if (!searchParams.get("highlightId")) {
+            handledUrlHighlightRef.current = null;
+        }
+    }, [searchParams]);
+
     const closeActiveHighlight = () => {
         setPopoverHighlightId(null);
         setActiveHighlightPosition(null);
@@ -250,7 +261,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         return [];
     };
 
-    const handleHighlightJump = async (highlightId: string) => {
+    const handleHighlightJump = useCallback(async (highlightId: string) => {
         const highlight = highlights.find((item) => item.id === highlightId);
         if (!highlight) return;
 
@@ -275,7 +286,31 @@ export function ReaderView({ content }: ReaderViewProps) {
         const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
         window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
         applyHighlightSpotlight(highlightId, marks);
-    };
+    }, [content.segments, highlights]);
+
+    useEffect(() => {
+        const urlHighlightId = searchParams.get("highlightId");
+        if (!urlHighlightId || highlightsLoading) {
+            return;
+        }
+
+        if (handledUrlHighlightRef.current === urlHighlightId) {
+            return;
+        }
+
+        handledUrlHighlightRef.current = urlHighlightId;
+
+        const clearUrlParam = () => {
+            router.replace(pathname, { scroll: false });
+        };
+
+        if (!highlights.some((highlight) => highlight.id === urlHighlightId)) {
+            clearUrlParam();
+            return;
+        }
+
+        void handleHighlightJump(urlHighlightId).finally(clearUrlParam);
+    }, [handleHighlightJump, highlights, highlightsLoading, pathname, router, searchParams]);
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>

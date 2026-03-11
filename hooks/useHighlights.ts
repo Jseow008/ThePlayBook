@@ -9,10 +9,23 @@ export type HighlightWithContent = UserHighlight & {
         author: string | null;
         cover_image_url: string | null;
     } | null;
+    segment: {
+        id: string;
+        title: string | null;
+    } | null;
 };
 
 interface UseHighlightsOptions {
     initialData?: HighlightWithContent[];
+}
+
+export interface HighlightsPage {
+    data: HighlightWithContent[];
+    nextCursor: string | null;
+}
+
+interface UseInfiniteHighlightsOptions {
+    initialPage?: HighlightsPage;
 }
 
 // ----------------------------------------------------------------------------
@@ -42,10 +55,10 @@ export function useHighlights(contentItemId?: string, options?: UseHighlightsOpt
 // ----------------------------------------------------------------------------
 // Fetch Infinite Highlights
 // ----------------------------------------------------------------------------
-export function useInfiniteHighlights(contentItemId?: string) {
+export function useInfiniteHighlights(contentItemId?: string, options?: UseInfiniteHighlightsOptions) {
     return useInfiniteQuery({
         queryKey: ["highlights", "infinite", contentItemId],
-        queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<{ data: HighlightWithContent[], nextCursor: string | null }> => {
+        queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<HighlightsPage> => {
             let url = contentItemId
                 ? `/api/library/highlights?content_item_id=${contentItemId}&limit=30`
                 : "/api/library/highlights?limit=30";
@@ -62,6 +75,12 @@ export function useInfiniteHighlights(contentItemId?: string) {
 
             return await res.json();
         },
+        initialData: options?.initialPage
+            ? {
+                pages: [options.initialPage],
+                pageParams: [null],
+            }
+            : undefined,
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
     });
@@ -118,6 +137,7 @@ export function useCreateHighlight() {
                 created_at: new Date().toISOString(),
                 updated_at: null,
                 content_item: null,
+                segment: null,
             };
 
             previousData.forEach(([queryKey, oldData]) => {
