@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2 } from "lucide-react";
+import { LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, Sparkles } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 import { APP_NAME } from "@/lib/brand";
+import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/onboarding";
 
 export default function SettingsPage() {
     const supabase = createClient();
@@ -279,6 +280,20 @@ export default function SettingsPage() {
                                     <HelpCircle className="w-5 h-5" />
                                 </div>
                                 <span className="font-medium">Terms of Service</span>
+                            </div>
+                        </Link>
+                        <Link
+                            href={`/browse?${APP_ONBOARDING_QUERY_PARAM}=${APP_ONBOARDING_REPLAY_VALUE}`}
+                            className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
+                                    <Sparkles className="w-5 h-5" />
+                                </div>
+                                <div>
+                                    <p className="font-medium">Replay app tour</p>
+                                    <p className="text-sm text-muted-foreground">Open the guided introduction again from the home feed.</p>
+                                </div>
                             </div>
                         </Link>
                         <div className="p-4 text-center text-xs text-muted-foreground bg-secondary/30">

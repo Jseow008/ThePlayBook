@@ -5,6 +5,7 @@ import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { MobileHeader } from "@/components/ui/MobileHeader";
+import { AppOnboardingGate } from "@/components/ui/AppOnboardingGate";
 import type { User } from "@supabase/supabase-js";
 
 /**
@@ -26,6 +27,8 @@ export function PublicLayoutShell({ children, initialUser }: { children: React.R
 
     return (
         <div className="min-h-screen bg-background">
+            <AppOnboardingGate initialUser={initialUser} />
+
             {/* Netflix-style Sidebar (hidden on mobile) */}
             <NetflixSidebar initialUser={initialUser} />
 

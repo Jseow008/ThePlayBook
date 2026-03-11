@@ -259,6 +259,7 @@ export type Database = {
           email: string | null
           id: string
           is_internal: boolean
+          onboarding_state: Json | null
           reader_settings: Json | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string | null
@@ -268,6 +269,7 @@ export type Database = {
           email?: string | null
           id: string
           is_internal?: boolean
+          onboarding_state?: Json | null
           reader_settings?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -277,6 +279,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_internal?: boolean
+          onboarding_state?: Json | null
           reader_settings?: Json | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string | null
@@ -611,6 +614,14 @@ export type Database = {
           type: Database["public"]["Enums"]["content_type"]
           updated_at: string
         }[]
+      }
+      set_onboarding_state: {
+        Args: {
+          p_status: string
+          p_tour: string
+          p_version: string
+        }
+        Returns: Json
       }
     }
     Enums: {
