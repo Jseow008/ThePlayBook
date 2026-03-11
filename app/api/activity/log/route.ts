@@ -17,6 +17,9 @@ function getUtcDateString() {
 export async function POST(req: NextRequest) {
     const requestId = getRequestId();
     const supabase = await createClient();
+    const rpcClient = supabase as unknown as {
+        rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: unknown }>;
+    };
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -45,11 +48,16 @@ export async function POST(req: NextRequest) {
 
         const activityDate = parsed.data.activity_date ?? getUtcDateString();
 
-        // @ts-expect-error - types for rpc might be outdated
-        const { error } = await supabase.rpc("increment_reading_activity", {
-            p_activity_date: activityDate,
-            p_duration_seconds: parsed.data.duration_seconds,
-        });
+        const { error } = parsed.data.content_id
+            ? await rpcClient.rpc("log_reading_activity", {
+                p_activity_date: activityDate,
+                p_duration_seconds: parsed.data.duration_seconds,
+                p_content_id: parsed.data.content_id,
+            })
+            : await rpcClient.rpc("increment_reading_activity", {
+                p_activity_date: activityDate,
+                p_duration_seconds: parsed.data.duration_seconds,
+            });
 
         if (error) throw error;
 

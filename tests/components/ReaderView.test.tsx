@@ -121,14 +121,23 @@ describe('ReaderView', () => {
         expect(screen.getByText('The Big Idea')).toBeInTheDocument();
     });
 
-    it('passes an in-reader portal container to NotesDrawer', async () => {
+    it('passes the current reader state into NotesDrawer', async () => {
         render(<ReaderView content={mockContent} />);
 
         await waitFor(() => {
             expect(notesDrawerSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    contentItemId: 'test-item-1',
-                    portalContainer: expect.any(HTMLDivElement),
+                    highlights: [],
+                    isLoading: undefined,
+                    hasError: false,
+                    activeHighlightId: null,
+                    onHighlightJump: expect.any(Function),
+                    sections: [
+                        {
+                            id: 'seg-1',
+                            title: 'Segment 1',
+                        },
+                    ],
                 })
             );
         });
