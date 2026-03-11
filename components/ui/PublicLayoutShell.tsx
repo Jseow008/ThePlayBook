@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { usePathname } from "next/navigation";
 import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { UserNav } from "@/components/ui/UserNav";
@@ -27,7 +28,9 @@ export function PublicLayoutShell({ children, initialUser }: { children: React.R
 
     return (
         <div className="min-h-screen bg-background">
-            <AppOnboardingGate initialUser={initialUser} />
+            <Suspense fallback={null}>
+                <AppOnboardingGate initialUser={initialUser} />
+            </Suspense>
 
             {/* Netflix-style Sidebar (hidden on mobile) */}
             <NetflixSidebar initialUser={initialUser} />
