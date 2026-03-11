@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
@@ -32,21 +32,32 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
+    const [popoverHighlightId, setPopoverHighlightId] = useState<string | null>(null);
     const [activeHighlightPosition, setActiveHighlightPosition] = useState<{
         top: number;
         left: number;
         width: number;
         height: number;
     } | null>(null);
+    const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
-    const popoverPortalRef = useRef<HTMLDivElement>(null);
+    const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
     const { saveReadingProgress } = useReadingProgress();
-    const { data: highlights = [] } = useHighlights(content.id);
+    const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
-    const activeHighlight = activeHighlightId
-        ? highlights.find((highlight) => highlight.id === activeHighlightId) ?? null
+    const popoverHighlight = popoverHighlightId
+        ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
         : null;
+    const spotlightTimeoutRef = useRef<number | null>(null);
+    const sectionMeta = useMemo(
+        () =>
+            content.segments.map((segment, index) => ({
+                id: segment.id,
+                title: segment.title || `Segment ${index + 1}`,
+            })),
+        [content.segments]
+    );
 
     // Start tracking reading time
     useReadingTimer(content.id);
@@ -102,10 +113,15 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, [content.id]);
 
     useEffect(() => {
-        if (!activeHighlightId || activeHighlight) return;
-        setActiveHighlightId(null);
-        setActiveHighlightPosition(null);
-    }, [activeHighlightId, activeHighlight]);
+        if (popoverHighlightId && !popoverHighlight) {
+            setPopoverHighlightId(null);
+            setActiveHighlightPosition(null);
+        }
+
+        if (activeHighlightId && !highlights.some((highlight) => highlight.id === activeHighlightId)) {
+            setActiveHighlightId(null);
+        }
+    }, [activeHighlightId, highlights, popoverHighlight, popoverHighlightId]);
 
     // Handle segment open — only track max index for progress visibility
     const handleSegmentOpen = (segmentId: string, index: number) => {
@@ -174,24 +190,96 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     useEffect(() => {
         const handleScroll = () => {
-            if (!isDesktop || !activeHighlightId || isPopoverHovered) return;
-            setActiveHighlightId(null);
+            if (!isDesktop || !popoverHighlightId || isPopoverHovered) return;
+            setPopoverHighlightId(null);
             setActiveHighlightPosition(null);
         };
 
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
-    }, [activeHighlightId, isDesktop, isPopoverHovered]);
+    }, [popoverHighlightId, isDesktop, isPopoverHovered]);
+
+    useEffect(() => {
+        return () => {
+            if (spotlightTimeoutRef.current !== null) {
+                window.clearTimeout(spotlightTimeoutRef.current);
+            }
+            document
+                .querySelectorAll<HTMLElement>('mark[data-highlight-spotlight="true"]')
+                .forEach((mark) => mark.removeAttribute("data-highlight-spotlight"));
+        };
+    }, []);
 
     const closeActiveHighlight = () => {
-        setActiveHighlightId(null);
+        setPopoverHighlightId(null);
         setActiveHighlightPosition(null);
         setIsPopoverHovered(false);
     };
 
+    const applyHighlightSpotlight = (highlightId: string, marks: HTMLElement[]) => {
+        if (spotlightTimeoutRef.current !== null) {
+            window.clearTimeout(spotlightTimeoutRef.current);
+        }
+
+        document
+            .querySelectorAll<HTMLElement>('mark[data-highlight-spotlight="true"]')
+            .forEach((mark) => mark.removeAttribute("data-highlight-spotlight"));
+
+        marks.forEach((mark) => mark.setAttribute("data-highlight-spotlight", "true"));
+
+        spotlightTimeoutRef.current = window.setTimeout(() => {
+            document
+                .querySelectorAll<HTMLElement>(`mark[data-id="${highlightId}"][data-highlight-spotlight="true"]`)
+                .forEach((mark) => mark.removeAttribute("data-highlight-spotlight"));
+        }, 1800);
+    };
+
+    const waitForHighlightMarks = async (highlightId: string): Promise<HTMLElement[]> => {
+        for (let attempt = 0; attempt < 12; attempt += 1) {
+            const marks = Array.from(
+                document.querySelectorAll<HTMLElement>(`mark[data-id="${highlightId}"]`)
+            );
+
+            if (marks.length > 0) {
+                return marks;
+            }
+
+            await new Promise((resolve) => window.setTimeout(resolve, 80));
+        }
+
+        return [];
+    };
+
+    const handleHighlightJump = async (highlightId: string) => {
+        const highlight = highlights.find((item) => item.id === highlightId);
+        if (!highlight) return;
+
+        setActiveHighlightId(highlightId);
+        setPopoverHighlightId(null);
+        setActiveHighlightPosition(null);
+        setIsPopoverHovered(false);
+
+        if (highlight.segment_id) {
+            const targetIndex = content.segments.findIndex((segment) => segment.id === highlight.segment_id);
+            setExpandedSegmentId(highlight.segment_id);
+
+            if (targetIndex !== -1) {
+                handleSegmentOpen(highlight.segment_id, targetIndex);
+            }
+        }
+
+        const marks = await waitForHighlightMarks(highlightId);
+        if (marks.length === 0) return;
+
+        const [firstMark] = marks;
+        const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        applyHighlightSpotlight(highlightId, marks);
+    };
+
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
-            <div ref={popoverPortalRef} aria-hidden="true" />
+            <div ref={setPopoverPortalEl} aria-hidden="true" />
             <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-8 sm:pt-12 lg:pb-24">
                 {/* Hero Header */}
                 <ReaderHeroHeader
@@ -224,8 +312,11 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onSegmentOpen={handleSegmentOpen}
                     onSegmentComplete={handleSegmentComplete}
                     highlights={highlights}
+                    expandedSegmentId={expandedSegmentId}
+                    onExpandedSegmentChange={setExpandedSegmentId}
                     onHighlightActivate={(highlightId, position) => {
                         setActiveHighlightId(highlightId);
+                        setPopoverHighlightId(highlightId);
                         setActiveHighlightPosition(position);
                     }}
                 />
@@ -246,16 +337,23 @@ export function ReaderView({ content }: ReaderViewProps) {
             {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
             {/* Deferred mobile alternative: introduce a separate post-selection CTA instead of replacing the native iOS menu. */}
             {isDesktop && <TextSelectionToolbar contentItemId={content.id} />}
-            <NotesDrawer contentItemId={content.id} />
-            {isDesktop && activeHighlight && activeHighlightPosition && popoverPortalRef.current && (
+            <NotesDrawer
+                highlights={highlights}
+                isLoading={highlightsLoading}
+                hasError={Boolean(highlightsError)}
+                sections={sectionMeta}
+                activeHighlightId={activeHighlightId}
+                onHighlightJump={handleHighlightJump}
+            />
+            {isDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (
                 <HighlightPopover
-                    highlightId={activeHighlight.id}
-                    noteBody={activeHighlight.note_body}
-                    highlightedText={activeHighlight.highlighted_text}
-                    currentColor={activeHighlight.color || "yellow"}
+                    highlightId={popoverHighlight.id}
+                    noteBody={popoverHighlight.note_body}
+                    highlightedText={popoverHighlight.highlighted_text}
+                    currentColor={popoverHighlight.color || "yellow"}
                     position={activeHighlightPosition}
-                    portalContainer={popoverPortalRef.current}
-                    createdAt={activeHighlight.created_at || undefined}
+                    portalContainer={popoverPortalEl}
+                    createdAt={popoverHighlight.created_at || undefined}
                     onClose={closeActiveHighlight}
                     onMouseEnter={() => setIsPopoverHovered(true)}
                     onMouseLeave={() => {

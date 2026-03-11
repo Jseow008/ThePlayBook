@@ -235,6 +235,8 @@ interface SegmentAccordionProps {
     onSegmentComplete?: (segmentId: string, index: number) => void;
     highlights?: HighlightWithContent[];
     onHighlightActivate?: (highlightId: string, position: HighlightPosition) => void;
+    expandedSegmentId?: string | null;
+    onExpandedSegmentChange?: (segmentId: string | null) => void;
 }
 
 export function SegmentAccordion({
@@ -244,15 +246,26 @@ export function SegmentAccordion({
     onSegmentComplete,
     highlights = [],
     onHighlightActivate,
+    expandedSegmentId,
+    onExpandedSegmentChange,
 }: SegmentAccordionProps) {
-    const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [uncontrolledExpandedId, setUncontrolledExpandedId] = useState<string | null>(null);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
+    const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
+
+    const setExpandedId = useCallback((nextSegmentId: string | null) => {
+        onExpandedSegmentChange?.(nextSegmentId);
+
+        if (expandedSegmentId === undefined) {
+            setUncontrolledExpandedId(nextSegmentId);
+        }
+    }, [expandedSegmentId, onExpandedSegmentChange]);
 
     const handleToggle = useCallback(
         (segment: SegmentFull, index: number) => {
-            const isOpening = expandedId !== segment.id;
+            const isOpening = currentExpandedId !== segment.id;
 
             if (isOpening) {
                 setExpandedId(segment.id);
@@ -273,7 +286,7 @@ export function SegmentAccordion({
 
             setExpandedId(null);
         },
-        [expandedId, onSegmentOpen]
+        [currentExpandedId, onSegmentOpen, setExpandedId]
     );
 
     useEffect(() => {
@@ -284,12 +297,12 @@ export function SegmentAccordion({
 
             if (e.key === "ArrowRight") {
                 e.preventDefault();
-                if (!expandedId) {
+                if (!currentExpandedId) {
                     handleToggle(segments[0], 0);
                     return;
                 }
 
-                const currentIndex = segments.findIndex((segment) => segment.id === expandedId);
+                const currentIndex = segments.findIndex((segment) => segment.id === currentExpandedId);
                 if (currentIndex !== -1 && currentIndex < segments.length - 1) {
                     handleToggle(segments[currentIndex + 1], currentIndex + 1);
                 }
@@ -298,7 +311,7 @@ export function SegmentAccordion({
 
             if (e.key === "ArrowLeft") {
                 e.preventDefault();
-                const currentIndex = segments.findIndex((segment) => segment.id === expandedId);
+                const currentIndex = segments.findIndex((segment) => segment.id === currentExpandedId);
                 if (currentIndex > 0) {
                     handleToggle(segments[currentIndex - 1], currentIndex - 1);
                 } else if (currentIndex === 0) {
@@ -309,7 +322,7 @@ export function SegmentAccordion({
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [expandedId, segments, handleToggle]);
+    }, [currentExpandedId, segments, handleToggle]);
 
     const activateHighlight = useCallback(
         (event: ReactMouseEvent<HTMLElement>) => {
@@ -337,7 +350,7 @@ export function SegmentAccordion({
                 Sections
             </h3>
             {segments.map((segment, index) => {
-                const isExpanded = expandedId === segment.id;
+                const isExpanded = currentExpandedId === segment.id;
                 const isCompleted = completedSegments.has(segment.id);
                 const segmentHighlights = highlights.filter((highlight) => highlight.segment_id === segment.id);
                 const remarkPlugins: any[] = [remarkGfm, remarkBreaks];

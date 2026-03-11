@@ -1,27 +1,45 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote } from "lucide-react";
-import { useHighlights, useDeleteHighlight } from "@/hooks/useHighlights";
-import { formatDistanceToNow } from "date-fns";
+import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote, ArrowUpRight } from "lucide-react";
+import { useDeleteHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
+import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 
 interface NotesDrawerProps {
-    contentItemId: string;
+    highlights: HighlightWithContent[];
+    isLoading: boolean;
+    hasError: boolean;
+    sections: Array<{
+        id: string;
+        title: string;
+    }>;
+    activeHighlightId?: string | null;
+    onHighlightJump: (highlightId: string) => void | Promise<void>;
 }
 
-export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
+export function NotesDrawer({
+    highlights,
+    isLoading,
+    hasError,
+    sections,
+    activeHighlightId = null,
+    onHighlightJump,
+}: NotesDrawerProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
-    const { data: highlights, isLoading, error } = useHighlights(contentItemId);
     const deleteHighlight = useDeleteHighlight();
     const [isMobile, setIsMobile] = useState(false);
     const [isDismissed, setIsDismissed] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const sectionTitleMap = useMemo(
+        () => new Map(sections.map((section) => [section.id, section.title])),
+        [sections]
+    );
 
     useEffect(() => {
         setMounted(true);
@@ -63,6 +81,13 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
             toast.success("Highlight deleted");
         } catch (error: any) {
             toast.error(error.message || "Failed to delete highlight");
+        }
+    };
+
+    const handleJump = async (highlightId: string) => {
+        await onHighlightJump(highlightId);
+        if (isMobile) {
+            setIsOpen(false);
         }
     };
 
@@ -111,6 +136,7 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                         onClick={() => {
                             if (!isDragging) setIsOpen(true);
                         }}
+                        aria-label="Open notes drawer"
                         className="relative flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
                     >
                         <StickyNote className="size-5 shrink-0" />
@@ -160,10 +186,10 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                     {isLoading ? (
                         <div className="flex flex-col gap-4 animate-pulse">
                             {[1, 2, 3].map((i) => (
-                                <div key={i} className="h-32 bg-secondary/50 rounded-xl" />
+                                <div key={i} className="h-20 rounded-xl bg-secondary/40" />
                             ))}
                         </div>
-                    ) : error ? (
+                    ) : hasError ? (
                         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground gap-3">
                             <AlertCircle className="size-8 text-destructive/50" />
                             <p>Failed to load notes.</p>
@@ -176,49 +202,117 @@ export function NotesDrawer({ contentItemId }: NotesDrawerProps) {
                             </p>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-5">
-                            {highlights.map((item) => (
-                                <div
-                                    key={item.id}
-                                    className="group relative flex flex-col gap-3 p-4 rounded-xl bg-card border border-border/40 hover:border-border transition-colors"
-                                >
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            handleDelete(item.id);
-                                        }}
-                                        disabled={deleteHighlight.isPending}
-                                        className="absolute top-2 right-2 p-2.5 z-10 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 rounded-md transition-all focus-ring"
-                                        aria-label="Delete highlight"
-                                    >
-                                        <Trash2 className="size-4" />
-                                    </button>
+                        <div className="flex flex-col">
+                            {highlights.map((item, index) => {
+                                const color = normalizeHighlightColor(item.color);
+                                const noteText = item.note_body?.trim() || null;
+                                const sectionTitle = item.segment_id
+                                    ? sectionTitleMap.get(item.segment_id) || "Saved passage"
+                                    : "Saved passage";
+                                const itemLabel = noteText ? "Note" : "Highlight";
+                                const isActive = activeHighlightId === item.id;
 
-                                    {/* The Highlight */}
+                                return (
                                     <div
+                                        key={item.id}
                                         className={cn(
-                                            "relative pl-3 border-l-2 pr-6",
-                                            HIGHLIGHT_COLOR_CLASSES[normalizeHighlightColor(item.color)].border
+                                            "group relative border-b border-border/25 py-1.5",
+                                            index === 0 && "pt-0",
+                                            index === highlights.length - 1 && "border-b-0 pb-0"
                                         )}
                                     >
-                                        <p className="text-[0.95rem] leading-relaxed text-foreground/90 italic">
-                                            &ldquo;{item.highlighted_text}&rdquo;
-                                        </p>
-                                    </div>
+                                        <span
+                                            aria-hidden="true"
+                                            className={cn(
+                                                "absolute left-0 top-3 bottom-3 w-px rounded-full transition-opacity duration-200",
+                                                HIGHLIGHT_COLOR_CLASSES[color].swatch,
+                                                isActive ? "opacity-100" : "opacity-0 group-hover:opacity-70"
+                                            )}
+                                        />
 
-                                    {/* The Note */}
-                                    {item.note_body && (
-                                        <div className="mt-1 p-3 rounded-lg bg-secondary/50 text-sm leading-relaxed text-foreground/80">
-                                            {item.note_body}
+                                        <button
+                                            onClick={() => handleJump(item.id)}
+                                            aria-label={`${itemLabel} ${sectionTitle}`}
+                                            className={cn(
+                                                "focus-ring w-full rounded-xl px-4 py-3 pr-20 text-left transition-colors duration-150",
+                                                isActive
+                                                    ? "bg-card/60"
+                                                    : "bg-transparent hover:bg-card/35"
+                                            )}
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <span
+                                                    className={cn(
+                                                        "mt-1.5 inline-flex h-2 w-2 shrink-0 rounded-full",
+                                                        HIGHLIGHT_COLOR_CLASSES[color].swatch
+                                                    )}
+                                                    aria-hidden="true"
+                                                />
+
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex flex-wrap items-center gap-1.5 text-[0.72rem] leading-5 text-muted-foreground/85">
+                                                        <span className="truncate font-medium text-foreground/72">
+                                                            {sectionTitle}
+                                                        </span>
+                                                        <span className="text-muted-foreground/35">•</span>
+                                                        <span>{itemLabel}</span>
+                                                        <span className="text-muted-foreground/35">•</span>
+                                                        <span
+                                                            title={item.created_at
+                                                                ? `Saved ${formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}`
+                                                                : undefined}
+                                                        >
+                                                            {item.created_at
+                                                                ? format(new Date(item.created_at), "MMM d, h:mm a")
+                                                                : "Just now"}
+                                                        </span>
+                                                    </div>
+
+                                                    <p className="mt-1.5 text-[0.98rem] leading-6 text-foreground/95 italic">
+                                                        &ldquo;{item.highlighted_text}&rdquo;
+                                                    </p>
+
+                                                    {noteText && (
+                                                        <p className="mt-1.5 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                                                            {noteText}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
+
+                                        <div className="absolute right-2 top-2.5 flex items-center gap-0.5">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleJump(item.id);
+                                                }}
+                                                className={cn(
+                                                    "focus-ring rounded-md p-1.5 text-muted-foreground/45 transition-all hover:bg-secondary/60 hover:text-foreground",
+                                                    isActive ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+                                                )}
+                                                aria-label={`Jump to ${sectionTitle}`}
+                                            >
+                                                <ArrowUpRight className="size-3.5" />
+                                            </button>
+
+                                            <button
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    handleDelete(item.id);
+                                                }}
+                                                disabled={deleteHighlight.isPending}
+                                                className="focus-ring rounded-md p-1.5 text-muted-foreground/45 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                                aria-label={`Delete ${itemLabel.toLowerCase()} from ${sectionTitle}`}
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </button>
                                         </div>
-                                    )}
-
-                                    <div className="text-[0.7rem] font-medium text-muted-foreground uppercase tracking-wider mt-1">
-                                        {formatDistanceToNow(new Date(item.created_at || ""), { addSuffix: true })}
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>
