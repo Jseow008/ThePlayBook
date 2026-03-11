@@ -77,6 +77,18 @@ describe('SegmentAccordion', () => {
         expect(defaultProps.onSegmentOpen).toHaveBeenCalledWith('seg-1', 0);
     });
 
+    it('supports externally controlled expanded segments', () => {
+        render(
+            <SegmentAccordion
+                {...defaultProps}
+                expandedSegmentId="seg-2"
+            />
+        );
+
+        expect(screen.getByText('Chapter 1').closest('button')).toHaveAttribute('aria-expanded', 'true');
+        expect(screen.getByText('Introduction').closest('button')).toHaveAttribute('aria-expanded', 'false');
+    });
+
     it('renders anchored highlights against the correct repeated text occurrence', () => {
         const { container } = render(
             <SegmentAccordion

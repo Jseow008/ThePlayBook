@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useMemo, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
-import { Bot, User, Send, Loader2, X, BotMessageSquare } from "lucide-react";
+import { Bot, User, Send, Loader2, X, BotMessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
@@ -16,6 +16,28 @@ interface AuthorChatProps {
 }
 
 const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
+
+const STARTER_PROMPTS = [
+    "What's the core argument I should walk away with?",
+    "What would a skeptic say about this?",
+    "How would you apply this in real life?",
+    "Which idea in this book matters most?",
+] as const;
+
+const FOLLOW_UP_ACTIONS = [
+    {
+        label: "Go deeper",
+        prompt: "Go deeper on your last point and explain why it matters.",
+    },
+    {
+        label: "Give me an example",
+        prompt: "Give me a concrete real-world example of your last point.",
+    },
+    {
+        label: "What's the counterargument?",
+        prompt: "What's the strongest counterargument to your last point?",
+    },
+] as const;
 
 function getDisplayErrorMessage(error: unknown): string {
     if (!(error instanceof Error) || !error.message) {
@@ -93,20 +115,18 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
 
     const isStreaming = status === "streaming" || status === "submitted";
 
-    const onSubmit = async (e?: FormEvent) => {
-        e?.preventDefault();
-        const trimmed = input.trim();
+    const sendPrompt = async (text: string) => {
+        const trimmed = text.trim();
         if (!trimmed || isStreaming) return;
         setInput("");
         if (textareaRef.current) textareaRef.current.style.height = "auto";
         await sendMessage({ text: trimmed });
     };
 
-    const suggestedQuestions = [
-        `What inspired you to write this?`,
-        `Can you give me a real-world example?`,
-        `What's a common misconception about your ideas?`,
-    ];
+    const onSubmit = async (e?: FormEvent) => {
+        e?.preventDefault();
+        await sendPrompt(input);
+    };
 
     const getMessageText = (m: (typeof messages)[number]): string => {
         const partsText = m.parts
@@ -122,193 +142,229 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
         return typeof maybeContent === "string" ? maybeContent : "";
     };
 
-    // Build display messages with a welcome message prepended
-    const displayMessages: Array<{ id: string; role: string; content: string }> = [
-        {
-            id: "welcome",
-            role: "assistant",
-            content: `I'm ${authorName}. You've just finished reading my work, *${bookTitle}*. I'd love to hear your thoughts — ask me anything, challenge my ideas, or let's explore a concept together.`,
-        },
-        ...messages.map((m) => {
-            return {
-                id: m.id,
-                role: m.role,
-                content: getMessageText(m),
-            };
-        }),
-    ];
+    const displayMessages: Array<{ id: string; role: string; content: string }> = messages.map((m) => {
+        return {
+            id: m.id,
+            role: m.role,
+            content: getMessageText(m),
+        };
+    });
+
+    const latestAssistantMessageId = [...displayMessages]
+        .reverse()
+        .find((message) => message.role === "assistant")?.id;
+    const isEmptyState = displayMessages.length === 0;
 
     if (!mounted) return null;
 
     return createPortal(
-        // Outer shell: fixed full-screen, flex column — single source of truth for layout
         <div
             role="dialog"
             aria-modal="true"
             aria-label={`Chat with ${authorName} persona`}
             className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300"
         >
-
-            {/* ── Header (flex-shrink-0) ── */}
-            <header className="flex-shrink-0 h-14 border-b border-border/50 flex items-center justify-between px-4 sm:px-6 gap-4">
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div className="shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center">
-                        <BotMessageSquare className="size-4 text-primary" />
+            <header className="flex-shrink-0 border-b border-border/50 px-4 py-3 sm:px-6">
+                <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+                            <BotMessageSquare className="size-4 text-primary" />
+                        </div>
+                        <div className="min-w-0">
+                            <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">{authorName}</h2>
+                            <p className="truncate text-xs text-foreground/80">{bookTitle}</p>
+                            <p className="mt-0.5 truncate text-[0.65rem] leading-none text-muted-foreground">Author Persona &middot; AI</p>
+                        </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <h2 className="text-sm font-bold text-foreground leading-tight truncate">{authorName}</h2>
-                        <p className="text-[0.65rem] text-muted-foreground leading-none mt-0.5 truncate">Author Persona &middot; AI</p>
-                    </div>
+                    <button
+                        onClick={onClose}
+                        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/60 hover:bg-muted transition-colors"
+                        aria-label="Close chat"
+                    >
+                        <X className="size-4 text-muted-foreground" />
+                    </button>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="shrink-0 size-8 rounded-lg bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-                    aria-label="Close chat"
-                >
-                    <X className="size-4 text-muted-foreground" />
-                </button>
             </header>
 
-            {/* ── Messages (flex-1, scrolls independently) ── */}
             <main
                 ref={mainRef}
                 className="flex-1 overflow-y-auto overscroll-contain"
             >
-                <div className="max-w-2xl mx-auto px-4 sm:px-6 py-5 space-y-5">
-                    {displayMessages.map((m) => (
-                        <div
-                            key={m.id}
-                            className={cn(
-                                "flex gap-3 w-full animate-in fade-in slide-in-from-bottom-2 duration-300",
-                                m.role === "user" ? "justify-end" : "justify-start"
-                            )}
-                        >
-                            {m.role === "assistant" && (
-                                <div className="flex-shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center mt-1">
-                                    <Bot className="size-4 text-primary" />
-                                </div>
-                            )}
-                            <div
-                                className={cn(
-                                    "max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3.5 shadow-sm",
-                                    m.role === "user"
-                                        ? "bg-primary text-primary-foreground rounded-tr-sm"
-                                        : "bg-card border border-border/50 rounded-tl-sm text-foreground"
+                <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pt-6 pb-3 sm:px-6">
+                    <div className="flex-1 rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
+                        <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-7">
+                            <div className="space-y-5">
+                                {isEmptyState && (
+                                    <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
+                                        <div className="flex items-start gap-4">
+                                            <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                                <Sparkles className="size-4" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-semibold text-foreground sm:text-[0.95rem]">
+                                                    Keep the conversation going
+                                                </p>
+                                                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
+                                                    You&apos;ve finished reading <span className="font-medium text-foreground">{bookTitle}</span>. Use this space to test the ideas, pressure the arguments, or pull out the point that matters most.
+                                                </p>
+                                                <div className="mt-5">
+                                                    <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                                                        Good places to start
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-2.5">
+                                                        {STARTER_PROMPTS.map((prompt) => (
+                                                            <button
+                                                                key={prompt}
+                                                                onClick={() => void sendPrompt(prompt)}
+                                                                className="rounded-full border border-border/70 bg-background/75 px-3.5 py-2 text-xs text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                                                disabled={isStreaming}
+                                                            >
+                                                                {prompt}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </section>
                                 )}
-                            >
-                                <div
-                                    className={cn(
-                                        "prose prose-sm max-w-none",
-                                        m.role === "user"
-                                            ? "text-primary-foreground [&_*]:text-primary-foreground"
-                                            : ""
-                                    )}
-                                >
-                                    {m.role === "user" ? (
-                                        <p className="m-0 leading-relaxed text-[0.95rem]">{m.content}</p>
-                                    ) : (
-                                        <ReactMarkdown>{m.content}</ReactMarkdown>
-                                    )}
-                                </div>
-                            </div>
-                            {m.role === "user" && (
-                                <div className="flex-shrink-0 size-8 rounded-full bg-secondary flex items-center justify-center mt-1">
-                                    <User className="size-4 text-secondary-foreground" />
-                                </div>
-                            )}
-                        </div>
-                    ))}
 
-                    {/* Suggested Questions — shown only before first user message */}
-                    {messages.length === 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {suggestedQuestions.map((q, i) => (
-                                <button
-                                    key={i}
-                                    onClick={async () => {
-                                        setInput("");
-                                        await sendMessage({ text: q });
-                                    }}
-                                    className="text-xs px-3 py-2 rounded-full border border-border/60 bg-card/60 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-all"
-                                >
-                                    {q}
-                                </button>
-                            ))}
-                        </div>
-                    )}
+                                {displayMessages.map((m) => {
+                                    const showFollowUpActions = !isStreaming && m.role === "assistant" && m.id === latestAssistantMessageId;
 
-                    {/* Streaming indicator */}
-                    {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
-                        <div className="flex gap-3 w-full animate-in fade-in">
-                            <div className="flex-shrink-0 size-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                <Bot className="size-4 text-primary" />
-                            </div>
-                            <div className="bg-card border border-border/50 rounded-2xl rounded-tl-sm px-4 py-3.5 flex items-center gap-2">
-                                <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground font-medium">Thinking...</span>
+                                    return (
+                                        <div key={m.id} className="space-y-3">
+                                            <div
+                                                className={cn(
+                                                    "flex w-full gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                                                    m.role === "user" ? "justify-end pr-1 sm:pr-2" : "justify-start"
+                                                )}
+                                            >
+                                                {m.role === "assistant" && (
+                                                    <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                                                        <Bot className="size-4 text-primary" />
+                                                    </div>
+                                                )}
+                                                <div
+                                                    className={cn(
+                                                        "rounded-2xl shadow-sm",
+                                                        m.role === "user"
+                                                            ? "max-w-[80%] rounded-tr-sm bg-primary px-4 py-3.5 text-primary-foreground sm:max-w-[72%]"
+                                                            : "max-w-[88%] rounded-tl-sm border border-border/40 bg-card/90 px-5 py-4 text-foreground sm:max-w-[78%]"
+                                                    )}
+                                                >
+                                                    <div
+                                                        className={cn(
+                                                            "prose prose-sm max-w-none",
+                                                            m.role === "user"
+                                                                ? "text-primary-foreground [&_*]:text-primary-foreground"
+                                                                : "leading-7 text-[0.98rem] text-foreground/95 [&_p]:my-0 [&_p+p]:mt-4 sm:max-w-[70ch]"
+                                                        )}
+                                                    >
+                                                        {m.role === "user" ? (
+                                                            <p className="m-0 leading-relaxed text-[0.95rem]">{m.content}</p>
+                                                        ) : (
+                                                            <ReactMarkdown>{m.content}</ReactMarkdown>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {m.role === "user" && (
+                                                    <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary">
+                                                        <User className="size-4 text-secondary-foreground" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {showFollowUpActions && (
+                                                <div className="ml-11 flex flex-wrap gap-2">
+                                                    {FOLLOW_UP_ACTIONS.map((action) => (
+                                                        <button
+                                                            key={action.label}
+                                                            onClick={() => void sendPrompt(action.prompt)}
+                                                            className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.72rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground"
+                                                        >
+                                                            {action.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+
+                                {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
+                                    <div className="flex w-full gap-3 animate-in fade-in">
+                                        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                                            <Bot className="size-4 text-primary" />
+                                        </div>
+                                        <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border/50 bg-card px-4 py-3.5">
+                                            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                                            <span className="text-sm font-medium text-muted-foreground">Thinking...</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {error && (
+                                    <div className="flex w-full gap-3 animate-in fade-in">
+                                        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/20">
+                                            <Bot className="size-4 text-destructive" />
+                                        </div>
+                                        <div className="rounded-2xl rounded-tl-sm border border-destructive/20 bg-destructive/10 px-4 py-3.5">
+                                            <p className="text-sm font-medium text-destructive">
+                                                {displayErrorMessage}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div ref={messagesEndRef} />
                             </div>
                         </div>
-                    )}
-
-                    {/* Error state */}
-                    {error && (
-                        <div className="flex gap-3 w-full animate-in fade-in">
-                            <div className="flex-shrink-0 size-8 rounded-full bg-destructive/20 flex items-center justify-center">
-                                <Bot className="size-4 text-destructive" />
-                            </div>
-                            <div className="bg-destructive/10 border border-destructive/20 rounded-2xl rounded-tl-sm px-4 py-3.5">
-                                <p className="text-sm text-destructive font-medium">
-                                    {displayErrorMessage}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Scroll anchor */}
-                    <div ref={messagesEndRef} />
+                    </div>
                 </div>
             </main>
 
-            {/* ── Input (flex-shrink-0, part of the flex column — never overlaps messages) ── */}
-            <div className="flex-shrink-0 border-t border-border/50 bg-background px-4 sm:px-6 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-                <div className="max-w-2xl mx-auto">
-                    <form
-                        onSubmit={onSubmit}
-                        className="relative flex items-end gap-2 bg-card rounded-2xl border border-border/60 shadow-sm overflow-hidden focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all"
-                    >
-                        <textarea
-                            ref={textareaRef}
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder={`Ask ${authorName} anything...`}
-                            className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto"
-                            rows={1}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    onSubmit();
-                                }
-                            }}
-                            aria-label={`Ask ${authorName} a question`}
-                        />
-                        <div className="mb-2 mr-2">
-                            <button
-                                type="submit"
-                                disabled={!input.trim() || isStreaming}
-                                className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
-                                aria-label="Send message"
-                            >
-                                {isStreaming ? (
-                                    <Loader2 className="size-4 animate-spin" />
-                                ) : (
-                                    <Send className="size-4 ml-0.5" />
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                    <p className="text-[0.6rem] text-muted-foreground opacity-50 text-center mt-2">
-                        AI persona · Responses are generated, not from the actual author
-                    </p>
+            <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-4 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
+                <div className="mx-auto w-full max-w-5xl">
+                    <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
+                        <form
+                            onSubmit={onSubmit}
+                            className="relative flex items-end gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50"
+                        >
+                            <textarea
+                                ref={textareaRef}
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder={`Ask ${authorName} anything...`}
+                                className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto"
+                                rows={1}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        void onSubmit();
+                                    }
+                                }}
+                                aria-label={`Ask ${authorName} a question`}
+                            />
+                            <div className="mb-2 mr-2">
+                                <button
+                                    type="submit"
+                                    disabled={!input.trim() || isStreaming}
+                                    className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+                                    aria-label="Send message"
+                                >
+                                    {isStreaming ? (
+                                        <Loader2 className="size-4 animate-spin" />
+                                    ) : (
+                                        <Send className="size-4 ml-0.5" />
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                        <p className="mt-2 text-center text-[0.6rem] text-muted-foreground opacity-50">
+                            AI persona · Responses are generated, not from the actual author
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>,
