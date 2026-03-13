@@ -14,7 +14,7 @@ import { useBatchContentItems } from "@/hooks/use-content-queries";
  * Shows all items the user has started reading but not completed with filters.
  */
 export default function ContinueReadingPage() {
-    const { inProgressIds, isLoaded, refresh, removeFromProgress } = useReadingProgress();
+    const { inProgressIds, isLoaded, removeFromProgress } = useReadingProgress();
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
@@ -33,13 +33,9 @@ export default function ContinueReadingPage() {
         const invalidIds = inProgressIds.filter((id) => !validIds.has(id));
 
         if (invalidIds.length > 0) {
-            invalidIds.forEach((id) => {
-                localStorage.removeItem(`flux_progress_${id}`);
-            });
-            window.dispatchEvent(new Event("flux_progress_updated"));
-            refresh();
+            invalidIds.forEach((id) => removeFromProgress(id));
         }
-    }, [allItems, inProgressIds, isLoaded, isLoading, refresh]);
+    }, [allItems, inProgressIds, isLoaded, isLoading, removeFromProgress]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {
@@ -162,6 +158,7 @@ export default function ContinueReadingPage() {
                                     <ContentCard
                                         key={item.id}
                                         item={item}
+                                        navigationMode="resume"
                                         titleDensity="app-compact"
                                         onRemove={(id) => {
                                             removeFromProgress(id);

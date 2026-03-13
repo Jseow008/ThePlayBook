@@ -45,7 +45,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
     const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded } = useReadingProgress();
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
-    const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
+    const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
     const router = useRouter();
     const pathname = usePathname();
@@ -66,11 +66,6 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Start tracking reading time
     useReadingTimer(content.id);
-
-    // Sync reader settings from cloud on mount
-    useEffect(() => {
-        syncFromCloud();
-    }, [syncFromCloud]);
 
     const savedProgress = getProgress(content.id);
 

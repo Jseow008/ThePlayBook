@@ -14,7 +14,7 @@ import { useBatchContentItems } from "@/hooks/use-content-queries";
  * Shows all items the user has finished reading with search, filter, and sort capabilities.
  */
 export default function CompletedPage() {
-    const { completedIds, isLoaded, refresh, removeFromProgress } = useReadingProgress();
+    const { completedIds, isLoaded, removeFromProgress } = useReadingProgress();
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
@@ -33,13 +33,9 @@ export default function CompletedPage() {
         const invalidIds = completedIds.filter((id) => !validIds.has(id));
 
         if (invalidIds.length > 0) {
-            invalidIds.forEach((id) => {
-                localStorage.removeItem(`flux_progress_${id}`);
-            });
-            window.dispatchEvent(new Event("flux_progress_updated"));
-            refresh();
+            invalidIds.forEach((id) => removeFromProgress(id));
         }
-    }, [allItems, completedIds, isLoaded, isLoading, refresh]);
+    }, [allItems, completedIds, isLoaded, isLoading, removeFromProgress]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {

@@ -8,6 +8,7 @@ const {
     routerReplaceMock,
     searchParamsState,
     highlightsState,
+    syncFromCloudMock,
 } = vi.hoisted(() => ({
     notesDrawerSpy: vi.fn(),
     routerReplaceMock: vi.fn(),
@@ -29,6 +30,7 @@ const {
             segment: null;
         }>,
     },
+    syncFromCloudMock: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -91,7 +93,7 @@ vi.mock('@/hooks/useReaderSettings', () => ({
         fontFamily: 'sans',
         fontSize: 'medium',
         lineHeight: 'default',
-        syncFromCloud: vi.fn(),
+        syncFromCloud: syncFromCloudMock,
     }),
 }));
 
@@ -144,6 +146,7 @@ describe('ReaderView', () => {
         window.scrollTo = vi.fn();
         localStorage.clear();
         document.body.innerHTML = '';
+        syncFromCloudMock.mockClear();
     });
 
     it('renders the layout components including header, accordion, and drawers', () => {
@@ -162,6 +165,19 @@ describe('ReaderView', () => {
         render(<ReaderView content={mockContent} />);
         expect(screen.getByText('The giant idea')).toBeInTheDocument();
         expect(screen.getByText('The Big Idea')).toBeInTheDocument();
+    });
+
+    it('does not resync reader settings on mount or remount', () => {
+        const { rerender, unmount } = render(<ReaderView content={mockContent} />);
+
+        expect(syncFromCloudMock).not.toHaveBeenCalled();
+
+        rerender(<ReaderView content={mockContent} />);
+        expect(syncFromCloudMock).not.toHaveBeenCalled();
+
+        unmount();
+        render(<ReaderView content={mockContent} />);
+        expect(syncFromCloudMock).not.toHaveBeenCalled();
     });
 
     it('passes the current reader state into NotesDrawer', async () => {

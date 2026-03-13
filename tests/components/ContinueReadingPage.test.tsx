@@ -79,15 +79,36 @@ describe("ContinueReadingPage", () => {
         });
     });
 
-    it("renders in-progress cards with the current navigation behavior and compact title density", () => {
+    it("renders in-progress cards with resume navigation and compact title density", () => {
         render(<ContinueReadingPage />);
 
-        expect(screen.getByText("preview:app-compact:Deep Work")).toBeInTheDocument();
+        expect(screen.getByText("resume:app-compact:Deep Work")).toBeInTheDocument();
         expect(mockContentCard).toHaveBeenCalledWith(
             expect.objectContaining({
                 item,
+                navigationMode: "resume",
                 titleDensity: "app-compact",
             })
         );
+    });
+
+    it("removes invalid progress ids through the hook instead of manual localStorage cleanup", () => {
+        const removeFromProgress = vi.fn();
+
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [item.id, "missing-item"],
+            isLoaded: true,
+            refresh: vi.fn(),
+            removeFromProgress,
+            storageScope: "guest",
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [item],
+            isLoading: false,
+        });
+
+        render(<ContinueReadingPage />);
+
+        expect(removeFromProgress).toHaveBeenCalledWith("missing-item");
     });
 });
