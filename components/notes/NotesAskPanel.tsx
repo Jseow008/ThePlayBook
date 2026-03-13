@@ -17,6 +17,7 @@ import {
     X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { serializeNotesChatScope, type NotesChatScopePayload } from "@/lib/notes-chat-scope";
 
 const chatTransport = new TextStreamChatTransport({ api: "/api/chat/notes" });
 
@@ -45,15 +46,7 @@ const FOLLOW_UP_ACTIONS = [
 ] as const;
 
 const NOTES_RETURN_TARGET = "/notes?ask=1";
-const NOTES_FULL_SCREEN_TARGET = `/ask?scope=notes&returnTo=${encodeURIComponent(NOTES_RETURN_TARGET)}`;
-
-export interface NotesChatScope {
-    highlightIds: string[];
-    noteCount: number;
-    totalMatches: number;
-    summary: string;
-    signature: string;
-}
+export type NotesChatScope = NotesChatScopePayload;
 
 interface NotesAskPanelProps {
     currentScope: NotesChatScope;
@@ -153,6 +146,14 @@ export function NotesAskPanel({
     const isSidebar = variant === "sidebar" && !mobile;
     const isPage = variant === "page";
     const scopeSummary = activeScope.summary.trim();
+    const fullScreenHref = (() => {
+        const params = new URLSearchParams({
+            scope: "notes",
+            returnTo: NOTES_RETURN_TARGET,
+            notesScope: serializeNotesChatScope(currentScope),
+        });
+        return `/ask?${params.toString()}`;
+    })();
 
     const sendPrompt = async (text: string) => {
         const trimmed = text.trim();
@@ -269,7 +270,7 @@ export function NotesAskPanel({
                     )}>
                         {!isPage && (
                             <Link
-                                href={NOTES_FULL_SCREEN_TARGET}
+                                href={fullScreenHref}
                                 className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
                             >
                                 {isSidebar ? "Full screen" : "Full Ask"}
@@ -451,7 +452,7 @@ export function NotesAskPanel({
 
                     {!isEmptyState && !isPage && (
                         <Link
-                            href={NOTES_FULL_SCREEN_TARGET}
+                            href={fullScreenHref}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:hidden"
                         >
                             Open full Ask These Notes

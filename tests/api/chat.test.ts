@@ -150,6 +150,25 @@ describe('Chat API', () => {
         expect(json.error.message).toContain('retrieval is not configured');
     });
 
+    it('allows metadata-only requests when GEMINI_API_KEY is missing', async () => {
+        delete process.env.GEMINI_API_KEY;
+
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: 'What have I completed in my library?' }],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
+        expect(embedContentMock).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            maxOutputTokens: 250,
+        }));
+    });
+
     it('processes a valid request successfully via Gemini embeddings and RAG', async () => {
         mockRpc.mockResolvedValueOnce({
             data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.82 }],

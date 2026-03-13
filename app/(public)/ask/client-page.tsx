@@ -104,6 +104,7 @@ interface AskClientPageProps {
     returnTo?: string;
     scope?: "library" | "notes";
     initialNotesPage?: HighlightsPage;
+    initialNotesScope?: NotesChatScope;
     initialLibrarySnapshot?: LibrarySnapshot;
 }
 
@@ -111,6 +112,7 @@ export function AskClientPage({
     returnTo,
     scope = "library",
     initialNotesPage,
+    initialNotesScope,
     initialLibrarySnapshot,
 }: AskClientPageProps) {
     const {
@@ -137,7 +139,7 @@ export function AskClientPage({
         isError: isNotesError,
     } = useInfiniteHighlights(undefined, {
         initialPage: initialNotesPage,
-        enabled: resolvedScope === "notes",
+        enabled: resolvedScope === "notes" && !initialNotesScope,
     });
 
     useEffect(() => {
@@ -202,6 +204,10 @@ export function AskClientPage({
     );
 
     const notesChatScope = useMemo<NotesChatScope>(() => {
+        if (initialNotesScope) {
+            return initialNotesScope;
+        }
+
         const scopedHighlights = noteHighlights.slice(0, 40);
 
         return {
@@ -215,7 +221,7 @@ export function AskClientPage({
                 scope: "notes",
             }),
         };
-    }, [noteHighlights]);
+    }, [initialNotesScope, noteHighlights]);
 
     const mobileLibraryHref = useMemo(() => {
         const params = new URLSearchParams();

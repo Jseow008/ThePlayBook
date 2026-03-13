@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { AskClientPage } from "./client-page";
 import type { HighlightsPage } from "@/hooks/useHighlights";
 import { buildLibrarySnapshot, type LibraryItemRow, type LibrarySnapshot } from "@/lib/server/library-snapshot";
+import { parseNotesChatScope } from "@/lib/notes-chat-scope";
 
 export const metadata = {
     title: "Ask",
@@ -13,6 +14,7 @@ interface AskPageProps {
     searchParams?: Promise<{
         returnTo?: string;
         scope?: string;
+        notesScope?: string;
     }>;
 }
 
@@ -22,6 +24,7 @@ export default async function AskPage({ searchParams }: AskPageProps) {
     const resolvedSearchParams = await searchParams;
     const returnTo = resolvedSearchParams?.returnTo;
     const scope = resolvedSearchParams?.scope === "notes" ? "notes" : "library";
+    const initialNotesScope = parseNotesChatScope(resolvedSearchParams?.notesScope);
 
     if (!user) {
         redirect("/login?next=/ask");
@@ -48,7 +51,7 @@ export default async function AskPage({ searchParams }: AskPageProps) {
         initialLibrarySnapshot = buildLibrarySnapshot((libraryRows || []) as LibraryItemRow[]);
     }
 
-    if (scope === "notes") {
+    if (scope === "notes" && !initialNotesScope) {
         const { data: highlights, error } = await supabase
             .from("user_highlights")
             .select(`
@@ -88,6 +91,7 @@ export default async function AskPage({ searchParams }: AskPageProps) {
             returnTo={returnTo}
             scope={scope}
             initialNotesPage={initialNotesPage}
+            initialNotesScope={initialNotesScope ?? undefined}
             initialLibrarySnapshot={initialLibrarySnapshot}
         />
     );

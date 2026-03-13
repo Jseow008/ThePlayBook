@@ -229,7 +229,8 @@ export function useReadingProgress() {
     const syncCloudForScope = useCallback(async (currentUser: User, scope: StorageScope) => {
         const { data, error } = await supabase
             .from("user_library")
-            .select("content_id, is_bookmarked, progress, last_interacted_at");
+            .select("content_id, is_bookmarked, progress, last_interacted_at")
+            .eq("user_id", currentUser.id);
 
         if (error || !data) {
             if (error) {

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
+import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { useChat } from "@ai-sdk/react";
 import { vi } from "vitest";
 
@@ -25,6 +26,11 @@ describe("NotesAskPanel", () => {
         summary: 'search: "goggins"',
         signature: "scope-a",
     };
+    const expectedFullScreenHref = `/ask?${new URLSearchParams({
+        scope: "notes",
+        returnTo: "/notes?ask=1",
+        notesScope: serializeNotesChatScope(currentScope),
+    }).toString()}`;
 
     beforeAll(() => {
         Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
@@ -139,7 +145,7 @@ describe("NotesAskPanel", () => {
 
         expect(screen.getByRole("link", { name: /full screen/i })).toHaveAttribute(
             "href",
-            "/ask?scope=notes&returnTo=%2Fnotes%3Fask%3D1"
+            expectedFullScreenHref
         );
         expect(screen.queryByLabelText(/close notes ai panel/i)).not.toBeInTheDocument();
         expect(screen.getAllByText("2 notes in scope")).toHaveLength(1);

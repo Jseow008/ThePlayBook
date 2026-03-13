@@ -203,6 +203,34 @@ describe("AskClientPage", () => {
         expect(screen.getByTestId("notes-page-panel")).toBeInTheDocument();
     });
 
+    it("passes a provided notes scope through to the full-screen notes panel", () => {
+        render(
+            <AskClientPage
+                scope="notes"
+                initialNotesScope={{
+                    highlightIds: ["highlight-7", "highlight-8"],
+                    noteCount: 2,
+                    totalMatches: 6,
+                    summary: 'search: "discipline"',
+                    signature: "scope-discipline",
+                }}
+            />
+        );
+
+        expect(notesAskPanelMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                currentScope: expect.objectContaining({
+                    highlightIds: ["highlight-7", "highlight-8"],
+                    noteCount: 2,
+                    totalMatches: 6,
+                    summary: 'search: "discipline"',
+                    signature: "scope-discipline",
+                }),
+                variant: "page",
+            })
+        );
+    });
+
     it("sends the selected starter prompt", () => {
         const mockSendMessage = vi.fn();
         (useChat as any).mockReturnValue({

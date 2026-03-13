@@ -227,22 +227,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // --- Validate API Key ---
-        const provider = process.env.AI_PROVIDER || "anthropic";
-        const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
-        const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
-        const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-
-        if (!hasAnthropic && !hasOpenAI) {
-            logApiError({ requestId, route: "/api/chat", message: "No AI provider configured", error: new Error("Missing env") });
-            return apiError("INTERNAL_ERROR", "AI service is not configured. Please contact an administrator.", 500, requestId);
-        }
-
-        if (!hasGemini) {
-            logApiError({ requestId, route: "/api/chat", message: "GEMINI_API_KEY not configured for retrieval embeddings", error: new Error("Missing env") });
-            return apiError("INTERNAL_ERROR", "Ask My Library retrieval is not configured. Please contact an administrator.", 500, requestId);
-        }
-
         // --- Parse & Validate Body ---
         let body: unknown;
         try {
@@ -278,6 +262,20 @@ export async function POST(req: NextRequest) {
         }
 
         const intent = detectAskIntent(userQuery);
+        const provider = process.env.AI_PROVIDER || "anthropic";
+        const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
+        const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+        const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+
+        if (!hasAnthropic && !hasOpenAI) {
+            logApiError({ requestId, route: "/api/chat", message: "No AI provider configured", error: new Error("Missing env") });
+            return apiError("INTERNAL_ERROR", "AI service is not configured. Please contact an administrator.", 500, requestId);
+        }
+
+        if (intent !== "library_metadata" && !hasGemini) {
+            logApiError({ requestId, route: "/api/chat", message: "GEMINI_API_KEY not configured for retrieval embeddings", error: new Error("Missing env") });
+            return apiError("INTERNAL_ERROR", "Ask My Library retrieval is not configured. Please contact an administrator.", 500, requestId);
+        }
 
         const { data: libraryRows, error: libraryError } = await supabase
             .from("user_library")

@@ -12,6 +12,7 @@ import {
 let authStateChangeHandler: ((event: string, session: { user: { id: string } | null } | null) => void) | null = null;
 let currentAuthUser: { id: string } | null = null;
 let currentCloudRows: Array<{
+    user_id?: string;
     content_id: string;
     is_bookmarked: boolean;
     progress: ReadingProgressData | null;
@@ -19,6 +20,16 @@ let currentCloudRows: Array<{
 }> = [];
 const upsertMock = vi.fn();
 const deleteMatchMock = vi.fn();
+const selectMock = vi.fn();
+const eqMock = vi.fn();
+
+const userLibraryTable = {
+    select: selectMock,
+    upsert: upsertMock,
+    delete: vi.fn(() => ({
+        match: deleteMatchMock,
+    })),
+};
 
 vi.mock("@/lib/supabase/client", () => ({
     createClient: () => ({
@@ -35,14 +46,19 @@ vi.mock("@/lib/supabase/client", () => ({
             }),
             getUser: vi.fn(() => Promise.resolve({ data: { user: currentAuthUser }, error: null })),
         },
-        from: vi.fn(() => ({
-            select: vi.fn(() => Promise.resolve({ data: currentCloudRows, error: null })),
-            upsert: upsertMock,
-            delete: vi.fn(() => ({
-                match: deleteMatchMock,
-            })),
-        })),
+        from: vi.fn(() => userLibraryTable),
     }),
+}));
+
+selectMock.mockImplementation(() => ({
+    eq: eqMock,
+}));
+
+eqMock.mockImplementation((column: string, value: string) => Promise.resolve({
+    data: column === "user_id"
+        ? currentCloudRows.filter((row) => row.user_id === undefined || row.user_id === value)
+        : currentCloudRows,
+    error: null,
 }));
 
 const localStorageMock = (() => {
@@ -200,5 +216,53 @@ describe("useReadingProgress", () => {
         expect(localStorage.getItem(myListKey(getStorageScope("user-a")))).toBe(JSON.stringify(["item-22"]));
         expect(localStorage.getItem(progressKey(getStorageScope("user-b"), "item-21"))).toBeNull();
         expect(localStorage.getItem(myListKey(getStorageScope("user-b")))).toBe(JSON.stringify([]));
+    });
+
+    it("loads only the signed-in user's cloud rows during hydration", async () => {
+        const { result } = renderHook(() => useReadingProgress());
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        currentAuthUser = { id: "user-a" };
+        currentCloudRows = [
+            {
+                user_id: "user-a",
+                content_id: "item-own",
+                is_bookmarked: false,
+                progress: {
+                    itemId: "item-own",
+                    completed: ["seg-1"],
+                    lastSegmentIndex: 0,
+                    lastReadAt: "2026-03-13T10:00:00.000Z",
+                    isCompleted: false,
+                },
+                last_interacted_at: "2026-03-13T10:00:00.000Z",
+            },
+            {
+                user_id: "user-b",
+                content_id: "item-foreign",
+                is_bookmarked: true,
+                progress: {
+                    itemId: "item-foreign",
+                    completed: ["seg-2"],
+                    lastSegmentIndex: 1,
+                    lastReadAt: "2026-03-13T11:00:00.000Z",
+                    isCompleted: false,
+                },
+                last_interacted_at: "2026-03-13T11:00:00.000Z",
+            },
+        ];
+
+        await act(async () => {
+            authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser });
+        });
+
+        await waitFor(() => expect(result.current.storageScope).toBe(getStorageScope("user-a")));
+
+        expect(eqMock).toHaveBeenCalledWith("user_id", "user-a");
+        expect(result.current.inProgressIds).toEqual(["item-own"]);
+        expect(result.current.myListIds).toEqual([]);
+        expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-own"))).not.toBeNull();
+        expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-foreign"))).toBeNull();
+        expect(upsertMock).not.toHaveBeenCalledWith(expect.objectContaining({ content_id: "item-foreign" }), expect.anything());
     });
 });
