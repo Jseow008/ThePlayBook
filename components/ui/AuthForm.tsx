@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Mail, Apple, ArrowRight } from "lucide-react";
+import { Chrome, Mail, Apple, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -158,6 +158,7 @@ export function AuthForm({ nextUrl = "/" }: AuthFormProps) {
                             <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                         </div>
                     ) : null}
+                    <Chrome className={cn("mr-2 h-4 w-4", isLoading !== null && "opacity-50")} />
                     <span className={cn(isLoading !== null && "opacity-50")}>Sign in with Google</span>
                 </Button>
 

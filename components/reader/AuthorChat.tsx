@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useMemo, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
-import { Bot, User, Send, Loader2, X, BotMessageSquare } from "lucide-react";
+import { Bot, User, Send, Loader2, X, BotMessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 
@@ -197,7 +197,9 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                                 {isEmptyState && (
                                     <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
                                         <div className="flex items-start gap-4">
-                                            <div className="mt-0.5 size-10 shrink-0" aria-hidden="true" />
+                                            <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                                <Sparkles className="size-4" />
+                                            </div>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-semibold text-foreground sm:text-[0.95rem]">
                                                     Keep the conversation going

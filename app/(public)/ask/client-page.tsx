@@ -3,7 +3,7 @@
 import { useMemo, useRef, useEffect, useState, type FormEvent } from "react";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
-import { Bot, User, Send, BotMessageSquare, Loader2, BookOpen, ArrowLeft } from "lucide-react";
+import { Bot, User, Send, BotMessageSquare, Loader2, BookOpen, ArrowLeft, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
@@ -326,7 +326,9 @@ export function AskClientPage({
                                         {isEmptyState && (
                                             <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
                                                 <div className="flex items-start gap-4">
-                                                    <div className="mt-0.5 size-10 shrink-0" aria-hidden="true" />
+                                                    <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                                        <Sparkles className="size-4" />
+                                                    </div>
                                                     <div className="min-w-0">
                                                         <p className="text-sm font-semibold text-foreground sm:text-[0.95rem]">
                                                             Ask across your reading life

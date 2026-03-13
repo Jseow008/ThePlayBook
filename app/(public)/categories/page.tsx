@@ -1,7 +1,23 @@
 
 import Link from "next/link";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { ArrowLeft, LayoutGrid } from "lucide-react";
+import {
+    Activity,
+    ArrowLeft,
+    Briefcase,
+    Brain,
+    CircleDollarSign,
+    Dumbbell,
+    Globe,
+    Heart,
+    Laptop,
+    Lightbulb,
+    Microscope,
+    Scale,
+    Smile,
+    Tag,
+    LayoutGrid
+} from "lucide-react";
 
 /**
  * Browse Categories Page
@@ -9,6 +25,27 @@ import { ArrowLeft, LayoutGrid } from "lucide-react";
  * Bento Grid view of all content categories.
  * Fetches categories dynamically from database.
  */
+
+// Mapping for curated categories (Style and Icon)
+const CATEGORY_STYLES: Record<string, { icon: any, color: string }> = {
+    "Mindset": { icon: Brain, color: "text-foreground/80 group-hover:text-foreground" },
+    "Health": { icon: Activity, color: "text-foreground/80 group-hover:text-foreground" },
+    "Wealth": { icon: CircleDollarSign, color: "text-foreground/80 group-hover:text-foreground" },
+    "Business": { icon: Briefcase, color: "text-foreground/80 group-hover:text-foreground" },
+    "Philosophy": { icon: Lightbulb, color: "text-foreground/80 group-hover:text-foreground" },
+    "Fitness": { icon: Dumbbell, color: "text-foreground/80 group-hover:text-foreground" },
+    "Finance": { icon: Scale, color: "text-foreground/80 group-hover:text-foreground" },
+    "Productivity": { icon: Briefcase, color: "text-foreground/80 group-hover:text-foreground" },
+    "Relationships": { icon: Heart, color: "text-foreground/80 group-hover:text-foreground" },
+    "Science": { icon: Microscope, color: "text-foreground/80 group-hover:text-foreground" },
+    "Technology": { icon: Laptop, color: "text-foreground/80 group-hover:text-foreground" },
+    "Lifestyle": { icon: Smile, color: "text-foreground/80 group-hover:text-foreground" },
+    "Travel": { icon: Globe, color: "text-foreground/80 group-hover:text-foreground" },
+};
+
+// Fallback colors for new categories
+// Fallback colors for new categories
+const FALLBACK_STYLE = "text-foreground/80 group-hover:text-foreground";
 
 export default async function CategoriesPage() {
     const supabase = createPublicServerClient();
@@ -26,10 +63,16 @@ export default async function CategoriesPage() {
             // Uniform Grid Logic
             const span = "col-span-1";
 
+            const style = CATEGORY_STYLES[name] || {
+                icon: Tag,
+                color: FALLBACK_STYLE,
+            };
+
             return {
                 name,
                 count,
                 span,
+                ...style
             };
         });
 
@@ -57,6 +100,7 @@ export default async function CategoriesPage() {
                 {categories.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 auto-rows-[140px] gap-3">
                         {categories.map((category) => {
+                            const Icon = category.icon;
                             return (
                                 <Link
                                     key={category.name}
@@ -69,7 +113,9 @@ export default async function CategoriesPage() {
                                     `}
                                 >
                                     <div className="flex items-start justify-between mb-4">
-                                        <div className="h-10 w-10 shrink-0" aria-hidden="true" />
+                                        <div className={`p-2.5 rounded-lg bg-secondary/30 group-hover:bg-secondary/50 transition-colors duration-200 ${category.color}`}>
+                                            <Icon className="size-5" />
+                                        </div>
                                         <span className="text-xs font-medium text-muted-foreground bg-secondary/30 px-2 py-1 rounded-md border border-border/30">
                                             {category.count}
                                         </span>
