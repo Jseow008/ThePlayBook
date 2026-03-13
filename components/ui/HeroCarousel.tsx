@@ -18,6 +18,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const [scrollY, setScrollY] = useState(0);
     const autoRotateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const scrollFrameRef = useRef<number | null>(null);
 
     const clearAutoRotate = useCallback(() => {
         if (!autoRotateTimeoutRef.current) return;
@@ -46,10 +47,20 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     // Parallax Scroll Effect
     useEffect(() => {
         const handleScroll = () => {
-            setScrollY(window.scrollY);
+            if (scrollFrameRef.current !== null) return;
+
+            scrollFrameRef.current = window.requestAnimationFrame(() => {
+                setScrollY(window.scrollY);
+                scrollFrameRef.current = null;
+            });
         };
         window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => window.removeEventListener("scroll", handleScroll);
+        return () => {
+            window.removeEventListener("scroll", handleScroll);
+            if (scrollFrameRef.current !== null) {
+                window.cancelAnimationFrame(scrollFrameRef.current);
+            }
+        };
     }, []);
 
     useEffect(() => {

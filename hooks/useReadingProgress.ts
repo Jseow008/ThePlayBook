@@ -1,6 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import {
+    createContext,
+    createElement,
+    useCallback,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+    type ReactNode,
+} from "react";
 import { AuthUser as User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { deleteUserLibrary, upsertUserLibrary } from "@/lib/server/user-library-repository";
@@ -49,7 +58,7 @@ function isLocalProgressNewer(localData: ReadingProgressData | null, cloudTimest
     return new Date(localData.lastReadAt).getTime() > new Date(cloudTimestamp).getTime();
 }
 
-export function useReadingProgress() {
+function useReadingProgressController() {
     const [inProgressIds, setInProgressIds] = useState<string[]>([]);
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [myListIds, setMyListIds] = useState<string[]>([]);
@@ -489,4 +498,24 @@ export function useReadingProgress() {
         storageScope,
         user,
     };
+}
+
+type ReadingProgressValue = ReturnType<typeof useReadingProgressController>;
+
+const ReadingProgressContext = createContext<ReadingProgressValue | undefined>(undefined);
+
+export function ReadingProgressProvider({ children }: { children: ReactNode }) {
+    const value = useReadingProgressController();
+
+    return createElement(ReadingProgressContext.Provider, { value }, children);
+}
+
+export function useReadingProgress() {
+    const value = useContext(ReadingProgressContext);
+
+    if (value === undefined) {
+        throw new Error("useReadingProgress must be used within a ReadingProgressProvider");
+    }
+
+    return value;
 }

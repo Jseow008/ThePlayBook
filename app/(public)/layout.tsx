@@ -1,4 +1,6 @@
 import { PublicLayoutShell } from "@/components/ui/PublicLayoutShell";
+import { AuthUserProvider } from "@/hooks/useAuthUser";
+import { ReadingProgressProvider } from "@/hooks/useReadingProgress";
 
 /**
  * Public Layout
@@ -13,5 +15,11 @@ export default function PublicLayout({
 }: {
     children: React.ReactNode;
 }) {
-    return <PublicLayoutShell initialUser={null}>{children}</PublicLayoutShell>;
+    return (
+        <AuthUserProvider>
+            <ReadingProgressProvider>
+                <PublicLayoutShell>{children}</PublicLayoutShell>
+            </ReadingProgressProvider>
+        </AuthUserProvider>
+    );
 }

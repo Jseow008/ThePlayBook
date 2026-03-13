@@ -1,50 +1,48 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { UserNav } from "@/components/ui/UserNav";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
-import type { User } from "@supabase/supabase-js";
 
 export function MobileHeader({
-    initialUser,
     compact = false,
 }: {
-    initialUser: User | null;
     compact?: boolean;
 }) {
     const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
-
-
+    const lastScrollYRef = useRef(0);
+    const frameRef = useRef<number | null>(null);
 
     useEffect(() => {
         const handleScroll = () => {
-            const currentScrollY = window.scrollY;
+            if (frameRef.current !== null) return;
 
-            // Only trigger hide/show if scrolling more than 10px to avoid jitter
-            if (Math.abs(currentScrollY - lastScrollY) < 10) return;
+            frameRef.current = window.requestAnimationFrame(() => {
+                const currentScrollY = window.scrollY;
+                const lastScrollY = lastScrollYRef.current;
 
-            if (currentScrollY > lastScrollY && currentScrollY > 50) {
-                // Scrolling down past 50px
-                setIsVisible(false);
-            } else {
-                // Scrolling up
-                setIsVisible(true);
-            }
+                if (Math.abs(currentScrollY - lastScrollY) >= 10) {
+                    setIsVisible(!(currentScrollY > lastScrollY && currentScrollY > 50));
+                    lastScrollYRef.current = currentScrollY;
+                }
 
-            setLastScrollY(currentScrollY);
+                frameRef.current = null;
+            });
         };
 
         window.addEventListener("scroll", handleScroll, { passive: true });
 
         return () => {
             window.removeEventListener("scroll", handleScroll);
+            if (frameRef.current !== null) {
+                window.cancelAnimationFrame(frameRef.current);
+            }
         };
-    }, [lastScrollY]);
+    }, []);
 
     // Completely hide on immersive routes
     if (pathname.startsWith("/read")) {
@@ -62,7 +60,7 @@ export function MobileHeader({
             <Link href="/browse">
                 <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} />
             </Link>
-            <UserNav initialUser={initialUser} />
+            <UserNav />
         </header>
     );
 }

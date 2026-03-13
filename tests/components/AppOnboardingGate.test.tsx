@@ -85,7 +85,7 @@ describe("AppOnboardingGate", () => {
     it("opens the shared tour for a signed-out visitor who has not seen it", async () => {
         authUserState.value = null;
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         expect(await screen.findByRole("dialog")).toBeInTheDocument();
         expect(screen.getByText("Find your next read.")).toBeInTheDocument();
@@ -93,7 +93,7 @@ describe("AppOnboardingGate", () => {
     });
 
     it("opens the tour for a signed-in user who has not seen it", async () => {
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         expect(await screen.findByRole("dialog")).toBeInTheDocument();
         expect(screen.getByText("Find your next read.")).toBeInTheDocument();
@@ -113,7 +113,7 @@ describe("AppOnboardingGate", () => {
             error: null,
         };
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         await waitFor(() => {
             expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -136,7 +136,7 @@ describe("AppOnboardingGate", () => {
             error: null,
         };
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         await act(async () => {
@@ -151,7 +151,7 @@ describe("AppOnboardingGate", () => {
         searchParamsState.value = "tour=app-v1";
         singleMock.mockImplementation(() => new Promise(() => undefined));
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         await act(async () => {
@@ -170,7 +170,7 @@ describe("AppOnboardingGate", () => {
             JSON.stringify(createGuestOnboardingEntry("completed"))
         );
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
         await act(async () => {
@@ -184,7 +184,7 @@ describe("AppOnboardingGate", () => {
         vi.useFakeTimers();
         searchParamsState.value = "tour=app-v1";
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         await act(async () => {
             await vi.advanceTimersByTimeAsync(REPLAY_OPEN_DELAY_MS);
@@ -206,7 +206,7 @@ describe("AppOnboardingGate", () => {
         authUserState.value = null;
         searchParamsState.value = "tour=app-v1";
 
-        const { rerender } = render(<AppOnboardingGate initialUser={null} />);
+        const { rerender } = render(<AppOnboardingGate />);
 
         await act(async () => {
             await vi.advanceTimersByTimeAsync(REPLAY_OPEN_DELAY_MS);
@@ -215,7 +215,7 @@ describe("AppOnboardingGate", () => {
         expect(rpcMock).not.toHaveBeenCalled();
 
         authUserState.value = { id: "user-1" };
-        rerender(<AppOnboardingGate initialUser={null} />);
+        rerender(<AppOnboardingGate />);
 
         expect(screen.getByRole("dialog")).toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
@@ -234,7 +234,7 @@ describe("AppOnboardingGate", () => {
     it("persists guest dismissal locally without calling the account RPC", async () => {
         authUserState.value = null;
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         fireEvent.click(await screen.findByRole("button", { name: "Skip tour" }));
 
@@ -251,7 +251,7 @@ describe("AppOnboardingGate", () => {
             JSON.stringify(createGuestOnboardingEntry("completed"))
         );
 
-        render(<AppOnboardingGate initialUser={null} />);
+        render(<AppOnboardingGate />);
 
         expect(await screen.findByRole("dialog")).toBeInTheDocument();
         expect(screen.getByText("Find your next read.")).toBeInTheDocument();

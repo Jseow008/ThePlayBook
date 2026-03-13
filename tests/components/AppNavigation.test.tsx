@@ -76,7 +76,7 @@ describe("app navigation", () => {
     });
 
     it("removes Ask My Library from the profile menu", () => {
-        render(<UserNav initialUser={null} />);
+        render(<UserNav />);
 
         fireEvent.click(screen.getByRole("button", { name: /open user menu/i }));
 
@@ -100,7 +100,7 @@ describe("app navigation", () => {
         pathnameState.value = "/notes";
         vi.useFakeTimers();
 
-        render(<NetflixSidebar initialUser={null} />);
+        render(<NetflixSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -117,7 +117,7 @@ describe("app navigation", () => {
 
     it("keeps a collapsed Ask shortcut in the desktop sidebar", () => {
         pathnameState.value = "/ask";
-        render(<NetflixSidebar initialUser={null} />);
+        render(<NetflixSidebar />);
 
         expect(screen.getByTitle("Ask")).toHaveAttribute("href", "/ask");
     });

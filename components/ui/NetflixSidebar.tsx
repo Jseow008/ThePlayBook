@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { User } from "@supabase/supabase-js";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -33,13 +32,13 @@ const navItems = [
     { icon: Shuffle, label: "Surprise Me", href: "/random" },
 ];
 
-export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
+export function NetflixSidebar() {
     const pathname = usePathname();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [isAskOpen, setIsAskOpen] = useState(false);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const user = useAuthUser(initialUser);
+    const user = useAuthUser();
 
     const handleMouseEnter = () => {
         if (hoverTimeoutRef.current) {

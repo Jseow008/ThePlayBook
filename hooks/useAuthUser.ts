@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
-export function useAuthUser(initialUser: User | null) {
+const AuthUserContext = createContext<User | null | undefined>(undefined);
+
+export function AuthUserProvider({
+    children,
+    initialUser = null,
+}: {
+    children: ReactNode;
+    initialUser?: User | null;
+}) {
     const [user, setUser] = useState<User | null>(initialUser);
 
     useEffect(() => {
@@ -30,6 +38,16 @@ export function useAuthUser(initialUser: User | null) {
             subscription.unsubscribe();
         };
     }, []);
+
+    return createElement(AuthUserContext.Provider, { value: user }, children);
+}
+
+export function useAuthUser() {
+    const user = useContext(AuthUserContext);
+
+    if (user === undefined) {
+        throw new Error("useAuthUser must be used within an AuthUserProvider");
+    }
 
     return user;
 }

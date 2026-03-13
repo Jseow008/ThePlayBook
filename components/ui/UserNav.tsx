@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { User } from "@supabase/supabase-js";
 import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -10,8 +9,8 @@ import { signOutAction } from "@/lib/actions/auth";
 import { AVATAR_ICONS } from "@/lib/avatars";
 import { useAuthUser } from "@/hooks/useAuthUser";
 
-export function UserNav({ initialUser }: { initialUser: User | null }) {
-    const user = useAuthUser(initialUser);
+export function UserNav() {
+    const user = useAuthUser();
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);

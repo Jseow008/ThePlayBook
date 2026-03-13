@@ -58,6 +58,7 @@ const DEFAULT_READER_SETTINGS: NormalizedReaderSettingsPayload = {
 let currentScope: StorageScope = getStorageScope(null);
 let authSyncInitialized = false;
 let suppressStorageWrites = false;
+let currentReaderSettingsUserId: string | null | undefined = undefined;
 
 function isReaderSettingsPayload(value: unknown): value is Partial<ReaderSettingsPayload> {
     if (!value || typeof value !== "object") return false;
@@ -319,12 +320,18 @@ const useReaderSettingsStore = create<ReaderSettingsState>()(
 );
 
 async function pushToCloudForCurrentUser(settings: ReaderSettingsPayload) {
+    if (currentReaderSettingsUserId !== undefined) {
+        if (!currentReaderSettingsUserId) return true;
+        return pushToCloud(currentReaderSettingsUserId, settings);
+    }
+
     const supabase = createClient();
     const { data, error } = await supabase.auth.getUser();
     if (error) {
         console.error("Failed to resolve auth state for reader settings:", error);
         return false;
     }
+    currentReaderSettingsUserId = data.user?.id ?? null;
     if (!data.user) return true;
     return pushToCloud(data.user.id, settings);
 }
@@ -400,6 +407,7 @@ async function syncReaderSettingsWithCloud(user: User, scope: StorageScope) {
 async function applyReaderSettingsScope(user: User | null) {
     if (typeof window === "undefined") return;
 
+    currentReaderSettingsUserId = user?.id ?? null;
     migrateLegacyStorageToGuest(localStorage);
 
     const nextScope = getStorageScope(user?.id);
@@ -427,10 +435,12 @@ function ensureReaderSettingsAuthSync() {
         if (error) {
             console.error("Failed to resolve auth state for reader settings:", error);
         }
+        currentReaderSettingsUserId = data.user?.id ?? null;
         void applyReaderSettingsScope(data.user ?? null);
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {
+        currentReaderSettingsUserId = session?.user?.id ?? null;
         void applyReaderSettingsScope(session?.user ?? null);
     });
 }

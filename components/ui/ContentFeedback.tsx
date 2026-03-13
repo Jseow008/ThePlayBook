@@ -5,8 +5,8 @@ import { createPortal } from "react-dom";
 import { ThumbsUp, ThumbsDown, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { useAuthUser } from "@/hooks/useAuthUser";
 
 interface ContentFeedbackProps {
     contentId: string;
@@ -21,10 +21,10 @@ const FEEDBACK_REASONS = [
 ];
 
 export function ContentFeedback({ contentId }: ContentFeedbackProps) {
+    const user = useAuthUser();
     const [voteStatus, setVoteStatus] = useState<'up' | 'down' | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -44,18 +44,13 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
     const [reason, setReason] = useState("");
     const [details, setDetails] = useState("");
 
-    // Fetch initial status on mount
+    // Fetch initial status once auth is already known.
     useEffect(() => {
-        const checkAuthAndFetchStatus = async () => {
-            const supabase = createClient();
-            const { data: { session } } = await supabase.auth.getSession();
-
-            if (!session) {
-                setIsLoggedIn(false);
+        const fetchStatus = async () => {
+            if (!user) {
+                setVoteStatus(null);
                 return;
             }
-
-            setIsLoggedIn(true);
 
             try {
                 const res = await fetch(`/api/feedback/content?contentId=${contentId}`);
@@ -67,8 +62,8 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                 console.error("Failed to load feedback status", err);
             }
         };
-        checkAuthAndFetchStatus();
-    }, [contentId]);
+        void fetchStatus();
+    }, [contentId, user]);
 
     const handleVote = async (type: 'up' | 'down') => {
         if (isSubmitting) return;
@@ -142,7 +137,7 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
         }
     };
 
-    if (!isLoggedIn) return null;
+    if (!user) return null;
 
     return (
         <div className="flex flex-col items-center justify-center pt-8 pb-4 mt-8 border-t border-border/40">

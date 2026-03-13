@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import type { User } from "@supabase/supabase-js";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
     APP_ONBOARDING_SLIDES,
@@ -24,11 +23,11 @@ type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type ActiveTour = "account" | "guest" | null;
 const REPLAY_OPEN_DELAY_MS = 1200;
 
-export function AppOnboardingGate({ initialUser }: { initialUser: User | null }) {
+export function AppOnboardingGate() {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const user = useAuthUser(initialUser);
+    const user = useAuthUser();
     const [isOpen, setIsOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [activeTour, setActiveTour] = useState<ActiveTour>(null);
@@ -38,7 +37,7 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
 
     useEffect(() => {
         let isCancelled = false;
-        let replayTimer: ReturnType<typeof window.setTimeout> | null = null;
+        let replayTimer: number | null = null;
 
         async function loadOnboardingState() {
             if (!isBrowseRoute) {
@@ -49,8 +48,6 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
 
             if (replayRequested) {
                 setActiveTour(user ? "account" : "guest");
-                if (isOpen) return;
-
                 replayTimer = window.setTimeout(() => {
                     if (isCancelled) return;
                     setIsOpen(true);
@@ -100,7 +97,7 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
                 window.clearTimeout(replayTimer);
             }
         };
-    }, [isBrowseRoute, isOpen, replayRequested, user]);
+    }, [isBrowseRoute, replayRequested, user]);
 
     const clearReplayParam = () => {
         if (!searchParams.has(APP_ONBOARDING_QUERY_PARAM)) return;

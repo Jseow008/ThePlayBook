@@ -7,7 +7,6 @@ import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { MobileHeader } from "@/components/ui/MobileHeader";
 import { AppOnboardingGate } from "@/components/ui/AppOnboardingGate";
-import type { User } from "@supabase/supabase-js";
 
 /**
  * Public Layout Shell
@@ -17,7 +16,7 @@ import type { User } from "@supabase/supabase-js";
  * All other public pages get the full app experience.
  */
 
-export function PublicLayoutShell({ children, initialUser }: { children: React.ReactNode, initialUser: User | null }) {
+export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLandingPage = pathname === "/";
     const isBrowsePage = pathname === "/browse";
@@ -30,20 +29,20 @@ export function PublicLayoutShell({ children, initialUser }: { children: React.R
     return (
         <div className="min-h-screen bg-background">
             <Suspense fallback={null}>
-                <AppOnboardingGate initialUser={initialUser} />
+                <AppOnboardingGate />
             </Suspense>
 
             {/* Netflix-style Sidebar (hidden on mobile) */}
-            <NetflixSidebar initialUser={initialUser} />
+            <NetflixSidebar />
 
             {/* Desktop Top Right Auth (hidden on mobile) */}
             <div className="hidden lg:flex fixed top-4 right-8 z-50">
-                <UserNav initialUser={initialUser} />
+                <UserNav />
             </div>
 
 
             {/* Mobile Header */}
-            <MobileHeader initialUser={initialUser} compact={isBrowsePage} />
+            <MobileHeader compact={isBrowsePage} />
 
             {/* Main Content */}
             <main

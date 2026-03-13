@@ -13,9 +13,6 @@ export default function RandomPage() {
     const fetchRandom = useCallback(async () => {
         setSpinning(true);
         try {
-            // Add a small delay for feeling
-            await new Promise(r => setTimeout(r, 600));
-
             const res = await fetch("/api/random");
             if (!res.ok) throw new Error("Failed");
 
