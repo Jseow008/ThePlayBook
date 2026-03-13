@@ -135,7 +135,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
 
                 {/* Smart Search Input */}
-                <div className="max-w-4xl w-full mb-8 relative z-10">
+                <div className="max-w-4xl w-full mb-8 relative z-20">
                     <SearchInput
                         initialQuery={query || ""}
                         category={category}
@@ -146,7 +146,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
 
                 {/* Type Filters */}
-                <div className="flex flex-wrap justify-start gap-2 mb-12 relative z-10">
+                <div className="flex flex-wrap justify-start gap-2 mb-12">
                     {contentTypes.map((t) => {
                         const isActive = (type === t) || (!type && t === "All") || (type && type.toLowerCase() === t.toLowerCase()) || (t === "All" && type === "All");
 
