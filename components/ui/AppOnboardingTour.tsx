@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-    LayoutGrid,
     X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -137,8 +136,7 @@ export function AppOnboardingTour({
                 data-testid="app-onboarding-tour"
             >
                 <div className="flex flex-none items-center justify-between px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
-                    <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
-                        <LayoutGrid className="size-3.5" />
+                    <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
                         {progressLabel}
                     </div>
 
@@ -227,9 +225,10 @@ export function AppOnboardingTour({
                                                                 <Image
                                                                     src={slide.imageSrc}
                                                                     alt={slide.imageAlt}
+                                                                    data-testid="app-onboarding-mobile-image"
                                                                     fill
                                                                     sizes="100vw"
-                                                                    className="object-cover object-top"
+                                                                    className="object-contain object-center bg-[#0b1220] p-2 sm:p-3"
                                                                     priority={index === 0}
                                                                 />
                                                                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent" />

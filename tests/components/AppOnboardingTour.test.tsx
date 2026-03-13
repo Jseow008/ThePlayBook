@@ -55,6 +55,19 @@ describe("AppOnboardingTour", () => {
             "/images/notes.png",
             "/images/ai-chat.png",
         ]));
+        expect(APP_ONBOARDING_SLIDES[4]?.imageSrc).toBe("/images/notes.png");
+    });
+
+    it("uses screenshot-safe mobile image framing across slides", () => {
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
+
+        const mobileImages = screen.getAllByTestId("app-onboarding-mobile-image");
+
+        expect(mobileImages).toHaveLength(6);
+        mobileImages.forEach((image) => {
+            expect(image).toHaveClass("object-contain", "object-center", "bg-[#0b1220]");
+            expect(image).not.toHaveClass("object-cover");
+        });
     });
 
     it("uses the shorter desktop screenshot frame instead of the old tall min-height", () => {
