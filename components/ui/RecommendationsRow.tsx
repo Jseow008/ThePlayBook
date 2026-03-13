@@ -5,7 +5,11 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentLane } from "@/components/ui/ContentLane";
 import { useBatchContentItems, useRecommendations } from "@/hooks/use-content-queries";
 
-export function RecommendationsRow() {
+export function RecommendationsRow({
+    cardTitleDensity = "default",
+}: {
+    cardTitleDensity?: "default" | "browse-compact";
+}) {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
 
     const mostRecentId = completedIds[0] || inProgressIds[0] || null;
@@ -59,6 +63,7 @@ export function RecommendationsRow() {
                 <ContentLane
                     title={recentTitle ? `Because you read "${recentTitle}"` : "Because of your recent reading"}
                     items={recentItems}
+                    cardTitleDensity={cardTitleDensity}
                 />
             )}
 
@@ -67,6 +72,7 @@ export function RecommendationsRow() {
                 <ContentLane
                     title="Recommended for You"
                     items={generalItems}
+                    cardTitleDensity={cardTitleDensity}
                 />
             )}
         </>

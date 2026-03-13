@@ -10,7 +10,17 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/components/ui/ContentCard", () => ({
-    ContentCard: ({ item }: { item: ContentItem }) => <div>{item.title}</div>,
+    ContentCard: ({
+        item,
+        navigationMode,
+        titleDensity,
+    }: {
+        item: ContentItem;
+        navigationMode?: "preview" | "resume";
+        titleDensity?: "default" | "browse-compact";
+    }) => (
+        <div>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${item.title}`}</div>
+    ),
 }));
 
 describe("ContentLane", () => {
@@ -77,5 +87,19 @@ describe("ContentLane", () => {
         });
 
         expect(rightArrow.className).not.toContain("pointer-events-none");
+    });
+
+    it("passes through the requested card navigation mode", () => {
+        render(<ContentLane title="Resume Lane" items={items} cardNavigationMode="resume" />);
+
+        expect(screen.getByText("resume:default:One")).toBeInTheDocument();
+        expect(screen.getByText("resume:default:Two")).toBeInTheDocument();
+    });
+
+    it("passes through the requested card title density", () => {
+        render(<ContentLane title="Compact Lane" items={items} cardTitleDensity="browse-compact" />);
+
+        expect(screen.getByText("preview:browse-compact:One")).toBeInTheDocument();
+        expect(screen.getByText("preview:browse-compact:Two")).toBeInTheDocument();
     });
 });

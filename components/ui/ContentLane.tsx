@@ -11,10 +11,18 @@ interface ContentLaneProps {
     title: React.ReactNode;
     items: ContentItem[];
     viewAllHref?: string;
+    cardNavigationMode?: "preview" | "resume";
+    cardTitleDensity?: "default" | "browse-compact";
 }
 
 
-export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
+export function ContentLane({
+    title,
+    items,
+    viewAllHref,
+    cardNavigationMode = "preview",
+    cardTitleDensity = "default",
+}: ContentLaneProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
     const [showRightArrow, setShowRightArrow] = useState(false);
@@ -126,7 +134,11 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                     >
                         {items.map((item) => (
                             <div key={item.id} className="w-[168px] min-w-[168px] md:w-[240px] md:min-w-[240px]">
-                                <ContentCard item={item} />
+                                <ContentCard
+                                    item={item}
+                                    navigationMode={cardNavigationMode}
+                                    titleDensity={cardTitleDensity}
+                                />
                             </div>
                         ))}
                     </div>

@@ -23,6 +23,8 @@ interface ContentCardProps {
     hideProgressBar?: boolean;
     hideBookmark?: boolean;
     enableUserState?: boolean;
+    navigationMode?: "preview" | "resume";
+    titleDensity?: "default" | "browse-compact";
 }
 
 interface BaseContentCardProps extends ContentCardProps {
@@ -30,6 +32,28 @@ interface BaseContentCardProps extends ContentCardProps {
     progressPercentage?: number;
     showProgress?: boolean;
     onToggleBookmark?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+    href?: string;
+}
+
+function hasUsableProgress(progress: ReturnType<typeof useReadingProgress>["getProgress"] extends (itemId: string) => infer T ? T : never) {
+    if (!progress) {
+        return false;
+    }
+
+    return (
+        Array.isArray(progress.completed)
+        || typeof progress.maxSegmentIndex === "number"
+        || typeof progress.lastSegmentIndex === "number"
+        || typeof progress.lastReadAt === "string"
+    );
+}
+
+function getContentCardHref(itemId: string, navigationMode: "preview" | "resume", hasProgress: boolean) {
+    if (navigationMode === "resume" && hasProgress) {
+        return `/read/${itemId}`;
+    }
+
+    return `/preview/${itemId}`;
 }
 
 export function ContentCard({
@@ -44,10 +68,11 @@ export function ContentCard({
 }
 
 function InteractiveContentCard(props: ContentCardProps) {
-    const { item, hideProgressBar = false } = props;
+    const { item, hideProgressBar = false, navigationMode = "preview" } = props;
     const { isInMyList, toggleMyList, getProgress } = useReadingProgress();
     const isBookmarked = isInMyList(item.id);
     const progress = getProgress(item.id);
+    const href = getContentCardHref(item.id, navigationMode, hasUsableProgress(progress));
 
     const percentage =
         progress && progress.totalSegments
@@ -65,6 +90,7 @@ function InteractiveContentCard(props: ContentCardProps) {
             isBookmarked={isBookmarked}
             progressPercentage={percentage}
             showProgress={showProgress}
+            href={href}
             onToggleBookmark={(event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -85,6 +111,8 @@ function BaseContentCard({
     progressPercentage = 0,
     showProgress = false,
     onToggleBookmark,
+    href = `/preview/${item.id}`,
+    titleDensity = "default",
 }: BaseContentCardProps) {
     const typeIcon: Record<ContentItem["type"], React.ComponentType<{ className?: string }>> = {
         podcast: Headphones,
@@ -100,7 +128,7 @@ function BaseContentCard({
 
     return (
         <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10 hover:scale-105">
-            <Link href={`/preview/${item.id}`} className="absolute inset-0 z-10 rounded-md focus-ring">
+            <Link href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
                 <span className="sr-only">View {item.title}</span>
             </Link>
 
@@ -165,7 +193,14 @@ function BaseContentCard({
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/72 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
                 <div className="flex h-full flex-col justify-end gap-1">
-                    <h3 className="w-full line-clamp-3 font-serif text-[0.95rem] font-medium leading-[1.18] text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug">
+                    <h3
+                        className={cn(
+                            "w-full line-clamp-3 font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
+                            titleDensity === "browse-compact"
+                                ? "text-[0.88rem] leading-[1.13]"
+                                : "text-[0.95rem] leading-[1.18]"
+                        )}
+                    >
                         {item.title}
                     </h3>
 
