@@ -46,7 +46,13 @@ export function PublicLayoutShell({ children, initialUser }: { children: React.R
             <MobileHeader initialUser={initialUser} compact={isBrowsePage} />
 
             {/* Main Content */}
-            <main className={isBrowsePage ? "lg:pl-16 pb-16 lg:pb-0" : "lg:pl-16 pb-20 lg:pb-0"}>
+            <main
+                className={
+                    isBrowsePage
+                        ? "lg:pl-16 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0"
+                        : "lg:pl-16 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0"
+                }
+            >
                 {/* Mobile padding for fixed header */}
                 {!pathname.startsWith("/read") && (
                     <div className={isBrowsePage ? "lg:hidden h-12" : "lg:hidden h-14"} />
