@@ -161,6 +161,7 @@ export default function ContinueReadingPage() {
                                 {filteredItems.map((item) => (
                                     <ContentCard
                                         key={item.id}
+                                        navigationMode="resume"
                                         item={item}
                                         onRemove={(id) => {
                                             removeFromProgress(id);
