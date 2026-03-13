@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Clock, BookOpen, Sparkles, ChevronDown, Bookmark, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -13,6 +12,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { toast } from "sonner";
 import { APP_NAME } from "@/lib/brand";
+import { ResilientImage } from "@/components/ui/ResilientImage";
 
 interface ContentPreviewProps {
     item: ContentItem;
@@ -74,13 +74,19 @@ export function ContentPreview({
                     {item.cover_image_url && (
                         <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
                             <div className="aspect-[2/3] w-[140px] sm:w-full max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/20 border border-border relative group">
-                                <Image
+                                <ResilientImage
                                     src={item.cover_image_url}
                                     alt={item.title}
                                     fill
+                                    surface="content-preview"
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                                     sizes="(max-width: 640px) 220px, 224px"
                                     priority
+                                    fallback={
+                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
+                                            <BookOpen className="size-12 text-muted-foreground" />
+                                        </div>
+                                    }
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                             </div>

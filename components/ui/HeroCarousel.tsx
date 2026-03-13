@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Info, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
 import { APP_NAME } from "@/lib/brand";
+import { ResilientImage } from "@/components/ui/ResilientImage";
 
 interface HeroCarouselProps {
     items: ContentItem[];
@@ -127,13 +127,15 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         <>
                             {/* The Image Container - Anchored Right */}
                             <div className="absolute top-0 right-0 bottom-0 w-full md:w-[85%] lg:w-[75%] xl:w-[65%]">
-                                <Image
+                                <ResilientImage
                                     src={(activeItem.hero_image_url || activeItem.cover_image_url)!}
                                     alt={activeItem.title}
                                     fill
                                     priority={activeIndex === 0}
+                                    surface="hero-carousel"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1280px) 85vw, 65vw"
                                     className="object-cover object-[50%_20%]"
+                                    fallback={<div className="h-full w-full bg-card" />}
                                 />
                             </div>
 

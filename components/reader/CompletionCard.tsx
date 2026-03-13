@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { AuthorChat } from "./AuthorChat";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
 import Link from "next/link";
-import Image from "next/image";
+import { ResilientImage } from "@/components/ui/ResilientImage";
 
 interface RecommendedBook {
     id: string;
@@ -125,12 +125,18 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                             <div className="flex items-start gap-4">
                                 {recommendation.cover_image_url ? (
                                     <div className="flex-shrink-0 w-12 h-16 rounded-lg overflow-hidden bg-muted relative">
-                                        <Image
+                                        <ResilientImage
                                             src={recommendation.cover_image_url}
                                             alt={recommendation.title}
                                             fill
+                                            surface="completion-card"
                                             className="object-cover"
                                             sizes="48px"
+                                            fallback={
+                                                <div className="absolute inset-0 flex items-center justify-center bg-accent/60">
+                                                    <BookOpen className="size-5 text-muted-foreground" />
+                                                </div>
+                                            }
                                         />
                                     </div>
                                 ) : (

@@ -17,7 +17,12 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('next/image', () => ({
-    default: (props: any) => <img alt={props.alt || ''} {...props} />,
+    default: ({ alt, fill, priority, unoptimized, ...props }: any) => {
+        void fill;
+        void priority;
+        void unoptimized;
+        return <img alt={alt || ''} {...props} />;
+    },
 }));
 
 describe('ContentPreview', () => {

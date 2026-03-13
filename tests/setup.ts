@@ -49,3 +49,8 @@ Object.defineProperty(window, 'localStorage', {
     },
     writable: true,
 });
+
+Object.defineProperty(window.navigator, 'sendBeacon', {
+    configurable: true,
+    value: vi.fn(() => true),
+});

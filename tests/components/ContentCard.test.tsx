@@ -18,7 +18,22 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/image", () => ({
-    default: ({ alt, ...props }: React.ImgHTMLAttributes<HTMLImageElement>) => <img alt={alt} {...props} />,
+    default: ({
+        alt,
+        fill,
+        priority,
+        unoptimized,
+        ...props
+    }: React.ImgHTMLAttributes<HTMLImageElement> & {
+        fill?: boolean;
+        priority?: boolean;
+        unoptimized?: boolean;
+    }) => {
+        void fill;
+        void priority;
+        void unoptimized;
+        return <img alt={alt} {...props} />;
+    },
 }));
 
 vi.mock("sonner", () => ({
@@ -122,5 +137,20 @@ describe("ContentCard", () => {
 
         expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("text-[0.95rem]");
         expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("leading-[1.18]");
+    });
+
+    it("falls back to the non-image artwork treatment after the direct retry fails", () => {
+        const itemWithCover = {
+            ...item,
+            cover_image_url: "https://example.com/deep-work.jpg",
+        };
+
+        render(<ContentCard item={itemWithCover} />);
+
+        fireEvent.error(screen.getByAltText("Deep Work"));
+        fireEvent.error(screen.getByAltText("Deep Work"));
+
+        expect(screen.queryByAltText("Deep Work")).not.toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "View Deep Work" })).toBeInTheDocument();
     });
 });

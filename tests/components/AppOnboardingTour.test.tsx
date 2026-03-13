@@ -48,14 +48,15 @@ describe("AppOnboardingTour", () => {
         );
 
         expect(imageSources).toEqual(expect.arrayContaining([
-            "/images/hero-section.png",
-            "/images/reading-experience-info-view.png",
-            "/images/reading-experience-reader-view.png",
-            "/images/highlighting-and-annotation.png",
-            "/images/notes.png",
-            "/images/ai-chat.png",
+            "/images/hero-section.webp",
+            "/images/reading-experience-info-view.webp",
+            "/images/reading-experience-reader-view.webp",
+            "/images/highlighting-and-annotation.webp",
+            "/images/notes.webp",
+            "/images/ai-chat.webp",
         ]));
-        expect(APP_ONBOARDING_SLIDES[4]?.imageSrc).toBe("/images/notes.png");
+        expect(imageSources.some((src) => src?.includes("/_next/image"))).toBe(false);
+        expect(APP_ONBOARDING_SLIDES[4]?.imageSrc).toBe("/images/notes.webp");
     });
 
     it("uses screenshot-safe mobile image framing across slides", () => {

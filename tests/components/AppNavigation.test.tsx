@@ -47,10 +47,11 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/image", () => ({
-    default: (props: ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean; priority?: boolean }) => {
-        const { alt, src, fill, priority, ...safeProps } = props;
+    default: (props: ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean; priority?: boolean; unoptimized?: boolean }) => {
+        const { alt, src, fill, priority, unoptimized, ...safeProps } = props;
         void fill;
         void priority;
+        void unoptimized;
         return <img alt={alt} src={src} {...safeProps} />;
     },
 }));

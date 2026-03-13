@@ -10,7 +10,12 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("next/image", () => ({
-    default: (props: any) => <img alt={props.alt || ""} {...props} />,
+    default: ({ alt, fill, priority, unoptimized, ...props }: any) => {
+        void fill;
+        void priority;
+        void unoptimized;
+        return <img alt={alt || ""} {...props} />;
+    },
 }));
 
 describe("HeroCarousel", () => {
@@ -103,5 +108,16 @@ describe("HeroCarousel", () => {
         });
 
         expect(screen.getByRole("heading", { name: "Third Feature" })).toBeInTheDocument();
+    });
+
+    it("keeps the hero content visible if the artwork fails twice", () => {
+        render(<HeroCarousel items={items} />);
+
+        fireEvent.error(screen.getByAltText("First Feature"));
+        fireEvent.error(screen.getByAltText("First Feature"));
+
+        expect(screen.queryByAltText("First Feature")).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "First Feature" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Read" })).toBeInTheDocument();
     });
 });

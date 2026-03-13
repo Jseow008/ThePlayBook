@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import {
     BookOpen,
     Headphones,
@@ -15,6 +14,7 @@ import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ResilientImage } from "@/components/ui/ResilientImage";
 
 interface ContentCardProps {
     item: ContentItem;
@@ -134,12 +134,18 @@ function BaseContentCard({
 
             {item.cover_image_url ? (
                 <div className="absolute inset-0 h-full w-full">
-                    <Image
+                    <ResilientImage
                         src={item.cover_image_url}
                         alt={item.title}
                         fill
+                        surface="content-card"
                         className="object-cover transition-transform duration-300 group-hover:scale-110"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                        fallback={
+                            <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
+                                <Icon className="size-16 text-muted-foreground" />
+                            </div>
+                        }
                     />
                 </div>
             ) : (

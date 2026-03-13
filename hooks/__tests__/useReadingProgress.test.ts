@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
+import { createElement, type ReactNode } from "react";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useReadingProgress, type ReadingProgressData } from "../useReadingProgress";
+import {
+    ReadingProgressProvider,
+    useReadingProgress,
+    type ReadingProgressData,
+} from "../useReadingProgress";
 import {
     GUEST_STORAGE_SCOPE,
     getStorageScope,
@@ -85,6 +90,10 @@ Object.defineProperty(window, "localStorage", {
     value: localStorageMock,
 });
 
+function wrapper({ children }: { children: ReactNode }) {
+    return createElement(ReadingProgressProvider, null, children);
+}
+
 describe("useReadingProgress", () => {
     beforeEach(() => {
         authStateChangeHandler = null;
@@ -109,7 +118,7 @@ describe("useReadingProgress", () => {
         }));
         localStorage.setItem(legacyMyListKey, JSON.stringify(["item-3"]));
 
-        const { result } = renderHook(() => useReadingProgress());
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
 
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
@@ -123,7 +132,7 @@ describe("useReadingProgress", () => {
     });
 
     it("saves new guest reading progress under the scoped guest key", async () => {
-        const { result } = renderHook(() => useReadingProgress());
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
 
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
@@ -157,7 +166,7 @@ describe("useReadingProgress", () => {
         localStorage.setItem(progressKey(GUEST_STORAGE_SCOPE, "item-10"), JSON.stringify(guestProgress));
         localStorage.setItem(myListKey(GUEST_STORAGE_SCOPE), JSON.stringify(["item-11"]));
 
-        const { result } = renderHook(() => useReadingProgress());
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
         currentAuthUser = { id: "user-a" };
@@ -179,7 +188,7 @@ describe("useReadingProgress", () => {
     });
 
     it("does not leak account A local data into account B on the same device", async () => {
-        const { result } = renderHook(() => useReadingProgress());
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
         currentAuthUser = { id: "user-a" };
@@ -219,7 +228,7 @@ describe("useReadingProgress", () => {
     });
 
     it("loads only the signed-in user's cloud rows during hydration", async () => {
-        const { result } = renderHook(() => useReadingProgress());
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
         currentAuthUser = { id: "user-a" };

@@ -55,11 +55,21 @@ const corsHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
+    deviceSizes: [640, 768, 1024, 1280],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    imageSizes: [32, 48, 96, 112, 150, 224, 700],
+    localPatterns: [
+      { pathname: "/images/**" },
+    ],
+    qualities: [75],
     remotePatterns: [
-      { protocol: "https", hostname: supabaseHostname },
+      {
+        protocol: "https",
+        hostname: supabaseHostname,
+        pathname: "/storage/v1/object/public/media/**",
+      },
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "api.dicebear.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
