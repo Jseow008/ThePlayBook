@@ -7,7 +7,7 @@ import type { ContentItemWithSegments, SegmentFull } from "@/types/domain";
 /**
  * Offline Item Hook
  * 
- * Manages offline storage of content items in IndexedDB.
+ * Manages offline storage of content items in a device-shared IndexedDB cache.
  * Follows the rehydration strategy: IDB -> React Query Cache -> Network
  */
 

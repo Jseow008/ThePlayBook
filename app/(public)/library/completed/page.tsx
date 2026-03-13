@@ -168,6 +168,7 @@ export default function CompletedPage() {
                                     <ContentCard
                                         key={item.id}
                                         item={item}
+                                        titleDensity="app-compact"
                                         showCompletedBadge
                                         onRemove={(id) => {
                                             removeFromProgress(id);

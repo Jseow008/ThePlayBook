@@ -1,8 +1,18 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
+"use client";
 
+import { useEffect } from "react";
+import { create } from "zustand";
+import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
+import {
+    getStorageScope,
+    migrateLegacyStorageToGuest,
+    readerSettingsKey,
+    type StorageScope,
+    GUEST_STORAGE_SCOPE,
+} from "@/lib/local-user-storage";
 
 export type FontSize = "small" | "medium" | "large";
 export type FontFamily = "sans" | "serif";
@@ -28,6 +38,16 @@ type ReaderSettingsPayload = Pick<
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
+const DEFAULT_READER_SETTINGS: ReaderSettingsPayload = {
+    fontSize: "medium",
+    fontFamily: "serif",
+    readerTheme: "dark",
+    lineHeight: "default",
+};
+
+let currentScope: StorageScope = getStorageScope(null);
+let authSyncInitialized = false;
+
 function isReaderSettingsPayload(value: unknown): value is Partial<ReaderSettingsPayload> {
     if (!value || typeof value !== "object") return false;
 
@@ -45,84 +65,226 @@ function isReaderSettingsPayload(value: unknown): value is Partial<ReaderSetting
     return true;
 }
 
-// Helper to push settings to cloud
-const pushToCloud = async (settings: Partial<ReaderSettingsState>) => {
+function hasSettingsPayload(value: Partial<ReaderSettingsPayload> | null): value is Partial<ReaderSettingsPayload> {
+    return Boolean(value && Object.keys(value).length > 0);
+}
+
+function getReaderSettingsStateStorage(): StateStorage {
+    return {
+        getItem: () => {
+            if (typeof window === "undefined") return null;
+            return localStorage.getItem(readerSettingsKey(currentScope));
+        },
+        setItem: (_name, value) => {
+            if (typeof window === "undefined") return;
+            localStorage.setItem(readerSettingsKey(currentScope), value);
+        },
+        removeItem: () => {
+            if (typeof window === "undefined") return;
+            localStorage.removeItem(readerSettingsKey(currentScope));
+        },
+    };
+}
+
+function readPersistedReaderSettings(scope: StorageScope) {
+    if (typeof window === "undefined") return null;
+
+    try {
+        const raw = localStorage.getItem(readerSettingsKey(scope));
+        if (!raw) return null;
+
+        const parsed = JSON.parse(raw) as { state?: unknown };
+        if (!isReaderSettingsPayload(parsed.state)) return null;
+        return parsed.state;
+    } catch {
+        return null;
+    }
+}
+
+function writePersistedReaderSettings(scope: StorageScope, payload: Partial<ReaderSettingsPayload>) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+        readerSettingsKey(scope),
+        JSON.stringify({ state: payload, version: 0 }),
+    );
+}
+
+async function pushToCloud(userId: string, settings: Partial<ReaderSettingsPayload>) {
     try {
         const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user) return;
+        const { error } = await supabase
+            .from("profiles")
+            // @ts-expect-error - generated profile types lag the schema additions
+            .update({ reader_settings: settings })
+            .eq("id", userId);
 
-        const payload: Partial<ReaderSettingsPayload> = {
-            fontSize: settings.fontSize,
-            fontFamily: settings.fontFamily,
-            readerTheme: settings.readerTheme,
-            lineHeight: settings.lineHeight,
-        };
+        if (error) {
+            console.error("Failed to push reader settings to cloud:", error);
+            return false;
+        }
 
-        await supabase.from("profiles")
-            // @ts-expect-error - types for profiles might be outdated
-            .update({ reader_settings: payload })
-            .eq("id", session.user.id);
-    } catch (err) {
-        console.error("Failed to push reader settings to cloud:", err);
+        return true;
+    } catch (error) {
+        console.error("Failed to push reader settings to cloud:", error);
+        return false;
     }
-};
+}
 
-export const useReaderSettings = create<ReaderSettingsState>()(
+const useReaderSettingsStore = create<ReaderSettingsState>()(
     persist(
         (set, get) => ({
-            fontSize: "medium",
-            fontFamily: "serif",
-            readerTheme: "dark",
-            lineHeight: "default",
+            ...DEFAULT_READER_SETTINGS,
             setFontSize: (size) => {
                 set({ fontSize: size });
-                pushToCloud(get());
+                const nextState = get();
+                void pushToCloudForCurrentUser(nextState);
             },
             setFontFamily: (family) => {
                 set({ fontFamily: family });
-                pushToCloud(get());
+                const nextState = get();
+                void pushToCloudForCurrentUser(nextState);
             },
             setReaderTheme: (theme) => {
                 set({ readerTheme: theme });
-                pushToCloud(get());
+                const nextState = get();
+                void pushToCloudForCurrentUser(nextState);
             },
             setLineHeight: (height) => {
                 set({ lineHeight: height });
-                pushToCloud(get());
+                const nextState = get();
+                void pushToCloudForCurrentUser(nextState);
             },
             syncFromCloud: async () => {
-                try {
-                    const supabase = createClient();
-                    const { data: { session } } = await supabase.auth.getSession();
-                    if (!session?.user) return;
-
-                    const { data, error } = await supabase
-                        .from("profiles")
-                        .select("reader_settings")
-                        .eq("id", session.user.id)
-                        .single();
-
-                    const profile = (data ?? null) as Pick<ProfileRow, "reader_settings"> | null;
-
-                    if (!error && isReaderSettingsPayload(profile?.reader_settings)) {
-                        const settings = profile.reader_settings;
-                        if (settings && Object.keys(settings).length > 0) {
-                            set({
-                                fontSize: settings.fontSize || get().fontSize,
-                                fontFamily: settings.fontFamily || get().fontFamily,
-                                readerTheme: settings.readerTheme || get().readerTheme,
-                                lineHeight: settings.lineHeight || get().lineHeight,
-                            });
-                        }
-                    }
-                } catch (err) {
-                    console.error("Failed to sync reader settings from cloud:", err);
+                const supabase = createClient();
+                const { data, error } = await supabase.auth.getUser();
+                if (error) {
+                    console.error("Failed to resolve auth state for reader settings:", error);
                 }
-            }
+                await applyReaderSettingsScope(data.user ?? null);
+            },
         }),
         {
             name: "flux_reader_settings",
-        }
-    )
+            storage: createJSONStorage(getReaderSettingsStateStorage),
+            partialize: (state) => ({
+                fontSize: state.fontSize,
+                fontFamily: state.fontFamily,
+                readerTheme: state.readerTheme,
+                lineHeight: state.lineHeight,
+            }),
+        },
+    ),
 );
+
+async function pushToCloudForCurrentUser(settings: Partial<ReaderSettingsPayload>) {
+    const supabase = createClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+        console.error("Failed to resolve auth state for reader settings:", error);
+        return false;
+    }
+    if (!data.user) return true;
+    return pushToCloud(data.user.id, settings);
+}
+
+async function rehydrateReaderSettings(scope: StorageScope) {
+    currentScope = scope;
+    useReaderSettingsStore.setState(DEFAULT_READER_SETTINGS);
+    await useReaderSettingsStore.persist.rehydrate();
+}
+
+function importGuestReaderSettings(scope: StorageScope) {
+    if (typeof window === "undefined" || scope === GUEST_STORAGE_SCOPE) return false;
+
+    const guestSettings = readPersistedReaderSettings(GUEST_STORAGE_SCOPE);
+    const scopedSettings = readPersistedReaderSettings(scope);
+
+    if (!hasSettingsPayload(guestSettings)) return false;
+    if (hasSettingsPayload(scopedSettings)) return false;
+
+    writePersistedReaderSettings(scope, guestSettings);
+    return true;
+}
+
+async function syncReaderSettingsWithCloud(user: User, scope: StorageScope) {
+    try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+            .from("profiles")
+            .select("reader_settings")
+            .eq("id", user.id)
+            .single();
+
+        if (error) {
+            console.error("Failed to sync reader settings from cloud:", error);
+            return false;
+        }
+
+        const profile = (data ?? null) as Pick<ProfileRow, "reader_settings"> | null;
+        if (isReaderSettingsPayload(profile?.reader_settings) && hasSettingsPayload(profile.reader_settings)) {
+            useReaderSettingsStore.setState({
+                fontSize: profile.reader_settings.fontSize || DEFAULT_READER_SETTINGS.fontSize,
+                fontFamily: profile.reader_settings.fontFamily || DEFAULT_READER_SETTINGS.fontFamily,
+                readerTheme: profile.reader_settings.readerTheme || DEFAULT_READER_SETTINGS.readerTheme,
+                lineHeight: profile.reader_settings.lineHeight || DEFAULT_READER_SETTINGS.lineHeight,
+            });
+            return true;
+        }
+
+        const localSettings = readPersistedReaderSettings(scope);
+        if (hasSettingsPayload(localSettings)) {
+            return pushToCloud(user.id, localSettings);
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Failed to sync reader settings from cloud:", error);
+        return false;
+    }
+}
+
+async function applyReaderSettingsScope(user: User | null) {
+    if (typeof window === "undefined") return;
+
+    migrateLegacyStorageToGuest(localStorage);
+
+    const nextScope = getStorageScope(user?.id);
+    const importedGuestSettings = user ? importGuestReaderSettings(nextScope) : false;
+
+    await rehydrateReaderSettings(nextScope);
+
+    if (!user) return;
+
+    const syncSucceeded = await syncReaderSettingsWithCloud(user, nextScope);
+
+    if (importedGuestSettings && syncSucceeded) {
+        localStorage.removeItem(readerSettingsKey(GUEST_STORAGE_SCOPE));
+    }
+}
+
+function ensureReaderSettingsAuthSync() {
+    if (typeof window === "undefined" || authSyncInitialized) return;
+
+    authSyncInitialized = true;
+
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data, error }) => {
+        if (error) {
+            console.error("Failed to resolve auth state for reader settings:", error);
+        }
+        void applyReaderSettingsScope(data.user ?? null);
+    });
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+        void applyReaderSettingsScope(session?.user ?? null);
+    });
+}
+
+export function useReaderSettings() {
+    useEffect(() => {
+        ensureReaderSettingsAuthSync();
+    }, []);
+
+    return useReaderSettingsStore();
+}

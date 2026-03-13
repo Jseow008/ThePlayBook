@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, X, Clock, ArrowRight } from "lucide-react";
+import { Search, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const RECENT_SEARCHES_KEY = "flux_recent_searches";
@@ -182,7 +182,6 @@ export function SearchInput({
                                         <span className="truncate">{term}</span>
                                     </button>
                                     <div className="flex items-center gap-2 pr-4">
-                                        <ArrowRight className="size-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                                         <button
                                             type="button"
                                             onClick={(e) => removeRecentSearch(term, e)}

@@ -162,6 +162,7 @@ export default function ContinueReadingPage() {
                                     <ContentCard
                                         key={item.id}
                                         item={item}
+                                        titleDensity="app-compact"
                                         onRemove={(id) => {
                                             removeFromProgress(id);
                                         }}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, Sparkles } from "lucide-react";
+import { Save, User as UserIcon, Loader2 } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -10,10 +10,11 @@ import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 import { APP_NAME } from "@/lib/brand";
 import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/onboarding";
+import { clearScopedProgress } from "@/lib/local-user-storage";
 
 export default function SettingsPage() {
     const supabase = createClient();
-    const { refresh } = useReadingProgress();
+    const { refresh, storageScope } = useReadingProgress();
 
     const [user, setUser] = useState<User | null>(null);
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -107,12 +108,7 @@ export default function SettingsPage() {
         }
 
         setIsClearing(true);
-        // Clear all localStorage keys starting with flux_progress_
-        Object.keys(localStorage).forEach((key) => {
-            if (key.startsWith("flux_progress_")) {
-                localStorage.removeItem(key);
-            }
-        });
+        clearScopedProgress(localStorage, storageScope);
         refresh(); // Update the hook state
         setTimeout(() => {
             setIsClearing(false);
@@ -198,9 +194,6 @@ export default function SettingsPage() {
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-red-500/10 rounded-lg text-red-500">
-                                    <LogOut className="w-5 h-5" />
-                                </div>
                                 <div>
                                     <p className="font-medium text-red-500">Sign Out</p>
                                     <p className="text-sm text-muted-foreground">Log out of your account</p>
@@ -223,9 +216,6 @@ export default function SettingsPage() {
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
-                                    {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
-                                </div>
                                 <div>
                                     <p className="font-medium text-foreground">Download My Data</p>
                                     <p className="text-sm text-muted-foreground">Export your reading history and library to a JSON file</p>
@@ -238,9 +228,6 @@ export default function SettingsPage() {
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left group"
                         >
                             <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg transition-colors ${confirmClear ? "bg-red-500/10 text-red-500" : "bg-secondary text-muted-foreground"}`}>
-                                    {confirmClear ? <AlertTriangle className="w-5 h-5" /> : <Trash2 className="w-5 h-5" />}
-                                </div>
                                 <div>
                                     <p className={`font-medium transition-colors ${confirmClear ? "text-red-500" : "text-foreground"}`}>
                                         {confirmClear ? "Click again to confirm" : "Clear Reading History"}
@@ -265,9 +252,6 @@ export default function SettingsPage() {
                             className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
-                                    <Shield className="w-5 h-5" />
-                                </div>
                                 <span className="font-medium">Privacy Policy</span>
                             </div>
                         </Link>
@@ -276,9 +260,6 @@ export default function SettingsPage() {
                             className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
-                                    <HelpCircle className="w-5 h-5" />
-                                </div>
                                 <span className="font-medium">Terms of Service</span>
                             </div>
                         </Link>
@@ -287,9 +268,6 @@ export default function SettingsPage() {
                             className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
-                                    <Sparkles className="w-5 h-5" />
-                                </div>
                                 <div>
                                     <p className="font-medium">Replay app tour</p>
                                     <p className="text-sm text-muted-foreground">Open the guided introduction again from the home feed.</p>

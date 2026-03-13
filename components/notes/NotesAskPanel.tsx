@@ -13,7 +13,6 @@ import {
     Loader2,
     RefreshCw,
     Send,
-    Sparkles,
     User,
     X,
 } from "lucide-react";
@@ -322,9 +321,7 @@ export function NotesAskPanel({
                             isSidebar && "px-5 py-5"
                         )}>
                             <div className="flex items-start gap-3">
-                                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                    <Sparkles className="size-4" />
-                                </div>
+                                <div className="mt-0.5 size-9 shrink-0" aria-hidden="true" />
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-foreground">
                                         {isSidebar ? "Use AI across this note set" : "Ask across this notes view"}

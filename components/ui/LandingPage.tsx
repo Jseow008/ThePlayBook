@@ -1,25 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Activity,
-  ArrowRight,
-  BookMarked,
-  Brain,
-  Briefcase,
-  CircleDollarSign,
-  Dumbbell,
-  Globe,
-  Heart,
-  Laptop,
-  Lightbulb,
-  Landmark,
-  Microscope,
-  NotebookPen,
-  RotateCcw,
-  Scale,
-  Smile,
-  Sparkles,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { APP_NAME } from "@/lib/brand";
@@ -32,23 +13,6 @@ interface LandingPageProps {
   totalContentCount: number;
   totalCategoryCount?: number;
 }
-
-const CATEGORY_ICONS = {
-  Mindset: Brain,
-  Health: Activity,
-  Wealth: CircleDollarSign,
-  Business: Briefcase,
-  Philosophy: Lightbulb,
-  Fitness: Dumbbell,
-  Finance: Scale,
-  Productivity: Briefcase,
-  Relationships: Heart,
-  Science: Microscope,
-  Technology: Laptop,
-  Lifestyle: Smile,
-  Travel: Globe,
-  Politics: Landmark,
-} as const;
 
 const CURATED_CATEGORY_ORDER = [
   "Mindset",
@@ -71,7 +35,6 @@ const PROOF_POINTS = [
 ] as const;
 
 const CORE_ANCHOR_FEATURE = {
-  icon: RotateCcw,
   title: "Reading view",
   description: "Read in clear, structured sections designed for focus.",
   image: "/images/reading-experience-reader-view.png",
@@ -79,19 +42,16 @@ const CORE_ANCHOR_FEATURE = {
 
 const CORE_SUPPORT_FEATURES = [
   {
-    icon: BookMarked,
     title: "Preview the thesis",
     description: "See the main idea and understand the thesis before you dive in.",
     image: "/images/reading-experience-info-view.png",
   },
   {
-    icon: NotebookPen,
     title: "Highlight and annotate",
     description: "Capture the passages worth remembering while you read.",
     image: "/images/highlighting-and-annotation.png",
   },
   {
-    icon: Sparkles,
     title: "Ask follow-up questions",
     description: "Ask the author(s) questions about what you just read.",
     image: "/images/ai-chat.png",
@@ -388,14 +348,10 @@ function CorePlatformFeaturesSection() {
                           alt={`Screenshot illustrating ${feature.title}`}
                           fill
                           unoptimized
-                          sizes="96px"
-                          className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
+                      sizes="96px"
+                      className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
                         />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-                        <div className="absolute bottom-2 left-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/10 bg-black/50 backdrop-blur-md">
-                          <feature.icon className="h-3 w-3 text-zinc-300" />
-                        </div>
                       </div>
 
                       <div className="flex flex-1 flex-col py-2 pr-4">
@@ -433,17 +389,12 @@ function TopicMapSection({ categories }: { categories: { category: string; count
 
         <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           {categories.map((item, index) => {
-            const Icon = CATEGORY_ICONS[item.category as keyof typeof CATEGORY_ICONS] || Sparkles;
-
             return (
               <FadeIn key={item.category} delayMs={index * 50}>
                 <Link
                   href={`/search?category=${encodeURIComponent(item.category)}`}
                   className="group flex h-full flex-col items-center justify-center gap-4 rounded-[2rem] border border-white/5 bg-white/5 p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 hover:shadow-2xl"
                 >
-                  <div className="rounded-2xl bg-black/40 p-4 shadow-inner transition-colors group-hover:bg-black/60">
-                    <Icon className="size-6 text-zinc-400 transition-colors group-hover:text-white" />
-                  </div>
                   <span className="text-[0.95rem] font-semibold tracking-[0.01em] text-zinc-300 transition-colors group-hover:text-white">
                     {item.category}
                   </span>

@@ -43,7 +43,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
-    const { saveReadingProgress } = useReadingProgress();
+    const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded } = useReadingProgress();
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight, syncFromCloud } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
@@ -72,50 +72,23 @@ export function ReaderView({ content }: ReaderViewProps) {
         syncFromCloud();
     }, [syncFromCloud]);
 
-    // Load progress from localStorage on mount
+    const savedProgress = getProgress(content.id);
+
+    // Load progress from scoped storage on mount and account changes
     useEffect(() => {
-        const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
-        if (savedProgress) {
-            try {
-                const parsed = JSON.parse(savedProgress);
-                if (parsed.completed) {
-                    setCompletedSegments(new Set(parsed.completed));
-                }
-                if (typeof parsed.maxSegmentIndex === "number") {
-                    setMaxSegmentIndex(parsed.maxSegmentIndex);
-                }
-            } catch (e) {
-                console.error("Failed to parse progress", e);
-            }
+        if (!savedProgress) {
+            setCompletedSegments(new Set());
+            setMaxSegmentIndex(-1);
+            return;
         }
-    }, [content.id]);
 
-    // Listen for cross-tab sync
-    useEffect(() => {
-        const handleStorage = (e: StorageEvent) => {
-            if (e.key === `flux_progress_${content.id}`) {
-                const savedProgress = localStorage.getItem(`flux_progress_${content.id}`);
-                if (savedProgress) {
-                    try {
-                        const { completed } = JSON.parse(savedProgress);
-                        if (completed) {
-                            setCompletedSegments((prev) => {
-                                if (prev.size !== completed.length) {
-                                    return new Set(completed);
-                                }
-                                return prev;
-                            });
-                        }
-                    } catch (e) {
-                        console.error("Failed to parse progress", e);
-                    }
-                }
-            }
-        };
-
-        window.addEventListener("storage", handleStorage);
-        return () => window.removeEventListener("storage", handleStorage);
-    }, [content.id]);
+        setCompletedSegments(new Set(savedProgress.completed || []));
+        setMaxSegmentIndex(
+            typeof savedProgress.maxSegmentIndex === "number"
+                ? savedProgress.maxSegmentIndex
+                : savedProgress.lastSegmentIndex ?? -1,
+        );
+    }, [savedProgress]);
 
     useEffect(() => {
         if (popoverHighlightId && !popoverHighlight) {
@@ -152,6 +125,8 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Save progress on changes (debounced)
     useEffect(() => {
+        if (!readingProgressLoaded) return;
+
         const timeoutId = setTimeout(() => {
             const isCompleted = completedSegments.size >= content.segments.length;
 
@@ -169,7 +144,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         }, 1000);
 
         return () => clearTimeout(timeoutId);
-    }, [completedSegments, maxSegmentIndex, content.id, content.segments.length, saveReadingProgress]);
+    }, [completedSegments, content.id, content.segments.length, maxSegmentIndex, readingProgressLoaded, saveReadingProgress]);
 
     // ── Keyboard Shortcuts (Fullscreen) ──────────────────────────
     useEffect(() => {

@@ -1,61 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { ContentLane } from "@/components/ui/ContentLane";
 import type { ContentItem } from "@/types/database";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 
 interface ContinueReadingProps {
     allItems: ContentItem[];
 }
 
 export function ContinueReading({ allItems }: ContinueReadingProps) {
-    const [inProgressItems, setInProgressItems] = useState<ContentItem[]>([]);
-    const [isMounted, setIsMounted] = useState(false);
+    const { inProgressIds, isLoaded } = useReadingProgress();
 
-    useEffect(() => {
-        setIsMounted(true);
+    const inProgressItems = useMemo(
+        () =>
+            inProgressIds
+                .map((id) => allItems.find((item) => item.id === id))
+                .filter((item): item is ContentItem => item !== undefined),
+        [allItems, inProgressIds],
+    );
 
-        // Find all progress keys in localStorage
-        const progressKeys: string[] = [];
-        for (let i = 0; i < localStorage.length; i++) {
-            const k = localStorage.key(i);
-            if (k && k.startsWith("flux_progress_")) progressKeys.push(k);
-        }
-
-        // Extract IDs and get corresponding items
-        const inProgress = progressKeys
-            .map(key => {
-                const id = key.replace("flux_progress_", "");
-                const item = allItems.find(i => i.id === id);
-
-                // Get last read timestamp and completion status for sorting/filtering
-                if (item) {
-                    try {
-                        const data = JSON.parse(localStorage.getItem(key) || "{}");
-                        // Skip completed items
-                        if (data.isCompleted) {
-                            return null;
-                        }
-                        return { item, lastReadAt: data.lastReadAt || "" };
-                    } catch {
-                        return { item, lastReadAt: "" };
-                    }
-                }
-                return null;
-            })
-            .filter((entry): entry is { item: ContentItem, lastReadAt: string } => entry !== null)
-            .sort((a, b) => {
-                // Sort by most recently read
-                if (!a.lastReadAt) return 1;
-                if (!b.lastReadAt) return -1;
-                return new Date(b.lastReadAt).getTime() - new Date(a.lastReadAt).getTime();
-            })
-            .map(entry => entry.item);
-
-        setInProgressItems(inProgress);
-    }, [allItems]);
-
-    if (!isMounted || inProgressItems.length === 0) {
+    if (!isLoaded || inProgressItems.length === 0) {
         return null;
     }
 
@@ -63,6 +28,7 @@ export function ContinueReading({ allItems }: ContinueReadingProps) {
         <ContentLane
             title="Continue Reading"
             items={inProgressItems}
+            cardNavigationMode="resume"
         />
     );
 }

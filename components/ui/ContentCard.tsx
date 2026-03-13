@@ -24,7 +24,7 @@ interface ContentCardProps {
     hideBookmark?: boolean;
     enableUserState?: boolean;
     navigationMode?: "preview" | "resume";
-    titleDensity?: "default" | "browse-compact";
+    titleDensity?: "default" | "app-compact";
 }
 
 interface BaseContentCardProps extends ContentCardProps {
@@ -196,7 +196,7 @@ function BaseContentCard({
                     <h3
                         className={cn(
                             "w-full line-clamp-3 font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
-                            titleDensity === "browse-compact"
+                            titleDensity === "app-compact"
                                 ? "text-[0.88rem] leading-[1.13]"
                                 : "text-[0.95rem] leading-[1.18]"
                         )}

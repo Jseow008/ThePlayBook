@@ -68,6 +68,8 @@ vi.mock('@/components/reader/CompletionCard', () => ({
 vi.mock('@/hooks/useReadingProgress', () => ({
     useReadingProgress: () => ({
         saveReadingProgress: vi.fn(),
+        getProgress: vi.fn(() => null),
+        isLoaded: true,
     }),
 }));
 

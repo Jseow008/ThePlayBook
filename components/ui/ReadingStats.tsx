@@ -1,7 +1,6 @@
 "use client";
 
 import { useReadingProgress } from "@/hooks/useReadingProgress";
-import { BookOpen, Trophy, Bookmark } from "lucide-react";
 import { useMemo } from "react";
 
 export function ReadingStats() {
@@ -18,24 +17,18 @@ export function ReadingStats() {
         {
             label: "Books Read",
             value: completedCount,
-            icon: Trophy,
-            color: "text-foreground", // White/Black
             bg: "bg-secondary/40",
             border: "border-border"
         },
         {
             label: "In Progress",
             value: inProgressCount,
-            icon: BookOpen,
-            color: "text-zinc-400", // Subtle grey/brown feel
             bg: "bg-zinc-500/10",
             border: "border-zinc-500/20"
         },
         {
             label: "Saved to List",
             value: myListCount,
-            icon: Bookmark,
-            color: "text-stone-400", // Warmer grey/brown
             bg: "bg-stone-500/10",
             border: "border-stone-500/20"
         }
@@ -78,9 +71,7 @@ export function ReadingStats() {
                                 {stat.value}
                             </p>
                         </div>
-                        <div className={`p-3 rounded-full ${stat.bg} ${stat.color}`}>
-                            <stat.icon className="w-6 h-6" />
-                        </div>
+                        <div className="h-12 w-12 shrink-0" aria-hidden="true" />
                     </div>
                 </div>
             ))}
