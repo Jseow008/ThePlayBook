@@ -20,6 +20,7 @@ import type { User } from "@supabase/supabase-js";
 export function PublicLayoutShell({ children, initialUser }: { children: React.ReactNode, initialUser: User | null }) {
     const pathname = usePathname();
     const isLandingPage = pathname === "/";
+    const isBrowsePage = pathname === "/browse";
 
     // Landing page: standalone layout (no sidebar, no bottom nav)
     if (isLandingPage) {
@@ -42,17 +43,19 @@ export function PublicLayoutShell({ children, initialUser }: { children: React.R
 
 
             {/* Mobile Header */}
-            <MobileHeader initialUser={initialUser} />
+            <MobileHeader initialUser={initialUser} compact={isBrowsePage} />
 
             {/* Main Content */}
-            <main className="lg:pl-16 pb-20 lg:pb-0">
+            <main className={isBrowsePage ? "lg:pl-16 pb-16 lg:pb-0" : "lg:pl-16 pb-20 lg:pb-0"}>
                 {/* Mobile padding for fixed header */}
-                {!pathname.startsWith("/read") && <div className="lg:hidden h-14" />}
+                {!pathname.startsWith("/read") && (
+                    <div className={isBrowsePage ? "lg:hidden h-12" : "lg:hidden h-14"} />
+                )}
                 {children}
             </main>
 
             {/* Mobile Bottom Navigation */}
-            <MobileBottomNav />
+            <MobileBottomNav compact={isBrowsePage} />
         </div>
     );
 }

@@ -40,12 +40,12 @@ export function RecommendationsRow() {
     if (isLoading) {
         return (
             <section className="space-y-4 animate-in fade-in duration-500">
-                <div className="flex items-center gap-2 px-6 lg:px-16">
+                <div className="flex items-center gap-2 px-4 md:px-6 lg:px-16">
                     <div className="h-7 w-64 bg-card/50 rounded-md animate-pulse" />
                 </div>
-                <div className="flex gap-4 overflow-hidden px-6 lg:px-16 pb-4">
+                <div className="flex gap-3 overflow-hidden px-4 pb-3 md:gap-4 md:px-6 md:pb-4 lg:px-16">
                     {[...Array(4)].map((_, i) => (
-                        <div key={i} className="flex-none w-[200px] md:w-[240px] aspect-[2/3] bg-card/50 rounded-lg animate-pulse" />
+                        <div key={i} className="flex-none w-[168px] aspect-[2/3] rounded-lg bg-card/50 animate-pulse md:w-[240px]" />
                     ))}
                 </div>
             </section>

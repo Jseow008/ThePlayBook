@@ -72,13 +72,13 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     if (items.length === 0) {
         return (
-            <div className="relative h-[70vh] md:h-[80vh] lg:h-[85vh] min-h-[500px] w-full overflow-hidden bg-card flex items-center justify-center">
+            <div className="relative flex min-h-[420px] h-[56svh] w-full items-center justify-center overflow-hidden bg-card md:h-[80vh] md:min-h-[500px] lg:h-[85vh]">
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
-                    <h1 className="text-5xl md:text-7xl font-black text-white mb-6">
+                    <h1 className="mb-6 text-4xl font-black text-white md:text-7xl">
                         {APP_NAME}
                     </h1>
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto bg-black/40 p-4 rounded-xl backdrop-blur-sm">
+                    <p className="mx-auto max-w-2xl rounded-xl bg-black/40 p-4 text-lg text-muted-foreground backdrop-blur-sm md:text-xl">
                         A curated stream of insights from books, podcasts, and articles. Check back soon for featured content.
                     </p>
                 </div>
@@ -95,7 +95,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const description = quickMode?.hook || quickMode?.big_idea || `Experience this ${APP_NAME} content today.`;
 
     return (
-        <div className="relative h-[70vh] md:h-[80vh] lg:h-[85vh] min-h-[500px] w-full overflow-hidden bg-background">
+        <div className="relative min-h-[420px] h-[56svh] w-full overflow-hidden bg-background md:h-[80vh] md:min-h-[500px] lg:h-[85vh]">
             {/* Background Image Layer */}
             <div
                 className="absolute inset-0 w-full h-full"
@@ -127,15 +127,15 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             </div>
 
                             {/* Full-screen Gradient Overlay to Blend Image into Background */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent via-[40%] to-[80%] md:bg-gradient-to-r md:from-background md:via-background md:to-transparent md:via-[15%] md:to-[60%] lg:via-[25%] lg:to-[70%] xl:via-[35%] xl:to-[80%] pointer-events-none" />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/42 to-transparent via-[48%] to-[82%] md:bg-gradient-to-r md:from-background md:via-background md:to-transparent md:via-[15%] md:to-[60%] lg:via-[25%] lg:to-[70%] xl:via-[35%] xl:to-[80%]" />
 
                             {/* Top Vignette for Navbar Contrast */}
-                            <div className="absolute inset-x-0 top-0 h-[40%] bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
+                            <div className="pointer-events-none absolute inset-x-0 top-0 h-[26%] bg-gradient-to-b from-black/45 to-transparent md:h-[40%] md:from-black/60" />
 
                             {/* Supplementary horizontal text darkening for highly-lit images */}
                             <div className="hidden md:block absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent md:w-[60%] pointer-events-none" />
                             {/* Right-side vignette to soften the screen edge */}
-                            <div className="absolute inset-y-0 right-0 w-[15%] bg-gradient-to-l from-black/40 to-transparent pointer-events-none" />
+                            <div className="pointer-events-none absolute inset-y-0 right-0 w-[10%] bg-gradient-to-l from-black/25 to-transparent md:w-[15%] md:from-black/40" />
                         </>
                     ) : (
                         <div className="w-full h-full bg-card" />
@@ -144,21 +144,21 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             </div>
 
             {/* Content Layer */}
-            <div className="absolute inset-0 flex items-center z-30 pointer-events-none">
-                <div className="w-full px-6 lg:px-16 pointer-events-auto">
-                    <div className="max-w-6xl space-y-4 md:space-y-8">
+            <div className="pointer-events-none absolute inset-0 z-30 flex items-end md:items-center">
+                <div className="pointer-events-auto w-full px-4 pb-6 md:px-6 md:pb-0 lg:px-16">
+                    <div className="max-w-6xl space-y-3 md:space-y-8">
                         {/* Featured Badge */}
                         <div
                             className={cn(
-                                "flex items-center gap-3 transition-opacity duration-700 delay-300",
+                                "flex items-center gap-2.5 transition-opacity duration-700 delay-300 md:gap-3",
                                 isTransitioning ? "opacity-0" : "opacity-100"
                             )}
                         >
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center text-black font-brand font-bold text-lg">
+                                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-base font-bold text-black font-brand md:h-8 md:w-8 md:text-lg">
                                     {APP_NAME.charAt(0)}
                                 </div>
-                                <span className="text-sm font-bold tracking-[0.2em] text-muted-foreground uppercase">
+                                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground md:text-sm md:tracking-[0.2em]">
                                     FEATURED
                                 </span>
                             </div>
@@ -167,7 +167,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Title */}
                         <h1
                             className={cn(
-                                "text-3xl md:text-5xl lg:text-7xl font-display font-bold text-white leading-[1.1] tracking-tight md:tracking-[-0.02em] drop-shadow-2xl transition-all duration-700 delay-100 origin-left max-w-5xl",
+                                "max-w-5xl origin-left font-display text-[2rem] font-bold leading-[1.02] tracking-[-0.025em] text-white drop-shadow-2xl transition-all duration-700 delay-100 md:text-5xl md:leading-[1.1] md:tracking-[-0.02em] lg:text-7xl",
                                 isTransitioning ? "opacity-0 scale-95 translate-y-4" : "opacity-100 scale-100 translate-y-0"
                             )}
                         >
@@ -177,23 +177,23 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Content Metadata */}
                         <div
                             className={cn(
-                                "flex items-center gap-3 transition-opacity duration-700 delay-200",
+                                "flex flex-wrap items-center gap-2 transition-opacity duration-700 delay-200 md:gap-3",
                                 isTransitioning ? "opacity-0" : "opacity-100"
                             )}
                         >
-                            <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded text-sm font-semibold text-white uppercase tracking-wide flex-shrink-0">
+                            <span className="flex-shrink-0 rounded bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm md:px-2 md:py-1 md:text-sm md:tracking-wide">
                                 {activeItem.type}
                             </span>
 
                             {/* Group Author and Category for better wrapping */}
-                            <span className="text-white/80 text-sm md:text-base leading-snug">
+                            <span className="text-xs leading-snug text-white/80 md:text-base">
                                 {activeItem.author && (
                                     <>
                                         by <span className="font-semibold text-white">{activeItem.author}</span>
                                     </>
                                 )}
                                 {activeItem.category && (
-                                    <span className="text-white/60 ml-2">
+                                    <span className="ml-2 text-white/60">
                                         • {activeItem.category}
                                     </span>
                                 )}
@@ -203,7 +203,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Description */}
                         <p
                             className={cn(
-                                "hidden md:block text-base md:text-xl text-white/90 font-medium leading-relaxed drop-shadow-md max-w-xl transition-all duration-700 delay-300",
+                                "hidden max-w-xl text-base font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-700 delay-300 md:block md:text-xl",
                                 isTransitioning ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
                             )}
                         >
@@ -213,22 +213,22 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Action Buttons */}
                         <div
                             className={cn(
-                                "flex items-center gap-4 pt-4 transition-all duration-700 delay-500",
+                                "flex items-center gap-3 pt-1 transition-all duration-700 delay-500 md:gap-4 md:pt-4",
                                 isTransitioning ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
                             )}
                         >
                             <Link
                                 href={`/read/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-2 md:gap-3 bg-white text-black px-6 py-2 md:px-8 md:py-3 rounded md:rounded-md text-base md:text-xl font-bold hover:bg-white/90 transition hover:scale-105 active:scale-95"
+                                className="focus-ring flex items-center gap-2 rounded-md bg-white px-5 py-2 text-sm font-bold text-black transition hover:scale-105 hover:bg-white/90 active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
                             >
-                                <BookOpen className="fill-black w-5 h-5 md:w-7 md:h-7" />
+                                <BookOpen className="h-4 w-4 fill-black md:h-7 md:w-7" />
                                 Read
                             </Link>
                             <Link
                                 href={`/preview/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-2 md:gap-3 bg-secondary text-secondary-foreground px-6 py-2 md:px-8 md:py-3 rounded md:rounded-md text-base md:text-xl font-semibold hover:bg-secondary/80 transition hover:scale-105 active:scale-95 backdrop-blur-sm"
+                                className="focus-ring flex items-center gap-2 rounded-md bg-secondary px-5 py-2 text-sm font-semibold text-secondary-foreground backdrop-blur-sm transition hover:scale-105 hover:bg-secondary/80 active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
                             >
-                                <Info className="w-5 h-5 md:w-7 md:h-7" />
+                                <Info className="h-4 w-4 md:h-7 md:w-7" />
                                 More Info
                             </Link>
                         </div>

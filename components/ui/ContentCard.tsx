@@ -121,7 +121,7 @@ function BaseContentCard({
             )}
 
             {renderNewBadge ? (
-                <div className="pointer-events-none absolute left-2 top-2 z-20 rounded-sm border border-white/10 bg-rose-600/90 px-2 py-0.5 text-[10px] font-bold tracking-wider text-white shadow-sm backdrop-blur-md">
+                <div className="pointer-events-none absolute left-2 top-2 z-20 rounded-sm border border-white/10 bg-rose-600/90 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.14em] text-white shadow-sm backdrop-blur-md md:px-2 md:text-[10px] md:tracking-wider">
                     NEW
                 </div>
             ) : null}
@@ -154,8 +154,8 @@ function BaseContentCard({
             ) : null}
 
             {item.author ? (
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/80 via-black/40 to-transparent px-8 pb-8 pt-10">
-                    <p className="translate-z-0 break-words text-center text-[10px] font-medium uppercase leading-relaxed tracking-[0.15em] whitespace-normal text-white/90 drop-shadow-md md:text-[11px]">
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
+                    <p className="translate-z-0 break-words text-center text-[9px] font-medium uppercase leading-relaxed tracking-[0.12em] whitespace-normal text-white/90 drop-shadow-md md:text-[11px] md:tracking-[0.15em]">
                         {item.author}
                     </p>
                 </div>
@@ -163,14 +163,14 @@ function BaseContentCard({
 
             <div className="pointer-events-none absolute inset-0 rounded-md bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-4 pb-5 pt-20">
-                <div className="flex h-full flex-col justify-end gap-1.5">
-                    <h3 className="w-full line-clamp-3 font-serif text-sm font-medium leading-snug text-white/95 transition-colors group-hover:text-white md:text-base">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/72 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
+                <div className="flex h-full flex-col justify-end gap-1">
+                    <h3 className="w-full line-clamp-3 font-serif text-[0.95rem] font-medium leading-[1.18] text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug">
                         {item.title}
                     </h3>
 
                     <div className="w-full">
-                        <p className="flex w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] font-medium uppercase leading-relaxed tracking-[0.12em] text-white/70 drop-shadow-md md:tracking-widest">
+                        <p className="flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest">
                             <span>{item.type}</span>
                             {item.category ? (
                                 <span className="flex items-center gap-1.5">

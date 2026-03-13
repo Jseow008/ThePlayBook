@@ -8,7 +8,13 @@ import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
 
-export function MobileHeader({ initialUser }: { initialUser: User | null }) {
+export function MobileHeader({
+    initialUser,
+    compact = false,
+}: {
+    initialUser: User | null;
+    compact?: boolean;
+}) {
     const pathname = usePathname();
     const [isVisible, setIsVisible] = useState(true);
     const [lastScrollY, setLastScrollY] = useState(0);
@@ -48,12 +54,13 @@ export function MobileHeader({ initialUser }: { initialUser: User | null }) {
     return (
         <header
             className={cn(
-                "lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 transition-transform duration-300",
+                "lg:hidden fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 transition-transform duration-300",
+                compact ? "h-12" : "h-14",
                 !isVisible ? "-translate-y-full" : "translate-y-0"
             )}
         >
             <Link href="/browse">
-                <Logo width={80} height={24} />
+                <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} />
             </Link>
             <UserNav initialUser={initialUser} />
         </header>

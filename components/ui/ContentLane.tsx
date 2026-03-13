@@ -79,13 +79,13 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
         <section
             ref={sectionRef}
             className={cn(
-                "py-1 md:py-2 group/lane transition-all duration-700 transform",
+                "py-0.5 md:py-2 group/lane transition-all duration-700 transform",
                 isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
             )}
         >
             {/* Header */}
-            <div className="flex items-center justify-between mb-2 px-6 lg:px-16">
-                <h2 className="text-xl md:text-2xl font-semibold text-foreground flex items-center gap-2 font-display tracking-tight">
+            <div className="mb-1.5 flex items-center justify-between px-4 md:mb-2 md:px-6 lg:px-16">
+                <h2 className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground md:text-2xl">
                     {title}
                     {viewAllHref && (
                         <Link
@@ -122,10 +122,10 @@ export function ContentLane({ title, items, viewAllHref }: ContentLaneProps) {
                 <div className="relative w-full overflow-hidden">
                     <div
                         ref={scrollRef}
-                        className="flex gap-4 overflow-x-auto px-6 lg:px-16 scroll-smooth pt-4 pb-4 scrollbar-hide"
+                        className="scrollbar-hide flex gap-3 overflow-x-auto px-4 pb-3 pt-3 scroll-smooth md:gap-4 md:px-6 md:pb-4 md:pt-4 lg:px-16"
                     >
                         {items.map((item) => (
-                            <div key={item.id} className="min-w-[200px] w-[200px] md:min-w-[240px] md:w-[240px]">
+                            <div key={item.id} className="w-[168px] min-w-[168px] md:w-[240px] md:min-w-[240px]">
                                 <ContentCard item={item} />
                             </div>
                         ))}
