@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { vi } from "vitest";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { streamText } from "ai";
 
 vi.mock("@/lib/supabase/server", () => ({
     createClient: vi.fn(),
@@ -16,6 +17,10 @@ vi.mock("ai", () => ({
     streamText: vi.fn().mockImplementation(() => ({
         toTextStreamResponse: () => new Response("mocked-stream"),
     })),
+}));
+
+vi.mock("@ai-sdk/anthropic", () => ({
+    anthropic: vi.fn().mockReturnValue("mock-anthropic-model"),
 }));
 
 describe("Notes chat API", () => {
@@ -36,7 +41,9 @@ describe("Notes chat API", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        process.env.OPENAI_API_KEY = "test-key";
+        process.env.ANTHROPIC_API_KEY = "test-key";
+        delete process.env.OPENAI_API_KEY;
+        delete process.env.AI_PROVIDER;
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
@@ -92,7 +99,12 @@ describe("Notes chat API", () => {
         const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
             method: "POST",
             body: JSON.stringify({
-                messages: [{ role: "user", content: "Summarize these notes" }],
+                messages: [
+                    {
+                        role: "user",
+                        parts: [{ type: "text", text: "Summarize these notes" }],
+                    },
+                ],
                 highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
                 scopeLabel: "1 matching note • Can't Hurt Me",
             }),
@@ -104,5 +116,76 @@ describe("Notes chat API", () => {
         expect(highlightQuery.eq).toHaveBeenCalledWith("user_id", "user-123");
         expect(highlightQuery.in).toHaveBeenCalledWith("id", ["123e4567-e89b-12d3-a456-426614174000"]);
         expect(res.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            maxOutputTokens: 600,
+            system: expect.stringContaining("Treat written note bodies as the strongest evidence"),
+        }));
+    });
+
+    it("accepts legacy content-only notes messages", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "Legacy note payload" }],
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
+    });
+
+    it("rejects requests when normalization produces no usable note text", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [
+                    {
+                        role: "user",
+                        parts: [{ type: "tool-invocation", toolName: "search", args: {} }],
+                    },
+                ],
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(400);
+        const json = await res.json();
+        expect(json.error.message).toContain("No valid messages");
+    });
+
+    it("rejects requests when the final normalized message is not from the user", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [
+                    { role: "user", parts: [{ type: "text", text: "Hello" }] },
+                    { role: "assistant", parts: [{ type: "text", text: "Hi there" }] },
+                ],
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(400);
+        const json = await res.json();
+        expect(json.error.message).toContain("Last message must be a user message");
+    });
+
+    it("returns 500 only when no AI provider key is configured", async () => {
+        delete process.env.ANTHROPIC_API_KEY;
+        delete process.env.OPENAI_API_KEY;
+
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "Summarize these notes" }],
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(500);
     });
 });

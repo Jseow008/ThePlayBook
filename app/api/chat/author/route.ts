@@ -200,9 +200,11 @@ ${contextText}
         let aiModel;
         const provider = process.env.AI_PROVIDER || "anthropic";
 
-        if (provider === "openai" && process.env.OPENAI_API_KEY) {
+        if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
+            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
+        } else if (process.env.OPENAI_API_KEY) {
             const { openai } = await import("@ai-sdk/openai");
-            aiModel = openai(process.env.AI_MODEL || "gpt-4o-mini");
+            aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
         } else {
             aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
         }

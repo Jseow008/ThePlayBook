@@ -61,10 +61,18 @@ SUPABASE_SERVICE_KEY=your-service-key
 # OAuth & API Additions
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
+AI_PROVIDER=anthropic
+AI_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_API_KEY=...
+GEMINI_API_KEY=...
 OPENAI_API_KEY=...
 ```
 
 > **Note:** These environment variables now point to the hosted Supabase instance. Get these values from your Supabase project dashboard.
+>
+> `ANTHROPIC_API_KEY` is the default generation provider for user-facing chat.
+> `GEMINI_API_KEY` powers both content-level and segment-level embeddings, including Ask My Library retrieval.
+> `OPENAI_API_KEY` is now optional and only needed if you still want OpenAI generation fallback.
 
 ---
 
@@ -338,6 +346,13 @@ Target sizes:
 - `segment_id` (UUID, FK → segment)
 - `content_item_id` (UUID, FK → content_item)
 - `embedding` (VECTOR)
+- `created_at`
+
+**segment_embedding_gemini**
+- `id` (UUID, PK)
+- `segment_id` (UUID, FK → segment)
+- `content_item_id` (UUID, FK → content_item)
+- `embedding` (VECTOR(768))
 - `created_at`
 
 **artifact**

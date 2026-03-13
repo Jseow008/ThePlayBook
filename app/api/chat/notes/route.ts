@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
@@ -10,7 +9,8 @@ export const maxDuration = 60;
 
 const ChatMessageSchema = z.object({
     role: z.enum(["system", "user", "assistant"]),
-    content: z.string().trim().min(1).max(2_000),
+    content: z.string().trim().max(2_000).optional(),
+    parts: z.array(z.any()).optional(),
 });
 
 const NotesChatRequestSchema = z.object({
@@ -21,6 +21,7 @@ const NotesChatRequestSchema = z.object({
 
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
 const MAX_CONTEXT_CHARS = 12_000;
+const MAX_OUTPUT_TOKENS = 600;
 
 type HighlightContextRow = {
     id: string;
@@ -37,6 +38,33 @@ function getRelation<T>(value: T | T[] | null): T | null {
     }
 
     return value ?? null;
+}
+
+function getMessageText(message: Record<string, unknown>): string {
+    if (Array.isArray(message.parts)) {
+        return message.parts
+            .filter((part: any) => part.type === "text" && typeof part.text === "string")
+            .map((part: any) => part.text as string)
+            .join("");
+    }
+
+    if (typeof message.content === "string") {
+        return message.content;
+    }
+
+    return "";
+}
+
+function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+    return rawMessages
+        .filter((message): message is Record<string, unknown> & { role: "system" | "user" | "assistant" } =>
+            message.role === "system" || message.role === "user" || message.role === "assistant"
+        )
+        .map((message) => ({
+            role: message.role,
+            content: getMessageText(message).trim(),
+        }))
+        .filter((message) => message.content.length > 0);
 }
 
 export async function POST(req: NextRequest) {
@@ -64,9 +92,12 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const openaiApiKey = process.env.OPENAI_API_KEY;
-        if (!openaiApiKey) {
-            logApiError({ requestId, route: "/api/chat/notes", message: "OPENAI_API_KEY not configured", error: new Error("Missing env") });
+        const provider = process.env.AI_PROVIDER || "anthropic";
+        const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
+        const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+
+        if (!hasAnthropic && !hasOpenAI) {
+            logApiError({ requestId, route: "/api/chat/notes", message: "No AI provider configured", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "AI service is not configured. Please contact an administrator.", 500, requestId);
         }
 
@@ -82,7 +113,12 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Invalid notes chat payload", 400, requestId);
         }
 
-        const { messages, highlightIds, scopeLabel } = parsed.data;
+        const { highlightIds, scopeLabel } = parsed.data;
+        const messages = normalizeMessages(parsed.data.messages as Array<Record<string, unknown>>);
+        if (messages.length === 0) {
+            return apiError("VALIDATION_ERROR", "No valid messages provided", 400, requestId);
+        }
+
         const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
         if (totalChars > MAX_TOTAL_MESSAGE_CHARS) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
@@ -113,6 +149,8 @@ export async function POST(req: NextRequest) {
         }
 
         const rows = (highlights ?? []) as HighlightContextRow[];
+        const noteBodyCount = rows.filter((highlight) => Boolean(highlight.note_body?.trim())).length;
+        const highlightOnlyCount = rows.length - noteBodyCount;
         let contextText = rows
             .map((highlight, index) => {
                 const contentItem = getRelation(highlight.content_item);
@@ -123,8 +161,8 @@ export async function POST(req: NextRequest) {
 
                 return [
                     `[Note ${index + 1}: "${title}"${section ? ` • ${section}` : ""}]`,
-                    `Highlight: ${highlight.highlighted_text}`,
                     noteText ? `Note: ${noteText}` : null,
+                    `Highlight: ${highlight.highlighted_text}`,
                 ]
                     .filter(Boolean)
                     .join("\n");
@@ -150,27 +188,35 @@ ${contextText}
 Current scope:
 ${scopeLabel || "Current notes view"}
 
+Scope makeup:
+- Total saved items in scope: ${rows.length}
+- Items with written notes: ${noteBodyCount}
+- Highlight-only items: ${highlightOnlyCount}
+
 Rules:
 1. Answer ONLY from the provided note context. Never use outside knowledge.
-2. If the notes do not contain enough information, say so clearly.
-3. Cite source titles naturally when referencing a point.
-4. Keep answers concise, structured, and useful for someone reviewing their notes.
-5. Focus on synthesis, comparison, retrieval, and pattern-finding across the notes in scope.`;
+2. Treat written note bodies as the strongest evidence when they exist. Use highlight text as supporting context.
+3. If the scope is mostly highlights rather than written notes, say so plainly instead of pretending the user wrote more notes than they did.
+4. If the notes do not contain enough information, say so clearly.
+5. Cite source titles naturally when referencing a point.
+6. Keep answers concise, structured, and useful for someone reviewing their notes.
+7. Focus on synthesis, comparison, retrieval, and pattern-finding across the notes in scope.`;
 
-        const provider = process.env.AI_PROVIDER || (process.env.ANTHROPIC_API_KEY ? "anthropic" : "openai");
         let aiModel;
 
-        if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
+        if (provider === "anthropic" && hasAnthropic) {
             const { anthropic } = await import("@ai-sdk/anthropic");
             aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
         } else {
-            aiModel = openai(process.env.AI_MODEL || "gpt-4o-mini");
+            const { openai } = await import("@ai-sdk/openai");
+            aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
         }
 
         const result = streamText({
             model: aiModel,
             system: systemPrompt,
             messages,
+            maxOutputTokens: MAX_OUTPUT_TOKENS,
         });
 
         return result.toTextStreamResponse();

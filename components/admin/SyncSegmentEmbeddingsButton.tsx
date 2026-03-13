@@ -1,16 +1,61 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
+
+type CoverageSummary = {
+    total_library_content_items: number;
+    embedded_content_items: number;
+    missing_segments: number;
+};
 
 export function SyncSegmentEmbeddingsButton() {
     const [isSyncing, setIsSyncing] = useState(false);
-    const [statusText, setStatusText] = useState("");
+    const [status, setStatus] = useState<{ tone: "success" | "error"; text: string } | null>(null);
+    const [summary, setSummary] = useState<CoverageSummary | null>(null);
+    const [isLoadingSummary, setIsLoadingSummary] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadSummary = async () => {
+            try {
+                setIsLoadingSummary(true);
+                const res = await fetch("/api/admin/embeddings/sync-segments", {
+                    method: "GET",
+                });
+                const data = await res.json();
+
+                if (!res.ok) {
+                    const errorMessage = data?.error?.message || "Failed to load embedding coverage";
+                    throw new Error(typeof errorMessage === "string" ? errorMessage : "Failed to load embedding coverage");
+                }
+
+                if (isMounted) {
+                    setSummary(data.summary ?? null);
+                }
+            } catch (error: any) {
+                if (isMounted) {
+                    setStatus({ tone: "error", text: "Error: " + error.message });
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoadingSummary(false);
+                }
+            }
+        };
+
+        void loadSummary();
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const handleSync = async () => {
         try {
             setIsSyncing(true);
-            setStatusText("Syncing Segments...");
+            setStatus(null);
 
             const res = await fetch("/api/admin/embeddings/sync-segments", {
                 method: "POST",
@@ -24,26 +69,39 @@ export function SyncSegmentEmbeddingsButton() {
             }
 
             if (data.results && data.results.processed > 0) {
-                setStatusText(`Synced ${data.results.success} segments!`);
+                const failureSuffix = data.results.failed > 0
+                    ? ` ${data.results.failed} failed.`
+                    : "";
+                const moreSuffix = data.results.has_more_to_process
+                    ? " More segments remain to be processed."
+                    : "";
+
+                setStatus({
+                    tone: data.results.failed > 0 ? "error" : "success",
+                    text: `Processed ${data.results.processed} segments. Synced ${data.results.success}.${failureSuffix}${moreSuffix}`,
+                });
             } else {
-                setStatusText("All segments up to date");
+                setStatus({ tone: "success", text: "All Gemini segment embeddings are up to date." });
             }
 
-            // Clear success message after a few seconds
+            if (data.summary) {
+                setSummary(data.summary);
+            }
+
             setTimeout(() => {
-                setStatusText("");
+                setStatus(null);
             }, 5000);
 
         } catch (error: any) {
             console.error("Sync error:", error);
-            setStatusText("Error: " + error.message);
+            setStatus({ tone: "error", text: "Error: " + error.message });
         } finally {
             setIsSyncing(false);
         }
     };
 
     return (
-        <div className="flex flex-col items-end gap-1 relative">
+        <div className="flex flex-col items-end gap-2 relative">
             <button
                 onClick={handleSync}
                 disabled={isSyncing}
@@ -52,9 +110,24 @@ export function SyncSegmentEmbeddingsButton() {
                 <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
                 {isSyncing ? "Syncing Segments..." : "Sync AI Segments"}
             </button>
-            {statusText && (
-                <span className="absolute top-full mt-2 text-xs font-medium text-emerald-500 animate-in fade-in slide-in-from-top-1 whitespace-nowrap z-10">
-                    {statusText}
+            <div className="max-w-sm text-right text-[11px] leading-5 text-zinc-500">
+                {isLoadingSummary ? (
+                    <span>Loading embedding coverage…</span>
+                ) : summary ? (
+                    <>
+                        <div>{summary.total_library_content_items} library items referenced</div>
+                        <div>{summary.embedded_content_items} content items have Gemini segment embeddings</div>
+                        <div>{summary.missing_segments} verified segments still need Gemini embeddings</div>
+                    </>
+                ) : null}
+            </div>
+            {status && (
+                <span
+                    className={`absolute top-full mt-2 max-w-xs text-right text-xs font-medium animate-in fade-in slide-in-from-top-1 whitespace-normal z-10 ${
+                        status.tone === "error" ? "text-red-500" : "text-emerald-500"
+                    }`}
+                >
+                    {status.text}
                 </span>
             )}
         </div>

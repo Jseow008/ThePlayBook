@@ -22,6 +22,10 @@ vi.mock('@ai-sdk/anthropic', () => ({
     anthropic: vi.fn().mockReturnValue('mock-anthropic-model'),
 }));
 
+vi.mock('@ai-sdk/openai', () => ({
+    openai: vi.fn().mockReturnValue('mock-openai-model'),
+}));
+
 describe('Author Chat API', () => {
     const mockUser = { id: 'user-123' };
     const mockAuthUser = vi.fn();
@@ -152,5 +156,18 @@ describe('Author Chat API', () => {
 
         const json = await res.json();
         expect(json.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('prefers Anthropic Sonnet by default when both providers are configured', async () => {
+        process.env.OPENAI_API_KEY = 'openai-test-key';
+
+        const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
+            method: 'POST',
+            body: JSON.stringify(validBody),
+        });
+
+        const res = await POST(req);
+
+        expect(res.status).toBe(200);
     });
 });

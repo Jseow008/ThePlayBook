@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { User } from "@supabase/supabase-js";
-import { LogOut, User as UserIcon, Settings, Sparkles } from "lucide-react";
+import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { signOutAction } from "@/lib/actions/auth";
@@ -119,16 +119,6 @@ export function UserNav({ initialUser }: { initialUser: User | null }) {
                     >
                         <UserIcon className="h-4 w-4" />
                         <span>Profile</span>
-                    </Link>
-
-                    <Link
-                        href="/ask"
-                        role="menuitem"
-                        className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground cursor-default w-full focus:bg-accent focus:text-accent-foreground outline-none"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        <Sparkles className="h-4 w-4" />
-                        <span>Ask My Library</span>
                     </Link>
 
                     <Link

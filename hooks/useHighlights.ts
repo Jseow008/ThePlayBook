@@ -26,6 +26,7 @@ export interface HighlightsPage {
 
 interface UseInfiniteHighlightsOptions {
     initialPage?: HighlightsPage;
+    enabled?: boolean;
 }
 
 // ----------------------------------------------------------------------------
@@ -81,6 +82,7 @@ export function useInfiniteHighlights(contentItemId?: string, options?: UseInfin
                 pageParams: [null],
             }
             : undefined,
+        enabled: options?.enabled,
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
     });

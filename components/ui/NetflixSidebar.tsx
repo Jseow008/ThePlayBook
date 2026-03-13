@@ -16,7 +16,9 @@ import {
     ChevronDown,
     Plus,
     LayoutGrid,
-    StickyNote
+    StickyNote,
+    Sparkles,
+    MessageSquareText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -35,6 +37,7 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
     const pathname = usePathname();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+    const [isAskOpen, setIsAskOpen] = useState(false);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const user = useAuthUser(initialUser);
 
@@ -66,10 +69,19 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
     useEffect(() => {
         if (!isExpanded) {
             setIsLibraryOpen(false);
+            setIsAskOpen(false);
         }
     }, [isExpanded]);
 
     const totalLibraryItems = inProgressCount + completedCount + myListCount;
+    const isLibrarySectionActive = pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed";
+    const isAskSectionActive = pathname === "/ask" || pathname === "/notes";
+
+    useEffect(() => {
+        if (isExpanded && isAskSectionActive) {
+            setIsAskOpen(true);
+        }
+    }, [isAskSectionActive, isExpanded]);
 
     return (
         <aside
@@ -158,7 +170,7 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
                             className={cn(
                                 "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
                                 "justify-start gap-3",
-                                (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-accent border-l-4 border-primary"
+                                isLibrarySectionActive && "text-foreground bg-accent border-l-4 border-primary"
                             )}
                         >
                             <div className="relative flex-shrink-0">
@@ -186,7 +198,7 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
                             title="My Library"
                             className={cn(
                                 "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 justify-center",
-                                (pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed") && "text-foreground bg-accent border-l-4 border-primary"
+                                isLibrarySectionActive && "text-foreground bg-accent border-l-4 border-primary"
                             )}
                         >
                             <div className="relative flex-shrink-0">
@@ -273,6 +285,72 @@ export function NetflixSidebar({ initialUser }: { initialUser: User | null }) {
                             >
                                 <StickyNote className="size-4 mr-3 flex-shrink-0" />
                                 <span className="text-sm whitespace-nowrap flex-1">Notes</span>
+                            </Link>
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-4 mx-4 border-t border-border" />
+
+                <div className="space-y-1 pt-4">
+                    {isExpanded ? (
+                        <button
+                            onClick={() => setIsAskOpen(!isAskOpen)}
+                            className={cn(
+                                "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 justify-start gap-3",
+                                isAskSectionActive && "text-foreground bg-accent border-l-4 border-primary"
+                            )}
+                        >
+                            <Sparkles className={cn("size-5 flex-shrink-0", isAskSectionActive && "text-primary")} />
+                            <span className="text-sm font-medium whitespace-nowrap flex-1 text-left">
+                                Ask
+                            </span>
+                            <ChevronDown
+                                className={cn(
+                                    "size-4 transition-transform",
+                                    isAskOpen && "rotate-180"
+                                )}
+                            />
+                        </button>
+                    ) : (
+                        <Link
+                            href="/ask"
+                            title="Ask"
+                            className={cn(
+                                "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 justify-center",
+                                isAskSectionActive && "text-foreground bg-accent border-l-4 border-primary"
+                            )}
+                        >
+                            <Sparkles className={cn("size-5 flex-shrink-0", isAskSectionActive && "text-primary")} />
+                        </Link>
+                    )}
+
+                    {isExpanded && isAskOpen && (
+                        <div className="ml-4 space-y-1">
+                            <Link
+                                href="/ask"
+                                className={cn(
+                                    "flex items-center h-10 px-4 transition-colors rounded-md",
+                                    pathname === "/ask"
+                                        ? "text-foreground bg-accent"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                )}
+                            >
+                                <Sparkles className="size-4 mr-3 flex-shrink-0" />
+                                <span className="text-sm whitespace-nowrap flex-1">Ask My Library</span>
+                            </Link>
+
+                            <Link
+                                href="/notes?ask=1"
+                                className={cn(
+                                    "flex items-center h-10 px-4 transition-colors rounded-md",
+                                    pathname === "/notes"
+                                        ? "text-foreground bg-accent"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                )}
+                            >
+                                <MessageSquareText className="size-4 mr-3 flex-shrink-0" />
+                                <span className="text-sm whitespace-nowrap flex-1">Ask These Notes</span>
                             </Link>
                         </div>
                     )}

@@ -3,10 +3,51 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { GoogleGenAI } from "@google/genai";
 
-const EMBEDDING_DIMENSIONS = 1536;
+const EMBEDDING_MODEL = "gemini-embedding-001";
+const EMBEDDING_DIMENSIONS = 768;
+const MAX_SEGMENTS_PER_REQUEST = 50;
 
 export const maxDuration = 300; // Allow 5 minutes max for syncing
+
+async function getCoverageSummary(supabase: ReturnType<typeof getAdminClient>) {
+    const { data, error } = await supabase.rpc("get_gemini_segment_embedding_coverage");
+
+    if (error) {
+        throw error;
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    return {
+        total_library_content_items: Number(row?.total_library_content_items ?? 0),
+        embedded_content_items: Number(row?.embedded_content_items ?? 0),
+        missing_segments: Number(row?.missing_segments ?? 0),
+    };
+}
+
+export async function GET() {
+    const requestId = getRequestId();
+
+    try {
+        const isAdmin = await verifyAdminSession();
+        if (!isAdmin) {
+            return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
+        }
+
+        const supabase = getAdminClient();
+        const summary = await getCoverageSummary(supabase);
+        return NextResponse.json({ summary });
+    } catch (error) {
+        logApiError({
+            requestId,
+            route: "/api/admin/embeddings/sync-segments",
+            message: "Failed to load Gemini segment embedding coverage",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to load embedding coverage", 500, requestId);
+    }
+}
 
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
@@ -27,16 +68,17 @@ export async function POST(request: NextRequest) {
             return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
         }
 
-        const apiKey = process.env.OPENAI_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            return apiError("INTERNAL_ERROR", "OPENAI_API_KEY is not configured", 500, requestId);
+            return apiError("INTERNAL_ERROR", "GEMINI_API_KEY is not configured", 500, requestId);
         }
 
         const supabase = getAdminClient();
+        const ai = new GoogleGenAI({ apiKey });
 
         const { data: segments, error: fetchError } = await supabase.rpc(
-            "get_segments_missing_embeddings",
-            { p_limit: 50 }
+            "get_segments_missing_gemini_embeddings",
+            { p_limit: MAX_SEGMENTS_PER_REQUEST }
         );
 
         if (fetchError) {
@@ -45,9 +87,13 @@ export async function POST(request: NextRequest) {
         }
 
         const missingEmbeddings = segments || [];
+        const initialSummary = await getCoverageSummary(supabase);
 
         if (missingEmbeddings.length === 0) {
-            return NextResponse.json({ results: { processed: 0, success: 0, failed: 0 } });
+            return NextResponse.json({
+                results: { processed: 0, success: 0, failed: 0 },
+                summary: initialSummary,
+            });
         }
 
         let successCount = 0;
@@ -62,33 +108,20 @@ export async function POST(request: NextRequest) {
             }
 
             try {
-                // Call OpenAI API for segment embedding
-                const response = await fetch('https://api.openai.com/v1/embeddings', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        input: text,
-                        model: 'text-embedding-3-small'
-                    })
+                const response = await ai.models.embedContent({
+                    model: EMBEDDING_MODEL,
+                    contents: text,
+                    config: { outputDimensionality: EMBEDDING_DIMENSIONS }
                 });
 
-                if (!response.ok) {
-                    throw new Error(`OpenAI API error: ${await response.text()}`);
-                }
-
-                const embeddingData = await response.json();
-                const embedding = embeddingData.data[0].embedding;
+                const embedding = response.embeddings?.[0]?.values;
 
                 if (!embedding || embedding.length !== EMBEDDING_DIMENSIONS) {
                     throw new Error(`Invalid embedding length returned: ${embedding?.length}`);
                 }
 
-                // Insert into segment_embedding table
                 const { error: insertError } = await supabase
-                    .from("segment_embedding")
+                    .from("segment_embedding_gemini")
                     .insert({
                         segment_id: segment.id,
                         content_item_id: segment.content_item_id,
@@ -111,12 +144,16 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        const summary = await getCoverageSummary(supabase);
+
         return NextResponse.json({
             results: {
                 processed: missingEmbeddings.length,
                 success: successCount,
-                failed: failedCount
-            }
+                failed: failedCount,
+                has_more_to_process: missingEmbeddings.length === MAX_SEGMENTS_PER_REQUEST,
+            },
+            summary,
         });
 
     } catch (error) {

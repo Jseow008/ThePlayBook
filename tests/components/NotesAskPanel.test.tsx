@@ -139,7 +139,7 @@ describe("NotesAskPanel", () => {
 
         expect(screen.getByRole("link", { name: /full screen/i })).toHaveAttribute(
             "href",
-            "/ask?returnTo=%2Fnotes%3Fask%3D1"
+            "/ask?scope=notes&returnTo=%2Fnotes%3Fask%3D1"
         );
         expect(screen.queryByLabelText(/close notes ai panel/i)).not.toBeInTheDocument();
         expect(screen.getAllByText("2 notes in scope")).toHaveLength(1);

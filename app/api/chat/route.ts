@@ -1,16 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { GoogleGenAI } from "@google/genai";
+import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/library-snapshot";
 
 export const maxDuration = 60; // Allow 60s max for AI response
 
 const ChatMessageSchema = z.object({
     role: z.enum(["system", "user", "assistant"]),
-    content: z.string().trim().min(1).max(2_000),
+    content: z.string().trim().max(2_000).optional(),
+    parts: z.array(z.any()).optional(),
 });
 
 const ChatRequestSchema = z.object({
@@ -19,10 +21,175 @@ const ChatRequestSchema = z.object({
 
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
 const MAX_CONTEXT_CHARS = 12_000;
+const MAX_LIBRARY_CONTEXT_CHARS = 6_000;
+const MAX_OUTPUT_TOKENS = 600;
+const EMBEDDING_MODEL = "gemini-embedding-001";
+const EMBEDDING_DIMENSIONS = 768;
+const PRIMARY_MATCH_THRESHOLD = 0.65;
+const FALLBACK_MATCH_THRESHOLD = 0.55;
+const MATCH_COUNT = 5;
 type SegmentWithTitle = {
+    id: string;
     markdown_body: string;
     content_item: { title: string | null } | Array<{ title: string | null }> | null;
 };
+type AskIntent = "library_metadata" | "content_synthesis" | "hybrid";
+
+function getMessageText(message: Record<string, unknown>): string {
+    if (Array.isArray(message.parts)) {
+        return message.parts
+            .filter((part: any) => part.type === "text" && typeof part.text === "string")
+            .map((part: any) => part.text as string)
+            .join("");
+    }
+
+    if (typeof message.content === "string") {
+        return message.content;
+    }
+
+    return "";
+}
+
+function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+    return rawMessages
+        .filter((message): message is Record<string, unknown> & { role: "system" | "user" | "assistant" } =>
+            message.role === "system" || message.role === "user" || message.role === "assistant"
+        )
+        .map((message) => ({
+            role: message.role,
+            content: getMessageText(message).trim(),
+        }))
+        .filter((message) => message.content.length > 0);
+}
+
+function detectAskIntent(query: string): AskIntent {
+    const normalized = query.toLowerCase();
+    const metadataPatterns = [
+        /\bwhat have i read\b/,
+        /\bwhat have i saved\b/,
+        /\bcompleted\b/,
+        /\bfinish(?:ed)?\b/,
+        /\bhow many\b/,
+        /\bwhich authors?\b/,
+        /\blist\b/,
+        /\bwhat books?\b/,
+        /\bmy library\b/,
+        /\bmy saved books?\b/,
+        /\bin progress\b/,
+    ];
+    const synthesisPatterns = [
+        /\btheme\b/,
+        /\bthemes\b/,
+        /\bcompare\b/,
+        /\bperspective\b/,
+        /\bperspectives\b/,
+        /\bsummar(?:ize|ise)\b/,
+        /\boverlap\b/,
+        /\bcontrast\b/,
+        /\brelevant\b/,
+        /\bwhy\b/,
+        /\bidea\b/,
+        /\bideas\b/,
+        /\bdiscipline\b/,
+        /\bhabit\b/,
+        /\bmeaning\b/,
+        /\bconcept\b/,
+        /\bpatterns?\b/,
+    ];
+
+    const metadataHits = metadataPatterns.filter((pattern) => pattern.test(normalized)).length;
+    const synthesisHits = synthesisPatterns.filter((pattern) => pattern.test(normalized)).length;
+
+    if (metadataHits > 0 && synthesisHits === 0) {
+        return "library_metadata";
+    }
+
+    if (synthesisHits > 0 && metadataHits === 0) {
+        return "content_synthesis";
+    }
+
+    return "hybrid";
+}
+
+async function fetchRelevantSegments(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    userId: string,
+    queryEmbedding: number[]
+): Promise<{
+    contextText: string;
+    retrievalStatus: "matched" | "no_match" | "not_initialized";
+}> {
+    const thresholds = [PRIMARY_MATCH_THRESHOLD, FALLBACK_MATCH_THRESHOLD];
+    let segmentResults: Array<{ segment_id: string; content_item_id: string; similarity: number }> = [];
+
+    for (const threshold of thresholds) {
+        const { data, error } = await (supabase.rpc as any)("match_library_segments_gemini", {
+            query_embedding: JSON.stringify(queryEmbedding),
+            match_threshold: threshold,
+            match_count: MATCH_COUNT,
+            p_user_id: userId,
+        });
+
+        if (error) {
+            throw error;
+        }
+
+        const matches = (data ?? []) as Array<{ segment_id: string; content_item_id: string; similarity: number }>;
+        if (matches.length > 0) {
+            segmentResults = matches;
+            break;
+        }
+    }
+
+    if (segmentResults.length === 0) {
+        const { count, error } = await supabase
+            .from("segment_embedding_gemini")
+            .select("id", { count: "exact", head: true });
+
+        if (error) {
+            throw error;
+        }
+
+        return {
+            contextText: "",
+            retrievalStatus: count ? "no_match" : "not_initialized",
+        };
+    }
+
+    const segmentIds = segmentResults.map((segment) => segment.segment_id);
+    const { data: segments, error: segFetchError } = await supabase
+        .from("segment")
+        .select("id, markdown_body, content_item ( title )")
+        .in("id", segmentIds);
+
+    if (segFetchError) {
+        throw segFetchError;
+    }
+
+    const segmentRows = (segments ?? []) as SegmentWithTitle[];
+    const segmentMap = new Map(segmentRows.map((segment) => [segment.id, segment]));
+
+    const orderedContext = segmentResults
+        .map((segmentResult, index) => {
+            const segment = segmentMap.get(segmentResult.segment_id);
+            if (!segment) {
+                return null;
+            }
+
+            const contentItem = Array.isArray(segment.content_item)
+                ? segment.content_item[0]
+                : segment.content_item;
+            const title = contentItem?.title || "Unknown Source";
+            return `[Source ${index + 1}: "${title}"]\n${segment.markdown_body}`;
+        })
+        .filter((entry): entry is string => Boolean(entry))
+        .join("\n\n---\n\n");
+
+    return {
+        contextText: orderedContext.length > MAX_CONTEXT_CHARS ? orderedContext.slice(0, MAX_CONTEXT_CHARS) : orderedContext,
+        retrievalStatus: orderedContext ? "matched" : "no_match",
+    };
+}
 
 export async function POST(req: NextRequest) {
     const requestId = getRequestId();
@@ -52,10 +219,19 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Validate API Key ---
-        const openaiApiKey = process.env.OPENAI_API_KEY;
-        if (!openaiApiKey) {
-            logApiError({ requestId, route: "/api/chat", message: "OPENAI_API_KEY not configured", error: new Error("Missing env") });
+        const provider = process.env.AI_PROVIDER || "anthropic";
+        const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
+        const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+        const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+
+        if (!hasAnthropic && !hasOpenAI) {
+            logApiError({ requestId, route: "/api/chat", message: "No AI provider configured", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "AI service is not configured. Please contact an administrator.", 500, requestId);
+        }
+
+        if (!hasGemini) {
+            logApiError({ requestId, route: "/api/chat", message: "GEMINI_API_KEY not configured for retrieval embeddings", error: new Error("Missing env") });
+            return apiError("INTERNAL_ERROR", "Ask My Library retrieval is not configured. Please contact an administrator.", 500, requestId);
         }
 
         // --- Parse & Validate Body ---
@@ -71,7 +247,11 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Invalid chat payload", 400, requestId);
         }
 
-        const { messages } = parsed.data;
+        const messages = normalizeMessages(parsed.data.messages as Array<Record<string, unknown>>);
+        if (messages.length === 0) {
+            return apiError("VALIDATION_ERROR", "No valid messages provided", 400, requestId);
+        }
+
         const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
         if (totalChars > MAX_TOTAL_MESSAGE_CHARS) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
@@ -87,116 +267,125 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
         }
 
-        // --- Step 1: Generate Embedding for Question ---
-        const embeddingResponse = await fetch("https://api.openai.com/v1/embeddings", {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${openaiApiKey}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                input: userQuery,
-                model: "text-embedding-3-small",
-            }),
-        });
+        const intent = detectAskIntent(userQuery);
 
-        if (!embeddingResponse.ok) {
-            const errText = await embeddingResponse.text();
-            logApiError({ requestId, route: "/api/chat", message: "OpenAI Embedding API error", error: new Error(errText) });
-            return apiError("INTERNAL_ERROR", "Failed to process your question. Please try again.", 500, requestId);
+        const { data: libraryRows, error: libraryError } = await supabase
+            .from("user_library")
+            .select(`
+                content_id,
+                is_bookmarked,
+                progress,
+                last_interacted_at,
+                content_item ( title, author )
+            `)
+            .eq("user_id", user.id)
+            .order("last_interacted_at", { ascending: false });
+
+        if (libraryError) {
+            logApiError({ requestId, route: "/api/chat", message: "Failed to load library metadata", error: libraryError });
+            return apiError("INTERNAL_ERROR", "Failed to load your library. Please try again.", 500, requestId);
         }
 
-        const embeddingData = await embeddingResponse.json();
-        const queryEmbedding = embeddingData?.data?.[0]?.embedding;
+        const libraryItems = (libraryRows ?? []) as LibraryItemRow[];
+        const metadataContext = buildLibraryMetadataContext(libraryItems, MAX_LIBRARY_CONTEXT_CHARS);
 
-        if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
-            logApiError({ requestId, route: "/api/chat", message: "Invalid embedding response structure", error: new Error("No embedding data") });
-            return apiError("INTERNAL_ERROR", "Failed to process your question. Please try again.", 500, requestId);
-        }
+        let retrievalContext = "";
+        let retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
 
-        // --- Step 2: Vector Search (RAG) ---
-        const { data: matchedSegments, error: rpcError } = await (supabase.rpc as any)("match_library_segments", {
-            query_embedding: JSON.stringify(queryEmbedding),
-            match_threshold: 0.65,
-            match_count: 5,
-            p_user_id: user.id,
-        });
+        if (intent !== "library_metadata") {
+            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+            let queryEmbedding: number[] | undefined;
+            try {
+                const embeddingResponse = await ai.models.embedContent({
+                    model: EMBEDDING_MODEL,
+                    contents: userQuery,
+                    config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+                });
 
-        if (rpcError) {
-            logApiError({ requestId, route: "/api/chat", message: "Vector search RPC failed", error: rpcError });
-            return apiError("INTERNAL_ERROR", "Failed to search your library. Please try again.", 500, requestId);
-        }
-
-        // --- Step 3: Fetch Segment Content ---
-        let contextText = "";
-
-        const segmentResults = matchedSegments as Array<{ segment_id: string; content_item_id: string; similarity: number }> | null;
-
-        if (segmentResults && segmentResults.length > 0) {
-            const segmentIds = segmentResults.map((s) => s.segment_id);
-
-            const { data: segments, error: segFetchError } = await supabase
-                .from("segment")
-                .select("id, markdown_body, content_item ( title )")
-                .in("id", segmentIds);
-
-            if (segFetchError) {
-                logApiError({ requestId, route: "/api/chat", message: "Failed to fetch segment content", error: segFetchError });
-                // Non-fatal — continue with empty context
+                queryEmbedding = embeddingResponse.embeddings?.[0]?.values;
+            } catch (error) {
+                logApiError({ requestId, route: "/api/chat", message: "Gemini embedding API error", error });
+                return apiError("INTERNAL_ERROR", "Ask My Library retrieval is temporarily unavailable. Please try again later.", 500, requestId);
             }
 
-            if (segments && segments.length > 0) {
-                const segmentRows = segments as SegmentWithTitle[];
-                contextText = segmentRows
-                    .map((seg, i: number) => {
-                        const contentItem = Array.isArray(seg.content_item)
-                            ? seg.content_item[0]
-                            : seg.content_item;
-                        const title = contentItem?.title || "Unknown Source";
-                        return `[Source ${i + 1}: "${title}"]\n${seg.markdown_body}`;
-                    })
-                    .join("\n\n---\n\n");
+            if (!queryEmbedding || queryEmbedding.length !== EMBEDDING_DIMENSIONS) {
+                logApiError({
+                    requestId,
+                    route: "/api/chat",
+                    message: "Invalid Gemini embedding response structure",
+                    error: new Error(`Expected ${EMBEDDING_DIMENSIONS} dimensions`),
+                });
+                return apiError("INTERNAL_ERROR", "Ask My Library retrieval is temporarily unavailable. Please try again later.", 500, requestId);
+            }
 
-                if (contextText.length > MAX_CONTEXT_CHARS) {
-                    contextText = contextText.slice(0, MAX_CONTEXT_CHARS);
-                }
+            try {
+                const retrievalResult = await fetchRelevantSegments(supabase, user.id, queryEmbedding);
+                retrievalContext = retrievalResult.contextText;
+                retrievalStatus = retrievalResult.retrievalStatus;
+            } catch (error) {
+                logApiError({ requestId, route: "/api/chat", message: "Vector search or segment fetch failed", error });
+                return apiError("INTERNAL_ERROR", "Failed to search your library. Please try again.", 500, requestId);
             }
         }
 
-        if (!contextText) {
-            contextText = "No relevant information was found in the user's saved library for this question.";
+        if (intent !== "library_metadata" && retrievalStatus === "not_initialized" && libraryItems.length === 0) {
+            return apiError(
+                "INTERNAL_ERROR",
+                "Ask My Library retrieval is not initialized yet. Please run Sync AI Segments in the admin dashboard.",
+                500,
+                requestId
+            );
         }
 
-        // --- Step 4: Stream LLM Response ---
-        const systemPrompt = `You are a helpful and knowledgeable "Notes" assistant for a personal reading platform.
-Your role is to answer the user's questions based STRICTLY on the provided context excerpts from their saved library.
+        const retrievalContextForPrompt = retrievalContext || (
+            retrievalStatus === "not_initialized"
+                ? "Retrieved passages are not initialized yet. Only library metadata is available for this request."
+                : retrievalStatus === "no_match"
+                    ? "Matching saved passages were limited for this topic. Answer from library metadata first and explicitly note that passage evidence is limited."
+                    : "Retrieved passages were not needed for this question."
+        );
 
-Context Excerpts from User's Library:
+        const systemPrompt = `You are Ask My Library, a hybrid reading assistant inside a personal reading platform.
+You can answer from two evidence types:
+1. Library metadata: authoritative for what the user has saved, read, completed, bookmarked, or recently interacted with.
+2. Retrieved passages: authoritative for themes, ideas, comparisons, and supporting quotations from saved book content.
+
+User library metadata:
 ===
-${contextText}
+${metadataContext}
 ===
+
+Retrieved passages:
+===
+${retrievalContextForPrompt}
+===
+
+Intent classification for this question: ${intent}
 
 Rules:
-1. Answer ONLY based on the provided context. Never fabricate or use information from outside the context.
-2. If the context does not contain enough information to answer the question, say so honestly and suggest the user save more relevant content to their library.
-3. Keep answers concise, well-structured, and formatted in clean Markdown.
-4. Naturally cite the source title when referencing information (e.g., "According to *Atomic Habits*...").
-5. Be conversational and encouraging — help the user feel like their library is a powerful knowledge base.`;
+1. Answer ONLY from the evidence above. Never invent titles, authors, progress, or themes that are not present.
+2. Use library metadata for inventory questions such as what the user has read, completed, saved, or how many items they have.
+3. Use retrieved passages for synthesis questions about themes, ideas, relevance, overlap, or comparisons.
+4. For hybrid questions, combine both evidence types. If metadata exists but retrieved passages are empty, answer the metadata portion directly and state that no matching saved passages were found.
+5. If the library metadata is empty, say so plainly instead of pretending the library exists.
+6. Cite source titles naturally when referencing books or retrieved passages.
+7. Keep answers concise, well-structured, and formatted in clean Markdown.`;
 
-        const provider = process.env.AI_PROVIDER || (process.env.ANTHROPIC_API_KEY ? "anthropic" : "openai");
         let aiModel;
 
-        if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
+        if (provider === "anthropic" && hasAnthropic) {
             const { anthropic } = await import("@ai-sdk/anthropic");
             aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
         } else {
-            aiModel = openai(process.env.AI_MODEL || "gpt-4o-mini");
+            const { openai } = await import("@ai-sdk/openai");
+            aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
         }
 
         const result = streamText({
             model: aiModel,
             system: systemPrompt,
             messages,
+            maxOutputTokens: MAX_OUTPUT_TOKENS,
         });
 
         return result.toTextStreamResponse();

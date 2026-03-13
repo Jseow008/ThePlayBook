@@ -46,6 +46,7 @@ const FOLLOW_UP_ACTIONS = [
 ] as const;
 
 const NOTES_RETURN_TARGET = "/notes?ask=1";
+const NOTES_FULL_SCREEN_TARGET = `/ask?scope=notes&returnTo=${encodeURIComponent(NOTES_RETURN_TARGET)}`;
 
 export interface NotesChatScope {
     highlightIds: string[];
@@ -59,7 +60,7 @@ interface NotesAskPanelProps {
     currentScope: NotesChatScope;
     onClose: () => void;
     mobile?: boolean;
-    variant?: "default" | "sidebar";
+    variant?: "default" | "sidebar" | "page";
 }
 
 function getDisplayErrorMessage(error: unknown): string {
@@ -151,6 +152,7 @@ export function NotesAskPanel({
     const isEmptyState = messages.length === 0;
     const hasScopeChanged = messages.length > 0 && activeScope.signature !== currentScope.signature;
     const isSidebar = variant === "sidebar" && !mobile;
+    const isPage = variant === "page";
     const scopeSummary = activeScope.summary.trim();
 
     const sendPrompt = async (text: string) => {
@@ -216,7 +218,8 @@ export function NotesAskPanel({
             className={cn(
                 "flex h-full flex-col overflow-hidden rounded-[24px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm",
                 mobile && "rounded-t-[24px] rounded-b-none border-b-0",
-                isSidebar && "min-h-[40rem]"
+                isSidebar && "min-h-[40rem]",
+                isPage && "rounded-none border-x-0 border-b-0 shadow-none"
             )}
         >
             <header className={cn(
@@ -265,13 +268,15 @@ export function NotesAskPanel({
                         "flex items-center gap-1",
                         isSidebar && "row-span-2 self-start justify-self-end"
                     )}>
-                        <Link
-                            href={`/ask?returnTo=${encodeURIComponent(NOTES_RETURN_TARGET)}`}
-                            className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
-                        >
-                            {isSidebar ? "Full screen" : "Full Ask"}
-                        </Link>
-                        {!isSidebar && (
+                        {!isPage && (
+                            <Link
+                                href={NOTES_FULL_SCREEN_TARGET}
+                                className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
+                            >
+                                {isSidebar ? "Full screen" : "Full Ask"}
+                            </Link>
+                        )}
+                        {!isSidebar && !isPage && (
                             <button
                                 type="button"
                                 onClick={onClose}
@@ -447,12 +452,12 @@ export function NotesAskPanel({
                         </div>
                     )}
 
-                    {!isEmptyState && (
+                    {!isEmptyState && !isPage && (
                         <Link
-                            href="/ask"
+                            href={NOTES_FULL_SCREEN_TARGET}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:hidden"
                         >
-                            Open full Ask My Library
+                            Open full Ask These Notes
                             <ArrowRight className="size-3" />
                         </Link>
                     )}
@@ -508,7 +513,9 @@ export function NotesAskPanel({
                     <BookOpen className="size-3" />
                     {isSidebar
                         ? "Grounded only in the notes currently in scope."
-                        : "Notes-scoped Ask My Library · grounded only in the notes currently in scope."}
+                        : isPage
+                            ? "Grounded only in the notes currently in scope."
+                        : "Notes-scoped assistant · grounded only in the notes currently in scope."}
                 </p>
             </div>
         </section>
