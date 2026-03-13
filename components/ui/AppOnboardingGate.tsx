@@ -22,6 +22,7 @@ import { AppOnboardingTour } from "@/components/ui/AppOnboardingTour";
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type ActiveTour = "account" | "guest" | null;
+const REPLAY_OPEN_DELAY_MS = 1200;
 
 export function AppOnboardingGate({ initialUser }: { initialUser: User | null }) {
     const pathname = usePathname();
@@ -37,11 +38,23 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
 
     useEffect(() => {
         let isCancelled = false;
+        let replayTimer: ReturnType<typeof window.setTimeout> | null = null;
 
         async function loadOnboardingState() {
             if (!isBrowseRoute) {
                 setIsOpen(false);
                 setActiveTour(null);
+                return;
+            }
+
+            if (replayRequested) {
+                setActiveTour(user ? "account" : "guest");
+                if (isOpen) return;
+
+                replayTimer = window.setTimeout(() => {
+                    if (isCancelled) return;
+                    setIsOpen(true);
+                }, REPLAY_OPEN_DELAY_MS);
                 return;
             }
 
@@ -83,8 +96,11 @@ export function AppOnboardingGate({ initialUser }: { initialUser: User | null })
 
         return () => {
             isCancelled = true;
+            if (replayTimer !== null) {
+                window.clearTimeout(replayTimer);
+            }
         };
-    }, [isBrowseRoute, replayRequested, user]);
+    }, [isBrowseRoute, isOpen, replayRequested, user]);
 
     const clearReplayParam = () => {
         if (!searchParams.has(APP_ONBOARDING_QUERY_PARAM)) return;

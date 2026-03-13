@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ImgHTMLAttributes, ReactNode } from "react";
 import { AppOnboardingGate } from "@/components/ui/AppOnboardingGate";
 import { GUEST_ONBOARDING_STORAGE_KEY, createGuestOnboardingEntry } from "@/lib/onboarding";
@@ -21,6 +21,7 @@ const {
     searchParamsState: { value: "" },
     singleMock: vi.fn(),
 }));
+const REPLAY_OPEN_DELAY_MS = 1200;
 
 vi.mock("next/navigation", () => ({
     usePathname: () => pathnameState.value,
@@ -69,11 +70,16 @@ describe("AppOnboardingGate", () => {
         pathnameState.value = "/browse";
         profileState.value = { data: { onboarding_state: null }, error: null };
         searchParamsState.value = "";
+        singleMock.mockReset();
         singleMock.mockImplementation(async () => profileState.value);
         rpcMock.mockResolvedValue({ error: null });
         routerReplaceMock.mockReset();
         rpcMock.mockClear();
         window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it("opens the shared tour for a signed-out visitor who has not seen it", async () => {
@@ -114,7 +120,8 @@ describe("AppOnboardingGate", () => {
         });
     });
 
-    it("force-opens from the replay query param even when already seen", async () => {
+    it("opens replay after a short delay even when already seen", async () => {
+        vi.useFakeTimers();
         searchParamsState.value = "tour=app-v1";
         profileState.value = {
             data: {
@@ -131,24 +138,96 @@ describe("AppOnboardingGate", () => {
 
         render(<AppOnboardingGate initialUser={null} />);
 
-        expect(await screen.findByRole("dialog")).toBeInTheDocument();
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(REPLAY_OPEN_DELAY_MS);
+        });
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(singleMock).not.toHaveBeenCalled();
+    });
+
+    it("opens replay after the short delay without waiting for the signed-in profile query", async () => {
+        vi.useFakeTimers();
+        searchParamsState.value = "tour=app-v1";
+        singleMock.mockImplementation(() => new Promise(() => undefined));
+
+        render(<AppOnboardingGate initialUser={null} />);
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(REPLAY_OPEN_DELAY_MS);
+        });
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(singleMock).not.toHaveBeenCalled();
+    });
+
+    it("opens guest replay after the short delay even when the guest tour was already seen", async () => {
+        vi.useFakeTimers();
+        authUserState.value = null;
+        searchParamsState.value = "tour=app-v1";
+        window.localStorage.setItem(
+            GUEST_ONBOARDING_STORAGE_KEY,
+            JSON.stringify(createGuestOnboardingEntry("completed"))
+        );
+
+        render(<AppOnboardingGate initialUser={null} />);
+
+        expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(REPLAY_OPEN_DELAY_MS);
+        });
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(singleMock).not.toHaveBeenCalled();
     });
 
     it("persists dismissal and clears the replay query param after closing", async () => {
+        vi.useFakeTimers();
         searchParamsState.value = "tour=app-v1";
 
         render(<AppOnboardingGate initialUser={null} />);
 
-        fireEvent.click(await screen.findByRole("button", { name: "Skip tour" }));
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(REPLAY_OPEN_DELAY_MS);
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
+        await act(async () => {});
 
-        await waitFor(() => {
-            expect(rpcMock).toHaveBeenCalledWith("set_onboarding_state", {
-                p_status: "dismissed",
-                p_tour: "app-tour",
-                p_version: "v1",
-            });
+        expect(rpcMock).toHaveBeenCalledWith("set_onboarding_state", {
+            p_status: "dismissed",
+            p_tour: "app-tour",
+            p_version: "v1",
         });
 
+        expect(routerReplaceMock).toHaveBeenCalledWith("/browse", { scroll: false });
+    });
+
+    it("persists replay dismissal to the account once auth resolves while the tour is open", async () => {
+        vi.useFakeTimers();
+        authUserState.value = null;
+        searchParamsState.value = "tour=app-v1";
+
+        const { rerender } = render(<AppOnboardingGate initialUser={null} />);
+
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(REPLAY_OPEN_DELAY_MS);
+        });
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        expect(rpcMock).not.toHaveBeenCalled();
+
+        authUserState.value = { id: "user-1" };
+        rerender(<AppOnboardingGate initialUser={null} />);
+
+        expect(screen.getByRole("dialog")).toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Skip tour" }));
+        await act(async () => {});
+
+        expect(rpcMock).toHaveBeenCalledWith("set_onboarding_state", {
+            p_status: "dismissed",
+            p_tour: "app-tour",
+            p_version: "v1",
+        });
+
+        expect(window.localStorage.getItem(GUEST_ONBOARDING_STORAGE_KEY)).toBeFalsy();
         expect(routerReplaceMock).toHaveBeenCalledWith("/browse", { scroll: false });
     });
 
