@@ -68,7 +68,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
             {results.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
                     {results.map((item) => (
-                        <ContentCard key={item.id} item={item} />
+                        <ContentCard key={item.id} item={item} titleDensity="app-compact" />
                     ))}
                 </div>
             ) : (
@@ -185,7 +185,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
                             {trendingItems.map((item) => (
-                                <ContentCard key={item.id} item={item} />
+                                <ContentCard key={item.id} item={item} titleDensity="app-compact" />
                             ))}
                         </div>
                     </div>

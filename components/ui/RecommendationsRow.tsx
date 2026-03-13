@@ -8,7 +8,7 @@ import { useBatchContentItems, useRecommendations } from "@/hooks/use-content-qu
 export function RecommendationsRow({
     cardTitleDensity = "default",
 }: {
-    cardTitleDensity?: "default" | "browse-compact";
+    cardTitleDensity?: "default" | "app-compact";
 }) {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
 

@@ -17,7 +17,7 @@ vi.mock("@/components/ui/ContentCard", () => ({
     }: {
         item: ContentItem;
         navigationMode?: "preview" | "resume";
-        titleDensity?: "default" | "browse-compact";
+        titleDensity?: "default" | "app-compact";
     }) => (
         <div>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${item.title}`}</div>
     ),
@@ -97,9 +97,9 @@ describe("ContentLane", () => {
     });
 
     it("passes through the requested card title density", () => {
-        render(<ContentLane title="Compact Lane" items={items} cardTitleDensity="browse-compact" />);
+        render(<ContentLane title="Compact Lane" items={items} cardTitleDensity="app-compact" />);
 
-        expect(screen.getByText("preview:browse-compact:One")).toBeInTheDocument();
-        expect(screen.getByText("preview:browse-compact:Two")).toBeInTheDocument();
+        expect(screen.getByText("preview:app-compact:One")).toBeInTheDocument();
+        expect(screen.getByText("preview:app-compact:Two")).toBeInTheDocument();
     });
 });

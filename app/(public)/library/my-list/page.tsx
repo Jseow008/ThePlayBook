@@ -164,6 +164,7 @@ export default function MyListPage() {
                                     <ContentCard
                                         key={item.id}
                                         item={item}
+                                        titleDensity="app-compact"
                                         onRemove={(id) => removeFromMyList(id)}
                                     />
                                 ))}

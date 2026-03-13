@@ -7,6 +7,7 @@ import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
+import { progressKey } from "@/lib/local-user-storage";
 
 /**
  * Completed Page
@@ -14,7 +15,7 @@ import { useBatchContentItems } from "@/hooks/use-content-queries";
  * Shows all items the user has finished reading with search, filter, and sort capabilities.
  */
 export default function CompletedPage() {
-    const { completedIds, isLoaded, refresh, removeFromProgress } = useReadingProgress();
+    const { completedIds, isLoaded, refresh, removeFromProgress, storageScope } = useReadingProgress();
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
@@ -34,12 +35,12 @@ export default function CompletedPage() {
 
         if (invalidIds.length > 0) {
             invalidIds.forEach((id) => {
-                localStorage.removeItem(`flux_progress_${id}`);
+                localStorage.removeItem(progressKey(storageScope, id));
             });
             window.dispatchEvent(new Event("flux_progress_updated"));
             refresh();
         }
-    }, [allItems, completedIds, isLoaded, isLoading, refresh]);
+    }, [allItems, completedIds, isLoaded, isLoading, refresh, storageScope]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {
@@ -168,6 +169,7 @@ export default function CompletedPage() {
                                     <ContentCard
                                         key={item.id}
                                         item={item}
+                                        titleDensity="app-compact"
                                         showCompletedBadge
                                         onRemove={(id) => {
                                             removeFromProgress(id);

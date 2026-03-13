@@ -43,13 +43,13 @@ export function HomeFeed({
                             </div>
                         }
                         items={items.slice(0, 10)}
-                        cardTitleDensity="browse-compact"
+                        cardTitleDensity="app-compact"
                     />
 
 
 
                     {/* Personalized Recommendations */}
-                    <RecommendationsRow cardTitleDensity="browse-compact" />
+                    <RecommendationsRow cardTitleDensity="app-compact" />
 
                     {/* Dynamic Sections from Admin */}
                     {(sections || []).map((section) => {
@@ -61,7 +61,7 @@ export function HomeFeed({
                                 key={section.id}
                                 title={section.title}
                                 items={sectionContent}
-                                cardTitleDensity="browse-compact"
+                                cardTitleDensity="app-compact"
                             />
                         );
                     })}

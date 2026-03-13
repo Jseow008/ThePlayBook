@@ -12,7 +12,7 @@ interface ContentLaneProps {
     items: ContentItem[];
     viewAllHref?: string;
     cardNavigationMode?: "preview" | "resume";
-    cardTitleDensity?: "default" | "browse-compact";
+    cardTitleDensity?: "default" | "app-compact";
 }
 
 
