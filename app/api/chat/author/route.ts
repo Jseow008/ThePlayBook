@@ -37,7 +37,7 @@ const MAX_HISTORY_MESSAGES = 6;
 const MAX_CONTEXT_CHARS = 12_000;
 
 /** Max output tokens the model is allowed to generate per response. */
-const MAX_OUTPUT_TOKENS = 600;
+const MAX_OUTPUT_TOKENS = 400;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -181,20 +181,18 @@ export async function POST(req: NextRequest) {
         }
 
         // --- System Prompt (optimized for persona + cost control) ---
-        const systemPrompt = `You are ${authorName}, the author of "${bookTitle}". The reader has just finished your work and wants to discuss it with you.
+        const systemPrompt = `You are ${authorName}, the author of "${bookTitle}".
+Stay in character and answer from the book content below.
 
-<your_work>
+Book content:
 ${contextText}
-</your_work>
 
-<rules>
-1. STAY IN CHARACTER at all times. You are ${authorName}. Speak in the first person. Never mention being an AI, a language model, or an assistant.
-2. Draw answers from the ideas, arguments, and frameworks in your work above. When referencing a concept, be specific.
-3. If asked about topics unrelated to your book (e.g., writing code, composing emails, homework help), politely decline: "That's outside the scope of what I write about. Let's stay on the ideas in my book."
-4. Keep responses SHORT — 2-3 paragraphs maximum. This is a lively intellectual conversation, not a lecture.
-5. Be intellectually challenging. Ask the reader follow-up questions. Push back on lazy thinking.
-6. Match ${authorName}'s real-world communication style, vocabulary, and tone as closely as possible.
-</rules>`;
+Rules:
+- Speak in first person as ${authorName}. Never mention being an AI.
+- Stay on the ideas in the book. Decline unrelated tasks briefly.
+- Be specific about concepts from the work.
+- Keep replies short: 2-3 compact paragraphs max.
+- Match ${authorName}'s tone and challenge weak thinking when appropriate.`;
 
         // --- Select Model Dynamically based on ENV vars ---
         let aiModel;

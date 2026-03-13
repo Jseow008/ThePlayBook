@@ -188,7 +188,7 @@ describe('Chat API', () => {
         // Stream text mock returned a 200 response
         expect(res.status).toBe(200);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            maxOutputTokens: 600,
+            maxOutputTokens: 500,
         }));
     });
 
@@ -210,6 +210,9 @@ describe('Chat API', () => {
         }));
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('Saved but not started: 0'),
+        }));
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            maxOutputTokens: 250,
         }));
     });
 
@@ -242,10 +245,13 @@ describe('Chat API', () => {
         expect(embedContentMock).toHaveBeenCalled();
         expect(mockRpc).toHaveBeenCalled();
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('User library metadata:'),
+            system: expect.stringContaining('Library metadata:'),
         }));
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('Retrieved passages:'),
+        }));
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            maxOutputTokens: 450,
         }));
     });
 
@@ -257,6 +263,25 @@ describe('Chat API', () => {
 
         const res = await POST(req);
         expect(res.status).toBe(200);
+    });
+
+    it('keeps only the last 6 normalized messages', async () => {
+        const messages = Array.from({ length: 7 }, (_, index) => ({
+            role: index % 2 === 0 ? 'user' : 'assistant',
+            content: `message-${index + 1}`,
+        }));
+
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({ messages }),
+        });
+
+        const res = await POST(req);
+
+        expect(res.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            messages: messages.slice(-6),
+        }));
     });
 
     it('rejects requests when normalization produces no usable text', async () => {

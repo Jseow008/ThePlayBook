@@ -117,8 +117,8 @@ describe("Notes chat API", () => {
         expect(highlightQuery.in).toHaveBeenCalledWith("id", ["123e4567-e89b-12d3-a456-426614174000"]);
         expect(res.status).toBe(200);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            maxOutputTokens: 600,
-            system: expect.stringContaining("Treat written note bodies as the strongest evidence"),
+            maxOutputTokens: 450,
+            system: expect.stringContaining("Treat written notes as the strongest evidence"),
         }));
     });
 
@@ -187,5 +187,42 @@ describe("Notes chat API", () => {
 
         const res = await POST(req);
         expect(res.status).toBe(500);
+    });
+
+    it("uses the higher output cap for synthesis-style note questions", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "Summarize the key ideas across these notes" }],
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            maxOutputTokens: 450,
+        }));
+    });
+
+    it("keeps only the last 6 normalized note messages", async () => {
+        const messages = Array.from({ length: 7 }, (_, index) => ({
+            role: index % 2 === 0 ? "user" : "assistant",
+            content: `note-message-${index + 1}`,
+        }));
+
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages,
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            messages: messages.slice(-6),
+        }));
     });
 });

@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/server/rate-limit';
+import { streamText } from 'ai';
 
 vi.mock('@/lib/supabase/server', () => ({
     createClient: vi.fn(),
@@ -169,5 +170,29 @@ describe('Author Chat API', () => {
         const res = await POST(req);
 
         expect(res.status).toBe(200);
+    });
+
+    it('uses the lower author output cap and last 6 messages only', async () => {
+        const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
+            method: 'POST',
+            body: JSON.stringify({
+                ...validBody,
+                messages: Array.from({ length: 7 }, (_, index) => ({
+                    role: index % 2 === 0 ? 'user' : 'assistant',
+                    content: `author-message-${index + 1}`,
+                })),
+            }),
+        });
+
+        const res = await POST(req);
+
+        expect(res.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            maxOutputTokens: 400,
+            messages: Array.from({ length: 7 }, (_, index) => ({
+                role: index % 2 === 0 ? 'user' : 'assistant',
+                content: `author-message-${index + 1}`,
+            })).slice(-6),
+        }));
     });
 });

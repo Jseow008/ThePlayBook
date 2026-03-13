@@ -19,9 +19,11 @@ const NotesChatRequestSchema = z.object({
     scopeLabel: z.string().trim().max(300).optional(),
 });
 
+const MAX_HISTORY_MESSAGES = 6;
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
-const MAX_CONTEXT_CHARS = 12_000;
-const MAX_OUTPUT_TOKENS = 600;
+const MAX_CONTEXT_CHARS = 9_000;
+const NOTES_DEFAULT_MAX_OUTPUT_TOKENS = 350;
+const NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS = 450;
 
 type HighlightContextRow = {
     id: string;
@@ -65,6 +67,15 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
             content: getMessageText(message).trim(),
         }))
         .filter((message) => message.content.length > 0);
+}
+
+function trimHighlightText(text: string, noteText: string | null): string {
+    const maxChars = noteText ? 160 : 220;
+    return text.length > maxChars ? `${text.slice(0, maxChars).trimEnd()}...` : text;
+}
+
+function detectNotesSynthesisIntent(query: string): boolean {
+    return /\b(compare|comparison|summar(?:ize|ise)|theme|themes|pattern|patterns|tension|contradiction|overlap|across)\b/i.test(query);
 }
 
 export async function POST(req: NextRequest) {
@@ -124,10 +135,12 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
-        const lastMessage = messages[messages.length - 1];
+        const trimmedMessages = messages.slice(-MAX_HISTORY_MESSAGES);
+        const lastMessage = trimmedMessages[trimmedMessages.length - 1];
         if (!lastMessage || lastMessage.role !== "user") {
             return apiError("VALIDATION_ERROR", "Last message must be a user message with text content", 400, requestId);
         }
+        const prefersLongerSynthesis = detectNotesSynthesisIntent(lastMessage.content);
 
         const { data: highlights, error: highlightError } = await supabase
             .from("user_highlights")
@@ -162,7 +175,7 @@ export async function POST(req: NextRequest) {
                 return [
                     `[Note ${index + 1}: "${title}"${section ? ` • ${section}` : ""}]`,
                     noteText ? `Note: ${noteText}` : null,
-                    `Highlight: ${highlight.highlighted_text}`,
+                    `Highlight: ${trimHighlightText(highlight.highlighted_text, noteText || null)}`,
                 ]
                     .filter(Boolean)
                     .join("\n");
@@ -177,30 +190,23 @@ export async function POST(req: NextRequest) {
             contextText = "No relevant note context is available for this request.";
         }
 
-        const systemPrompt = `You are a helpful notes assistant inside a personal reading app.
-Your role is to answer the user's question using ONLY the provided notes context.
+        const systemPrompt = `You are a notes assistant inside a personal reading app.
+Answer only from the scoped note context below.
 
-Scoped Notes Context:
-===
+Notes context:
 ${contextText}
-===
 
-Current scope:
-${scopeLabel || "Current notes view"}
-
-Scope makeup:
-- Total saved items in scope: ${rows.length}
-- Items with written notes: ${noteBodyCount}
-- Highlight-only items: ${highlightOnlyCount}
+Scope: ${scopeLabel || "Current notes view"}
+Items in scope: ${rows.length}
+Written notes: ${noteBodyCount}
+Highlight-only items: ${highlightOnlyCount}
 
 Rules:
-1. Answer ONLY from the provided note context. Never use outside knowledge.
-2. Treat written note bodies as the strongest evidence when they exist. Use highlight text as supporting context.
-3. If the scope is mostly highlights rather than written notes, say so plainly instead of pretending the user wrote more notes than they did.
-4. If the notes do not contain enough information, say so clearly.
-5. Cite source titles naturally when referencing a point.
-6. Keep answers concise, structured, and useful for someone reviewing their notes.
-7. Focus on synthesis, comparison, retrieval, and pattern-finding across the notes in scope.`;
+- Treat written notes as the strongest evidence. Use highlights as supporting context.
+- If the scope is mostly clipped highlights, say that once and still extract the strongest themes available.
+- If the notes are insufficient, say so clearly without repeating yourself.
+- Cite source titles naturally.
+- Keep answers short, structured, and practical. Use bullets when listing patterns or gaps.`;
 
         let aiModel;
 
@@ -215,8 +221,8 @@ Rules:
         const result = streamText({
             model: aiModel,
             system: systemPrompt,
-            messages,
-            maxOutputTokens: MAX_OUTPUT_TOKENS,
+            messages: trimmedMessages,
+            maxOutputTokens: prefersLongerSynthesis ? NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS : NOTES_DEFAULT_MAX_OUTPUT_TOKENS,
         });
 
         return result.toTextStreamResponse();

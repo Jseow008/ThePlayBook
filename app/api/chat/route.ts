@@ -19,10 +19,15 @@ const ChatRequestSchema = z.object({
     messages: z.array(ChatMessageSchema).min(1).max(20),
 });
 
+const MAX_HISTORY_MESSAGES = 6;
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
-const MAX_CONTEXT_CHARS = 12_000;
-const MAX_LIBRARY_CONTEXT_CHARS = 6_000;
-const MAX_OUTPUT_TOKENS = 600;
+const MAX_CONTEXT_CHARS = 9_000;
+const MAX_LIBRARY_CONTEXT_CHARS = 4_000;
+const MAX_OUTPUT_TOKENS = {
+    library_metadata: 250,
+    content_synthesis: 450,
+    hybrid: 500,
+} as const;
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
 const PRIMARY_MATCH_THRESHOLD = 0.65;
@@ -34,6 +39,10 @@ type SegmentWithTitle = {
     content_item: { title: string | null } | Array<{ title: string | null }> | null;
 };
 type AskIntent = "library_metadata" | "content_synthesis" | "hybrid";
+
+function getOutputTokenCap(intent: AskIntent): number {
+    return MAX_OUTPUT_TOKENS[intent];
+}
 
 function getMessageText(message: Record<string, unknown>): string {
     if (Array.isArray(message.parts)) {
@@ -257,7 +266,8 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
-        const lastMessage = messages[messages.length - 1];
+        const trimmedMessages = messages.slice(-MAX_HISTORY_MESSAGES);
+        const lastMessage = trimmedMessages[trimmedMessages.length - 1];
         if (!lastMessage || lastMessage.role !== "user") {
             return apiError("VALIDATION_ERROR", "Last message must be a user message with text content", 400, requestId);
         }
@@ -345,31 +355,24 @@ export async function POST(req: NextRequest) {
                     : "Retrieved passages were not needed for this question."
         );
 
-        const systemPrompt = `You are Ask My Library, a hybrid reading assistant inside a personal reading platform.
-You can answer from two evidence types:
-1. Library metadata: authoritative for what the user has saved, read, completed, bookmarked, or recently interacted with.
-2. Retrieved passages: authoritative for themes, ideas, comparisons, and supporting quotations from saved book content.
+        const systemPrompt = `You are Ask My Library.
+Answer only from the evidence below.
 
-User library metadata:
-===
+Library metadata:
 ${metadataContext}
-===
 
 Retrieved passages:
-===
 ${retrievalContextForPrompt}
-===
 
-Intent classification for this question: ${intent}
+Intent: ${intent}
 
 Rules:
-1. Answer ONLY from the evidence above. Never invent titles, authors, progress, or themes that are not present.
-2. Use library metadata for inventory questions such as what the user has read, completed, saved, or how many items they have.
-3. Use retrieved passages for synthesis questions about themes, ideas, relevance, overlap, or comparisons.
-4. For hybrid questions, combine both evidence types. If metadata exists but retrieved passages are empty, answer the metadata portion directly and state that no matching saved passages were found.
-5. If the library metadata is empty, say so plainly instead of pretending the library exists.
-6. Cite source titles naturally when referencing books or retrieved passages.
-7. Keep answers concise, well-structured, and formatted in clean Markdown.`;
+- Use metadata for inventory, counts, titles, authors, and reading status.
+- Use retrieved passages for themes, comparisons, and content-based reasoning.
+- For hybrid questions, combine both. If passages are limited, answer from metadata first and say passage evidence is limited.
+- Never invent books, authors, progress, or themes.
+- If metadata is empty, say so plainly.
+- Keep answers short and structured. Use bullets for lists. Do not write a long essay unless asked.`;
 
         let aiModel;
 
@@ -384,8 +387,8 @@ Rules:
         const result = streamText({
             model: aiModel,
             system: systemPrompt,
-            messages,
-            maxOutputTokens: MAX_OUTPUT_TOKENS,
+            messages: trimmedMessages,
+            maxOutputTokens: getOutputTokenCap(intent),
         });
 
         return result.toTextStreamResponse();
