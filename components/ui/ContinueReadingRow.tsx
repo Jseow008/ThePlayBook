@@ -35,6 +35,7 @@ export function ContinueReadingRow() {
         <ContentLane
             title="Continue Reading"
             items={items}
+            cardNavigationMode="resume"
         />
     );
 }
