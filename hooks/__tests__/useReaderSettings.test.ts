@@ -17,6 +17,7 @@ type ReaderSettingsPayload = {
 
 let authStateChangeHandler: ((event: string, session: { user: { id: string } | null } | null) => void) | null = null;
 let currentAuthUser: { id: string } | null = null;
+let currentAuthError: { code?: string; message?: string; name?: string } | null = null;
 let currentCloudReaderSettings: Partial<ReaderSettingsPayload> | null = null;
 const profileUpdateMock = vi.fn();
 
@@ -33,7 +34,7 @@ vi.mock("@/lib/supabase/client", () => ({
                     },
                 };
             }),
-            getUser: vi.fn(() => Promise.resolve({ data: { user: currentAuthUser }, error: null })),
+            getUser: vi.fn(() => Promise.resolve({ data: { user: currentAuthUser }, error: currentAuthError })),
         },
         from: vi.fn(() => ({
             select: vi.fn(() => ({
@@ -95,6 +96,7 @@ describe("useReaderSettings", () => {
     beforeEach(() => {
         authStateChangeHandler = null;
         currentAuthUser = null;
+        currentAuthError = null;
         currentCloudReaderSettings = null;
         window.localStorage.clear();
         vi.clearAllMocks();
@@ -137,6 +139,38 @@ describe("useReaderSettings", () => {
         });
 
         expect(localStorage.getItem(readerSettingsKey(GUEST_STORAGE_SCOPE))).toBe(persistedSettings);
+    });
+
+    it("treats missing-session bootstrap as guest settings without logging an error", async () => {
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const guestSettings: ReaderSettingsPayload = {
+            fontSize: "large",
+            fontFamily: "serif",
+            readerTheme: "light",
+            lineHeight: "relaxed",
+            updatedAt: "2026-03-13T12:00:00.000Z",
+        };
+
+        currentAuthError = {
+            code: "session_not_found",
+            message: "Auth session missing!",
+            name: "AuthSessionMissingError",
+        };
+        localStorage.setItem(
+            readerSettingsKey(GUEST_STORAGE_SCOPE),
+            createPersistedSettings(guestSettings),
+        );
+
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+
+        await waitFor(() => {
+            expect(result.current.fontSize).toBe("large");
+            expect(result.current.readerTheme).toBe("light");
+        });
+
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
+        consoleErrorSpy.mockRestore();
     });
 
     it("imports guest reader settings into a signed-in scope without resetting them to defaults", async () => {

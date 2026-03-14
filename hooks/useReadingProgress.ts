@@ -12,6 +12,7 @@ import {
 } from "react";
 import { AuthUser as User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { deleteUserLibrary, upsertUserLibrary } from "@/lib/server/user-library-repository";
 import type { Json } from "@/types/database";
 import {
@@ -347,12 +348,12 @@ function useReadingProgressController() {
         let isMounted = true;
 
         const initialize = async () => {
-            const { data, error } = await supabase.auth.getUser();
+            const { user, error } = resolveAuthUserResult(await supabase.auth.getUser());
             if (!isMounted) return;
             if (error) {
                 console.error("Failed to resolve auth state for reading progress:", error);
             }
-            await hydrateForUser(data.user ?? null);
+            await hydrateForUser(user);
         };
 
         initialize();

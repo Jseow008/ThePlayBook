@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import type { Database } from "@/types/database";
 import {
     getStorageScope,
@@ -298,11 +299,11 @@ const useReaderSettingsStore = create<ReaderSettingsState>()(
             },
             syncFromCloud: async () => {
                 const supabase = createClient();
-                const { data, error } = await supabase.auth.getUser();
+                const { user, error } = resolveAuthUserResult(await supabase.auth.getUser());
                 if (error) {
                     console.error("Failed to resolve auth state for reader settings:", error);
                 }
-                await applyReaderSettingsScope(data.user ?? null);
+                await applyReaderSettingsScope(user);
             },
         }),
         {
@@ -326,14 +327,14 @@ async function pushToCloudForCurrentUser(settings: ReaderSettingsPayload) {
     }
 
     const supabase = createClient();
-    const { data, error } = await supabase.auth.getUser();
+    const { user, error } = resolveAuthUserResult(await supabase.auth.getUser());
     if (error) {
         console.error("Failed to resolve auth state for reader settings:", error);
         return false;
     }
-    currentReaderSettingsUserId = data.user?.id ?? null;
-    if (!data.user) return true;
-    return pushToCloud(data.user.id, settings);
+    currentReaderSettingsUserId = user?.id ?? null;
+    if (!user) return true;
+    return pushToCloud(user.id, settings);
 }
 
 async function rehydrateReaderSettings(scope: StorageScope) {
@@ -431,12 +432,13 @@ function ensureReaderSettingsAuthSync() {
 
     const supabase = createClient();
 
-    supabase.auth.getUser().then(({ data, error }) => {
+    supabase.auth.getUser().then((result) => {
+        const { user, error } = resolveAuthUserResult(result);
         if (error) {
             console.error("Failed to resolve auth state for reader settings:", error);
         }
-        currentReaderSettingsUserId = data.user?.id ?? null;
-        void applyReaderSettingsScope(data.user ?? null);
+        currentReaderSettingsUserId = user?.id ?? null;
+        void applyReaderSettingsScope(user);
     });
 
     supabase.auth.onAuthStateChange((_event, session) => {

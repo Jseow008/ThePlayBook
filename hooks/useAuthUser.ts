@@ -3,6 +3,7 @@
 import { createContext, createElement, useContext, useEffect, useState, type ReactNode } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 
 const AuthUserContext = createContext<User | null | undefined>(undefined);
 
@@ -23,9 +24,11 @@ export function AuthUserProvider({
         const supabase = createClient();
         let isMounted = true;
 
-        supabase.auth.getUser().then(({ data, error }) => {
-            if (!isMounted || error) return;
-            setUser(data.user ?? null);
+        supabase.auth.getUser().then((result) => {
+            if (!isMounted) return;
+            const { user, error } = resolveAuthUserResult(result);
+            if (error) return;
+            setUser(user);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

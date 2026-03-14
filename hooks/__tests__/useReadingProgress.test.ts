@@ -16,6 +16,7 @@ import {
 
 let authStateChangeHandler: ((event: string, session: { user: { id: string } | null } | null) => void) | null = null;
 let currentAuthUser: { id: string } | null = null;
+let currentAuthError: { code?: string; message?: string; name?: string } | null = null;
 let currentCloudRows: Array<{
     user_id?: string;
     content_id: string;
@@ -49,7 +50,7 @@ vi.mock("@/lib/supabase/client", () => ({
                     },
                 };
             }),
-            getUser: vi.fn(() => Promise.resolve({ data: { user: currentAuthUser }, error: null })),
+            getUser: vi.fn(() => Promise.resolve({ data: { user: currentAuthUser }, error: currentAuthError })),
         },
         from: vi.fn(() => userLibraryTable),
     }),
@@ -98,6 +99,7 @@ describe("useReadingProgress", () => {
     beforeEach(() => {
         authStateChangeHandler = null;
         currentAuthUser = null;
+        currentAuthError = null;
         currentCloudRows = [];
         window.localStorage.clear();
         upsertMock.mockResolvedValue({ error: null });
@@ -152,6 +154,23 @@ describe("useReadingProgress", () => {
         const localData = localStorage.getItem(progressKey(GUEST_STORAGE_SCOPE, "item-4"));
         expect(localData).toBeDefined();
         expect(JSON.parse(localData!).completed).toContain("seg-x");
+    });
+
+    it("treats missing-session bootstrap as a guest flow without logging an error", async () => {
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        currentAuthError = {
+            code: "session_not_found",
+            message: "Auth session missing!",
+            name: "AuthSessionMissingError",
+        };
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        expect(result.current.storageScope).toBe(GUEST_STORAGE_SCOPE);
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
+        consoleErrorSpy.mockRestore();
     });
 
     it("imports guest data into the first signed-in account and clears guest storage", async () => {
@@ -225,6 +244,24 @@ describe("useReadingProgress", () => {
         expect(localStorage.getItem(myListKey(getStorageScope("user-a")))).toBe(JSON.stringify(["item-22"]));
         expect(localStorage.getItem(progressKey(getStorageScope("user-b"), "item-21"))).toBeNull();
         expect(localStorage.getItem(myListKey(getStorageScope("user-b")))).toBe(JSON.stringify([]));
+    });
+
+    it("keeps logging unexpected auth bootstrap errors", async () => {
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        currentAuthError = {
+            message: "Network failure",
+            name: "AuthRetryableFetchError",
+        };
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+            "Failed to resolve auth state for reading progress:",
+            currentAuthError,
+        );
+        consoleErrorSpy.mockRestore();
     });
 
     it("loads only the signed-in user's cloud rows during hydration", async () => {
