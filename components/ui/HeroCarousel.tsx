@@ -158,7 +158,10 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
             {/* Content Layer */}
             <div className="pointer-events-none absolute inset-0 z-30 flex items-end md:items-center">
-                <div className="pointer-events-auto w-full px-4 pb-6 md:px-6 md:pb-0 lg:px-16">
+                <div
+                    className="pointer-events-auto w-full px-4 pb-10 md:px-6 md:pb-0 lg:px-16"
+                    data-testid="hero-carousel-content"
+                >
                     <div className="max-w-6xl space-y-3 md:space-y-8">
                         {/* Featured Badge */}
                         <div
@@ -216,7 +219,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Description */}
                         <p
                             className={cn(
-                                "hidden max-w-xl text-base font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-700 delay-300 md:block md:text-xl",
+                                "max-w-lg text-sm font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-700 delay-300 md:max-w-xl md:text-xl",
                                 isTransitioning ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
                             )}
                         >
