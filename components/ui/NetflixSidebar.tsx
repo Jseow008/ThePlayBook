@@ -29,7 +29,7 @@ const navItems = [
     { icon: Search, label: "Search", href: "/search" },
     { icon: Home, label: "Home", href: "/browse" },
     { icon: LayoutGrid, label: "Browse Categories", href: "/categories" },
-    { icon: Shuffle, label: "Surprise Me", href: "/random" },
+    { icon: Shuffle, label: "Focus", href: "/focus" },
 ];
 
 export function NetflixSidebar() {

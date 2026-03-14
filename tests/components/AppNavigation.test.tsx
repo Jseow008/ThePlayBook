@@ -122,4 +122,21 @@ describe("app navigation", () => {
 
         expect(screen.getByTitle("Ask")).toHaveAttribute("href", "/ask");
     });
+
+    it("renames Surprise Me to Focus in the desktop sidebar", async () => {
+        vi.useFakeTimers();
+
+        render(<NetflixSidebar />);
+
+        const sidebar = screen.getByRole("complementary");
+        fireEvent.mouseEnter(sidebar);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(300);
+        });
+
+        expect(screen.getByRole("link", { name: "Focus" })).toHaveAttribute("href", "/focus");
+        expect(screen.queryByRole("link", { name: "Surprise Me" })).not.toBeInTheDocument();
+
+        vi.useRealTimers();
+    });
 });

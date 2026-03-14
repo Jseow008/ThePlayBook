@@ -36,12 +36,12 @@ test('public layout chrome is excluded on landing and present on browse', async 
     await page.goto('/');
 
     // Landing page should not include app-shell nav links
-    await expect(page.locator('a[href="/random"]')).toHaveCount(0);
+    await expect(page.locator('a[href="/focus"]')).toHaveCount(0);
     await expect(page.locator('a[href="/search"]')).toHaveCount(0);
 
     await page.goto('/browse');
 
     // Browse page should include app-shell nav links
-    await expect(page.locator('a[href="/random"]').first()).toBeAttached();
+    await expect(page.locator('a[href="/focus"]').first()).toBeAttached();
     await expect(page.locator('a[href="/search"]').first()).toBeAttached();
 });

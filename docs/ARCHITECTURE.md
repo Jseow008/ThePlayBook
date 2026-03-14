@@ -24,7 +24,7 @@ Flux is a **curated content platform** with public browsing and personalized use
 
 * **Strategy:** Incremental Static Regeneration (ISR) for SEO and performance.
 * **Goal:** Sub-100ms TTFB, excellent SEO for discoverability.
-* **Routes:** `/` (Home), `/read/[id]`, `/search`, `/random`.
+* **Routes:** `/` (Home), `/read/[id]`, `/search`, `/focus`.
 * **Data Source:** Supabase with public read access.
 
 ### Zone B: Admin Panel (Content Management & AI Ops)

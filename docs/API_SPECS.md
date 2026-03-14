@@ -458,8 +458,9 @@ The following routes are currently implemented and should be treated as active c
 
 ### 7.1 Public/Authenticated Utility APIs
 
-- **GET** `/api/random`
-  - Returns a random verified content item (via RPC `get_random_verified_content`).
+- **GET** `/api/focus`
+  - Returns a shuffled batch of verified items with `quick_mode_json` for the Focus feed.
+  - Query params: `limit` and optional `excludeIds`.
   - Rate limited.
 
 - **POST** `/api/content/batch`

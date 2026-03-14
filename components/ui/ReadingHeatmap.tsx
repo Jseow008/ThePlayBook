@@ -269,7 +269,7 @@ function ReadingEmptyState() {
             <p className="text-xs text-muted-foreground mb-4 max-w-[200px]">
                 Read any amount today to start your streak and unlock the heatmap.
             </p>
-            <Link href="/random">
+            <Link href="/focus">
                 <Button size="sm" variant="default" className="text-xs h-8">
                     Start Reading
                 </Button>

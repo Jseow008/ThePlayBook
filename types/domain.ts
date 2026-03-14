@@ -142,6 +142,17 @@ export interface ArtifactSummary {
     version: number;
 }
 
+export interface FocusFeedItem {
+    id: string;
+    title: string;
+    type: string;
+    author: string | null;
+    category: string | null;
+    cover_image_url: string | null;
+    duration_seconds: number | null;
+    quick_mode_json: QuickMode;
+}
+
 // ==========================================================================
 // LOCAL STORAGE TYPES (for client-side progress tracking)
 // ==========================================================================
