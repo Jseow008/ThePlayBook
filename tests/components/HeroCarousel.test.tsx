@@ -120,4 +120,26 @@ describe("HeroCarousel", () => {
         expect(screen.getByRole("heading", { name: "First Feature" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Read" })).toBeInTheDocument();
     });
+
+    it("shows the mobile description without hiding it on smaller screens", () => {
+        render(<HeroCarousel items={items} />);
+
+        const description = screen.getByText("Experience this Flux content today.");
+
+        expect(description).toBeInTheDocument();
+        expect(description).toHaveClass("text-sm", "md:text-xl");
+        expect(description).not.toHaveClass("hidden");
+    });
+
+    it("lifts the mobile hero content stack while preserving desktop alignment classes", () => {
+        render(<HeroCarousel items={items} />);
+
+        expect(screen.getByTestId("hero-carousel-content")).toHaveClass("pb-10", "md:pb-0");
+    });
+
+    it("falls back to the default description when no hook or big idea exists", () => {
+        render(<HeroCarousel items={items} />);
+
+        expect(screen.getByText("Experience this Flux content today.")).toBeInTheDocument();
+    });
 });
