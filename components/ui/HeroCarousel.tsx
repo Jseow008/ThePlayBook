@@ -159,7 +159,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             {/* Content Layer */}
             <div className="pointer-events-none absolute inset-0 z-30 flex items-end md:items-center">
                 <div
-                    className="pointer-events-auto w-full px-4 pb-10 md:px-6 md:pb-0 lg:px-16"
+                    className="pointer-events-auto w-full px-4 pb-16 md:px-6 md:pb-0 lg:px-16"
                     data-testid="hero-carousel-content"
                 >
                     <div className="max-w-6xl space-y-3 md:space-y-8">
