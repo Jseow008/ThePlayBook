@@ -12,7 +12,7 @@ const BATCH_SIZE = 6;
 const FEED_VIEWPORT_CLASS = "h-[calc(100svh-8.75rem)] md:h-[calc(100svh-7.5rem)]";
 const WHEEL_TRIGGER = 40;
 const TOUCH_TRIGGER = 40;
-const GESTURE_UNLOCK_TIMEOUT_MS = 650;
+const GESTURE_UNLOCK_TIMEOUT_MS = 200;
 const WHEEL_QUIET_PERIOD_MS = 180;
 
 function formatDuration(durationSeconds: number | null) {
