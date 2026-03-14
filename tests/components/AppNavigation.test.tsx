@@ -86,15 +86,16 @@ describe("app navigation", () => {
         expect(screen.getByText("Settings")).toBeInTheDocument();
     });
 
-    it("renders Ask in the mobile bottom nav instead of Categories", () => {
+    it("renders Focus in the mobile bottom nav instead of Ask", () => {
         render(<MobileBottomNav />);
 
         expect(screen.getByRole("link", { name: /home/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /search/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /^ask$/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /^focus$/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /my library/i })).toBeInTheDocument();
         expect(screen.queryByText("Categories")).not.toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /^ask$/i })).toHaveAttribute("href", "/ask");
+        expect(screen.queryByRole("link", { name: /^ask$/i })).not.toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /^focus$/i })).toHaveAttribute("href", "/focus");
     });
 
     it("adds an Ask section to the desktop sidebar with global and notes entry points", async () => {

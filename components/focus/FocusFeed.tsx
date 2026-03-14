@@ -1,8 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Loader2 } from "lucide-react";
+import { BookOpen, Info, Loader2 } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import type { FocusFeedItem } from "@/types/domain";
@@ -10,6 +10,10 @@ import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/compon
 
 const BATCH_SIZE = 6;
 const FEED_VIEWPORT_CLASS = "h-[calc(100svh-8.75rem)] md:h-[calc(100svh-7.5rem)]";
+const WHEEL_TRIGGER = 40;
+const TOUCH_TRIGGER = 40;
+const GESTURE_UNLOCK_TIMEOUT_MS = 650;
+const WHEEL_QUIET_PERIOD_MS = 180;
 
 function formatDuration(durationSeconds: number | null) {
     if (!durationSeconds) return null;
@@ -21,7 +25,6 @@ function buildExcludeParam(ids: string[]) {
 }
 
 export function FocusFeed() {
-    const router = useRouter();
     const { completedIds, isLoaded } = useReadingProgress();
     const isDesktop = useMediaQuery("(min-width: 768px)");
     const [items, setItems] = useState<FocusFeedItem[]>([]);
@@ -33,8 +36,101 @@ export function FocusFeed() {
     const seenIdsRef = useRef<Set<string>>(new Set());
     const hasInitializedRef = useRef(false);
     const isFetchingRef = useRef(false);
+    const activeCardIndexRef = useRef(0);
+    const isGestureLockedRef = useRef(false);
+    const pendingCardIndexRef = useRef<number | null>(null);
+    const unlockTimeoutRef = useRef<number | null>(null);
+    const accumulatedWheelDeltaRef = useRef(0);
+    const isWheelMomentumLockedRef = useRef(false);
+    const wheelQuietTimeoutRef = useRef<number | null>(null);
+    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
+
+    const unlockGestures = useCallback(() => {
+        isGestureLockedRef.current = false;
+        pendingCardIndexRef.current = null;
+
+        if (unlockTimeoutRef.current !== null) {
+            window.clearTimeout(unlockTimeoutRef.current);
+            unlockTimeoutRef.current = null;
+        }
+    }, []);
+
+    const clearWheelQuietTimeout = useCallback(() => {
+        if (wheelQuietTimeoutRef.current !== null) {
+            window.clearTimeout(wheelQuietTimeoutRef.current);
+            wheelQuietTimeoutRef.current = null;
+        }
+    }, []);
+
+    const refreshWheelQuietPeriod = useCallback(() => {
+        isWheelMomentumLockedRef.current = true;
+        clearWheelQuietTimeout();
+        wheelQuietTimeoutRef.current = window.setTimeout(() => {
+            isWheelMomentumLockedRef.current = false;
+            accumulatedWheelDeltaRef.current = 0;
+            wheelQuietTimeoutRef.current = null;
+        }, WHEEL_QUIET_PERIOD_MS);
+    }, [clearWheelQuietTimeout]);
+
+    const moveToCard = useCallback(
+        (nextIndex: number) => {
+            const list = listRef.current;
+            if (!list) {
+                return false;
+            }
+
+            const cardElements = Array.from(
+                list.querySelectorAll<HTMLElement>("[data-focus-card-index]")
+            );
+
+            if (cardElements.length === 0) {
+                return false;
+            }
+
+            const boundedIndex = Math.max(0, Math.min(nextIndex, cardElements.length - 1));
+            if (boundedIndex === activeCardIndexRef.current) {
+                return false;
+            }
+
+            const targetCard = cardElements[boundedIndex];
+            if (!targetCard) {
+                return false;
+            }
+
+            isGestureLockedRef.current = true;
+            pendingCardIndexRef.current = boundedIndex;
+            accumulatedWheelDeltaRef.current = 0;
+
+            if (unlockTimeoutRef.current !== null) {
+                window.clearTimeout(unlockTimeoutRef.current);
+            }
+
+            unlockTimeoutRef.current = window.setTimeout(() => {
+                unlockGestures();
+            }, GESTURE_UNLOCK_TIMEOUT_MS);
+
+            targetCard.scrollIntoView({ behavior: "smooth", block: "start" });
+            return true;
+        },
+        [unlockGestures]
+    );
+
+    const moveByDirection = useCallback(
+        (direction: -1 | 1) => {
+            if (
+                isGestureLockedRef.current ||
+                isWheelMomentumLockedRef.current ||
+                cards.length === 0
+            ) {
+                return false;
+            }
+
+            return moveToCard(activeCardIndexRef.current + direction);
+        },
+        [cards.length, moveToCard]
+    );
 
     const fetchBatch = useCallback(async () => {
         if (isFetchingRef.current || !hasMore) {
@@ -114,7 +210,16 @@ export function FocusFeed() {
                 const nextIndex = Number(
                     (visibleEntry.target as HTMLElement).dataset.focusCardIndex ?? 0
                 );
-                setActiveCardIndex(Number.isNaN(nextIndex) ? 0 : nextIndex);
+                const normalizedIndex = Number.isNaN(nextIndex) ? 0 : nextIndex;
+                activeCardIndexRef.current = normalizedIndex;
+                setActiveCardIndex(normalizedIndex);
+
+                if (
+                    isGestureLockedRef.current &&
+                    pendingCardIndexRef.current === normalizedIndex
+                ) {
+                    unlockGestures();
+                }
             },
             {
                 root: list,
@@ -124,7 +229,108 @@ export function FocusFeed() {
 
         cardElements.forEach((element) => observer.observe(element));
         return () => observer.disconnect();
-    }, [cards.length]);
+    }, [cards.length, unlockGestures]);
+
+    useEffect(() => {
+        activeCardIndexRef.current = activeCardIndex;
+    }, [activeCardIndex]);
+
+    useEffect(() => {
+        const list = listRef.current;
+        if (!list || cards.length === 0) {
+            return;
+        }
+
+        const handleWheel = (event: WheelEvent) => {
+            if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (isGestureLockedRef.current) {
+                refreshWheelQuietPeriod();
+                return;
+            }
+
+            if (isWheelMomentumLockedRef.current) {
+                refreshWheelQuietPeriod();
+                return;
+            }
+
+            accumulatedWheelDeltaRef.current += event.deltaY;
+            if (Math.abs(accumulatedWheelDeltaRef.current) < WHEEL_TRIGGER) {
+                return;
+            }
+
+            const direction = accumulatedWheelDeltaRef.current > 0 ? 1 : -1;
+            accumulatedWheelDeltaRef.current = 0;
+            if (moveByDirection(direction)) {
+                refreshWheelQuietPeriod();
+            }
+        };
+
+        const handleTouchStart = (event: TouchEvent) => {
+            if (event.touches.length !== 1) {
+                touchStartRef.current = null;
+                return;
+            }
+
+            const touch = event.touches[0];
+            touchStartRef.current = {
+                x: touch.clientX,
+                y: touch.clientY,
+            };
+        };
+
+        const handleTouchMove = (event: TouchEvent) => {
+            if (!touchStartRef.current || event.touches.length !== 1) {
+                return;
+            }
+
+            const touch = event.touches[0];
+            const deltaX = touch.clientX - touchStartRef.current.x;
+            const deltaY = touch.clientY - touchStartRef.current.y;
+
+            if (Math.abs(deltaY) <= Math.abs(deltaX)) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (isGestureLockedRef.current || Math.abs(deltaY) < TOUCH_TRIGGER) {
+                return;
+            }
+
+            touchStartRef.current = null;
+            moveByDirection(deltaY < 0 ? 1 : -1);
+        };
+
+        const resetTouchTracking = () => {
+            touchStartRef.current = null;
+        };
+
+        list.addEventListener("wheel", handleWheel, { passive: false });
+        list.addEventListener("touchstart", handleTouchStart, { passive: true });
+        list.addEventListener("touchmove", handleTouchMove, { passive: false });
+        list.addEventListener("touchend", resetTouchTracking);
+        list.addEventListener("touchcancel", resetTouchTracking);
+
+        return () => {
+            list.removeEventListener("wheel", handleWheel);
+            list.removeEventListener("touchstart", handleTouchStart);
+            list.removeEventListener("touchmove", handleTouchMove);
+            list.removeEventListener("touchend", resetTouchTracking);
+            list.removeEventListener("touchcancel", resetTouchTracking);
+        };
+    }, [cards.length, moveByDirection, refreshWheelQuietPeriod]);
+
+    useEffect(() => {
+        return () => {
+            unlockGestures();
+            clearWheelQuietTimeout();
+        };
+    }, [clearWheelQuietTimeout, unlockGestures]);
 
     useEffect(() => {
         if (!hasInitializedRef.current || loading || !hasMore || cards.length === 0) {
@@ -153,7 +359,7 @@ export function FocusFeed() {
                     <div
                         ref={listRef}
                         data-testid="focus-feed-list"
-                        className={`${FEED_VIEWPORT_CLASS} snap-y snap-mandatory overflow-y-auto overscroll-y-contain`}
+                        className={`${FEED_VIEWPORT_CLASS} scrollbar-hide snap-y snap-mandatory overflow-y-auto overscroll-y-contain`}
                     >
                         <div className="space-y-3 pb-2">
                             {cards.map((card, index) => (
@@ -162,7 +368,6 @@ export function FocusFeed() {
                                     card={card}
                                     cardIndex={index}
                                     isDesktop={isDesktop}
-                                    onOpen={() => router.push(`/read/${card.id}`)}
                                 />
                             ))}
 
@@ -211,15 +416,18 @@ function FocusCardView({
     card,
     cardIndex,
     isDesktop,
-    onOpen,
 }: {
     card: FocusCard;
     cardIndex: number;
     isDesktop: boolean;
-    onOpen: () => void;
 }) {
     const duration = formatDuration(card.duration_seconds);
-    const visibleTakeaways = isDesktop ? card.takeaways.slice(0, 4) : card.takeaways.slice(0, 3);
+    const visibleTakeaways = isDesktop ? card.takeaways.slice(0, 7) : card.takeaways.slice(0, 3);
+    const takeawayLabel = isDesktop
+        ? "Key Takeaways"
+        : card.totalTakeaways > visibleTakeaways.length
+            ? `Key Takeaways (${visibleTakeaways.length} of ${card.totalTakeaways})`
+            : `Key Takeaways (${card.totalTakeaways})`;
 
     return (
         <article
@@ -252,6 +460,9 @@ function FocusCardView({
                     </div>
 
                     <section className="rounded-2xl border border-border/50 bg-background/45 p-4 sm:p-[1.125rem]">
+                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75 sm:text-[11px]">
+                            Hook
+                        </p>
                         <p className="line-clamp-6 text-[0.95rem] leading-[1.55] text-foreground/92 sm:text-[1rem] sm:leading-[1.55]">
                             {card.hook}
                         </p>
@@ -259,7 +470,7 @@ function FocusCardView({
 
                     <section className="rounded-2xl border border-border/50 bg-background/45 p-4 sm:p-[1.125rem]">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75 sm:text-[11px]">
-                            Key Takeaways
+                            {takeawayLabel}
                         </p>
                         {visibleTakeaways.length > 0 ? (
                             <div className="mt-2 space-y-2">
@@ -282,16 +493,23 @@ function FocusCardView({
                         )}
                     </section>
 
-                    <div className="pt-0.5">
-                        <button
-                            type="button"
-                            onClick={onOpen}
-                            className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
-                            aria-label={`View summary for ${card.title}`}
+                    <div className="flex flex-wrap items-center justify-end gap-3 pt-0.5">
+                        <Link
+                            href={`/read/${card.id}`}
+                            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                            aria-label={`Read ${card.title}`}
                         >
                             <BookOpen className="size-4" />
-                            View summary
-                        </button>
+                            Read
+                        </Link>
+                        <Link
+                            href={`/preview/${card.id}`}
+                            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
+                            aria-label={`Preview ${card.title}`}
+                        >
+                            <Info className="size-4" />
+                            Preview
+                        </Link>
                     </div>
                 </div>
             </div>

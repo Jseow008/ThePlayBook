@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import {
     Search,
     Home,
-    Shuffle,
+    Crosshair,
     BookOpen,
     Library,
     BookMarked,
@@ -29,7 +29,7 @@ const navItems = [
     { icon: Search, label: "Search", href: "/search" },
     { icon: Home, label: "Home", href: "/browse" },
     { icon: LayoutGrid, label: "Browse Categories", href: "/categories" },
-    { icon: Shuffle, label: "Focus", href: "/focus" },
+    { icon: Crosshair, label: "Focus", href: "/focus" },
 ];
 
 export function NetflixSidebar() {

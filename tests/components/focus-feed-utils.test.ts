@@ -13,7 +13,16 @@ const baseItem: FocusFeedItem = {
     quick_mode_json: {
         hook: "Work with more intensity.",
         big_idea: "Protect your attention to produce better output.",
-        key_takeaways: ["Schedule focus blocks", "Reduce context switching", "Measure your output", "Protect deep work time"],
+        key_takeaways: [
+            "Schedule focus blocks",
+            "Reduce context switching",
+            "Measure your output",
+            "Protect deep work time",
+            "Minimize shallow tasks",
+            "Track when your energy peaks",
+            "Use rituals to start faster",
+            "Guard your shutdown routine",
+        ],
     },
 };
 
@@ -26,7 +35,8 @@ describe("focus-feed-utils", () => {
             expect.objectContaining({
                 id: baseItem.id,
                 hook: baseItem.quick_mode_json.hook,
-                takeaways: baseItem.quick_mode_json.key_takeaways.slice(0, 4),
+                totalTakeaways: 8,
+                takeaways: baseItem.quick_mode_json.key_takeaways.slice(0, 7),
             })
         );
         expect(cards[0]).not.toHaveProperty("bigIdea");

@@ -8,25 +8,30 @@ export interface FocusCard {
     category: string | null;
     duration_seconds: number | null;
     hook: string;
+    totalTakeaways: number;
     takeaways: string[];
 }
 
 const FALLBACK_HOOK = "Open the full summary when you want to go deeper.";
 
 export function buildFocusCards(items: FocusFeedItem[]): FocusCard[] {
-    return items.map((item) => ({
-        id: item.id,
-        title: item.title,
-        author: item.author,
-        type: item.type,
-        category: item.category,
-        duration_seconds: item.duration_seconds,
-        hook: item.quick_mode_json.hook.trim() || FALLBACK_HOOK,
-        takeaways: item.quick_mode_json.key_takeaways
+    return items.map((item) => {
+        const filteredTakeaways = item.quick_mode_json.key_takeaways
             .map((takeaway) => takeaway.trim())
-            .filter(Boolean)
-            .slice(0, 4),
-    }));
+            .filter(Boolean);
+
+        return {
+            id: item.id,
+            title: item.title,
+            author: item.author,
+            type: item.type,
+            category: item.category,
+            duration_seconds: item.duration_seconds,
+            hook: item.quick_mode_json.hook.trim() || FALLBACK_HOOK,
+            totalTakeaways: filteredTakeaways.length,
+            takeaways: filteredTakeaways.slice(0, 7),
+        };
+    });
 }
 
 export function mergeUniqueFocusItems(

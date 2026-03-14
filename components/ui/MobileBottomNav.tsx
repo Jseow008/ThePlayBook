@@ -6,7 +6,7 @@ import {
     Home,
     Search,
     Library,
-    Sparkles,
+    Crosshair,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -21,7 +21,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 const navItems = [
     { icon: Home, label: "Home", href: "/browse" },
     { icon: Search, label: "Search", href: "/search" },
-    { icon: Sparkles, label: "Ask", href: "/ask" },
+    { icon: Crosshair, label: "Focus", href: "/focus" },
     { icon: Library, label: "My Library", href: "/library/my-list" },
 ];
 
@@ -31,7 +31,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
 
     // Check if current path is in library section
     const isLibraryActive = pathname.startsWith("/library");
-    const isAskActive = pathname === "/ask";
+    const isFocusActive = pathname === "/focus";
 
     return (
         <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border safe-area-pb">
@@ -39,9 +39,9 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                 {navItems.map((item) => {
                     const isActive = item.href === "/library/my-list"
                         ? isLibraryActive
-                        : item.href === "/ask"
-                            ? isAskActive
-                        : pathname === item.href;
+                        : item.href === "/focus"
+                            ? isFocusActive
+                            : pathname === item.href;
                     const isLibrary = item.href === "/library/my-list";
 
                     return (
