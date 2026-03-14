@@ -18,13 +18,35 @@ interface SearchPageProps {
 }
 
 const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url, duration_seconds, created_at, quick_mode_json";
+const TRENDING_LIMIT = 10;
+const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
+
+function normalizeType(type?: string): ContentType | undefined {
+    if (!type || type.toLowerCase() === "all") {
+        return undefined;
+    }
+
+    const normalized = type.toLowerCase() as ContentType;
+    return SEARCHABLE_TYPES.includes(normalized) ? normalized : undefined;
+}
+
+function formatTrendingLabel(type?: ContentType) {
+    if (!type) {
+        return "Trending Now";
+    }
+
+    return `Trending ${type.charAt(0).toUpperCase()}${type.slice(1)}s`;
+}
 
 // Separate component for results to enable Suspense
 async function SearchResults({ query, category, type }: { query?: string; category?: string; type?: string }) {
     const supabase = createPublicServerClient();
+    const normalizedType = normalizeType(type);
+    const trimmedQuery = query?.trim() ?? "";
 
     let results: ContentItem[] = [];
-    const hasSearch = (query && query.trim().length > 0) || category || type;
+    const hasQuery = trimmedQuery.length > 0;
+    const hasSearch = hasQuery || Boolean(category);
 
     if (hasSearch) {
         let queryBuilder = supabase
@@ -39,12 +61,12 @@ async function SearchResults({ query, category, type }: { query?: string; catego
             queryBuilder = queryBuilder.eq("category", category);
         }
 
-        if (type && type !== "All") {
-            queryBuilder = queryBuilder.eq("type", type.toLowerCase() as ContentType);
+        if (normalizedType) {
+            queryBuilder = queryBuilder.eq("type", normalizedType);
         }
 
-        if (query && query.trim().length > 0) {
-            const searchTerm = `%${query.trim()}%`;
+        if (hasQuery) {
+            const searchTerm = `%${trimmedQuery}%`;
             queryBuilder = queryBuilder.or(`title.ilike.${searchTerm},author.ilike.${searchTerm},category.ilike.${searchTerm}`);
         }
 
@@ -62,7 +84,7 @@ async function SearchResults({ query, category, type }: { query?: string; catego
                 {results.length} result{results.length !== 1 ? "s" : ""}
                 {query && ` for "${query}"`}
                 {category && ` in ${category}`}
-                {type && type !== "All" && ` (${type})`}
+                {normalizedType && ` (${normalizedType})`}
             </p>
 
             {results.length > 0 ? (
@@ -106,13 +128,19 @@ function ResultsSkeleton() {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q: query, category, type } = await searchParams;
     const supabase = createPublicServerClient();
+    const selectedType = normalizeType(type);
+    const hasContentSearch = (query?.trim().length ?? 0) > 0 || Boolean(category);
 
-    const hasSearch = (query && query.trim().length > 0) || category || type;
+    let trendingItems: ContentItem[] = [];
 
-    // Fetch trending content for empty state
-    // @ts-expect-error - types for rpc might be outdated
-    const { data: trendingData } = await supabase.rpc("get_trending_content", { p_limit: 12 });
-    const trendingItems = (trendingData || []) as unknown as ContentItem[];
+    if (!hasContentSearch) {
+        // @ts-expect-error - types for rpc might be outdated
+        const { data: trendingData } = await supabase.rpc("get_trending_content", {
+            p_limit: TRENDING_LIMIT,
+            p_type: selectedType ?? null,
+        });
+        trendingItems = (trendingData || []) as unknown as ContentItem[];
+    }
 
     const contentTypes = ["All", "Book", "Podcast", "Article"];
 
@@ -173,7 +201,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
 
                 {/* Results */}
-                {hasSearch ? (
+                {hasContentSearch ? (
                     <Suspense fallback={<ResultsSkeleton />}>
                         <SearchResults query={query} category={category} type={type} />
                     </Suspense>
@@ -181,7 +209,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     <div className="animate-in fade-in duration-500">
                         <div className="flex items-center gap-2 mb-6">
                             <TrendingUp className="size-5 text-primary" />
-                            <h2 className="text-lg font-semibold text-foreground">Trending Now</h2>
+                            <h2 className="text-lg font-semibold text-foreground">{formatTrendingLabel(selectedType)}</h2>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
                             {trendingItems.map((item) => (

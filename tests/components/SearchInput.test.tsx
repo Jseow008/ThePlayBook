@@ -50,4 +50,12 @@ describe("SearchInput", () => {
             JSON.stringify(["Deep Work"])
         );
     });
+
+    it("preserves the selected type when clearing an active query", () => {
+        render(<SearchInput initialQuery="Deep Work" type="book" />);
+
+        fireEvent.click(screen.getByRole("button", { name: /clear search/i }));
+
+        expect(routerPushMock).toHaveBeenCalledWith("/search?type=book");
+    });
 });
