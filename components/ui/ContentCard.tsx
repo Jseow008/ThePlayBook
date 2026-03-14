@@ -56,6 +56,10 @@ function getContentCardHref(itemId: string, navigationMode: "preview" | "resume"
     return `/preview/${itemId}`;
 }
 
+function getContentCardLabel(href: string, title: string) {
+    return href.startsWith("/read/") ? `Read ${title}` : `Preview ${title}`;
+}
+
 export function ContentCard({
     enableUserState = true,
     ...props
@@ -125,11 +129,12 @@ function BaseContentCard({
     const createdAt = item.created_at ? new Date(item.created_at) : null;
     const isNew = createdAt ? createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false;
     const renderNewBadge = isNew && !showCompletedBadge;
+    const linkLabel = getContentCardLabel(href, item.title);
 
     return (
         <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10 hover:scale-105">
             <Link href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
-                <span className="sr-only">View {item.title}</span>
+                <span className="sr-only">{linkLabel}</span>
             </Link>
 
             {item.cover_image_url ? (

@@ -119,6 +119,10 @@ describe("HeroCarousel", () => {
         expect(screen.queryByAltText("First Feature")).not.toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "First Feature" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Read" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Preview" })).toHaveAttribute(
+            "href",
+            "/preview/11111111-1111-1111-1111-111111111111"
+        );
     });
 
     it("shows the mobile description without hiding it on smaller screens", () => {

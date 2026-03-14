@@ -245,7 +245,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 className="focus-ring flex items-center gap-2 rounded-md bg-secondary px-5 py-2 text-sm font-semibold text-secondary-foreground backdrop-blur-sm transition hover:scale-105 hover:bg-secondary/80 active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
                             >
                                 <Info className="h-4 w-4 md:h-7 md:w-7" />
-                                More Info
+                                Preview
                             </Link>
                         </div>
                     </div>

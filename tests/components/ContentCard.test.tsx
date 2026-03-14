@@ -83,7 +83,7 @@ describe("ContentCard", () => {
     it("defaults to the preview page", () => {
         render(<ContentCard item={item} />);
 
-        expect(screen.getByRole("link", { name: "View Deep Work" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Preview Deep Work" })).toHaveAttribute(
             "href",
             "/preview/11111111-1111-1111-1111-111111111111"
         );
@@ -102,7 +102,7 @@ describe("ContentCard", () => {
 
         render(<ContentCard item={item} navigationMode="resume" />);
 
-        expect(screen.getByRole("link", { name: "View Deep Work" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Read Deep Work" })).toHaveAttribute(
             "href",
             "/read/11111111-1111-1111-1111-111111111111"
         );
@@ -111,7 +111,7 @@ describe("ContentCard", () => {
     it("falls back to the preview page in resume mode when progress is missing", () => {
         render(<ContentCard item={item} navigationMode="resume" />);
 
-        expect(screen.getByRole("link", { name: "View Deep Work" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Preview Deep Work" })).toHaveAttribute(
             "href",
             "/preview/11111111-1111-1111-1111-111111111111"
         );
@@ -151,6 +151,6 @@ describe("ContentCard", () => {
         fireEvent.error(screen.getByAltText("Deep Work"));
 
         expect(screen.queryByAltText("Deep Work")).not.toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "View Deep Work" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Preview Deep Work" })).toBeInTheDocument();
     });
 });
