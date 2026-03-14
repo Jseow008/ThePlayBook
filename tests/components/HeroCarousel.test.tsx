@@ -138,7 +138,7 @@ describe("HeroCarousel", () => {
     it("lifts the mobile hero content stack while preserving desktop alignment classes", () => {
         render(<HeroCarousel items={items} />);
 
-        expect(screen.getByTestId("hero-carousel-content")).toHaveClass("pb-16", "md:pb-0");
+        expect(screen.getByTestId("hero-carousel-content")).toHaveClass("pb-12", "md:pb-0");
     });
 
     it("falls back to the default description when no hook or big idea exists", () => {
