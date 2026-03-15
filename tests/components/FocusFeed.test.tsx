@@ -223,8 +223,10 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.9rem]");
         expect(screen.getByText("Do less, but better.")).toHaveClass("line-clamp-8");
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("p-3");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("p-3");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("border");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("bg-background/45");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("border");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("bg-background/45");
         expect(firstCard).toHaveClass("py-4");
     });
 
@@ -302,6 +304,10 @@ describe("FocusFeed", () => {
         expect(within(firstCard).queryByText("Key Takeaways (2 of 8)")).not.toBeInTheDocument();
         expect(within(firstCard).getAllByText(/^0[1-7]$/)).toHaveLength(7);
         expect(within(firstCard).queryByText("08")).not.toBeInTheDocument();
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-background/45");
+        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("border");
+        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("bg-background/45");
     });
 
     it("renders read and preview links on the focus card", async () => {
