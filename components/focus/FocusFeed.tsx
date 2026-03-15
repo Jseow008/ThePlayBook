@@ -441,28 +441,31 @@ function FocusCardView({
                         <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
                             {card.title}
                         </h2>
-                        <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/70 sm:text-xs">
-                            {card.author && <span className="line-clamp-1">{card.author}</span>}
-                            <span className="rounded-full border border-border/40 px-2 py-0.5 uppercase tracking-[0.16em] text-muted-foreground/80">
-                                {card.type}
-                            </span>
-                            {card.category && (
-                                <span className="line-clamp-1 rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
-                                    {card.category}
-                                </span>
+                        <div className="space-y-1.5">
+                            {card.author && (
+                                <p className="line-clamp-1 text-xs text-muted-foreground/70 sm:text-[13px]">
+                                    {card.author}
+                                </p>
                             )}
-                            {duration && (
-                                <span className="rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
-                                    {duration}
+                            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/70 sm:text-xs">
+                                <span className="rounded-full border border-border/40 px-2 py-0.5 uppercase tracking-[0.16em] text-muted-foreground/80">
+                                    {card.type}
                                 </span>
-                            )}
+                                {card.category && (
+                                    <span className="line-clamp-1 rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
+                                        {card.category}
+                                    </span>
+                                )}
+                                {duration && (
+                                    <span className="rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
+                                        {duration}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
 
                     <section className="rounded-2xl border border-border/50 bg-background/45 p-4 sm:p-[1.125rem]">
-                        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75 sm:text-[11px]">
-                            Hook
-                        </p>
                         <p
                             className={
                                 isDesktop

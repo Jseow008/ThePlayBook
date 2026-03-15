@@ -186,14 +186,14 @@ describe("FocusFeed", () => {
         });
 
         expect(await screen.findByText("Focus Mode")).toBeInTheDocument();
-        expect(screen.getByText("Focus Mode").closest("section")).toHaveClass("pt-20");
+        expect(screen.getByText("Focus Mode").closest("section")).toHaveClass("pt-15");
         expect(screen.queryByRole("heading", { name: "One idea per post" })).not.toBeInTheDocument();
         const cards = await screen.findAllByTestId("focus-feed-card");
         const firstCard = cards[0]!;
         const secondCard = cards[1]!;
 
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
-        expect(within(firstCard).getByText("Hook")).toBeInTheDocument();
+        expect(within(firstCard).queryByText("Hook")).not.toBeInTheDocument();
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)")).toBeInTheDocument();
         expect(within(secondCard).getByText("Key Takeaways (2 of 3)")).toBeInTheDocument();
         expect(screen.queryByText("What stands out")).not.toBeInTheDocument();
@@ -216,7 +216,10 @@ describe("FocusFeed", () => {
         );
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("text-[1.2rem]");
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("sm:text-[1.5rem]");
-        expect(screen.getByText("Greg McKeown").parentElement).toHaveClass("text-[11px]");
+        expect(screen.getByText("Greg McKeown")).toHaveClass("text-xs");
+        expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("book");
+        expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("Productivity");
+        expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("15 min");
         expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.95rem]");
         expect(screen.getByText("Do less, but better.")).toHaveClass("line-clamp-8");
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
