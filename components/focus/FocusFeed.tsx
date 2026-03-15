@@ -343,7 +343,7 @@ export function FocusFeed() {
     }, [activeCardIndex, cards.length, fetchBatch, hasMore, loading]);
 
     return (
-        <section className="px-4 pt-7 pb-3 md:px-6 md:pt-10 md:pb-6 lg:px-10">
+        <section className="px-4 pt-15 md:px-6 md:pt-10 md:pb-6 lg:px-10">
             <div className="mx-auto max-w-3xl space-y-5 md:space-y-6">
                 <header className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/80">

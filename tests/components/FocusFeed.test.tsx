@@ -186,6 +186,7 @@ describe("FocusFeed", () => {
         });
 
         expect(await screen.findByText("Focus Mode")).toBeInTheDocument();
+        expect(screen.getByText("Focus Mode").closest("section")).toHaveClass("pt-15");
         expect(screen.queryByRole("heading", { name: "One idea per post" })).not.toBeInTheDocument();
         const cards = await screen.findAllByTestId("focus-feed-card");
         const firstCard = cards[0]!;
