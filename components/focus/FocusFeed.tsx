@@ -343,8 +343,8 @@ export function FocusFeed() {
     }, [activeCardIndex, cards.length, fetchBatch, hasMore, loading]);
 
     return (
-        <section className="px-4 py-3 md:px-6 lg:px-10">
-            <div className="mx-auto max-w-3xl space-y-3">
+        <section className="px-4 pt-7 pb-3 md:px-6 md:pt-10 md:pb-6 lg:px-10">
+            <div className="mx-auto max-w-3xl space-y-5 md:space-y-6">
                 <header className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/80">
                         Focus Mode
@@ -422,7 +422,7 @@ function FocusCardView({
     isDesktop: boolean;
 }) {
     const duration = formatDuration(card.duration_seconds);
-    const visibleTakeaways = isDesktop ? card.takeaways.slice(0, 7) : card.takeaways.slice(0, 3);
+    const visibleTakeaways = isDesktop ? card.takeaways.slice(0, 7) : card.takeaways.slice(0, 2);
     const takeawayLabel = isDesktop
         ? "Key Takeaways"
         : card.totalTakeaways > visibleTakeaways.length
@@ -463,7 +463,13 @@ function FocusCardView({
                         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75 sm:text-[11px]">
                             Hook
                         </p>
-                        <p className="line-clamp-6 text-[0.95rem] leading-[1.55] text-foreground/92 sm:text-[1rem] sm:leading-[1.55]">
+                        <p
+                            className={
+                                isDesktop
+                                    ? "line-clamp-6 text-[0.95rem] leading-[1.55] text-foreground/92 sm:text-[1rem] sm:leading-[1.55]"
+                                    : "line-clamp-8 text-[0.95rem] leading-[1.55] text-foreground/92 sm:text-[1rem] sm:leading-[1.55]"
+                            }
+                        >
                             {card.hook}
                         </p>
                     </section>
@@ -482,7 +488,9 @@ function FocusCardView({
                                         <span className="mt-0.5 text-[11px] font-semibold text-primary sm:text-xs">
                                             {String(index + 1).padStart(2, "0")}
                                         </span>
-                                        <span className="line-clamp-2">{takeaway}</span>
+                                        <span className={isDesktop ? "line-clamp-2" : "line-clamp-4"}>
+                                            {takeaway}
+                                        </span>
                                     </div>
                                 ))}
                             </div>

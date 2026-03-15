@@ -174,7 +174,7 @@ describe("FocusFeed", () => {
         vi.stubGlobal("fetch", fetchMock);
     });
 
-    it("loads focus items with completed IDs excluded from the API query and uses the hook on mobile", async () => {
+    it("loads focus items with completed IDs excluded from the API query and shows full hook plus two takeaways on mobile", async () => {
         render(<FocusFeed />);
 
         await waitFor(() => {
@@ -193,12 +193,13 @@ describe("FocusFeed", () => {
 
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
         expect(within(firstCard).getByText("Hook")).toBeInTheDocument();
-        expect(within(firstCard).getByText("Key Takeaways (3 of 8)")).toBeInTheDocument();
-        expect(within(secondCard).getByText("Key Takeaways (3)")).toBeInTheDocument();
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)")).toBeInTheDocument();
+        expect(within(secondCard).getByText("Key Takeaways (2 of 3)")).toBeInTheDocument();
         expect(screen.queryByText("What stands out")).not.toBeInTheDocument();
         expect(screen.getByText("Do less, but better.")).toBeInTheDocument();
         expect(screen.queryByText("Eliminate the trivial to make room for the essential.")).not.toBeInTheDocument();
-        expect(screen.getByText("Trade busyness for clarity")).toBeInTheDocument();
+        expect(screen.getByText("Protect white space")).toBeInTheDocument();
+        expect(screen.queryByText("Trade busyness for clarity")).not.toBeInTheDocument();
         expect(screen.queryByText("Audit every commitment")).not.toBeInTheDocument();
         expect(screen.queryByText("Cut projects that dilute the essential")).not.toBeInTheDocument();
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
@@ -216,6 +217,8 @@ describe("FocusFeed", () => {
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("sm:text-[1.5rem]");
         expect(screen.getByText("Greg McKeown").parentElement).toHaveClass("text-[11px]");
         expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.95rem]");
+        expect(screen.getByText("Do less, but better.")).toHaveClass("line-clamp-8");
+        expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
         expect(firstCard).toHaveClass("py-4");
     });
 
@@ -290,7 +293,7 @@ describe("FocusFeed", () => {
         const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
 
         expect(within(firstCard).getByText("Key Takeaways")).toBeInTheDocument();
-        expect(within(firstCard).queryByText("Key Takeaways (3 of 8)")).not.toBeInTheDocument();
+        expect(within(firstCard).queryByText("Key Takeaways (2 of 8)")).not.toBeInTheDocument();
         expect(within(firstCard).getAllByText(/^0[1-7]$/)).toHaveLength(7);
         expect(within(firstCard).queryByText("08")).not.toBeInTheDocument();
     });
