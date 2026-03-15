@@ -220,7 +220,7 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("book");
         expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("Productivity");
         expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("15 min");
-        expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.95rem]");
+        expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.9rem]");
         expect(screen.getByText("Do less, but better.")).toHaveClass("line-clamp-8");
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("p-3");

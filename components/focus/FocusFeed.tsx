@@ -469,8 +469,8 @@ function FocusCardView({
                         <p
                             className={
                                 isDesktop
-                                    ? "line-clamp-6 text-[0.95rem] leading-[1.55] text-foreground/92 sm:text-[1rem] sm:leading-[1.55]"
-                                    : "line-clamp-8 text-[0.95rem] leading-[1.55] text-foreground/92 sm:text-[1rem] sm:leading-[1.55]"
+                                    ? "line-clamp-6 text-[0.9rem] leading-[1.55] text-foreground/92 sm:text-[0.95rem] sm:leading-[1.55]"
+                                    : "line-clamp-8 text-[0.9rem] leading-[1.55] text-foreground/92 sm:text-[0.95rem] sm:leading-[1.55]"
                             }
                         >
                             {card.hook}
