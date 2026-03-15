@@ -186,7 +186,7 @@ describe("FocusFeed", () => {
         });
 
         expect(await screen.findByText("Focus Mode")).toBeInTheDocument();
-        expect(screen.getByText("Focus Mode").closest("section")).toHaveClass("pt-13");
+        expect(screen.getByText("Focus Mode").closest("section")).toHaveClass("pt-11");
         expect(screen.queryByRole("heading", { name: "One idea per post" })).not.toBeInTheDocument();
         const cards = await screen.findAllByTestId("focus-feed-card");
         const firstCard = cards[0]!;
@@ -223,8 +223,8 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.95rem]");
         expect(screen.getByText("Do less, but better.")).toHaveClass("line-clamp-8");
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("p-3.5");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("p-3.5");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("p-3");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("p-3");
         expect(firstCard).toHaveClass("py-4");
     });
 

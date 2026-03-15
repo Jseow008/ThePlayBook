@@ -343,7 +343,7 @@ export function FocusFeed() {
     }, [activeCardIndex, cards.length, fetchBatch, hasMore, loading]);
 
     return (
-        <section className="px-4 pt-13 md:px-6 md:pt-9 md:pb-6 lg:px-10">
+        <section className="px-4 pt-11 md:px-6 md:pt-8 md:pb-6 lg:px-10">
             <div className="mx-auto max-w-3xl space-y-5 md:space-y-6">
                 <header className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/80">
@@ -465,7 +465,7 @@ function FocusCardView({
                         </div>
                     </div>
 
-                    <section className="rounded-2xl border border-border/50 bg-background/45 p-3.5 sm:p-4">
+                    <section className="rounded-2xl border border-border/50 bg-background/45 p-3 sm:p-3.5">
                         <p
                             className={
                                 isDesktop
@@ -477,7 +477,7 @@ function FocusCardView({
                         </p>
                     </section>
 
-                    <section className="rounded-2xl border border-border/50 bg-background/45 p-3.5 sm:p-4">
+                    <section className="rounded-2xl border border-border/50 bg-background/45 p-3 sm:p-3.5">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75 sm:text-[11px]">
                             {takeawayLabel}
                         </p>
