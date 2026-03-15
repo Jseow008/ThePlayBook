@@ -305,12 +305,16 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getAllByText(/^0[1-7]$/)).toHaveLength(7);
         expect(within(firstCard).queryByText("08")).not.toBeInTheDocument();
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-background/45");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-border/35");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-background/30");
         expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("border");
-        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("bg-background/45");
+        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("border-border/35");
+        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("bg-background/30");
+        expect(within(firstCard).queryByRole("link", { name: "Preview Essentialism" })).not.toBeInTheDocument();
+        expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("renders read and preview links on the focus card", async () => {
+    it("renders read and preview links on mobile focus cards", async () => {
         render(<FocusFeed />);
 
         expect(await screen.findByRole("link", {

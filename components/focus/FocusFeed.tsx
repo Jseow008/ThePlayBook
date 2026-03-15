@@ -436,8 +436,8 @@ function FocusCardView({
             className={`${FEED_VIEWPORT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div className="flex h-full flex-col">
-                <div className={isDesktop ? "space-y-3" : "space-y-2.5"}>
-                    <div className="space-y-2">
+                <div className={isDesktop ? "space-y-2.5" : "space-y-2.5"}>
+                    <div className={isDesktop ? "space-y-1.5" : "space-y-2"}>
                         <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
                             {card.title}
                         </h2>
@@ -468,7 +468,7 @@ function FocusCardView({
                     <section
                         className={
                             isDesktop
-                                ? "rounded-2xl border border-border/50 bg-background/45 p-3 sm:p-3.5"
+                                ? "rounded-2xl border border-border/35 bg-background/30 p-2.5 sm:p-3"
                                 : ""
                         }
                     >
@@ -486,7 +486,7 @@ function FocusCardView({
                     <section
                         className={
                             isDesktop
-                                ? "rounded-2xl border border-border/50 bg-background/45 p-3 sm:p-3.5"
+                                ? "rounded-2xl border border-border/35 bg-background/30 p-2.5 sm:p-3"
                                 : ""
                         }
                     >
@@ -494,7 +494,7 @@ function FocusCardView({
                             {takeawayLabel}
                         </p>
                         {visibleTakeaways.length > 0 ? (
-                            <div className={isDesktop ? "mt-2 space-y-2" : "mt-1.5 space-y-1.5"}>
+                            <div className={isDesktop ? "mt-1.5 space-y-1.5" : "mt-1.5 space-y-1.5"}>
                                 {visibleTakeaways.map((takeaway, index) => (
                                     <div
                                         key={`${card.id}-${index}`}
@@ -516,7 +516,7 @@ function FocusCardView({
                         )}
                     </section>
 
-                    <div className={isDesktop ? "flex flex-wrap items-center justify-end gap-3 pt-0.5" : "flex flex-wrap items-center justify-end gap-3 pt-0"}>
+                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-0" : "flex flex-wrap items-center justify-end gap-3 pt-0"}>
                         <Link
                             href={`/read/${card.id}`}
                             className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -525,14 +525,16 @@ function FocusCardView({
                             <BookOpen className="size-4" />
                             Read
                         </Link>
-                        <Link
-                            href={`/preview/${card.id}`}
-                            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
-                            aria-label={`Preview ${card.title}`}
-                        >
-                            <Info className="size-4" />
-                            Preview
-                        </Link>
+                        {!isDesktop && (
+                            <Link
+                                href={`/preview/${card.id}`}
+                                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
+                                aria-label={`Preview ${card.title}`}
+                            >
+                                <Info className="size-4" />
+                                Preview
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>
