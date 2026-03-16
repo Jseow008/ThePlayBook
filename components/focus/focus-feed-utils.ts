@@ -1,4 +1,4 @@
-import type { FocusFeedItem } from "@/types/domain";
+import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 
 export interface FocusCard {
     id: string;
@@ -43,12 +43,29 @@ function getMobileTakeawayLimit(title: string, hook: string, takeaways: string[]
     return Math.max(2, Math.min(4, limit)) as 2 | 3 | 4;
 }
 
+function normalizeQuickMode(quickMode: unknown) {
+    const parsedQuickMode = QuickModeSchema.safeParse(quickMode);
+    if (!parsedQuickMode.success) {
+        return {
+            hook: FALLBACK_HOOK,
+            takeaways: [] as string[],
+        };
+    }
+
+    const hook = parsedQuickMode.data.hook.trim() || FALLBACK_HOOK;
+    const takeaways = parsedQuickMode.data.key_takeaways
+        .map((takeaway) => takeaway.trim())
+        .filter(Boolean);
+
+    return {
+        hook,
+        takeaways,
+    };
+}
+
 export function buildFocusCards(items: FocusFeedItem[]): FocusCard[] {
     return items.map((item) => {
-        const filteredTakeaways = item.quick_mode_json.key_takeaways
-            .map((takeaway) => takeaway.trim())
-            .filter(Boolean);
-        const hook = item.quick_mode_json.hook.trim() || FALLBACK_HOOK;
+        const { hook, takeaways } = normalizeQuickMode(item.quick_mode_json);
 
         return {
             id: item.id,
@@ -58,9 +75,9 @@ export function buildFocusCards(items: FocusFeedItem[]): FocusCard[] {
             category: item.category,
             duration_seconds: item.duration_seconds,
             hook,
-            mobileTakeawayLimit: getMobileTakeawayLimit(item.title, hook, filteredTakeaways),
-            totalTakeaways: filteredTakeaways.length,
-            takeaways: filteredTakeaways,
+            mobileTakeawayLimit: getMobileTakeawayLimit(item.title, hook, takeaways),
+            totalTakeaways: takeaways.length,
+            takeaways,
         };
     });
 }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import type { FocusFeedItem } from "@/types/domain";
+import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
@@ -76,11 +76,32 @@ export async function GET(request: NextRequest) {
         return apiError("INTERNAL_ERROR", "Failed to fetch focus feed.", 500, requestId);
     }
 
+    let invalidRowCount = 0;
+    const validItems = ((data ?? []) as FocusFeedItem[]).filter((item) => {
+        const parsedQuickMode = QuickModeSchema.safeParse(item.quick_mode_json);
+        if (!parsedQuickMode.success) {
+            invalidRowCount += 1;
+            return false;
+        }
+
+        item.quick_mode_json = parsedQuickMode.data;
+        return true;
+    });
+
+    if (invalidRowCount > 0) {
+        logApiError({
+            requestId,
+            route: "/api/focus",
+            message: "Dropped invalid focus feed rows",
+            error: { invalid_row_count: invalidRowCount },
+        });
+    }
+
     const excluded = new Set(excludeIds);
-    const filteredItems = shuffleItems(
-        ((data ?? []) as FocusFeedItem[]).filter((item) => !excluded.has(item.id))
-    )
-        .slice(0, limit);
+    const filteredItems = shuffleItems(validItems.filter((item) => !excluded.has(item.id))).slice(
+        0,
+        limit
+    );
 
     return NextResponse.json(filteredItems, {
         headers: {

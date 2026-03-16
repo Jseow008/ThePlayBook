@@ -31,6 +31,18 @@ const WHEEL_QUIET_PERIOD_MS = 180;
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 
+function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
+    if (!container) {
+        return [];
+    }
+
+    return Array.from(
+        container.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+    ).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
+}
+
 function formatDuration(durationSeconds: number | null) {
     if (!durationSeconds) return null;
     return `${Math.max(1, Math.round(durationSeconds / 60))} min`;
@@ -68,6 +80,9 @@ export function FocusFeed() {
     const sheetTouchStartYRef = useRef<number | null>(null);
     const sheetCloseTimeoutRef = useRef<number | null>(null);
     const sheetEnterTimeoutRef = useRef<number | null>(null);
+    const takeawaysSheetDialogRef = useRef<HTMLDivElement | null>(null);
+    const takeawaysSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+    const takeawaysSheetOpenerRef = useRef<HTMLElement | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
     const isTakeawaysSheetOpen = !isDesktop && takeawaysSheetCard !== null;
@@ -111,6 +126,15 @@ export function FocusFeed() {
         }
     }, []);
 
+    const restoreTakeawaysSheetFocus = useCallback(() => {
+        const opener = takeawaysSheetOpenerRef.current;
+        takeawaysSheetOpenerRef.current = null;
+
+        if (opener && opener.isConnected) {
+            opener.focus();
+        }
+    }, []);
+
     const closeTakeawaysSheet = useCallback(() => {
         clearSheetAnimationTimeouts();
         setSheetDragOffset(0);
@@ -118,6 +142,7 @@ export function FocusFeed() {
         if (prefersReducedMotion) {
             setTakeawaysSheetPhase("closed");
             setTakeawaysSheetCard(null);
+            restoreTakeawaysSheetFocus();
             return;
         }
 
@@ -126,11 +151,13 @@ export function FocusFeed() {
             setTakeawaysSheetCard(null);
             setTakeawaysSheetPhase("closed");
             sheetCloseTimeoutRef.current = null;
+            restoreTakeawaysSheetFocus();
         }, TAKEAWAYS_SHEET_CLOSE_DURATION_MS);
-    }, [clearSheetAnimationTimeouts, prefersReducedMotion]);
+    }, [clearSheetAnimationTimeouts, prefersReducedMotion, restoreTakeawaysSheetFocus]);
 
-    const openTakeawaysSheet = useCallback((card: FocusCard) => {
+    const openTakeawaysSheet = useCallback((card: FocusCard, opener: HTMLElement) => {
         clearSheetAnimationTimeouts();
+        takeawaysSheetOpenerRef.current = opener;
         setTakeawaysSheetCard(card);
         setSheetDragOffset(0);
         sheetTouchStartYRef.current = null;
@@ -259,6 +286,24 @@ export function FocusFeed() {
             }
         };
     }, [prefersReducedMotion, takeawaysSheetCard, takeawaysSheetPhase]);
+
+    useEffect(() => {
+        if (!isTakeawaysSheetOpen) {
+            return;
+        }
+
+        const dialog = takeawaysSheetDialogRef.current;
+        if (!dialog) {
+            return;
+        }
+
+        if (dialog.contains(document.activeElement)) {
+            return;
+        }
+
+        const focusTarget = takeawaysSheetCloseButtonRef.current ?? dialog;
+        focusTarget.focus();
+    }, [isTakeawaysSheetOpen, takeawaysSheetPhase]);
 
     useEffect(() => {
         if (!isLoaded || hasInitializedRef.current) {
@@ -429,7 +474,8 @@ export function FocusFeed() {
         setTakeawaysSheetPhase("closed");
         setSheetDragOffset(0);
         sheetTouchStartYRef.current = null;
-    }, [clearSheetAnimationTimeouts, isDesktop, takeawaysSheetCard]);
+        restoreTakeawaysSheetFocus();
+    }, [clearSheetAnimationTimeouts, isDesktop, restoreTakeawaysSheetFocus, takeawaysSheetCard]);
 
     useEffect(() => {
         if (!mounted || !isTakeawaysSheetOpen) {
@@ -447,6 +493,55 @@ export function FocusFeed() {
             document.documentElement.style.overflow = originalHtmlOverflow;
         };
     }, [isTakeawaysSheetOpen, mounted]);
+
+    useEffect(() => {
+        if (!isTakeawaysSheetOpen) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                closeTakeawaysSheet();
+                return;
+            }
+
+            if (event.key !== "Tab") {
+                return;
+            }
+
+            const focusableElements = getFocusableElements(takeawaysSheetDialogRef.current);
+            if (focusableElements.length === 0) {
+                event.preventDefault();
+                takeawaysSheetDialogRef.current?.focus();
+                return;
+            }
+
+            const first = focusableElements[0];
+            const last = focusableElements[focusableElements.length - 1];
+            const activeElement = document.activeElement as HTMLElement | null;
+
+            if (!activeElement || !takeawaysSheetDialogRef.current?.contains(activeElement)) {
+                event.preventDefault();
+                (event.shiftKey ? last : first)?.focus();
+                return;
+            }
+
+            if (event.shiftKey && activeElement === first) {
+                event.preventDefault();
+                last?.focus();
+                return;
+            }
+
+            if (!event.shiftKey && activeElement === last) {
+                event.preventDefault();
+                first?.focus();
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [closeTakeawaysSheet, isTakeawaysSheetOpen]);
 
     useEffect(() => {
         if (!hasInitializedRef.current || loading || !hasMore || cards.length === 0) {
@@ -508,6 +603,8 @@ export function FocusFeed() {
                         onClose={closeTakeawaysSheet}
                         onDragOffsetChange={setSheetDragOffset}
                         touchStartYRef={sheetTouchStartYRef}
+                        dialogRef={takeawaysSheetDialogRef}
+                        closeButtonRef={takeawaysSheetCloseButtonRef}
                     />,
                     document.body
                 )
@@ -552,7 +649,7 @@ function FocusCardView({
     card: FocusCard;
     cardIndex: number;
     isDesktop: boolean;
-    onOpenTakeaways: (card: FocusCard) => void;
+    onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
 }) {
     const duration = formatDuration(card.duration_seconds);
     const visibleTakeaways = isDesktop
@@ -664,7 +761,7 @@ function FocusCardView({
                         ) : (
                             <button
                                 type="button"
-                                onClick={() => onOpenTakeaways(card)}
+                                onClick={(event) => onOpenTakeaways(card, event.currentTarget)}
                                 className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                                 aria-label={`Show full takeaways for ${card.title}`}
                             >
@@ -687,6 +784,8 @@ function FocusTakeawaysSheet({
     onClose,
     onDragOffsetChange,
     touchStartYRef,
+    dialogRef,
+    closeButtonRef,
 }: {
     card: FocusCard;
     dragOffset: number;
@@ -695,6 +794,8 @@ function FocusTakeawaysSheet({
     onClose: () => void;
     onDragOffsetChange: (offset: number) => void;
     touchStartYRef: MutableRefObject<number | null>;
+    dialogRef: MutableRefObject<HTMLDivElement | null>;
+    closeButtonRef: MutableRefObject<HTMLButtonElement | null>;
 }) {
     const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
         if (event.touches.length !== 1) {
@@ -782,6 +883,8 @@ function FocusTakeawaysSheet({
                     aria-modal="true"
                     aria-label={`Full takeaways for ${card.title}`}
                     data-testid="focus-takeaways-sheet"
+                    ref={dialogRef}
+                    tabIndex={-1}
                     className={`mx-auto flex max-h-[min(82svh,calc(100svh-1rem))] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-border/60 bg-background shadow-2xl ${prefersReducedMotion ? "" : "transition-transform transition-opacity"}`}
                     style={sheetTransitionStyle}
                 >
@@ -796,6 +899,7 @@ function FocusTakeawaysSheet({
                         <button
                             type="button"
                             onClick={onClose}
+                            ref={closeButtonRef}
                             data-testid="focus-takeaways-sheet-close"
                             className="focus-ring absolute right-3 top-2 rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
                             aria-label="Close full takeaways"

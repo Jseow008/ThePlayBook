@@ -88,6 +88,28 @@ describe("focus-feed-utils", () => {
         expect(cards[0]?.mobileTakeawayLimit).toBe(3);
     });
 
+    it("falls back safely when malformed quick mode data reaches the client", () => {
+        const malformedItem = {
+            ...baseItem,
+            id: "123e4567-e89b-12d3-a456-426614174004",
+            quick_mode_json: {
+                hook: null,
+                key_takeaways: "not-an-array",
+            },
+        } as unknown as FocusFeedItem;
+
+        const cards = buildFocusCards([malformedItem]);
+
+        expect(cards[0]).toEqual(
+            expect.objectContaining({
+                hook: "Open the full summary when you want to go deeper.",
+                mobileTakeawayLimit: 4,
+                totalTakeaways: 0,
+                takeaways: [],
+            })
+        );
+    });
+
     it("deduplicates incoming items when merging feed batches", () => {
         const anotherItem: FocusFeedItem = {
             ...baseItem,

@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/focus/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/supabase/public-server", () => ({
@@ -11,6 +12,15 @@ vi.mock("@/lib/supabase/public-server", () => ({
 vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
 }));
+
+vi.mock("@/lib/server/api", async () => {
+    const actual = await vi.importActual<typeof import("@/lib/server/api")>("@/lib/server/api");
+    return {
+        ...actual,
+        getRequestId: vi.fn(() => "focus-test-request"),
+        logApiError: vi.fn(),
+    };
+});
 
 describe("Focus API", () => {
     const mockLimit = vi.fn();
@@ -116,5 +126,61 @@ describe("Focus API", () => {
                 title: "Second Item",
             }),
         ]);
+    });
+
+    it("drops rows with invalid quick mode payloads without failing the request", async () => {
+        mockLimit.mockResolvedValue({
+            data: [
+                {
+                    id: "123e4567-e89b-12d3-a456-426614174010",
+                    title: "Broken Item",
+                    type: "book",
+                    author: "Author 0",
+                    category: "Mindset",
+                    cover_image_url: null,
+                    duration_seconds: 180,
+                    quick_mode_json: {
+                        hook: "Missing takeaways",
+                        big_idea: "Broken payload",
+                    },
+                },
+                {
+                    id: "123e4567-e89b-12d3-a456-426614174011",
+                    title: "Valid Item",
+                    type: "book",
+                    author: "Author 1",
+                    category: "Mindset",
+                    cover_image_url: null,
+                    duration_seconds: 300,
+                    quick_mode_json: {
+                        hook: "A",
+                        big_idea: "B",
+                        key_takeaways: ["C"],
+                    },
+                },
+            ],
+            error: null,
+        });
+
+        const request = new NextRequest(new URL("http://localhost/api/focus?limit=2"));
+
+        const response = await GET(request);
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(json).toEqual([
+            expect.objectContaining({
+                id: "123e4567-e89b-12d3-a456-426614174011",
+                title: "Valid Item",
+            }),
+        ]);
+        expect(logApiError).toHaveBeenCalledWith(
+            expect.objectContaining({
+                requestId: "focus-test-request",
+                route: "/api/focus",
+                message: "Dropped invalid focus feed rows",
+                error: { invalid_row_count: 1 },
+            })
+        );
     });
 });

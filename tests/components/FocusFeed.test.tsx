@@ -245,13 +245,16 @@ describe("FocusFeed", () => {
         render(<FocusFeed />);
 
         await screen.findByText("Essentialism");
+        const trigger = screen.getByRole("button", {
+            name: "Show full takeaways for Essentialism",
+        });
+        trigger.focus();
 
-        fireEvent.click(
-            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
-        );
+        fireEvent.click(trigger);
 
         const sheetFrame = await screen.findByTestId("focus-takeaways-sheet-frame");
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
+        const closeButton = screen.getByTestId("focus-takeaways-sheet-close");
         expect(sheetFrame).toHaveClass("px-5");
         expect(sheet).toHaveAttribute("aria-label", "Full takeaways for Essentialism");
         expect(sheet).toHaveClass("transition-transform");
@@ -266,6 +269,18 @@ describe("FocusFeed", () => {
         const readLink = within(sheet).getByRole("link", { name: "Read Essentialism" });
         expect(readLink).toHaveAttribute("href", "/read/123e4567-e89b-12d3-a456-426614174222");
         expect(readLink).toBeInTheDocument();
+        await waitFor(() => {
+            expect(closeButton).toHaveFocus();
+        });
+
+        readLink.focus();
+        expect(readLink).toHaveFocus();
+
+        fireEvent.keyDown(document, { key: "Tab" });
+        expect(closeButton).toHaveFocus();
+
+        fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+        expect(readLink).toHaveFocus();
 
         fireEvent.wheel(screen.getByTestId("focus-takeaways-sheet-backdrop"), {
             deltaY: 120,
@@ -273,10 +288,11 @@ describe("FocusFeed", () => {
         });
         expect(scrollIntoViewMock).not.toHaveBeenCalled();
 
-        fireEvent.click(screen.getByTestId("focus-takeaways-sheet-close"));
+        fireEvent.keyDown(document, { key: "Escape" });
         await waitFor(() => {
             expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
         });
+        expect(trigger).toHaveFocus();
         expect(screen.getByText("Essentialism")).toBeInTheDocument();
     });
 
