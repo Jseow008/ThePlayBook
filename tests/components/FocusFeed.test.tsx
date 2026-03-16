@@ -294,7 +294,7 @@ describe("FocusFeed", () => {
         vi.useFakeTimers();
         try {
             await act(async () => {
-                await vi.advanceTimersByTimeAsync(10);
+                await vi.advanceTimersByTimeAsync(16);
             });
 
             fireEvent.click(screen.getByTestId("focus-takeaways-sheet-close"));
@@ -302,7 +302,7 @@ describe("FocusFeed", () => {
             expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
 
             await act(async () => {
-                await vi.advanceTimersByTimeAsync(159);
+                await vi.advanceTimersByTimeAsync(179);
             });
 
             expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
@@ -338,6 +338,11 @@ describe("FocusFeed", () => {
     });
 
     it("ignores trailing desktop wheel momentum until the quiet period ends", async () => {
+        mediaQueryState.value = {
+            isDesktop: true,
+            prefersReducedMotion: false,
+        };
+
         render(<FocusFeed />);
 
         await screen.findByText("Deep Work");

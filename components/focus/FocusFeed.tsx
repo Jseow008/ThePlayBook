@@ -20,10 +20,10 @@ import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/compon
 const BATCH_SIZE = 6;
 const FEED_LIST_VIEWPORT_CLASS = "h-[calc(100svh-10rem)] md:h-[calc(100svh-7.5rem)]";
 const FEED_CARD_HEIGHT_CLASS = "min-h-[calc(100svh-10.75rem)] md:min-h-[calc(100svh-7.5rem)]";
-const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 200;
-const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 160;
-const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 180;
-const TAKEAWAYS_SHEET_ENTER_DELAY_MS = 10;
+const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 240;
+const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 180;
+const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 200;
+const TAKEAWAYS_SHEET_ENTER_DELAY_MS = 16;
 const WHEEL_TRIGGER = 40;
 const TOUCH_TRIGGER = 40;
 const GESTURE_UNLOCK_TIMEOUT_MS = 200;
@@ -735,15 +735,15 @@ function FocusTakeawaysSheet({
         : prefersReducedMotion
             ? 0
             : phase === "entering"
-                ? 16
+                ? 24
                 : phase === "exiting"
-                    ? 12
+                    ? 16
                     : 0;
     const sheetOpacity = prefersReducedMotion
         ? 1
         : phase === "entered"
             ? 1
-            : 0.98;
+            : 0.94;
     const backdropTransitionStyle = prefersReducedMotion
         ? undefined
         : {
