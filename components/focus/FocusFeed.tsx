@@ -486,7 +486,9 @@ function FocusCardView({
     onOpenTakeaways: (card: FocusCard) => void;
 }) {
     const duration = formatDuration(card.duration_seconds);
-    const visibleTakeaways = isDesktop ? card.takeaways.slice(0, 7) : card.takeaways.slice(0, 2);
+    const visibleTakeaways = isDesktop
+        ? card.takeaways.slice(0, 7)
+        : card.takeaways.slice(0, card.mobileTakeawayLimit);
     const takeawayLabel = isDesktop
         ? "Key Takeaways"
         : card.totalTakeaways > visibleTakeaways.length

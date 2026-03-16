@@ -174,7 +174,7 @@ describe("FocusFeed", () => {
         vi.stubGlobal("fetch", fetchMock);
     });
 
-    it("loads focus items with completed IDs excluded from the API query and shows full hook plus two takeaways on mobile", async () => {
+    it("loads focus items with completed IDs excluded from the API query and shows a heuristic mobile takeaway count", async () => {
         render(<FocusFeed />);
 
         await waitFor(() => {
@@ -194,15 +194,16 @@ describe("FocusFeed", () => {
 
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
         expect(within(firstCard).queryByText("Hook")).not.toBeInTheDocument();
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)")).toBeInTheDocument();
-        expect(within(secondCard).getByText("Key Takeaways (2 of 3)")).toBeInTheDocument();
+        expect(within(firstCard).getByText("Key Takeaways (4 of 8)")).toBeInTheDocument();
+        expect(within(secondCard).getByText("Key Takeaways (3)")).toBeInTheDocument();
         expect(screen.queryByText("What stands out")).not.toBeInTheDocument();
         expect(screen.getByText("Do less, but better.")).toBeInTheDocument();
         expect(screen.queryByText("Eliminate the trivial to make room for the essential.")).not.toBeInTheDocument();
         expect(screen.getByText("Protect white space")).toBeInTheDocument();
-        expect(screen.queryByText("Trade busyness for clarity")).not.toBeInTheDocument();
-        expect(screen.queryByText("Audit every commitment")).not.toBeInTheDocument();
+        expect(screen.getByText("Trade busyness for clarity")).toBeInTheDocument();
+        expect(screen.getByText("Audit every commitment")).toBeInTheDocument();
         expect(screen.queryByText("Cut projects that dilute the essential")).not.toBeInTheDocument();
+        expect(screen.getByText("Reduce shallow obligations")).toBeInTheDocument();
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
@@ -222,8 +223,8 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("border");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("bg-background/45");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("border");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("bg-background/45");
+        expect(within(firstCard).getByText("Key Takeaways (4 of 8)").closest("section")).not.toHaveClass("border");
+        expect(within(firstCard).getByText("Key Takeaways (4 of 8)").closest("section")).not.toHaveClass("bg-background/45");
         expect(firstCard).toHaveClass("min-h-[calc(100svh-10.75rem)]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100svh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
@@ -333,6 +334,7 @@ describe("FocusFeed", () => {
 
         expect(within(firstCard).getByText("Key Takeaways")).toBeInTheDocument();
         expect(within(firstCard).queryByText("Key Takeaways (2 of 8)")).not.toBeInTheDocument();
+        expect(within(firstCard).queryByText("Key Takeaways (4 of 8)")).not.toBeInTheDocument();
         expect(within(firstCard).getAllByText(/^0[1-7]$/)).toHaveLength(7);
         expect(within(firstCard).queryByText("08")).not.toBeInTheDocument();
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border");
@@ -355,5 +357,19 @@ describe("FocusFeed", () => {
         expect(screen.getByRole("button", {
             name: "Show full takeaways for Essentialism",
         })).toBeInTheDocument();
+    });
+
+    it("keeps the full takeaway list available in the mobile bottom sheet regardless of the card limit", async () => {
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+        );
+
+        const sheet = await screen.findByTestId("focus-takeaways-sheet");
+        expect(within(sheet).getByText("Cut projects that dilute the essential")).toBeInTheDocument();
+        expect(within(sheet).getByText("Treat rest as strategic capacity")).toBeInTheDocument();
     });
 });
