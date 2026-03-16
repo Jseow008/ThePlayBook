@@ -29,7 +29,7 @@ export function buildFocusCards(items: FocusFeedItem[]): FocusCard[] {
             duration_seconds: item.duration_seconds,
             hook: item.quick_mode_json.hook.trim() || FALLBACK_HOOK,
             totalTakeaways: filteredTakeaways.length,
-            takeaways: filteredTakeaways.slice(0, 7),
+            takeaways: filteredTakeaways,
         };
     });
 }

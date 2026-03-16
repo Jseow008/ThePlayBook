@@ -36,7 +36,7 @@ describe("focus-feed-utils", () => {
                 id: baseItem.id,
                 hook: baseItem.quick_mode_json.hook,
                 totalTakeaways: 8,
-                takeaways: baseItem.quick_mode_json.key_takeaways.slice(0, 7),
+                takeaways: baseItem.quick_mode_json.key_takeaways,
             })
         );
         expect(cards[0]).not.toHaveProperty("bigIdea");

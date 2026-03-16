@@ -210,10 +210,7 @@ describe("FocusFeed", () => {
             "href",
             "/read/123e4567-e89b-12d3-a456-426614174222"
         );
-        expect(screen.getByRole("link", { name: "Preview Essentialism" })).toHaveAttribute(
-            "href",
-            "/preview/123e4567-e89b-12d3-a456-426614174222"
-        );
+        expect(screen.getByRole("button", { name: "Show full takeaways for Essentialism" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("text-[1.2rem]");
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("sm:text-[1.5rem]");
         expect(screen.getByText("Greg McKeown")).toHaveClass("text-xs");
@@ -228,6 +225,38 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("border");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("bg-background/45");
         expect(firstCard).toHaveClass("py-4");
+    });
+
+    it("opens a mobile takeaways sheet with the full takeaway list and closes back to the same feed", async () => {
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+        );
+
+        const sheet = await screen.findByTestId("focus-takeaways-sheet");
+        expect(within(sheet).getByRole("heading", { name: "Essentialism" })).toBeInTheDocument();
+        expect(within(sheet).getByText("Greg McKeown")).toBeInTheDocument();
+        expect(within(sheet).getByText("Audit every commitment")).toBeInTheDocument();
+        expect(within(sheet).getByText("Treat rest as strategic capacity")).toBeInTheDocument();
+        expect(within(sheet).getByRole("link", { name: "Read Essentialism" })).toHaveAttribute(
+            "href",
+            "/read/123e4567-e89b-12d3-a456-426614174222"
+        );
+
+        fireEvent.wheel(screen.getByTestId("focus-takeaways-sheet-backdrop"), {
+            deltaY: 120,
+            deltaX: 0,
+        });
+        expect(scrollIntoViewMock).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByTestId("focus-takeaways-sheet-close"));
+        await waitFor(() => {
+            expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
+        });
+        expect(screen.getByText("Essentialism")).toBeInTheDocument();
     });
 
     it("ignores trailing desktop wheel momentum until the quiet period ends", async () => {
@@ -310,11 +339,11 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("border");
         expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("border-border/35");
         expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("bg-background/30");
-        expect(within(firstCard).queryByRole("link", { name: "Preview Essentialism" })).not.toBeInTheDocument();
+        expect(within(firstCard).queryByRole("button", { name: "Show full takeaways for Essentialism" })).not.toBeInTheDocument();
         expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("renders read and preview links on mobile focus cards", async () => {
+    it("renders read and full takeaways actions on mobile focus cards", async () => {
         render(<FocusFeed />);
 
         expect(await screen.findByRole("link", {
@@ -323,11 +352,8 @@ describe("FocusFeed", () => {
             "href",
             "/read/123e4567-e89b-12d3-a456-426614174222"
         );
-        expect(screen.getByRole("link", {
-            name: "Preview Essentialism",
-        })).toHaveAttribute(
-            "href",
-            "/preview/123e4567-e89b-12d3-a456-426614174222"
-        );
+        expect(screen.getByRole("button", {
+            name: "Show full takeaways for Essentialism",
+        })).toBeInTheDocument();
     });
 });

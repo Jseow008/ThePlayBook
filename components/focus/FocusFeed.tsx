@@ -1,8 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Info, Loader2 } from "lucide-react";
+import {
+    type MutableRefObject,
+    type TouchEvent as ReactTouchEvent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
+import { createPortal } from "react-dom";
+import { BookOpen, Info, Loader2, X } from "lucide-react";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import type { FocusFeedItem } from "@/types/domain";
@@ -32,6 +41,9 @@ export function FocusFeed() {
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [activeCardIndex, setActiveCardIndex] = useState(0);
+    const [mounted, setMounted] = useState(false);
+    const [takeawaysSheetCard, setTakeawaysSheetCard] = useState<FocusCard | null>(null);
+    const [sheetDragOffset, setSheetDragOffset] = useState(0);
     const listRef = useRef<HTMLDivElement | null>(null);
     const seenIdsRef = useRef<Set<string>>(new Set());
     const hasInitializedRef = useRef(false);
@@ -44,8 +56,10 @@ export function FocusFeed() {
     const isWheelMomentumLockedRef = useRef(false);
     const wheelQuietTimeoutRef = useRef<number | null>(null);
     const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+    const sheetTouchStartYRef = useRef<number | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
+    const isTakeawaysSheetOpen = !isDesktop && takeawaysSheetCard !== null;
 
     const unlockGestures = useCallback(() => {
         isGestureLockedRef.current = false;
@@ -73,6 +87,18 @@ export function FocusFeed() {
             wheelQuietTimeoutRef.current = null;
         }, WHEEL_QUIET_PERIOD_MS);
     }, [clearWheelQuietTimeout]);
+
+    const closeTakeawaysSheet = useCallback(() => {
+        setTakeawaysSheetCard(null);
+        setSheetDragOffset(0);
+        sheetTouchStartYRef.current = null;
+    }, []);
+
+    const openTakeawaysSheet = useCallback((card: FocusCard) => {
+        setTakeawaysSheetCard(card);
+        setSheetDragOffset(0);
+        sheetTouchStartYRef.current = null;
+    }, []);
 
     const moveToCard = useCallback(
         (nextIndex: number) => {
@@ -122,6 +148,7 @@ export function FocusFeed() {
             if (
                 isGestureLockedRef.current ||
                 isWheelMomentumLockedRef.current ||
+                isTakeawaysSheetOpen ||
                 cards.length === 0
             ) {
                 return false;
@@ -129,7 +156,7 @@ export function FocusFeed() {
 
             return moveToCard(activeCardIndexRef.current + direction);
         },
-        [cards.length, moveToCard]
+        [cards.length, isTakeawaysSheetOpen, moveToCard]
     );
 
     const fetchBatch = useCallback(async () => {
@@ -173,6 +200,10 @@ export function FocusFeed() {
             setLoading(false);
         }
     }, [completedIds, hasMore]);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (!isLoaded || hasInitializedRef.current) {
@@ -333,6 +364,23 @@ export function FocusFeed() {
     }, [clearWheelQuietTimeout, unlockGestures]);
 
     useEffect(() => {
+        if (!mounted || !isTakeawaysSheetOpen) {
+            return;
+        }
+
+        const originalBodyOverflow = document.body.style.overflow;
+        const originalHtmlOverflow = document.documentElement.style.overflow;
+
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = originalBodyOverflow;
+            document.documentElement.style.overflow = originalHtmlOverflow;
+        };
+    }, [isTakeawaysSheetOpen, mounted]);
+
+    useEffect(() => {
         if (!hasInitializedRef.current || loading || !hasMore || cards.length === 0) {
             return;
         }
@@ -368,6 +416,7 @@ export function FocusFeed() {
                                     card={card}
                                     cardIndex={index}
                                     isDesktop={isDesktop}
+                                    onOpenTakeaways={openTakeawaysSheet}
                                 />
                             ))}
 
@@ -381,6 +430,18 @@ export function FocusFeed() {
                     </div>
                 )}
             </div>
+            {mounted && isTakeawaysSheetOpen && takeawaysSheetCard
+                ? createPortal(
+                    <FocusTakeawaysSheet
+                        card={takeawaysSheetCard}
+                        dragOffset={sheetDragOffset}
+                        onClose={closeTakeawaysSheet}
+                        onDragOffsetChange={setSheetDragOffset}
+                        touchStartYRef={sheetTouchStartYRef}
+                    />,
+                    document.body
+                )
+                : null}
         </section>
     );
 }
@@ -416,10 +477,12 @@ function FocusCardView({
     card,
     cardIndex,
     isDesktop,
+    onOpenTakeaways,
 }: {
     card: FocusCard;
     cardIndex: number;
     isDesktop: boolean;
+    onOpenTakeaways: (card: FocusCard) => void;
 }) {
     const duration = formatDuration(card.duration_seconds);
     const visibleTakeaways = isDesktop ? card.takeaways.slice(0, 7) : card.takeaways.slice(0, 2);
@@ -526,18 +589,170 @@ function FocusCardView({
                             Read
                         </Link>
                         {!isDesktop && (
-                            <Link
-                                href={`/preview/${card.id}`}
+                            <button
+                                type="button"
+                                onClick={() => onOpenTakeaways(card)}
                                 className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
-                                aria-label={`Preview ${card.title}`}
+                                aria-label={`Show full takeaways for ${card.title}`}
                             >
                                 <Info className="size-4" />
-                                Preview
-                            </Link>
+                                Full takeaways
+                            </button>
                         )}
                     </div>
                 </div>
             </div>
         </article>
+    );
+}
+
+function FocusTakeawaysSheet({
+    card,
+    dragOffset,
+    onClose,
+    onDragOffsetChange,
+    touchStartYRef,
+}: {
+    card: FocusCard;
+    dragOffset: number;
+    onClose: () => void;
+    onDragOffsetChange: (offset: number) => void;
+    touchStartYRef: MutableRefObject<number | null>;
+}) {
+    const duration = formatDuration(card.duration_seconds);
+
+    const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+        if (event.touches.length !== 1) {
+            touchStartYRef.current = null;
+            return;
+        }
+
+        touchStartYRef.current = event.touches[0]?.clientY ?? null;
+    };
+
+    const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
+        if (touchStartYRef.current === null || event.touches.length !== 1) {
+            return;
+        }
+
+        const currentY = event.touches[0]?.clientY ?? touchStartYRef.current;
+        const nextOffset = Math.max(0, currentY - touchStartYRef.current);
+        onDragOffsetChange(Math.min(nextOffset, 160));
+    };
+
+    const handleTouchEnd = () => {
+        if (dragOffset > 80) {
+            onClose();
+            return;
+        }
+
+        touchStartYRef.current = null;
+        onDragOffsetChange(0);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[80] lg:hidden" aria-hidden={false}>
+            <button
+                type="button"
+                data-testid="focus-takeaways-sheet-backdrop"
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                aria-label="Close full takeaways"
+                onClick={onClose}
+            />
+
+            <div className="absolute inset-x-0 bottom-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="focus-takeaways-sheet-title"
+                    data-testid="focus-takeaways-sheet"
+                    className="mx-auto flex max-h-[min(82svh,calc(100svh-1rem))] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-border/60 bg-background shadow-2xl"
+                    style={{ transform: `translateY(${dragOffset}px)` }}
+                >
+                    <div
+                        className="flex flex-col gap-3 border-b border-border/40 px-4 pt-3 pb-4"
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchCancel={handleTouchEnd}
+                    >
+                        <div className="mx-auto h-1.5 w-12 rounded-full bg-muted-foreground/30" />
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0 space-y-2">
+                                <h2
+                                    id="focus-takeaways-sheet-title"
+                                    className="text-lg font-semibold tracking-tight text-foreground"
+                                >
+                                    {card.title}
+                                </h2>
+                                <div className="space-y-1.5">
+                                    {card.author && (
+                                        <p className="line-clamp-1 text-xs text-muted-foreground/70">
+                                            {card.author}
+                                        </p>
+                                    )}
+                                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/70">
+                                        <span className="rounded-full border border-border/40 px-2 py-0.5 uppercase tracking-[0.16em] text-muted-foreground/80">
+                                            {card.type}
+                                        </span>
+                                        {card.category && (
+                                            <span className="rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
+                                                {card.category}
+                                            </span>
+                                        )}
+                                        {duration && (
+                                            <span className="rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
+                                                {duration}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                data-testid="focus-takeaways-sheet-close"
+                                className="focus-ring -mr-1 rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                                aria-label="Close full takeaways"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto px-4 py-4">
+                        <div className="space-y-4">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75">
+                                Key Takeaways
+                            </p>
+                            <div className="space-y-3">
+                                {card.takeaways.map((takeaway, index) => (
+                                    <div
+                                        key={`${card.id}-sheet-${index}`}
+                                        className="flex gap-3 text-[0.92rem] leading-[1.55] text-foreground/90"
+                                    >
+                                        <span className="mt-0.5 text-[11px] font-semibold text-primary">
+                                            {String(index + 1).padStart(2, "0")}
+                                        </span>
+                                        <span>{takeaway}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="border-t border-border/40 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                        <Link
+                            href={`/read/${card.id}`}
+                            className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                            aria-label={`Read ${card.title}`}
+                        >
+                            <BookOpen className="size-4" />
+                            Read
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
