@@ -302,7 +302,7 @@ describe("FocusFeed", () => {
             expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
 
             await act(async () => {
-                await vi.advanceTimersByTimeAsync(179);
+                await vi.advanceTimersByTimeAsync(209);
             });
 
             expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
