@@ -18,7 +18,8 @@ import type { FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
 const BATCH_SIZE = 6;
-const FEED_VIEWPORT_CLASS = "h-[calc(100svh-8.75rem)] md:h-[calc(100svh-7.5rem)]";
+const FEED_LIST_VIEWPORT_CLASS = "h-[calc(100svh-10rem)] md:h-[calc(100svh-7.5rem)]";
+const FEED_CARD_HEIGHT_CLASS = "min-h-[calc(100svh-10.75rem)] md:min-h-[calc(100svh-7.5rem)]";
 const WHEEL_TRIGGER = 40;
 const TOUCH_TRIGGER = 40;
 const GESTURE_UNLOCK_TIMEOUT_MS = 200;
@@ -407,9 +408,9 @@ export function FocusFeed() {
                     <div
                         ref={listRef}
                         data-testid="focus-feed-list"
-                        className={`${FEED_VIEWPORT_CLASS} scrollbar-hide snap-y snap-mandatory overflow-y-auto overscroll-y-contain`}
+                        className={`${FEED_LIST_VIEWPORT_CLASS} scrollbar-hide snap-y snap-mandatory overflow-y-auto overscroll-y-contain`}
                     >
-                        <div className="space-y-3 pb-2">
+                        <div className="space-y-3 pb-4 md:pb-2">
                             {cards.map((card, index) => (
                                 <FocusCardView
                                     key={card.id}
@@ -448,7 +449,7 @@ export function FocusFeed() {
 
 function LoadingState() {
     return (
-        <div className={`flex items-center justify-center rounded-3xl border border-border/60 bg-card/40 px-6 ${FEED_VIEWPORT_CLASS}`}>
+        <div className={`flex items-center justify-center rounded-3xl border border-border/60 bg-card/40 px-6 ${FEED_LIST_VIEWPORT_CLASS}`}>
             <div className="flex items-center gap-3 rounded-full border border-border/60 bg-card/70 px-5 py-3 text-sm text-muted-foreground shadow-sm">
                 <Loader2 className="size-4 animate-spin text-primary" />
                 Loading focus mode
@@ -459,7 +460,7 @@ function LoadingState() {
 
 function EmptyState({ error }: { error: string | null }) {
     return (
-        <div className={`flex items-center justify-center rounded-3xl border border-border/60 bg-card/40 px-6 ${FEED_VIEWPORT_CLASS}`}>
+        <div className={`flex items-center justify-center rounded-3xl border border-border/60 bg-card/40 px-6 ${FEED_LIST_VIEWPORT_CLASS}`}>
             <div className="max-w-md rounded-[2rem] border border-border/60 bg-card/70 p-8 text-center shadow-sm">
                 <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                     Nothing queued yet
@@ -496,7 +497,7 @@ function FocusCardView({
         <article
             data-focus-card-index={cardIndex}
             data-testid="focus-feed-card"
-            className={`${FEED_VIEWPORT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
+            className={`${FEED_CARD_HEIGHT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div className="flex h-full flex-col">
                 <div className={isDesktop ? "space-y-2.5" : "space-y-2.5"}>

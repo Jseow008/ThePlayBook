@@ -206,6 +206,10 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
+        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100svh-10rem)]");
+        expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100svh-7.5rem)]");
+        expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("pb-4");
+        expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("md:pb-2");
         expect(screen.getByRole("button", { name: "Show full takeaways for Essentialism" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("text-[1.2rem]");
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("sm:text-[1.5rem]");
@@ -220,6 +224,8 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("bg-background/45");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("border");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("bg-background/45");
+        expect(firstCard).toHaveClass("min-h-[calc(100svh-10.75rem)]");
+        expect(firstCard).toHaveClass("md:min-h-[calc(100svh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
     });
 
