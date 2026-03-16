@@ -580,19 +580,20 @@ function FocusCardView({
                     </section>
 
                     <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-0" : "flex flex-wrap items-center justify-end gap-3 pt-0"}>
-                        <Link
-                            href={`/read/${card.id}`}
-                            className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                            aria-label={`Read ${card.title}`}
-                        >
-                            <BookOpen className="size-4" />
-                            Read
-                        </Link>
-                        {!isDesktop && (
+                        {isDesktop ? (
+                            <Link
+                                href={`/read/${card.id}`}
+                                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                                aria-label={`Read ${card.title}`}
+                            >
+                                <BookOpen className="size-4" />
+                                Read
+                            </Link>
+                        ) : (
                             <button
                                 type="button"
                                 onClick={() => onOpenTakeaways(card)}
-                                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-primary/35 bg-primary/10 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-primary/15"
+                                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                                 aria-label={`Show full takeaways for ${card.title}`}
                             >
                                 <Info className="size-4" />

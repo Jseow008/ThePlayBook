@@ -206,10 +206,6 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
-        expect(screen.getByRole("link", { name: "Read Essentialism" })).toHaveAttribute(
-            "href",
-            "/read/123e4567-e89b-12d3-a456-426614174222"
-        );
         expect(screen.getByRole("button", { name: "Show full takeaways for Essentialism" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("text-[1.2rem]");
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("sm:text-[1.5rem]");
@@ -343,15 +339,13 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("renders read and full takeaways actions on mobile focus cards", async () => {
+    it("renders only the full takeaways action on mobile focus cards", async () => {
         render(<FocusFeed />);
 
-        expect(await screen.findByRole("link", {
+        await screen.findByText("Essentialism");
+        expect(screen.queryByRole("link", {
             name: "Read Essentialism",
-        })).toHaveAttribute(
-            "href",
-            "/read/123e4567-e89b-12d3-a456-426614174222"
-        );
+        })).not.toBeInTheDocument();
         expect(screen.getByRole("button", {
             name: "Show full takeaways for Essentialism",
         })).toBeInTheDocument();
