@@ -20,10 +20,16 @@ import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/compon
 const BATCH_SIZE = 6;
 const FEED_LIST_VIEWPORT_CLASS = "h-[calc(100svh-10rem)] md:h-[calc(100svh-7.5rem)]";
 const FEED_CARD_HEIGHT_CLASS = "min-h-[calc(100svh-10.75rem)] md:min-h-[calc(100svh-7.5rem)]";
+const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 200;
+const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 160;
+const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 180;
+const TAKEAWAYS_SHEET_ENTER_DELAY_MS = 10;
 const WHEEL_TRIGGER = 40;
 const TOUCH_TRIGGER = 40;
 const GESTURE_UNLOCK_TIMEOUT_MS = 200;
 const WHEEL_QUIET_PERIOD_MS = 180;
+
+type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 
 function formatDuration(durationSeconds: number | null) {
     if (!durationSeconds) return null;
@@ -37,6 +43,7 @@ function buildExcludeParam(ids: string[]) {
 export function FocusFeed() {
     const { completedIds, isLoaded } = useReadingProgress();
     const isDesktop = useMediaQuery("(min-width: 768px)");
+    const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
     const [items, setItems] = useState<FocusFeedItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
@@ -44,6 +51,7 @@ export function FocusFeed() {
     const [activeCardIndex, setActiveCardIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
     const [takeawaysSheetCard, setTakeawaysSheetCard] = useState<FocusCard | null>(null);
+    const [takeawaysSheetPhase, setTakeawaysSheetPhase] = useState<TakeawaysSheetPhase>("closed");
     const [sheetDragOffset, setSheetDragOffset] = useState(0);
     const listRef = useRef<HTMLDivElement | null>(null);
     const seenIdsRef = useRef<Set<string>>(new Set());
@@ -58,6 +66,8 @@ export function FocusFeed() {
     const wheelQuietTimeoutRef = useRef<number | null>(null);
     const touchStartRef = useRef<{ x: number; y: number } | null>(null);
     const sheetTouchStartYRef = useRef<number | null>(null);
+    const sheetCloseTimeoutRef = useRef<number | null>(null);
+    const sheetEnterTimeoutRef = useRef<number | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
     const isTakeawaysSheetOpen = !isDesktop && takeawaysSheetCard !== null;
@@ -89,17 +99,43 @@ export function FocusFeed() {
         }, WHEEL_QUIET_PERIOD_MS);
     }, [clearWheelQuietTimeout]);
 
-    const closeTakeawaysSheet = useCallback(() => {
-        setTakeawaysSheetCard(null);
-        setSheetDragOffset(0);
-        sheetTouchStartYRef.current = null;
+    const clearSheetAnimationTimeouts = useCallback(() => {
+        if (sheetCloseTimeoutRef.current !== null) {
+            window.clearTimeout(sheetCloseTimeoutRef.current);
+            sheetCloseTimeoutRef.current = null;
+        }
+
+        if (sheetEnterTimeoutRef.current !== null) {
+            window.clearTimeout(sheetEnterTimeoutRef.current);
+            sheetEnterTimeoutRef.current = null;
+        }
     }, []);
 
+    const closeTakeawaysSheet = useCallback(() => {
+        clearSheetAnimationTimeouts();
+        setSheetDragOffset(0);
+        sheetTouchStartYRef.current = null;
+        if (prefersReducedMotion) {
+            setTakeawaysSheetPhase("closed");
+            setTakeawaysSheetCard(null);
+            return;
+        }
+
+        setTakeawaysSheetPhase("exiting");
+        sheetCloseTimeoutRef.current = window.setTimeout(() => {
+            setTakeawaysSheetCard(null);
+            setTakeawaysSheetPhase("closed");
+            sheetCloseTimeoutRef.current = null;
+        }, TAKEAWAYS_SHEET_CLOSE_DURATION_MS);
+    }, [clearSheetAnimationTimeouts, prefersReducedMotion]);
+
     const openTakeawaysSheet = useCallback((card: FocusCard) => {
+        clearSheetAnimationTimeouts();
         setTakeawaysSheetCard(card);
         setSheetDragOffset(0);
         sheetTouchStartYRef.current = null;
-    }, []);
+        setTakeawaysSheetPhase(prefersReducedMotion ? "entered" : "entering");
+    }, [clearSheetAnimationTimeouts, prefersReducedMotion]);
 
     const moveToCard = useCallback(
         (nextIndex: number) => {
@@ -205,6 +241,24 @@ export function FocusFeed() {
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (!takeawaysSheetCard || prefersReducedMotion || takeawaysSheetPhase !== "entering") {
+            return;
+        }
+
+        sheetEnterTimeoutRef.current = window.setTimeout(() => {
+            setTakeawaysSheetPhase("entered");
+            sheetEnterTimeoutRef.current = null;
+        }, TAKEAWAYS_SHEET_ENTER_DELAY_MS);
+
+        return () => {
+            if (sheetEnterTimeoutRef.current !== null) {
+                window.clearTimeout(sheetEnterTimeoutRef.current);
+                sheetEnterTimeoutRef.current = null;
+            }
+        };
+    }, [prefersReducedMotion, takeawaysSheetCard, takeawaysSheetPhase]);
 
     useEffect(() => {
         if (!isLoaded || hasInitializedRef.current) {
@@ -361,8 +415,21 @@ export function FocusFeed() {
         return () => {
             unlockGestures();
             clearWheelQuietTimeout();
+            clearSheetAnimationTimeouts();
         };
-    }, [clearWheelQuietTimeout, unlockGestures]);
+    }, [clearSheetAnimationTimeouts, clearWheelQuietTimeout, unlockGestures]);
+
+    useEffect(() => {
+        if (!isDesktop || takeawaysSheetCard === null) {
+            return;
+        }
+
+        clearSheetAnimationTimeouts();
+        setTakeawaysSheetCard(null);
+        setTakeawaysSheetPhase("closed");
+        setSheetDragOffset(0);
+        sheetTouchStartYRef.current = null;
+    }, [clearSheetAnimationTimeouts, isDesktop, takeawaysSheetCard]);
 
     useEffect(() => {
         if (!mounted || !isTakeawaysSheetOpen) {
@@ -436,6 +503,8 @@ export function FocusFeed() {
                     <FocusTakeawaysSheet
                         card={takeawaysSheetCard}
                         dragOffset={sheetDragOffset}
+                        phase={takeawaysSheetPhase}
+                        prefersReducedMotion={prefersReducedMotion}
                         onClose={closeTakeawaysSheet}
                         onDragOffsetChange={setSheetDragOffset}
                         touchStartYRef={sheetTouchStartYRef}
@@ -613,12 +682,16 @@ function FocusCardView({
 function FocusTakeawaysSheet({
     card,
     dragOffset,
+    phase,
+    prefersReducedMotion,
     onClose,
     onDragOffsetChange,
     touchStartYRef,
 }: {
     card: FocusCard;
     dragOffset: number;
+    phase: TakeawaysSheetPhase;
+    prefersReducedMotion: boolean;
     onClose: () => void;
     onDragOffsetChange: (offset: number) => void;
     touchStartYRef: MutableRefObject<number | null>;
@@ -652,14 +725,52 @@ function FocusTakeawaysSheet({
         onDragOffsetChange(0);
     };
 
+    const isDragging = dragOffset > 0;
+    const shouldAnimateMotion = !prefersReducedMotion && !isDragging;
+    const isExiting = phase === "exiting";
+    const backdropOpacityClass =
+        phase === "entered" ? "opacity-100" : "opacity-0";
+    const sheetTranslateY = isDragging
+        ? dragOffset
+        : prefersReducedMotion
+            ? 0
+            : phase === "entering"
+                ? 16
+                : phase === "exiting"
+                    ? 12
+                    : 0;
+    const sheetOpacity = prefersReducedMotion
+        ? 1
+        : phase === "entered"
+            ? 1
+            : 0.98;
+    const backdropTransitionStyle = prefersReducedMotion
+        ? undefined
+        : {
+            transitionDuration: `${isExiting ? TAKEAWAYS_SHEET_CLOSE_DURATION_MS : TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS}ms`,
+            transitionTimingFunction: isExiting ? "ease-in" : "ease-out",
+        };
+    const sheetTransitionStyle = shouldAnimateMotion
+        ? {
+            transitionDuration: `${isExiting ? TAKEAWAYS_SHEET_CLOSE_DURATION_MS : TAKEAWAYS_SHEET_OPEN_DURATION_MS}ms`,
+            transitionTimingFunction: isExiting ? "ease-in" : "ease-out",
+            transform: `translateY(${sheetTranslateY}px)`,
+            opacity: sheetOpacity,
+        }
+        : {
+            transform: `translateY(${sheetTranslateY}px)`,
+            opacity: sheetOpacity,
+        };
+
     return (
         <div className="fixed inset-0 z-[80] lg:hidden" aria-hidden={false}>
             <button
                 type="button"
                 data-testid="focus-takeaways-sheet-backdrop"
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                className={`absolute inset-0 bg-black/60 backdrop-blur-sm ${prefersReducedMotion ? "" : "transition-opacity"} ${backdropOpacityClass}`}
                 aria-label="Close full takeaways"
                 onClick={onClose}
+                style={backdropTransitionStyle}
             />
 
             <div
@@ -671,8 +782,8 @@ function FocusTakeawaysSheet({
                     aria-modal="true"
                     aria-label={`Full takeaways for ${card.title}`}
                     data-testid="focus-takeaways-sheet"
-                    className="mx-auto flex max-h-[min(82svh,calc(100svh-1rem))] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-border/60 bg-background shadow-2xl"
-                    style={{ transform: `translateY(${dragOffset}px)` }}
+                    className={`mx-auto flex max-h-[min(82svh,calc(100svh-1rem))] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-border/60 bg-background shadow-2xl ${prefersReducedMotion ? "" : "transition-transform transition-opacity"}`}
+                    style={sheetTransitionStyle}
                 >
                     <div
                         className="relative flex justify-center px-4 pt-3 pb-2"

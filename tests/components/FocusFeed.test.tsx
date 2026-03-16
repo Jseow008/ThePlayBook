@@ -11,7 +11,10 @@ const { readingProgressState, mediaQueryState } = vi.hoisted(() => ({
         },
     },
     mediaQueryState: {
-        value: false,
+        value: {
+            isDesktop: false,
+            prefersReducedMotion: false,
+        },
     },
 }));
 
@@ -81,7 +84,12 @@ vi.mock("@/hooks/useReadingProgress", () => ({
 }));
 
 vi.mock("@/hooks/useMediaQuery", () => ({
-    useMediaQuery: () => mediaQueryState.value,
+    useMediaQuery: (query: string) =>
+        query === "(min-width: 768px)"
+            ? mediaQueryState.value.isDesktop
+            : query === "(prefers-reduced-motion: reduce)"
+                ? mediaQueryState.value.prefersReducedMotion
+                : false,
 }));
 
 describe("FocusFeed", () => {
@@ -106,7 +114,10 @@ describe("FocusFeed", () => {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             isLoaded: true,
         };
-        mediaQueryState.value = false;
+        mediaQueryState.value = {
+            isDesktop: false,
+            prefersReducedMotion: false,
+        };
         fetchMock.mockResolvedValue({
             ok: true,
             json: async () => [
@@ -243,6 +254,9 @@ describe("FocusFeed", () => {
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
         expect(sheetFrame).toHaveClass("px-5");
         expect(sheet).toHaveAttribute("aria-label", "Full takeaways for Essentialism");
+        expect(sheet).toHaveClass("transition-transform");
+        expect(sheet).toHaveClass("transition-opacity");
+        expect(screen.getByTestId("focus-takeaways-sheet-backdrop")).toHaveClass("transition-opacity");
         expect(within(sheet).queryByText("Key Takeaways")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Essentialism")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Greg McKeown")).not.toBeInTheDocument();
@@ -264,6 +278,63 @@ describe("FocusFeed", () => {
             expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
         });
         expect(screen.getByText("Essentialism")).toBeInTheDocument();
+    });
+
+    it("keeps the sheet mounted for the exit animation before unmounting", async () => {
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+        );
+
+        await screen.findByTestId("focus-takeaways-sheet");
+
+        vi.useFakeTimers();
+        try {
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(10);
+            });
+
+            fireEvent.click(screen.getByTestId("focus-takeaways-sheet-close"));
+
+            expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(159);
+            });
+
+            expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1);
+            });
+
+            expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("skips slide motion when reduced motion is preferred", async () => {
+        mediaQueryState.value = {
+            isDesktop: false,
+            prefersReducedMotion: true,
+        };
+
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+        );
+
+        const sheet = await screen.findByTestId("focus-takeaways-sheet");
+        expect(sheet).not.toHaveClass("transition-transform");
+        expect(sheet).not.toHaveClass("transition-opacity");
+        expect(screen.getByTestId("focus-takeaways-sheet-backdrop")).not.toHaveClass("transition-opacity");
     });
 
     it("ignores trailing desktop wheel momentum until the quiet period ends", async () => {
@@ -330,7 +401,10 @@ describe("FocusFeed", () => {
     });
 
     it("shows up to seven takeaways on desktop", async () => {
-        mediaQueryState.value = true;
+        mediaQueryState.value = {
+            isDesktop: true,
+            prefersReducedMotion: false,
+        };
 
         render(<FocusFeed />);
 
