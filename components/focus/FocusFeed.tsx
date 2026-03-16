@@ -623,8 +623,6 @@ function FocusTakeawaysSheet({
     onDragOffsetChange: (offset: number) => void;
     touchStartYRef: MutableRefObject<number | null>;
 }) {
-    const duration = formatDuration(card.duration_seconds);
-
     const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
         if (event.touches.length !== 1) {
             touchStartYRef.current = null;
@@ -668,80 +666,49 @@ function FocusTakeawaysSheet({
                 <div
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby="focus-takeaways-sheet-title"
+                    aria-labelledby="focus-takeaways-sheet-heading"
                     data-testid="focus-takeaways-sheet"
                     className="mx-auto flex max-h-[min(82svh,calc(100svh-1rem))] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-border/60 bg-background shadow-2xl"
                     style={{ transform: `translateY(${dragOffset}px)` }}
                 >
                     <div
-                        className="flex flex-col gap-3 border-b border-border/40 px-4 pt-3 pb-4"
+                        className="flex items-center justify-between gap-3 border-b border-border/40 px-4 pt-3 pb-3"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
                         onTouchCancel={handleTouchEnd}
                     >
                         <div className="mx-auto h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-                        <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0 space-y-2">
-                                <h2
-                                    id="focus-takeaways-sheet-title"
-                                    className="text-lg font-semibold tracking-tight text-foreground"
-                                >
-                                    {card.title}
-                                </h2>
-                                <div className="space-y-1.5">
-                                    {card.author && (
-                                        <p className="line-clamp-1 text-xs text-muted-foreground/70">
-                                            {card.author}
-                                        </p>
-                                    )}
-                                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/70">
-                                        <span className="rounded-full border border-border/40 px-2 py-0.5 uppercase tracking-[0.16em] text-muted-foreground/80">
-                                            {card.type}
-                                        </span>
-                                        {card.category && (
-                                            <span className="rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
-                                                {card.category}
-                                            </span>
-                                        )}
-                                        {duration && (
-                                            <span className="rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
-                                                {duration}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                data-testid="focus-takeaways-sheet-close"
-                                className="focus-ring -mr-1 rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
-                                aria-label="Close full takeaways"
-                            >
-                                <X className="size-4" />
-                            </button>
-                        </div>
+                        <p
+                            id="focus-takeaways-sheet-heading"
+                            className="absolute left-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75"
+                        >
+                            Key Takeaways
+                        </p>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            data-testid="focus-takeaways-sheet-close"
+                            className="focus-ring -mr-1 ml-auto rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                            aria-label="Close full takeaways"
+                        >
+                            <X className="size-4" />
+                        </button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-4 py-4">
-                        <div className="space-y-4">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75">
-                                Key Takeaways
-                            </p>
-                            <div className="space-y-3">
-                                {card.takeaways.map((takeaway, index) => (
-                                    <div
-                                        key={`${card.id}-sheet-${index}`}
-                                        className="flex gap-3 text-[0.92rem] leading-[1.55] text-foreground/90"
-                                    >
-                                        <span className="mt-0.5 text-[11px] font-semibold text-primary">
-                                            {String(index + 1).padStart(2, "0")}
-                                        </span>
-                                        <span>{takeaway}</span>
-                                    </div>
-                                ))}
-                            </div>
+                        <div className="space-y-3">
+                            {card.takeaways.map((takeaway, index) => (
+                                <div
+                                    key={`${card.id}-sheet-${index}`}
+                                    className="flex gap-3 text-[0.92rem] leading-[1.55] text-foreground/90"
+                                >
+                                    <span className="mt-0.5 text-[11px] font-semibold text-primary">
+                                        {String(index + 1).padStart(2, "0")}
+                                    </span>
+                                    <span>{takeaway}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
 

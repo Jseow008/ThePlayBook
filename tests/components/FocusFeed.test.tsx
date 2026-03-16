@@ -230,7 +230,7 @@ describe("FocusFeed", () => {
         expect(firstCard).toHaveClass("py-4");
     });
 
-    it("opens a mobile takeaways sheet with the full takeaway list and closes back to the same feed", async () => {
+    it("opens a simplified mobile takeaways sheet with the full takeaway list and closes back to the same feed", async () => {
         render(<FocusFeed />);
 
         await screen.findByText("Essentialism");
@@ -240,8 +240,9 @@ describe("FocusFeed", () => {
         );
 
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
-        expect(within(sheet).getByRole("heading", { name: "Essentialism" })).toBeInTheDocument();
-        expect(within(sheet).getByText("Greg McKeown")).toBeInTheDocument();
+        expect(within(sheet).getByText("Key Takeaways")).toBeInTheDocument();
+        expect(within(sheet).queryByText("Essentialism")).not.toBeInTheDocument();
+        expect(within(sheet).queryByText("Greg McKeown")).not.toBeInTheDocument();
         expect(within(sheet).getByText("Audit every commitment")).toBeInTheDocument();
         expect(within(sheet).getByText("Treat rest as strategic capacity")).toBeInTheDocument();
         expect(within(sheet).getByRole("link", { name: "Read Essentialism" })).toHaveAttribute(
