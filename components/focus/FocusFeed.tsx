@@ -666,37 +666,31 @@ function FocusTakeawaysSheet({
                 <div
                     role="dialog"
                     aria-modal="true"
-                    aria-labelledby="focus-takeaways-sheet-heading"
+                    aria-label={`Full takeaways for ${card.title}`}
                     data-testid="focus-takeaways-sheet"
                     className="mx-auto flex max-h-[min(82svh,calc(100svh-1rem))] w-full max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-border/60 bg-background shadow-2xl"
                     style={{ transform: `translateY(${dragOffset}px)` }}
                 >
                     <div
-                        className="flex items-center justify-between gap-3 border-b border-border/40 px-4 pt-3 pb-3"
+                        className="relative flex justify-center border-b border-border/40 px-4 pt-3 pb-2"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}
                         onTouchCancel={handleTouchEnd}
                     >
                         <div className="mx-auto h-1.5 w-12 rounded-full bg-muted-foreground/30" />
-                        <p
-                            id="focus-takeaways-sheet-heading"
-                            className="absolute left-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75"
-                        >
-                            Key Takeaways
-                        </p>
                         <button
                             type="button"
                             onClick={onClose}
                             data-testid="focus-takeaways-sheet-close"
-                            className="focus-ring -mr-1 ml-auto rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+                            className="focus-ring absolute right-3 top-2 rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
                             aria-label="Close full takeaways"
                         >
                             <X className="size-4" />
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 py-4">
+                    <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
                         <div className="space-y-3">
                             {card.takeaways.map((takeaway, index) => (
                                 <div

@@ -240,7 +240,8 @@ describe("FocusFeed", () => {
         );
 
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
-        expect(within(sheet).getByText("Key Takeaways")).toBeInTheDocument();
+        expect(sheet).toHaveAttribute("aria-label", "Full takeaways for Essentialism");
+        expect(within(sheet).queryByText("Key Takeaways")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Essentialism")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Greg McKeown")).not.toBeInTheDocument();
         expect(within(sheet).getByText("Audit every commitment")).toBeInTheDocument();
