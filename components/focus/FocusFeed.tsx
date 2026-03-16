@@ -672,7 +672,7 @@ function FocusTakeawaysSheet({
                     style={{ transform: `translateY(${dragOffset}px)` }}
                 >
                     <div
-                        className="relative flex justify-center border-b border-border/40 px-4 pt-3 pb-2"
+                        className="relative flex justify-center px-4 pt-3 pb-2"
                         onTouchStart={handleTouchStart}
                         onTouchMove={handleTouchMove}
                         onTouchEnd={handleTouchEnd}

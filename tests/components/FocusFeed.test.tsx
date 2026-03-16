@@ -244,6 +244,7 @@ describe("FocusFeed", () => {
         expect(within(sheet).queryByText("Key Takeaways")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Essentialism")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Greg McKeown")).not.toBeInTheDocument();
+        expect(sheet.firstElementChild).not.toHaveClass("border-b");
         expect(within(sheet).getByText("Audit every commitment")).toBeInTheDocument();
         expect(within(sheet).getByText("Treat rest as strategic capacity")).toBeInTheDocument();
         expect(within(sheet).getByRole("link", { name: "Read Essentialism" })).toHaveAttribute(
