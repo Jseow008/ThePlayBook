@@ -662,7 +662,10 @@ function FocusTakeawaysSheet({
                 onClick={onClose}
             />
 
-            <div className="absolute inset-x-0 bottom-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div
+                data-testid="focus-takeaways-sheet-frame"
+                className="absolute inset-x-0 bottom-0 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            >
                 <div
                     role="dialog"
                     aria-modal="true"

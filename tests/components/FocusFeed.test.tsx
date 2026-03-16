@@ -239,7 +239,9 @@ describe("FocusFeed", () => {
             screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
         );
 
+        const sheetFrame = await screen.findByTestId("focus-takeaways-sheet-frame");
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
+        expect(sheetFrame).toHaveClass("px-5");
         expect(sheet).toHaveAttribute("aria-label", "Full takeaways for Essentialism");
         expect(within(sheet).queryByText("Key Takeaways")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Essentialism")).not.toBeInTheDocument();
@@ -247,10 +249,9 @@ describe("FocusFeed", () => {
         expect(sheet.firstElementChild).not.toHaveClass("border-b");
         expect(within(sheet).getByText("Audit every commitment")).toBeInTheDocument();
         expect(within(sheet).getByText("Treat rest as strategic capacity")).toBeInTheDocument();
-        expect(within(sheet).getByRole("link", { name: "Read Essentialism" })).toHaveAttribute(
-            "href",
-            "/read/123e4567-e89b-12d3-a456-426614174222"
-        );
+        const readLink = within(sheet).getByRole("link", { name: "Read Essentialism" });
+        expect(readLink).toHaveAttribute("href", "/read/123e4567-e89b-12d3-a456-426614174222");
+        expect(readLink).toBeInTheDocument();
 
         fireEvent.wheel(screen.getByTestId("focus-takeaways-sheet-backdrop"), {
             deltaY: 120,
