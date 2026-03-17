@@ -72,6 +72,35 @@ describe("NotesAskPanel", () => {
         });
     });
 
+    it("uses the author-chat shell pattern for the page variant while keeping scope context", () => {
+        const pageScope: NotesChatScope = {
+            ...currentScope,
+            totalMatches: 6,
+        };
+
+        render(
+            <NotesAskPanel
+                currentScope={pageScope}
+                onClose={vi.fn()}
+                variant="page"
+            />
+        );
+
+        expect(screen.queryByText("Ask These Notes")).not.toBeInTheDocument();
+        expect(screen.getByText("Explore this note set")).toBeInTheDocument();
+        expect(
+            screen.getByText("Use the notes currently in scope to surface patterns, compare themes, retrieve supporting evidence, and spot tensions or contradictions.")
+        ).toBeInTheDocument();
+        expect(screen.getByText("Good places to start")).toBeInTheDocument();
+        expect(screen.getByText("2 notes in scope")).toBeInTheDocument();
+        expect(screen.getByText("using 40 most recent")).toBeInTheDocument();
+        expect(screen.getByText('search: "goggins"')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Ask about these notes...")).toBeInTheDocument();
+        expect(
+            screen.getByText("Notes-scoped assistant · Grounded only in the notes currently in scope.")
+        ).toBeInTheDocument();
+    });
+
     it("auto-scrolls only after real chat activity appears", () => {
         const { rerender } = render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
 
@@ -149,6 +178,7 @@ describe("NotesAskPanel", () => {
         );
         expect(screen.queryByLabelText(/close notes ai panel/i)).not.toBeInTheDocument();
         expect(screen.getAllByText("2 notes in scope")).toHaveLength(1);
+        expect(screen.getByText("Grounded only in the notes currently in scope.")).toBeInTheDocument();
         expect(screen.queryByText(/matching notes/i)).not.toBeInTheDocument();
     });
 });

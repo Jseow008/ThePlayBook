@@ -320,9 +320,9 @@ export function AskClientPage({
                 <>
                     <main className="flex-1 overflow-y-auto overscroll-contain">
                         <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pt-6 pb-3 sm:px-6">
-                            <div className="flex-1 rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
-                                <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-7">
-                                    <div className="space-y-5">
+                            <div className="flex min-h-[30rem] flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm sm:min-h-[34rem]">
+                                <div className="mx-auto flex min-h-full w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
+                                    <div className="flex-1 space-y-5">
                                         {isEmptyState && (
                                             <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
                                                 <div className="flex items-start gap-4">
@@ -336,22 +336,6 @@ export function AskClientPage({
                                                         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
                                                             Ask about completed books, saved titles, recurring authors, and the ideas inside the passages you&apos;ve kept. Ask My Library can answer both library-inventory questions and content-grounded synthesis questions.
                                                         </p>
-                                                        {initialLibrarySnapshot && (
-                                                            <div className="mt-4 grid gap-2 text-xs text-muted-foreground sm:grid-cols-2">
-                                                                <div className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2">
-                                                                    <span className="font-medium text-foreground">{initialLibrarySnapshot.totalItems}</span> items currently in your library
-                                                                </div>
-                                                                <div className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2">
-                                                                    <span className="font-medium text-foreground">{initialLibrarySnapshot.completedCount}</span> completed
-                                                                </div>
-                                                                <div className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2">
-                                                                    <span className="font-medium text-foreground">{initialLibrarySnapshot.inProgressCount}</span> in progress
-                                                                </div>
-                                                                <div className="rounded-2xl border border-border/60 bg-background/60 px-3 py-2">
-                                                                    <span className="font-medium text-foreground">{initialLibrarySnapshot.savedButNotStartedCount}</span> saved but not started
-                                                                </div>
-                                                            </div>
-                                                        )}
                                                         <div className="mt-5">
                                                             <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
                                                                 Good places to start
@@ -473,7 +457,7 @@ export function AskClientPage({
                         </div>
                     </main>
 
-                    <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-4 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
+                    <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-4 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
                         <div className="mx-auto w-full max-w-5xl">
                             <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
                                 <form
