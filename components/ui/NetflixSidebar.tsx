@@ -32,6 +32,8 @@ const navItems = [
     { icon: Crosshair, label: "Focus", href: "/focus" },
 ];
 
+const notesItem = { icon: StickyNote, label: "Notes", href: "/notes" };
+
 export function NetflixSidebar() {
     const pathname = usePathname();
     const [isExpanded, setIsExpanded] = useState(false);
@@ -64,7 +66,7 @@ export function NetflixSidebar() {
             : user?.user_metadata?.avatar_url;
     const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
 
-    // Close library when sidebar collapses
+    // Close accordion sections when the sidebar collapses.
     useEffect(() => {
         if (!isExpanded) {
             setIsLibraryOpen(false);
@@ -73,8 +75,16 @@ export function NetflixSidebar() {
     }, [isExpanded]);
 
     const totalLibraryItems = inProgressCount + completedCount + myListCount;
-    const isLibrarySectionActive = pathname === "/library" || pathname === "/library/reading" || pathname === "/library/completed";
-    const isAskSectionActive = pathname === "/ask" || pathname === "/notes";
+    const isLibrarySectionActive = pathname.startsWith("/library");
+    const isNotesSectionActive = pathname === notesItem.href;
+    const isAskSectionActive = pathname === "/ask";
+
+    // Keep the current section expanded when it owns the active route.
+    useEffect(() => {
+        if (isExpanded && isLibrarySectionActive) {
+            setIsLibraryOpen(true);
+        }
+    }, [isExpanded, isLibrarySectionActive]);
 
     useEffect(() => {
         if (isExpanded && isAskSectionActive) {
@@ -271,22 +281,35 @@ export function NetflixSidebar() {
                                     </span>
                                 )}
                             </Link>
-
-                            {/* Notes */}
-                            <Link
-                                href="/notes"
-                                className={cn(
-                                    "flex items-center h-10 px-4 transition-colors rounded-md",
-                                    pathname === "/notes"
-                                        ? "text-foreground bg-accent"
-                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                                )}
-                            >
-                                <StickyNote className="size-4 mr-3 flex-shrink-0" />
-                                <span className="text-sm whitespace-nowrap flex-1">Notes</span>
-                            </Link>
                         </div>
                     )}
+                </div>
+
+                <div className="space-y-1 pt-2">
+                    <Link
+                        href={notesItem.href}
+                        title={!isExpanded ? notesItem.label : undefined}
+                        className={cn(
+                            "flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
+                            isExpanded ? "justify-start gap-3" : "justify-center",
+                            isNotesSectionActive && "text-foreground bg-accent border-l-4 border-primary"
+                        )}
+                    >
+                        <notesItem.icon
+                            className={cn(
+                                "size-5 flex-shrink-0",
+                                isNotesSectionActive && "text-primary"
+                            )}
+                        />
+                        <span
+                            className={cn(
+                                "text-sm font-medium transition-opacity whitespace-nowrap",
+                                isExpanded ? "opacity-100" : "opacity-0 w-0"
+                            )}
+                        >
+                            {notesItem.label}
+                        </span>
+                    </Link>
                 </div>
 
                 <div className="mt-4 mx-4 border-t border-border" />

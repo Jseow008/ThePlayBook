@@ -99,7 +99,7 @@ describe("app navigation", () => {
     });
 
     it("adds an Ask section to the desktop sidebar with global and notes entry points", async () => {
-        pathnameState.value = "/notes";
+        pathnameState.value = "/ask";
         vi.useFakeTimers();
 
         render(<NetflixSidebar />);
@@ -113,6 +113,26 @@ describe("app navigation", () => {
         expect(screen.getByRole("button", { name: /ask/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Ask My Library" })).toHaveAttribute("href", "/ask");
         expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveAttribute("href", "/notes?ask=1");
+
+        vi.useRealTimers();
+    });
+
+    it("surfaces Notes as a top-level desktop sidebar destination", async () => {
+        pathnameState.value = "/notes";
+        vi.useFakeTimers();
+
+        render(<NetflixSidebar />);
+
+        const sidebar = screen.getByRole("complementary");
+        fireEvent.mouseEnter(sidebar);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(300);
+        });
+
+        const notesLink = screen.getByRole("link", { name: /^notes$/i });
+        expect(notesLink).toHaveAttribute("href", "/notes");
+        expect(notesLink).toHaveClass("border-l-4");
+        expect(screen.getByRole("button", { name: /ask/i })).not.toHaveClass("border-l-4");
 
         vi.useRealTimers();
     });
