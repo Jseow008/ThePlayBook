@@ -200,6 +200,7 @@ describe("AskClientPage", () => {
         render(<AskClientPage scope="notes" />);
 
         expect(screen.getByRole("heading", { name: "Ask These Notes" })).toBeInTheDocument();
+        expect(screen.getAllByRole("heading", { name: "Ask These Notes" })).toHaveLength(1);
         expect(screen.getByTestId("notes-page-panel")).toBeInTheDocument();
     });
 
