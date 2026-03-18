@@ -22,8 +22,10 @@ export function LibraryToolbar({
     onSortChange,
     className,
 }: LibraryToolbarProps) {
+    const filters = ["all", "book", "podcast", "article"] as const;
+
     return (
-        <div className={cn("flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between py-4", className)}>
+        <div className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", className)}>
             {/* Search */}
             <div className="relative w-full lg:w-64 group">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
@@ -36,18 +38,24 @@ export function LibraryToolbar({
                 />
             </div>
 
-            <div className="flex items-center gap-3 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-hide">
+            <div
+                data-testid="library-toolbar-controls"
+                className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:gap-3"
+            >
                 {/* Filter */}
-                <div className="flex items-center bg-secondary/25 rounded-full p-1 border border-border/60">
-                    {["all", "book", "podcast", "article"].map((filter) => (
+                <div
+                    data-testid="library-toolbar-filters"
+                    className="flex flex-wrap gap-2 lg:items-center lg:rounded-full lg:border lg:border-border/60 lg:bg-secondary/25 lg:p-1"
+                >
+                    {filters.map((filter) => (
                         <button
                             key={filter}
                             onClick={() => onFilterChange(filter)}
                             className={cn(
-                                "h-8 px-4 rounded-full text-xs font-medium capitalize transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                "inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-medium capitalize transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-3.5 lg:h-8 lg:border-transparent lg:px-4",
                                 activeFilter === filter
-                                    ? "bg-background text-foreground shadow-sm"
-                                    : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                                    ? "border-border/70 bg-secondary/50 text-foreground shadow-sm lg:bg-background"
+                                    : "border-border/60 bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground hover:bg-secondary/30 lg:hover:bg-secondary/50"
                             )}
                         >
                             {filter}
@@ -56,11 +64,15 @@ export function LibraryToolbar({
                 </div>
 
                 {/* Sort */}
-                <div className="relative">
+                <div
+                    data-testid="library-toolbar-sort"
+                    className="relative shrink-0"
+                >
                     <select
                         value={activeSort}
                         onChange={(e) => onSortChange(e.target.value as any)}
-                        className="h-9 pl-3 pr-8 rounded-full bg-secondary/25 text-xs font-medium border border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer text-muted-foreground hover:text-foreground transition-colors appearance-none"
+                        aria-label="Sort library items"
+                        className="h-8 min-w-28 rounded-full border border-border/60 bg-background/40 pl-3 pr-8 text-xs font-medium text-muted-foreground transition-colors appearance-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer lg:h-9 lg:bg-secondary/25"
                     >
                         <option value="newest">Newest</option>
                         <option value="oldest">Oldest</option>
