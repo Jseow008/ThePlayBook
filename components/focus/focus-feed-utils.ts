@@ -8,40 +8,11 @@ export interface FocusCard {
     category: string | null;
     duration_seconds: number | null;
     hook: string;
-    mobileTakeawayLimit: 2 | 3 | 4;
     totalTakeaways: number;
     takeaways: string[];
 }
 
 const FALLBACK_HOOK = "Open the full summary when you want to go deeper.";
-
-function getAverageTakeawayLength(takeaways: string[]) {
-    const sampledTakeaways = takeaways.slice(0, 4);
-    if (sampledTakeaways.length === 0) {
-        return 0;
-    }
-
-    const totalLength = sampledTakeaways.reduce((sum, takeaway) => sum + takeaway.length, 0);
-    return totalLength / sampledTakeaways.length;
-}
-
-function getMobileTakeawayLimit(title: string, hook: string, takeaways: string[]): 2 | 3 | 4 {
-    let limit = 4;
-
-    if (title.length > 55) {
-        limit -= 1;
-    }
-
-    if (hook.length > 140) {
-        limit -= 1;
-    }
-
-    if (getAverageTakeawayLength(takeaways) > 90) {
-        limit -= 1;
-    }
-
-    return Math.max(2, Math.min(4, limit)) as 2 | 3 | 4;
-}
 
 function normalizeQuickMode(quickMode: unknown) {
     const parsedQuickMode = QuickModeSchema.safeParse(quickMode);
@@ -75,7 +46,6 @@ export function buildFocusCards(items: FocusFeedItem[]): FocusCard[] {
             category: item.category,
             duration_seconds: item.duration_seconds,
             hook,
-            mobileTakeawayLimit: getMobileTakeawayLimit(item.title, hook, takeaways),
             totalTakeaways: takeaways.length,
             takeaways,
         };
