@@ -260,7 +260,6 @@ export async function POST(request: NextRequest) {
 
         revalidatePath("/");
         revalidatePath("/search");
-        revalidatePath("/categories");
         revalidatePath(`/preview/${contentItem.id}`);
         revalidatePath(`/read/${contentItem.id}`);
 

@@ -14,7 +14,6 @@ import {
     CheckCircle2,
     ChevronDown,
     Plus,
-    LayoutGrid,
     StickyNote,
     Sparkles,
     MessageSquareText,
@@ -28,7 +27,6 @@ import { useAuthUser } from "@/hooks/useAuthUser";
 const navItems = [
     { icon: Search, label: "Search", href: "/search" },
     { icon: Home, label: "Home", href: "/browse" },
-    { icon: LayoutGrid, label: "Browse Categories", href: "/categories" },
     { icon: Crosshair, label: "Focus", href: "/focus" },
 ];
 
@@ -171,8 +169,6 @@ export function NetflixSidebar() {
 
                 {/* My Library Section */}
                 <div className="space-y-1">
-                    {/* My Library Header */}
-                    {/* My Library Header */}
                     {isExpanded ? (
                         <button
                             onClick={() => setIsLibraryOpen(!isLibraryOpen)}

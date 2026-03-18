@@ -90,6 +90,15 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/categories",
+        destination: "/browse",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -86,7 +86,7 @@
 
 ### 2.5 My Library & Notes (`/library`, `/notes`)
 
-* Consistent subnav layouts matching `/search` and `/categories`.
+* Consistent subnav layouts matching `/search` and `/browse`.
 * Filterable lists of bookmarked items.
 * **Notes**: Accordion expanding UI for text highlights and markdown notes, color-coded per highlight user setting. Sortable by Last Interacted or Creation Timestamp.
 

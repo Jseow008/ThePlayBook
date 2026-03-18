@@ -1,14 +1,15 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SearchPage from "@/app/(public)/search/page";
 
-const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks } = vi.hoisted(() => {
+const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock } = vi.hoisted(() => {
     let latestQueryBuilder: Record<string, ReturnType<typeof vi.fn>> | null = null;
 
     const createQueryBuilder = () => {
         const builder = {
             select: vi.fn(),
             eq: vi.fn(),
+            in: vi.fn(),
             is: vi.fn(),
             order: vi.fn(),
             limit: vi.fn(),
@@ -18,6 +19,7 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks } = vi.hois
 
         builder.select.mockReturnValue(builder);
         builder.eq.mockReturnValue(builder);
+        builder.in.mockReturnValue(builder);
         builder.is.mockReturnValue(builder);
         builder.order.mockReturnValue(builder);
         builder.limit.mockReturnValue(builder);
@@ -37,15 +39,45 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks } = vi.hois
         resetSupabaseMocks: () => {
             latestQueryBuilder = null;
         },
+        routerPushMock: vi.fn(),
     };
 });
 
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({
+        push: routerPushMock,
+    }),
+}));
+
 vi.mock("next/link", () => ({
-    default: ({ children, href, ...props }: { children: React.ReactNode; href: string | { pathname?: string } }) => (
-        <a href={typeof href === "string" ? href : href.pathname || ""} {...props}>
+    default: ({
+        children,
+        href,
+        ...props
+    }: {
+        children: React.ReactNode;
+        href: string | { pathname?: string; query?: Record<string, string | undefined> };
+    }) => {
+        const resolvedHref = typeof href === "string"
+            ? href
+            : (() => {
+                const params = new URLSearchParams();
+                Object.entries(href.query || {}).forEach(([key, value]) => {
+                    if (value) {
+                        params.set(key, value);
+                    }
+                });
+
+                const search = params.toString();
+                return `${href.pathname || ""}${search ? `?${search}` : ""}`;
+            })();
+
+        return (
+            <a href={resolvedHref} {...props}>
             {children}
         </a>
-    ),
+        );
+    },
 }));
 
 vi.mock("@/lib/supabase/public-server", () => ({
@@ -67,44 +99,105 @@ describe("SearchPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         resetSupabaseMocks();
+        routerPushMock.mockReset();
+        rpcMock.mockImplementation((fn: string, args?: Record<string, unknown>) => {
+            if (fn === "get_category_stats") {
+                return Promise.resolve({
+                    data: [
+                        { category: "Business", count: 6 },
+                        { category: "'Business'", count: 2 },
+                        { category: "Finance", count: 4 },
+                        { category: "Productivity", count: 5 },
+                        { category: "Health", count: 3 },
+                        { category: "Productivity", count: 5 },
+                        { category: "Mindset", count: 3 },
+                        { category: "Psychology", count: 2 },
+                        { category: "'Psychology'", count: 1 },
+                        { category: "Christian", count: 1 },
+                    ],
+                });
+            }
+
+            if (fn === "get_trending_content") {
+                return Promise.resolve({ data: [] });
+            }
+
+            throw new Error(`Unexpected RPC: ${fn} ${JSON.stringify(args)}`);
+        });
     });
 
     it("loads default trending items when no query or category is present", async () => {
-        rpcMock.mockResolvedValue({
-            data: [{ id: "trending-item", title: "Trending Item" }],
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return Promise.resolve({
+                    data: [
+                        { category: "Business", count: 6 },
+                        { category: "'Business'", count: 2 },
+                        { category: "Productivity", count: 5 },
+                        { category: "Psychology", count: 2 },
+                    ],
+                });
+            }
+
+            if (fn === "get_trending_content") {
+                return Promise.resolve({
+                    data: [{ id: "trending-item", title: "Trending Item" }],
+                });
+            }
+
+            throw new Error(`Unexpected RPC: ${fn}`);
         });
 
         render(await SearchPage({ searchParams: Promise.resolve({}) }));
 
+        expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 10,
             p_type: null,
         });
         expect(screen.getByText("Trending Now")).toBeInTheDocument();
         expect(screen.getByText("Trending Item")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "All topics" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Business" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Productivity" })).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Psychology" })).not.toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: "Others" })).toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();
     });
 
     it("loads type-filtered trending items when only a type is selected", async () => {
-        rpcMock.mockResolvedValue({
-            data: [{ id: "deep-work", title: "Deep Work" }],
+        rpcMock.mockImplementation((fn: string) => {
+            if (fn === "get_category_stats") {
+                return Promise.resolve({
+                    data: [
+                        { category: "Mindset", count: 3 },
+                        { category: "Science", count: 2 },
+                    ],
+                });
+            }
+
+            if (fn === "get_trending_content") {
+                return Promise.resolve({
+                    data: [{ id: "deep-work", title: "Deep Work" }],
+                });
+            }
+
+            throw new Error(`Unexpected RPC: ${fn}`);
         });
 
         render(await SearchPage({ searchParams: Promise.resolve({ type: "book" }) }));
 
+        expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
             p_limit: 10,
             p_type: "book",
         });
         expect(screen.getByText("Trending Books")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Mindset" })).toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();
     });
 
     it("uses the main results query for text search and applies the type filter", async () => {
-        rpcMock.mockResolvedValue({
-            data: [{ title: "Should Not Render" }],
-        });
-
         render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast" }) }));
 
         await waitFor(() => {
@@ -112,16 +205,13 @@ describe("SearchPage", () => {
         });
 
         const queryBuilder = getLatestQueryBuilder();
-        expect(rpcMock).not.toHaveBeenCalled();
+        expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
+        expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(queryBuilder?.eq).toHaveBeenCalledWith("type", "podcast");
         expect(queryBuilder?.or).toHaveBeenCalledWith("title.ilike.%focus%,author.ilike.%focus%,category.ilike.%focus%");
     });
 
     it("uses the main results query for category pages and still applies the type filter", async () => {
-        rpcMock.mockResolvedValue({
-            data: [{ title: "Should Not Render" }],
-        });
-
         render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity", type: "article" }) }));
 
         await waitFor(() => {
@@ -129,16 +219,88 @@ describe("SearchPage", () => {
         });
 
         const queryBuilder = getLatestQueryBuilder();
-        expect(rpcMock).not.toHaveBeenCalled();
+        expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
+        expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(queryBuilder?.eq).toHaveBeenCalledWith("category", "Productivity");
         expect(queryBuilder?.eq).toHaveBeenCalledWith("type", "article");
     });
 
-    it("keeps the search input stack layer above the filter row", async () => {
-        rpcMock.mockResolvedValue({
-            data: [],
+    it("queries across duplicate raw variants for normalized topics", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ category: "Business" }) }));
+
+        await waitFor(() => {
+            expect(fromMock).toHaveBeenCalledWith("content_item");
         });
 
+        const queryBuilder = getLatestQueryBuilder();
+        expect(queryBuilder?.in).toHaveBeenCalledWith("category", ["'Business'", "Business"]);
+    });
+
+    it("links category-filtered search pages back to browse", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity" }) }));
+
+        expect(screen.getByRole("link", { name: /back to browse/i })).toHaveAttribute("href", "/browse");
+    });
+
+    it("highlights the selected category chip when a category is present", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity" }) }));
+
+        expect(screen.getByRole("link", { name: "Productivity" })).toHaveClass("bg-primary");
+        expect(screen.getByRole("link", { name: "All topics" })).not.toHaveClass("bg-primary");
+    });
+
+    it("normalizes raw deep links for display", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ category: "'Business'" }) }));
+
+        expect(screen.getByRole("heading", { name: "Business Content" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Business" })).toHaveClass("bg-primary");
+    });
+
+    it("preserves query and type when selecting a category chip", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast" }) }));
+
+        expect(screen.getByRole("link", { name: "Business" })).toHaveAttribute("href", "/search?q=focus&category=Business&type=podcast");
+    });
+
+    it("clears only the category when selecting all topics", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast", category: "Productivity" }) }));
+
+        expect(screen.getByRole("link", { name: "All topics" })).toHaveAttribute("href", "/search?q=focus&type=podcast");
+    });
+
+    it("keeps the selected category when switching type filters", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity" }) }));
+
+        expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute("href", "/search?category=Productivity&type=podcast");
+        expect(screen.getByRole("link", { name: "All" })).toHaveAttribute("href", "/search?category=Productivity");
+    });
+
+    it("renders remaining normalized topics in the dropdown", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({}) }));
+
+        const select = screen.getByRole("combobox", { name: "Others" });
+        const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
+
+        expect(optionLabels).toEqual(["Others", "Christian", "Psychology"]);
+    });
+
+    it("reflects a selected non-curated topic in the dropdown", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ category: "Psychology" }) }));
+
+        expect(screen.getByRole("combobox", { name: "Others" })).toHaveValue("Psychology");
+    });
+
+    it("preserves query and type when selecting a dropdown topic", async () => {
+        render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast" }) }));
+
+        fireEvent.change(screen.getByRole("combobox", { name: "Others" }), {
+            target: { value: "Psychology" },
+        });
+
+        expect(routerPushMock).toHaveBeenCalledWith("/search?q=focus&category=Psychology&type=podcast");
+    });
+
+    it("keeps the search input stack layer above the filter row", async () => {
         render(await SearchPage({ searchParams: Promise.resolve({}) }));
 
         const searchInputWrapper = screen.getByTestId("search-input").parentElement;

@@ -160,4 +160,21 @@ describe("app navigation", () => {
 
         vi.useRealTimers();
     });
+
+    it("removes Browse Categories from the desktop sidebar", async () => {
+        vi.useFakeTimers();
+
+        render(<NetflixSidebar />);
+
+        const sidebar = screen.getByRole("complementary");
+        fireEvent.mouseEnter(sidebar);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(300);
+        });
+
+        expect(screen.queryByRole("link", { name: /browse categories/i })).not.toBeInTheDocument();
+        expect(screen.queryByTitle("Browse Categories")).not.toBeInTheDocument();
+
+        vi.useRealTimers();
+    });
 });

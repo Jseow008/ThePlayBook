@@ -195,7 +195,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         revalidatePath("/");
         revalidatePath("/search");
-        revalidatePath("/categories");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
 
@@ -254,7 +253,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
         revalidatePath("/");
         revalidatePath("/search");
-        revalidatePath("/categories");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
 
