@@ -14,6 +14,7 @@ import { AuthUser as User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { deleteUserLibrary, upsertUserLibrary } from "@/lib/server/user-library-repository";
+import type { ReadingProgressData } from "@/lib/reading-progress";
 import type { Json } from "@/types/database";
 import {
     clearScopedProgress,
@@ -30,18 +31,7 @@ import {
     migrateLegacyStorageToGuest,
 } from "@/lib/local-user-storage";
 
-/**
- * Reading progress data stored in localStorage
- */
-export interface ReadingProgressData {
-    itemId: string;
-    completed: string[];
-    lastSegmentIndex: number;
-    lastReadAt: string;
-    isCompleted: boolean;
-    totalSegments?: number;
-    maxSegmentIndex?: number;
-}
+export type { ReadingProgressData } from "@/lib/reading-progress";
 
 interface UserLibraryRow {
     content_id: string;

@@ -4,12 +4,16 @@ import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
 
 const {
+    heroHeaderSpy,
     notesDrawerSpy,
     routerReplaceMock,
     searchParamsState,
     highlightsState,
+    getProgressMock,
+    saveReadingProgressMock,
     syncFromCloudMock,
 } = vi.hoisted(() => ({
+    heroHeaderSpy: vi.fn(),
     notesDrawerSpy: vi.fn(),
     routerReplaceMock: vi.fn(),
     searchParamsState: { value: '' },
@@ -30,6 +34,8 @@ const {
             segment: null;
         }>,
     },
+    getProgressMock: vi.fn(),
+    saveReadingProgressMock: vi.fn(),
     syncFromCloudMock: vi.fn(),
 }));
 
@@ -41,7 +47,10 @@ vi.mock('next/navigation', () => ({
 
 // Mock child components to isolate ReaderView testing
 vi.mock('@/components/reader/ReaderHeroHeader', () => ({
-    ReaderHeroHeader: () => <div data-testid="mock-hero-header" />
+    ReaderHeroHeader: (props: any) => {
+        heroHeaderSpy(props);
+        return <div data-testid="mock-hero-header" />;
+    },
 }));
 
 vi.mock('@/components/reader/SegmentAccordion', () => ({
@@ -69,8 +78,8 @@ vi.mock('@/components/reader/CompletionCard', () => ({
 
 vi.mock('@/hooks/useReadingProgress', () => ({
     useReadingProgress: () => ({
-        saveReadingProgress: vi.fn(),
-        getProgress: vi.fn(() => null),
+        saveReadingProgress: saveReadingProgressMock,
+        getProgress: getProgressMock,
         isLoaded: true,
     }),
 }));
@@ -139,10 +148,13 @@ describe('ReaderView', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        heroHeaderSpy.mockClear();
         notesDrawerSpy.mockClear();
         routerReplaceMock.mockClear();
         searchParamsState.value = '';
         highlightsState.value = [];
+        getProgressMock.mockReturnValue(null);
+        saveReadingProgressMock.mockReset();
         window.scrollTo = vi.fn();
         localStorage.clear();
         document.body.innerHTML = '';
@@ -239,6 +251,59 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             expect(routerReplaceMock).toHaveBeenCalledWith('/read/test-item-1', { scroll: false });
+        });
+    });
+
+    it('normalizes stale saved progress before rendering and persists the cleaned version', async () => {
+        getProgressMock.mockReturnValue({
+            itemId: mockContent.id,
+            completed: ['seg-1', 'seg-2', 'seg-2'],
+            lastSegmentIndex: 9,
+            maxSegmentIndex: 9,
+            lastReadAt: '2026-03-17T10:00:00.000Z',
+            isCompleted: false,
+            totalSegments: 5,
+        });
+
+        render(<ReaderView content={mockContent} />);
+
+        await waitFor(() => {
+            expect(heroHeaderSpy).toHaveBeenCalledWith(expect.objectContaining({
+                segmentsRead: 1,
+                segmentsTotal: 1,
+            }));
+        });
+
+        await waitFor(() => {
+            expect(saveReadingProgressMock).toHaveBeenCalledWith('test-item-1', {
+                itemId: 'test-item-1',
+                completed: ['seg-1'],
+                lastSegmentIndex: 0,
+                maxSegmentIndex: 0,
+                lastReadAt: '2026-03-17T10:00:00.000Z',
+                isCompleted: true,
+                totalSegments: 1,
+            });
+        });
+    });
+
+    it('preserves legacy resume position when saved progress lacks maxSegmentIndex', async () => {
+        getProgressMock.mockReturnValue({
+            itemId: mockContent.id,
+            completed: [],
+            lastSegmentIndex: 0,
+            lastReadAt: '2026-03-17T10:00:00.000Z',
+            isCompleted: false,
+            totalSegments: 5,
+        });
+
+        render(<ReaderView content={mockContent} />);
+
+        await waitFor(() => {
+            expect(saveReadingProgressMock).toHaveBeenCalledWith('test-item-1', expect.objectContaining({
+                lastSegmentIndex: 0,
+                maxSegmentIndex: 0,
+            }));
         });
     });
 });

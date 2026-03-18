@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { clampReadingProgressPercent } from "@/lib/reading-progress";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -80,10 +81,7 @@ function InteractiveContentCard(props: ContentCardProps) {
 
     const percentage =
         progress && progress.totalSegments
-            ? Math.min(
-                100,
-                Math.round((progress.completed?.length || 0) / progress.totalSegments * 100)
-            )
+            ? clampReadingProgressPercent(progress.completed?.length || 0, progress.totalSegments)
             : 0;
 
     const showProgress = !hideProgressBar && !!progress && !progress.isCompleted && percentage > 0;

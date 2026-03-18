@@ -15,6 +15,7 @@ import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { HighlightPopover } from "./HighlightPopover";
+import { normalizeReadingProgress } from "@/lib/reading-progress";
 
 /**
  * Reader View — Accordion Layout
@@ -63,6 +64,10 @@ export function ReaderView({ content }: ReaderViewProps) {
             })),
         [content.segments]
     );
+    const validSegmentIds = useMemo(
+        () => new Set(content.segments.map((segment) => segment.id)),
+        [content.segments]
+    );
 
     // Start tracking reading time
     useReadingTimer(content.id);
@@ -77,13 +82,24 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
-        setCompletedSegments(new Set(savedProgress.completed || []));
+        const { progress, didChange } = normalizeReadingProgress({
+            progress: savedProgress,
+            itemId: content.id,
+            totalSegments: content.segments.length,
+            validSegmentIds,
+        });
+
+        setCompletedSegments(new Set(progress.completed));
         setMaxSegmentIndex(
-            typeof savedProgress.maxSegmentIndex === "number"
-                ? savedProgress.maxSegmentIndex
-                : savedProgress.lastSegmentIndex ?? -1,
+            typeof progress.maxSegmentIndex === "number"
+                ? progress.maxSegmentIndex
+                : progress.lastSegmentIndex ?? -1,
         );
-    }, [savedProgress]);
+
+        if (didChange && readingProgressLoaded) {
+            saveReadingProgress(content.id, progress);
+        }
+    }, [content.id, content.segments.length, readingProgressLoaded, saveReadingProgress, savedProgress, validSegmentIds]);
 
     useEffect(() => {
         if (popoverHighlightId && !popoverHighlight) {
@@ -123,23 +139,34 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (!readingProgressLoaded) return;
 
         const timeoutId = setTimeout(() => {
-            const isCompleted = completedSegments.size >= content.segments.length;
-
-            const progressData = {
-                completed: Array.from(completedSegments),
-                lastSegmentIndex: maxSegmentIndex,
-                maxSegmentIndex,
-                lastReadAt: new Date().toISOString(),
-                isCompleted,
+            const { progress } = normalizeReadingProgress({
+                progress: {
+                    completed: Array.from(completedSegments),
+                    lastSegmentIndex: maxSegmentIndex,
+                    maxSegmentIndex,
+                    lastReadAt: new Date().toISOString(),
+                    isCompleted: completedSegments.size >= content.segments.length,
+                    itemId: content.id,
+                    totalSegments: content.segments.length,
+                },
                 itemId: content.id,
                 totalSegments: content.segments.length,
-            };
+                validSegmentIds,
+            });
 
-            saveReadingProgress(content.id, progressData);
+            saveReadingProgress(content.id, progress);
         }, 1000);
 
         return () => clearTimeout(timeoutId);
-    }, [completedSegments, content.id, content.segments.length, maxSegmentIndex, readingProgressLoaded, saveReadingProgress]);
+    }, [
+        completedSegments,
+        content.id,
+        content.segments.length,
+        maxSegmentIndex,
+        readingProgressLoaded,
+        saveReadingProgress,
+        validSegmentIds,
+    ]);
 
     // ── Keyboard Shortcuts (Fullscreen) ──────────────────────────
     useEffect(() => {
