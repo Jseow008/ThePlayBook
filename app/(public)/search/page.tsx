@@ -269,14 +269,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
                         {selectedTopicLabel ? `${selectedTopicLabel} Content` : "What do you want to learn?"}
                     </h1>
-                    {selectedTopicLabel && (
-                        <Link
-                            href="/browse"
-                            className="text-sm text-muted-foreground hover:text-foreground transition-colors w-fit"
-                        >
-                            ← Back to browse
-                        </Link>
-                    )}
                 </div>
 
                 {/* Smart Search Input */}

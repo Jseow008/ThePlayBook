@@ -241,10 +241,11 @@ describe("SearchPage", () => {
         expect(queryBuilder?.in).toHaveBeenCalledWith("category", ["'Business'", "Business"]);
     });
 
-    it("links category-filtered search pages back to browse", async () => {
+    it("does not show a back-to-browse link on category-filtered search pages", async () => {
         await renderSearchPage({ category: "Productivity" });
 
-        expect(screen.getByRole("link", { name: /back to browse/i })).toHaveAttribute("href", "/browse");
+        expect(screen.queryByRole("link", { name: /back to browse/i })).not.toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Productivity Content" })).toBeInTheDocument();
     });
 
     it("highlights the selected category chip when a category is present", async () => {
