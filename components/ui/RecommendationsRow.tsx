@@ -37,11 +37,12 @@ export function RecommendationsRow({
 
     const recentTitle = recentTitleItems[0]?.title || "";
     const isLoading = recentLoading || recentTitleLoading || generalLoading;
+    const hasItems = recentItems.length > 0 || generalItems.length > 0;
 
     if (!isLoaded || (!mostRecentId && clusterIds.length === 0)) return null;
-    if (!isLoading && !recentItems.length && !generalItems.length) return null;
+    if (!isLoading && !hasItems) return null;
 
-    if (isLoading) {
+    if (isLoading && !hasItems) {
         return (
             <section className="space-y-4 animate-in fade-in duration-500">
                 <div className="flex items-center gap-2 px-4 md:px-6 lg:px-16">

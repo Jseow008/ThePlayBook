@@ -2,13 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { createServerClient } from "@supabase/ssr";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const supabaseResponse = await updateSession(request);
     const pathname = request.nextUrl.pathname;
-    const isAdminApiRoute = pathname.startsWith('/api/admin');
+    const isAdminApiRoute = pathname.startsWith("/api/admin");
 
-    // Check if the route is an admin route
-    if (pathname.startsWith('/admin') || isAdminApiRoute) {
+    if (pathname.startsWith("/admin") || isAdminApiRoute) {
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -17,8 +16,8 @@ export async function middleware(request: NextRequest) {
                     getAll() {
                         return request.cookies.getAll();
                     },
-                    setAll() { } // Read-only in middleware checks after updateSession
-                }
+                    setAll() { },
+                },
             }
         );
 
@@ -30,24 +29,23 @@ export async function middleware(request: NextRequest) {
                     { status: 401 }
                 );
             }
-            return NextResponse.redirect(new URL('/login?next=' + request.nextUrl.pathname, request.url));
+            return NextResponse.redirect(new URL("/login?next=" + request.nextUrl.pathname, request.url));
         }
 
-        // Check admin role
         const { data: profile } = await supabase
             .from("profiles")
             .select("role")
             .eq("id", user.id)
             .single();
 
-        if (!profile || profile.role !== 'admin') {
+        if (!profile || profile.role !== "admin") {
             if (isAdminApiRoute) {
                 return NextResponse.json(
                     { error: { code: "FORBIDDEN", message: "Admin access required" } },
                     { status: 403 }
                 );
             }
-            return NextResponse.redirect(new URL('/', request.url));
+            return NextResponse.redirect(new URL("/", request.url));
         }
     }
 

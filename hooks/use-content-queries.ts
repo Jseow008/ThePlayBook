@@ -50,5 +50,6 @@ export function useRecommendations(completedIds: string[], options?: { enabled?:
             return (await response.json()) as ContentItem[];
         },
         staleTime: 2 * 60 * 1000,
+        placeholderData: (previousData) => previousData,
     });
 }

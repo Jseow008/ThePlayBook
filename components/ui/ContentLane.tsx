@@ -46,27 +46,6 @@ export function ContentLane({
         setShowRightArrow(hasOverflow && scrollLeft < scrollWidth - clientWidth - 20);
     }, []);
 
-    const [isVisible, setIsVisible] = useState(false);
-    const sectionRef = useRef<HTMLElement>(null);
-
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsVisible(true);
-                    observer.disconnect(); // Only animate once
-                }
-            },
-            { threshold: 0.1, rootMargin: "50px" }
-        );
-
-        if (sectionRef.current) {
-            observer.observe(sectionRef.current);
-        }
-
-        return () => observer.disconnect();
-    }, []);
-
     useEffect(() => {
         const container = scrollRef.current;
         if (!container) return;
@@ -85,11 +64,7 @@ export function ContentLane({
 
     return (
         <section
-            ref={sectionRef}
-            className={cn(
-                "py-0.5 md:py-2 group/lane transition-all duration-700 transform",
-                isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
-            )}
+            className={cn("py-0.5 md:py-2 group/lane animate-in fade-in duration-500")}
         >
             {/* Header */}
             <div className="mb-1.5 flex items-center justify-between px-4 md:mb-2 md:px-6 lg:px-16">

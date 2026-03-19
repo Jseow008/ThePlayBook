@@ -327,21 +327,31 @@ function useReadingProgressController() {
         setStorageScope(nextScope);
 
         let importedGuestData = false;
-        let syncSucceeded = true;
 
         if (nextUser) {
             importedGuestData = importGuestDataToScope(nextScope);
-            syncSucceeded = await syncCloudForScope(nextUser, nextScope);
-        }
-
-        if (runId !== hydrateRunRef.current) return;
-
-        if (nextUser && importedGuestData && syncSucceeded) {
-            clearScopedProgress(localStorage, GUEST_STORAGE_SCOPE);
-            localStorage.removeItem(myListKey(GUEST_STORAGE_SCOPE));
         }
 
         loadProgress(nextScope);
+
+        if (!nextUser) {
+            return;
+        }
+
+        void syncCloudForScope(nextUser, nextScope)
+            .then((syncSucceeded) => {
+                if (runId !== hydrateRunRef.current) return;
+
+                if (importedGuestData && syncSucceeded) {
+                    clearScopedProgress(localStorage, GUEST_STORAGE_SCOPE);
+                    localStorage.removeItem(myListKey(GUEST_STORAGE_SCOPE));
+                }
+
+                loadProgress(nextScope);
+            })
+            .catch((error) => {
+                console.error("Failed to sync reading progress during hydration:", error);
+            });
     }, [importGuestDataToScope, loadProgress, resetState, syncCloudForScope]);
 
     useEffect(() => {
