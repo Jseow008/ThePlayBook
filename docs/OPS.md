@@ -162,7 +162,7 @@ Change status from "Verified" to "Draft" to hide from public.
 For large imports, use SQL scripts via `supabase/seed.sql` and apply with `psql`.
 
 **Syncing Embeddings:**
-After bulk uploads or edits, utilize the "Sync Missing Embeddings" button in the admin interface to submit unvectorized items to the AI pipeline for pgvector representation generation.
+After bulk uploads or edits, use the admin dashboard to inspect coverage. Segment embeddings for Ask My Library are backfilled locally with `npm run embeddings:sync-segments`, which writes directly to Supabase using the service role key.
 
 ### 3.6 Admin Session Flow
 

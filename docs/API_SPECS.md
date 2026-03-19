@@ -280,7 +280,7 @@ Upload an image to Supabase Storage.
 ### 3.9 AI Operations
 
 - **POST** `/api/admin/embeddings/sync`: Regenerates global embeddings for all items.
-- **POST** `/api/admin/embeddings/sync-segments`: Synchronizes vector embeddings for missing segments.
+- **GET** `/api/admin/embeddings/sync-segments`: Returns coverage plus the local CLI command used to backfill missing segment embeddings.
 
 ---
 

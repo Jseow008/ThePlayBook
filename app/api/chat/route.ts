@@ -339,7 +339,7 @@ export async function POST(req: NextRequest) {
         if (intent !== "library_metadata" && retrievalStatus === "not_initialized" && libraryItems.length === 0) {
             return apiError(
                 "INTERNAL_ERROR",
-                "Ask My Library retrieval is not initialized yet. Please run Sync AI Segments in the admin dashboard.",
+                "Ask My Library retrieval is not initialized yet. Please contact an administrator.",
                 500,
                 requestId
             );

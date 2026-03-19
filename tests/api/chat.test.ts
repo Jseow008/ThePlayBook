@@ -354,6 +354,6 @@ describe('Chat API', () => {
         expect(res.status).toBe(500);
 
         const json = await res.json();
-        expect(json.error.message).toContain('run Sync AI Segments');
+        expect(json.error.message).toContain('contact an administrator');
     });
 });
