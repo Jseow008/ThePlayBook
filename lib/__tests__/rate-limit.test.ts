@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { RateLimitBackendUnavailableError, rateLimit } from "../server/rate-limit";
+import {
+    bestEffortRateLimit,
+    RateLimitBackendUnavailableError,
+    rateLimit,
+} from "../server/rate-limit";
 import { NextRequest } from "next/server";
 
 describe("rateLimit", () => {
@@ -133,6 +137,26 @@ describe("rateLimit", () => {
 
         await expect(rateLimit(req, { limit: 1, windowMs: 1000 })).rejects.toBeInstanceOf(
             RateLimitBackendUnavailableError
+        );
+    });
+
+    it("allows low-risk routes to degrade safely when the shared limiter is unavailable", async () => {
+        process.env.NODE_ENV = "production";
+        delete process.env.UPSTASH_REDIS_REST_URL;
+        delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const req = createMockRequest("12.12.12.12", "/api/recommendations");
+
+        await expect(bestEffortRateLimit(req, {
+            limit: 1,
+            windowMs: 1000,
+            routeLabel: "/api/recommendations",
+        })).resolves.toEqual({ success: true });
+
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+            expect.stringContaining("/api/recommendations"),
+            expect.any(RateLimitBackendUnavailableError)
         );
     });
 });
