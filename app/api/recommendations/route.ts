@@ -2,7 +2,7 @@ import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { bestEffortRateLimit } from "@/lib/server/rate-limit";
 
 const RecommendationsRequestSchema = z.object({
     completedIds: z.array(z.string().uuid()).max(50).default([]),
@@ -12,7 +12,11 @@ export async function POST(request: NextRequest) {
     const requestId = getRequestId();
 
     // Rate limit: 10 requests per 60 seconds per IP
-    const rl = await rateLimit(request, { limit: 10, windowMs: 60_000 });
+    const rl = await bestEffortRateLimit(request, {
+        limit: 10,
+        windowMs: 60_000,
+        routeLabel: "/api/recommendations",
+    });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait and try again." } },

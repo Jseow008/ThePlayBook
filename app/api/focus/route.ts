@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { bestEffortRateLimit } from "@/lib/server/rate-limit";
 
 const QUERY_SCHEMA = z.object({
     limit: z.coerce.number().int().min(1).max(12).default(6),
@@ -27,7 +27,11 @@ function shuffleItems<T>(items: T[]): T[] {
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
 
-    const rateLimitResult = await rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rateLimitResult = await bestEffortRateLimit(request, {
+        limit: 30,
+        windowMs: 60_000,
+        routeLabel: "/api/focus",
+    });
     if (!rateLimitResult.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },

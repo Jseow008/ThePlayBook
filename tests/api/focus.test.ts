@@ -3,14 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/focus/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { logApiError } from "@/lib/server/api";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { bestEffortRateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: vi.fn(),
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
-    rateLimit: vi.fn(),
+    bestEffortRateLimit: vi.fn(),
 }));
 
 vi.mock("@/lib/server/api", async () => {
@@ -36,7 +36,7 @@ describe("Focus API", () => {
         (createPublicServerClient as any).mockReturnValue({
             from: mockFrom,
         });
-        (rateLimit as any).mockResolvedValue({ success: true });
+        (bestEffortRateLimit as any).mockResolvedValue({ success: true });
         randomSpy = vi.spyOn(Math, "random");
         mockLimit.mockResolvedValue({
             data: [
@@ -182,5 +182,18 @@ describe("Focus API", () => {
                 error: { invalid_row_count: 1 },
             })
         );
+    });
+
+    it("keeps serving focus items when rate limiting degrades safely", async () => {
+        (bestEffortRateLimit as any).mockResolvedValueOnce({ success: true });
+
+        const request = new NextRequest(new URL("http://localhost/api/focus?limit=1"));
+
+        const response = await GET(request);
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(Array.isArray(json)).toBe(true);
+        expect(json).toHaveLength(1);
     });
 });

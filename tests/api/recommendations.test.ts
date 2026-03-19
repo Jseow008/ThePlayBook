@@ -2,14 +2,15 @@ import { POST } from '@/app/api/recommendations/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
 import { createPublicServerClient } from '@/lib/supabase/public-server';
-import { rateLimit } from '@/lib/server/rate-limit';
+import { bestEffortRateLimit } from '@/lib/server/rate-limit';
 
 vi.mock('@/lib/supabase/public-server', () => ({
     createPublicServerClient: vi.fn(),
 }));
 
 vi.mock('@/lib/server/rate-limit', () => ({
-    rateLimit: vi.fn(),
+    bestEffortRateLimit: vi.fn(),
+    RateLimitBackendUnavailableError: class RateLimitBackendUnavailableError extends Error {},
 }));
 
 describe('Recommendations API', () => {
@@ -22,7 +23,7 @@ describe('Recommendations API', () => {
         vi.clearAllMocks();
 
         (createPublicServerClient as any).mockReturnValue(mockSupabaseClient);
-        (rateLimit as any).mockResolvedValue({ success: true });
+        (bestEffortRateLimit as any).mockResolvedValue({ success: true });
         mockRpc.mockResolvedValue({ data: [{ id: '123', title: 'Test Item' }], error: null });
     });
 
@@ -80,5 +81,22 @@ describe('Recommendations API', () => {
 
         const res = await POST(req);
         expect(res.status).toBe(500);
+    });
+
+    it('still returns recommendations when the shared rate-limit backend is unavailable', async () => {
+        (bestEffortRateLimit as any).mockResolvedValueOnce({ success: true });
+
+        const validId = '123e4567-e89b-12d3-a456-426614174000';
+        const req = new NextRequest(new URL('http://localhost/api/recommendations'), {
+            method: 'POST',
+            body: JSON.stringify({ completedIds: [validId] })
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
+        expect(mockRpc).toHaveBeenCalledWith('match_recommendations', {
+            completed_ids: [validId],
+            match_count: 10,
+        });
     });
 });

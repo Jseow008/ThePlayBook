@@ -29,6 +29,10 @@ export class RateLimitBackendUnavailableError extends Error {
     }
 }
 
+interface BestEffortRateLimitOptions extends RateLimitOptions {
+    routeLabel: string;
+}
+
 const IP_V4_REGEX = /^(?:\d{1,3}\.){3}\d{1,3}$/;
 const IP_V6_REGEX = /^[a-fA-F0-9:]+$/;
 
@@ -159,5 +163,23 @@ export async function rateLimit(req: NextRequest, options: RateLimitOptions): Pr
 
         console.warn("Failed to use Upstash rate limiter, falling back to in-memory", e);
         return fallbackRateLimit(req, options);
+    }
+}
+
+export async function bestEffortRateLimit(
+    req: NextRequest,
+    options: BestEffortRateLimitOptions
+): Promise<RateLimitResult> {
+    const { routeLabel, ...rateLimitOptions } = options;
+
+    try {
+        return await rateLimit(req, rateLimitOptions);
+    } catch (error) {
+        if (error instanceof RateLimitBackendUnavailableError) {
+            console.warn(`Rate limiting unavailable for ${routeLabel}; allowing request`, error);
+            return { success: true };
+        }
+
+        throw error;
     }
 }

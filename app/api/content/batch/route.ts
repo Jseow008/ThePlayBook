@@ -1,7 +1,7 @@
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { bestEffortRateLimit } from "@/lib/server/rate-limit";
 
 const BatchRequestSchema = z.object({
     ids: z.array(z.string().uuid()).min(1).max(50),
@@ -17,7 +17,11 @@ const CONTENT_BATCH_SELECT = "id, type, title, source_url, status, quick_mode_js
  */
 export async function POST(request: NextRequest) {
     // Rate limit: 30 requests per 60 seconds per IP
-    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
+    const rl = await bestEffortRateLimit(request, {
+        limit: 30,
+        windowMs: 60_000,
+        routeLabel: "/api/content/batch",
+    });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
