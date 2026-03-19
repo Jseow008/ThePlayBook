@@ -116,6 +116,7 @@ export function FocusFeed() {
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [hasInitialized, setHasInitialized] = useState(false);
     const [activeCardIndex, setActiveCardIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
     const [takeawaysSheetCard, setTakeawaysSheetCard] = useState<FocusCard | null>(null);
@@ -280,7 +281,7 @@ export function FocusFeed() {
         [cards.length, isTakeawaysSheetOpen, moveToCard]
     );
 
-    const fetchBatch = useCallback(async () => {
+    const fetchBatch = useCallback(async (options?: { includeCompletedIds?: boolean }) => {
         if (isFetchingRef.current || !hasMore) {
             return;
         }
@@ -290,8 +291,9 @@ export function FocusFeed() {
         setError(null);
 
         try {
+            const includeCompletedIds = options?.includeCompletedIds ?? isLoaded;
             const excludeIds = buildExcludeParam([
-                ...completedIds,
+                ...(includeCompletedIds ? completedIds : []),
                 ...Array.from(seenIdsRef.current),
             ]);
 
@@ -320,7 +322,7 @@ export function FocusFeed() {
             isFetchingRef.current = false;
             setLoading(false);
         }
-    }, [completedIds, hasMore]);
+    }, [completedIds, hasMore, isLoaded]);
 
     useEffect(() => {
         setMounted(true);
@@ -345,7 +347,7 @@ export function FocusFeed() {
     }, [prefersReducedMotion, takeawaysSheetCard, takeawaysSheetPhase]);
 
     useEffect(() => {
-        if (!isLoaded || hasInitializedRef.current) {
+        if (hasInitializedRef.current) {
             return;
         }
 
@@ -361,7 +363,8 @@ export function FocusFeed() {
         setHasMore(restoredState.hasMore);
         setActiveCardIndex(restoredState.activeCardIndex);
         hasInitializedRef.current = true;
-    }, [isLoaded]);
+        setHasInitialized(true);
+    }, []);
 
     useEffect(() => {
         if (!isTakeawaysSheetOpen) {
@@ -404,13 +407,42 @@ export function FocusFeed() {
     }, [cards.length]);
 
     useEffect(() => {
-        if (!isLoaded || hasInitializedRef.current) {
+        if (hasInitializedRef.current) {
             return;
         }
 
         hasInitializedRef.current = true;
-        void fetchBatch();
-    }, [fetchBatch, isLoaded]);
+        setHasInitialized(true);
+        void fetchBatch({ includeCompletedIds: false });
+    }, [fetchBatch]);
+
+    useEffect(() => {
+        if (!isLoaded || items.length === 0) {
+            return;
+        }
+
+        const completedSet = new Set(completedIds);
+        const filteredItems = items.filter((item) => !completedSet.has(item.id));
+
+        if (filteredItems.length === items.length) {
+            return;
+        }
+
+        const nextActiveIndex = filteredItems.length === 0
+            ? 0
+            : Math.min(activeCardIndexRef.current, filteredItems.length - 1);
+
+        if (nextActiveIndex !== activeCardIndexRef.current) {
+            activeCardIndexRef.current = nextActiveIndex;
+            setActiveCardIndex(nextActiveIndex);
+        }
+
+        setItems(filteredItems);
+
+        if (hasMore && filteredItems.length - nextActiveIndex <= 3) {
+            void fetchBatch({ includeCompletedIds: true });
+        }
+    }, [completedIds, fetchBatch, hasMore, isLoaded, items]);
 
     useEffect(() => {
         const list = listRef.current;
@@ -436,8 +468,13 @@ export function FocusFeed() {
                     return;
                 }
 
+                const target = visibleEntry.target as HTMLElement | null;
+                if (!target) {
+                    return;
+                }
+
                 const nextIndex = Number(
-                    (visibleEntry.target as HTMLElement).dataset.focusCardIndex ?? 0
+                    target.dataset.focusCardIndex ?? 0
                 );
                 const normalizedIndex = Number.isNaN(nextIndex) ? 0 : nextIndex;
                 activeCardIndexRef.current = normalizedIndex;
@@ -652,7 +689,7 @@ export function FocusFeed() {
     }, [activeCardIndex, cards.length, fetchBatch, hasMore, loading]);
 
     useEffect(() => {
-        if (!mounted || !isLoaded || loading || items.length === 0) {
+        if (!mounted || !hasInitialized || loading || items.length === 0) {
             return;
         }
 
@@ -667,7 +704,7 @@ export function FocusFeed() {
             FOCUS_FEED_RESTORE_STORAGE_KEY,
             JSON.stringify(snapshot)
         );
-    }, [activeCardIndex, hasMore, isLoaded, items, loading, mounted]);
+    }, [activeCardIndex, hasInitialized, hasMore, items, loading, mounted]);
 
     return (
         <section className="px-4 pt-11 md:px-6 md:pt-8 md:pb-6 lg:px-10">
@@ -678,7 +715,7 @@ export function FocusFeed() {
                     </p>
                 </header>
 
-                {!isLoaded || (loading && cards.length === 0) ? (
+                {!hasInitialized || (loading && cards.length === 0) ? (
                     <LoadingState />
                 ) : !loading && cards.length === 0 ? (
                     <EmptyState error={error} />

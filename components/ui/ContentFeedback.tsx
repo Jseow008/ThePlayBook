@@ -20,6 +20,11 @@ const FEEDBACK_REASONS = [
     "Other"
 ];
 
+function resetDownvoteForm(setReason: (value: string) => void, setDetails: (value: string) => void) {
+    setReason("");
+    setDetails("");
+}
+
 export function ContentFeedback({ contentId }: ContentFeedbackProps) {
     const user = useAuthUser();
     const [voteStatus, setVoteStatus] = useState<'up' | 'down' | null>(null);
@@ -44,6 +49,24 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
     const [reason, setReason] = useState("");
     const [details, setDetails] = useState("");
 
+    const parseResponseError = async (response: Response) => {
+        try {
+            const payload = await response.json() as { error?: { message?: string } };
+            return payload.error?.message || "Could not save feedback";
+        } catch {
+            return "Could not save feedback";
+        }
+    };
+
+    const ensureOk = async (response: Response, fallbackMessage: string) => {
+        if (response.ok) {
+            return;
+        }
+
+        const apiMessage = await parseResponseError(response);
+        throw new Error(apiMessage || fallbackMessage);
+    };
+
     // Fetch initial status once auth is already known.
     useEffect(() => {
         const fetchStatus = async () => {
@@ -67,32 +90,34 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
 
     const handleVote = async (type: 'up' | 'down') => {
         if (isSubmitting) return;
+        const previousVote = voteStatus;
 
         // If clicking the same button, remove the vote
         if (voteStatus === type) {
             setVoteStatus(null);
             setIsSubmitting(true);
             try {
-                await fetch("/api/feedback/content", {
+                const response = await fetch("/api/feedback/content", {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ content_id: contentId })
                 });
+                await ensureOk(response, "Failed to remove feedback");
             } catch (err) {
                 console.error("Failed to remove vote", err);
+                setVoteStatus(previousVote);
+                toast.error("Could not update feedback right now.");
             } finally {
                 setIsSubmitting(false);
             }
             return;
         }
 
-        // Switching vote or creating new vote
-        setVoteStatus(type);
-
         if (type === 'up') {
+            setVoteStatus(type);
             setIsSubmitting(true);
             try {
-                await fetch("/api/feedback/content", {
+                const response = await fetch("/api/feedback/content", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -100,9 +125,12 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                         is_positive: true
                     })
                 });
+                await ensureOk(response, "Failed to save feedback");
                 toast.success("Thanks for the feedback! 👍");
             } catch (err) {
                 console.error("Failed to submit upvote", err);
+                setVoteStatus(previousVote);
+                toast.error("Could not save feedback right now.");
             } finally {
                 setIsSubmitting(false);
             }
@@ -115,7 +143,7 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
     const submitDownvote = async (withDetails: boolean) => {
         setIsSubmitting(true);
         try {
-            await fetch("/api/feedback/content", {
+            const response = await fetch("/api/feedback/content", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -125,15 +153,16 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                     details: withDetails ? (details || null) : null
                 })
             });
-        } catch (err) {
-            console.error("Failed to submit downvote", err);
-        } finally {
-            setIsSubmitting(false);
+            await ensureOk(response, "Failed to save feedback");
+            setVoteStatus("down");
             setIsModalOpen(false);
             toast.success("Feedback received. We'll use it to improve!");
-            // Reset modal state
-            setReason("");
-            setDetails("");
+            resetDownvoteForm(setReason, setDetails);
+        } catch (err) {
+            console.error("Failed to submit downvote", err);
+            toast.error("Could not save feedback right now.");
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -184,7 +213,10 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                         <div className="flex items-center justify-between">
                             <h2 className="text-xl font-semibold text-foreground">Help us improve</h2>
                             <button
-                                onClick={() => setIsModalOpen(false)}
+                                onClick={() => {
+                                    setIsModalOpen(false);
+                                    resetDownvoteForm(setReason, setDetails);
+                                }}
                                 className="text-muted-foreground hover:text-foreground transition-colors p-1"
                                 aria-label="Close"
                             >

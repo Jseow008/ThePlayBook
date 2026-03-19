@@ -8,6 +8,7 @@
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { Search, TrendingUp } from "lucide-react";
+import { getCategoryStats } from "@/lib/server/public-content";
 import type { ContentItem, ContentType } from "@/types/database";
 import Link from "next/link";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -211,12 +212,12 @@ function ResultsSkeleton() {
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q: query, category, type } = await searchParams;
-    const supabase = createPublicServerClient();
     const selectedType = normalizeType(type);
     const normalizedCategory = normalizeCategoryLabel(category);
     const hasContentSearch = (query?.trim().length ?? 0) > 0 || Boolean(normalizedCategory);
 
-    const categoryStatsPromise = supabase.rpc("get_category_stats");
+    const categoryStatsPromise = getCategoryStats();
+    const supabase = createPublicServerClient();
     const rpcClient = supabase as typeof supabase & {
         rpc: (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown }>;
     };
@@ -227,7 +228,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         })
         : Promise.resolve({ data: null });
 
-    const [{ data: categoryStats }, { data: trendingData }] = await Promise.all([
+    const [categoryStats, { data: trendingData }] = await Promise.all([
         categoryStatsPromise,
         trendingPromise,
     ]);
@@ -236,7 +237,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     trendingItems = (trendingData || []) as unknown as ContentItem[];
 
     const contentTypes = ["All", "Book", "Podcast", "Article"];
-    const normalizedTopics = buildNormalizedTopics((categoryStats as CategoryStat[] | null) || []);
+    const normalizedTopics = buildNormalizedTopics(categoryStats);
     const topicsByLabel = new Map(normalizedTopics.map((topic) => [topic.label, topic]));
     const selectedTopic = normalizedCategory
         ? topicsByLabel.get(normalizedCategory) ?? {

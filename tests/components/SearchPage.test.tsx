@@ -1,6 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import SearchPage from "@/app/(public)/search/page";
 
 const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock } = vi.hoisted(() => {
     let latestQueryBuilder: Record<string, ReturnType<typeof vi.fn>> | null = null;
@@ -95,8 +94,14 @@ vi.mock("@/components/ui/ContentCard", () => ({
     ContentCard: ({ item }: { item: { title: string } }) => <div>{item.title}</div>,
 }));
 
+async function renderSearchPage(searchParams: { q?: string; category?: string; type?: string } = {}) {
+    const { default: SearchPage } = await import("@/app/(public)/search/page");
+    return render(await SearchPage({ searchParams: Promise.resolve(searchParams) }));
+}
+
 describe("SearchPage", () => {
     beforeEach(() => {
+        vi.resetModules();
         vi.clearAllMocks();
         resetSupabaseMocks();
         routerPushMock.mockReset();
@@ -148,7 +153,7 @@ describe("SearchPage", () => {
             throw new Error(`Unexpected RPC: ${fn}`);
         });
 
-        render(await SearchPage({ searchParams: Promise.resolve({}) }));
+        await renderSearchPage({});
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
@@ -185,7 +190,7 @@ describe("SearchPage", () => {
             throw new Error(`Unexpected RPC: ${fn}`);
         });
 
-        render(await SearchPage({ searchParams: Promise.resolve({ type: "book" }) }));
+        await renderSearchPage({ type: "book" });
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
@@ -198,7 +203,7 @@ describe("SearchPage", () => {
     });
 
     it("uses the main results query for text search and applies the type filter", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast" }) }));
+        await renderSearchPage({ q: "focus", type: "podcast" });
 
         await waitFor(() => {
             expect(fromMock).toHaveBeenCalledWith("content_item");
@@ -212,7 +217,7 @@ describe("SearchPage", () => {
     });
 
     it("uses the main results query for category pages and still applies the type filter", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity", type: "article" }) }));
+        await renderSearchPage({ category: "Productivity", type: "article" });
 
         await waitFor(() => {
             expect(fromMock).toHaveBeenCalledWith("content_item");
@@ -226,7 +231,7 @@ describe("SearchPage", () => {
     });
 
     it("queries across duplicate raw variants for normalized topics", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ category: "Business" }) }));
+        await renderSearchPage({ category: "Business" });
 
         await waitFor(() => {
             expect(fromMock).toHaveBeenCalledWith("content_item");
@@ -237,46 +242,46 @@ describe("SearchPage", () => {
     });
 
     it("links category-filtered search pages back to browse", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity" }) }));
+        await renderSearchPage({ category: "Productivity" });
 
         expect(screen.getByRole("link", { name: /back to browse/i })).toHaveAttribute("href", "/browse");
     });
 
     it("highlights the selected category chip when a category is present", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity" }) }));
+        await renderSearchPage({ category: "Productivity" });
 
         expect(screen.getByRole("link", { name: "Productivity" })).toHaveClass("bg-primary");
         expect(screen.getByRole("link", { name: "All topics" })).not.toHaveClass("bg-primary");
     });
 
     it("normalizes raw deep links for display", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ category: "'Business'" }) }));
+        await renderSearchPage({ category: "'Business'" });
 
         expect(screen.getByRole("heading", { name: "Business Content" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Business" })).toHaveClass("bg-primary");
     });
 
     it("preserves query and type when selecting a category chip", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast" }) }));
+        await renderSearchPage({ q: "focus", type: "podcast" });
 
         expect(screen.getByRole("link", { name: "Business" })).toHaveAttribute("href", "/search?q=focus&category=Business&type=podcast");
     });
 
     it("clears only the category when selecting all topics", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast", category: "Productivity" }) }));
+        await renderSearchPage({ q: "focus", type: "podcast", category: "Productivity" });
 
         expect(screen.getByRole("link", { name: "All topics" })).toHaveAttribute("href", "/search?q=focus&type=podcast");
     });
 
     it("keeps the selected category when switching type filters", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ category: "Productivity" }) }));
+        await renderSearchPage({ category: "Productivity" });
 
         expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute("href", "/search?category=Productivity&type=podcast");
         expect(screen.getByRole("link", { name: "All" })).toHaveAttribute("href", "/search?category=Productivity");
     });
 
     it("renders remaining normalized topics in the dropdown", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({}) }));
+        await renderSearchPage({});
 
         const select = screen.getByRole("combobox", { name: "Others" });
         const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
@@ -285,13 +290,13 @@ describe("SearchPage", () => {
     });
 
     it("reflects a selected non-curated topic in the dropdown", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ category: "Psychology" }) }));
+        await renderSearchPage({ category: "Psychology" });
 
         expect(screen.getByRole("combobox", { name: "Others" })).toHaveValue("Psychology");
     });
 
     it("preserves query and type when selecting a dropdown topic", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({ q: "focus", type: "podcast" }) }));
+        await renderSearchPage({ q: "focus", type: "podcast" });
 
         fireEvent.change(screen.getByRole("combobox", { name: "Others" }), {
             target: { value: "Psychology" },
@@ -301,7 +306,7 @@ describe("SearchPage", () => {
     });
 
     it("keeps the search input stack layer above the filter row", async () => {
-        render(await SearchPage({ searchParams: Promise.resolve({}) }));
+        await renderSearchPage({});
 
         const searchInputWrapper = screen.getByTestId("search-input").parentElement;
         const filterRow = screen.getByRole("link", { name: "All" }).parentElement;

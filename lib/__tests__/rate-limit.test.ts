@@ -1,14 +1,36 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { rateLimit } from "../server/rate-limit";
+import { RateLimitBackendUnavailableError, rateLimit } from "../server/rate-limit";
 import { NextRequest } from "next/server";
 
 describe("rateLimit", () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalRedisUrl = process.env.UPSTASH_REDIS_REST_URL;
+    const originalRedisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+    function restoreEnv() {
+        process.env.NODE_ENV = originalNodeEnv;
+
+        if (originalRedisUrl === undefined) {
+            delete process.env.UPSTASH_REDIS_REST_URL;
+        } else {
+            process.env.UPSTASH_REDIS_REST_URL = originalRedisUrl;
+        }
+
+        if (originalRedisToken === undefined) {
+            delete process.env.UPSTASH_REDIS_REST_TOKEN;
+        } else {
+            process.env.UPSTASH_REDIS_REST_TOKEN = originalRedisToken;
+        }
+    }
+
     beforeEach(() => {
         vi.useFakeTimers();
+        restoreEnv();
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        restoreEnv();
     });
 
     function createMockRequest(ip: string, path: string = "/api/test") {
@@ -100,5 +122,17 @@ describe("rateLimit", () => {
 
         expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "author-chat:guest" })).success).toBe(true);
         expect((await rateLimit(req, { limit: 1, windowMs: 1000, key: "author-chat:guest" })).success).toBe(false);
+    });
+
+    it("throws in production when shared Redis rate limiting is not configured", async () => {
+        process.env.NODE_ENV = "production";
+        delete process.env.UPSTASH_REDIS_REST_URL;
+        delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+        const req = createMockRequest("11.11.11.11");
+
+        await expect(rateLimit(req, { limit: 1, windowMs: 1000 })).rejects.toBeInstanceOf(
+            RateLimitBackendUnavailableError
+        );
     });
 });

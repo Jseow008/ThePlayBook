@@ -189,15 +189,16 @@ describe("FocusFeed", () => {
         vi.stubGlobal("fetch", fetchMock);
     });
 
-    it("loads focus items with completed IDs excluded from the API query and shows two mobile takeaways", async () => {
+    it("loads focus items immediately before reading progress hydration and shows two mobile takeaways", async () => {
+        readingProgressState.value = {
+            completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
+            isLoaded: false,
+        };
+
         render(<FocusFeed />);
 
         await waitFor(() => {
-            expect(fetchMock).toHaveBeenCalledWith(
-                expect.stringContaining(
-                    "excludeIds=123e4567-e89b-12d3-a456-426614174111"
-                )
-            );
+            expect(fetchMock).toHaveBeenCalledWith("/api/focus?limit=6");
         });
 
         expect(await screen.findByText("Focus Mode")).toBeInTheDocument();
@@ -242,6 +243,119 @@ describe("FocusFeed", () => {
         expect(firstCard).toHaveClass("min-h-[calc(100svh-10.75rem)]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100svh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
+    });
+
+    it("prunes completed items after reading progress hydrates and fetches replacements", async () => {
+        readingProgressState.value = {
+            completedIds: [],
+            isLoaded: false,
+        };
+
+        const extraInitialItems = [
+            {
+                id: "123e4567-e89b-12d3-a456-426614174556",
+                title: "Make Time",
+                type: "book",
+                author: "Jake Knapp",
+                category: "Productivity",
+                cover_image_url: "https://example.com/make-time.jpg",
+                duration_seconds: 660,
+                quick_mode_json: {
+                    hook: "Design your day on purpose.",
+                    big_idea: "Protect time for what matters before reactive work takes over.",
+                    key_takeaways: [
+                        "Choose one daily highlight",
+                        "Remove default distractions",
+                    ],
+                },
+            },
+            {
+                id: "123e4567-e89b-12d3-a456-426614174557",
+                title: "Show Your Work",
+                type: "book",
+                author: "Austin Kleon",
+                category: "Creativity",
+                cover_image_url: "https://example.com/show-your-work.jpg",
+                duration_seconds: 540,
+                quick_mode_json: {
+                    hook: "Share the process, not just the polished result.",
+                    big_idea: "Consistent visibility compounds trust and opportunity.",
+                    key_takeaways: [
+                        "Document the work in public",
+                        "Teach what you are learning",
+                    ],
+                },
+            },
+            {
+                id: "123e4567-e89b-12d3-a456-426614174558",
+                title: "Stillness Is the Key",
+                type: "book",
+                author: "Ryan Holiday",
+                category: "Mindset",
+                cover_image_url: "https://example.com/stillness.jpg",
+                duration_seconds: 780,
+                quick_mode_json: {
+                    hook: "Calm is a competitive advantage.",
+                    big_idea: "Mental stillness improves judgment and sustained performance.",
+                    key_takeaways: [
+                        "Create room for reflection",
+                        "Reduce noise before deciding",
+                    ],
+                },
+            },
+        ];
+
+        const replacementItem = {
+            id: "123e4567-e89b-12d3-a456-426614174555",
+            title: "The One Thing",
+            type: "book",
+            author: "Gary Keller",
+            category: "Productivity",
+            cover_image_url: "https://example.com/the-one-thing.jpg",
+            duration_seconds: 720,
+            quick_mode_json: {
+                hook: "A narrower focus makes everything else easier.",
+                big_idea: "Prioritize the one thing that creates the biggest downstream effect.",
+                key_takeaways: [
+                    "Find the highest-leverage task",
+                    "Protect time for the main priority",
+                ],
+            },
+        };
+
+        fetchMock
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => [...focusItems, ...extraInitialItems],
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => [replacementItem],
+            });
+
+        const view = render(<FocusFeed />);
+
+        expect(await screen.findByText("Essentialism")).toBeInTheDocument();
+
+        readingProgressState.value = {
+            completedIds: [
+                focusItems[0]!.id,
+                focusItems[1]!.id,
+                focusItems[2]!.id,
+            ],
+            isLoaded: true,
+        };
+        view.rerender(<FocusFeed />);
+
+        await waitFor(() => {
+            expect(screen.queryByText("Essentialism")).not.toBeInTheDocument();
+        });
+        expect(await screen.findByText("The One Thing")).toBeInTheDocument();
+
+        const replacementRequestUrl = String(fetchMock.mock.calls[1]?.[0] ?? "");
+        expect(replacementRequestUrl).toContain(`excludeIds=${focusItems[0]!.id}`);
+        expect(replacementRequestUrl).toContain(focusItems[1]!.id);
+        expect(replacementRequestUrl).toContain(focusItems[2]!.id);
     });
 
     it("saves a focus restore snapshot after the active card changes", async () => {

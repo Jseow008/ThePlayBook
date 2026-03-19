@@ -19,6 +19,16 @@ interface RateLimitResult {
     retryAfterMs?: number;
 }
 
+export class RateLimitBackendUnavailableError extends Error {
+    constructor(message: string, cause?: unknown) {
+        super(message);
+        this.name = "RateLimitBackendUnavailableError";
+        if (cause) {
+            this.cause = cause;
+        }
+    }
+}
+
 const IP_V4_REGEX = /^(?:\d{1,3}\.){3}\d{1,3}$/;
 const IP_V6_REGEX = /^[a-fA-F0-9:]+$/;
 
@@ -82,15 +92,29 @@ function fallbackRateLimit(req: NextRequest, options: RateLimitOptions): RateLim
 let redis: Redis | null = null;
 const ratelimits = new Map<string, Ratelimit>(); // Cache for different limiters
 
+function hasUpstashConfig() {
+    return Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+}
+
+function isProductionEnvironment() {
+    return process.env.NODE_ENV === "production";
+}
+
 /**
  * Enterprise rate limiter using Upstash Redis.
- * Falls back to in-memory sliding window if Upstash is not configured.
+ * Uses an in-memory sliding window only in non-production environments.
  */
 export async function rateLimit(req: NextRequest, options: RateLimitOptions): Promise<RateLimitResult> {
     const { limit, windowMs } = options;
     const rateKey = getRateLimitKey(req, options);
 
-    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    if (!hasUpstashConfig()) {
+        if (isProductionEnvironment()) {
+            throw new RateLimitBackendUnavailableError(
+                "Upstash Redis must be configured for rate-limited routes in production."
+            );
+        }
+
         return fallbackRateLimit(req, options);
     }
 
@@ -126,6 +150,13 @@ export async function rateLimit(req: NextRequest, options: RateLimitOptions): Pr
 
         return { success: true };
     } catch (e) {
+        if (isProductionEnvironment()) {
+            throw new RateLimitBackendUnavailableError(
+                "Upstash Redis is unavailable for a rate-limited route in production.",
+                e
+            );
+        }
+
         console.warn("Failed to use Upstash rate limiter, falling back to in-memory", e);
         return fallbackRateLimit(req, options);
     }
