@@ -93,6 +93,27 @@ Access the admin panel at `/admin-login` with a Supabase account that has `profi
 - [API_SPECS.md](./docs/API_SPECS.md) — API contracts
 - [OPS.md](./docs/OPS.md) — Operational workflows
 
+## Recent UX Hardening
+
+The latest production-focused pass tightened the public app shell, route data loading, and failure handling:
+
+- Public detail pages now use shared server loaders so `/preview/[id]` and `/read/[id]` derive metadata and page data from the same fetch path.
+- The landing page no longer blocks on a server-side auth lookup. Logged-in users are redirected client-side to `/browse` after hydration.
+- Focus mode now fetches the first batch immediately, then removes completed items once reading progress hydrates and backfills replacements as needed.
+- Search keeps trending content limited to empty-state views while category stats are loaded through a dedicated shared helper.
+- Content feedback only shows success after confirmed API writes and rolls back optimistic UI on failure.
+- Rate limiting now requires Upstash Redis in production. In-memory fallback remains development-only.
+
+## Verification
+
+Current verification baseline for these changes:
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
 ## License
 
 Private project.

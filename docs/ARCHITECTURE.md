@@ -1,7 +1,7 @@
 # ARCHITECTURE.md: Flux
 
-> **Status:** Active  
-> **Last Updated:** February 2026  
+> **Status:** Active
+> **Last Updated:** March 2026
 > **North Star:** "Curated knowledge, publicly accessible, beautifully presented."
 
 ## 1. Product Overview
@@ -26,6 +26,7 @@ Flux is a **curated content platform** with public browsing and personalized use
 * **Goal:** Sub-100ms TTFB, excellent SEO for discoverability.
 * **Routes:** `/` (Home), `/read/[id]`, `/search`, `/focus`.
 * **Data Source:** Supabase with public read access.
+* **Constraint:** Public routes avoid cookie-bound auth reads whenever possible so they remain cache-friendly on Vercel.
 
 ### Zone B: Admin Panel (Content Management & AI Ops)
 
@@ -260,7 +261,21 @@ The admin panel is protected by Supabase Auth session validation and server-side
 | `/admin/*` | No cache | N/A |
 | `/library`, `/notes`, `/ask` | Dynamic | N/A |
 
-### 7.2 Bundle Budget
+### 7.2 Public Route Loading Rules
+
+1. **Shared Detail Loaders**: `/preview/[id]` and `/read/[id]` use shared server-side loader helpers so metadata generation and page rendering follow the same data path.
+2. **Cookie-Free Public Reads**: Public detail routes use the cookie-free public Supabase server client to avoid converting cache-friendly routes into auth-bound routes.
+3. **Landing Page Separation**: `/` renders as a public route first. Authenticated-user redirection to `/browse` happens client-side after hydration instead of server-side auth gating.
+4. **Search Empty-State Discipline**: Trending content is fetched only for empty-state search views. Search/category result pages avoid the trending path.
+5. **Focus Feed Responsiveness**: Focus mode does not wait for reading-progress hydration before fetching its initial batch. Personalization is applied after the first paint by pruning completed items and backfilling replacements.
+
+### 7.3 Failure Handling Rules
+
+1. **Truthful Write UI**: Feedback and other user-visible write paths must not show success until the server confirms the write.
+2. **Optimistic Rollback**: Any optimistic local state change must be reverted if the write fails.
+3. **Production Rate Limiting**: Shared Redis-backed rate limiting is required in production. Silent degradation to per-instance memory is not acceptable outside development.
+
+### 7.4 Bundle Budget
 
 * Homepage: < 150kb gzipped
 * Reader: < 200kb gzipped

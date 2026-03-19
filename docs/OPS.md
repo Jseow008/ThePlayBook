@@ -88,6 +88,8 @@ OPENAI_API_KEY=...
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_KEY`
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
 
 ### 2.2 Database → Supabase (Hosted)
 
@@ -102,6 +104,14 @@ OPENAI_API_KEY=...
 ### 2.3 Domain & SSL
 
 Configured via Vercel dashboard. SSL is automatic.
+
+### 2.3.1 Production Rate Limit Requirement
+
+Rate-limited API routes now require Upstash Redis in production.
+
+- Development may fall back to the in-memory limiter.
+- Production must not silently degrade to per-instance memory.
+- If Upstash is missing or unavailable in production, rate-limited routes are expected to fail closed until the backing store is restored.
 
 ### 2.4 Google OAuth Setup (Custom Domain)
 
@@ -216,6 +226,25 @@ npx supabase db reset
 **Cause:** localStorage is cleared or blocked.
 
 **Fix:** Check browser settings for localStorage access.
+
+### 4.6 Public pages feel slower on Vercel than locally
+
+**Possible causes:**
+1. Public routes accidentally introduced cookie/auth reads
+2. Metadata and page render are hitting separate Supabase fetch paths
+3. Upstream Supabase latency is higher in production than in local development
+
+**Current expected behavior:**
+- `/` is public-first and redirects authenticated users client-side
+- `/preview/[id]` and `/read/[id]` share their server loader paths
+- `/focus` loads its first batch before reading-progress hydration finishes
+
+**Verification commands:**
+```bash
+npm test
+npm run lint
+npm run build
+```
 
 ---
 
