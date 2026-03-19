@@ -33,10 +33,10 @@ export type SegmentSyncProgress = {
     batchRequests: number;
 };
 
-type RpcResult<T> = Promise<{ data: T | null; error: unknown }>;
+type RpcResult<T> = PromiseLike<{ data: T | null; error: unknown }>;
 
 export type SegmentSyncSupabaseClient = {
-    rpc: (fn: string, args?: Record<string, unknown>) => RpcResult<unknown>;
+    rpc: (...args: any[]) => RpcResult<unknown>;
     from: (table: "segment_embedding_gemini") => {
         upsert: (
             values: Array<{
@@ -45,7 +45,7 @@ export type SegmentSyncSupabaseClient = {
                 embedding: number[];
             }>,
             options?: { onConflict?: string }
-        ) => Promise<{ error: unknown }>;
+        ) => PromiseLike<{ error: unknown }>;
     };
 };
 
