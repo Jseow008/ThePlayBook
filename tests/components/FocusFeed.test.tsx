@@ -3,6 +3,8 @@ import type { ImgHTMLAttributes } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { FocusFeed } from "@/components/focus/FocusFeed";
 
+const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
+
 const { readingProgressState, mediaQueryState } = vi.hoisted(() => ({
     readingProgressState: {
         value: {
@@ -94,6 +96,67 @@ vi.mock("@/hooks/useMediaQuery", () => ({
 
 describe("FocusFeed", () => {
     const fetchMock = vi.fn();
+    const focusItems = [
+        {
+            id: "123e4567-e89b-12d3-a456-426614174222",
+            title: "Essentialism",
+            type: "book",
+            author: "Greg McKeown",
+            category: "Productivity",
+            cover_image_url: "https://example.com/essentialism.jpg",
+            duration_seconds: 900,
+            quick_mode_json: {
+                hook: "Do less, but better.",
+                big_idea: "Eliminate the trivial to make room for the essential.",
+                key_takeaways: [
+                    "Say no more often",
+                    "Protect white space",
+                    "Trade busyness for clarity",
+                    "Audit every commitment",
+                    "Cut projects that dilute the essential",
+                    "Make decisions by elimination first",
+                    "Protect your calendar from reactive work",
+                    "Treat rest as strategic capacity",
+                ],
+            },
+        },
+        {
+            id: "123e4567-e89b-12d3-a456-426614174333",
+            title: "Deep Work",
+            type: "book",
+            author: "Cal Newport",
+            category: "Productivity",
+            cover_image_url: "https://example.com/deep-work.jpg",
+            duration_seconds: 840,
+            quick_mode_json: {
+                hook: "Depth beats distraction.",
+                big_idea: "Protect long stretches of concentration to produce better work.",
+                key_takeaways: [
+                    "Train your brain to resist context switching",
+                    "Schedule uninterrupted work sessions",
+                    "Reduce shallow obligations",
+                ],
+            },
+        },
+        {
+            id: "123e4567-e89b-12d3-a456-426614174444",
+            title: "Atomic Habits",
+            type: "book",
+            author: "James Clear",
+            category: "Self Improvement",
+            cover_image_url: "https://example.com/atomic-habits.jpg",
+            duration_seconds: 780,
+            quick_mode_json: {
+                hook: "Tiny systems drive outsized change.",
+                big_idea: "Small repeated behaviors compound into identity-level results.",
+                key_takeaways: [
+                    "Make habits obvious and easy",
+                    "Track consistency instead of intensity",
+                    "Design your environment to support repetition",
+                ],
+            },
+        },
+    ];
 
     beforeAll(() => {
         Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
@@ -118,69 +181,10 @@ describe("FocusFeed", () => {
             isDesktop: false,
             prefersReducedMotion: false,
         };
+        window.sessionStorage.clear();
         fetchMock.mockResolvedValue({
             ok: true,
-            json: async () => [
-                {
-                    id: "123e4567-e89b-12d3-a456-426614174222",
-                    title: "Essentialism",
-                    type: "book",
-                    author: "Greg McKeown",
-                    category: "Productivity",
-                    cover_image_url: "https://example.com/essentialism.jpg",
-                    duration_seconds: 900,
-                    quick_mode_json: {
-                        hook: "Do less, but better.",
-                        big_idea: "Eliminate the trivial to make room for the essential.",
-                        key_takeaways: [
-                            "Say no more often",
-                            "Protect white space",
-                            "Trade busyness for clarity",
-                            "Audit every commitment",
-                            "Cut projects that dilute the essential",
-                            "Make decisions by elimination first",
-                            "Protect your calendar from reactive work",
-                            "Treat rest as strategic capacity",
-                        ],
-                    },
-                },
-                {
-                    id: "123e4567-e89b-12d3-a456-426614174333",
-                    title: "Deep Work",
-                    type: "book",
-                    author: "Cal Newport",
-                    category: "Productivity",
-                    cover_image_url: "https://example.com/deep-work.jpg",
-                    duration_seconds: 840,
-                    quick_mode_json: {
-                        hook: "Depth beats distraction.",
-                        big_idea: "Protect long stretches of concentration to produce better work.",
-                        key_takeaways: [
-                            "Train your brain to resist context switching",
-                            "Schedule uninterrupted work sessions",
-                            "Reduce shallow obligations",
-                        ],
-                    },
-                },
-                {
-                    id: "123e4567-e89b-12d3-a456-426614174444",
-                    title: "Atomic Habits",
-                    type: "book",
-                    author: "James Clear",
-                    category: "Self Improvement",
-                    cover_image_url: "https://example.com/atomic-habits.jpg",
-                    duration_seconds: 780,
-                    quick_mode_json: {
-                        hook: "Tiny systems drive outsized change.",
-                        big_idea: "Small repeated behaviors compound into identity-level results.",
-                        key_takeaways: [
-                            "Make habits obvious and easy",
-                            "Track consistency instead of intensity",
-                            "Design your environment to support repetition",
-                        ],
-                    },
-                },
-            ],
+            json: async () => focusItems,
         });
         vi.stubGlobal("fetch", fetchMock);
     });
@@ -238,6 +242,104 @@ describe("FocusFeed", () => {
         expect(firstCard).toHaveClass("min-h-[calc(100svh-10.75rem)]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100svh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
+    });
+
+    it("saves a focus restore snapshot after the active card changes", async () => {
+        render(<FocusFeed />);
+
+        const cards = await screen.findAllByTestId("focus-feed-card");
+        const observer = observerInstances[0]!;
+
+        await act(async () => {
+            observer.trigger(cards[1]!);
+        });
+
+        await waitFor(() => {
+            const savedState = JSON.parse(
+                window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY) || "{}"
+            );
+
+            expect(savedState).toEqual(
+                expect.objectContaining({
+                    activeCardIndex: 1,
+                    hasMore: false,
+                    items: expect.arrayContaining([
+                        expect.objectContaining({ id: focusItems[0]!.id }),
+                        expect.objectContaining({ id: focusItems[1]!.id }),
+                        expect.objectContaining({ id: focusItems[2]!.id }),
+                    ]),
+                    seenIds: expect.arrayContaining([
+                        focusItems[0]!.id,
+                        focusItems[1]!.id,
+                        focusItems[2]!.id,
+                    ]),
+                })
+            );
+        });
+    });
+
+    it("restores the exact focus batch and card from sessionStorage without an initial fetch", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: false,
+                seenIds: focusItems.map((item) => item.id),
+            })
+        );
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByText("Deep Work")).toBeInTheDocument();
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: "start" });
+        expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
+    });
+
+    it("falls back to the normal fetch path when restored state is invalid", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: [],
+                activeCardIndex: 5,
+                hasMore: true,
+                seenIds: [],
+            })
+        );
+
+        render(<FocusFeed />);
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+        expect(await screen.findByText("Essentialism")).toBeInTheDocument();
+    });
+
+    it("continues prefetching normally after restoring near the end of a saved batch", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: true,
+                seenIds: focusItems.map((item) => item.id),
+            })
+        );
+
+        render(<FocusFeed />);
+
+        await screen.findByText("Deep Work");
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
+        expect(requestUrl).toContain(readingProgressState.value.completedIds[0]!);
+        expect(requestUrl).toContain(focusItems[0]!.id);
+        expect(requestUrl).toContain(focusItems[1]!.id);
+        expect(requestUrl).toContain(focusItems[2]!.id);
     });
 
     it("opens a simplified mobile takeaways sheet with the full takeaway list and closes back to the same feed", async () => {

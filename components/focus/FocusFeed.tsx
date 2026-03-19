@@ -12,9 +12,10 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { BookOpen, Info, Loader2, X } from "lucide-react";
+import { z } from "zod";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
-import type { FocusFeedItem } from "@/types/domain";
+import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
 const BATCH_SIZE = 6;
@@ -28,8 +29,39 @@ const WHEEL_TRIGGER = 40;
 const TOUCH_TRIGGER = 40;
 const GESTURE_UNLOCK_TIMEOUT_MS = 200;
 const WHEEL_QUIET_PERIOD_MS = 180;
+const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
+
+const FocusRestoreItemSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    type: z.string(),
+    author: z.string().nullable(),
+    category: z.string().nullable(),
+    cover_image_url: z.string().nullable(),
+    duration_seconds: z.number().nullable(),
+    quick_mode_json: QuickModeSchema,
+});
+
+const FocusRestoreStateSchema = z
+    .object({
+        items: z.array(FocusRestoreItemSchema).min(1),
+        activeCardIndex: z.number().int().min(0),
+        hasMore: z.boolean(),
+        seenIds: z.array(z.string()),
+    })
+    .superRefine((value, ctx) => {
+        if (value.activeCardIndex >= value.items.length) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["activeCardIndex"],
+                message: "activeCardIndex must be within the restored items array",
+            });
+        }
+    });
+
+type FocusRestoreState = z.infer<typeof FocusRestoreStateSchema>;
 
 function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
     if (!container) {
@@ -50,6 +82,30 @@ function formatDuration(durationSeconds: number | null) {
 
 function buildExcludeParam(ids: string[]) {
     return Array.from(new Set(ids.filter(Boolean))).join(",");
+}
+
+function readFocusRestoreState(): FocusRestoreState | null {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    const raw = window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
+    if (!raw) {
+        return null;
+    }
+
+    try {
+        const parsed = FocusRestoreStateSchema.safeParse(JSON.parse(raw));
+        if (!parsed.success) {
+            window.sessionStorage.removeItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
+            return null;
+        }
+
+        return parsed.data;
+    } catch {
+        window.sessionStorage.removeItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
+        return null;
+    }
 }
 
 export function FocusFeed() {
@@ -83,6 +139,7 @@ export function FocusFeed() {
     const takeawaysSheetDialogRef = useRef<HTMLDivElement | null>(null);
     const takeawaysSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
     const takeawaysSheetOpenerRef = useRef<HTMLElement | null>(null);
+    const pendingRestoreCardIndexRef = useRef<number | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
     const isTakeawaysSheetOpen = !isDesktop && takeawaysSheetCard !== null;
@@ -288,6 +345,25 @@ export function FocusFeed() {
     }, [prefersReducedMotion, takeawaysSheetCard, takeawaysSheetPhase]);
 
     useEffect(() => {
+        if (!isLoaded || hasInitializedRef.current) {
+            return;
+        }
+
+        const restoredState = readFocusRestoreState();
+        if (!restoredState) {
+            return;
+        }
+
+        seenIdsRef.current = new Set(restoredState.seenIds);
+        activeCardIndexRef.current = restoredState.activeCardIndex;
+        pendingRestoreCardIndexRef.current = restoredState.activeCardIndex;
+        setItems(restoredState.items);
+        setHasMore(restoredState.hasMore);
+        setActiveCardIndex(restoredState.activeCardIndex);
+        hasInitializedRef.current = true;
+    }, [isLoaded]);
+
+    useEffect(() => {
         if (!isTakeawaysSheetOpen) {
             return;
         }
@@ -304,6 +380,28 @@ export function FocusFeed() {
         const focusTarget = takeawaysSheetCloseButtonRef.current ?? dialog;
         focusTarget.focus();
     }, [isTakeawaysSheetOpen, takeawaysSheetPhase]);
+
+    useEffect(() => {
+        if (pendingRestoreCardIndexRef.current === null) {
+            return;
+        }
+
+        const list = listRef.current;
+        if (!list || cards.length === 0) {
+            return;
+        }
+
+        const targetCard = list.querySelector<HTMLElement>(
+            `[data-focus-card-index="${pendingRestoreCardIndexRef.current}"]`
+        );
+
+        if (!targetCard) {
+            return;
+        }
+
+        targetCard.scrollIntoView({ block: "start" });
+        pendingRestoreCardIndexRef.current = null;
+    }, [cards.length]);
 
     useEffect(() => {
         if (!isLoaded || hasInitializedRef.current) {
@@ -552,6 +650,24 @@ export function FocusFeed() {
             void fetchBatch();
         }
     }, [activeCardIndex, cards.length, fetchBatch, hasMore, loading]);
+
+    useEffect(() => {
+        if (!mounted || !isLoaded || loading || items.length === 0) {
+            return;
+        }
+
+        const snapshot: FocusRestoreState = {
+            items,
+            activeCardIndex,
+            hasMore,
+            seenIds: Array.from(seenIdsRef.current),
+        };
+
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify(snapshot)
+        );
+    }, [activeCardIndex, hasMore, isLoaded, items, loading, mounted]);
 
     return (
         <section className="px-4 pt-11 md:px-6 md:pt-8 md:pb-6 lg:px-10">
