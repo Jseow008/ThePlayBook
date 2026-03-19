@@ -103,6 +103,7 @@ The latest production-focused pass tightened the public app shell, route data lo
 - Search keeps trending content limited to empty-state views while category stats are loaded through a dedicated shared helper.
 - Content feedback only shows success after confirmed API writes and rolls back optimistic UI on failure.
 - Rate limiting now requires Upstash Redis in production. In-memory fallback remains development-only.
+- Low-risk read-only personalization endpoints such as recommendations, focus feed, and content batch now degrade gracefully if the shared rate-limit backend is temporarily unavailable, so browse personalization does not disappear.
 
 ## Verification
 

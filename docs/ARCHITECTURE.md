@@ -274,6 +274,7 @@ The admin panel is protected by Supabase Auth session validation and server-side
 1. **Truthful Write UI**: Feedback and other user-visible write paths must not show success until the server confirms the write.
 2. **Optimistic Rollback**: Any optimistic local state change must be reverted if the write fails.
 3. **Production Rate Limiting**: Shared Redis-backed rate limiting is required in production. Silent degradation to per-instance memory is not acceptable outside development.
+4. **Read-Only UX Fallbacks**: Low-risk discovery and personalization reads such as `/api/recommendations`, `/api/content/batch`, and `/api/focus` may use best-effort rate limiting so browse surfaces remain available when the shared limiter backend is degraded.
 
 ### 7.4 Bundle Budget
 

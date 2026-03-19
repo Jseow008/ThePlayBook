@@ -112,6 +112,7 @@ Rate-limited API routes now require Upstash Redis in production.
 - Development may fall back to the in-memory limiter.
 - Production must not silently degrade to per-instance memory.
 - If Upstash is missing or unavailable in production, rate-limited routes are expected to fail closed until the backing store is restored.
+- Exception: low-risk read-only personalization endpoints (`/api/recommendations`, `/api/content/batch`, `/api/focus`) use best-effort rate limiting so public browse experiences remain available during temporary limiter-backend incidents.
 
 ### 2.4 Google OAuth Setup (Custom Domain)
 
