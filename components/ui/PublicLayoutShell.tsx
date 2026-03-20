@@ -48,7 +48,9 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
             {/* Main Content */}
             <main
                 className={
-                    isBrowsePage
+                    isFocusPage
+                        ? "lg:pl-16"
+                        : isBrowsePage
                         ? "lg:pl-16 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0"
                         : "lg:pl-16 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0"
                 }

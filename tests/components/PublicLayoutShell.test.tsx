@@ -38,16 +38,21 @@ describe("PublicLayoutShell", () => {
     it("keeps the focus shell without the mobile header", () => {
         pathnameState.value = "/focus";
 
-        render(
+        const { container } = render(
             <PublicLayoutShell>
                 <div>Focus content</div>
             </PublicLayoutShell>
         );
+
+        const main = container.querySelector("main");
 
         expect(screen.getByTestId("sidebar")).toBeInTheDocument();
         expect(screen.getByTestId("user-nav")).toBeInTheDocument();
         expect(screen.queryByTestId("mobile-header")).not.toBeInTheDocument();
         expect(screen.getByTestId("mobile-bottom-nav")).toBeInTheDocument();
         expect(screen.getByText("Focus content")).toBeInTheDocument();
+        expect(main).toHaveClass("lg:pl-16");
+        expect(main).not.toHaveClass("pb-[calc(4rem+env(safe-area-inset-bottom))]");
+        expect(main).not.toHaveClass("pb-[calc(3.5rem+env(safe-area-inset-bottom))]");
     });
 });
