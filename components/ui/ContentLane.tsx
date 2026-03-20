@@ -73,7 +73,7 @@ export function ContentLane({
                     {viewAllHref && (
                         <Link
                             href={viewAllHref}
-                            className="focus-ring rounded-sm text-sm font-normal text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover/lane:opacity-100"
+                            className="focus-ring rounded-sm text-sm font-normal text-muted-foreground hover:text-primary transition-all opacity-0 group-hover/lane:opacity-100 hover:translate-x-1"
                         >
                             <span className="flex items-center gap-1">
                                 Explore All <ChevronRight className="size-4" />
@@ -91,9 +91,9 @@ export function ContentLane({
                     onClick={() => scroll("left")}
                     aria-label="Scroll left"
                     className={cn(
-                        "focus-ring absolute left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-card/90 text-foreground border border-border flex items-center justify-center transition-opacity hover:bg-card",
+                        "focus-ring absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background/70 backdrop-blur-md text-foreground border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all hover:bg-background/90 hover:scale-110 active:scale-95",
                         showLeftArrow
-                            ? "opacity-0 group-hover/lane:opacity-100"
+                            ? "opacity-40 group-hover/lane:opacity-100"
                             : "opacity-0 pointer-events-none"
                     )}
                 >
@@ -125,9 +125,9 @@ export function ContentLane({
                     onClick={() => scroll("right")}
                     aria-label="Scroll right"
                     className={cn(
-                        "focus-ring absolute right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-card/90 text-foreground border border-border flex items-center justify-center transition-opacity hover:bg-card",
+                        "focus-ring absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background/70 backdrop-blur-md text-foreground border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all hover:bg-background/90 hover:scale-110 active:scale-95",
                         showRightArrow
-                            ? "opacity-0 group-hover/lane:opacity-100"
+                            ? "opacity-60 lg:-right-4 lg:group-hover/lane:right-2 group-hover/lane:opacity-100"
                             : "opacity-0 pointer-events-none"
                     )}
                 >
@@ -135,8 +135,8 @@ export function ContentLane({
                 </button>
 
                 {/* Fade edges */}
-                <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+                <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent pointer-events-none" />
+                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent pointer-events-none" />
             </div>
         </section>
     );

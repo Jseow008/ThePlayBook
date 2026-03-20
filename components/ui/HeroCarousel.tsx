@@ -183,7 +183,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Title */}
                         <h1
                             className={cn(
-                                "max-w-5xl origin-left font-display text-[2rem] font-bold leading-[1.02] tracking-[-0.025em] text-white drop-shadow-2xl transition-all duration-700 delay-100 md:text-5xl md:leading-[1.1] md:tracking-[-0.02em] lg:text-7xl",
+                                "max-w-5xl origin-left font-display text-[2rem] font-bold leading-[1.02] tracking-[-0.025em] bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/60 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] transition-all duration-700 delay-100 md:text-5xl md:leading-[1.1] md:tracking-[-0.02em] lg:text-7xl",
                                 isTransitioning ? "opacity-0 scale-95 translate-y-4" : "opacity-100 scale-100 translate-y-0"
                             )}
                         >
@@ -235,14 +235,14 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         >
                             <Link
                                 href={`/read/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-2 rounded-md bg-white px-5 py-2 text-sm font-bold text-black transition hover:scale-105 hover:bg-white/90 active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
+                                className="focus-ring flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
                             >
                                 <BookOpen className="h-4 w-4 fill-black md:h-7 md:w-7" />
                                 Read
                             </Link>
                             <Link
                                 href={`/preview/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-2 rounded-md bg-secondary px-5 py-2 text-sm font-semibold text-secondary-foreground backdrop-blur-sm transition hover:scale-105 hover:bg-secondary/80 active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
+                                className="focus-ring flex items-center gap-2 rounded-full bg-black/20 px-5 py-2 text-sm font-semibold text-white backdrop-blur-md border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all hover:scale-105 hover:bg-black/40 hover:border-white/40 active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
                             >
                                 <Info className="h-4 w-4 md:h-7 md:w-7" />
                                 Preview
@@ -263,10 +263,10 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             queueTransition(() => index, 300);
                         }}
                         className={cn(
-                            "w-12 h-1 rounded-sm transition-all duration-300",
+                            "h-1.5 rounded-full transition-all duration-500 ease-in-out cursor-pointer",
                             index === activeIndex
-                                ? "bg-white opacity-100"
-                                : "bg-muted-foreground/50 opacity-50 hover:bg-muted-foreground"
+                                ? "w-16 bg-white opacity-100 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
+                                : "w-8 bg-white/40 opacity-50 hover:bg-white/70 hover:w-10 hover:opacity-100"
                         )}
                         aria-label={`Go to item ${index + 1}`}
                     />

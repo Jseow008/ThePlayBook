@@ -34,7 +34,7 @@ export function HomeFeed({
                 featuredItems.length > 0 ? "-mt-5 md:-mt-8 pt-0" : "pt-16 md:pt-24"
             )}>
                 {/* Standard Feed View */}
-                <div className="space-y-3 md:space-y-1 animate-in fade-in duration-500">
+                <div className="space-y-8 md:space-y-10 lg:space-y-14 animate-in fade-in duration-500">
                     {/* New / Latest Additions */}
                     <ContentLane
                         title={
@@ -69,7 +69,7 @@ export function HomeFeed({
             </div>
 
             {/* Footer */}
-            <footer className="border-t border-border px-4 py-4 md:px-6 lg:px-16 lg:py-7 mt-3 md:mt-4 bg-card/20">
+            <footer className="border-t border-border px-4 py-8 md:px-6 lg:px-16 lg:py-12 mt-12 md:mt-20 bg-card/10 backdrop-blur-sm">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-2">
                         <div className="w-6 h-6 bg-foreground rounded-md flex items-center justify-center text-background font-display font-bold">
