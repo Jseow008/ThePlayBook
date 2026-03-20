@@ -41,7 +41,7 @@ describe("SearchInput", () => {
         const input = screen.getByPlaceholderText("Search by title, author, or keyword...");
         fireEvent.focus(input);
 
-        const recentSearchButton = await screen.findByRole("button", { name: /deep work/i });
+        const recentSearchButton = await screen.findByRole("button", { name: /^deep work$/i });
         fireEvent.click(recentSearchButton);
 
         expect(routerPushMock).toHaveBeenCalledWith("/search?q=Deep+Work");
@@ -57,5 +57,35 @@ describe("SearchInput", () => {
         fireEvent.click(screen.getByRole("button", { name: /clear search/i }));
 
         expect(routerPushMock).toHaveBeenCalledWith("/search?type=book");
+    });
+
+    it("keeps the dropdown open when removing a recent search", async () => {
+        vi.mocked(window.localStorage.getItem).mockReturnValue(
+            JSON.stringify(["Deep Work", "Atomic Habits", "Outlive", "The Almanack", "Essentialism"])
+        );
+
+        render(<SearchInput />);
+
+        const input = screen.getByPlaceholderText("Search by title, author, or keyword...");
+        fireEvent.focus(input);
+
+        await screen.findByText("Recent Searches");
+
+        const removeButton = screen.getByRole("button", { name: /remove atomic habits from recent searches/i });
+
+        fireEvent.mouseDown(removeButton);
+        fireEvent.click(removeButton);
+
+        expect(screen.getByText("Recent Searches")).toBeInTheDocument();
+        expect(screen.queryByText("Atomic Habits")).not.toBeInTheDocument();
+        expect(screen.getByText("Deep Work")).toBeInTheDocument();
+        expect(screen.getByText("Outlive")).toBeInTheDocument();
+        expect(screen.getByText("The Almanack")).toBeInTheDocument();
+        expect(screen.getByText("Essentialism")).toBeInTheDocument();
+        expect(routerPushMock).not.toHaveBeenCalled();
+        expect(window.localStorage.setItem).toHaveBeenCalledWith(
+            "flux_recent_searches",
+            JSON.stringify(["Deep Work", "Outlive", "The Almanack", "Essentialism"])
+        );
     });
 });

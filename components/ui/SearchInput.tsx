@@ -184,8 +184,10 @@ export function SearchInput({
                                     <div className="flex items-center pr-4">
                                         <button
                                             type="button"
+                                            onMouseDown={(e) => e.preventDefault()}
                                             onClick={(e) => removeRecentSearch(term, e)}
                                             className="p-1 text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all hover:bg-background rounded-full"
+                                            aria-label={`Remove ${term} from recent searches`}
                                         >
                                             <X className="size-3" />
                                         </button>
