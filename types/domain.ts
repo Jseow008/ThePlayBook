@@ -114,8 +114,32 @@ export interface ContentItemWithSegments {
     author: string | null;
     cover_image_url: string | null;
     audio_url: string | null;
+    series_id: string | null;
+    series_order: number | null;
+    seriesContext?: SeriesContext | null;
     segments: SegmentFull[];
     artifacts: ArtifactSummary[];
+}
+
+export interface ContentSeriesSummary {
+    id: string;
+    slug: string;
+    title: string;
+    description: string | null;
+}
+
+export interface SeriesAdjacentItem {
+    id: string;
+    title: string;
+    series_order: number;
+}
+
+export interface SeriesContext {
+    series: ContentSeriesSummary;
+    totalItems: number;
+    currentOrder: number;
+    previousItem: SeriesAdjacentItem | null;
+    nextItem: SeriesAdjacentItem | null;
 }
 
 export interface SegmentSummary {

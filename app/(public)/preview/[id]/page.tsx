@@ -30,6 +30,7 @@ export default async function PreviewPage({ params }: PageProps) {
         <ContentPreview
             item={preview.item}
             segmentCount={preview.segmentCount}
+            seriesContext={preview.seriesContext}
         />
     );
 }

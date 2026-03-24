@@ -174,6 +174,8 @@ export type Database = {
           id: string
           is_featured: boolean
           quick_mode_json: Json | null
+          series_id: string | null
+          series_order: number | null
           source_url: string | null
           status: Database["public"]["Enums"]["content_status"]
           title: string
@@ -193,6 +195,8 @@ export type Database = {
           id?: string
           is_featured?: boolean
           quick_mode_json?: Json | null
+          series_id?: string | null
+          series_order?: number | null
           source_url?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           title: string
@@ -212,10 +216,47 @@ export type Database = {
           id?: string
           is_featured?: boolean
           quick_mode_json?: Json | null
+          series_id?: string | null
+          series_order?: number | null
           source_url?: string | null
           status?: Database["public"]["Enums"]["content_status"]
           title?: string
           type?: Database["public"]["Enums"]["content_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_item_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "content_series"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_series: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          slug?: string
+          title?: string
           updated_at?: string
         }
         Relationships: []
@@ -771,6 +812,7 @@ export type UserRole = Database["public"]["Enums"]["user_role"];
 
 // Convenience types for table rows
 export type ContentItem = Database["public"]["Tables"]["content_item"]["Row"];
+export type ContentSeries = Database["public"]["Tables"]["content_series"]["Row"];
 export type Segment = Database["public"]["Tables"]["segment"]["Row"];
 export type Artifact = Database["public"]["Tables"]["artifact"]["Row"];
 export type HomepageSection = Database["public"]["Tables"]["homepage_section"]["Row"];

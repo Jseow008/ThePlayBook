@@ -7,7 +7,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { ContentItem } from "@/types/database";
-import type { QuickMode } from "@/types/domain";
+import type { QuickMode, SeriesContext } from "@/types/domain";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import { ResilientImage } from "@/components/ui/ResilientImage";
 interface ContentPreviewProps {
     item: ContentItem;
     segmentCount?: number | null;
+    seriesContext?: SeriesContext | null;
     onSpinAgain?: () => void;
     isSpinning?: boolean;
     ctaIcon?: React.ElementType;
@@ -25,6 +26,7 @@ interface ContentPreviewProps {
 export function ContentPreview({
     item,
     segmentCount,
+    seriesContext = null,
     onSpinAgain,
     isSpinning = false,
     ctaIcon: CtaIcon = Sparkles,
@@ -105,7 +107,7 @@ export function ContentPreview({
                         )}
 
                         {/* Metadata Pills */}
-                        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-6">
+                        <div className="order-1 flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-6">
                             {item.duration_seconds && (
                                 <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
                                     <Clock className="size-3" />
@@ -129,10 +131,57 @@ export function ContentPreview({
                                 variant="icon"
                                 className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
                             />
+
+                            {seriesContext && (
+                                <div className="hidden sm:flex w-full flex-wrap items-center gap-x-3 gap-y-2 pt-1 text-sm text-muted-foreground">
+                                    <span className="font-medium text-foreground">
+                                        Part {seriesContext.currentOrder} of {seriesContext.totalItems} in {seriesContext.series.title}
+                                    </span>
+                                    <Link
+                                        href={`/series/${seriesContext.series.slug}`}
+                                        className="font-medium text-primary hover:underline"
+                                    >
+                                        See all parts
+                                    </Link>
+                                </div>
+                            )}
                         </div>
 
+                        {seriesContext && (
+                            <>
+                                <div className="order-2 mb-2 rounded-3xl border border-border/60 bg-card/40 p-5 sm:hidden">
+                                    <div className="flex flex-col gap-5">
+                                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                                            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-foreground">
+                                                Part {seriesContext.currentOrder} of {seriesContext.totalItems}
+                                            </span>
+                                            {seriesContext.nextItem ? (
+                                                <span className="text-muted-foreground">
+                                                    Next:{" "}
+                                                    <span className="font-medium text-foreground">
+                                                        {seriesContext.nextItem.title}
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    Final part in this sequence
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <Link
+                                            href={`/series/${seriesContext.series.slug}`}
+                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-border/60 bg-background/70 px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-accent/40"
+                                        >
+                                            View all series
+                                        </Link>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
                         {/* CTA Buttons */}
-                        <div className="hidden sm:flex flex-col gap-3">
+                        <div className="order-3 hidden sm:flex flex-col gap-3 sm:order-2">
                             <Link
                                 href={`/read/${item.id}`}
                                 className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
@@ -183,7 +232,7 @@ export function ContentPreview({
 
                 {/* ── Quick Mode Content ── */}
                 {quickMode ? (
-                    <div className="space-y-5">
+                    <div className="space-y-4">
                         {/* Hook */}
                         {quickMode.hook && (
                             <div className="relative pl-5 py-4 pr-6 rounded-r-xl border-l-[3px] border-primary/50 bg-secondary/30">
