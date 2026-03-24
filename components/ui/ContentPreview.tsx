@@ -148,36 +148,32 @@ export function ContentPreview({
                         </div>
 
                         {seriesContext && (
-                            <>
-                                <div className="order-2 mb-2 rounded-3xl border border-border/60 bg-card/40 p-5 sm:hidden">
-                                    <div className="flex flex-col gap-5">
-                                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                                            <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-foreground">
-                                                Part {seriesContext.currentOrder} of {seriesContext.totalItems}
+                            <div className="order-2 mb-2 flex flex-col gap-2 sm:hidden">
+                                <div className="flex flex-col gap-2 text-sm">
+                                    <span className="inline-flex w-fit items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-foreground">
+                                        Part {seriesContext.currentOrder} of {seriesContext.totalItems}
+                                    </span>
+                                    {seriesContext.nextItem ? (
+                                        <span className="text-muted-foreground">
+                                            Next:{" "}
+                                            <span className="font-medium text-foreground">
+                                                {seriesContext.nextItem.title}
                                             </span>
-                                            {seriesContext.nextItem ? (
-                                                <span className="text-muted-foreground">
-                                                    Next:{" "}
-                                                    <span className="font-medium text-foreground">
-                                                        {seriesContext.nextItem.title}
-                                                    </span>
-                                                </span>
-                                            ) : (
-                                                <span className="text-muted-foreground">
-                                                    Final part in this sequence
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        <Link
-                                            href={`/series/${seriesContext.series.slug}`}
-                                            className="inline-flex h-11 items-center justify-center rounded-xl border border-border/60 bg-background/70 px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:bg-accent/40"
-                                        >
-                                            View all series
-                                        </Link>
-                                    </div>
+                                        </span>
+                                    ) : (
+                                        <span className="text-muted-foreground">
+                                            Final part in this sequence
+                                        </span>
+                                    )}
                                 </div>
-                            </>
+
+                                <Link
+                                    href={`/series/${seriesContext.series.slug}`}
+                                    className="inline-flex w-fit items-center text-sm font-semibold text-primary underline underline-offset-4 transition-colors hover:text-primary/80"
+                                >
+                                    View all series
+                                </Link>
+                            </div>
                         )}
 
                         {/* CTA Buttons */}
