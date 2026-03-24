@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -91,6 +94,11 @@ const CORE_SUPPORT_FEATURES = [
     image: "/images/ai-chat.png",
   },
 ] as const;
+
+const FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND = 22;
+const FEATURED_READS_RESUME_DELAY_MS = 2000;
+const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
+const FEATURED_READS_MIN_LOOP_ITEMS = 8;
 
 function fadeInStyle(delayMs = 0) {
   return {
@@ -280,11 +288,257 @@ function HeroSection() {
 }
 
 function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
-  if (items.length === 0) return null;
+  const baseMultiplier = Math.max(
+    1,
+    Math.ceil(FEATURED_READS_MIN_LOOP_ITEMS / Math.max(1, items.length))
+  );
+  const loopItems = Array.from({ length: baseMultiplier }).flatMap(() => items);
+  const displayItems = [...loopItems, ...loopItems];
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<number | null>(null);
+  const lastFrameTimeRef = useRef<number | null>(null);
+  const autoScrollRemainderRef = useRef(0);
+  const loopWidthRef = useRef(0);
+  const isHoveringRef = useRef(false);
+  const isDraggingRef = useRef(false);
+  const isTouchingRef = useRef(false);
+  const isFocusWithinRef = useRef(false);
+  const pauseUntilRef = useRef(0);
+  const isAutoScrollingRef = useRef(false);
+  const suppressClickRef = useRef(false);
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startScrollLeft: number;
+    moved: boolean;
+  } | null>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-  // Duplicate items for seamless CSS loop. Keep multiplier low.
-  const multiplier = Math.max(2, Math.ceil(16 / Math.max(1, items.length)));
-  const displayItems = Array.from({ length: multiplier }).flatMap(() => items);
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+    };
+
+    updateMotionPreference();
+    mediaQuery.addEventListener("change", updateMotionPreference);
+
+    return () => mediaQuery.removeEventListener("change", updateMotionPreference);
+  }, []);
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+    const trackElement = trackRef.current;
+
+    if (!scrollElement || !trackElement) return;
+
+    const measure = () => {
+      loopWidthRef.current = scrollElement.scrollWidth / 2;
+    };
+
+    measure();
+
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(measure)
+      : null;
+
+    resizeObserver?.observe(scrollElement);
+    resizeObserver?.observe(trackElement);
+    window.addEventListener("resize", measure);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [displayItems.length]);
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current;
+
+    if (!scrollElement) return;
+
+    const normalizeScrollPosition = () => {
+      const loopWidth = loopWidthRef.current;
+      if (loopWidth <= 0 || scrollElement.scrollWidth <= scrollElement.clientWidth + 1) {
+        return;
+      }
+
+      if (scrollElement.scrollLeft <= 0) {
+        isAutoScrollingRef.current = true;
+        scrollElement.scrollLeft += loopWidth;
+        return;
+      }
+
+      if (scrollElement.scrollLeft >= loopWidth) {
+        isAutoScrollingRef.current = true;
+        scrollElement.scrollLeft -= loopWidth;
+      }
+    };
+
+    const tick = (timestamp: number) => {
+      const shouldPause =
+        prefersReducedMotion
+        || isHoveringRef.current
+        || isDraggingRef.current
+        || isTouchingRef.current
+        || isFocusWithinRef.current
+        || Date.now() < pauseUntilRef.current;
+
+      const lastTimestamp = lastFrameTimeRef.current ?? timestamp;
+      lastFrameTimeRef.current = timestamp;
+
+      if (!shouldPause && loopWidthRef.current > 0 && scrollElement.scrollWidth > scrollElement.clientWidth + 1) {
+        const deltaSeconds = (timestamp - lastTimestamp) / 1000;
+        if (deltaSeconds > 0) {
+          const distanceToApply = (
+            deltaSeconds * FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND
+          ) + autoScrollRemainderRef.current;
+          const wholePixels = Math.trunc(distanceToApply);
+          autoScrollRemainderRef.current = distanceToApply - wholePixels;
+
+          if (wholePixels > 0) {
+          isAutoScrollingRef.current = true;
+            scrollElement.scrollLeft += wholePixels;
+            normalizeScrollPosition();
+          }
+        }
+      }
+
+      frameRef.current = window.requestAnimationFrame(tick);
+    };
+
+    frameRef.current = window.requestAnimationFrame(tick);
+
+    return () => {
+      if (frameRef.current !== null) {
+        window.cancelAnimationFrame(frameRef.current);
+      }
+    };
+  }, [prefersReducedMotion]);
+
+  function extendPause() {
+    pauseUntilRef.current = Date.now() + FEATURED_READS_RESUME_DELAY_MS;
+  }
+
+  function normalizeScrollPosition(element: HTMLDivElement) {
+    const loopWidth = loopWidthRef.current;
+    if (loopWidth <= 0 || element.scrollWidth <= element.clientWidth + 1) {
+      return;
+    }
+
+    if (element.scrollLeft <= 0) {
+      isAutoScrollingRef.current = true;
+      element.scrollLeft += loopWidth;
+      return;
+    }
+
+    if (element.scrollLeft >= loopWidth) {
+      isAutoScrollingRef.current = true;
+      element.scrollLeft -= loopWidth;
+    }
+  }
+
+  function prepareForDrag(element: HTMLDivElement) {
+    if (loopWidthRef.current <= 0) return;
+
+    if (element.scrollLeft <= 1) {
+      element.scrollLeft += loopWidthRef.current;
+    } else if (element.scrollLeft >= loopWidthRef.current - 1) {
+      element.scrollLeft -= loopWidthRef.current;
+    }
+  }
+
+  function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if ((event.pointerType && event.pointerType !== "mouse") || event.button !== 0) {
+      return;
+    }
+
+    const element = event.currentTarget;
+    prepareForDrag(element);
+    isDraggingRef.current = true;
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: element.scrollLeft,
+      moved: false,
+    };
+    suppressClickRef.current = false;
+    lastFrameTimeRef.current = null;
+    autoScrollRemainderRef.current = 0;
+    element.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  }
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const dragState = dragStateRef.current;
+    if (!dragState || dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragState.startX;
+    if (!dragState.moved && Math.abs(deltaX) > FEATURED_READS_DRAG_THRESHOLD_PX) {
+      dragState.moved = true;
+    }
+
+    if (!dragState.moved) {
+      return;
+    }
+
+    const element = event.currentTarget;
+    element.scrollLeft = dragState.startScrollLeft - deltaX;
+    normalizeScrollPosition(element);
+    suppressClickRef.current = true;
+    extendPause();
+    event.preventDefault();
+  }
+
+  function handlePointerUp(event: React.PointerEvent<HTMLDivElement>) {
+    if (dragStateRef.current?.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    isDraggingRef.current = false;
+    dragStateRef.current = null;
+    lastFrameTimeRef.current = null;
+    autoScrollRemainderRef.current = 0;
+    extendPause();
+  }
+
+  function handlePointerCancel(event: React.PointerEvent<HTMLDivElement>) {
+    if (dragStateRef.current?.pointerId !== event.pointerId) {
+      return;
+    }
+
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    isDraggingRef.current = false;
+    dragStateRef.current = null;
+    lastFrameTimeRef.current = null;
+    autoScrollRemainderRef.current = 0;
+    extendPause();
+  }
+
+  function handleScroll() {
+    if (isAutoScrollingRef.current) {
+      isAutoScrollingRef.current = false;
+      return;
+    }
+
+    if (isDraggingRef.current) {
+      return;
+    }
+
+    const element = scrollRef.current;
+    if (!element) return;
+
+    normalizeScrollPosition(element);
+    lastFrameTimeRef.current = null;
+    autoScrollRemainderRef.current = 0;
+    extendPause();
+  }
+
+  if (items.length === 0) return null;
 
   return (
     <section id="featured-reads" className="scroll-mt-20 overflow-hidden bg-black/50 py-24 sm:py-32">
@@ -297,8 +551,74 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       </FadeIn>
 
       <FadeIn delayMs={100}>
-        <div className="relative mx-auto flex w-full max-w-7xl overflow-hidden pb-8 py-4">
-          <div className="landing-carousel-track flex w-max items-center gap-4 px-4 sm:gap-6 sm:px-6">
+        <div
+          className="relative mx-auto flex w-full max-w-7xl overflow-hidden pb-8 pt-4"
+          onFocusCapture={() => {
+            isFocusWithinRef.current = true;
+            lastFrameTimeRef.current = null;
+            autoScrollRemainderRef.current = 0;
+          }}
+          onBlurCapture={(event) => {
+            const nextFocusedElement = event.relatedTarget as Node | null;
+            if (nextFocusedElement && event.currentTarget.contains(nextFocusedElement)) {
+              return;
+            }
+
+            isFocusWithinRef.current = false;
+            lastFrameTimeRef.current = null;
+            autoScrollRemainderRef.current = 0;
+            extendPause();
+          }}
+          onClickCapture={(event) => {
+            if (!suppressClickRef.current) {
+              return;
+            }
+
+            suppressClickRef.current = false;
+            event.preventDefault();
+            event.stopPropagation();
+          }}
+        >
+          <div
+            ref={scrollRef}
+            aria-label="Featured reads"
+            data-testid="featured-reads-carousel"
+            className="scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-x] cursor-grab"
+            onMouseEnter={() => {
+              isHoveringRef.current = true;
+              lastFrameTimeRef.current = null;
+              autoScrollRemainderRef.current = 0;
+            }}
+            onMouseLeave={() => {
+              isHoveringRef.current = false;
+              lastFrameTimeRef.current = null;
+              autoScrollRemainderRef.current = 0;
+              extendPause();
+            }}
+            onTouchStart={() => {
+              isTouchingRef.current = true;
+              lastFrameTimeRef.current = null;
+              autoScrollRemainderRef.current = 0;
+            }}
+            onTouchEnd={() => {
+              isTouchingRef.current = false;
+              lastFrameTimeRef.current = null;
+              autoScrollRemainderRef.current = 0;
+              extendPause();
+            }}
+            onTouchCancel={() => {
+              isTouchingRef.current = false;
+              lastFrameTimeRef.current = null;
+              autoScrollRemainderRef.current = 0;
+              extendPause();
+            }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+            onScroll={handleScroll}
+          >
+            <div ref={trackRef} className="flex w-max items-center gap-4 sm:gap-6">
             {displayItems.map((item, index) => (
               <div
                 key={`${item.id}-${index}`}
@@ -312,6 +632,7 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
                 />
               </div>
             ))}
+            </div>
           </div>
         </div>
       </FadeIn>

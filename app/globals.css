@@ -526,16 +526,6 @@ mark[data-highlight-spotlight="true"] {
   }
 }
 
-@keyframes scroll-carousel {
-  0% {
-    transform: translateX(0);
-  }
-
-  100% {
-    transform: translateX(calc(-50% - 0.5rem));
-  }
-}
-
 .landing-hero-flow-1 {
   animation: heroFlow1 20s ease-in-out infinite;
 }
@@ -548,20 +538,11 @@ mark[data-highlight-spotlight="true"] {
   animation: heroFlow3 18s ease-in-out infinite;
 }
 
-.landing-carousel-track {
-  animation: scroll-carousel 40s linear infinite;
-}
-
-.group:hover .landing-carousel-track {
-  animation-play-state: paused;
-}
-
 @media (prefers-reduced-motion: reduce) {
 
   .landing-hero-flow-1,
   .landing-hero-flow-2,
   .landing-hero-flow-3,
-  .landing-carousel-track,
   .animate-fade-in {
     animation: none;
     opacity: 1;
