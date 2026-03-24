@@ -64,12 +64,6 @@ const CURATED_CATEGORY_ORDER = [
   "Politics",
 ] as const;
 
-const PROOF_POINTS = [
-  "Structured summaries",
-  "Highlights and notes",
-  "Ask the author",
-] as const;
-
 const CORE_ANCHOR_FEATURE = {
   icon: RotateCcw,
   title: "Reading view",
@@ -228,8 +222,7 @@ function HeroSection() {
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              {APP_NAME} turns books, podcasts, and articles into structured reading
-              experiences you can highlight, revisit, and actually use.
+              {APP_NAME} creates structured summaries designed for understanding, recall, and application.
             </p>
           </div>
 
@@ -247,17 +240,8 @@ function HeroSection() {
                 href="/browse"
                 className="focus-ring inline-flex items-center justify-center rounded-full border border-white/10 px-8 py-4 text-base font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
               >
-                Browse the Library
+                Browse Library
               </Link>
-            </div>
-
-            <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-medium text-zinc-400">
-              {PROOF_POINTS.map((point) => (
-                <span key={point} className="inline-flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-white/20" />
-                  {point}
-                </span>
-              ))}
             </div>
           </div>
         </div>
@@ -345,9 +329,9 @@ function CorePlatformFeaturesSection() {
           <div className="relative z-10 grid gap-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
             <div className="max-w-md">
               <SectionIntro
-                label="How Flux helps"
-                title="From first insight to lasting reference."
-                body="Preview the core idea, read in clean sections, mark what matters, and come back when the idea becomes useful."
+                label="How Flux works"
+                title="From insight to lasting reference."
+                body="Preview the key ideas, read detailed summaries in clean sections, highlight what matters, and come back when the idea becomes useful."
               />
             </div>
 
