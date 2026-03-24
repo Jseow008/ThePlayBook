@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, ArrowRight, List } from "lucide-react";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
@@ -297,6 +299,70 @@ export function ReaderView({ content }: ReaderViewProps) {
                     segmentsTotal={content.segments.length}
                     segmentsRead={completedSegments.size}
                 />
+
+                {content.seriesContext && (
+                    <div className="mb-5 space-y-3">
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="min-w-0">
+                                <p className="text-lg font-semibold tracking-tight text-foreground sm:text-xl">
+                                    Part {content.seriesContext.currentOrder} of {content.seriesContext.totalItems} in {content.seriesContext.series.title}
+                                </p>
+                            </div>
+
+                            <Link
+                                href={`/series/${content.seriesContext.series.slug}`}
+                                className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline"
+                            >
+                                <List className="size-3" />
+                                View all parts
+                            </Link>
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {content.seriesContext.previousItem ? (
+                                <Link
+                                    href={`/read/${content.seriesContext.previousItem.id}`}
+                                    className="flex min-h-12 items-center justify-between rounded-2xl border border-border/50 bg-background/55 px-3 py-2 transition-colors hover:border-primary/35 hover:bg-accent/25"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                            Previous
+                                        </p>
+                                        <p className="truncate text-sm font-medium text-foreground">
+                                            {content.seriesContext.previousItem.title}
+                                        </p>
+                                    </div>
+                                    <ArrowLeft className="size-4 flex-shrink-0 text-muted-foreground" />
+                                </Link>
+                            ) : (
+                                <div className="flex min-h-12 items-center rounded-2xl border border-dashed border-border/45 px-3 py-2 text-sm text-muted-foreground/85">
+                                    Start of the series
+                                </div>
+                            )}
+
+                            {content.seriesContext.nextItem ? (
+                                <Link
+                                    href={`/read/${content.seriesContext.nextItem.id}`}
+                                    className="flex min-h-12 items-center justify-between rounded-2xl border border-primary/15 bg-primary/[0.07] px-3 py-2 transition-colors hover:border-primary/30 hover:bg-primary/[0.1]"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                                            Next up
+                                        </p>
+                                        <p className="truncate text-sm font-medium text-foreground">
+                                            {content.seriesContext.nextItem.title}
+                                        </p>
+                                    </div>
+                                    <ArrowRight className="size-4 flex-shrink-0 text-primary" />
+                                </Link>
+                            ) : (
+                                <div className="flex min-h-12 items-center rounded-2xl border border-dashed border-border/45 px-3 py-2 text-sm text-muted-foreground/85">
+                                    End of the series
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Big Idea - Context before segments */}
                 {quickMode?.big_idea && (

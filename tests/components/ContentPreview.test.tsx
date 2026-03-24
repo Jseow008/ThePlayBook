@@ -58,6 +58,7 @@ describe('ContentPreview', () => {
     const defaultProps = {
         item: mockItem,
         segmentCount: 5,
+        seriesContext: null,
         onSpinAgain: vi.fn(),
         isSpinning: false,
     };
@@ -93,5 +94,46 @@ describe('ContentPreview', () => {
 
         fireEvent.click(spinButtons[0]);
         expect(defaultProps.onSpinAgain).toHaveBeenCalledTimes(1);
+    });
+
+    it('renders series context when present', () => {
+        render(
+            <ContentPreview
+                {...defaultProps}
+                seriesContext={{
+                    series: {
+                        id: 'series-1',
+                        slug: 'matthew',
+                        title: 'Matthew',
+                        description: null,
+                    },
+                    totalItems: 8,
+                    currentOrder: 2,
+                    previousItem: null,
+                    nextItem: {
+                        id: 'next-1',
+                        title: 'Matthew 8-12',
+                        series_order: 3,
+                    },
+                }}
+            />
+        );
+
+        expect(screen.queryByText('Reading Sequence')).not.toBeInTheDocument();
+        expect(screen.queryByText('Reading sequence')).not.toBeInTheDocument();
+        expect(screen.getByText('Part 2 of 8 in Matthew')).toBeInTheDocument();
+        expect(screen.getByText('See all parts')).toHaveAttribute('href', '/series/matthew');
+        expect(screen.getByText('Next:')).toBeInTheDocument();
+        expect(screen.getAllByText('Matthew 8-12').length).toBeGreaterThan(0);
+        expect(screen.getByRole('link', { name: 'View all series' })).toHaveAttribute('href', '/series/matthew');
+    });
+
+    it('keeps standalone items free of series UI', () => {
+        render(<ContentPreview {...defaultProps} />);
+
+        expect(screen.queryByText(/Part \d+ of \d+/)).not.toBeInTheDocument();
+        expect(screen.queryByText('Reading Sequence')).not.toBeInTheDocument();
+        expect(screen.queryByText('Reading sequence')).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /View all/i })).not.toBeInTheDocument();
     });
 });

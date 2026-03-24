@@ -39,6 +39,14 @@ vi.mock('next/navigation', () => ({
     useSearchParams: () => new URLSearchParams(searchParamsState.value),
 }));
 
+vi.mock('next/link', () => ({
+    default: ({ children, href, className }: { children: React.ReactNode; href: string; className?: string }) => (
+        <a href={href} className={className}>
+            {children}
+        </a>
+    ),
+}));
+
 // Mock child components to isolate ReaderView testing
 vi.mock('@/components/reader/ReaderHeroHeader', () => ({
     ReaderHeroHeader: () => <div data-testid="mock-hero-header" />
@@ -178,6 +186,72 @@ describe('ReaderView', () => {
         unmount();
         render(<ReaderView content={mockContent} />);
         expect(syncFromCloudMock).not.toHaveBeenCalled();
+    });
+
+    it('renders series navigation when the item belongs to a series', () => {
+        render(
+            <ReaderView
+                content={{
+                    ...mockContent,
+                    series_id: 'series-1',
+                    series_order: 2,
+                    seriesContext: {
+                        series: {
+                            id: 'series-1',
+                            slug: 'matthew',
+                            title: 'Matthew',
+                            description: null,
+                        },
+                        totalItems: 8,
+                        currentOrder: 2,
+                        previousItem: {
+                            id: 'prev-1',
+                            title: 'Matthew 1-4',
+                            series_order: 1,
+                        },
+                        nextItem: {
+                            id: 'next-1',
+                            title: 'Matthew 8-12',
+                            series_order: 3,
+                        },
+                    },
+                }}
+            />
+        );
+
+        expect(screen.getByText('Part 2 of 8 in Matthew')).toBeInTheDocument();
+        expect(screen.queryByText('Guided reading sequence')).not.toBeInTheDocument();
+        expect(screen.queryByText('You are reading item 2 in this sequence.')).not.toBeInTheDocument();
+        expect(screen.getByRole('link', { name: 'View all parts' })).toHaveAttribute('href', '/series/matthew');
+        expect(screen.getByRole('link', { name: /Matthew 1-4/i })).toHaveAttribute('href', '/read/prev-1');
+        expect(screen.getByRole('link', { name: /Matthew 8-12/i })).toHaveAttribute('href', '/read/next-1');
+    });
+
+    it('renders explicit first and last part states when adjacent items are missing', () => {
+        render(
+            <ReaderView
+                content={{
+                    ...mockContent,
+                    series_id: 'series-1',
+                    series_order: 1,
+                    seriesContext: {
+                        series: {
+                            id: 'series-1',
+                            slug: 'matthew',
+                            title: 'Matthew',
+                            description: null,
+                        },
+                        totalItems: 1,
+                        currentOrder: 1,
+                        previousItem: null,
+                        nextItem: null,
+                    },
+                }}
+            />
+        );
+
+        expect(screen.getByText('Start of the series')).toBeInTheDocument();
+        expect(screen.getByText('End of the series')).toBeInTheDocument();
     });
 
     it('passes the current reader state into NotesDrawer', async () => {
