@@ -134,14 +134,14 @@ export function ContentPreview({
 
                             {seriesContext && (
                                 <div className="hidden sm:flex w-full flex-wrap items-center gap-x-3 gap-y-2 pt-1 text-sm text-muted-foreground">
-                                    <span className="font-medium text-foreground">
+                                    <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-foreground">
                                         Part {seriesContext.currentOrder} of {seriesContext.totalItems} in {seriesContext.series.title}
                                     </span>
                                     <Link
                                         href={`/series/${seriesContext.series.slug}`}
-                                        className="font-medium text-primary hover:underline"
+                                        className="font-semibold text-primary underline underline-offset-4 transition-colors hover:text-primary/80"
                                     >
-                                        See all parts
+                                        View All Series
                                     </Link>
                                 </div>
                             )}
@@ -151,7 +151,7 @@ export function ContentPreview({
                             <div className="order-2 mb-2 flex flex-col gap-2 sm:hidden">
                                 <div className="flex flex-col gap-2 text-sm">
                                     <span className="inline-flex w-fit items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1 font-semibold text-foreground">
-                                        Part {seriesContext.currentOrder} of {seriesContext.totalItems}
+                                        Part {seriesContext.currentOrder} of {seriesContext.totalItems} in {seriesContext.series.title}
                                     </span>
                                     {seriesContext.nextItem ? (
                                         <span className="text-muted-foreground">

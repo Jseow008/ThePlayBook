@@ -122,7 +122,7 @@ describe('ContentPreview', () => {
         expect(screen.queryByText('Reading Sequence')).not.toBeInTheDocument();
         expect(screen.queryByText('Reading sequence')).not.toBeInTheDocument();
         expect(screen.getByText('Part 2 of 8 in Matthew')).toBeInTheDocument();
-        expect(screen.getByText('See all parts')).toHaveAttribute('href', '/series/matthew');
+        expect(screen.getByText('View All Series')).toHaveAttribute('href', '/series/matthew');
         expect(screen.getByText('Next:')).toBeInTheDocument();
         expect(screen.getAllByText('Matthew 8-12').length).toBeGreaterThan(0);
         expect(screen.getByRole('link', { name: 'View all series' })).toHaveAttribute('href', '/series/matthew');
