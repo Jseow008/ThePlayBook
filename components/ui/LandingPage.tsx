@@ -342,7 +342,6 @@ function CorePlatformFeaturesSection() {
     <section className="bg-black py-24 sm:py-32">
       <FadeIn className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.01] p-10 sm:p-14 lg:p-16">
-          <div className="pointer-events-none absolute inset-0 rounded-[3rem] bg-emerald-500/5 blur-[60px]" />
           <div className="relative z-10 grid gap-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
             <div className="max-w-md">
               <SectionIntro
@@ -392,10 +391,6 @@ function CorePlatformFeaturesSection() {
                           className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
                         />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-
-                        <div className="absolute bottom-2 left-2 flex h-6 w-6 items-center justify-center rounded-lg border border-white/10 bg-black/50 backdrop-blur-md">
-                          <feature.icon className="h-3 w-3 text-zinc-300" />
-                        </div>
                       </div>
 
                       <div className="flex flex-1 flex-col py-2 pr-4">
