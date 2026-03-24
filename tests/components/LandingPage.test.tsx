@@ -144,20 +144,28 @@ function renderLandingPage() {
   );
 
   const carousel = screen.getByTestId("featured-reads-carousel") as HTMLDivElement;
+  const firstLoop = screen.getByTestId("featured-reads-group-a") as HTMLDivElement;
+  const middleLoop = screen.getByTestId("featured-reads-group-b") as HTMLDivElement;
+  const lastLoop = screen.getByTestId("featured-reads-group-c") as HTMLDivElement;
   Object.defineProperty(carousel, "clientWidth", { configurable: true, value: 400 });
-  Object.defineProperty(carousel, "scrollWidth", { configurable: true, value: 1600 });
+  Object.defineProperty(carousel, "scrollWidth", { configurable: true, value: 2800 });
+  Object.defineProperty(firstLoop, "offsetLeft", { configurable: true, value: 0 });
+  Object.defineProperty(middleLoop, "offsetLeft", { configurable: true, value: 800 });
+  Object.defineProperty(lastLoop, "offsetLeft", { configurable: true, value: 1600 });
   let scrollLeftValue = 0;
   Object.defineProperty(carousel, "scrollLeft", {
     configurable: true,
     get: () => scrollLeftValue,
     set: (value: number) => {
-      scrollLeftValue = Math.trunc(value);
+      scrollLeftValue = Math.max(0, Math.min(2400, Math.trunc(value)));
     },
   });
 
   act(() => {
     window.dispatchEvent(new Event("resize"));
   });
+
+  fireEvent.scroll(carousel);
 
   return carousel;
 }
@@ -182,19 +190,27 @@ describe("LandingPage featured reads carousel", () => {
   it("autoplay initializes and advances the carousel", () => {
     const carousel = renderLandingPage();
 
-    expect(carousel.scrollLeft).toBe(0);
+    expect(carousel.scrollLeft).toBe(800);
 
     act(() => {
       vi.advanceTimersByTime(1000);
     });
 
-    expect(carousel.scrollLeft).toBeGreaterThan(20);
+    expect(carousel.scrollLeft).toBeGreaterThan(820);
   });
 
   it("matches browse lane vertical padding so hover scaling is not clipped", () => {
     const carousel = renderLandingPage();
 
     expect(carousel).toHaveClass("pt-3", "pb-3", "md:pt-4", "md:pb-4");
+  });
+
+  it("renders three identical carousel groups to keep rebasing away from hard edges", () => {
+    renderLandingPage();
+
+    expect(screen.getByTestId("featured-reads-group-a")).toBeInTheDocument();
+    expect(screen.getByTestId("featured-reads-group-b")).toBeInTheDocument();
+    expect(screen.getByTestId("featured-reads-group-c")).toBeInTheDocument();
   });
 
   it("pauses on hover and focus, then resumes after the idle delay", () => {
@@ -249,7 +265,7 @@ describe("LandingPage featured reads carousel", () => {
   it("lets desktop users drag the carousel horizontally", () => {
     const carousel = renderLandingPage();
 
-    carousel.scrollLeft = 40;
+    carousel.scrollLeft = 840;
 
     fireEvent.pointerDown(carousel, {
       button: 0,
@@ -264,7 +280,7 @@ describe("LandingPage featured reads carousel", () => {
       pointerType: "mouse",
     });
 
-    expect(carousel.scrollLeft).toBeGreaterThan(100);
+    expect(carousel.scrollLeft).toBeGreaterThan(900);
 
     fireEvent.pointerUp(carousel, {
       pointerId: 1,
@@ -299,6 +315,24 @@ describe("LandingPage featured reads carousel", () => {
     expect(cardClickSpy).not.toHaveBeenCalled();
   });
 
+  it("rebases seamlessly when scrolling past the forward seam", () => {
+    const carousel = renderLandingPage();
+
+    carousel.scrollLeft = 1610;
+    fireEvent.scroll(carousel);
+
+    expect(carousel.scrollLeft).toBe(810);
+  });
+
+  it("rebases seamlessly when scrolling past the backward seam", () => {
+    const carousel = renderLandingPage();
+
+    carousel.scrollLeft = 790;
+    fireEvent.scroll(carousel);
+
+    expect(carousel.scrollLeft).toBe(1590);
+  });
+
   it("disables autoplay when reduced motion is preferred", () => {
     mockMatchMedia(true);
     const carousel = renderLandingPage();
@@ -307,6 +341,6 @@ describe("LandingPage featured reads carousel", () => {
       vi.advanceTimersByTime(2000);
     });
 
-    expect(carousel.scrollLeft).toBe(0);
+    expect(carousel.scrollLeft).toBe(800);
   });
 });

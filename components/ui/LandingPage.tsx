@@ -100,6 +100,12 @@ const FEATURED_READS_RESUME_DELAY_MS = 2000;
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
 
+function getNormalizedScrollLeft(scrollLeft: number, loopWidth: number) {
+  const middleStart = loopWidth;
+  const offsetWithinLoop = ((scrollLeft - middleStart) % loopWidth + loopWidth) % loopWidth;
+  return middleStart + offsetWithinLoop;
+}
+
 function fadeInStyle(delayMs = 0) {
   return {
     animationDelay: `${delayMs}ms`,
@@ -293,13 +299,15 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     Math.ceil(FEATURED_READS_MIN_LOOP_ITEMS / Math.max(1, items.length))
   );
   const loopItems = Array.from({ length: baseMultiplier }).flatMap(() => items);
-  const displayItems = [...loopItems, ...loopItems];
   const scrollRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+  const firstLoopRef = useRef<HTMLDivElement>(null);
+  const middleLoopRef = useRef<HTMLDivElement>(null);
+  const lastLoopRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number | null>(null);
   const autoScrollRemainderRef = useRef(0);
   const loopWidthRef = useRef(0);
+  const hasInitializedLoopRef = useRef(false);
   const isHoveringRef = useRef(false);
   const isDraggingRef = useRef(false);
   const isTouchingRef = useRef(false);
@@ -329,12 +337,24 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
 
   useEffect(() => {
     const scrollElement = scrollRef.current;
-    const trackElement = trackRef.current;
+    const firstLoopElement = firstLoopRef.current;
+    const middleLoopElement = middleLoopRef.current;
+    const lastLoopElement = lastLoopRef.current;
 
-    if (!scrollElement || !trackElement) return;
+    if (!scrollElement || !firstLoopElement || !middleLoopElement || !lastLoopElement) return;
 
     const measure = () => {
-      loopWidthRef.current = scrollElement.scrollWidth / 2;
+      const loopWidth = middleLoopElement.offsetLeft - firstLoopElement.offsetLeft;
+      if (loopWidth <= 0) return;
+
+      loopWidthRef.current = loopWidth;
+      const normalizedScrollLeft = getNormalizedScrollLeft(scrollElement.scrollLeft, loopWidth);
+
+      if (!hasInitializedLoopRef.current || scrollElement.scrollLeft !== normalizedScrollLeft) {
+        isAutoScrollingRef.current = true;
+        scrollElement.scrollLeft = hasInitializedLoopRef.current ? normalizedScrollLeft : loopWidth;
+        hasInitializedLoopRef.current = true;
+      }
     };
 
     measure();
@@ -344,14 +364,16 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       : null;
 
     resizeObserver?.observe(scrollElement);
-    resizeObserver?.observe(trackElement);
+    resizeObserver?.observe(firstLoopElement);
+    resizeObserver?.observe(middleLoopElement);
+    resizeObserver?.observe(lastLoopElement);
     window.addEventListener("resize", measure);
 
     return () => {
       resizeObserver?.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [displayItems.length]);
+  }, [items.length]);
 
   useEffect(() => {
     const scrollElement = scrollRef.current;
@@ -360,17 +382,21 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
 
     const normalizeScrollPosition = () => {
       const loopWidth = loopWidthRef.current;
-      if (loopWidth <= 0 || scrollElement.scrollWidth <= scrollElement.clientWidth + 1) {
+      if (
+        loopWidth <= 0
+        || !hasInitializedLoopRef.current
+        || scrollElement.scrollWidth <= scrollElement.clientWidth + 1
+      ) {
         return;
       }
 
-      if (scrollElement.scrollLeft <= 0) {
+      if (scrollElement.scrollLeft < loopWidth) {
         isAutoScrollingRef.current = true;
         scrollElement.scrollLeft += loopWidth;
         return;
       }
 
-      if (scrollElement.scrollLeft >= loopWidth) {
+      if (scrollElement.scrollLeft >= loopWidth * 2) {
         isAutoScrollingRef.current = true;
         scrollElement.scrollLeft -= loopWidth;
       }
@@ -388,7 +414,12 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       const lastTimestamp = lastFrameTimeRef.current ?? timestamp;
       lastFrameTimeRef.current = timestamp;
 
-      if (!shouldPause && loopWidthRef.current > 0 && scrollElement.scrollWidth > scrollElement.clientWidth + 1) {
+      if (
+        !shouldPause
+        && hasInitializedLoopRef.current
+        && loopWidthRef.current > 0
+        && scrollElement.scrollWidth > scrollElement.clientWidth + 1
+      ) {
         const deltaSeconds = (timestamp - lastTimestamp) / 1000;
         if (deltaSeconds > 0) {
           const distanceToApply = (
@@ -398,7 +429,7 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
           autoScrollRemainderRef.current = distanceToApply - wholePixels;
 
           if (wholePixels > 0) {
-          isAutoScrollingRef.current = true;
+            isAutoScrollingRef.current = true;
             scrollElement.scrollLeft += wholePixels;
             normalizeScrollPosition();
           }
@@ -423,30 +454,23 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
 
   function normalizeScrollPosition(element: HTMLDivElement) {
     const loopWidth = loopWidthRef.current;
-    if (loopWidth <= 0 || element.scrollWidth <= element.clientWidth + 1) {
+    if (
+      loopWidth <= 0
+      || !hasInitializedLoopRef.current
+      || element.scrollWidth <= element.clientWidth + 1
+    ) {
       return;
     }
 
-    if (element.scrollLeft <= 0) {
+    const normalizedScrollLeft = getNormalizedScrollLeft(element.scrollLeft, loopWidth);
+    if (normalizedScrollLeft !== element.scrollLeft) {
       isAutoScrollingRef.current = true;
-      element.scrollLeft += loopWidth;
-      return;
-    }
-
-    if (element.scrollLeft >= loopWidth) {
-      isAutoScrollingRef.current = true;
-      element.scrollLeft -= loopWidth;
+      element.scrollLeft = normalizedScrollLeft;
     }
   }
 
   function prepareForDrag(element: HTMLDivElement) {
-    if (loopWidthRef.current <= 0) return;
-
-    if (element.scrollLeft <= 1) {
-      element.scrollLeft += loopWidthRef.current;
-    } else if (element.scrollLeft >= loopWidthRef.current - 1) {
-      element.scrollLeft -= loopWidthRef.current;
-    }
+    normalizeScrollPosition(element);
   }
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
@@ -618,20 +642,65 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
             onPointerCancel={handlePointerCancel}
             onScroll={handleScroll}
           >
-            <div ref={trackRef} className="flex w-max items-center gap-4 sm:gap-6">
-            {displayItems.map((item, index) => (
+            <div className="flex w-max items-center gap-4 sm:gap-6">
               <div
-                key={`${item.id}-${index}`}
-                className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
+                ref={firstLoopRef}
+                data-testid="featured-reads-group-a"
+                className="flex items-center gap-4 sm:gap-6"
               >
-                <ContentCard
-                  item={item}
-                  enableUserState={false}
-                  hideBookmark
-                  hideProgressBar
-                />
+                {loopItems.map((item, index) => (
+                  <div
+                    key={`${item.id}-a-${index}`}
+                    className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
+                  >
+                    <ContentCard
+                      item={item}
+                      enableUserState={false}
+                      hideBookmark
+                      hideProgressBar
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
+              <div
+                ref={middleLoopRef}
+                data-testid="featured-reads-group-b"
+                className="flex items-center gap-4 sm:gap-6"
+              >
+                {loopItems.map((item, index) => (
+                  <div
+                    key={`${item.id}-b-${index}`}
+                    className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
+                  >
+                    <ContentCard
+                      item={item}
+                      enableUserState={false}
+                      hideBookmark
+                      hideProgressBar
+                    />
+                  </div>
+                ))}
+              </div>
+              <div
+                ref={lastLoopRef}
+                data-testid="featured-reads-group-c"
+                aria-hidden="true"
+                className="flex items-center gap-4 sm:gap-6"
+              >
+                {loopItems.map((item, index) => (
+                  <div
+                    key={`${item.id}-c-${index}`}
+                    className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
+                  >
+                    <ContentCard
+                      item={item}
+                      enableUserState={false}
+                      hideBookmark
+                      hideProgressBar
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
