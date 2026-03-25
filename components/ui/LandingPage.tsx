@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   Activity,
   ArrowRight,
-  BookMarked,
   Brain,
   Briefcase,
   CircleDollarSign,
@@ -17,8 +16,6 @@ import {
   Lightbulb,
   Landmark,
   Microscope,
-  NotebookPen,
-  RotateCcw,
   Scale,
   Smile,
   Sparkles,
@@ -68,7 +65,6 @@ const CURATED_CATEGORY_ORDER = [
 ] as const;
 
 const CORE_ANCHOR_FEATURE = {
-  icon: RotateCcw,
   title: "Reading view",
   description: "Read in clear, structured sections designed for focus.",
   image: "/images/reading-experience-reader-view.png",
@@ -76,19 +72,16 @@ const CORE_ANCHOR_FEATURE = {
 
 const CORE_SUPPORT_FEATURES = [
   {
-    icon: BookMarked,
     title: "Preview the thesis",
     description: "See the main idea and understand the thesis before you dive in.",
     image: "/images/reading-experience-info-view.png",
   },
   {
-    icon: NotebookPen,
     title: "Highlight and annotate",
     description: "Capture the passages worth remembering while you read.",
     image: "/images/highlighting-and-annotation.png",
   },
   {
-    icon: Sparkles,
     title: "Ask follow-up questions",
     description: "Ask the author(s) questions about what you just read.",
     image: "/images/ai-chat.png",
@@ -99,6 +92,10 @@ const FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND = 22;
 const FEATURED_READS_RESUME_DELAY_MS = 2000;
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
+const PRIMARY_CTA_CLASS =
+  "focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-16px_rgba(255,255,255,0.45)]";
+const SECONDARY_CTA_CLASS =
+  "focus-ring inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.02] px-8 py-4 text-base font-medium text-white/75 transition-[border-color,background-color,color,transform] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.06] hover:text-white";
 
 function getNormalizedScrollLeft(scrollLeft: number, loopWidth: number) {
   const middleStart = loopWidth;
@@ -171,6 +168,8 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
 
       <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(221,197,160,0.08),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(91,109,140,0.10),transparent_24%)]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-white/[0.03] via-transparent to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
 
         <HeroSection />
         <CorePlatformFeaturesSection />
@@ -187,7 +186,7 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
 
 function LandingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-background/82 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-background/95 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-sm">
           <Logo width={88} height={24} />
@@ -202,7 +201,7 @@ function LandingHeader() {
           </Link>
           <Link
             href="/login"
-            className="focus-ring inline-flex items-center rounded-full border border-white/[0.08] px-3 py-1.5 text-xs font-semibold text-foreground transition-all hover:bg-white/[0.04] sm:px-4 sm:py-2 sm:text-sm"
+            className="focus-ring inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_10px_24px_-16px_rgba(255,255,255,0.5)] sm:px-4 sm:py-2 sm:text-sm"
           >
             Sign In
           </Link>
@@ -218,6 +217,7 @@ function HeroSection() {
       <div className="pointer-events-none absolute inset-0 z-0 opacity-60">
         <div className="landing-hero-flow-1 absolute left-1/4 top-1/4 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-[80px]" />
         <div className="landing-hero-flow-2 absolute bottom-1/4 right-1/4 h-[400px] w-[400px] translate-x-1/4 translate-y-1/4 rounded-full bg-emerald-500/5 blur-[80px]" />
+        <div className="landing-hero-flow-3 absolute left-[58%] top-[18%] h-[220px] w-[220px] rounded-full bg-white/[0.04] blur-[72px]" />
       </div>
 
       <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-6 lg:px-8 lg:grid-cols-[1fr_1fr] lg:items-center">
@@ -244,15 +244,15 @@ function HeroSection() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link
                 href="/login"
-                className="focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-transform hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]"
+                className={PRIMARY_CTA_CLASS}
               >
                 <span className="relative z-10">Start Reading</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
-                <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-200 to-white opacity-0 transition-opacity group-hover:opacity-100" />
+                <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-100 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
               <Link
                 href="/browse"
-                className="focus-ring inline-flex items-center justify-center rounded-full border border-white/10 px-8 py-4 text-base font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
+                className={SECONDARY_CTA_CLASS}
               >
                 Browse Library
               </Link>
@@ -261,6 +261,7 @@ function HeroSection() {
         </div>
 
         <div className="relative hidden lg:block">
+          <div className="pointer-events-none absolute inset-x-8 -top-6 h-20 rounded-full bg-white/[0.04] blur-3xl" />
           <div className="relative z-20 w-full">
             <div className="relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
               <Image
@@ -272,6 +273,7 @@ function HeroSection() {
                 sizes="(max-width: 1024px) 0px, 700px"
                 className="object-cover opacity-90"
               />
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/[0.22] via-transparent to-white/[0.03]" />
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
             </div>
 
@@ -565,7 +567,10 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
   if (items.length === 0) return null;
 
   return (
-    <section id="featured-reads" className="scroll-mt-20 overflow-hidden bg-black/50 py-24 sm:py-32">
+    <section
+      id="featured-reads"
+      className="scroll-mt-20 overflow-hidden bg-[linear-gradient(180deg,rgba(0,0,0,0.24),rgba(0,0,0,0.4),rgba(0,0,0,0.24))] py-24 sm:py-32"
+    >
       <FadeIn className="mx-auto mb-16 max-w-7xl px-6">
         <SectionIntro
           label="Start here"
@@ -603,6 +608,8 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
             event.stopPropagation();
           }}
         >
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background via-background/70 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background via-background/70 to-transparent" />
           <div
             ref={scrollRef}
             aria-label="Featured reads"
@@ -713,10 +720,12 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
 
 function CorePlatformFeaturesSection() {
   return (
-    <section className="bg-black py-24 sm:py-32">
+    <section className="relative bg-black py-20 sm:py-24">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
       <FadeIn className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-[3rem] border border-white/10 bg-gradient-to-br from-white/5 to-white/[0.01] p-10 sm:p-14 lg:p-16">
-          <div className="relative z-10 grid gap-16 lg:grid-cols-[0.88fr_1.12fr] lg:items-center">
+        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/5 via-white/[0.03] to-white/[0.01] p-8 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.85)] sm:p-10 lg:p-12">
+          <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-white/[0.04] blur-3xl" />
+          <div className="relative z-10 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="max-w-md">
               <SectionIntro
                 label="How Flux works"
@@ -725,9 +734,9 @@ function CorePlatformFeaturesSection() {
               />
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2 lg:items-center">
+            <div className="grid gap-4 sm:grid-cols-2 lg:items-center">
               <FadeIn delayMs={100}>
-                <div className="group flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-2xl">
+                <div className="group flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.85)]">
                   <div className="relative aspect-[1996/1794] w-full shrink-0 overflow-hidden border-b border-white/5 bg-zinc-950">
                     <Image
                       src={CORE_ANCHOR_FEATURE.image}
@@ -740,38 +749,38 @@ function CorePlatformFeaturesSection() {
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                   </div>
 
-                  <div className="flex flex-1 flex-col p-8 pt-6">
+                  <div className="flex flex-1 flex-col p-6 pt-5">
                     <h3 className="text-2xl font-semibold tracking-tight text-white">
                       {CORE_ANCHOR_FEATURE.title}
                     </h3>
-                    <p className="mt-3 text-base leading-8 text-zinc-300">
+                    <p className="mt-3 text-base leading-7 text-zinc-300">
                       {CORE_ANCHOR_FEATURE.description}
                     </p>
                   </div>
                 </div>
               </FadeIn>
 
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
                 {CORE_SUPPORT_FEATURES.map((feature, index) => (
                   <FadeIn key={feature.title} delayMs={150 + index * 80}>
-                    <div className="group relative flex flex-row items-center gap-5 overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 p-3 transition-all hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-xl">
-                      <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-white/5 bg-zinc-950">
+                    <div className="group relative flex flex-row items-center gap-4 overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/80 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_20px_40px_-28px_rgba(255,255,255,0.2)]">
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.15rem] border border-white/5 bg-zinc-950">
                         <Image
                           src={feature.image}
                           alt={`Screenshot illustrating ${feature.title}`}
                           fill
                           unoptimized
-                          sizes="96px"
+                          sizes="80px"
                           className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
                         />
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                       </div>
 
-                      <div className="flex flex-1 flex-col py-2 pr-4">
+                      <div className="flex flex-1 flex-col py-1 pr-3">
                         <h3 className="text-base font-semibold leading-snug tracking-[-0.01em] text-white">
                           {feature.title}
                         </h3>
-                        <p className="mt-1 text-sm leading-7 text-zinc-300">
+                        <p className="mt-1 text-sm leading-6 text-zinc-300">
                           {feature.description}
                         </p>
                       </div>
@@ -789,7 +798,8 @@ function CorePlatformFeaturesSection() {
 
 function TopicMapSection({ categories }: { categories: { category: string; count: number }[] }) {
   return (
-    <section className="py-24 sm:py-32">
+    <section className="relative py-24 sm:py-32">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.03),transparent_32%)]" />
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <FadeIn>
           <SectionIntro
@@ -808,9 +818,10 @@ function TopicMapSection({ categories }: { categories: { category: string; count
               <FadeIn key={item.category} delayMs={index * 50}>
                 <Link
                   href={`/search?category=${encodeURIComponent(item.category)}`}
-                  className="group flex h-full flex-col items-center justify-center gap-4 rounded-[2rem] border border-white/5 bg-white/5 p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/10 hover:shadow-2xl"
+                  className="group relative flex h-full flex-col items-center justify-center gap-4 overflow-hidden rounded-[2rem] border border-white/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[0_24px_50px_-28px_rgba(255,255,255,0.24)]"
                 >
-                  <div className="rounded-2xl bg-black/40 p-4 shadow-inner transition-colors group-hover:bg-black/60">
+                  <div className="pointer-events-none absolute inset-x-8 top-0 h-20 bg-gradient-to-b from-white/[0.08] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                  <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-4 shadow-inner transition-colors group-hover:bg-black/60">
                     <Icon className="size-6 text-zinc-400 transition-colors group-hover:text-white" />
                   </div>
                   <span className="text-[0.95rem] font-semibold tracking-[0.01em] text-zinc-300 transition-colors group-hover:text-white">
@@ -830,39 +841,46 @@ function FinalCTASection() {
   return (
     <section className="relative overflow-hidden py-32 sm:py-40">
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="h-[300px] w-[600px] rounded-full bg-blue-500/8 blur-[80px]" />
+        <div className="h-[300px] w-[600px] rounded-full bg-blue-500/[0.08] blur-[80px]" />
+        <div className="landing-hero-flow-3 absolute h-[220px] w-[420px] rounded-full bg-white/[0.03] blur-[90px]" />
       </div>
 
       <FadeIn>
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center lg:px-8">
-          <h2 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl md:text-[5.5rem]">
-            Build a personal library of ideas you&apos;ll actually return to.
-          </h2>
+          <div className="relative px-6 py-14 sm:px-10">
+            <div className="pointer-events-none absolute inset-x-10 top-1/2 h-32 -translate-y-1/2 rounded-full bg-white/[0.025] blur-3xl" />
 
-          <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-            Start reading, save what matters, and turn insight into something durable.
-          </p>
+            <div className="relative">
+              <h2 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl md:text-[5.5rem]">
+                Build a personal library of ideas you&apos;ll actually return to.
+              </h2>
 
-          <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
-            <Link
-              href="/login"
-              className="focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-transform hover:scale-[1.02] hover:shadow-[0_0_40px_-10px_rgba(255,255,255,0.4)]"
-            >
-              <span className="relative z-10">Start Reading</span>
-              <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
-              <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-200 to-white opacity-0 transition-opacity group-hover:opacity-100" />
-            </Link>
-            <Link
-              href="/browse"
-              className="focus-ring inline-flex items-center gap-2 rounded-full border border-white/10 px-8 py-4 text-base font-medium text-white/70 transition-colors hover:border-white/30 hover:bg-white/5 hover:text-white"
-            >
-              Browse the Library
-            </Link>
+              <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
+                Start reading, save what matters, and turn insight into something durable.
+              </p>
+
+              <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
+                <Link
+                  href="/login"
+                  className={PRIMARY_CTA_CLASS}
+                >
+                  <span className="relative z-10">Start Reading</span>
+                  <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
+                  <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-100 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                </Link>
+                <Link
+                  href="/browse"
+                  className={SECONDARY_CTA_CLASS}
+                >
+                  Browse the Library
+                </Link>
+              </div>
+
+              <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">
+                Read less noise. Keep more signal.
+              </p>
+            </div>
           </div>
-
-          <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">
-            Read less noise. Keep more signal.
-          </p>
         </div>
       </FadeIn>
     </section>
@@ -878,13 +896,13 @@ function LandingFooter() {
         </div>
 
         <div className="flex items-center gap-6 text-sm text-muted-foreground/60">
-          <Link href="/about" className="focus-ring rounded-sm transition-colors hover:text-foreground">
+          <Link href="/about" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
             About
           </Link>
-          <Link href="/privacy" className="focus-ring rounded-sm transition-colors hover:text-foreground">
+          <Link href="/privacy" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
             Privacy
           </Link>
-          <Link href="/terms" className="focus-ring rounded-sm transition-colors hover:text-foreground">
+          <Link href="/terms" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
             Terms
           </Link>
         </div>
