@@ -50,6 +50,48 @@ interface UserLibraryRow {
     last_interacted_at: string;
 }
 
+function normalizeCloudSyncError(error: unknown) {
+    if (error instanceof Error) {
+        return {
+            name: error.name,
+            message: error.message,
+        };
+    }
+
+    if (typeof error === "string") {
+        return { message: error };
+    }
+
+    if (!error || typeof error !== "object") {
+        return { message: "Unknown cloud sync error" };
+    }
+
+    const candidate = error as Record<string, unknown>;
+    const normalized = Object.fromEntries(
+        Object.entries(candidate).filter(([, value]) => value !== undefined && value !== null)
+    );
+
+    if (Object.keys(normalized).length > 0) {
+        return normalized;
+    }
+
+    return {
+        message: "Unknown cloud sync error",
+        rawType: Object.prototype.toString.call(error),
+    };
+}
+
+function logRecoverableCloudSync(
+    context: string,
+    error: unknown,
+    metadata: Record<string, unknown> = {}
+) {
+    console.warn(`[ReadingProgress] ${context}`, {
+        ...metadata,
+        error: normalizeCloudSyncError(error),
+    });
+}
+
 function hasProgressData(value: ReadingProgressData | null) {
     return Boolean(value && Object.keys(value).length > 0);
 }
@@ -162,7 +204,11 @@ function useReadingProgressController() {
                 const { error } = await deleteUserLibrary(supabase, currentUser.id, itemId);
 
                 if (error) {
-                    console.error("Cloud sync delete error:", error);
+                    logRecoverableCloudSync("Delete cloud progress failed", error, {
+                        itemId,
+                        scope,
+                        userId: currentUser.id,
+                    });
                     return false;
                 }
                 return true;
@@ -194,13 +240,21 @@ function useReadingProgressController() {
             });
 
             if (error) {
-                console.error("Cloud sync error:", error);
+                logRecoverableCloudSync("Upsert cloud progress failed", error, {
+                    itemId,
+                    scope,
+                    userId: currentUser.id,
+                });
                 return false;
             }
 
             return true;
         } catch (error) {
-            console.error("Failed to sync item:", itemId, error);
+            logRecoverableCloudSync("Unexpected cloud sync failure", error, {
+                itemId,
+                scope,
+                userId: currentUser.id,
+            });
             return false;
         }
     }, [readProgressFromScope, supabase]);
@@ -243,9 +297,10 @@ function useReadingProgressController() {
             .eq("user_id", currentUser.id);
 
         if (error || !data) {
-            if (error) {
-                console.error("Cloud sync fetch error:", error);
-            }
+            logRecoverableCloudSync("Fetch cloud progress failed", error ?? { message: "No user_library rows returned" }, {
+                scope,
+                userId: currentUser.id,
+            });
             return false;
         }
 

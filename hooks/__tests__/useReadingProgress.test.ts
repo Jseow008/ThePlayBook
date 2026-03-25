@@ -264,6 +264,49 @@ describe("useReadingProgress", () => {
         consoleErrorSpy.mockRestore();
     });
 
+    it("keeps local progress and downgrades recoverable cloud sync failures to warnings", async () => {
+        const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const guestProgress = {
+            itemId: "item-31",
+            completed: ["seg-1"],
+            lastSegmentIndex: 0,
+            lastReadAt: new Date().toISOString(),
+            isCompleted: false,
+        } satisfies ReadingProgressData;
+
+        localStorage.setItem(progressKey(GUEST_STORAGE_SCOPE, "item-31"), JSON.stringify(guestProgress));
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        currentAuthUser = { id: "user-a" };
+        currentCloudRows = [];
+        upsertMock.mockResolvedValue({ error: {} });
+
+        await act(async () => {
+            authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser });
+        });
+
+        await waitFor(() => expect(result.current.storageScope).toBe(getStorageScope("user-a")));
+
+        expect(result.current.inProgressIds).toEqual(["item-31"]);
+        expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-31"))).not.toBeNull();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+            "[ReadingProgress] Upsert cloud progress failed",
+            expect.objectContaining({
+                itemId: "item-31",
+                scope: getStorageScope("user-a"),
+                userId: "user-a",
+                error: expect.any(Object),
+            }),
+        );
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+        consoleWarnSpy.mockRestore();
+        consoleErrorSpy.mockRestore();
+    });
+
     it("loads only the signed-in user's cloud rows during hydration", async () => {
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
