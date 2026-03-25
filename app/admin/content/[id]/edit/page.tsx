@@ -7,6 +7,7 @@
 import { notFound } from "next/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { ContentForm } from "@/components/admin/ContentForm";
+import { getAdminSeriesOptions } from "@/lib/server/admin-series";
 import { Segment } from "@/types/database";
 
 interface EditContentPageProps {
@@ -16,6 +17,7 @@ interface EditContentPageProps {
 export default async function EditContentPage({ params }: EditContentPageProps) {
     const { id } = await params;
     const supabase = getAdminClient();
+    const seriesOptions = await getAdminSeriesOptions();
 
     // Fetch content with segments and artifacts
     const { data: contentItemRaw, error } = await supabase
@@ -46,6 +48,8 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
         cover_image_url: contentItem.cover_image_url || "",
         hero_image_url: contentItem.hero_image_url || "",
         audio_url: contentItem.audio_url || "",
+        series_id: contentItem.series_id || "",
+        series_order: contentItem.series_order ?? null,
         duration_seconds: contentItem.duration_seconds,
         status: contentItem.status as "draft" | "verified",
         is_featured: contentItem.is_featured,
@@ -79,7 +83,7 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
                 </p>
             </div>
 
-            <ContentForm initialData={formData} isEditing />
+            <ContentForm initialData={formData} isEditing seriesOptions={seriesOptions} />
         </div>
     );
 }

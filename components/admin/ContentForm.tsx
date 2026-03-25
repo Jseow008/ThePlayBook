@@ -42,6 +42,7 @@ import {
     useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { AdminSeriesOption } from "@/lib/server/admin-series";
 
 interface Segment {
     id?: string;
@@ -65,6 +66,8 @@ interface ContentFormData {
     author: string;
     type: "podcast" | "book" | "article";
     category: string;
+    series_id: string;
+    series_order: number | null;
     source_url: string;
     cover_image_url: string;
     hero_image_url: string;
@@ -83,6 +86,7 @@ interface ContentFormProps {
         artifacts?: Array<{ id?: string; type: "checklist"; payload_schema: { title: string; items: Array<{ id: string; label: string; mandatory: boolean }> } }>;
     };
     isEditing?: boolean;
+    seriesOptions?: AdminSeriesOption[];
 }
 
 const defaultQuickMode: QuickModeJson = {
@@ -115,6 +119,8 @@ const defaultFormData: ContentFormData = {
     author: "",
     type: "podcast",
     category: "",
+    series_id: "",
+    series_order: null,
     source_url: "",
     cover_image_url: "",
     hero_image_url: "",
@@ -231,7 +237,7 @@ function SortableSegmentItem({
     );
 }
 
-export function ContentForm({ initialData, isEditing = false }: ContentFormProps) {
+export function ContentForm({ initialData, isEditing = false, seriesOptions = [] }: ContentFormProps) {
     const router = useRouter();
 
     // Initialize form data with client_ids for segments and artifacts if missing
@@ -506,6 +512,8 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
             hero_image_url: formData.hero_image_url || null,
             audio_url: formData.audio_url || null,
             category: formData.category || null,
+            series_id: formData.series_id || null,
+            series_order: formData.series_id ? formData.series_order : null,
         };
 
         try {
@@ -644,6 +652,37 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                         </select>
                     </div>
 
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-700 mb-2">
+                            Series <span className="text-zinc-400 font-normal">(Optional)</span>
+                        </label>
+                        <select
+                            value={formData.series_id}
+                            onChange={(e) => {
+                                const nextSeriesId = e.target.value;
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    series_id: nextSeriesId,
+                                    series_order: nextSeriesId ? prev.series_order : null,
+                                }));
+                            }}
+                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.series_id ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
+                        >
+                            <option value="">Standalone content</option>
+                            {seriesOptions.map((series) => (
+                                <option key={series.id} value={series.id}>
+                                    {series.title}
+                                </option>
+                            ))}
+                        </select>
+                        {seriesOptions.length === 0 && (
+                            <p className="mt-1 text-xs text-zinc-500">No series available yet. Add one through a migration or seed first.</p>
+                        )}
+                        {fieldErrors.series_id && (
+                            <p className="mt-1 text-sm text-red-600">{fieldErrors.series_id}</p>
+                        )}
+                    </div>
+
                     {/* Type */}
                     <div>
                         <label className="block text-sm font-medium text-zinc-700 mb-2">
@@ -670,6 +709,30 @@ export function ContentForm({ initialData, isEditing = false }: ContentFormProps
                         </div>
                         {fieldErrors.type && (
                             <p className="mt-1 text-sm text-red-600">{fieldErrors.type}</p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-zinc-700 mb-2">
+                            Series Order
+                        </label>
+                        <input
+                            type="number"
+                            value={formData.series_order ?? ""}
+                            onChange={(e) =>
+                                updateField(
+                                    "series_order",
+                                    e.target.value ? parseInt(e.target.value, 10) : null
+                                )
+                            }
+                            placeholder={formData.series_id ? "1" : "Select a series first"}
+                            min="1"
+                            disabled={!formData.series_id}
+                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent disabled:bg-zinc-50 disabled:text-zinc-400 ${fieldErrors.series_order ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
+                        />
+                        <p className="mt-1 text-xs text-zinc-500">Required when this item belongs to a series.</p>
+                        {fieldErrors.series_order && (
+                            <p className="mt-1 text-sm text-red-600">{fieldErrors.series_order}</p>
                         )}
                     </div>
 

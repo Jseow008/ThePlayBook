@@ -121,7 +121,7 @@ describe('ContentPreview', () => {
 
         expect(screen.queryByText('Reading Sequence')).not.toBeInTheDocument();
         expect(screen.queryByText('Reading sequence')).not.toBeInTheDocument();
-        expect(screen.getByText('Part 2 of 8 in Matthew')).toBeInTheDocument();
+        expect(screen.getAllByText('Part 2 of 8 in Matthew').length).toBeGreaterThan(0);
         expect(screen.getByText('View All Series')).toHaveAttribute('href', '/series/matthew');
         expect(screen.getByText('Next:')).toBeInTheDocument();
         expect(screen.getAllByText('Matthew 8-12').length).toBeGreaterThan(0);

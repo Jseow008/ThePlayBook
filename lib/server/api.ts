@@ -16,7 +16,8 @@ export function apiError(
     code: ApiErrorCode,
     message: string,
     status: number,
-    requestId: string
+    requestId: string,
+    details?: unknown
 ) {
     return NextResponse.json(
         {
@@ -24,6 +25,7 @@ export function apiError(
                 code,
                 message,
                 request_id: requestId,
+                ...(details !== undefined ? { details } : {}),
             },
         },
         { status }
@@ -53,4 +55,39 @@ export function logApiError(params: {
     }
 
     console.error(base, { error: params.error });
+}
+
+function getErrorCode(error: unknown): string | null {
+    if (!error || typeof error !== "object" || !("code" in error)) {
+        return null;
+    }
+
+    const code = (error as { code?: unknown }).code;
+    return typeof code === "string" ? code : null;
+}
+
+function getErrorStringProperty(error: unknown, key: string): string | null {
+    if (!error || typeof error !== "object" || !(key in error)) {
+        return null;
+    }
+
+    const value = (error as Record<string, unknown>)[key];
+    return typeof value === "string" ? value : null;
+}
+
+export function isSupabaseNotFoundError(error: unknown): boolean {
+    return getErrorCode(error) === "PGRST116";
+}
+
+export function isPostgresUniqueViolation(error: unknown): boolean {
+    return getErrorCode(error) === "23505";
+}
+
+export function isUniqueConstraintViolation(error: unknown, constraint: string): boolean {
+    if (!isPostgresUniqueViolation(error)) {
+        return false;
+    }
+
+    return getErrorStringProperty(error, "constraint") === constraint
+        || getErrorStringProperty(error, "constraint_name") === constraint;
 }

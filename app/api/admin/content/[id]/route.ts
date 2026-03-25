@@ -10,8 +10,59 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import {
+    apiError,
+    getRequestId,
+    isSupabaseNotFoundError,
+    isUniqueConstraintViolation,
+    logApiError,
+} from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+
+function validateSeriesAssignment(
+    value: { series_id?: string | null; series_order?: number | null },
+    ctx: z.RefinementCtx
+) {
+    const hasSeriesId = value.series_id !== undefined && value.series_id !== null;
+    const hasSeriesOrder = value.series_order !== undefined && value.series_order !== null;
+
+    if (hasSeriesId && !hasSeriesOrder) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["series_order"],
+            message: "Series order is required when a series is selected",
+        });
+    }
+
+    if (!hasSeriesId && hasSeriesOrder) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["series_id"],
+            message: "Series selection is required when a series order is set",
+        });
+    }
+}
+
+async function getSeriesSlugsByIds(
+    supabase: ReturnType<typeof getAdminClient>,
+    seriesIds: Array<string | null | undefined>
+) {
+    const uniqueSeriesIds = Array.from(new Set(seriesIds.filter((value): value is string => Boolean(value))));
+    if (uniqueSeriesIds.length === 0) {
+        return [];
+    }
+
+    const { data, error } = await supabase
+        .from("content_series")
+        .select("slug")
+        .in("id", uniqueSeriesIds);
+
+    if (error || !data) {
+        return [];
+    }
+
+    return Array.from(new Set(data.map((entry) => entry.slug).filter(Boolean)));
+}
 
 // Zod schema for updating content
 const UpdateContentSchema = z.object({
@@ -31,6 +82,8 @@ const UpdateContentSchema = z.object({
         big_idea: z.string(),
         key_takeaways: z.array(z.string()),
     }).optional().nullable(),
+    series_id: z.string().uuid().optional().nullable(),
+    series_order: z.number().int().positive().optional().nullable(),
     segments: z.array(z.object({
         id: z.string().uuid().optional(), // Existing segment ID for update
         order_index: z.number().int(),
@@ -51,7 +104,7 @@ const UpdateContentSchema = z.object({
             })),
         }),
     })).optional(),
-});
+}).superRefine(validateSeriesAssignment);
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -97,7 +150,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             .single();
 
         if (contentError) {
-            if (contentError.code === "PGRST116") {
+            if (isSupabaseNotFoundError(contentError)) {
                 return apiError("NOT_FOUND", "Content not found", 404, requestId);
             }
             throw contentError;
@@ -156,11 +209,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const parsed = UpdateContentSchema.safeParse(body);
 
         if (!parsed.success) {
-            return apiError("VALIDATION_ERROR", "Invalid request", 400, requestId);
+            return apiError("VALIDATION_ERROR", "Invalid request", 400, requestId, parsed.error.issues);
         }
 
         const { segments, artifacts, ...contentData } = parsed.data;
         const supabase = getAdminClient();
+        const { data: existingContent, error: existingContentError } = await supabase
+            .from("content_item")
+            .select("series_id")
+            .eq("id", id)
+            .single();
+
+        if (existingContentError) {
+            if (isSupabaseNotFoundError(existingContentError)) {
+                return apiError("NOT_FOUND", "Content not found", 404, requestId);
+            }
+
+            throw existingContentError;
+        }
 
         const contentPatch: Record<string, unknown> = {};
         if (contentData.title !== undefined) contentPatch.title = contentData.title;
@@ -175,6 +241,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (contentData.status !== undefined) contentPatch.status = contentData.status;
         if (contentData.is_featured !== undefined) contentPatch.is_featured = contentData.is_featured;
         if (contentData.quick_mode_json !== undefined) contentPatch.quick_mode_json = contentData.quick_mode_json;
+        if (contentData.series_id !== undefined) contentPatch.series_id = contentData.series_id;
+        if (contentData.series_order !== undefined) contentPatch.series_order = contentData.series_order;
+        if (contentData.series_id === null && contentData.series_order === undefined) {
+            contentPatch.series_order = null;
+        }
 
         const artifactPayload = artifacts?.map((artifact) => ({
             type: artifact.type,
@@ -190,6 +261,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         });
 
         if (updateGraphError) {
+            if (isUniqueConstraintViolation(updateGraphError, "idx_content_item_series_order_unique")) {
+                return apiError(
+                    "VALIDATION_ERROR",
+                    "This series order is already used in the selected series",
+                    400,
+                    requestId,
+                    [{ path: ["series_order"], message: "This series order is already used in the selected series" }]
+                );
+            }
+
             throw updateGraphError;
         }
 
@@ -197,6 +278,11 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         revalidatePath("/search");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
+        const seriesSlugs = await getSeriesSlugsByIds(supabase, [
+            existingContent?.series_id,
+            contentData.series_id,
+        ]);
+        seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
 
         return NextResponse.json({
             success: true,
@@ -240,6 +326,19 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     try {
         const supabase = getAdminClient();
+        const { data: existingContent, error: existingContentError } = await supabase
+            .from("content_item")
+            .select("series_id")
+            .eq("id", id)
+            .single();
+
+        if (existingContentError) {
+            if (isSupabaseNotFoundError(existingContentError)) {
+                return apiError("NOT_FOUND", "Content not found", 404, requestId);
+            }
+
+            throw existingContentError;
+        }
 
         // Soft delete by setting deleted_at
         const { error } = await supabase
@@ -255,6 +354,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         revalidatePath("/search");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
+        const seriesSlugs = await getSeriesSlugsByIds(supabase, [existingContent?.series_id]);
+        seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
 
         return NextResponse.json({
             success: true,

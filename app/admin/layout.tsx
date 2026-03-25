@@ -8,7 +8,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { verifyAdminSession } from "@/lib/admin/auth";
-import { LayoutDashboard, BookOpen, LayoutGrid, BarChart3 } from "lucide-react";
+import { LayoutDashboard, BookOpen, LayoutGrid, BarChart3, Layers3 } from "lucide-react";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
 import { APP_NAME } from "@/lib/brand";
 
@@ -55,6 +55,13 @@ export default async function AdminLayout({
                             >
                                 <LayoutGrid className="w-4 h-4" />
                                 <span className="hidden sm:inline">Sections</span>
+                            </Link>
+                            <Link
+                                href="/admin/series"
+                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                            >
+                                <Layers3 className="w-4 h-4" />
+                                <span className="hidden sm:inline">Series</span>
                             </Link>
                             <Link
                                 href="/admin/insights"

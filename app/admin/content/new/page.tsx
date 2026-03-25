@@ -5,8 +5,11 @@
  */
 
 import { ContentForm } from "@/components/admin/ContentForm";
+import { getAdminSeriesOptions } from "@/lib/server/admin-series";
 
-export default function NewContentPage() {
+export default async function NewContentPage() {
+    const seriesOptions = await getAdminSeriesOptions();
+
     return (
         <div className="space-y-6">
             <div>
@@ -16,7 +19,7 @@ export default function NewContentPage() {
                 </p>
             </div>
 
-            <ContentForm />
+            <ContentForm seriesOptions={seriesOptions} />
         </div>
     );
 }
