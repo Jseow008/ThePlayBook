@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("public content routes", () => {
@@ -122,5 +122,66 @@ describe("public content routes", () => {
         expect(getReadPageDataMock).toHaveBeenCalledTimes(2);
         expect(getReadPageDataMock).toHaveBeenNthCalledWith(1, "read-1");
         expect(getReadPageDataMock).toHaveBeenNthCalledWith(2, "read-1");
+    });
+
+    it("renders the series page with ordered items", async () => {
+        const getSeriesPageDataMock = vi.fn().mockResolvedValue({
+            series: {
+                id: "series-1",
+                slug: "matthew",
+                title: "Matthew",
+                description: "Matthew series description",
+            },
+            items: [
+                {
+                    id: "item-1",
+                    title: "Matthew 1-4",
+                    type: "book",
+                    duration_seconds: 240,
+                    author: "Matthew Henry",
+                },
+                {
+                    id: "item-2",
+                    title: "Matthew 5-7",
+                    type: "book",
+                    duration_seconds: 300,
+                    author: "Matthew Henry",
+                },
+            ],
+        });
+
+        vi.doMock("@/lib/server/public-content", () => ({
+            getSeriesPageData: getSeriesPageDataMock,
+        }));
+
+        const seriesModule = await import("@/app/(public)/series/[slug]/page");
+
+        const metadata = await seriesModule.generateMetadata({
+            params: Promise.resolve({ slug: "matthew" }),
+        });
+
+        render(await seriesModule.default({
+            params: Promise.resolve({ slug: "matthew" }),
+        }));
+
+        expect(metadata.title).toBe("Matthew — Flux");
+        expect(screen.getByText("Matthew")).toBeInTheDocument();
+        expect(screen.getByText("by Matthew Henry")).toBeInTheDocument();
+        expect(screen.getByText("Matthew series description")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Start series" })).toHaveAttribute("href", "/read/item-1");
+        expect(screen.getByText("Parts")).toBeInTheDocument();
+        expect(screen.getByText("Matthew 1-4")).toBeInTheDocument();
+        expect(screen.getByText("Matthew 5-7")).toBeInTheDocument();
+        expect(screen.queryByText(/^Matthew Henry$/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Preview Matthew 1-4" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: /Matthew 1-4/i }));
+        expect(screen.getByRole("link", { name: "Read Matthew 1-4" })).toHaveAttribute("href", "/read/item-1");
+        expect(screen.getByRole("link", { name: "Preview Matthew 1-4" })).toHaveAttribute("href", "/preview/item-1");
+        expect(screen.queryByRole("link", { name: /Browse all content/i })).not.toBeInTheDocument();
+        expect(screen.queryByText("Each part opens on its preview page first")).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /Open preview/i })).not.toBeInTheDocument();
+        expect(getSeriesPageDataMock).toHaveBeenCalledTimes(2);
+        expect(getSeriesPageDataMock).toHaveBeenNthCalledWith(1, "matthew");
+        expect(getSeriesPageDataMock).toHaveBeenNthCalledWith(2, "matthew");
     });
 });
