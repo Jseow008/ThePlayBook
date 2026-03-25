@@ -182,7 +182,6 @@ export function AppOnboardingTour({
                     >
                         {slides.map((slide, index) => {
                             const desktopImageSrc = slide.desktopImageSrc || slide.imageSrc;
-                            const isDesktopChatSlide = desktopImageSrc.includes("ai-chat");
 
                             return (
                                 <section
@@ -227,7 +226,7 @@ export function AppOnboardingTour({
                                                                     data-testid="app-onboarding-mobile-image"
                                                                     fetchPriority={index === 0 ? "high" : "auto"}
                                                                     loading={index === 0 ? "eager" : "lazy"}
-                                                                    className="object-contain object-center bg-[#0b1220] p-2 sm:p-3"
+                                                                    className="object-cover object-top"
                                                                     style={{
                                                                         height: "100%",
                                                                         inset: 0,
@@ -245,12 +244,10 @@ export function AppOnboardingTour({
                                                                 <img
                                                                     src={desktopImageSrc}
                                                                     alt={slide.imageAlt}
+                                                                    data-testid="app-onboarding-desktop-image"
                                                                     fetchPriority={index === 0 ? "high" : "auto"}
                                                                     loading={index === 0 ? "eager" : "lazy"}
-                                                                    className={cn(
-                                                                        "object-cover object-top",
-                                                                        isDesktopChatSlide && "object-contain bg-[#0b1220] p-4"
-                                                                    )}
+                                                                    className="object-cover object-top"
                                                                     style={{
                                                                         height: "100%",
                                                                         inset: 0,

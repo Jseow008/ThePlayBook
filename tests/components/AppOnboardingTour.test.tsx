@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ImgHTMLAttributes } from "react";
 import { AppOnboardingTour } from "@/components/ui/AppOnboardingTour";
 import { APP_ONBOARDING_SLIDES } from "@/lib/onboarding";
@@ -66,8 +66,8 @@ describe("AppOnboardingTour", () => {
 
         expect(mobileImages).toHaveLength(6);
         mobileImages.forEach((image) => {
-            expect(image).toHaveClass("object-contain", "object-center", "bg-[#0b1220]");
-            expect(image).not.toHaveClass("object-cover");
+            expect(image).toHaveClass("object-cover", "object-top");
+            expect(image).not.toHaveClass("object-contain", "object-center", "bg-[#0b1220]", "p-2", "sm:p-3");
         });
     });
 
@@ -80,6 +80,21 @@ describe("AppOnboardingTour", () => {
         frames.forEach((frame) => {
             expect(frame).toHaveClass("lg:block", "h-[300px]");
         });
+    });
+
+    it("renders the ask slide desktop image with the same fill treatment as the other slides", () => {
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
+
+        const browseDesktopImage = within(screen.getByTestId("app-onboarding-slide-1"))
+            .getByTestId("app-onboarding-desktop-image");
+        const askDesktopImage = within(screen.getByTestId("app-onboarding-slide-6"))
+            .getByTestId("app-onboarding-desktop-image");
+
+        expect(browseDesktopImage).toHaveClass("object-cover", "object-top");
+        expect(browseDesktopImage).not.toHaveClass("object-contain", "bg-[#0b1220]", "p-4");
+
+        expect(askDesktopImage).toHaveClass("object-cover", "object-top");
+        expect(askDesktopImage).not.toHaveClass("object-contain", "bg-[#0b1220]", "p-4");
     });
 
     it("moves between slides using next, back, and dot navigation", () => {
