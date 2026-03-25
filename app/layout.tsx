@@ -29,6 +29,7 @@ const playfair = Playfair_Display({
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
 const description =
   "The world's best ideas, distilled into structured, actionable knowledge you can retain and use.";
+const showVercelTelemetry = process.env.NODE_ENV === "production";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -90,8 +91,8 @@ export default function RootLayout({
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
         <Toaster theme="dark" position="bottom-center" richColors closeButton />
-        <Analytics />
-        <SpeedInsights />
+        {showVercelTelemetry ? <Analytics /> : null}
+        {showVercelTelemetry ? <SpeedInsights /> : null}
       </body>
     </html>
   );

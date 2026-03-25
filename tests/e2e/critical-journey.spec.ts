@@ -5,6 +5,12 @@ test.describe('Critical User Journey', () => {
         // Step 1: Browse
         await page.goto('/browse');
 
+        const skipTourButton = page.getByRole('button', { name: 'Skip tour' });
+        if (await skipTourButton.isVisible().catch(() => false)) {
+            await skipTourButton.click();
+            await expect(skipTourButton).toHaveCount(0);
+        }
+
         // Wait for feed to load and click the first content card's link
         // Find links that go to /preview/...
         const previewLink = page.locator('a[href^="/preview/"]').first();

@@ -127,7 +127,7 @@ export function ContentLane({
                     className={cn(
                         "focus-ring absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background/70 backdrop-blur-md text-foreground border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all hover:bg-background/90 hover:scale-110 active:scale-95",
                         showRightArrow
-                            ? "opacity-60 lg:-right-4 lg:group-hover/lane:right-2 group-hover/lane:opacity-100"
+                            ? "opacity-60 group-hover/lane:opacity-100"
                             : "opacity-0 pointer-events-none"
                     )}
                 >

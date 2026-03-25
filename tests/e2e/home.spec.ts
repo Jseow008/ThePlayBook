@@ -10,7 +10,7 @@ test('landing page loads and renders correctly', async ({ page }) => {
 
     // Verify the landing page exposes the current hero CTAs
     await expect(heroSection.getByRole('link', { name: 'Start Reading' })).toBeVisible();
-    await expect(heroSection.getByRole('link', { name: 'Browse the Library' })).toBeVisible();
+    await expect(heroSection.getByRole('link', { name: 'Browse Library' })).toBeVisible();
 });
 
 test('browse page loads and renders correctly', async ({ page }) => {
@@ -25,7 +25,7 @@ test('landing page CTA navigates to browse', async ({ page }) => {
     const heroSection = page.locator('h1').locator('xpath=ancestor::section[1]');
 
     // Click the browse CTA and wait for navigation
-    await heroSection.getByRole('link', { name: 'Browse the Library' }).click();
+    await heroSection.getByRole('link', { name: 'Browse Library' }).click();
 
     // Should navigate to /browse
     await page.waitForURL(/\/browse/, { timeout: 15000 });
