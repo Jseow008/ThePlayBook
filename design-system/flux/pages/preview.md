@@ -1,6 +1,6 @@
 # Preview Page Overrides
 
-> **PROJECT:** Lifebook
+> **PROJECT:** Flux
 > **Page Type:** Product Preview / Pre-read
 
 > ⚠️ **IMPORTANT:** Rules in this file **override** the `MASTER.md` file in this same project folder.
@@ -21,4 +21,3 @@
 
 - Preview is optimized for readable skimming, not sustained immersion.
 - Truncation is acceptable, but core preview content should remain comfortable to scan on desktop and mobile.
-

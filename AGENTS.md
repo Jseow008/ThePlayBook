@@ -4,7 +4,7 @@ When working on UI or UX in this repository, preserve the existing Flux design s
 
 ### UI/UX Pro Max Usage Policy
 
-`ui-ux-pro-max` is allowed only as a reference and polish aid. It must not be used as the authoritative design system for Lifebook.
+`ui-ux-pro-max` is allowed only as a reference and polish aid. It must not be used as the authoritative design system for Flux.
 
 Always preserve:
 - Existing layout structure and section order
@@ -34,7 +34,7 @@ Disallowed uses unless the user explicitly approves a redesign:
 
 1. Read `docs/DESIGN.md` and relevant existing components before proposing changes.
 2. If using `ui-ux-pro-max`, use it only for narrow lookups such as `--domain ux`, `--domain web`, `--domain style`, or `--domain react`.
-3. Do not use `--design-system` for an existing Lifebook page unless the user explicitly asks for a redesign exploration.
+3. Do not use `--design-system` for an existing Flux page unless the user explicitly asks for a redesign exploration.
 4. Before editing, state what will remain unchanged.
 5. Keep UI edits localized and reversible.
 6. Validate visual changes against desktop and mobile behavior.

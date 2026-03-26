@@ -6,7 +6,7 @@
 
 ---
 
-**Project:** Lifebook
+**Project:** Flux
 **Generated:** 2026-03-23 21:40:54
 **Category:** News/Media Platform
 

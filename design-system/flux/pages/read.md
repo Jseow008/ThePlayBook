@@ -1,6 +1,6 @@
 # Read Page Overrides
 
-> **PROJECT:** Lifebook
+> **PROJECT:** Flux
 > **Page Type:** Reader / Long-form
 
 > ⚠️ **IMPORTANT:** Rules in this file **override** the `MASTER.md` file in this same project folder.
