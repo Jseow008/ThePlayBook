@@ -78,7 +78,7 @@ describe('SegmentAccordion', () => {
     });
 
     it('supports externally controlled expanded segments', () => {
-        render(
+        const { container } = render(
             <SegmentAccordion
                 {...defaultProps}
                 expandedSegmentId="seg-2"
@@ -87,6 +87,8 @@ describe('SegmentAccordion', () => {
 
         expect(screen.getByText('Chapter 1').closest('button')).toHaveAttribute('aria-expanded', 'true');
         expect(screen.getByText('Introduction').closest('button')).toHaveAttribute('aria-expanded', 'false');
+        expect(container.querySelector('.reading-copy.reading-copy-prose.reading-copy-strong')).not.toBeNull();
+        expect(container.querySelector('.dark\\:prose-invert')).toBeNull();
     });
 
     it('renders anchored highlights against the correct repeated text occurrence', () => {

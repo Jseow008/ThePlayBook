@@ -370,7 +370,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <h3 className="text-sm font-bold text-primary uppercase tracking-[0.2em] mb-3">
                             The Big Idea
                         </h3>
-                        <div className={`reader-size-${fontSize} text-foreground/90 leading-relaxed font-medium`}>
+                        <div className={`reader-size-${fontSize} reading-copy reading-copy-default font-medium`}>
                             {quickMode.big_idea}
                         </div>
                     </div>

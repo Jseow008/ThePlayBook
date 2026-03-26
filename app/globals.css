@@ -49,6 +49,10 @@
   --highlight-purple: 270 100% 70%;
 
   --radius: 0.5rem;
+  --reading-line-height-base: 1.72;
+  --reading-text-soft: 0 0% 88%;
+  --reading-text-default: 0 0% 92%;
+  --reading-text-strong: 0 0% 95%;
 }
 
 .light {
@@ -94,6 +98,9 @@
   --border: 240 5.9% 90%;
   --input: 240 5.9% 90%;
   --ring: 240 5.9% 10%;
+  --reading-text-soft: 240 6% 26%;
+  --reading-text-default: 240 8% 16%;
+  --reading-text-strong: 240 10% 10%;
 }
 
 .reader-sepia {
@@ -114,6 +121,9 @@
   --border: 36 15% 82%;
   --input: 36 15% 82%;
   --ring: 24 10% 15%;
+  --reading-text-soft: 24 10% 27%;
+  --reading-text-default: 24 11% 18%;
+  --reading-text-strong: 24 12% 12%;
 
   /* Highlights - Sepia Theme (Warm, slightly desaturated) */
   --highlight-yellow: 40 80% 50%;
@@ -141,6 +151,9 @@
   --border: 240 3.7% 15.9%;
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
+  --reading-text-soft: 0 0% 88%;
+  --reading-text-default: 0 0% 92%;
+  --reading-text-strong: 0 0% 95%;
 
   /* Highlights - Dark Theme (Bright, saturated) */
   --highlight-yellow: 45 100% 50%;
@@ -227,27 +240,27 @@ body {
 
 /* Reader Typography Utilities */
 .reader-spacing-compact {
-  --reader-line-height: 1.4;
+  --reader-line-height: 1.5;
 }
 
 .reader-spacing-default {
-  --reader-line-height: 1.6;
+  --reader-line-height: var(--reading-line-height-base);
 }
 
 .reader-spacing-relaxed {
-  --reader-line-height: 1.85;
+  --reader-line-height: 1.88;
 }
 
 .reader-size-small {
   font-size: 0.875rem;
   /* 14px */
-  line-height: var(--reader-line-height, 1.5);
+  line-height: var(--reader-line-height, var(--reading-line-height-base));
 }
 
 @media (min-width: 768px) {
   .reader-size-small {
     font-size: 1rem;
-    line-height: var(--reader-line-height, 1.5);
+    line-height: var(--reader-line-height, var(--reading-line-height-base));
     /* 16px */
   }
 }
@@ -375,13 +388,13 @@ mark[data-highlight-spotlight="true"] {
 .reader-size-medium {
   font-size: 1rem;
   /* 16px */
-  line-height: var(--reader-line-height, 1.6);
+  line-height: var(--reader-line-height, var(--reading-line-height-base));
 }
 
 @media (min-width: 768px) {
   .reader-size-medium {
     font-size: 1.125rem;
-    line-height: var(--reader-line-height, 1.6);
+    line-height: var(--reader-line-height, var(--reading-line-height-base));
     /* 18px */
   }
 }
@@ -389,15 +402,40 @@ mark[data-highlight-spotlight="true"] {
 .reader-size-large {
   font-size: 1.125rem;
   /* 18px */
-  line-height: var(--reader-line-height, 1.7);
+  line-height: var(--reader-line-height, var(--reading-line-height-base));
 }
 
 @media (min-width: 768px) {
   .reader-size-large {
     font-size: 1.25rem;
-    line-height: var(--reader-line-height, 1.7);
+    line-height: var(--reader-line-height, var(--reading-line-height-base));
     /* 20px */
   }
+}
+
+.reading-copy {
+  line-height: var(--reader-line-height, var(--reading-line-height-base));
+}
+
+.reading-copy-soft {
+  color: hsl(var(--reading-text-soft));
+}
+
+.reading-copy-default {
+  color: hsl(var(--reading-text-default));
+}
+
+.reading-copy-strong {
+  color: hsl(var(--reading-text-strong));
+}
+
+.reading-copy-prose {
+  --tw-prose-body: currentColor;
+  --tw-prose-headings: hsl(var(--foreground));
+  --tw-prose-bold: hsl(var(--foreground));
+  --tw-prose-links: hsl(var(--primary));
+  --tw-prose-counters: hsl(var(--muted-foreground));
+  --tw-prose-bullets: hsl(var(--muted-foreground));
 }
 
 .reader-font-serif {

@@ -170,9 +170,10 @@ describe('ReaderView', () => {
     });
 
     it('renders the big idea if available', () => {
-        render(<ReaderView content={mockContent} />);
+        const { container } = render(<ReaderView content={mockContent} />);
         expect(screen.getByText('The giant idea')).toBeInTheDocument();
         expect(screen.getByText('The Big Idea')).toBeInTheDocument();
+        expect(container.querySelector('.reading-copy.reading-copy-default')).not.toBeNull();
     });
 
     it('does not resync reader settings on mount or remount', () => {

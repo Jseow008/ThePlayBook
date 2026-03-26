@@ -234,7 +234,7 @@ export function ContentPreview({
                             <div className="relative pl-5 py-4 pr-6 rounded-r-xl border-l-[3px] border-primary/50 bg-secondary/30">
                                 <div
                                     ref={hookRef}
-                                    className={`text-base md:text-lg text-muted-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-0 prose-p:leading-relaxed ${!showFullHook ? "line-clamp-3" : ""}`}
+                                    className={`reading-copy reading-copy-prose reading-copy-soft max-w-none text-base prose prose-sm prose-p:my-0 md:text-lg ${!showFullHook ? "line-clamp-3" : ""}`}
                                 >
                                     <ReactMarkdown
                                         remarkPlugins={[remarkGfm]}
@@ -272,7 +272,7 @@ export function ContentPreview({
                                             <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold mt-0.5">
                                                 {index + 1}
                                             </span>
-                                            <div className="text-base text-foreground leading-relaxed prose prose-sm max-w-none prose-p:my-0">
+                                            <div className="reading-copy reading-copy-prose reading-copy-strong max-w-none text-base prose prose-sm prose-p:my-0">
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
                                                     rehypePlugins={[rehypeSanitize]}

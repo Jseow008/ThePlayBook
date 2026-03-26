@@ -443,16 +443,14 @@ export function SegmentAccordion({
                                             onMouseMove={isDesktop ? activateHighlight : undefined}
                                             onClick={isDesktop ? activateHighlight : undefined}
                                             className={cn(
-                                            "prose dark:prose-invert max-w-none relative transition-all duration-300",
+                                            "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative transition-all duration-300",
                                             `reader-size-${fontSize}`,
                                             `reader-font-${fontFamily}`,
                                             `reader-spacing-${lineHeight}`,
                                             "prose-headings:text-foreground prose-headings:font-semibold prose-headings:text-base",
-                                            "prose-p:text-foreground/95",
                                             "prose-a:text-primary prose-a:no-underline hover:prose-a:underline",
                                             "prose-strong:text-foreground",
                                             "prose-blockquote:border-l-primary/40 prose-blockquote:text-muted-foreground prose-blockquote:text-sm md:prose-blockquote:text-base",
-                                            "prose-ul:text-foreground/95 prose-ol:text-foreground/95",
                                             "prose-li:marker:text-muted-foreground"
                                         )}
                                     >
