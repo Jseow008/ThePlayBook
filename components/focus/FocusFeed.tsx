@@ -11,7 +11,8 @@ import {
     useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Info, Loader2, X } from "lucide-react";
+import { BookOpen, Bookmark, Check, Info, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -20,9 +21,9 @@ import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/compon
 
 const BATCH_SIZE = 6;
 const FEED_LIST_VIEWPORT_CLASS =
-    "h-[calc(100dvh-10rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-7.5rem)]";
+    "h-[calc(100dvh-11rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-7.5rem)]";
 const FEED_CARD_HEIGHT_CLASS =
-    "min-h-[calc(100dvh-10.75rem-env(safe-area-inset-bottom))] md:min-h-[calc(100dvh-7.5rem)]";
+    "min-h-[calc(100dvh-11.75rem-env(safe-area-inset-bottom))] md:min-h-[calc(100dvh-7.5rem)]";
 const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 240;
 const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 210;
 const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 200;
@@ -49,13 +50,23 @@ const FocusRestoreItemSchema = z.object({
 
 const FocusRestoreStateSchema = z
     .object({
-        items: z.array(FocusRestoreItemSchema).min(1),
+        items: z.array(FocusRestoreItemSchema),
         activeCardIndex: z.number().int().min(0),
         hasMore: z.boolean(),
         seenIds: z.array(z.string()),
+        dismissedIds: z.array(z.string()).default([]),
     })
     .superRefine((value, ctx) => {
-        if (value.activeCardIndex >= value.items.length) {
+        if (value.items.length === 0 && value.activeCardIndex !== 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["activeCardIndex"],
+                message: "activeCardIndex must be zero when there are no restored items",
+            });
+            return;
+        }
+
+        if (value.items.length > 0 && value.activeCardIndex >= value.items.length) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["activeCardIndex"],
@@ -117,6 +128,17 @@ function readFocusRestoreState(): FocusRestoreState | null {
     }
 }
 
+function writeFocusRestoreState(snapshot: FocusRestoreState) {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    window.sessionStorage.setItem(
+        FOCUS_FEED_RESTORE_STORAGE_KEY,
+        JSON.stringify(snapshot)
+    );
+}
+
 export function FocusFeed() {
     const { completedIds, isLoaded } = useReadingProgress();
     const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -133,11 +155,14 @@ export function FocusFeed() {
     const [sheetDragOffset, setSheetDragOffset] = useState(0);
     const listRef = useRef<HTMLDivElement | null>(null);
     const seenIdsRef = useRef<Set<string>>(new Set());
+    const dismissedIdsRef = useRef<Set<string>>(new Set());
     const hasInitializedRef = useRef(false);
     const isFetchingRef = useRef(false);
     const activeCardIndexRef = useRef(0);
     const isGestureLockedRef = useRef(false);
     const pendingCardIndexRef = useRef<number | null>(null);
+    const isRestoringSnapshotRef = useRef(false);
+    const restorePrefetchArmedRef = useRef(false);
     const unlockTimeoutRef = useRef<number | null>(null);
     const accumulatedWheelDeltaRef = useRef(0);
     const isWheelMomentumLockedRef = useRef(false);
@@ -304,6 +329,7 @@ export function FocusFeed() {
             const excludeIds = buildExcludeParam([
                 ...(includeCompletedIds ? completedIds : []),
                 ...Array.from(seenIdsRef.current),
+                ...Array.from(dismissedIdsRef.current),
             ]);
 
             const params = new URLSearchParams({
@@ -361,19 +387,29 @@ export function FocusFeed() {
         }
 
         const restoredState = readFocusRestoreState();
-        if (!restoredState) {
+        if (restoredState) {
+            seenIdsRef.current = new Set(restoredState.seenIds);
+            dismissedIdsRef.current = new Set(restoredState.dismissedIds);
+            activeCardIndexRef.current = restoredState.activeCardIndex;
+            isRestoringSnapshotRef.current = true;
+            restorePrefetchArmedRef.current =
+                restoredState.hasMore
+                && restoredState.items.length > 0
+                && restoredState.items.length - restoredState.activeCardIndex <= 3;
+            pendingRestoreCardIndexRef.current =
+                restoredState.items.length > 0 ? restoredState.activeCardIndex : null;
+            setHasMore(restoredState.hasMore);
+            setItems(restoredState.items);
+            setActiveCardIndex(restoredState.activeCardIndex);
+            hasInitializedRef.current = true;
+            setHasInitialized(true);
             return;
         }
 
-        seenIdsRef.current = new Set(restoredState.seenIds);
-        activeCardIndexRef.current = restoredState.activeCardIndex;
-        pendingRestoreCardIndexRef.current = restoredState.activeCardIndex;
-        setItems(restoredState.items);
-        setHasMore(restoredState.hasMore);
-        setActiveCardIndex(restoredState.activeCardIndex);
         hasInitializedRef.current = true;
         setHasInitialized(true);
-    }, []);
+        void fetchBatch({ includeCompletedIds: false });
+    }, [fetchBatch]);
 
     useEffect(() => {
         if (!isTakeawaysSheetOpen) {
@@ -414,16 +450,6 @@ export function FocusFeed() {
         targetCard.scrollIntoView({ block: "start" });
         pendingRestoreCardIndexRef.current = null;
     }, [cards.length]);
-
-    useEffect(() => {
-        if (hasInitializedRef.current) {
-            return;
-        }
-
-        hasInitializedRef.current = true;
-        setHasInitialized(true);
-        void fetchBatch({ includeCompletedIds: false });
-    }, [fetchBatch]);
 
     useEffect(() => {
         if (!isLoaded || items.length === 0) {
@@ -688,7 +714,19 @@ export function FocusFeed() {
     }, [closeTakeawaysSheet, isTakeawaysSheetOpen]);
 
     useEffect(() => {
+        if (!hasInitializedRef.current || !hasMore || items.length > 0 || error) {
+            return;
+        }
+
+        void fetchBatch();
+    }, [error, fetchBatch, hasMore, items.length]);
+
+    useEffect(() => {
         if (!hasInitializedRef.current || loading || !hasMore || cards.length === 0) {
+            return;
+        }
+
+        if (isRestoringSnapshotRef.current) {
             return;
         }
 
@@ -698,7 +736,21 @@ export function FocusFeed() {
     }, [activeCardIndex, cards.length, fetchBatch, hasMore, loading]);
 
     useEffect(() => {
-        if (!mounted || !hasInitialized || loading || items.length === 0) {
+        if (!hasInitialized || !isRestoringSnapshotRef.current) {
+            return;
+        }
+
+        isRestoringSnapshotRef.current = false;
+        if (!restorePrefetchArmedRef.current) {
+            return;
+        }
+
+        restorePrefetchArmedRef.current = false;
+        void fetchBatch();
+    }, [fetchBatch, hasInitialized]);
+
+    useEffect(() => {
+        if (!mounted || !hasInitialized) {
             return;
         }
 
@@ -707,13 +759,11 @@ export function FocusFeed() {
             activeCardIndex,
             hasMore,
             seenIds: Array.from(seenIdsRef.current),
+            dismissedIds: Array.from(dismissedIdsRef.current),
         };
 
-        window.sessionStorage.setItem(
-            FOCUS_FEED_RESTORE_STORAGE_KEY,
-            JSON.stringify(snapshot)
-        );
-    }, [activeCardIndex, hasInitialized, hasMore, items, loading, mounted]);
+        writeFocusRestoreState(snapshot);
+    }, [activeCardIndex, hasInitialized, hasMore, items, mounted]);
 
     return (
         <section className="px-4 pt-11 md:px-6 md:pt-8 md:pb-6 lg:px-10">
@@ -742,6 +792,42 @@ export function FocusFeed() {
                                     cardIndex={index}
                                     isDesktop={isDesktop}
                                     onOpenTakeaways={openTakeawaysSheet}
+                                    onDismiss={(cardId) => {
+                                        dismissedIdsRef.current.add(cardId);
+
+                                        const currentIndex = items.findIndex((item) => item.id === cardId);
+                                        if (currentIndex === -1) {
+                                            return;
+                                        }
+
+                                        const nextItems = items.filter((item) => item.id !== cardId);
+                                        const shouldShiftActiveIndex = currentIndex < activeCardIndexRef.current;
+                                        const nextActiveIndex = nextItems.length === 0
+                                            ? 0
+                                            : Math.min(
+                                                Math.max(
+                                                    0,
+                                                    activeCardIndexRef.current - (shouldShiftActiveIndex ? 1 : 0)
+                                                ),
+                                                nextItems.length - 1
+                                            );
+
+                                        activeCardIndexRef.current = nextActiveIndex;
+                                        setActiveCardIndex(nextActiveIndex);
+                                        setItems(nextItems);
+                                        writeFocusRestoreState({
+                                            items: nextItems,
+                                            activeCardIndex: nextActiveIndex,
+                                            hasMore,
+                                            seenIds: Array.from(seenIdsRef.current),
+                                            dismissedIds: Array.from(dismissedIdsRef.current),
+                                        });
+                                        toast.success("Removed from focus feed");
+
+                                        if (hasMore && nextItems.length - nextActiveIndex <= 3) {
+                                            void fetchBatch();
+                                        }
+                                    }}
                                 />
                             ))}
 
@@ -807,13 +893,17 @@ function FocusCardView({
     cardIndex,
     isDesktop,
     onOpenTakeaways,
+    onDismiss,
 }: {
     card: FocusCard;
     cardIndex: number;
     isDesktop: boolean;
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
+    onDismiss: (cardId: string) => void;
 }) {
+    const { isInMyList, toggleMyList } = useReadingProgress();
     const duration = formatDuration(card.duration_seconds);
+    const isSaved = isInMyList(card.id);
     const visibleTakeaways = isDesktop
         ? card.takeaways.slice(0, 7)
         : card.takeaways.slice(0, 2);
@@ -830,47 +920,47 @@ function FocusCardView({
             className={`${FEED_CARD_HEIGHT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div className="flex h-full flex-col">
-                <div className={isDesktop ? "space-y-3" : "space-y-2.5"}>
-                    <div className={isDesktop ? "space-y-1" : "space-y-2"}>
-                        <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
-                            {card.title}
-                        </h2>
-                        <div className={isDesktop ? "space-y-1" : "space-y-1.5"}>
-                            {card.author && (
-                                <p className="line-clamp-1 text-xs text-muted-foreground/70 sm:text-[13px]">
-                                    {card.author}
-                                </p>
-                            )}
-                            <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground/70 sm:text-xs">
-                                <span className="rounded-full border border-border/40 px-2 py-0.5 uppercase tracking-[0.16em] text-muted-foreground/80">
-                                    {card.type}
-                                </span>
-                                {card.category && (
-                                    <span className="line-clamp-1 rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
-                                        {card.category}
-                                    </span>
+                    <div className={isDesktop ? "space-y-3" : "space-y-3"}>
+                        <div className={isDesktop ? "space-y-1.5" : "space-y-2"}>
+                            <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
+                                {card.title}
+                            </h2>
+                            <div className={isDesktop ? "space-y-1" : "space-y-1.5"}>
+                                {card.author && (
+                                    <p className="line-clamp-1 text-sm font-medium text-muted-foreground/80 sm:text-base">
+                                        {card.author}
+                                    </p>
                                 )}
-                                {duration && (
-                                    <span className="rounded-full border border-border/50 bg-background/35 px-2 py-0.5 text-foreground/85">
-                                        {duration}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                                        {card.type}
                                     </span>
-                                )}
+                                    {card.category && (
+                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                                            {card.category}
+                                        </span>
+                                    )}
+                                    {duration && (
+                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                                            {duration}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                        </div>
                     </div>
 
                     <section
                         className={
                             isDesktop
-                                ? "rounded-2xl border border-border/35 bg-background/30 p-3 sm:p-3.5"
-                                : ""
+                                ? "relative rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-3 pl-5 pr-4"
+                                : "relative rounded-r-xl border-l-[3px] border-primary/45 bg-secondary/25 py-3 pl-4 pr-3"
                         }
                     >
                         <p
                             className={
                                 isDesktop
-                                    ? "line-clamp-6 text-[0.9rem] leading-[1.55] text-foreground/92 sm:text-[0.95rem] sm:leading-[1.55]"
-                                    : "line-clamp-8 text-[0.9rem] leading-[1.55] text-foreground/92 sm:text-[0.95rem] sm:leading-[1.55]"
+                                    ? "line-clamp-6 text-[0.95rem] leading-[1.6] text-foreground/92 sm:text-base sm:leading-[1.6]"
+                                    : "line-clamp-8 text-[0.95rem] leading-[1.6] text-foreground/92 sm:text-base sm:leading-[1.6]"
                             }
                         >
                             {card.hook}
@@ -879,40 +969,72 @@ function FocusCardView({
 
                     <section
                         className={
-                            isDesktop
-                                ? "rounded-2xl border border-border/35 bg-background/30 p-3 sm:p-3.5"
-                                : ""
+                            "space-y-3"
                         }
                     >
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/75 sm:text-[11px]">
+                        <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75 sm:text-xs">
                             {takeawayLabel}
                         </p>
                         {visibleTakeaways.length > 0 ? (
-                            <div className={isDesktop ? "mt-2 space-y-2" : "mt-1.5 space-y-1.5"}>
+                            <div className="grid gap-3">
                                 {visibleTakeaways.map((takeaway, index) => (
                                     <div
                                         key={`${card.id}-${index}`}
-                                        className={isDesktop
-                                            ? "flex gap-2.5 text-[0.9rem] leading-[1.6] text-foreground/90"
-                                            : "flex gap-2.5 text-[0.85rem] leading-[1.55] text-foreground/88 sm:text-[0.9rem] sm:leading-[1.55]"}
+                                        className="flex gap-3 px-1 py-1"
                                     >
-                                        <span className="mt-0.5 text-[11px] font-semibold text-primary sm:text-xs">
-                                            {String(index + 1).padStart(2, "0")}
+                                        <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-bold text-primary sm:text-xs">
+                                            {index + 1}
                                         </span>
-                                        <span className={isDesktop ? "line-clamp-2" : "line-clamp-4"}>
+                                        <span
+                                            className={
+                                                isDesktop
+                                                    ? "line-clamp-2 text-[0.95rem] leading-[1.6] text-foreground/90"
+                                                    : "line-clamp-4 text-[0.9rem] leading-[1.6] text-foreground/88 sm:text-[0.95rem]"
+                                            }
+                                        >
                                             {takeaway}
                                         </span>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="mt-2.5 line-clamp-2 text-[0.9rem] leading-[1.55] text-muted-foreground">
+                            <p className="px-1 text-[0.9rem] leading-[1.6] text-muted-foreground">
                                 Open the full summary for the complete breakdown.
                             </p>
                         )}
                     </section>
 
-                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5" : "flex flex-wrap items-center justify-end gap-3 pt-0"}>
+                    {!isDesktop && (
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    toggleMyList(card.id);
+                                    toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                                }}
+                                className={`focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors touch-manipulation ${isSaved
+                                    ? "border-primary/35 bg-primary/10 text-foreground"
+                                    : "border-border/60 bg-background/35 text-muted-foreground hover:text-foreground"
+                                    }`}
+                                aria-label={isSaved ? `Remove ${card.title} from My List` : `Save ${card.title} to My List`}
+                            >
+                                {isSaved ? <Check className="size-4 text-primary" /> : <Bookmark className="size-4" />}
+                                {isSaved ? "Saved" : "Save"}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => onDismiss(card.id)}
+                                className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border/60 bg-background/35 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground touch-manipulation"
+                                aria-label={`Not interested in ${card.title}`}
+                            >
+                                <X className="size-4" />
+                                Not interested
+                            </button>
+                        </div>
+                    )}
+
+                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5" : "flex flex-wrap items-center justify-start gap-3 pt-2"}>
                         {isDesktop ? (
                             <Link
                                 href={`/read/${card.id}`}
@@ -926,7 +1048,7 @@ function FocusCardView({
                             <button
                                 type="button"
                                 onClick={(event) => onOpenTakeaways(card, event.currentTarget)}
-                                className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                                className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 touch-manipulation"
                                 aria-label={`Show full takeaways for ${card.title}`}
                             >
                                 <Info className="size-4" />

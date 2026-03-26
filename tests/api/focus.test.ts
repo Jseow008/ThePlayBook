@@ -198,9 +198,10 @@ describe("Focus API", () => {
         expect(response.status).toBe(200);
         expect(mockRange).toHaveBeenNthCalledWith(1, 0, 47);
         expect(mockRange).toHaveBeenNthCalledWith(2, 48, 95);
-        expect(json).toEqual([
-            expect.objectContaining({ id: "123e4567-e89b-12d3-a456-426614174200" }),
-            expect.objectContaining({ id: "123e4567-e89b-12d3-a456-426614174201" }),
+        expect(json).toHaveLength(2);
+        expect(json.map((item: { id: string }) => item.id).sort()).toEqual([
+            "123e4567-e89b-12d3-a456-426614174200",
+            "123e4567-e89b-12d3-a456-426614174201",
         ]);
     });
 

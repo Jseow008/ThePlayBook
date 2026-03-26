@@ -5,11 +5,12 @@ import { FocusFeed } from "@/components/focus/FocusFeed";
 
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 
-const { readingProgressState, mediaQueryState } = vi.hoisted(() => ({
+const { readingProgressState, mediaQueryState, toggleMyListMock, toastSuccessMock } = vi.hoisted(() => ({
     readingProgressState: {
         value: {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             isLoaded: true,
+            myListIds: [] as string[],
         },
     },
     mediaQueryState: {
@@ -18,6 +19,8 @@ const { readingProgressState, mediaQueryState } = vi.hoisted(() => ({
             prefersReducedMotion: false,
         },
     },
+    toggleMyListMock: vi.fn(),
+    toastSuccessMock: vi.fn(),
 }));
 
 const scrollIntoViewMock = vi.fn();
@@ -82,7 +85,11 @@ vi.mock("next/image", () => ({
 }));
 
 vi.mock("@/hooks/useReadingProgress", () => ({
-    useReadingProgress: () => readingProgressState.value,
+    useReadingProgress: () => ({
+        ...readingProgressState.value,
+        isInMyList: (itemId: string) => readingProgressState.value.myListIds.includes(itemId),
+        toggleMyList: toggleMyListMock,
+    }),
 }));
 
 vi.mock("@/hooks/useMediaQuery", () => ({
@@ -92,6 +99,12 @@ vi.mock("@/hooks/useMediaQuery", () => ({
             : query === "(prefers-reduced-motion: reduce)"
                 ? mediaQueryState.value.prefersReducedMotion
                 : false,
+}));
+
+vi.mock("sonner", () => ({
+    toast: {
+        success: toastSuccessMock,
+    },
 }));
 
 describe("FocusFeed", () => {
@@ -176,11 +189,14 @@ describe("FocusFeed", () => {
         readingProgressState.value = {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             isLoaded: true,
+            myListIds: [],
         };
         mediaQueryState.value = {
             isDesktop: false,
             prefersReducedMotion: false,
         };
+        toggleMyListMock.mockReset();
+        toastSuccessMock.mockReset();
         window.sessionStorage.clear();
         fetchMock.mockResolvedValue({
             ok: true,
@@ -193,6 +209,7 @@ describe("FocusFeed", () => {
         readingProgressState.value = {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             isLoaded: false,
+            myListIds: [],
         };
 
         render(<FocusFeed />);
@@ -222,25 +239,27 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
-        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-10rem-env(safe-area-inset-bottom))]");
+        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-11rem-env(safe-area-inset-bottom))]");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100dvh-7.5rem)]");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("pb-4");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("md:pb-2");
         expect(screen.getByRole("button", { name: "Show full takeaways for Essentialism" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("text-[1.2rem]");
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("sm:text-[1.5rem]");
-        expect(screen.getByText("Greg McKeown")).toHaveClass("text-xs");
+        expect(screen.getByText("Greg McKeown")).toHaveClass("text-sm");
+        expect(screen.getByText("Greg McKeown")).toHaveClass("font-medium");
         expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("book");
         expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("Productivity");
         expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("15 min");
-        expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.9rem]");
+        expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.95rem]");
         expect(screen.getByText("Do less, but better.")).toHaveClass("line-clamp-8");
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("border");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("bg-background/45");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("border");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("bg-background/45");
-        expect(firstCard).toHaveClass("min-h-[calc(100dvh-10.75rem-env(safe-area-inset-bottom))]");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-3");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-1");
+        expect(firstCard).toHaveClass("min-h-[calc(100dvh-11.75rem-env(safe-area-inset-bottom))]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
     });
@@ -249,6 +268,7 @@ describe("FocusFeed", () => {
         readingProgressState.value = {
             completedIds: ["not-a-uuid", focusItems[2]!.id],
             isLoaded: true,
+            myListIds: [],
         };
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,
@@ -276,6 +296,7 @@ describe("FocusFeed", () => {
         readingProgressState.value = {
             completedIds: [],
             isLoaded: false,
+            myListIds: [],
         };
 
         const extraInitialItems = [
@@ -371,6 +392,7 @@ describe("FocusFeed", () => {
                 focusItems[2]!.id,
             ],
             isLoaded: true,
+            myListIds: [],
         };
         view.rerender(<FocusFeed />);
 
@@ -389,7 +411,10 @@ describe("FocusFeed", () => {
         render(<FocusFeed />);
 
         const cards = await screen.findAllByTestId("focus-feed-card");
-        const observer = observerInstances[0]!;
+        await waitFor(() => {
+            expect(observerInstances.length).toBeGreaterThan(0);
+        });
+        const observer = observerInstances.at(-1)!;
 
         await act(async () => {
             observer.trigger(cards[1]!);
@@ -419,7 +444,7 @@ describe("FocusFeed", () => {
         });
     });
 
-    it("restores the exact focus batch and card from sessionStorage without an initial fetch", async () => {
+    it("restores the exact focus batch and card from sessionStorage immediately", async () => {
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,
             JSON.stringify({
@@ -433,7 +458,6 @@ describe("FocusFeed", () => {
         render(<FocusFeed />);
 
         expect(await screen.findByText("Deep Work")).toBeInTheDocument();
-        expect(fetchMock).not.toHaveBeenCalled();
         expect(scrollIntoViewMock).toHaveBeenCalledWith({ block: "start" });
         expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
     });
@@ -676,28 +700,137 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Key Takeaways")).toBeInTheDocument();
         expect(within(firstCard).queryByText("Key Takeaways (2 of 8)")).not.toBeInTheDocument();
         expect(within(firstCard).queryByText("Key Takeaways (4 of 8)")).not.toBeInTheDocument();
-        expect(within(firstCard).getAllByText(/^0[1-7]$/)).toHaveLength(7);
+        expect(within(firstCard).getAllByText(/^[1-7]$/)).toHaveLength(7);
         expect(within(firstCard).queryByText("08")).not.toBeInTheDocument();
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-border/35");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-background/30");
-        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("border");
-        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("border-border/35");
-        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("bg-background/30");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
+        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("space-y-3");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-1");
         expect(within(firstCard).queryByRole("button", { name: "Show full takeaways for Essentialism" })).not.toBeInTheDocument();
+        expect(within(firstCard).queryByRole("button", { name: "Save Essentialism to My List" })).not.toBeInTheDocument();
+        expect(within(firstCard).queryByRole("button", { name: "Not interested in Essentialism" })).not.toBeInTheDocument();
         expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("renders only the full takeaways action on mobile focus cards", async () => {
+    it("renders save, dismiss, and full takeaways actions on mobile focus cards", async () => {
         render(<FocusFeed />);
 
-        await screen.findByText("Essentialism");
+        const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
         expect(screen.queryByRole("link", {
             name: "Read Essentialism",
         })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", {
+        const button = screen.getByRole("button", {
             name: "Show full takeaways for Essentialism",
+        });
+        expect(screen.getByRole("button", {
+            name: "Save Essentialism to My List",
         })).toBeInTheDocument();
+        expect(screen.getByRole("button", {
+            name: "Not interested in Essentialism",
+        })).toBeInTheDocument();
+        expect(button).toBeInTheDocument();
+        expect(button).toHaveClass("min-h-11");
+        expect(button).toHaveClass("touch-manipulation");
+        expect(button.parentElement).toHaveClass("justify-start");
+        expect(button.parentElement).toHaveClass("pt-2");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("grid");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("gap-3");
+    });
+
+    it("saves a mobile focus item to My List", async () => {
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Save Essentialism to My List" })
+        );
+
+        expect(toggleMyListMock).toHaveBeenCalledWith(focusItems[0]!.id);
+        expect(toastSuccessMock).toHaveBeenCalledWith("Added to My List");
+    });
+
+    it("dismisses a mobile focus item for the current session", async () => {
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+
+        fireEvent.click(
+            screen.getByRole("button", { name: "Not interested in Essentialism" })
+        );
+
+        await waitFor(() => {
+            expect(screen.queryByText("Essentialism")).not.toBeInTheDocument();
+        });
+        expect(screen.getByText("Deep Work")).toBeInTheDocument();
+        expect(toastSuccessMock).toHaveBeenCalledWith("Removed from focus feed");
+    });
+
+    it("persists dismissed cards across a return even when the feed is temporarily empty", async () => {
+        const restoredCard = focusItems[0]!;
+        const refillCard = focusItems[1]!;
+        let resolveRefill: ((value: { ok: true; json: () => Promise<typeof focusItems> }) => void) | null = null;
+
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: [restoredCard],
+                activeCardIndex: 0,
+                hasMore: true,
+                seenIds: [restoredCard.id],
+                dismissedIds: [],
+            })
+        );
+
+        fetchMock.mockReset();
+        fetchMock.mockImplementationOnce(
+            () =>
+                new Promise((resolve) => {
+                    resolveRefill = resolve;
+                })
+        );
+
+        const view = render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+        fireEvent.click(
+            screen.getByRole("button", { name: "Not interested in Essentialism" })
+        );
+
+        const storedStateAfterDismiss = JSON.parse(
+            window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY) || "{}"
+        );
+        expect(storedStateAfterDismiss).toMatchObject({
+            items: [],
+            activeCardIndex: 0,
+            hasMore: true,
+            dismissedIds: [restoredCard.id],
+        });
+
+        view.unmount();
+
+        fetchMock.mockImplementationOnce(async () => ({
+            ok: true,
+            json: async () => [refillCard],
+        }));
+
+        render(<FocusFeed />);
+
+        expect(screen.queryByText("Nothing queued yet")).not.toBeInTheDocument();
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+        });
+        expect(fetchMock.mock.calls[1]?.[0]).toContain(restoredCard.id);
+
+        resolveRefill?.({
+            ok: true,
+            json: async () => [refillCard],
+        });
+
+        expect(await screen.findByText("Deep Work")).toBeInTheDocument();
+        expect(screen.queryByText("Essentialism")).not.toBeInTheDocument();
     });
 
     it("keeps the full takeaway list available in the mobile bottom sheet regardless of the card limit", async () => {
