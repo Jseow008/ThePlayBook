@@ -16,7 +16,6 @@ import {
     Plus,
     StickyNote,
     Sparkles,
-    MessageSquareText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -387,18 +386,6 @@ export function NetflixSidebar() {
                                 <span className="text-sm whitespace-nowrap flex-1">Ask My Library</span>
                             </Link>
 
-                            <Link
-                                href="/notes?ask=1"
-                                className={cn(
-                                    "flex items-center h-10 px-4 transition-colors rounded-md",
-                                    pathname === "/notes"
-                                        ? "text-foreground bg-accent"
-                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                                )}
-                            >
-                                <MessageSquareText className="size-4 mr-3 flex-shrink-0" />
-                                <span className="text-sm whitespace-nowrap flex-1">Ask These Notes</span>
-                            </Link>
                         </div>
                     )}
                 </div>

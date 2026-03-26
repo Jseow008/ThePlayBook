@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport } from "ai";
+import { TextStreamChatTransport, type UIMessage } from "ai";
 import {
     ArrowRight,
     BookOpen,
@@ -19,6 +20,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { serializeNotesChatScope, type NotesChatScopePayload } from "@/lib/notes-chat-scope";
+import {
+    clearNotesChatSession,
+    readNotesChatSession,
+    writeNotesChatSession,
+} from "@/lib/notes-chat-session";
 
 const chatTransport = new TextStreamChatTransport({ api: "/api/chat/notes" });
 
@@ -191,12 +197,15 @@ export function NotesAskPanel({
     mobile = false,
     variant = "default",
 }: NotesAskPanelProps) {
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [input, setInput] = useState("");
     const [showAllStarterPrompts, setShowAllStarterPrompts] = useState(false);
     const [activeScope, setActiveScope] = useState<NotesChatScope>(currentScope);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const hasMountedRef = useRef(false);
+    const hasHydratedSessionRef = useRef(false);
     const previousMessageCountRef = useRef(0);
     const previousStatusRef = useRef<string | null>(null);
 
@@ -206,21 +215,56 @@ export function NotesAskPanel({
         setMessages,
         status,
         error,
-    } = useChat({
+    } = useChat<UIMessage>({
         transport: chatTransport,
     });
 
     useEffect(() => {
-        if (messages.length === 0) {
+        if (messages.length === 0 && hasHydratedSessionRef.current) {
             setActiveScope(currentScope);
         }
     }, [currentScope, messages.length]);
+
+    useEffect(() => {
+        if (hasHydratedSessionRef.current) {
+            return;
+        }
+
+        const restoredSession = readNotesChatSession(currentScope.signature);
+        if (restoredSession) {
+            setActiveScope(restoredSession.activeScope);
+            setMessages(restoredSession.messages);
+        } else {
+            setActiveScope(currentScope);
+        }
+
+        hasHydratedSessionRef.current = true;
+    }, [currentScope, setMessages]);
 
     useEffect(() => {
         if (!(variant === "sidebar" && !mobile) || messages.length > 0) {
             setShowAllStarterPrompts(false);
         }
     }, [activeScope.signature, messages.length, mobile, variant]);
+
+    useEffect(() => {
+        if (!hasHydratedSessionRef.current) {
+            return;
+        }
+
+        const persistenceKeys = [activeScope.signature, currentScope.signature];
+
+        if (messages.length === 0) {
+            clearNotesChatSession(currentScope.signature);
+            return;
+        }
+
+        writeNotesChatSession(persistenceKeys, {
+            activeScope,
+            messages,
+            updatedAt: Date.now(),
+        });
+    }, [activeScope, currentScope.signature, messages]);
 
     useEffect(() => {
         const previousMessageCount = previousMessageCountRef.current;
@@ -262,11 +306,21 @@ export function NotesAskPanel({
     const visibleStarterPrompts = isSidebar && !showAllStarterPrompts
         ? STARTER_PROMPTS.slice(0, 2)
         : STARTER_PROMPTS;
+    const returnTarget = (() => {
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (pathname === "/notes") {
+            params.set("ask", "1");
+        }
+
+        const query = params.toString();
+        return query ? `${pathname}?${query}` : pathname;
+    })();
     const fullScreenHref = (() => {
         const params = new URLSearchParams({
             scope: "notes",
-            returnTo: NOTES_RETURN_TARGET,
-            notesScope: serializeNotesChatScope(currentScope),
+            returnTo: returnTarget || NOTES_RETURN_TARGET,
+            notesScope: serializeNotesChatScope(activeScope),
         });
         return `/ask?${params.toString()}`;
     })();
@@ -301,6 +355,18 @@ export function NotesAskPanel({
     const syncToCurrentScope = () => {
         setActiveScope(currentScope);
         setMessages([]);
+    };
+
+    const startNewChat = () => {
+        clearNotesChatSession([activeScope.signature, currentScope.signature]);
+        setInput("");
+        setShowAllStarterPrompts(false);
+        setActiveScope(currentScope);
+        setMessages([]);
+
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+        }
     };
 
     const getMessageText = (message: (typeof messages)[number]): string => {
@@ -594,6 +660,16 @@ export function NotesAskPanel({
                             isSidebar && "row-span-2 self-start justify-self-end"
                         )}
                     >
+                        {!isEmptyState && (
+                            <button
+                                type="button"
+                                onClick={startNewChat}
+                                disabled={isStreaming}
+                                className="rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                                New chat
+                            </button>
+                        )}
                         <Link
                             href={fullScreenHref}
                             className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
@@ -613,7 +689,7 @@ export function NotesAskPanel({
                     </div>
                 </div>
 
-                <ScopeOverview scope={activeScope} compact className="mt-4" />
+                {!isSidebar && <ScopeOverview scope={activeScope} compact className="mt-4" />}
             </header>
 
             {hasScopeChanged && (
@@ -806,15 +882,22 @@ export function NotesAskPanel({
                         <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
                             {notesLabel}
                         </span>
+                        {isSidebar && (
+                            <span className="rounded-full border border-border/60 bg-background/55 px-2.5 py-1 text-[0.68rem] text-foreground/78">
+                                {activeScope.summary.trim() || "All content"}
+                            </span>
+                        )}
                         {activeScope.totalMatches > activeScope.noteCount && (
                             <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
                                 Using {activeScope.noteCount} most recent
                             </span>
                         )}
                     </div>
-                    <span className="text-[0.65rem] text-muted-foreground/75">
-                        Enter to send · Shift+Enter for newline
-                    </span>
+                    {!isSidebar && (
+                        <span className="text-[0.65rem] text-muted-foreground/75">
+                            Enter to send · Shift+Enter for newline
+                        </span>
+                    )}
                 </div>
 
                 <form

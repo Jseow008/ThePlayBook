@@ -25,9 +25,24 @@ export default async function AskPage({ searchParams }: AskPageProps) {
     const returnTo = resolvedSearchParams?.returnTo;
     const scope = resolvedSearchParams?.scope === "notes" ? "notes" : "library";
     const initialNotesScope = parseNotesChatScope(resolvedSearchParams?.notesScope);
+    const nextParams = new URLSearchParams();
+
+    if (resolvedSearchParams?.returnTo) {
+        nextParams.set("returnTo", resolvedSearchParams.returnTo);
+    }
+
+    if (resolvedSearchParams?.scope) {
+        nextParams.set("scope", resolvedSearchParams.scope);
+    }
+
+    if (resolvedSearchParams?.notesScope) {
+        nextParams.set("notesScope", resolvedSearchParams.notesScope);
+    }
+
+    const nextTarget = nextParams.size > 0 ? `/ask?${nextParams.toString()}` : "/ask";
 
     if (!user) {
-        redirect("/login?next=/ask");
+        redirect(`/login?next=${encodeURIComponent(nextTarget)}`);
     }
 
     let initialNotesPage: HighlightsPage | undefined;

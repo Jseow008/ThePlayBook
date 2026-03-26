@@ -4,8 +4,18 @@ import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { useChat } from "@ai-sdk/react";
 import { vi } from "vitest";
 
+const { pathnameState, searchParamsState } = vi.hoisted(() => ({
+    pathnameState: { value: "/notes" },
+    searchParamsState: { value: new URLSearchParams("ask=1&q=goggins&type=note") },
+}));
+
 vi.mock("@ai-sdk/react", () => ({
     useChat: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+    usePathname: () => pathnameState.value,
+    useSearchParams: () => searchParamsState.value,
 }));
 
 vi.mock("next/link", () => ({
@@ -28,7 +38,7 @@ describe("NotesAskPanel", () => {
     };
     const expectedFullScreenHref = `/ask?${new URLSearchParams({
         scope: "notes",
-        returnTo: "/notes?ask=1",
+        returnTo: "/notes?ask=1&q=goggins&type=note",
         notesScope: serializeNotesChatScope(currentScope),
     }).toString()}`;
 
@@ -41,6 +51,8 @@ describe("NotesAskPanel", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        pathnameState.value = "/notes";
+        searchParamsState.value = new URLSearchParams("ask=1&q=goggins&type=note");
         (useChat as any).mockReturnValue({
             messages: [],
             sendMessage: sendMessageMock,
@@ -54,7 +66,7 @@ describe("NotesAskPanel", () => {
         render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
 
         expect(screen.getByText("Ask These Notes")).toBeInTheDocument();
-        expect(screen.getByText("2 notes in scope")).toBeInTheDocument();
+        expect(screen.getAllByText("2 notes in scope")).toHaveLength(2);
         expect(scrollIntoViewMock).not.toHaveBeenCalled();
 
         fireEvent.click(screen.getByRole("button", { name: "What patterns show up across these notes?" }));
@@ -92,10 +104,10 @@ describe("NotesAskPanel", () => {
             screen.getByText("Use the notes currently in scope to surface patterns, compare themes, retrieve supporting evidence, and spot tensions or contradictions.")
         ).toBeInTheDocument();
         expect(screen.getByText("Good places to start")).toBeInTheDocument();
-        expect(screen.getByText("2 notes in scope")).toBeInTheDocument();
-        expect(screen.getByText("using 40 most recent")).toBeInTheDocument();
+        expect(screen.getAllByText("2 notes in scope")).toHaveLength(2);
+        expect(screen.getAllByText("Using 2 most recent")).toHaveLength(2);
         expect(screen.getByText('search: "goggins"')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText("Ask about these notes...")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Ask about the notes in this scope...")).toBeInTheDocument();
         expect(
             screen.getByText("Notes-scoped assistant · Grounded only in the notes currently in scope.")
         ).toBeInTheDocument();
@@ -156,9 +168,9 @@ describe("NotesAskPanel", () => {
             />
         );
 
-        expect(screen.getByText(/filters changed/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/filters changed/i)).toHaveLength(2);
 
-        fireEvent.click(screen.getByRole("button", { name: /use current filters/i }));
+        fireEvent.click(screen.getAllByRole("button", { name: /use current filters/i })[0]);
 
         expect(setMessagesMock).toHaveBeenCalledWith([]);
     });
@@ -180,5 +192,44 @@ describe("NotesAskPanel", () => {
         expect(screen.getAllByText("2 notes in scope")).toHaveLength(1);
         expect(screen.getByText("Grounded only in the notes currently in scope.")).toBeInTheDocument();
         expect(screen.queryByText(/matching notes/i)).not.toBeInTheDocument();
+    });
+
+    it("keeps the active chat scope when opening full-screen after filters change", () => {
+        (useChat as any).mockReturnValue({
+            messages: [
+                {
+                    id: "u1",
+                    role: "user",
+                    content: "Summarize these notes",
+                },
+            ],
+            sendMessage: sendMessageMock,
+            setMessages: setMessagesMock,
+            status: "ready",
+            error: null,
+        });
+
+        const { rerender } = render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
+
+        searchParamsState.value = new URLSearchParams("ask=1&color=blue");
+
+        const nextScope: NotesChatScope = {
+            highlightIds: ["highlight-3"],
+            noteCount: 1,
+            totalMatches: 1,
+            summary: "blue highlights",
+            signature: "scope-b",
+        };
+
+        rerender(<NotesAskPanel currentScope={nextScope} onClose={vi.fn()} />);
+
+        const href = screen.getAllByRole("link", { name: /full ask/i })[0].getAttribute("href");
+        const expectedHref = `/ask?${new URLSearchParams({
+            scope: "notes",
+            returnTo: "/notes?ask=1&color=blue",
+            notesScope: serializeNotesChatScope(currentScope),
+        }).toString()}`;
+
+        expect(href).toBe(expectedHref);
     });
 });

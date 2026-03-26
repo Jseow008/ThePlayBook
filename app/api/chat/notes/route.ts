@@ -15,7 +15,7 @@ const ChatMessageSchema = z.object({
 
 const NotesChatRequestSchema = z.object({
     messages: z.array(ChatMessageSchema).min(1).max(20),
-    highlightIds: z.array(z.string().uuid()).max(40),
+    highlightIds: z.array(z.string().uuid()).min(1).max(40),
     scopeLabel: z.string().trim().max(300).optional(),
 });
 

@@ -95,6 +95,21 @@ describe("Notes chat API", () => {
         expect(json.error.code).toBe("VALIDATION_ERROR");
     });
 
+    it("rejects empty highlight scopes", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "Summarize these notes" }],
+                highlightIds: [],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(400);
+        const json = await res.json();
+        expect(json.error.code).toBe("VALIDATION_ERROR");
+    });
+
     it("fetches only the requested user highlights and streams a response", async () => {
         const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
             method: "POST",

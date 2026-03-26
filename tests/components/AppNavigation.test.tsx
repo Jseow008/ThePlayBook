@@ -98,7 +98,7 @@ describe("app navigation", () => {
         expect(screen.getByRole("link", { name: /^focus$/i })).toHaveAttribute("href", "/focus");
     });
 
-    it("adds an Ask section to the desktop sidebar with global and notes entry points", async () => {
+    it("adds an Ask section to the desktop sidebar with a global entry point", async () => {
         pathnameState.value = "/ask";
         vi.useFakeTimers();
 
@@ -112,7 +112,7 @@ describe("app navigation", () => {
 
         expect(screen.getByRole("button", { name: /ask/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Ask My Library" })).toHaveAttribute("href", "/ask");
-        expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveAttribute("href", "/notes?ask=1");
+        expect(screen.queryByRole("link", { name: "Ask These Notes" })).not.toBeInTheDocument();
 
         vi.useRealTimers();
     });
