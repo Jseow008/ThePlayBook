@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import {
     BotMessageSquare,
@@ -44,6 +45,29 @@ const COLOR_FILTER_OPTIONS: Array<{ value: ColorFilter; label: string }> = [
     { value: "purple", label: "Purple" },
 ];
 
+const DEFAULT_SELECTED_ITEM = "all" as const;
+const DEFAULT_SELECTED_TYPE: ItemTypeFilter = "all";
+const DEFAULT_SELECTED_COLOR: ColorFilter = "all";
+const DEFAULT_SORT: SortDirection = "newest";
+const VIRTUALIZATION_MIN_ITEMS = 60;
+const VIRTUAL_ROW_ESTIMATE = 224;
+const VIRTUAL_ROW_GAP = 12;
+const VIRTUAL_OVERSCAN_PX = 720;
+
+function getValidTypeFilter(value: string | null): ItemTypeFilter {
+    return value === "note" || value === "highlight" ? value : DEFAULT_SELECTED_TYPE;
+}
+
+function getValidSortDirection(value: string | null): SortDirection {
+    return value === "oldest" ? value : DEFAULT_SORT;
+}
+
+function getValidColorFilter(value: string | null): ColorFilter {
+    return COLOR_FILTER_OPTIONS.some((option) => option.value === value)
+        ? (value as ColorFilter)
+        : DEFAULT_SELECTED_COLOR;
+}
+
 function getHighlightHref(item: HighlightWithContent) {
     if (!item.content_item?.id) {
         return null;
@@ -84,13 +108,246 @@ function buildScopeSummary({
     return parts.join(" • ") || "All content";
 }
 
+function findStartIndex(offsets: number[], heights: number[], target: number) {
+    let low = 0;
+    let high = offsets.length - 1;
+    let result = 0;
+
+    while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        const itemBottom = offsets[mid] + heights[mid];
+
+        if (itemBottom >= target) {
+            result = mid;
+            high = mid - 1;
+        } else {
+            low = mid + 1;
+        }
+    }
+
+    return result;
+}
+
+function findEndIndex(offsets: number[], target: number) {
+    let low = 0;
+    let high = offsets.length - 1;
+    let result = offsets.length - 1;
+
+    while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+
+        if (offsets[mid] <= target) {
+            result = mid;
+            low = mid + 1;
+        } else {
+            high = mid - 1;
+        }
+    }
+
+    return result;
+}
+
+interface HighlightListItemProps {
+    item: HighlightWithContent;
+    deletePending: boolean;
+    onDelete: (id: string, itemType: "Note" | "Highlight") => void;
+    onHeightChange?: (height: number) => void;
+    style?: CSSProperties;
+}
+
+function HighlightListItem({
+    item,
+    deletePending,
+    onDelete,
+    onHeightChange,
+    style,
+}: HighlightListItemProps) {
+    const rootRef = useRef<HTMLDivElement | null>(null);
+    const noteText = item.note_body?.trim() || null;
+    const itemType = noteText ? "Note" : "Highlight";
+    const normalizedColor = normalizeHighlightColor(item.color);
+    const colorClasses = HIGHLIGHT_COLOR_CLASSES[normalizedColor];
+    const href = getHighlightHref(item);
+    const segmentTitle = item.segment?.title?.trim() || null;
+
+    useEffect(() => {
+        if (!onHeightChange) {
+            return;
+        }
+
+        const node = rootRef.current;
+        if (!node) {
+            return;
+        }
+
+        const measure = () => {
+            onHeightChange(Math.ceil(node.getBoundingClientRect().height));
+        };
+
+        measure();
+
+        const resizeObserver = typeof ResizeObserver !== "undefined"
+            ? new ResizeObserver(measure)
+            : null;
+
+        resizeObserver?.observe(node);
+
+        return () => {
+            resizeObserver?.disconnect();
+        };
+    }, [item.id, noteText, onHeightChange]);
+
+    return (
+        <div
+            ref={rootRef}
+            style={style}
+            className={cn(style && "absolute left-0 right-0")}
+        >
+            <div className="group relative overflow-hidden rounded-2xl bg-background/30 ring-1 ring-white/8 transition-[background-color,box-shadow] hover:bg-card/40 hover:shadow-[0_18px_40px_-32px_rgba(255,255,255,0.28)]">
+                <div
+                    aria-hidden="true"
+                    className={cn("absolute inset-y-0 left-0 w-[3px]", colorClasses.swatch)}
+                />
+                <div className="flex gap-2 p-3 sm:p-4">
+                    {href ? (
+                        <Link
+                            href={href}
+                            className="min-w-0 flex-1 rounded-xl px-3 py-2 transition-colors hover:bg-background/35 focus:outline-none focus:ring-2 focus:ring-primary"
+                            aria-label={`${itemType} from ${segmentTitle || item.content_item?.title || "saved passage"}`}
+                        >
+                            <div className="flex items-start gap-3">
+                                {item.content_item?.cover_image_url ? (
+                                    <img
+                                        src={item.content_item.cover_image_url}
+                                        alt=""
+                                        className="mt-0.5 h-8 w-8 shrink-0 rounded-lg object-cover"
+                                    />
+                                ) : (
+                                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card/60 text-muted-foreground">
+                                        <BookOpen className="size-4" />
+                                    </div>
+                                )}
+
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="line-clamp-1 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
+                                        {item.content_item?.title || "Saved passage"}
+                                    </h3>
+
+                                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.76rem] text-muted-foreground">
+                                        {segmentTitle && (
+                                            <span className="truncate">{segmentTitle}</span>
+                                        )}
+                                        {segmentTitle && (
+                                            <span className="text-muted-foreground/40">•</span>
+                                        )}
+                                        <span className="rounded-full border border-white/10 bg-card/40 px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-foreground/78">
+                                            {itemType}
+                                        </span>
+                                        <span className="text-muted-foreground/40">•</span>
+                                        <time dateTime={item.created_at || undefined}>
+                                            {item.created_at
+                                                ? format(new Date(item.created_at), "MMM d, h:mm a")
+                                                : "Saved passage"}
+                                        </time>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="mt-4 max-w-3xl line-clamp-3 text-[0.97rem] leading-6 text-foreground/92 italic">
+                                &ldquo;{item.highlighted_text}&rdquo;
+                            </p>
+
+                            {noteText && (
+                                <div className="mt-4 rounded-xl border border-white/8 bg-card/45 px-3.5 py-3">
+                                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                                        Your note
+                                    </p>
+                                    <p className="mt-1.5 line-clamp-4 max-w-3xl text-[0.88rem] leading-6 text-muted-foreground">
+                                        {noteText}
+                                    </p>
+                                </div>
+                            )}
+                        </Link>
+                    ) : (
+                        <div className="min-w-0 flex-1 px-3 py-2">
+                            <div className="flex items-start gap-3">
+                                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card/60 text-muted-foreground">
+                                    <BookOpen className="size-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="line-clamp-1 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
+                                        Saved passage
+                                    </h3>
+                                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.76rem] text-muted-foreground">
+                                        <span className="rounded-full border border-white/10 bg-card/40 px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-foreground/78">
+                                            {itemType}
+                                        </span>
+                                        <span className="text-muted-foreground/40">•</span>
+                                        <time dateTime={item.created_at || undefined}>
+                                            {item.created_at
+                                                ? format(new Date(item.created_at), "MMM d, h:mm a")
+                                                : "Saved passage"}
+                                        </time>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="mt-4 max-w-3xl line-clamp-3 text-[0.97rem] leading-6 text-foreground/92 italic">
+                                &ldquo;{item.highlighted_text}&rdquo;
+                            </p>
+                            {noteText && (
+                                <div className="mt-4 rounded-xl border border-white/8 bg-card/45 px-3.5 py-3">
+                                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                                        Your note
+                                    </p>
+                                    <p className="mt-1.5 line-clamp-4 max-w-3xl text-[0.88rem] leading-6 text-muted-foreground">
+                                        {noteText}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="flex shrink-0 items-start gap-1 pt-1">
+                        {href && (
+                            <Link
+                                href={href}
+                                className="rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-background/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                aria-label={`Open ${itemType.toLowerCase()} in reader`}
+                            >
+                                <ExternalLink className="size-4" />
+                            </Link>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => onDelete(item.id, itemType)}
+                            disabled={deletePending}
+                            className="rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-primary"
+                            aria-label={`Delete ${itemType.toLowerCase()}`}
+                        >
+                            <Trash2 className="size-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainClientPageProps) {
-    const [searchQuery, setSearchQuery] = useState("");
-    const [selectedItem, setSelectedItem] = useState<string | "all">("all");
-    const [selectedType, setSelectedType] = useState<ItemTypeFilter>("all");
-    const [selectedColor, setSelectedColor] = useState<ColorFilter>("all");
-    const [sortBy, setSortBy] = useState<SortDirection>("newest");
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const [searchQuery, setSearchQuery] = useState(searchParams.get("q") ?? "");
+    const [selectedItem, setSelectedItem] = useState<string | "all">(searchParams.get("item") ?? DEFAULT_SELECTED_ITEM);
+    const [selectedType, setSelectedType] = useState<ItemTypeFilter>(getValidTypeFilter(searchParams.get("type")));
+    const [selectedColor, setSelectedColor] = useState<ColorFilter>(getValidColorFilter(searchParams.get("color")));
+    const [sortBy, setSortBy] = useState<SortDirection>(getValidSortDirection(searchParams.get("sort")));
     const [isAskOpen, setIsAskOpen] = useState(initialAskOpen);
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchParams.get("q") ?? "");
+    const [itemHeights, setItemHeights] = useState<Record<number, number>>({});
+    const [virtualRange, setVirtualRange] = useState({ start: 0, end: 0 });
+    const listContainerRef = useRef<HTMLDivElement | null>(null);
+    const scrollFrameRef = useRef<number | null>(null);
     const deleteHighlight = useDeleteHighlight();
     const {
         data,
@@ -105,6 +362,89 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         () => data?.pages.flatMap((page) => page.data) ?? initialPage.data,
         [data, initialPage.data]
     );
+
+    useEffect(() => {
+        const timeoutId = window.setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+        }, 180);
+
+        return () => window.clearTimeout(timeoutId);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        const nextSearchQuery = searchParams.get("q") ?? "";
+        const nextSelectedItem = searchParams.get("item") ?? DEFAULT_SELECTED_ITEM;
+        const nextSelectedType = getValidTypeFilter(searchParams.get("type"));
+        const nextSelectedColor = getValidColorFilter(searchParams.get("color"));
+        const nextSortBy = getValidSortDirection(searchParams.get("sort"));
+        const nextAskOpen = searchParams.get("ask") === "1";
+
+        setSearchQuery((current) => (current === nextSearchQuery ? current : nextSearchQuery));
+        setDebouncedSearchQuery((current) => (current === nextSearchQuery ? current : nextSearchQuery));
+        setSelectedItem((current) => (current === nextSelectedItem ? current : nextSelectedItem));
+        setSelectedType((current) => (current === nextSelectedType ? current : nextSelectedType));
+        setSelectedColor((current) => (current === nextSelectedColor ? current : nextSelectedColor));
+        setSortBy((current) => (current === nextSortBy ? current : nextSortBy));
+        setIsAskOpen((current) => (current === nextAskOpen ? current : nextAskOpen));
+    }, [searchParams]);
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        const normalizedQuery = debouncedSearchQuery.trim();
+
+        if (normalizedQuery) {
+            params.set("q", normalizedQuery);
+        } else {
+            params.delete("q");
+        }
+
+        if (selectedItem !== DEFAULT_SELECTED_ITEM) {
+            params.set("item", selectedItem);
+        } else {
+            params.delete("item");
+        }
+
+        if (selectedType !== DEFAULT_SELECTED_TYPE) {
+            params.set("type", selectedType);
+        } else {
+            params.delete("type");
+        }
+
+        if (selectedColor !== DEFAULT_SELECTED_COLOR) {
+            params.set("color", selectedColor);
+        } else {
+            params.delete("color");
+        }
+
+        if (sortBy !== DEFAULT_SORT) {
+            params.set("sort", sortBy);
+        } else {
+            params.delete("sort");
+        }
+
+        if (isAskOpen) {
+            params.set("ask", "1");
+        } else {
+            params.delete("ask");
+        }
+
+        const nextQuery = params.toString();
+        const currentQuery = searchParams.toString();
+
+        if (nextQuery !== currentQuery) {
+            router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+        }
+    }, [
+        debouncedSearchQuery,
+        isAskOpen,
+        pathname,
+        router,
+        searchParams,
+        selectedColor,
+        selectedItem,
+        selectedType,
+        sortBy,
+    ]);
 
     const uniqueItems = useMemo(() => {
         const map = new Map<string, { id: string; title: string }>();
@@ -148,16 +488,150 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             });
     }, [highlights, searchQuery, selectedItem, selectedType, selectedColor, sortBy]);
 
+    const shouldVirtualize = filteredHighlights.length >= VIRTUALIZATION_MIN_ITEMS;
+
+    useEffect(() => {
+        setItemHeights({});
+        setVirtualRange({
+            start: 0,
+            end: shouldVirtualize
+                ? Math.min(filteredHighlights.length - 1, 11)
+                : Math.max(filteredHighlights.length - 1, 0),
+        });
+    }, [filteredHighlights, shouldVirtualize]);
+
+    const virtualMetrics = useMemo(() => {
+        const offsets: number[] = [];
+        const heights: number[] = [];
+        let totalHeight = 0;
+
+        filteredHighlights.forEach((_, index) => {
+            offsets.push(totalHeight);
+            const height = itemHeights[index] ?? VIRTUAL_ROW_ESTIMATE;
+            heights.push(height);
+            totalHeight += height + VIRTUAL_ROW_GAP;
+        });
+
+        if (filteredHighlights.length > 0) {
+            totalHeight -= VIRTUAL_ROW_GAP;
+        }
+
+        return { offsets, heights, totalHeight };
+    }, [filteredHighlights, itemHeights]);
+
+    useEffect(() => {
+        if (!shouldVirtualize) {
+            return;
+        }
+
+        const updateVisibleRange = () => {
+            const container = listContainerRef.current;
+            if (!container || virtualMetrics.offsets.length === 0) {
+                return;
+            }
+
+            const rect = container.getBoundingClientRect();
+            const visibleTop = Math.max(0, -rect.top - VIRTUAL_OVERSCAN_PX);
+            const visibleBottom = Math.max(0, -rect.top + window.innerHeight + VIRTUAL_OVERSCAN_PX);
+            const start = findStartIndex(virtualMetrics.offsets, virtualMetrics.heights, visibleTop);
+            const end = findEndIndex(virtualMetrics.offsets, visibleBottom);
+
+            setVirtualRange((current) => (
+                current.start === start && current.end === end
+                    ? current
+                    : { start, end }
+            ));
+        };
+
+        const scheduleUpdate = () => {
+            if (scrollFrameRef.current !== null) {
+                window.cancelAnimationFrame(scrollFrameRef.current);
+            }
+
+            scrollFrameRef.current = window.requestAnimationFrame(() => {
+                updateVisibleRange();
+            });
+        };
+
+        updateVisibleRange();
+        window.addEventListener("scroll", scheduleUpdate, { passive: true });
+        window.addEventListener("resize", scheduleUpdate);
+
+        return () => {
+            if (scrollFrameRef.current !== null) {
+                window.cancelAnimationFrame(scrollFrameRef.current);
+                scrollFrameRef.current = null;
+            }
+            window.removeEventListener("scroll", scheduleUpdate);
+            window.removeEventListener("resize", scheduleUpdate);
+        };
+    }, [shouldVirtualize, virtualMetrics]);
+
     const hasFilters =
         searchQuery.trim().length > 0
-        || selectedItem !== "all"
-        || selectedType !== "all"
-        || selectedColor !== "all";
+        || selectedItem !== DEFAULT_SELECTED_ITEM
+        || selectedType !== DEFAULT_SELECTED_TYPE
+        || selectedColor !== DEFAULT_SELECTED_COLOR;
+
+    const hasCustomSort = sortBy !== DEFAULT_SORT;
+    const hasActiveControls = hasFilters || hasCustomSort;
 
     const selectedItemTitle = useMemo(
         () => uniqueItems.find((item) => item.id === selectedItem)?.title ?? null,
         [selectedItem, uniqueItems]
     );
+
+    const activeFilterChips = useMemo(() => {
+        const chips: Array<{
+            key: string;
+            label: string;
+            onRemove: () => void;
+        }> = [];
+
+        if (searchQuery.trim()) {
+            chips.push({
+                key: "q",
+                label: `Search: "${searchQuery.trim()}"`,
+                onRemove: () => setSearchQuery(""),
+            });
+        }
+
+        if (selectedItem !== DEFAULT_SELECTED_ITEM) {
+            chips.push({
+                key: "item",
+                label: selectedItemTitle ? `Content: ${selectedItemTitle}` : "Content filter",
+                onRemove: () => setSelectedItem(DEFAULT_SELECTED_ITEM),
+            });
+        }
+
+        if (selectedType !== DEFAULT_SELECTED_TYPE) {
+            chips.push({
+                key: "type",
+                label: selectedType === "note" ? "Notes only" : "Highlights only",
+                onRemove: () => setSelectedType(DEFAULT_SELECTED_TYPE),
+            });
+        }
+
+        if (selectedColor !== DEFAULT_SELECTED_COLOR) {
+            chips.push({
+                key: "color",
+                label: `${selectedColor[0].toUpperCase()}${selectedColor.slice(1)} highlights`,
+                onRemove: () => setSelectedColor(DEFAULT_SELECTED_COLOR),
+            });
+        }
+
+        if (sortBy !== DEFAULT_SORT) {
+            chips.push({
+                key: "sort",
+                label: sortBy === "oldest" ? "Oldest first" : "Newest first",
+                onRemove: () => setSortBy(DEFAULT_SORT),
+            });
+        }
+
+        return chips;
+    }, [searchQuery, selectedItem, selectedItemTitle, selectedType, selectedColor, sortBy]);
+
+    const resultLabel = `${filteredHighlights.length} ${filteredHighlights.length === 1 ? "result" : "results"}`;
 
     const notesChatScope = useMemo<NotesChatScope>(() => {
         const scopedHighlights = filteredHighlights.slice(0, 40);
@@ -192,7 +666,12 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         sortBy,
     ]);
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: string, itemType: "Note" | "Highlight") => {
+        const confirmed = window.confirm(`Delete this ${itemType.toLowerCase()}? This cannot be undone.`);
+        if (!confirmed) {
+            return;
+        }
+
         try {
             await deleteHighlight.mutateAsync(id);
             toast.success("Highlight deleted");
@@ -203,6 +682,14 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
 
     const toggleAskPanel = () => {
         setIsAskOpen((current) => !current);
+    };
+
+    const clearAllControls = () => {
+        setSearchQuery("");
+        setSelectedItem(DEFAULT_SELECTED_ITEM);
+        setSelectedType(DEFAULT_SELECTED_TYPE);
+        setSelectedColor(DEFAULT_SELECTED_COLOR);
+        setSortBy(DEFAULT_SORT);
     };
 
     return (
@@ -238,7 +725,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
 
                 <div className={cn(
                     "grid gap-6 lg:items-start",
-                    isAskOpen && "lg:grid-cols-[minmax(0,1fr)_27rem]"
+                    isAskOpen && "lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_25rem]"
                 )}>
                     <div className={cn("min-w-0", !isAskOpen && "lg:mx-auto lg:max-w-4xl lg:w-full")}>
                         <div className="sticky top-4 z-10 mb-8 rounded-2xl border border-white/10 bg-background/90 p-4 backdrop-blur-sm">
@@ -266,6 +753,9 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                             className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 pl-9 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                                         >
                                             <option value="all">All content</option>
+                                            {selectedItem !== DEFAULT_SELECTED_ITEM && !selectedItemTitle && (
+                                                <option value={selectedItem}>Selected content</option>
+                                            )}
                                             {uniqueItems.map((item) => (
                                                 <option key={item.id} value={item.id}>
                                                     {item.title}
@@ -315,6 +805,43 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     </label>
                                 </div>
+
+                                <div className="flex flex-col gap-3 border-t border-white/5 pt-3">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="rounded-full border border-white/10 bg-card/35 px-2.5 py-1 text-foreground/88">
+                                                {resultLabel}
+                                            </span>
+                                            <span>from {highlights.length} loaded entries</span>
+                                        </div>
+
+                                        {hasActiveControls && (
+                                            <button
+                                                type="button"
+                                                onClick={clearAllControls}
+                                                className="rounded-full border border-white/10 px-3 py-1 font-medium text-foreground/80 transition-colors hover:bg-card/50 hover:text-foreground"
+                                            >
+                                                Clear filters
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {activeFilterChips.length > 0 && (
+                                        <div className="flex flex-wrap gap-2">
+                                            {activeFilterChips.map((chip) => (
+                                                <button
+                                                    key={chip.key}
+                                                    type="button"
+                                                    onClick={chip.onRemove}
+                                                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-card/35 px-3 py-1.5 text-xs text-foreground/88 transition-colors hover:bg-card/50 hover:text-foreground"
+                                                >
+                                                    <span className="max-w-[16rem] truncate">{chip.label}</span>
+                                                    <X className="size-3.5 text-muted-foreground" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -337,123 +864,64 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         ? "No highlights match your current filters."
                                         : "You have not highlighted anything yet. Start reading and save passages to build your notes."}
                                 </p>
+                                {hasActiveControls && (
+                                    <button
+                                        type="button"
+                                        onClick={clearAllControls}
+                                        className="mt-5 inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/85 transition-colors hover:bg-card/50 hover:text-foreground"
+                                    >
+                                        Clear filters
+                                    </button>
+                                )}
                             </div>
                         ) : (
-                            <div className="space-y-3">
-                                {filteredHighlights.map((item) => {
-                                    const noteText = item.note_body?.trim() || null;
-                                    const itemType = noteText ? "Note" : "Highlight";
-                                    const normalizedColor = normalizeHighlightColor(item.color);
-                                    const colorClasses = HIGHLIGHT_COLOR_CLASSES[normalizedColor];
-                                    const href = getHighlightHref(item);
-                                    const segmentTitle = item.segment?.title?.trim() || null;
+                            <div ref={listContainerRef}>
+                                {shouldVirtualize ? (
+                                    <div
+                                        className="relative"
+                                        style={{ height: virtualMetrics.totalHeight }}
+                                    >
+                                        {filteredHighlights
+                                            .slice(virtualRange.start, virtualRange.end + 1)
+                                            .map((item, visibleIndex) => {
+                                                const index = virtualRange.start + visibleIndex;
 
-                                    return (
-                                        <div
-                                            key={item.id}
-                                            className="group relative overflow-hidden rounded-xl bg-background/30 ring-1 ring-white/8 transition-colors hover:bg-card/40"
-                                        >
-                                            <div
-                                                aria-hidden="true"
-                                                className={cn("absolute inset-y-0 left-0 w-[3px]", colorClasses.swatch)}
+                                                return (
+                                                    <HighlightListItem
+                                                        key={item.id}
+                                                        item={item}
+                                                        deletePending={deleteHighlight.isPending}
+                                                        onDelete={(id, itemType) => {
+                                                            void handleDelete(id, itemType);
+                                                        }}
+                                                        onHeightChange={(height) => {
+                                                            setItemHeights((current) => (
+                                                                current[index] === height
+                                                                    ? current
+                                                                    : { ...current, [index]: height }
+                                                            ));
+                                                        }}
+                                                        style={{
+                                                            top: virtualMetrics.offsets[index],
+                                                        }}
+                                                    />
+                                                );
+                                            })}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {filteredHighlights.map((item) => (
+                                            <HighlightListItem
+                                                key={item.id}
+                                                item={item}
+                                                deletePending={deleteHighlight.isPending}
+                                                onDelete={(id, itemType) => {
+                                                    void handleDelete(id, itemType);
+                                                }}
                                             />
-                                            <div className="flex gap-2 p-3 sm:p-4">
-                                                {href ? (
-                                                    <Link
-                                                        href={href}
-                                                        className="min-w-0 flex-1 rounded-lg px-3 py-2 transition-colors hover:bg-background/35 focus:outline-none focus:ring-2 focus:ring-primary"
-                                                        aria-label={`${itemType} from ${segmentTitle || item.content_item?.title || "saved passage"}`}
-                                                    >
-                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.79rem] text-muted-foreground">
-                                                            {item.content_item && (
-                                                                <span className="inline-flex min-w-0 items-center gap-2 text-foreground/88">
-                                                                    {item.content_item.cover_image_url && (
-                                                                        <img
-                                                                            src={item.content_item.cover_image_url}
-                                                                            alt=""
-                                                                            className="h-5 w-5 rounded-md object-cover"
-                                                                        />
-                                                                    )}
-                                                                    <span className="truncate font-medium">
-                                                                        {item.content_item.title}
-                                                                    </span>
-                                                                </span>
-                                                            )}
-                                                            {segmentTitle && (
-                                                                <>
-                                                                    <span className="text-muted-foreground/50">•</span>
-                                                                    <span className="truncate">{segmentTitle}</span>
-                                                                </>
-                                                            )}
-                                                            <span className="text-muted-foreground/50">•</span>
-                                                            <span>{itemType}</span>
-                                                        </div>
-
-                                                        <div className="mt-1 text-[0.78rem] text-muted-foreground/85">
-                                                            <time dateTime={item.created_at || undefined}>
-                                                                {item.created_at
-                                                                    ? format(new Date(item.created_at), "MMM d, h:mm a")
-                                                                    : "Saved passage"}
-                                                            </time>
-                                                        </div>
-
-                                                        <p className="mt-3 max-w-3xl text-[0.97rem] leading-6 text-foreground/92 italic">
-                                                            &ldquo;{item.highlighted_text}&rdquo;
-                                                        </p>
-
-                                                        {noteText && (
-                                                            <p className="mt-3 max-w-3xl text-[0.88rem] leading-6 text-muted-foreground">
-                                                                {noteText}
-                                                            </p>
-                                                        )}
-                                                    </Link>
-                                                ) : (
-                                                    <div className="min-w-0 flex-1 px-3 py-2">
-                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.79rem] text-muted-foreground">
-                                                            <span>{itemType}</span>
-                                                        </div>
-                                                        <div className="mt-1 text-[0.78rem] text-muted-foreground/85">
-                                                            <time dateTime={item.created_at || undefined}>
-                                                                {item.created_at
-                                                                    ? format(new Date(item.created_at), "MMM d, h:mm a")
-                                                                    : "Saved passage"}
-                                                            </time>
-                                                        </div>
-                                                        <p className="mt-3 max-w-3xl text-[0.97rem] leading-6 text-foreground/92 italic">
-                                                            &ldquo;{item.highlighted_text}&rdquo;
-                                                        </p>
-                                                        {noteText && (
-                                                            <p className="mt-3 max-w-3xl text-[0.88rem] leading-6 text-muted-foreground">
-                                                                {noteText}
-                                                            </p>
-                                                        )}
-                                                    </div>
-                                                )}
-
-                                                <div className="flex shrink-0 items-start gap-1 pt-1">
-                                                    {href && (
-                                                        <Link
-                                                            href={href}
-                                                            className="rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-background/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                                            aria-label={`Open ${itemType.toLowerCase()} in reader`}
-                                                        >
-                                                            <ExternalLink className="size-4" />
-                                                        </Link>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDelete(item.id)}
-                                                        disabled={deleteHighlight.isPending}
-                                                        className="rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-primary"
-                                                        aria-label={`Delete ${itemType.toLowerCase()}`}
-                                                    >
-                                                        <Trash2 className="size-4" />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                         {hasNextPage && (
@@ -493,12 +961,36 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                         aria-label="Close notes AI panel backdrop"
                         onClick={toggleAskPanel}
                     />
-                    <div className="absolute inset-x-0 bottom-0 max-h-[88vh]">
+                    <div className="absolute inset-x-0 bottom-0 max-h-[88vh] px-3 pb-3">
+                        <div className="relative z-10 mb-2">
+                            <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-white/18" />
+                            <div className="rounded-[20px] border border-white/10 bg-background/92 px-4 py-3 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)] backdrop-blur-sm">
+                                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+                                    Current scope
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2 text-[0.72rem]">
+                                    <span className="rounded-full border border-white/10 bg-card/45 px-2.5 py-1 text-foreground/88">
+                                        {notesChatScope.noteCount} {notesChatScope.noteCount === 1 ? "note" : "notes"} in scope
+                                    </span>
+                                    {notesChatScope.totalMatches > notesChatScope.noteCount && (
+                                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-primary">
+                                            Using {notesChatScope.noteCount} most recent
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="mt-2 line-clamp-2 text-[0.72rem] leading-relaxed text-muted-foreground">
+                                    {notesChatScope.summary}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="relative z-10">
                         <NotesAskPanel
                             currentScope={notesChatScope}
                             onClose={toggleAskPanel}
                             mobile
                         />
+                        </div>
                     </div>
                 </div>
             )}

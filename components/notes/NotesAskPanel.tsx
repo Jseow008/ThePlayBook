@@ -83,6 +83,108 @@ function getDisplayErrorMessage(error: unknown): string {
     return FALLBACK_CHAT_ERROR;
 }
 
+function getScopeTokens(scopeSummary: string): string[] {
+    const trimmed = scopeSummary.trim();
+
+    if (!trimmed || trimmed === "All content") {
+        return ["All content"];
+    }
+
+    return trimmed
+        .split(" • ")
+        .map((part) => part.trim())
+        .filter(Boolean);
+}
+
+function getNotesLabel(count: number): string {
+    return `${count} ${count === 1 ? "note" : "notes"} in scope`;
+}
+
+function ScopeOverview({
+    scope,
+    compact = false,
+    className,
+}: {
+    scope: NotesChatScope;
+    compact?: boolean;
+    className?: string;
+}) {
+    const scopeTokens = getScopeTokens(scope.summary);
+    const isTruncated = scope.totalMatches > scope.noteCount;
+
+    return (
+        <section
+            className={cn(
+                "rounded-[20px] border border-border/55 bg-background/55 px-4 py-3 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.75)]",
+                compact && "rounded-2xl px-3.5 py-3",
+                className
+            )}
+        >
+            <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/85">
+                    Current scope
+                </p>
+                <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
+                    {getNotesLabel(scope.noteCount)}
+                </span>
+                {isTruncated && (
+                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
+                        Using {scope.noteCount} most recent
+                    </span>
+                )}
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+                {scopeTokens.map((token) => (
+                    <span
+                        key={token}
+                        className="rounded-full border border-border/60 bg-card/45 px-3 py-1.5 text-[0.72rem] text-foreground/85"
+                    >
+                        {token}
+                    </span>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function ScopeChangedBanner({
+    onSync,
+    compact = false,
+}: {
+    onSync: () => void;
+    compact?: boolean;
+}) {
+    return (
+        <div
+            className={cn(
+                "border border-primary/25 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015)),linear-gradient(90deg,rgba(255,255,255,0.02),rgba(255,255,255,0))] px-4 py-3 shadow-[0_16px_40px_-28px_rgba(255,255,255,0.18)]",
+                compact ? "rounded-2xl" : "rounded-none"
+            )}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-primary/90">
+                        Scope changed
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-foreground/78">
+                        Your filters changed. This chat is still grounded in the earlier notes snapshot.
+                    </p>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={onSync}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[0.72rem] font-medium text-primary transition-colors hover:bg-primary/15"
+                >
+                    <RefreshCw className="size-3" />
+                    Use current filters
+                </button>
+            </div>
+        </div>
+    );
+}
+
 export function NotesAskPanel({
     currentScope,
     onClose,
@@ -90,6 +192,7 @@ export function NotesAskPanel({
     variant = "default",
 }: NotesAskPanelProps) {
     const [input, setInput] = useState("");
+    const [showAllStarterPrompts, setShowAllStarterPrompts] = useState(false);
     const [activeScope, setActiveScope] = useState<NotesChatScope>(currentScope);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -112,6 +215,12 @@ export function NotesAskPanel({
             setActiveScope(currentScope);
         }
     }, [currentScope, messages.length]);
+
+    useEffect(() => {
+        if (!isSidebar || !isEmptyState) {
+            setShowAllStarterPrompts(false);
+        }
+    }, [isEmptyState, isSidebar, activeScope.signature]);
 
     useEffect(() => {
         const previousMessageCount = previousMessageCountRef.current;
@@ -146,7 +255,13 @@ export function NotesAskPanel({
     const hasScopeChanged = messages.length > 0 && activeScope.signature !== currentScope.signature;
     const isSidebar = variant === "sidebar" && !mobile;
     const isPage = variant === "page";
-    const scopeSummary = activeScope.summary.trim();
+    const notesLabel = getNotesLabel(activeScope.noteCount);
+    const composerPlaceholder = activeScope.highlightIds.length === 0
+        ? "No notes in scope. Adjust your filters first."
+        : `Ask about the ${activeScope.noteCount === 1 ? "note" : "notes"} in this scope...`;
+    const visibleStarterPrompts = isSidebar && !showAllStarterPrompts
+        ? STARTER_PROMPTS.slice(0, 2)
+        : STARTER_PROMPTS;
     const fullScreenHref = (() => {
         const params = new URLSearchParams({
             scope: "notes",
@@ -219,24 +334,16 @@ export function NotesAskPanel({
             <section className="flex min-h-full flex-1 flex-col">
                 <div className="flex min-h-[30rem] flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm sm:min-h-[34rem]">
                     {hasScopeChanged && (
-                        <div className="border-b border-border/40 bg-primary/5 px-4 py-3 sm:px-6">
-                            <div className="mx-auto flex w-full max-w-4xl items-start justify-between gap-3">
-                                <p className="text-xs leading-relaxed text-muted-foreground">
-                                    Your filters changed. This chat is still using the earlier notes snapshot.
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={syncToCurrentScope}
-                                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[0.72rem] font-medium text-primary transition-colors hover:bg-primary/15"
-                                >
-                                    <RefreshCw className="size-3" />
-                                    Use current filters
-                                </button>
+                        <div className="border-b border-border/40 px-4 pt-4 sm:px-6">
+                            <div className="mx-auto w-full max-w-4xl pb-4">
+                                <ScopeChangedBanner onSync={syncToCurrentScope} compact />
                             </div>
                         </div>
                     )}
 
                     <div className="mx-auto flex min-h-full w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
+                        <ScopeOverview scope={activeScope} className="mb-5" />
+
                         <div className="flex-1 space-y-5">
                             {isEmptyState && (
                                 <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
@@ -251,21 +358,6 @@ export function NotesAskPanel({
                                             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
                                                 Use the notes currently in scope to surface patterns, compare themes, retrieve supporting evidence, and spot tensions or contradictions.
                                             </p>
-                                            <div className="mt-4 flex flex-wrap items-center gap-2 text-[0.72rem] text-muted-foreground">
-                                                <span className="rounded-full border border-border/60 bg-background/60 px-2.5 py-1">
-                                                    {activeScope.noteCount} notes in scope
-                                                </span>
-                                                {activeScope.totalMatches > activeScope.noteCount && (
-                                                    <span className="rounded-full border border-border/60 bg-background/60 px-2.5 py-1">
-                                                        using 40 most recent
-                                                    </span>
-                                                )}
-                                            </div>
-                                            {scopeSummary && (
-                                                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                                                    {scopeSummary}
-                                                </p>
-                                            )}
                                             <div className="mt-5">
                                                 <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
                                                     Good places to start
@@ -392,6 +484,28 @@ export function NotesAskPanel({
 
                 <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-0 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-0">
                     <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
+                        {hasScopeChanged && (
+                            <div className="mb-3">
+                                <ScopeChangedBanner onSync={syncToCurrentScope} compact />
+                            </div>
+                        )}
+
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
+                                    {notesLabel}
+                                </span>
+                                {activeScope.totalMatches > activeScope.noteCount && (
+                                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
+                                        Using {activeScope.noteCount} most recent
+                                    </span>
+                                )}
+                            </div>
+                            <span className="text-[0.65rem] text-muted-foreground/75">
+                                Enter to send · Shift+Enter for newline
+                            </span>
+                        </div>
+
                         <form
                             onSubmit={onSubmit}
                             className="relative flex items-end gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50"
@@ -400,11 +514,7 @@ export function NotesAskPanel({
                                 ref={textareaRef}
                                 value={input}
                                 onChange={(event) => setInput(event.target.value)}
-                                placeholder={
-                                    activeScope.highlightIds.length === 0
-                                        ? "No notes in scope. Adjust your filters first."
-                                        : "Ask about these notes..."
-                                }
+                                placeholder={composerPlaceholder}
                                 className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto"
                                 rows={1}
                                 onKeyDown={(event) => {
@@ -431,8 +541,10 @@ export function NotesAskPanel({
                                 </button>
                             </div>
                         </form>
-                        <p className="mt-2 text-center text-[0.6rem] text-muted-foreground opacity-50">
-                            Notes-scoped assistant · Grounded only in the notes currently in scope.
+                        <p className="mt-2 text-center text-[0.6rem] text-muted-foreground opacity-60">
+                            {activeScope.highlightIds.length === 0
+                                ? "No notes are currently in scope. Adjust the notes filters to enable Ask."
+                                : "Notes-scoped assistant · Grounded only in the notes currently in scope."}
                         </p>
                     </div>
                 </div>
@@ -448,52 +560,40 @@ export function NotesAskPanel({
                 isSidebar && "min-h-[40rem]"
             )}
         >
-            <header className={cn(
-                "border-b border-border/50 px-4 py-4",
-                isSidebar && "px-5 py-5"
-                )}>
-                    <div className={cn(
+            <header
+                className={cn(
+                    "border-b border-border/50 px-4 py-4",
+                    isSidebar && "px-5 py-5"
+                )}
+            >
+                <div
+                    className={cn(
                         "flex items-start justify-between gap-3",
                         isSidebar && "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4"
-                    )}>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                                <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-                                    <BotMessageSquare className="size-4 text-primary" />
-                                </div>
-                                <div className="min-w-0">
-                                    <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">
-                                        Ask These Notes
-                                    </h2>
-                                    <p className="text-xs text-foreground/80">
-                                        {isSidebar ? "Notes-scoped copilot" : "Answers grounded in the notes currently in view"}
-                                    </p>
-                                </div>
+                    )}
+                >
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+                                <BotMessageSquare className="size-4 text-primary" />
                             </div>
-                            <div className="mt-3 flex flex-wrap items-center gap-2 text-[0.72rem] text-muted-foreground">
-                                <span className="rounded-full border border-white/10 bg-background/70 px-2.5 py-1">
-                                    {activeScope.noteCount} notes in scope
-                                </span>
-                                {activeScope.totalMatches > activeScope.noteCount && (
-                                    <span className="rounded-full border border-white/10 bg-background/70 px-2.5 py-1">
-                                    using 40 most recent
-                                </span>
-                            )}
+                            <div className="min-w-0">
+                                <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">
+                                    Ask These Notes
+                                </h2>
+                                <p className="text-xs text-foreground/80">
+                                    {isSidebar ? "Notes-scoped copilot" : "Answers grounded in the notes currently in view"}
+                                </p>
+                            </div>
                         </div>
-                        {scopeSummary && (
-                            <p className={cn(
-                                "mt-2 text-xs leading-relaxed text-muted-foreground",
-                                isSidebar && "line-clamp-2 max-w-full"
-                            )}>
-                                {scopeSummary}
-                            </p>
-                        )}
                     </div>
 
-                    <div className={cn(
-                        "flex items-center gap-1",
-                        isSidebar && "row-span-2 self-start justify-self-end"
-                    )}>
+                    <div
+                        className={cn(
+                            "flex items-center gap-1",
+                            isSidebar && "row-span-2 self-start justify-self-end"
+                        )}
+                    >
                         <Link
                             href={fullScreenHref}
                             className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
@@ -512,26 +612,16 @@ export function NotesAskPanel({
                         )}
                     </div>
                 </div>
+
+                <ScopeOverview scope={activeScope} compact className="mt-4" />
             </header>
 
             {hasScopeChanged && (
                 <div className={cn(
-                    "border-b border-border/40 bg-primary/5 px-4 py-3",
+                    "border-b border-border/40 px-4 py-4",
                     isSidebar && "px-5"
                 )}>
-                    <div className="flex items-start justify-between gap-3">
-                        <p className="text-xs leading-relaxed text-muted-foreground">
-                            Your filters changed. This chat is still using the earlier notes snapshot.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={syncToCurrentScope}
-                            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[0.72rem] font-medium text-primary transition-colors hover:bg-primary/15"
-                        >
-                            <RefreshCw className="size-3" />
-                            Use current filters
-                        </button>
-                    </div>
+                    <ScopeChangedBanner onSync={syncToCurrentScope} compact />
                 </div>
             )}
 
@@ -562,14 +652,14 @@ export function NotesAskPanel({
                                         "mt-4 flex flex-wrap gap-2",
                                         isSidebar && "gap-2.5"
                                     )}>
-                                        {STARTER_PROMPTS.map((prompt) => (
+                                        {visibleStarterPrompts.map((prompt) => (
                                             <button
                                                 key={prompt}
                                                 type="button"
                                                 onClick={() => void sendPrompt(prompt)}
                                                 className={cn(
                                                     "rounded-full border border-border/70 bg-background/75 px-3 py-1.5 text-xs text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
-                                                    isSidebar && "w-full justify-center px-4 py-2 text-[0.79rem]"
+                                                    isSidebar && "px-3.5 py-2 text-[0.76rem]"
                                                 )}
                                                 disabled={isStreaming || activeScope.highlightIds.length === 0}
                                             >
@@ -577,6 +667,17 @@ export function NotesAskPanel({
                                             </button>
                                         ))}
                                     </div>
+
+                                    {isSidebar && STARTER_PROMPTS.length > 2 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowAllStarterPrompts((current) => !current)}
+                                            className="mt-3 inline-flex items-center gap-1.5 text-[0.72rem] font-medium text-muted-foreground transition-colors hover:text-foreground"
+                                        >
+                                            {showAllStarterPrompts ? "Show fewer prompts" : "More prompts"}
+                                            <ArrowRight className={cn("size-3 transition-transform", showAllStarterPrompts && "rotate-90")} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </section>
@@ -694,6 +795,28 @@ export function NotesAskPanel({
                 "border-t border-border/45 bg-card/30 px-3 pt-3 pb-[max(0.85rem,env(safe-area-inset-bottom))]",
                 isSidebar && "px-4 pt-4"
             )}>
+                {hasScopeChanged && (
+                    <div className="mb-3">
+                        <ScopeChangedBanner onSync={syncToCurrentScope} compact />
+                    </div>
+                )}
+
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
+                            {notesLabel}
+                        </span>
+                        {activeScope.totalMatches > activeScope.noteCount && (
+                            <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
+                                Using {activeScope.noteCount} most recent
+                            </span>
+                        )}
+                    </div>
+                    <span className="text-[0.65rem] text-muted-foreground/75">
+                        Enter to send · Shift+Enter for newline
+                    </span>
+                </div>
+
                 <form
                     onSubmit={onSubmit}
                     className="relative flex items-end gap-2 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50"
@@ -702,11 +825,7 @@ export function NotesAskPanel({
                         ref={textareaRef}
                         value={input}
                         onChange={(event) => setInput(event.target.value)}
-                        placeholder={
-                            activeScope.highlightIds.length === 0
-                                ? "No notes in scope. Adjust your filters first."
-                                : "Ask about the notes in this view..."
-                        }
+                        placeholder={composerPlaceholder}
                         className="min-h-[54px] max-h-40 w-full flex-1 resize-none bg-transparent px-4 py-3 text-[0.93rem] outline-none placeholder:text-muted-foreground/70"
                         rows={1}
                         onKeyDown={(event) => {
@@ -735,9 +854,11 @@ export function NotesAskPanel({
                 </form>
                 <p className="mt-2 flex items-center gap-1.5 text-[0.65rem] font-medium text-muted-foreground opacity-65">
                     <BookOpen className="size-3" />
-                    {isSidebar
-                        ? "Grounded only in the notes currently in scope."
-                        : "Notes-scoped assistant · grounded only in the notes currently in scope."}
+                    {activeScope.highlightIds.length === 0
+                        ? "No notes are currently in scope. Adjust the notes filters to enable Ask."
+                        : isSidebar
+                            ? "Grounded only in the notes currently in scope."
+                            : "Notes-scoped assistant · grounded only in the notes currently in scope."}
                 </p>
             </div>
         </section>
