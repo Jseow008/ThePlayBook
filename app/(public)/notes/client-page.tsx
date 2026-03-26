@@ -13,6 +13,7 @@ import {
     Highlighter,
     Loader2,
     Search,
+    SlidersHorizontal,
     Trash2,
     X,
 } from "lucide-react";
@@ -150,6 +151,7 @@ function findEndIndex(offsets: number[], target: number) {
 interface HighlightListItemProps {
     item: HighlightWithContent;
     deletePending: boolean;
+    isDeleteArmed: boolean;
     onDelete: (id: string, itemType: "Note" | "Highlight") => void;
     onHeightChange?: (height: number) => void;
     style?: CSSProperties;
@@ -158,6 +160,7 @@ interface HighlightListItemProps {
 function HighlightListItem({
     item,
     deletePending,
+    isDeleteArmed,
     onDelete,
     onHeightChange,
     style,
@@ -321,10 +324,16 @@ function HighlightListItem({
                             type="button"
                             onClick={() => onDelete(item.id, itemType)}
                             disabled={deletePending}
-                            className="rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-destructive/10 hover:text-destructive focus:outline-none focus:ring-2 focus:ring-primary"
-                            aria-label={`Delete ${itemType.toLowerCase()}`}
+                            className={cn(
+                                "rounded-md p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60",
+                                isDeleteArmed
+                                    ? "bg-destructive/12 text-destructive hover:bg-destructive/18"
+                                    : "text-muted-foreground/80 hover:bg-destructive/10 hover:text-destructive"
+                            )}
+                            aria-label={isDeleteArmed ? `Confirm delete ${itemType.toLowerCase()}` : `Delete ${itemType.toLowerCase()}`}
+                            title={isDeleteArmed ? `Click again to delete this ${itemType.toLowerCase()}` : `Delete ${itemType.toLowerCase()}`}
                         >
-                            <Trash2 className="size-4" />
+                            {isDeleteArmed ? <X className="size-4" /> : <Trash2 className="size-4" />}
                         </button>
                     </div>
                 </div>
@@ -343,11 +352,17 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     const [selectedColor, setSelectedColor] = useState<ColorFilter>(getValidColorFilter(searchParams.get("color")));
     const [sortBy, setSortBy] = useState<SortDirection>(getValidSortDirection(searchParams.get("sort")));
     const [isAskOpen, setIsAskOpen] = useState(initialAskOpen);
+    const [isFilterBarCompact, setIsFilterBarCompact] = useState(false);
+    const [isMobileFiltersExpanded, setIsMobileFiltersExpanded] = useState(false);
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchParams.get("q") ?? "");
+    const [armedDeleteId, setArmedDeleteId] = useState<string | null>(null);
     const [itemHeights, setItemHeights] = useState<Record<number, number>>({});
     const [virtualRange, setVirtualRange] = useState({ start: 0, end: 0 });
     const listContainerRef = useRef<HTMLDivElement | null>(null);
     const scrollFrameRef = useRef<number | null>(null);
+    const deleteArmTimeoutRef = useRef<number | null>(null);
+    const previousSearchParamsRef = useRef<string | null>(null);
+    const shouldRespectInitialAskOpenRef = useRef(initialAskOpen);
     const deleteHighlight = useDeleteHighlight();
     const {
         data,
@@ -372,12 +387,55 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     }, [searchQuery]);
 
     useEffect(() => {
+        const updateCompactState = () => {
+            setIsFilterBarCompact(window.scrollY > 72);
+        };
+
+        updateCompactState();
+        window.addEventListener("scroll", updateCompactState, { passive: true });
+
+        return () => {
+            window.removeEventListener("scroll", updateCompactState);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!armedDeleteId) {
+            if (deleteArmTimeoutRef.current !== null) {
+                window.clearTimeout(deleteArmTimeoutRef.current);
+                deleteArmTimeoutRef.current = null;
+            }
+            return;
+        }
+
+        deleteArmTimeoutRef.current = window.setTimeout(() => {
+            setArmedDeleteId(null);
+            deleteArmTimeoutRef.current = null;
+        }, 3200);
+
+        return () => {
+            if (deleteArmTimeoutRef.current !== null) {
+                window.clearTimeout(deleteArmTimeoutRef.current);
+                deleteArmTimeoutRef.current = null;
+            }
+        };
+    }, [armedDeleteId]);
+
+    useEffect(() => {
+        const currentQuery = searchParams.toString();
+        if (previousSearchParamsRef.current === currentQuery) {
+            return;
+        }
+        previousSearchParamsRef.current = currentQuery;
+
         const nextSearchQuery = searchParams.get("q") ?? "";
         const nextSelectedItem = searchParams.get("item") ?? DEFAULT_SELECTED_ITEM;
         const nextSelectedType = getValidTypeFilter(searchParams.get("type"));
         const nextSelectedColor = getValidColorFilter(searchParams.get("color"));
         const nextSortBy = getValidSortDirection(searchParams.get("sort"));
-        const nextAskOpen = searchParams.get("ask") === "1";
+        const nextAskValue = searchParams.get("ask");
+        const shouldSyncAskOpen = nextAskValue !== null || !shouldRespectInitialAskOpenRef.current;
+        const nextAskOpen = nextAskValue === "1";
 
         setSearchQuery((current) => (current === nextSearchQuery ? current : nextSearchQuery));
         setDebouncedSearchQuery((current) => (current === nextSearchQuery ? current : nextSearchQuery));
@@ -385,7 +443,12 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         setSelectedType((current) => (current === nextSelectedType ? current : nextSelectedType));
         setSelectedColor((current) => (current === nextSelectedColor ? current : nextSelectedColor));
         setSortBy((current) => (current === nextSortBy ? current : nextSortBy));
-        setIsAskOpen((current) => (current === nextAskOpen ? current : nextAskOpen));
+
+        if (shouldSyncAskOpen) {
+            setIsAskOpen((current) => (current === nextAskOpen ? current : nextAskOpen));
+        }
+
+        shouldRespectInitialAskOpenRef.current = false;
     }, [searchParams]);
 
     useEffect(() => {
@@ -630,6 +693,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
 
         return chips;
     }, [searchQuery, selectedItem, selectedItemTitle, selectedType, selectedColor, sortBy]);
+    const activeFilterCount = activeFilterChips.length;
 
     const resultLabel = `${filteredHighlights.length} ${filteredHighlights.length === 1 ? "result" : "results"}`;
 
@@ -666,14 +730,15 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         sortBy,
     ]);
 
-    const handleDelete = async (id: string, itemType: "Note" | "Highlight") => {
-        const confirmed = window.confirm(`Delete this ${itemType.toLowerCase()}? This cannot be undone.`);
-        if (!confirmed) {
+    const handleDelete = async (id: string) => {
+        if (armedDeleteId !== id) {
+            setArmedDeleteId(id);
             return;
         }
 
         try {
             await deleteHighlight.mutateAsync(id);
+            setArmedDeleteId(null);
             toast.success("Highlight deleted");
         } catch (error: any) {
             toast.error(error.message || "Failed to delete highlight");
@@ -690,6 +755,23 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         setSelectedType(DEFAULT_SELECTED_TYPE);
         setSelectedColor(DEFAULT_SELECTED_COLOR);
         setSortBy(DEFAULT_SORT);
+        setIsMobileFiltersExpanded(false);
+    };
+
+    const updateSelectedItem = (value: string | "all") => {
+        setSelectedItem(value);
+    };
+
+    const updateSortBy = (value: SortDirection) => {
+        setSortBy(value);
+    };
+
+    const updateSelectedType = (value: ItemTypeFilter) => {
+        setSelectedType(value);
+    };
+
+    const updateSelectedColor = (value: ColorFilter) => {
+        setSelectedColor(value);
     };
 
     return (
@@ -728,8 +810,165 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                     isAskOpen && "lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_25rem]"
                 )}>
                     <div className={cn("min-w-0", !isAskOpen && "lg:mx-auto lg:max-w-4xl lg:w-full")}>
-                        <div className="sticky top-4 z-10 mb-8 rounded-2xl border border-white/10 bg-background/90 p-4 backdrop-blur-sm">
-                            <div className="flex flex-col gap-3">
+                        <div className="sticky top-4 z-10 mb-8 lg:hidden">
+                            <div className="rounded-2xl border border-white/10 bg-background/92 p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)] backdrop-blur-sm">
+                                <div className="flex flex-col gap-2.5">
+                                    <label className="relative">
+                                        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                        <input
+                                            type="text"
+                                            placeholder="Search notes, highlights, books, sections"
+                                            value={searchQuery}
+                                            onChange={(event) => setSearchQuery(event.target.value)}
+                                            className="h-10 w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary"
+                                        />
+                                    </label>
+
+                                    <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <span className="rounded-full border border-white/10 bg-card/35 px-2.5 py-1 text-foreground/88">
+                                                {resultLabel}
+                                            </span>
+                                            <span>from {highlights.length} loaded entries</span>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsMobileFiltersExpanded((current) => !current)}
+                                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-card/35 px-3 py-1.5 font-medium text-foreground/85 transition-colors hover:bg-card/50 hover:text-foreground"
+                                            aria-expanded={isMobileFiltersExpanded}
+                                        >
+                                            <SlidersHorizontal className="size-3.5" />
+                                            Filters
+                                            {activeFilterCount > 0 && (
+                                                <span className="rounded-full bg-primary/14 px-1.5 py-0.5 text-[0.65rem] text-primary">
+                                                    {activeFilterCount}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </div>
+
+                                    {activeFilterChips.length > 0 && (
+                                        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                                            {activeFilterChips.map((chip) => (
+                                                <button
+                                                    key={chip.key}
+                                                    type="button"
+                                                    onClick={chip.onRemove}
+                                                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-card/35 px-2.5 py-1 text-xs text-foreground/88 transition-colors hover:bg-card/50 hover:text-foreground"
+                                                >
+                                                    <span className="max-w-[14rem] truncate">{chip.label}</span>
+                                                    <X className="size-3.5 text-muted-foreground" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {isMobileFiltersExpanded && (
+                                        <div className="flex flex-col gap-2.5 border-t border-white/5 pt-2.5">
+                                            <label className="relative">
+                                                <Filter className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                                <select
+                                                    value={selectedItem}
+                                                    onChange={(event) => updateSelectedItem(event.target.value)}
+                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 pl-9 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                >
+                                                    <option value="all">All content</option>
+                                                    {selectedItem !== DEFAULT_SELECTED_ITEM && !selectedItemTitle && (
+                                                        <option value={selectedItem}>Selected content</option>
+                                                    )}
+                                                    {uniqueItems.map((item) => (
+                                                        <option key={item.id} value={item.id}>
+                                                            {item.title}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                            </label>
+
+                                            <label className="relative">
+                                                <select
+                                                    value={sortBy}
+                                                    onChange={(event) => updateSortBy(event.target.value as SortDirection)}
+                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                >
+                                                    <option value="newest">Newest first</option>
+                                                    <option value="oldest">Oldest first</option>
+                                                </select>
+                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                            </label>
+
+                                            <label className="relative">
+                                                <select
+                                                    value={selectedType}
+                                                    onChange={(event) => updateSelectedType(event.target.value as ItemTypeFilter)}
+                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                >
+                                                    <option value="all">All types</option>
+                                                    <option value="note">Notes</option>
+                                                    <option value="highlight">Highlights</option>
+                                                </select>
+                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                            </label>
+
+                                            <label className="relative">
+                                                <select
+                                                    value={selectedColor}
+                                                    onChange={(event) => updateSelectedColor(event.target.value as ColorFilter)}
+                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                >
+                                                    {COLOR_FILTER_OPTIONS.map((option) => (
+                                                        <option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                            </label>
+
+                                            {hasActiveControls && (
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={clearAllControls}
+                                                        className="rounded-full border border-white/10 px-3 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-card/50 hover:text-foreground"
+                                                    >
+                                                        Clear filters
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsMobileFiltersExpanded(false)}
+                                                        className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+                                                    >
+                                                        Done
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {!hasActiveControls && (
+                                                <div className="flex justify-end">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setIsMobileFiltersExpanded(false)}
+                                                        className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15"
+                                                    >
+                                                        Done
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className={cn(
+                            "sticky top-4 z-10 mb-8 hidden rounded-2xl border border-white/10 bg-background/90 backdrop-blur-sm transition-all duration-200 lg:block",
+                            isFilterBarCompact
+                                ? "p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)]"
+                                : "p-4"
+                        )}>
+                            <div className={cn("flex flex-col transition-all duration-200", isFilterBarCompact ? "gap-2.5" : "gap-3")}>
                                 <label className="relative">
                                     <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <input
@@ -737,12 +976,16 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         placeholder="Search notes, highlights, books, sections"
                                         value={searchQuery}
                                         onChange={(event) => setSearchQuery(event.target.value)}
-                                        className="h-11 w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary"
+                                        className={cn(
+                                            "w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
+                                            isFilterBarCompact ? "h-10" : "h-11"
+                                        )}
                                     />
                                 </label>
 
                                 <div className={cn(
-                                    "grid gap-3 sm:grid-cols-2",
+                                    "grid sm:grid-cols-2 transition-all duration-200",
+                                    isFilterBarCompact ? "gap-2.5" : "gap-3",
                                     isAskOpen ? "xl:grid-cols-4" : "lg:grid-cols-4"
                                 )}>
                                     <label className="relative">
@@ -750,7 +993,10 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         <select
                                             value={selectedItem}
                                             onChange={(event) => setSelectedItem(event.target.value)}
-                                            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 pl-9 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                            className={cn(
+                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 pl-9 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
+                                                isFilterBarCompact ? "h-9" : "h-10"
+                                            )}
                                         >
                                             <option value="all">All content</option>
                                             {selectedItem !== DEFAULT_SELECTED_ITEM && !selectedItemTitle && (
@@ -769,7 +1015,10 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         <select
                                             value={sortBy}
                                             onChange={(event) => setSortBy(event.target.value as SortDirection)}
-                                            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                            className={cn(
+                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
+                                                isFilterBarCompact ? "h-9" : "h-10"
+                                            )}
                                         >
                                             <option value="newest">Newest first</option>
                                             <option value="oldest">Oldest first</option>
@@ -781,7 +1030,10 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         <select
                                             value={selectedType}
                                             onChange={(event) => setSelectedType(event.target.value as ItemTypeFilter)}
-                                            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                            className={cn(
+                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
+                                                isFilterBarCompact ? "h-9" : "h-10"
+                                            )}
                                         >
                                             <option value="all">All types</option>
                                             <option value="note">Notes</option>
@@ -794,7 +1046,10 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         <select
                                             value={selectedColor}
                                             onChange={(event) => setSelectedColor(event.target.value as ColorFilter)}
-                                            className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                            className={cn(
+                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
+                                                isFilterBarCompact ? "h-9" : "h-10"
+                                            )}
                                         >
                                             {COLOR_FILTER_OPTIONS.map((option) => (
                                                 <option key={option.value} value={option.value}>
@@ -806,7 +1061,10 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                     </label>
                                 </div>
 
-                                <div className="flex flex-col gap-3 border-t border-white/5 pt-3">
+                                <div className={cn(
+                                    "flex flex-col border-t border-white/5 transition-all duration-200",
+                                    isFilterBarCompact ? "gap-2 pt-2.5" : "gap-3 pt-3"
+                                )}>
                                     <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                                         <div className="flex flex-wrap items-center gap-2">
                                             <span className="rounded-full border border-white/10 bg-card/35 px-2.5 py-1 text-foreground/88">
@@ -827,13 +1085,21 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                     </div>
 
                                     {activeFilterChips.length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
+                                        <div className={cn(
+                                            "flex gap-2",
+                                            isFilterBarCompact
+                                                ? "overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                                                : "flex-wrap"
+                                        )}>
                                             {activeFilterChips.map((chip) => (
                                                 <button
                                                     key={chip.key}
                                                     type="button"
                                                     onClick={chip.onRemove}
-                                                    className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-card/35 px-3 py-1.5 text-xs text-foreground/88 transition-colors hover:bg-card/50 hover:text-foreground"
+                                                    className={cn(
+                                                        "inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-card/35 text-xs text-foreground/88 transition-colors hover:bg-card/50 hover:text-foreground",
+                                                        isFilterBarCompact ? "shrink-0 px-2.5 py-1" : "px-3 py-1.5"
+                                                    )}
                                                 >
                                                     <span className="max-w-[16rem] truncate">{chip.label}</span>
                                                     <X className="size-3.5 text-muted-foreground" />
@@ -891,8 +1157,9 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                                         key={item.id}
                                                         item={item}
                                                         deletePending={deleteHighlight.isPending}
-                                                        onDelete={(id, itemType) => {
-                                                            void handleDelete(id, itemType);
+                                                        isDeleteArmed={armedDeleteId === item.id}
+                                                        onDelete={(id) => {
+                                                            void handleDelete(id);
                                                         }}
                                                         onHeightChange={(height) => {
                                                             setItemHeights((current) => (
@@ -915,8 +1182,9 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                                 key={item.id}
                                                 item={item}
                                                 deletePending={deleteHighlight.isPending}
-                                                onDelete={(id, itemType) => {
-                                                    void handleDelete(id, itemType);
+                                                isDeleteArmed={armedDeleteId === item.id}
+                                                onDelete={(id) => {
+                                                    void handleDelete(id);
                                                 }}
                                             />
                                         ))}

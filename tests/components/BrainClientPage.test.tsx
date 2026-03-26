@@ -32,6 +32,7 @@ const {
 }));
 
 const notesAskPanelMock = vi.fn();
+const routerReplaceMock = vi.fn();
 
 vi.mock("@/hooks/useHighlights", () => ({
     useInfiniteHighlights: () => infiniteHighlightsState.value,
@@ -53,6 +54,14 @@ vi.mock("@/components/notes/NotesAskPanel", () => ({
         notesAskPanelMock(props);
         return <div data-testid="notes-ask-panel">Notes AI Panel</div>;
     },
+}));
+
+vi.mock("next/navigation", () => ({
+    useRouter: () => ({
+        replace: routerReplaceMock,
+    }),
+    usePathname: () => "/notes",
+    useSearchParams: () => new URLSearchParams(""),
 }));
 
 describe("BrainClientPage", () => {
@@ -134,6 +143,7 @@ describe("BrainClientPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         notesAskPanelMock.mockClear();
+        routerReplaceMock.mockClear();
         fetchNextPageMock.mockResolvedValue(undefined);
         infiniteHighlightsState.value = {
             data: {
@@ -162,29 +172,29 @@ describe("BrainClientPage", () => {
         expect(screen.queryByText("   ")).not.toBeInTheDocument();
     });
 
-    it("filters by search, type, and color and supports deleting a row", async () => {
+    it("filters by search, type, and color and supports inline two-step deletion", async () => {
         deleteHighlightMock.mockResolvedValue("highlight-1");
 
         render(<BrainClientPage initialPage={initialPage} />);
 
-        fireEvent.change(screen.getByPlaceholderText(/search notes/i), {
+        fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], {
             target: { value: "second" },
         });
         expect(screen.getByText(/second highlight/i)).toBeInTheDocument();
         expect(screen.queryByText(/highlighted passage/i)).not.toBeInTheDocument();
 
-        fireEvent.change(screen.getByDisplayValue("All types"), {
+        fireEvent.change(screen.getAllByDisplayValue("All types")[0], {
             target: { value: "note" },
         });
         expect(screen.queryByText("A second highlight")).not.toBeInTheDocument();
 
-        fireEvent.change(screen.getByPlaceholderText(/search notes/i), {
+        fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], {
             target: { value: "" },
         });
-        fireEvent.change(screen.getByDisplayValue("Notes"), {
+        fireEvent.change(screen.getAllByDisplayValue("Notes")[0], {
             target: { value: "all" },
         });
-        fireEvent.change(screen.getByDisplayValue("All colors"), {
+        fireEvent.change(screen.getAllByDisplayValue("All colors")[0], {
             target: { value: "blue" },
         });
 
@@ -192,6 +202,10 @@ describe("BrainClientPage", () => {
         expect(screen.queryByText(/second highlight/i)).not.toBeInTheDocument();
 
         fireEvent.click(screen.getByLabelText("Delete note"));
+
+        expect(deleteHighlightMock).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByLabelText("Confirm delete note"));
 
         await waitFor(() => {
             expect(deleteHighlightMock).toHaveBeenCalledWith("highlight-1");

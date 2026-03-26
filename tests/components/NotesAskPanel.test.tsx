@@ -8,9 +8,22 @@ vi.mock("@ai-sdk/react", () => ({
     useChat: vi.fn(),
 }));
 
+vi.mock("next/navigation", () => ({
+    usePathname: () => "/notes",
+    useSearchParams: () => new URLSearchParams("ask=1"),
+}));
+
 vi.mock("next/link", () => ({
-    default: ({ children, href }: { children: React.ReactNode; href: string }) => (
-        <a href={href}>{children}</a>
+    default: ({
+        children,
+        href,
+        ...props
+    }: {
+        children: React.ReactNode;
+        href: string;
+        [key: string]: unknown;
+    }) => (
+        <a href={href} {...props}>{children}</a>
     ),
 }));
 
@@ -54,7 +67,7 @@ describe("NotesAskPanel", () => {
         render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
 
         expect(screen.getByText("Ask These Notes")).toBeInTheDocument();
-        expect(screen.getByText("2 notes in scope")).toBeInTheDocument();
+        expect(screen.getAllByText("2 notes in scope").length).toBeGreaterThan(0);
         expect(scrollIntoViewMock).not.toHaveBeenCalled();
 
         fireEvent.click(screen.getByRole("button", { name: "What patterns show up across these notes?" }));
@@ -92,10 +105,10 @@ describe("NotesAskPanel", () => {
             screen.getByText("Use the notes currently in scope to surface patterns, compare themes, retrieve supporting evidence, and spot tensions or contradictions.")
         ).toBeInTheDocument();
         expect(screen.getByText("Good places to start")).toBeInTheDocument();
-        expect(screen.getByText("2 notes in scope")).toBeInTheDocument();
-        expect(screen.getByText("using 40 most recent")).toBeInTheDocument();
+        expect(screen.getAllByText("2 notes in scope").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("Using 2 most recent").length).toBeGreaterThan(0);
         expect(screen.getByText('search: "goggins"')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText("Ask about these notes...")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Ask about the notes in this scope...")).toBeInTheDocument();
         expect(
             screen.getByText("Notes-scoped assistant · Grounded only in the notes currently in scope.")
         ).toBeInTheDocument();
@@ -156,9 +169,9 @@ describe("NotesAskPanel", () => {
             />
         );
 
-        expect(screen.getByText(/filters changed/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/filters changed/i).length).toBeGreaterThan(0);
 
-        fireEvent.click(screen.getByRole("button", { name: /use current filters/i }));
+        fireEvent.click(screen.getAllByRole("button", { name: /use current filters/i })[0]);
 
         expect(setMessagesMock).toHaveBeenCalledWith([]);
     });
@@ -172,7 +185,7 @@ describe("NotesAskPanel", () => {
             />
         );
 
-        expect(screen.getByRole("link", { name: /full screen/i })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: /open ask these notes in full screen/i })).toHaveAttribute(
             "href",
             expectedFullScreenHref
         );

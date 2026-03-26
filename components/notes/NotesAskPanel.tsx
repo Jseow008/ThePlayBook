@@ -2,15 +2,18 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport } from "ai";
+import { TextStreamChatTransport, type UIMessage } from "ai";
 import {
     ArrowRight,
     BookOpen,
     Bot,
     BotMessageSquare,
+    Expand,
     Loader2,
+    Plus,
     RefreshCw,
     Send,
     Sparkles,
@@ -19,6 +22,11 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { serializeNotesChatScope, type NotesChatScopePayload } from "@/lib/notes-chat-scope";
+import {
+    clearNotesChatSession,
+    readNotesChatSession,
+    writeNotesChatSession,
+} from "@/lib/notes-chat-session";
 
 const chatTransport = new TextStreamChatTransport({ api: "/api/chat/notes" });
 
@@ -191,12 +199,15 @@ export function NotesAskPanel({
     mobile = false,
     variant = "default",
 }: NotesAskPanelProps) {
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [input, setInput] = useState("");
     const [showAllStarterPrompts, setShowAllStarterPrompts] = useState(false);
     const [activeScope, setActiveScope] = useState<NotesChatScope>(currentScope);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const hasMountedRef = useRef(false);
+    const hasHydratedSessionRef = useRef(false);
     const previousMessageCountRef = useRef(0);
     const previousStatusRef = useRef<string | null>(null);
 
@@ -206,21 +217,56 @@ export function NotesAskPanel({
         setMessages,
         status,
         error,
-    } = useChat({
+    } = useChat<UIMessage>({
         transport: chatTransport,
     });
 
     useEffect(() => {
-        if (messages.length === 0) {
+        if (messages.length === 0 && hasHydratedSessionRef.current) {
             setActiveScope(currentScope);
         }
     }, [currentScope, messages.length]);
+
+    useEffect(() => {
+        if (hasHydratedSessionRef.current) {
+            return;
+        }
+
+        const restoredSession = readNotesChatSession(currentScope.signature);
+        if (restoredSession) {
+            setActiveScope(restoredSession.activeScope);
+            setMessages(restoredSession.messages);
+        } else {
+            setActiveScope(currentScope);
+        }
+
+        hasHydratedSessionRef.current = true;
+    }, [currentScope, setMessages]);
 
     useEffect(() => {
         if (!(variant === "sidebar" && !mobile) || messages.length > 0) {
             setShowAllStarterPrompts(false);
         }
     }, [activeScope.signature, messages.length, mobile, variant]);
+
+    useEffect(() => {
+        if (!hasHydratedSessionRef.current) {
+            return;
+        }
+
+        const persistenceKeys = [activeScope.signature, currentScope.signature];
+
+        if (messages.length === 0) {
+            clearNotesChatSession(currentScope.signature);
+            return;
+        }
+
+        writeNotesChatSession(persistenceKeys, {
+            activeScope,
+            messages,
+            updatedAt: Date.now(),
+        });
+    }, [activeScope, currentScope.signature, messages]);
 
     useEffect(() => {
         const previousMessageCount = previousMessageCountRef.current;
@@ -262,14 +308,34 @@ export function NotesAskPanel({
     const visibleStarterPrompts = isSidebar && !showAllStarterPrompts
         ? STARTER_PROMPTS.slice(0, 2)
         : STARTER_PROMPTS;
+    const returnTarget = (() => {
+        const resolvedPathname = pathname || "/notes";
+        const params = new URLSearchParams(searchParams?.toString() ?? "");
+
+        if (resolvedPathname === "/notes") {
+            params.set("ask", "1");
+        }
+
+        const query = params.toString();
+        return query ? `${resolvedPathname}?${query}` : resolvedPathname;
+    })();
     const fullScreenHref = (() => {
         const params = new URLSearchParams({
             scope: "notes",
-            returnTo: NOTES_RETURN_TARGET,
-            notesScope: serializeNotesChatScope(currentScope),
+            returnTo: returnTarget || NOTES_RETURN_TARGET,
+            notesScope: serializeNotesChatScope(activeScope),
         });
         return `/ask?${params.toString()}`;
     })();
+    const headerActionClassName = cn(
+        "inline-flex items-center rounded-full border border-border/70 bg-background/45 px-3.5 py-2 text-xs font-medium text-foreground/82 shadow-[0_1px_0_rgba(255,255,255,0.02)] transition-all hover:border-border hover:bg-card/75 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50",
+        isSidebar && "px-3.5 py-2 text-[0.72rem]"
+    );
+    const sidebarUtilityActionClassName = "hidden sm:inline-flex size-10 items-center justify-center rounded-full border border-border/70 bg-background/45 text-foreground/82 shadow-[0_1px_0_rgba(255,255,255,0.02)] transition-all hover:border-border hover:bg-card/75 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+    const newChatActionClassName = cn(
+        "inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/12 px-3.5 py-2 text-xs font-semibold text-primary shadow-[0_10px_24px_-18px_rgba(255,255,255,0.3)] transition-all hover:border-primary/45 hover:bg-primary/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/45 disabled:cursor-not-allowed disabled:opacity-50",
+        isSidebar && "px-3 py-1.5 text-[0.72rem]"
+    );
 
     const sendPrompt = async (text: string) => {
         const trimmed = text.trim();
@@ -301,6 +367,18 @@ export function NotesAskPanel({
     const syncToCurrentScope = () => {
         setActiveScope(currentScope);
         setMessages([]);
+    };
+
+    const startNewChat = () => {
+        clearNotesChatSession([activeScope.signature, currentScope.signature]);
+        setInput("");
+        setShowAllStarterPrompts(false);
+        setActiveScope(currentScope);
+        setMessages([]);
+
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+        }
     };
 
     const getMessageText = (message: (typeof messages)[number]): string => {
@@ -515,7 +593,7 @@ export function NotesAskPanel({
                                 value={input}
                                 onChange={(event) => setInput(event.target.value)}
                                 placeholder={composerPlaceholder}
-                                className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto"
+                                className="flex-1 max-h-40 min-h-[52px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70"
                                 rows={1}
                                 onKeyDown={(event) => {
                                     if (event.key === "Enter" && !event.shiftKey) {
@@ -566,41 +644,62 @@ export function NotesAskPanel({
                     isSidebar && "px-5 py-5"
                 )}
             >
-                <div
-                    className={cn(
-                        "flex items-start justify-between gap-3",
-                        isSidebar && "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4"
-                    )}
-                >
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                            <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-                                <BotMessageSquare className="size-4 text-primary" />
+                {isSidebar ? (
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                            <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 text-primary">
+                                <BotMessageSquare className="size-4" />
                             </div>
-                            <div className="min-w-0">
-                                <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">
-                                    Ask These Notes
-                                </h2>
-                                <p className="text-xs text-foreground/80">
-                                    {isSidebar ? "Notes-scoped copilot" : "Answers grounded in the notes currently in view"}
-                                </p>
-                            </div>
+                            <h2 className="min-w-0 text-base font-bold leading-tight text-foreground">
+                                Ask These Notes
+                            </h2>
                         </div>
-                    </div>
 
-                    <div
-                        className={cn(
-                            "flex items-center gap-1",
-                            isSidebar && "row-span-2 self-start justify-self-end"
-                        )}
-                    >
                         <Link
                             href={fullScreenHref}
-                            className="hidden rounded-lg px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-background/60 hover:text-foreground sm:inline-flex"
+                            className={sidebarUtilityActionClassName}
+                            aria-label="Open Ask These Notes in full screen"
+                            title="Open full screen"
                         >
-                            {isSidebar ? "Full screen" : "Full Ask"}
+                            <Expand className="size-4" />
                         </Link>
-                        {!isSidebar && (
+                    </div>
+                ) : (
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
+                                    <BotMessageSquare className="size-4 text-primary" />
+                                </div>
+                                <div className="min-w-0">
+                                    <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">
+                                        Ask These Notes
+                                    </h2>
+                                    <p className="text-xs text-foreground/80">
+                                        Answers grounded in the notes currently in view
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            {!isEmptyState && (
+                                <button
+                                    type="button"
+                                    onClick={startNewChat}
+                                    disabled={isStreaming}
+                                    className={newChatActionClassName}
+                                >
+                                    <Plus className="size-3.5" />
+                                    Start new chat
+                                </button>
+                            )}
+                            <Link
+                                href={fullScreenHref}
+                                className={cn("hidden sm:inline-flex", headerActionClassName)}
+                            >
+                                Full Ask
+                            </Link>
                             <button
                                 type="button"
                                 onClick={onClose}
@@ -609,11 +708,11 @@ export function NotesAskPanel({
                             >
                                 <X className="size-4" />
                             </button>
-                        )}
+                        </div>
                     </div>
-                </div>
+                )}
 
-                <ScopeOverview scope={activeScope} compact className="mt-4" />
+                {!isSidebar && <ScopeOverview scope={activeScope} compact className="mt-4" />}
             </header>
 
             {hasScopeChanged && (
@@ -636,9 +735,6 @@ export function NotesAskPanel({
                             isSidebar && "px-5 py-5"
                         )}>
                             <div className="flex items-start gap-3">
-                                <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                    <Sparkles className="size-4" />
-                                </div>
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-foreground">
                                         {isSidebar ? "Use AI across this note set" : "Ask across this notes view"}
@@ -702,13 +798,13 @@ export function NotesAskPanel({
                                     )}
 
                                     <div
-                                            className={cn(
-                                                "rounded-2xl shadow-sm",
-                                                message.role === "user"
-                                                    ? "max-w-[86%] rounded-tr-sm bg-primary px-4 py-3 text-primary-foreground"
-                                                    : "max-w-[92%] rounded-tl-sm border border-border/40 bg-card/90 px-4 py-3 text-foreground"
-                                            )}
-                                        >
+                                        className={cn(
+                                            "rounded-2xl shadow-sm",
+                                            message.role === "user"
+                                                ? "max-w-[86%] rounded-tr-sm bg-primary px-4 py-3 text-primary-foreground"
+                                                : "max-w-[92%] rounded-tl-sm border border-border/40 bg-card/90 px-4 py-3 text-foreground"
+                                        )}
+                                    >
                                         <div
                                             className={cn(
                                                 "prose prose-sm max-w-none",
@@ -806,15 +902,32 @@ export function NotesAskPanel({
                         <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
                             {notesLabel}
                         </span>
+                        {isSidebar && (
+                            <span className="rounded-full border border-border/60 bg-background/55 px-2.5 py-1 text-[0.68rem] text-foreground/78">
+                                {activeScope.summary.trim() || "All content"}
+                            </span>
+                        )}
                         {activeScope.totalMatches > activeScope.noteCount && (
                             <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
                                 Using {activeScope.noteCount} most recent
                             </span>
                         )}
                     </div>
-                    <span className="text-[0.65rem] text-muted-foreground/75">
-                        Enter to send · Shift+Enter for newline
-                    </span>
+                    {isSidebar && !isEmptyState ? (
+                        <button
+                            type="button"
+                            onClick={startNewChat}
+                            disabled={isStreaming}
+                            className={newChatActionClassName}
+                        >
+                            <Plus className="size-3.5" />
+                            Start new chat
+                        </button>
+                    ) : !isSidebar ? (
+                        <span className="text-[0.65rem] text-muted-foreground/75">
+                            Enter to send · Shift+Enter for newline
+                        </span>
+                    ) : null}
                 </div>
 
                 <form
