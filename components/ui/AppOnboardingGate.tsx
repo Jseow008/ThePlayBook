@@ -46,6 +46,10 @@ export function AppOnboardingGate() {
                 return;
             }
 
+            if (user === undefined) {
+                return;
+            }
+
             if (replayRequested) {
                 setActiveTour(user ? "account" : "guest");
                 replayTimer = window.setTimeout(() => {

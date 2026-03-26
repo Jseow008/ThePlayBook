@@ -17,13 +17,19 @@ export function AuthForm({ nextUrl = "/" }: AuthFormProps) {
     const [email, setEmail] = useState("");
     const [emailSent, setEmailSent] = useState(false);
 
+    const buildCallbackUrl = () => {
+        const callbackUrl = new URL("/auth/callback", window.location.origin);
+        callbackUrl.searchParams.set("next", nextUrl);
+        return callbackUrl.toString();
+    };
+
     const handleOAuthLogin = async (provider: "google" | "apple") => {
         setIsLoading(provider);
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider,
                 options: {
-                    redirectTo: `${window.location.origin}/auth/callback?next=${nextUrl}`,
+                    redirectTo: buildCallbackUrl(),
                 },
             });
 
@@ -53,7 +59,7 @@ export function AuthForm({ nextUrl = "/" }: AuthFormProps) {
             const { error } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback?next=${nextUrl}`,
+                    emailRedirectTo: buildCallbackUrl(),
                 },
             });
 

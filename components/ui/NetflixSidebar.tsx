@@ -76,6 +76,7 @@ export function NetflixSidebar() {
     const isLibrarySectionActive = pathname.startsWith("/library");
     const isNotesSectionActive = pathname === notesItem.href;
     const isAskSectionActive = pathname === "/ask";
+    const isAuthLoading = user === undefined;
 
     // Keep the current section expanded when it owns the active route.
     useEffect(() => {
@@ -172,6 +173,8 @@ export function NetflixSidebar() {
                     {isExpanded ? (
                         <button
                             onClick={() => setIsLibraryOpen(!isLibraryOpen)}
+                            aria-expanded={isLibraryOpen}
+                            aria-controls="sidebar-library-subnav"
                             className={cn(
                                 "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50",
                                 "justify-start gap-3",
@@ -188,14 +191,12 @@ export function NetflixSidebar() {
                             >
                                 My Library
                             </span>
-                            {isExpanded && isLoaded && totalLibraryItems > 0 && (
-                                <ChevronDown
-                                    className={cn(
-                                        "size-4 transition-transform",
-                                        isLibraryOpen && "rotate-180"
-                                    )}
-                                />
-                            )}
+                            <ChevronDown
+                                className={cn(
+                                    "size-4 transition-transform",
+                                    isLibraryOpen && "rotate-180"
+                                )}
+                            />
                         </button>
                     ) : (
                         <Link
@@ -219,8 +220,8 @@ export function NetflixSidebar() {
                     )}
 
                     {/* Library Sub-items (only when expanded and open) */}
-                    {isExpanded && isLibraryOpen && isLoaded && (
-                        <div className="ml-4 space-y-1">
+                    {isExpanded && isLibraryOpen && (
+                        <div id="sidebar-library-subnav" className="ml-4 space-y-1">
                             {/* My List */}
                             <Link
                                 href="/library/my-list"
@@ -376,7 +377,20 @@ export function NetflixSidebar() {
             </nav>
 
             {/* Sign In / User Profile */}
-            {!user ? (
+            {isAuthLoading ? (
+                <div className="p-4">
+                    <div
+                        aria-hidden="true"
+                        className={cn(
+                            "flex items-center rounded-md border border-border bg-secondary/50 animate-pulse",
+                            isExpanded ? "h-10 px-4" : "h-10 w-10 mx-auto justify-center"
+                        )}
+                    >
+                        <div className="h-6 w-6 rounded-full bg-background/60" />
+                        {isExpanded ? <div className="ml-3 h-3 w-20 rounded bg-background/60" /> : null}
+                    </div>
+                </div>
+            ) : !user ? (
                 <div className="p-4">
                     <Link
                         href="/login"

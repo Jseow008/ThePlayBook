@@ -55,6 +55,15 @@ export function UserNav() {
             : user?.user_metadata?.avatar_url;
     const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
 
+    if (user === undefined) {
+        return (
+            <div
+                aria-hidden="true"
+                className="h-8 w-8 rounded-full border border-border bg-primary/10 animate-pulse"
+            />
+        );
+    }
+
     if (!user) {
         return (
             <Link
@@ -77,7 +86,7 @@ export function UserNav() {
                 aria-expanded={isOpen}
                 aria-controls="user-menu"
             >
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center border border-border overflow-hidden">
+                <div className="relative h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center border border-border overflow-hidden">
                     {(user.user_metadata?.avatar_icon || user.user_metadata?.avatar_url) ? (
                         <Image
                             src={avatarSrc!}

@@ -1,13 +1,17 @@
 import { AuthForm } from "@/components/ui/AuthForm";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
+import { normalizeNextPath } from "@/lib/auth-redirect";
 
 export default async function LoginPage({
     searchParams,
 }: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-    const { error } = await searchParams;
+    const params = await searchParams;
+    const error = typeof params.error === "string" ? params.error : undefined;
+    const next = normalizeNextPath(typeof params.next === "string" ? params.next : undefined);
+
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
             <Link
@@ -35,8 +39,7 @@ export default async function LoginPage({
                             Authentication failed. Please try again.
                         </div>
                     )}
-
-                    <AuthForm />
+                    <AuthForm nextUrl={next} />
                 </div>
             </div>
         </div>

@@ -5,16 +5,17 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 
-const AuthUserContext = createContext<User | null | undefined>(undefined);
+const AUTH_CONTEXT_MISSING = Symbol("AUTH_CONTEXT_MISSING");
+const AuthUserContext = createContext<User | null | undefined | typeof AUTH_CONTEXT_MISSING>(AUTH_CONTEXT_MISSING);
 
 export function AuthUserProvider({
     children,
-    initialUser = null,
+    initialUser,
 }: {
     children: ReactNode;
-    initialUser?: User | null;
+    initialUser?: User | null | undefined;
 }) {
-    const [user, setUser] = useState<User | null>(initialUser);
+    const [user, setUser] = useState<User | null | undefined>(initialUser);
 
     useEffect(() => {
         setUser(initialUser);
@@ -27,8 +28,14 @@ export function AuthUserProvider({
         supabase.auth.getUser().then((result) => {
             if (!isMounted) return;
             const { user, error } = resolveAuthUserResult(result);
-            if (error) return;
+            if (error) {
+                setUser((current) => current === undefined ? null : current);
+                return;
+            }
             setUser(user);
+        }).catch(() => {
+            if (!isMounted) return;
+            setUser((current) => current === undefined ? null : current);
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -48,7 +55,7 @@ export function AuthUserProvider({
 export function useAuthUser() {
     const user = useContext(AuthUserContext);
 
-    if (user === undefined) {
+    if (user === AUTH_CONTEXT_MISSING) {
         throw new Error("useAuthUser must be used within an AuthUserProvider");
     }
 
