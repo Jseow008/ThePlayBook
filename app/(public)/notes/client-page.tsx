@@ -400,6 +400,26 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     }, []);
 
     useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        const previousOverflow = document.body.style.overflow;
+
+        const syncBodyOverflow = () => {
+            document.body.style.overflow = isAskOpen && window.innerWidth < 1024 ? "hidden" : previousOverflow;
+        };
+
+        syncBodyOverflow();
+        window.addEventListener("resize", syncBodyOverflow);
+
+        return () => {
+            window.removeEventListener("resize", syncBodyOverflow);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isAskOpen]);
+
+    useEffect(() => {
         if (!armedDeleteId) {
             if (deleteArmTimeoutRef.current !== null) {
                 window.clearTimeout(deleteArmTimeoutRef.current);
@@ -1246,35 +1266,17 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                         aria-label="Close notes AI panel backdrop"
                         onClick={toggleAskPanel}
                     />
-                    <div className="absolute inset-x-0 bottom-0 max-h-[88vh] px-3 pb-3">
-                        <div className="relative z-10 mb-2">
-                            <div className="mx-auto mb-2 h-1.5 w-12 rounded-full bg-white/18" />
-                            <div className="rounded-[20px] border border-white/10 bg-background/92 px-4 py-3 shadow-[0_18px_40px_-24px_rgba(0,0,0,0.85)] backdrop-blur-sm">
-                                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
-                                    Current scope
-                                </p>
-                                <div className="flex flex-wrap items-center gap-2 text-[0.72rem]">
-                                    <span className="rounded-full border border-white/10 bg-card/45 px-2.5 py-1 text-foreground/88">
-                                        {notesChatScope.noteCount} {notesChatScope.noteCount === 1 ? "note" : "notes"} in scope
-                                    </span>
-                                    {notesChatScope.totalMatches > notesChatScope.noteCount && (
-                                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-primary">
-                                            Using {notesChatScope.noteCount} most recent
-                                        </span>
-                                    )}
-                                </div>
-                                <p className="mt-2 line-clamp-2 text-[0.72rem] leading-relaxed text-muted-foreground">
-                                    {notesChatScope.summary}
-                                </p>
-                            </div>
+                    <div className="absolute inset-x-0 bottom-0 top-4 z-10 flex flex-col px-3 pb-3">
+                        <div className="relative z-10 mb-2 flex justify-center">
+                            <div className="h-1.5 w-12 rounded-full bg-white/18" />
                         </div>
 
-                        <div className="relative z-10">
-                        <NotesAskPanel
-                            currentScope={notesChatScope}
-                            onClose={toggleAskPanel}
-                            mobile
-                        />
+                        <div className="relative min-h-0 flex-1">
+                            <NotesAskPanel
+                                currentScope={notesChatScope}
+                                onClose={toggleAskPanel}
+                                mobile
+                            />
                         </div>
                     </div>
                 </div>

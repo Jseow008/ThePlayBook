@@ -144,6 +144,12 @@ describe("BrainClientPage", () => {
         vi.clearAllMocks();
         notesAskPanelMock.mockClear();
         routerReplaceMock.mockClear();
+        document.body.style.overflow = "";
+        Object.defineProperty(window, "innerWidth", {
+            configurable: true,
+            writable: true,
+            value: 1280,
+        });
         fetchNextPageMock.mockResolvedValue(undefined);
         infiniteHighlightsState.value = {
             data: {
@@ -255,5 +261,29 @@ describe("BrainClientPage", () => {
                 .getAllByRole("button", { name: /close notes ai/i })
                 .find((button) => button.getAttribute("aria-pressed") === "true")
         ).toBeTruthy();
+    });
+
+    it("locks body scroll only for the mobile ask sheet", async () => {
+        Object.defineProperty(window, "innerWidth", {
+            configurable: true,
+            writable: true,
+            value: 390,
+        });
+
+        const { unmount } = render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+
+        expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
+        expect(document.body.style.overflow).toBe("hidden");
+
+        unmount();
+
+        expect(document.body.style.overflow).toBe("");
+    });
+
+    it("does not lock body scroll for the desktop ask sidebar", async () => {
+        render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+
+        expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
+        expect(document.body.style.overflow).toBe("");
     });
 });
