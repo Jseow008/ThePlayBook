@@ -52,8 +52,12 @@ describe("PublicLayoutShell", () => {
         expect(screen.getByTestId("mobile-bottom-nav")).toBeInTheDocument();
         expect(screen.getByText("Focus content")).toBeInTheDocument();
         expect(main).toHaveClass("lg:pl-16");
+        expect(main).toHaveClass("h-full");
+        expect(main).toHaveClass("overflow-hidden");
         expect(main).not.toHaveClass("pb-[calc(4rem+env(safe-area-inset-bottom))]");
         expect(main).not.toHaveClass("pb-[calc(3.5rem+env(safe-area-inset-bottom))]");
+        expect(container.firstElementChild).toHaveClass("h-[100dvh]");
+        expect(container.firstElementChild).toHaveClass("overflow-hidden");
     });
 
     it("suppresses the mobile chrome on immersive read routes", () => {

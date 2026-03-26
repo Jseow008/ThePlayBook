@@ -19,8 +19,10 @@ import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
 const BATCH_SIZE = 6;
-const FEED_LIST_VIEWPORT_CLASS = "h-[calc(100svh-10rem)] md:h-[calc(100svh-7.5rem)]";
-const FEED_CARD_HEIGHT_CLASS = "min-h-[calc(100svh-10.75rem)] md:min-h-[calc(100svh-7.5rem)]";
+const FEED_LIST_VIEWPORT_CLASS =
+    "h-[calc(100dvh-10rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-7.5rem)]";
+const FEED_CARD_HEIGHT_CLASS =
+    "min-h-[calc(100dvh-10.75rem-env(safe-area-inset-bottom))] md:min-h-[calc(100dvh-7.5rem)]";
 const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 240;
 const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 210;
 const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 200;
@@ -30,6 +32,7 @@ const TOUCH_TRIGGER = 40;
 const GESTURE_UNLOCK_TIMEOUT_MS = 200;
 const WHEEL_QUIET_PERIOD_MS = 180;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
+const FocusItemIdSchema = z.string().uuid();
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 
@@ -81,7 +84,13 @@ function formatDuration(durationSeconds: number | null) {
 }
 
 function buildExcludeParam(ids: string[]) {
-    return Array.from(new Set(ids.filter(Boolean))).join(",");
+    return Array.from(
+        new Set(
+            ids
+                .map((id) => id.trim())
+                .filter((id) => FocusItemIdSchema.safeParse(id).success)
+        )
+    ).join(",");
 }
 
 function readFocusRestoreState(): FocusRestoreState | null {
@@ -715,7 +724,7 @@ export function FocusFeed() {
                     </p>
                 </header>
 
-                {!hasInitialized || (loading && cards.length === 0) ? (
+                {!mounted || !hasInitialized || (loading && cards.length === 0) ? (
                     <LoadingState />
                 ) : !loading && cards.length === 0 ? (
                     <EmptyState error={error} />
@@ -821,12 +830,12 @@ function FocusCardView({
             className={`${FEED_CARD_HEIGHT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div className="flex h-full flex-col">
-                <div className={isDesktop ? "space-y-2.5" : "space-y-2.5"}>
-                    <div className={isDesktop ? "space-y-1.5" : "space-y-2"}>
+                <div className={isDesktop ? "space-y-3" : "space-y-2.5"}>
+                    <div className={isDesktop ? "space-y-1" : "space-y-2"}>
                         <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
                             {card.title}
                         </h2>
-                        <div className="space-y-1.5">
+                        <div className={isDesktop ? "space-y-1" : "space-y-1.5"}>
                             {card.author && (
                                 <p className="line-clamp-1 text-xs text-muted-foreground/70 sm:text-[13px]">
                                     {card.author}
@@ -842,7 +851,7 @@ function FocusCardView({
                                     </span>
                                 )}
                                 {duration && (
-                                    <span className="rounded-full border border-border/40 px-2 py-0.5 text-muted-foreground/80">
+                                    <span className="rounded-full border border-border/50 bg-background/35 px-2 py-0.5 text-foreground/85">
                                         {duration}
                                     </span>
                                 )}
@@ -853,7 +862,7 @@ function FocusCardView({
                     <section
                         className={
                             isDesktop
-                                ? "rounded-2xl border border-border/35 bg-background/30 p-2.5 sm:p-3"
+                                ? "rounded-2xl border border-border/35 bg-background/30 p-3 sm:p-3.5"
                                 : ""
                         }
                     >
@@ -871,7 +880,7 @@ function FocusCardView({
                     <section
                         className={
                             isDesktop
-                                ? "rounded-2xl border border-border/35 bg-background/30 p-2.5 sm:p-3"
+                                ? "rounded-2xl border border-border/35 bg-background/30 p-3 sm:p-3.5"
                                 : ""
                         }
                     >
@@ -879,11 +888,13 @@ function FocusCardView({
                             {takeawayLabel}
                         </p>
                         {visibleTakeaways.length > 0 ? (
-                            <div className={isDesktop ? "mt-1.5 space-y-1.5" : "mt-1.5 space-y-1.5"}>
+                            <div className={isDesktop ? "mt-2 space-y-2" : "mt-1.5 space-y-1.5"}>
                                 {visibleTakeaways.map((takeaway, index) => (
                                     <div
                                         key={`${card.id}-${index}`}
-                                        className="flex gap-2.5 text-[0.85rem] leading-[1.55] text-foreground/88 sm:text-[0.9rem] sm:leading-[1.55]"
+                                        className={isDesktop
+                                            ? "flex gap-2.5 text-[0.9rem] leading-[1.6] text-foreground/90"
+                                            : "flex gap-2.5 text-[0.85rem] leading-[1.55] text-foreground/88 sm:text-[0.9rem] sm:leading-[1.55]"}
                                     >
                                         <span className="mt-0.5 text-[11px] font-semibold text-primary sm:text-xs">
                                             {String(index + 1).padStart(2, "0")}
@@ -901,7 +912,7 @@ function FocusCardView({
                         )}
                     </section>
 
-                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-0" : "flex flex-wrap items-center justify-end gap-3 pt-0"}>
+                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5" : "flex flex-wrap items-center justify-end gap-3 pt-0"}>
                         {isDesktop ? (
                             <Link
                                 href={`/read/${card.id}`}

@@ -29,7 +29,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className={isFocusPage ? "h-[100dvh] overflow-hidden bg-background" : "min-h-screen bg-background"}>
             <Suspense fallback={null}>
                 <AppOnboardingGate />
             </Suspense>
@@ -49,7 +49,9 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
             {/* Main Content */}
             <main
                 className={
-                    isFocusPage || isReadPage
+                    isFocusPage
+                        ? "h-full overflow-hidden lg:pl-16"
+                        : isReadPage
                         ? "lg:pl-16"
                         : isBrowsePage
                         ? "lg:pl-16 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0"

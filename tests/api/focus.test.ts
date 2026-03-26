@@ -23,8 +23,9 @@ vi.mock("@/lib/server/api", async () => {
 });
 
 describe("Focus API", () => {
-    const mockLimit = vi.fn();
-    const mockNot = vi.fn(() => ({ limit: mockLimit }));
+    const mockRange = vi.fn();
+    const mockOrder = vi.fn(() => ({ range: mockRange }));
+    const mockNot = vi.fn(() => ({ order: mockOrder }));
     const mockIs = vi.fn(() => ({ not: mockNot }));
     const mockEq = vi.fn(() => ({ is: mockIs }));
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
@@ -33,12 +34,13 @@ describe("Focus API", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockRange.mockReset();
         (createPublicServerClient as any).mockReturnValue({
             from: mockFrom,
         });
         (bestEffortRateLimit as any).mockResolvedValue({ success: true });
         randomSpy = vi.spyOn(Math, "random");
-        mockLimit.mockResolvedValue({
+        mockRange.mockResolvedValue({
             data: [
                 {
                     id: "123e4567-e89b-12d3-a456-426614174000",
@@ -115,7 +117,8 @@ describe("Focus API", () => {
 
         expect(mockFrom).toHaveBeenCalledWith("content_item");
         expect(mockNot).toHaveBeenCalledWith("quick_mode_json", "is", null);
-        expect(mockLimit).toHaveBeenCalledWith(48);
+        expect(mockOrder).toHaveBeenCalledWith("id", { ascending: true });
+        expect(mockRange).toHaveBeenCalledWith(0, 47);
         expect(json).toEqual([
             expect.objectContaining({
                 id: "123e4567-e89b-12d3-a456-426614174002",
@@ -128,8 +131,81 @@ describe("Focus API", () => {
         ]);
     });
 
+    it("continues scanning later pages when the first page is exhausted by exclusions", async () => {
+        mockRange
+            .mockResolvedValueOnce({
+                data: Array.from({ length: 48 }, (_, index) => ({
+                    id: `123e4567-e89b-12d3-a456-426614174${String(100 + index).padStart(3, "0")}`,
+                    title: `Excluded Item ${index + 1}`,
+                    type: "book",
+                    author: "Author A",
+                    category: "Mindset",
+                    cover_image_url: null,
+                    duration_seconds: 180,
+                    quick_mode_json: {
+                        hook: "A",
+                        big_idea: "B",
+                        key_takeaways: ["C"],
+                    },
+                })),
+                error: null,
+            })
+            .mockResolvedValueOnce({
+                data: [
+                    {
+                        id: "123e4567-e89b-12d3-a456-426614174200",
+                        title: "Second Page First Item",
+                        type: "book",
+                        author: "Author B",
+                        category: "Mindset",
+                        cover_image_url: null,
+                        duration_seconds: 180,
+                        quick_mode_json: {
+                            hook: "A",
+                            big_idea: "B",
+                            key_takeaways: ["C"],
+                        },
+                    },
+                    {
+                        id: "123e4567-e89b-12d3-a456-426614174201",
+                        title: "Second Page Second Item",
+                        type: "book",
+                        author: "Author C",
+                        category: "Mindset",
+                        cover_image_url: null,
+                        duration_seconds: 180,
+                        quick_mode_json: {
+                            hook: "A",
+                            big_idea: "B",
+                            key_takeaways: ["C"],
+                        },
+                    },
+                ],
+                error: null,
+            });
+
+        const request = new NextRequest(
+            new URL(
+                `http://localhost/api/focus?limit=2&excludeIds=${Array.from({ length: 48 }, (_, index) =>
+                    `123e4567-e89b-12d3-a456-426614174${String(100 + index).padStart(3, "0")}`
+                ).join(",")}`
+            )
+        );
+
+        const response = await GET(request);
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(mockRange).toHaveBeenNthCalledWith(1, 0, 47);
+        expect(mockRange).toHaveBeenNthCalledWith(2, 48, 95);
+        expect(json).toEqual([
+            expect.objectContaining({ id: "123e4567-e89b-12d3-a456-426614174200" }),
+            expect.objectContaining({ id: "123e4567-e89b-12d3-a456-426614174201" }),
+        ]);
+    });
+
     it("drops rows with invalid quick mode payloads without failing the request", async () => {
-        mockLimit.mockResolvedValue({
+        mockRange.mockResolvedValue({
             data: [
                 {
                     id: "123e4567-e89b-12d3-a456-426614174010",

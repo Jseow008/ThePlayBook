@@ -222,8 +222,8 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
-        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100svh-10rem)]");
-        expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100svh-7.5rem)]");
+        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-10rem-env(safe-area-inset-bottom))]");
+        expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100dvh-7.5rem)]");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("pb-4");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("md:pb-2");
         expect(screen.getByRole("button", { name: "Show full takeaways for Essentialism" })).toBeInTheDocument();
@@ -240,9 +240,36 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).not.toHaveClass("bg-background/45");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("border");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).not.toHaveClass("bg-background/45");
-        expect(firstCard).toHaveClass("min-h-[calc(100svh-10.75rem)]");
-        expect(firstCard).toHaveClass("md:min-h-[calc(100svh-7.5rem)]");
+        expect(firstCard).toHaveClass("min-h-[calc(100dvh-10.75rem-env(safe-area-inset-bottom))]");
+        expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
+    });
+
+    it("filters malformed completed IDs before building the focus exclude query", async () => {
+        readingProgressState.value = {
+            completedIds: ["not-a-uuid", focusItems[2]!.id],
+            isLoaded: true,
+        };
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: true,
+                seenIds: focusItems.map((item) => item.id),
+            })
+        );
+
+        render(<FocusFeed />);
+
+        await screen.findByText("Deep Work");
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
+        expect(requestUrl).toContain(focusItems[2]!.id);
+        expect(requestUrl).not.toContain("not-a-uuid");
     });
 
     it("prunes completed items after reading progress hydrates and fetches replacements", async () => {
