@@ -920,8 +920,8 @@ function FocusCardView({
             className={`${FEED_CARD_HEIGHT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div className="flex h-full flex-col">
-                    <div className={isDesktop ? "space-y-3" : "space-y-3"}>
-                        <div className={isDesktop ? "space-y-1.5" : "space-y-2"}>
+                    <div className={isDesktop ? "space-y-3" : "space-y-2.5"}>
+                        <div className={isDesktop ? "space-y-1.5" : "space-y-1.5"}>
                             <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
                                 {card.title}
                             </h2>
@@ -953,7 +953,7 @@ function FocusCardView({
                         className={
                             isDesktop
                                 ? "relative rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-3 pl-5 pr-4"
-                                : "relative rounded-r-xl border-l-[3px] border-primary/45 bg-secondary/25 py-3 pl-4 pr-3"
+                                : "relative rounded-r-xl border-l-[3px] border-primary/45 bg-secondary/25 py-2.5 pl-4 pr-3"
                         }
                     >
                         <p
@@ -969,18 +969,18 @@ function FocusCardView({
 
                     <section
                         className={
-                            "space-y-3"
+                            isDesktop ? "space-y-3" : "space-y-2.5"
                         }
                     >
                         <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75 sm:text-xs">
                             {takeawayLabel}
                         </p>
                         {visibleTakeaways.length > 0 ? (
-                            <div className="grid gap-3">
+                            <div className={isDesktop ? "grid gap-3" : "grid gap-2.5"}>
                                 {visibleTakeaways.map((takeaway, index) => (
                                     <div
                                         key={`${card.id}-${index}`}
-                                        className="flex gap-3 px-1 py-1"
+                                        className={isDesktop ? "flex gap-3 px-1 py-1" : "flex gap-3 px-1 py-0.5"}
                                     >
                                         <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-bold text-primary sm:text-xs">
                                             {index + 1}
@@ -1005,7 +1005,7 @@ function FocusCardView({
                     </section>
 
                     {!isDesktop && (
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
                             <button
                                 type="button"
                                 onClick={() => {
@@ -1034,7 +1034,7 @@ function FocusCardView({
                         </div>
                     )}
 
-                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5" : "flex flex-wrap items-center justify-start gap-3 pt-2"}>
+                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5" : "flex flex-wrap items-center justify-start gap-3 pt-1.5"}>
                         {isDesktop ? (
                             <Link
                                 href={`/read/${card.id}`}

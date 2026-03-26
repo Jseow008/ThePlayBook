@@ -256,9 +256,9 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-3");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-2.5");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-1");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0.5");
         expect(firstCard).toHaveClass("min-h-[calc(100dvh-11.75rem-env(safe-area-inset-bottom))]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
@@ -733,9 +733,9 @@ describe("FocusFeed", () => {
         expect(button).toHaveClass("min-h-11");
         expect(button).toHaveClass("touch-manipulation");
         expect(button.parentElement).toHaveClass("justify-start");
-        expect(button.parentElement).toHaveClass("pt-2");
+        expect(button.parentElement).toHaveClass("pt-1.5");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("grid");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("gap-3");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("gap-2.5");
     });
 
     it("saves a mobile focus item to My List", async () => {
