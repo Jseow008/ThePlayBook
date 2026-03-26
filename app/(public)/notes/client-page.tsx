@@ -793,7 +793,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                             onClick={toggleAskPanel}
                             aria-pressed={isAskOpen}
                             className={cn(
-                                "inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                                "hidden items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors lg:inline-flex",
                                 isAskOpen
                                     ? "border-primary/30 bg-primary/15 text-primary hover:bg-primary/20"
                                     : "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
@@ -832,20 +832,37 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                             <span>from {highlights.length} loaded entries</span>
                                         </div>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsMobileFiltersExpanded((current) => !current)}
-                                            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-card/35 px-3 py-1.5 font-medium text-foreground/85 transition-colors hover:bg-card/50 hover:text-foreground"
-                                            aria-expanded={isMobileFiltersExpanded}
-                                        >
-                                            <SlidersHorizontal className="size-3.5" />
-                                            Filters
-                                            {activeFilterCount > 0 && (
-                                                <span className="rounded-full bg-primary/14 px-1.5 py-0.5 text-[0.65rem] text-primary">
-                                                    {activeFilterCount}
-                                                </span>
-                                            )}
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={toggleAskPanel}
+                                                aria-pressed={isAskOpen}
+                                                className={cn(
+                                                    "inline-flex min-h-11 items-center gap-2 rounded-full border px-3 py-1.5 font-medium transition-colors",
+                                                    isAskOpen
+                                                        ? "border-primary/30 bg-primary/15 text-primary hover:bg-primary/20"
+                                                        : "border-white/10 bg-card/35 text-foreground/85 hover:bg-card/50 hover:text-foreground"
+                                                )}
+                                            >
+                                                {isAskOpen ? <X className="size-3.5" /> : <BotMessageSquare className="size-3.5" />}
+                                                Ask
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsMobileFiltersExpanded((current) => !current)}
+                                                className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-card/35 px-3 py-1.5 font-medium text-foreground/85 transition-colors hover:bg-card/50 hover:text-foreground"
+                                                aria-expanded={isMobileFiltersExpanded}
+                                            >
+                                                <SlidersHorizontal className="size-3.5" />
+                                                Filters
+                                                {activeFilterCount > 0 && (
+                                                    <span className="rounded-full bg-primary/14 px-1.5 py-0.5 text-[0.65rem] text-primary">
+                                                        {activeFilterCount}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {activeFilterChips.length > 0 && (
