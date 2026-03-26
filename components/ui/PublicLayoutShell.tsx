@@ -21,6 +21,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
     const isLandingPage = pathname === "/";
     const isBrowsePage = pathname === "/browse";
     const isFocusPage = pathname === "/focus";
+    const isReadPage = pathname.startsWith("/read");
 
     // Landing page: standalone layout (no sidebar, no bottom nav)
     if (isLandingPage) {
@@ -48,7 +49,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
             {/* Main Content */}
             <main
                 className={
-                    isFocusPage
+                    isFocusPage || isReadPage
                         ? "lg:pl-16"
                         : isBrowsePage
                         ? "lg:pl-16 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0"
@@ -56,14 +57,14 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
                 }
             >
                 {/* Mobile padding for fixed header */}
-                {!pathname.startsWith("/read") && !isFocusPage && (
+                {!isReadPage && !isFocusPage && (
                     <div className={isBrowsePage ? "lg:hidden h-12" : "lg:hidden h-14"} />
                 )}
                 {children}
             </main>
 
             {/* Mobile Bottom Navigation */}
-            <MobileBottomNav compact={isBrowsePage} />
+            {!isReadPage && <MobileBottomNav compact={isBrowsePage} />}
         </div>
     );
 }

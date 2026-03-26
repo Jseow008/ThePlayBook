@@ -44,6 +44,15 @@ export function MobileHeader({
         };
     }, []);
 
+    useEffect(() => {
+        setIsVisible(true);
+        lastScrollYRef.current = window.scrollY;
+        if (frameRef.current !== null) {
+            window.cancelAnimationFrame(frameRef.current);
+            frameRef.current = null;
+        }
+    }, [pathname]);
+
     // Completely hide on immersive routes
     if (pathname.startsWith("/read")) {
         return null;

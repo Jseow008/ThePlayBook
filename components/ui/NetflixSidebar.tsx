@@ -37,22 +37,47 @@ export function NetflixSidebar() {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [isAskOpen, setIsAskOpen] = useState(false);
+    const sidebarRef = useRef<HTMLElement | null>(null);
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isPointerInsideRef = useRef(false);
     const user = useAuthUser();
 
-    const handleMouseEnter = () => {
+    const clearHoverTimeout = () => {
         if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current);
+            hoverTimeoutRef.current = null;
         }
+    };
+
+    const handleMouseEnter = () => {
+        isPointerInsideRef.current = true;
+        clearHoverTimeout();
         hoverTimeoutRef.current = setTimeout(() => {
             setIsExpanded(true);
         }, 300); // 300ms delay
     };
 
     const handleMouseLeave = () => {
-        if (hoverTimeoutRef.current) {
-            clearTimeout(hoverTimeoutRef.current);
-            hoverTimeoutRef.current = null;
+        isPointerInsideRef.current = false;
+        clearHoverTimeout();
+        if (sidebarRef.current?.contains(document.activeElement)) {
+            return;
+        }
+        setIsExpanded(false);
+    };
+
+    const handleFocusCapture = () => {
+        clearHoverTimeout();
+        setIsExpanded(true);
+    };
+
+    const handleBlurCapture = (event: React.FocusEvent<HTMLElement>) => {
+        const nextTarget = event.relatedTarget;
+        if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+            return;
+        }
+        if (isPointerInsideRef.current) {
+            return;
         }
         setIsExpanded(false);
     };
@@ -93,8 +118,11 @@ export function NetflixSidebar() {
 
     return (
         <aside
+            ref={sidebarRef}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            onFocusCapture={handleFocusCapture}
+            onBlurCapture={handleBlurCapture}
             className={cn(
                 "fixed left-0 top-0 bottom-0 z-50 bg-background/95 backdrop-blur-md border-r border-border transition-all duration-300 hidden lg:flex flex-col",
                 isExpanded ? "w-56" : "w-16"

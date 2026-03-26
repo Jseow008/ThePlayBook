@@ -23,7 +23,7 @@ vi.mock("@/components/ui/MobileBottomNav", () => ({
 }));
 
 vi.mock("@/components/ui/MobileHeader", () => ({
-    MobileHeader: () => <header data-testid="mobile-header" />,
+    MobileHeader: () => (pathnameState.value.startsWith("/read") ? null : <header data-testid="mobile-header" />),
 }));
 
 vi.mock("@/components/ui/AppOnboardingGate", () => ({
@@ -51,6 +51,27 @@ describe("PublicLayoutShell", () => {
         expect(screen.queryByTestId("mobile-header")).not.toBeInTheDocument();
         expect(screen.getByTestId("mobile-bottom-nav")).toBeInTheDocument();
         expect(screen.getByText("Focus content")).toBeInTheDocument();
+        expect(main).toHaveClass("lg:pl-16");
+        expect(main).not.toHaveClass("pb-[calc(4rem+env(safe-area-inset-bottom))]");
+        expect(main).not.toHaveClass("pb-[calc(3.5rem+env(safe-area-inset-bottom))]");
+    });
+
+    it("suppresses the mobile chrome on immersive read routes", () => {
+        pathnameState.value = "/read/test-item-1";
+
+        const { container } = render(
+            <PublicLayoutShell>
+                <div>Reader content</div>
+            </PublicLayoutShell>
+        );
+
+        const main = container.querySelector("main");
+
+        expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+        expect(screen.getByTestId("user-nav")).toBeInTheDocument();
+        expect(screen.queryByTestId("mobile-header")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("mobile-bottom-nav")).not.toBeInTheDocument();
+        expect(screen.getByText("Reader content")).toBeInTheDocument();
         expect(main).toHaveClass("lg:pl-16");
         expect(main).not.toHaveClass("pb-[calc(4rem+env(safe-area-inset-bottom))]");
         expect(main).not.toHaveClass("pb-[calc(3.5rem+env(safe-area-inset-bottom))]");

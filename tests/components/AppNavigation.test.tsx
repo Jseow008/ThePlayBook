@@ -117,6 +117,71 @@ describe("app navigation", () => {
         vi.useRealTimers();
     });
 
+    it("opens the Library submenu from the expanded desktop sidebar", async () => {
+        vi.useFakeTimers();
+
+        render(<NetflixSidebar />);
+
+        const sidebar = screen.getByRole("complementary");
+        fireEvent.mouseEnter(sidebar);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(300);
+        });
+
+        const libraryButton = screen.getByRole("button", { name: /my library/i });
+        expect(libraryButton).toHaveAttribute("aria-expanded", "false");
+
+        fireEvent.click(libraryButton);
+
+        expect(libraryButton).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByRole("link", { name: /my list/i })).toHaveAttribute("href", "/library/my-list");
+        expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute("href", "/library/reading");
+        expect(screen.getByRole("link", { name: /completed/i })).toHaveAttribute("href", "/library/completed");
+
+        vi.useRealTimers();
+    });
+
+    it("expands the desktop sidebar on keyboard focus so submenu destinations are reachable", () => {
+        render(<NetflixSidebar />);
+
+        fireEvent.focus(screen.getByRole("link", { name: /search/i }));
+
+        const libraryButton = screen.getByRole("button", { name: /my library/i });
+        expect(libraryButton).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /ask/i })).toBeInTheDocument();
+    });
+
+    it("opens the Library submenu even before reading progress finishes loading", async () => {
+        readingProgressState.value = {
+            totalLibraryItems: 0,
+            inProgressCount: 0,
+            completedCount: 0,
+            myListCount: 0,
+            isLoaded: false,
+        };
+        vi.useFakeTimers();
+
+        render(<NetflixSidebar />);
+
+        const sidebar = screen.getByRole("complementary");
+        fireEvent.mouseEnter(sidebar);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(300);
+        });
+
+        const libraryButton = screen.getByRole("button", { name: /my library/i });
+        expect(libraryButton).toHaveAttribute("aria-expanded", "false");
+
+        fireEvent.click(libraryButton);
+
+        expect(libraryButton).toHaveAttribute("aria-expanded", "true");
+        expect(screen.getByRole("link", { name: "My List" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Continue Reading" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Completed" })).toBeInTheDocument();
+
+        vi.useRealTimers();
+    });
+
     it("surfaces Notes as a top-level desktop sidebar destination", async () => {
         pathnameState.value = "/notes";
         vi.useFakeTimers();
