@@ -217,10 +217,10 @@ export function NotesAskPanel({
     }, [currentScope, messages.length]);
 
     useEffect(() => {
-        if (!isSidebar || !isEmptyState) {
+        if (!(variant === "sidebar" && !mobile) || messages.length > 0) {
             setShowAllStarterPrompts(false);
         }
-    }, [isEmptyState, isSidebar, activeScope.signature]);
+    }, [activeScope.signature, messages.length, mobile, variant]);
 
     useEffect(() => {
         const previousMessageCount = previousMessageCountRef.current;
