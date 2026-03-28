@@ -256,9 +256,9 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-2.5");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-2");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0.5");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0");
         expect(firstCard).toHaveClass("min-h-[calc(100dvh-11.75rem-env(safe-area-inset-bottom))]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
@@ -713,7 +713,7 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("renders save, dismiss, and full takeaways actions on mobile focus cards", async () => {
+    it("renders header utility actions and full takeaways on mobile focus cards", async () => {
         render(<FocusFeed />);
 
         const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
@@ -726,16 +726,24 @@ describe("FocusFeed", () => {
         expect(screen.getByRole("button", {
             name: "Save Essentialism to My List",
         })).toBeInTheDocument();
-        expect(screen.getByRole("button", {
-            name: "Not interested in Essentialism",
-        })).toBeInTheDocument();
+        const moreActionsButton = screen.getByRole("button", {
+            name: "More actions for Essentialism",
+        });
+        expect(moreActionsButton).toBeInTheDocument();
         expect(button).toBeInTheDocument();
         expect(button).toHaveClass("min-h-11");
         expect(button).toHaveClass("touch-manipulation");
         expect(button.parentElement).toHaveClass("justify-start");
         expect(button.parentElement).toHaveClass("pt-1.5");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("grid");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("gap-2.5");
+        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("gap-2");
+
+        fireEvent.click(moreActionsButton);
+
+        expect(screen.getByRole("menu", { name: "Actions for Essentialism" })).toBeInTheDocument();
+        expect(screen.getByRole("menuitem", {
+            name: "Not interested in Essentialism",
+        })).toBeInTheDocument();
     });
 
     it("saves a mobile focus item to My List", async () => {
@@ -757,7 +765,11 @@ describe("FocusFeed", () => {
         await screen.findByText("Essentialism");
 
         fireEvent.click(
-            screen.getByRole("button", { name: "Not interested in Essentialism" })
+            screen.getByRole("button", { name: "More actions for Essentialism" })
+        );
+
+        fireEvent.click(
+            screen.getByRole("menuitem", { name: "Not interested in Essentialism" })
         );
 
         await waitFor(() => {
@@ -795,7 +807,10 @@ describe("FocusFeed", () => {
 
         await screen.findByText("Essentialism");
         fireEvent.click(
-            screen.getByRole("button", { name: "Not interested in Essentialism" })
+            screen.getByRole("button", { name: "More actions for Essentialism" })
+        );
+        fireEvent.click(
+            screen.getByRole("menuitem", { name: "Not interested in Essentialism" })
         );
 
         const storedStateAfterDismiss = JSON.parse(
