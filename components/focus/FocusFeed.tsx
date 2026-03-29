@@ -20,7 +20,7 @@ import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
 const BATCH_SIZE = 6;
-const MOBILE_FOCUS_TOP_FRAME_OFFSET = "3.5rem";
+const MOBILE_FOCUS_TOP_FRAME_OFFSET = "3rem";
 const MOBILE_FOCUS_BOTTOM_NAV_HEIGHT = "4rem";
 const MOBILE_FOCUS_BOTTOM_SAFE_AREA = "env(safe-area-inset-bottom)";
 const MOBILE_FOCUS_VIEWPORT_HEIGHT = `calc(100dvh-${MOBILE_FOCUS_TOP_FRAME_OFFSET}-${MOBILE_FOCUS_BOTTOM_NAV_HEIGHT}-${MOBILE_FOCUS_BOTTOM_SAFE_AREA})`;
