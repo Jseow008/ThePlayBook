@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
+import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 
 type ItemTypeFilter = "all" | "note" | "highlight";
 type SortDirection = "newest" | "oldest";
@@ -400,26 +401,6 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     }, []);
 
     useEffect(() => {
-        if (typeof window === "undefined") {
-            return;
-        }
-
-        const previousOverflow = document.body.style.overflow;
-
-        const syncBodyOverflow = () => {
-            document.body.style.overflow = isAskOpen && window.innerWidth < 1024 ? "hidden" : previousOverflow;
-        };
-
-        syncBodyOverflow();
-        window.addEventListener("resize", syncBodyOverflow);
-
-        return () => {
-            window.removeEventListener("resize", syncBodyOverflow);
-            document.body.style.overflow = previousOverflow;
-        };
-    }, [isAskOpen]);
-
-    useEffect(() => {
         if (!armedDeleteId) {
             if (deleteArmTimeoutRef.current !== null) {
                 window.clearTimeout(deleteArmTimeoutRef.current);
@@ -750,6 +731,21 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         sortBy,
     ]);
 
+    const mobileAskHref = useMemo(() => {
+        const returnParams = new URLSearchParams(searchParams.toString());
+        returnParams.delete("ask");
+        const returnQuery = returnParams.toString();
+        const returnTo = returnQuery ? `${pathname}?${returnQuery}` : pathname;
+
+        const askParams = new URLSearchParams({
+            scope: "notes",
+            returnTo,
+            notesScope: serializeNotesChatScope(notesChatScope),
+        });
+
+        return `/ask?${askParams.toString()}`;
+    }, [notesChatScope, pathname, searchParams]);
+
     const handleDelete = async (id: string) => {
         if (armedDeleteId !== id) {
             setArmedDeleteId(id);
@@ -766,6 +762,11 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     };
 
     const toggleAskPanel = () => {
+        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+            router.push(mobileAskHref);
+            return;
+        }
+
         setIsAskOpen((current) => !current);
     };
 
@@ -1258,29 +1259,6 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                 </div>
             </main>
 
-            {isAskOpen && (
-                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden">
-                    <button
-                        type="button"
-                        className="absolute inset-0"
-                        aria-label="Close notes AI panel backdrop"
-                        onClick={toggleAskPanel}
-                    />
-                    <div className="absolute inset-x-0 bottom-0 top-4 z-10 flex flex-col px-3 pb-3">
-                        <div className="relative z-10 mb-2 flex justify-center">
-                            <div className="h-1.5 w-12 rounded-full bg-white/18" />
-                        </div>
-
-                        <div className="relative min-h-0 flex-1">
-                            <NotesAskPanel
-                                currentScope={notesChatScope}
-                                onClose={toggleAskPanel}
-                                mobile
-                            />
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -259,13 +259,13 @@ export function AskClientPage({
                             <BotMessageSquare className="size-4 text-primary" />
                         </div>
                         <div className="min-w-0">
-                            <h1 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">{pageTitle}</h1>
-                            <p className="truncate text-xs text-foreground/80">{pageSubtitle}</p>
+                            <h1 className="truncate text-[0.95rem] font-bold leading-tight text-foreground sm:text-base">{pageTitle}</h1>
+                            <p className="truncate text-[0.72rem] text-foreground/80 sm:text-xs">{pageSubtitle}</p>
                             {isLibraryScope && (
                                 <p className="mt-0.5 truncate text-[0.65rem] leading-none text-muted-foreground">Library Assistant &middot; AI Search</p>
                             )}
                             {isLibraryScope && initialLibrarySnapshot && (
-                                <div className="mt-2 flex flex-wrap gap-1.5 text-[0.65rem] text-muted-foreground">
+                                <div className="mt-2 flex flex-wrap gap-1.5 text-[0.62rem] text-muted-foreground sm:text-[0.65rem]">
                                     <span className="rounded-full border border-border/60 bg-card/50 px-2 py-0.5">
                                         {initialLibrarySnapshot.totalItems} in library
                                     </span>
@@ -291,7 +291,7 @@ export function AskClientPage({
                         <Link
                             href={mobileLibraryHref}
                             className={cn(
-                                "rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                "rounded-full px-4 py-1.5 text-[0.9rem] font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-sm",
                                 isLibraryScope
                                     ? "bg-primary text-primary-foreground shadow-sm"
                                     : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
@@ -303,7 +303,7 @@ export function AskClientPage({
                         <Link
                             href={mobileNotesHref}
                             className={cn(
-                                "rounded-full px-4 py-1.5 text-sm font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                "rounded-full px-4 py-1.5 text-[0.9rem] font-medium whitespace-nowrap transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-sm",
                                 !isLibraryScope
                                     ? "bg-primary text-primary-foreground shadow-sm"
                                     : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
@@ -318,11 +318,12 @@ export function AskClientPage({
 
             {isLibraryScope ? (
                 <>
-                    <main className="flex-1 overflow-y-auto overscroll-contain">
-                        <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pt-6 pb-3 sm:px-6">
-                            <div className="flex min-h-[30rem] flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm sm:min-h-[34rem]">
-                                <div className="mx-auto flex min-h-full w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
-                                    <div className="flex-1 space-y-5">
+                    <main className="min-h-0 flex-1 overflow-hidden">
+                        <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 pt-6 pb-3 sm:px-6">
+                            <div className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
+                                <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
+                                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                                        <div className="space-y-5 pb-2">
                                         {isEmptyState && (
                                             <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
                                                 <div className="flex items-start gap-4">
@@ -330,14 +331,14 @@ export function AskClientPage({
                                                         <Sparkles className="size-4" />
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-sm font-semibold text-foreground sm:text-[0.95rem]">
+                                                        <p className="text-[0.95rem] font-semibold text-foreground">
                                                             Ask across your reading life
                                                         </p>
-                                                        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
+                                                        <p className="mt-2 max-w-2xl text-[0.92rem] leading-[1.6] text-muted-foreground sm:text-[0.95rem]">
                                                             Ask about completed books, saved titles, recurring authors, and the ideas inside the passages you&apos;ve kept. Ask My Library can answer both library-inventory questions and content-grounded synthesis questions.
                                                         </p>
                                                         <div className="mt-5">
-                                                            <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                                                            <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
                                                                 Good places to start
                                                             </p>
                                                             <div className="flex flex-wrap gap-2.5">
@@ -345,7 +346,7 @@ export function AskClientPage({
                                                                     <button
                                                                         key={prompt}
                                                                         onClick={() => void sendPrompt(prompt)}
-                                                                        className="rounded-full border border-border/70 bg-background/75 px-3.5 py-2 text-xs text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                                                        className="rounded-full border border-border/70 bg-background/75 px-3 py-1.5 text-[0.72rem] text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-xs"
                                                                         disabled={isStreaming}
                                                                     >
                                                                         {prompt}
@@ -388,11 +389,11 @@ export function AskClientPage({
                                                                     "prose prose-sm max-w-none",
                                                                     message.role === "user"
                                                                         ? "text-primary-foreground [&_*]:text-primary-foreground"
-                                                                        : "leading-7 text-[0.98rem] text-foreground/95 [&_p]:my-0 [&_p+p]:mt-4 sm:max-w-[70ch]"
+                                                                        : "leading-[1.6] text-[0.92rem] text-foreground/95 [&_p]:my-0 [&_p+p]:mt-4 sm:max-w-[70ch] sm:text-[0.98rem] sm:leading-7"
                                                                 )}
                                                             >
                                                                 {message.role === "user" ? (
-                                                                    <p className="m-0 leading-relaxed text-[0.95rem]">{message.content}</p>
+                                                                    <p className="m-0 leading-[1.55] text-[0.9rem] sm:text-[0.95rem]">{message.content}</p>
                                                                 ) : (
                                                                     <ReactMarkdown>{message.content}</ReactMarkdown>
                                                                 )}
@@ -412,7 +413,7 @@ export function AskClientPage({
                                                                 <button
                                                                     key={action.label}
                                                                     onClick={() => void sendPrompt(action.prompt)}
-                                                                    className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.72rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground"
+                                                                    className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.7rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground sm:text-[0.72rem]"
                                                                 >
                                                                     {action.label}
                                                                 </button>
@@ -430,7 +431,7 @@ export function AskClientPage({
                                                 </div>
                                                 <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border/50 bg-card px-4 py-3.5">
                                                     <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                                                    <span className="text-sm font-medium text-muted-foreground">
+                                                    <span className="text-[0.9rem] font-medium text-muted-foreground sm:text-sm">
                                                         Reading your library...
                                                     </span>
                                                 </div>
@@ -443,14 +444,15 @@ export function AskClientPage({
                                                     <Bot className="size-4 text-destructive" />
                                                 </div>
                                                 <div className="rounded-2xl rounded-tl-sm border border-destructive/20 bg-destructive/10 px-4 py-3.5">
-                                                    <p className="text-sm font-medium text-destructive">
+                                                    <p className="text-[0.9rem] font-medium text-destructive sm:text-sm">
                                                         {displayErrorMessage}
                                                     </p>
                                                 </div>
                                             </div>
                                         )}
 
-                                        <div ref={messagesEndRef} />
+                                            <div ref={messagesEndRef} />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -469,7 +471,7 @@ export function AskClientPage({
                                         value={input}
                                         onChange={(e) => setInput(e.target.value)}
                                         placeholder="Ask about the ideas in your library..."
-                                        className="flex-1 max-h-48 min-h-[56px] w-full resize-none bg-transparent px-5 py-4 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto"
+                                        className="flex-1 max-h-48 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.92rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto sm:min-h-[56px] sm:px-5 sm:py-4 sm:text-[0.95rem]"
                                         rows={1}
                                         onKeyDown={(e) => {
                                             if (e.key === "Enter" && !e.shiftKey) {
@@ -505,8 +507,8 @@ export function AskClientPage({
                     </div>
                 </>
             ) : (
-                <main className="flex-1 overflow-y-auto overscroll-contain">
-                    <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-0 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6">
+                <main className="min-h-0 flex-1 overflow-hidden">
+                    <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6">
                         {isNotesLoading && noteHighlights.length === 0 ? (
                             <div className="flex flex-1 items-center justify-center px-4 py-12">
                                 <div className="flex items-center gap-3 text-sm text-muted-foreground">

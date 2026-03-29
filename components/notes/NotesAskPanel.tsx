@@ -16,7 +16,6 @@ import {
     Plus,
     RefreshCw,
     Send,
-    Sparkles,
     User,
     X,
 } from "lucide-react";
@@ -135,22 +134,19 @@ function ScopeOverview({
                 <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
                     {getNotesLabel(scope.noteCount)}
                 </span>
+                {scopeTokens.map((token) => (
+                    <span
+                        key={token}
+                        className="rounded-full border border-border/60 bg-card/45 px-2.5 py-1 text-[0.68rem] text-foreground/85"
+                    >
+                        {token}
+                    </span>
+                ))}
                 {isTruncated && (
                     <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
                         Using {scope.noteCount} most recent
                     </span>
                 )}
-            </div>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-                {scopeTokens.map((token) => (
-                    <span
-                        key={token}
-                        className="rounded-full border border-border/60 bg-card/45 px-3 py-1.5 text-[0.72rem] text-foreground/85"
-                    >
-                        {token}
-                    </span>
-                ))}
             </div>
         </section>
     );
@@ -409,8 +405,8 @@ export function NotesAskPanel({
 
     if (isPage) {
         return (
-            <section className="flex min-h-full flex-1 flex-col">
-                <div className="flex min-h-[30rem] flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm sm:min-h-[34rem]">
+            <section className="flex h-full min-h-0 flex-1 flex-col">
+                <div className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
                     {hasScopeChanged && (
                         <div className="border-b border-border/40 px-4 pt-4 sm:px-6">
                             <div className="mx-auto w-full max-w-4xl pb-4">
@@ -419,25 +415,22 @@ export function NotesAskPanel({
                         </div>
                     )}
 
-                    <div className="mx-auto flex min-h-full w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
-                        <ScopeOverview scope={activeScope} className="mb-5" />
+                    <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
+                        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                            <div className="space-y-5 pb-2">
+                                <ScopeOverview scope={activeScope} />
 
-                        <div className="flex-1 space-y-5">
-                            {isEmptyState && (
-                                <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
-                                    <div className="flex items-start gap-4">
-                                        <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                                            <Sparkles className="size-4" />
-                                        </div>
+                                {isEmptyState && (
+                                    <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
                                         <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-foreground sm:text-[0.95rem]">
+                                            <p className="text-[0.95rem] font-semibold text-foreground sm:text-[0.95rem]">
                                                 Explore this note set
                                             </p>
-                                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
+                                            <p className="mt-2 max-w-2xl text-[0.92rem] leading-[1.6] text-muted-foreground sm:text-[0.95rem]">
                                                 Use the notes currently in scope to surface patterns, compare themes, retrieve supporting evidence, and spot tensions or contradictions.
                                             </p>
                                             <div className="mt-5">
-                                                <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                                                <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
                                                     Good places to start
                                                 </p>
                                                 <div className="flex flex-wrap gap-2.5">
@@ -446,7 +439,7 @@ export function NotesAskPanel({
                                                             key={prompt}
                                                             type="button"
                                                             onClick={() => void sendPrompt(prompt)}
-                                                            className="rounded-full border border-border/70 bg-background/75 px-3.5 py-2 text-xs text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                                            className="rounded-full border border-border/70 bg-background/75 px-3 py-1.5 text-[0.72rem] text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-xs"
                                                             disabled={isStreaming || activeScope.highlightIds.length === 0}
                                                         >
                                                             {prompt}
@@ -455,107 +448,107 @@ export function NotesAskPanel({
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </section>
-                            )}
+                                    </section>
+                                )}
 
-                            {displayMessages.map((message) => {
-                                const showFollowUps =
-                                    !isStreaming
-                                    && message.role === "assistant"
-                                    && message.id === latestAssistantMessageId;
+                                {displayMessages.map((message) => {
+                                    const showFollowUps =
+                                        !isStreaming
+                                        && message.role === "assistant"
+                                        && message.id === latestAssistantMessageId;
 
-                                return (
-                                    <div key={message.id} className="space-y-3">
-                                        <div
-                                            className={cn(
-                                                "flex w-full gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
-                                                message.role === "user" ? "justify-end pr-1 sm:pr-2" : "justify-start"
-                                            )}
-                                        >
-                                            {message.role === "assistant" && (
-                                                <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
-                                                    <Bot className="size-4 text-primary" />
-                                                </div>
-                                            )}
-
+                                    return (
+                                        <div key={message.id} className="space-y-3">
                                             <div
                                                 className={cn(
-                                                    "rounded-2xl shadow-sm",
-                                                    message.role === "user"
-                                                        ? "max-w-[80%] rounded-tr-sm bg-primary px-4 py-3.5 text-primary-foreground sm:max-w-[72%]"
-                                                        : "max-w-[88%] rounded-tl-sm border border-border/40 bg-card/90 px-5 py-4 text-foreground sm:max-w-[78%]"
+                                                    "flex w-full gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                                                    message.role === "user" ? "justify-end pr-1 sm:pr-2" : "justify-start"
                                                 )}
                                             >
+                                                {message.role === "assistant" && (
+                                                    <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                                                        <Bot className="size-4 text-primary" />
+                                                    </div>
+                                                )}
+
                                                 <div
                                                     className={cn(
-                                                        "prose prose-sm max-w-none",
+                                                        "rounded-2xl shadow-sm",
                                                         message.role === "user"
-                                                            ? "text-primary-foreground [&_*]:text-primary-foreground"
-                                                            : "leading-7 text-[0.98rem] text-foreground/95 [&_p]:my-0 [&_p+p]:mt-4 sm:max-w-[70ch]"
+                                                            ? "max-w-[80%] rounded-tr-sm bg-primary px-4 py-3.5 text-primary-foreground sm:max-w-[72%]"
+                                                            : "max-w-[88%] rounded-tl-sm border border-border/40 bg-card/90 px-5 py-4 text-foreground sm:max-w-[78%]"
                                                     )}
                                                 >
-                                                    {message.role === "user" ? (
-                                                        <p className="m-0 leading-relaxed text-[0.95rem]">{message.content}</p>
-                                                    ) : (
-                                                        <ReactMarkdown>{message.content}</ReactMarkdown>
-                                                    )}
+                                                    <div
+                                                        className={cn(
+                                                            "prose prose-sm max-w-none",
+                                                            message.role === "user"
+                                                                ? "text-primary-foreground [&_*]:text-primary-foreground"
+                                                                : "leading-[1.6] text-[0.92rem] text-foreground/95 [&_p]:my-0 [&_p+p]:mt-4 sm:max-w-[70ch] sm:text-[0.98rem] sm:leading-7"
+                                                        )}
+                                                    >
+                                                        {message.role === "user" ? (
+                                                            <p className="m-0 leading-[1.55] text-[0.9rem] sm:text-[0.95rem]">{message.content}</p>
+                                                        ) : (
+                                                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                                                        )}
+                                                    </div>
                                                 </div>
+
+                                                {message.role === "user" && (
+                                                    <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary">
+                                                        <User className="size-4 text-secondary-foreground" />
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {message.role === "user" && (
-                                                <div className="mt-1 flex size-8 shrink-0 items-center justify-center rounded-full bg-secondary">
-                                                    <User className="size-4 text-secondary-foreground" />
+                                            {showFollowUps && (
+                                                <div className="ml-11 flex flex-wrap gap-2">
+                                                    {FOLLOW_UP_ACTIONS.map((action) => (
+                                                        <button
+                                                            key={action.label}
+                                                            type="button"
+                                                            onClick={() => void sendPrompt(action.prompt)}
+                                                            className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.7rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground sm:text-[0.72rem]"
+                                                        >
+                                                            {action.label}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
+                                    );
+                                })}
 
-                                        {showFollowUps && (
-                                            <div className="ml-11 flex flex-wrap gap-2">
-                                                {FOLLOW_UP_ACTIONS.map((action) => (
-                                                    <button
-                                                        key={action.label}
-                                                        type="button"
-                                                        onClick={() => void sendPrompt(action.prompt)}
-                                                        className="rounded-full border border-border/65 bg-background/80 px-3 py-1.5 text-[0.72rem] font-medium text-muted-foreground transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground"
-                                                    >
-                                                        {action.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
+                                {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
+                                    <div className="flex w-full gap-3 animate-in fade-in">
+                                        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
+                                            <Bot className="size-4 text-primary" />
+                                        </div>
+                                        <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border/50 bg-card px-4 py-3.5">
+                                            <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                                            <span className="text-[0.9rem] font-medium text-muted-foreground sm:text-sm">
+                                                Reading these notes...
+                                            </span>
+                                        </div>
                                     </div>
-                                );
-                            })}
+                                )}
 
-                            {isStreaming && displayMessages[displayMessages.length - 1]?.role === "user" && (
-                                <div className="flex w-full gap-3 animate-in fade-in">
-                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/20">
-                                        <Bot className="size-4 text-primary" />
+                                {error && (
+                                    <div className="flex w-full gap-3 animate-in fade-in">
+                                        <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/20">
+                                            <Bot className="size-4 text-destructive" />
+                                        </div>
+                                        <div className="rounded-2xl rounded-tl-sm border border-destructive/20 bg-destructive/10 px-4 py-3.5">
+                                            <p className="text-[0.9rem] font-medium text-destructive sm:text-sm">
+                                                {displayErrorMessage}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-border/50 bg-card px-4 py-3.5">
-                                        <Loader2 className="size-4 animate-spin text-muted-foreground" />
-                                        <span className="text-sm font-medium text-muted-foreground">
-                                            Reading these notes...
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
+                                )}
 
-                            {error && (
-                                <div className="flex w-full gap-3 animate-in fade-in">
-                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-destructive/20">
-                                        <Bot className="size-4 text-destructive" />
-                                    </div>
-                                    <div className="rounded-2xl rounded-tl-sm border border-destructive/20 bg-destructive/10 px-4 py-3.5">
-                                        <p className="text-sm font-medium text-destructive">
-                                            {displayErrorMessage}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div ref={messagesEndRef} />
+                                <div ref={messagesEndRef} />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -593,7 +586,7 @@ export function NotesAskPanel({
                                 value={input}
                                 onChange={(event) => setInput(event.target.value)}
                                 placeholder={composerPlaceholder}
-                                className="flex-1 max-h-40 min-h-[52px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70"
+                                className="flex-1 max-h-40 min-h-[52px] w-full resize-none overflow-y-auto bg-transparent px-4 py-3 text-[0.92rem] outline-none placeholder:text-muted-foreground/70 sm:py-3.5 sm:text-[0.95rem]"
                                 rows={1}
                                 onKeyDown={(event) => {
                                     if (event.key === "Enter" && !event.shiftKey) {
@@ -640,7 +633,7 @@ export function NotesAskPanel({
         >
             <header
                 className={cn(
-                    "border-b border-border/50 px-4 py-4",
+                    "shrink-0 border-b border-border/50 px-4 py-4",
                     isSidebar && "px-5 py-5"
                 )}
             >
@@ -725,7 +718,7 @@ export function NotesAskPanel({
             )}
 
             <div className={cn(
-                "flex-1 overflow-y-auto px-4 py-4",
+                "min-h-0 flex-1 overflow-y-auto px-4 py-4",
                 isSidebar && "px-5 py-5"
             )}>
                 <div className={cn("space-y-4", isSidebar && "space-y-5")}>
@@ -888,7 +881,7 @@ export function NotesAskPanel({
             </div>
 
             <div className={cn(
-                "border-t border-border/45 bg-card/30 px-3 pt-3 pb-[max(0.85rem,env(safe-area-inset-bottom))]",
+                "shrink-0 border-t border-border/45 bg-card/30 px-3 pt-3 pb-[max(0.85rem,env(safe-area-inset-bottom))]",
                 isSidebar && "px-4 pt-4"
             )}>
                 {hasScopeChanged && (
@@ -924,9 +917,9 @@ export function NotesAskPanel({
                             Start new chat
                         </button>
                     ) : !isSidebar && !mobile ? (
-                        <span className="text-[0.65rem] text-muted-foreground/75">
-                            Enter to send · Shift+Enter for newline
-                        </span>
+                            <span className="text-[0.62rem] text-muted-foreground/75 sm:text-[0.65rem]">
+                                Enter to send · Shift+Enter for newline
+                            </span>
                     ) : null}
                 </div>
 

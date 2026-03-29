@@ -80,4 +80,25 @@ describe("PublicLayoutShell", () => {
         expect(main).not.toHaveClass("pb-[calc(4rem+env(safe-area-inset-bottom))]");
         expect(main).not.toHaveClass("pb-[calc(3.5rem+env(safe-area-inset-bottom))]");
     });
+
+    it("suppresses the mobile chrome on ask routes so ask can own the viewport", () => {
+        pathnameState.value = "/ask";
+
+        const { container } = render(
+            <PublicLayoutShell>
+                <div>Ask content</div>
+            </PublicLayoutShell>
+        );
+
+        const main = container.querySelector("main");
+
+        expect(screen.getByTestId("sidebar")).toBeInTheDocument();
+        expect(screen.getByTestId("user-nav")).toBeInTheDocument();
+        expect(screen.queryByTestId("mobile-header")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("mobile-bottom-nav")).not.toBeInTheDocument();
+        expect(screen.getByText("Ask content")).toBeInTheDocument();
+        expect(main).toHaveClass("lg:pl-16");
+        expect(main).not.toHaveClass("pb-[calc(4rem+env(safe-area-inset-bottom))]");
+        expect(main).not.toHaveClass("pb-[calc(3.5rem+env(safe-area-inset-bottom))]");
+    });
 });

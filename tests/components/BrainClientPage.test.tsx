@@ -33,6 +33,7 @@ const {
 
 const notesAskPanelMock = vi.fn();
 const routerReplaceMock = vi.fn();
+const routerPushMock = vi.fn();
 
 vi.mock("@/hooks/useHighlights", () => ({
     useInfiniteHighlights: () => infiniteHighlightsState.value,
@@ -59,6 +60,7 @@ vi.mock("@/components/notes/NotesAskPanel", () => ({
 vi.mock("next/navigation", () => ({
     useRouter: () => ({
         replace: routerReplaceMock,
+        push: routerPushMock,
     }),
     usePathname: () => "/notes",
     useSearchParams: () => new URLSearchParams(""),
@@ -144,6 +146,7 @@ describe("BrainClientPage", () => {
         vi.clearAllMocks();
         notesAskPanelMock.mockClear();
         routerReplaceMock.mockClear();
+        routerPushMock.mockClear();
         document.body.style.overflow = "";
         Object.defineProperty(window, "innerWidth", {
             configurable: true,
@@ -263,21 +266,23 @@ describe("BrainClientPage", () => {
         ).toBeTruthy();
     });
 
-    it("locks body scroll only for the mobile ask sheet", async () => {
+    it("routes mobile ask entry to the full-screen notes ask page", () => {
         Object.defineProperty(window, "innerWidth", {
             configurable: true,
             writable: true,
             value: 390,
         });
 
-        const { unmount } = render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+        render(<BrainClientPage initialPage={initialPage} />);
 
-        expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
-        expect(document.body.style.overflow).toBe("hidden");
+        fireEvent.click(screen.getAllByRole("button", { name: /ask/i })[0]);
 
-        unmount();
-
-        expect(document.body.style.overflow).toBe("");
+        expect(routerPushMock).toHaveBeenCalledWith(
+            expect.stringContaining("/ask?scope=notes")
+        );
+        expect(routerPushMock).toHaveBeenCalledWith(
+            expect.stringContaining("returnTo=%2Fnotes")
+        );
     });
 
     it("does not lock body scroll for the desktop ask sidebar", async () => {
