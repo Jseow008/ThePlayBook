@@ -8,7 +8,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 export const maxDuration = 60;
 
 const ChatMessageSchema = z.object({
-    role: z.enum(["system", "user", "assistant"]),
+    role: z.enum(["user", "assistant"]),
     content: z.string().trim().max(2_000).optional(),
     parts: z.array(z.any()).optional(),
 });
@@ -57,10 +57,10 @@ function getMessageText(message: Record<string, unknown>): string {
     return "";
 }
 
-function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "user" | "assistant"; content: string }> {
     return rawMessages
-        .filter((message): message is Record<string, unknown> & { role: "system" | "user" | "assistant" } =>
-            message.role === "system" || message.role === "user" || message.role === "assistant"
+        .filter((message): message is Record<string, unknown> & { role: "user" | "assistant" } =>
+            message.role === "user" || message.role === "assistant"
         )
         .map((message) => ({
             role: message.role,
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
         } = await supabase.auth.getUser();
 
         if (authError || !user) {
-            return apiError("UNAUTHORIZED", "Please log in to use Ask My Library", 401, requestId);
+            return apiError("UNAUTHORIZED", "Please log in to use Ask These Notes", 401, requestId);
         }
 
         const rl = await rateLimit(req, { limit: 10, windowMs: 60_000, key: `${user.id}:notes` });

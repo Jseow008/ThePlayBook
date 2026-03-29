@@ -10,7 +10,7 @@ import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/l
 export const maxDuration = 60; // Allow 60s max for AI response
 
 const ChatMessageSchema = z.object({
-    role: z.enum(["system", "user", "assistant"]),
+    role: z.enum(["user", "assistant"]),
     content: z.string().trim().max(2_000).optional(),
     parts: z.array(z.any()).optional(),
 });
@@ -59,10 +59,10 @@ function getMessageText(message: Record<string, unknown>): string {
     return "";
 }
 
-function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "user" | "assistant"; content: string }> {
     return rawMessages
-        .filter((message): message is Record<string, unknown> & { role: "system" | "user" | "assistant" } =>
-            message.role === "system" || message.role === "user" || message.role === "assistant"
+        .filter((message): message is Record<string, unknown> & { role: "user" | "assistant" } =>
+            message.role === "user" || message.role === "assistant"
         )
         .map((message) => ({
             role: message.role,
@@ -334,15 +334,6 @@ export async function POST(req: NextRequest) {
                 logApiError({ requestId, route: "/api/chat", message: "Vector search or segment fetch failed", error });
                 return apiError("INTERNAL_ERROR", "Failed to search your library. Please try again.", 500, requestId);
             }
-        }
-
-        if (intent !== "library_metadata" && retrievalStatus === "not_initialized" && libraryItems.length === 0) {
-            return apiError(
-                "INTERNAL_ERROR",
-                "Ask My Library retrieval is not initialized yet. Please contact an administrator.",
-                500,
-                requestId
-            );
         }
 
         const retrievalContextForPrompt = retrievalContext || (

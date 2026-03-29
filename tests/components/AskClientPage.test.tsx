@@ -102,9 +102,13 @@ describe("AskClientPage", () => {
         render(<AskClientPage initialLibrarySnapshot={defaultSnapshot} />);
 
         expect(screen.getByRole("heading", { name: "Ask My Library" })).toBeInTheDocument();
+        expect(screen.getByText("Library scope")).toBeInTheDocument();
         expect(screen.getByText("Ask across your reading life")).toBeInTheDocument();
-        expect(screen.getByText("53 in library")).toBeInTheDocument();
+        expect(screen.getAllByText("53 in library")).toHaveLength(2);
         expect(screen.getByText("0 saved but not started")).toBeInTheDocument();
+        expect(screen.getByText("Enter to send · Shift+Enter for newline")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Ask about the books in your library...")).toBeInTheDocument();
+        expect(screen.queryByText("Library Assistant · AI Search")).not.toBeInTheDocument();
         expect(screen.getByText("Good places to start")).toBeInTheDocument();
         expect(scrollIntoViewMock).not.toHaveBeenCalled();
         expect(screen.getByRole("button", { name: "What have I completed in my library?" })).toBeInTheDocument();
