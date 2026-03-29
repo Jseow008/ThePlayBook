@@ -20,7 +20,7 @@ import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
 const BATCH_SIZE = 6;
-const MOBILE_FOCUS_TOP_FRAME_OFFSET = "5rem";
+const MOBILE_FOCUS_TOP_FRAME_OFFSET = "4.5rem";
 const MOBILE_FOCUS_BOTTOM_NAV_HEIGHT = "4rem";
 const MOBILE_FOCUS_BOTTOM_SAFE_AREA = "env(safe-area-inset-bottom)";
 const MOBILE_FOCUS_VIEWPORT_HEIGHT = `calc(100dvh-${MOBILE_FOCUS_TOP_FRAME_OFFSET}-${MOBILE_FOCUS_BOTTOM_NAV_HEIGHT}-${MOBILE_FOCUS_BOTTOM_SAFE_AREA})`;
@@ -958,17 +958,17 @@ function FocusCardView({
                                             {card.author}
                                         </p>
                                     )}
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
+                                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
                                             {card.type}
                                         </span>
                                         {card.category && (
-                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
                                                 {card.category}
                                             </span>
                                         )}
                                         {duration && (
-                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
                                                 {duration}
                                             </span>
                                         )}
