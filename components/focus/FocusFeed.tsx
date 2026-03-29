@@ -767,7 +767,7 @@ export function FocusFeed() {
 
     return (
         <section className="px-4 pt-11 md:px-6 md:pt-8 md:pb-6 lg:px-10">
-            <div className="mx-auto max-w-3xl space-y-4 md:space-y-6">
+            <div className="mx-auto max-w-3xl space-y-5 md:space-y-6">
                 <header className="space-y-1">
                     <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary/80">
                         Focus Mode
