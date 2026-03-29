@@ -219,7 +219,7 @@ describe("FocusFeed", () => {
         });
 
         expect(screen.queryByText("Focus Mode")).not.toBeInTheDocument();
-        expect(screen.getByTestId("focus-feed-list").closest("section")).toHaveClass("pt-4");
+        expect(screen.getByTestId("focus-feed-list").closest("section")).toHaveClass("pt-5");
         expect(screen.queryByRole("heading", { name: "One idea per post" })).not.toBeInTheDocument();
         const cards = await screen.findAllByTestId("focus-feed-card");
         const firstCard = cards[0]!;
@@ -239,7 +239,7 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
-        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-11rem-env(safe-area-inset-bottom))]");
+        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-7rem-4rem-env(safe-area-inset-bottom))]");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100dvh-7.5rem)]");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("pb-4");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("md:pb-2");
@@ -259,7 +259,8 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-2");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0");
-        expect(firstCard).toHaveClass("min-h-[calc(100dvh-11.75rem-env(safe-area-inset-bottom))]");
+        expect(screen.getByRole("button", { name: "Show full takeaways for Essentialism" }).parentElement).toHaveClass("mt-auto");
+        expect(firstCard).toHaveClass("min-h-[calc(100dvh-7rem-4rem-env(safe-area-inset-bottom))]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
     });
@@ -734,7 +735,8 @@ describe("FocusFeed", () => {
         expect(button).toHaveClass("min-h-11");
         expect(button).toHaveClass("touch-manipulation");
         expect(button.parentElement).toHaveClass("justify-start");
-        expect(button.parentElement).toHaveClass("pt-1.5");
+        expect(button.parentElement).toHaveClass("mt-auto");
+        expect(button.parentElement).toHaveClass("pt-3");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("grid");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("gap-2");
 

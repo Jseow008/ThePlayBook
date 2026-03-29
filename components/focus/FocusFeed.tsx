@@ -20,10 +20,14 @@ import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
 const BATCH_SIZE = 6;
+const MOBILE_FOCUS_TOP_FRAME_OFFSET = "7rem";
+const MOBILE_FOCUS_BOTTOM_NAV_HEIGHT = "4rem";
+const MOBILE_FOCUS_BOTTOM_SAFE_AREA = "env(safe-area-inset-bottom)";
+const MOBILE_FOCUS_VIEWPORT_HEIGHT = `calc(100dvh-${MOBILE_FOCUS_TOP_FRAME_OFFSET}-${MOBILE_FOCUS_BOTTOM_NAV_HEIGHT}-${MOBILE_FOCUS_BOTTOM_SAFE_AREA})`;
 const FEED_LIST_VIEWPORT_CLASS =
-    "h-[calc(100dvh-11rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-7.5rem)]";
+    `h-[${MOBILE_FOCUS_VIEWPORT_HEIGHT}] md:h-[calc(100dvh-7.5rem)]`;
 const FEED_CARD_HEIGHT_CLASS =
-    "min-h-[calc(100dvh-11.75rem-env(safe-area-inset-bottom))] md:min-h-[calc(100dvh-7.5rem)]";
+    `min-h-[${MOBILE_FOCUS_VIEWPORT_HEIGHT}] md:min-h-[calc(100dvh-7.5rem)]`;
 const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 240;
 const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 210;
 const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 200;
@@ -766,7 +770,7 @@ export function FocusFeed() {
     }, [activeCardIndex, hasInitialized, hasMore, items, mounted]);
 
     return (
-        <section className="px-4 pt-4 md:px-6 md:pt-6 md:pb-6 lg:px-10">
+        <section className="px-4 pt-5 md:px-6 md:pt-6 md:pb-6 lg:px-10">
             <div className="mx-auto max-w-3xl">
                 {!mounted || !hasInitialized || (loading && cards.length === 0) ? (
                     <LoadingState />
@@ -942,7 +946,7 @@ function FocusCardView({
             className={`${FEED_CARD_HEIGHT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div className="flex h-full flex-col">
-                    <div className={isDesktop ? "space-y-3" : "space-y-2"}>
+                    <div className={isDesktop ? "space-y-3" : "flex h-full flex-col space-y-2"}>
                         <div className="flex items-start justify-between gap-3">
                             <div className={isDesktop ? "min-w-0 flex-1 space-y-1.5" : "min-w-0 flex-1 space-y-1.5"}>
                                 <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
@@ -1079,7 +1083,13 @@ function FocusCardView({
                         )}
                     </section>
 
-                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5" : "flex flex-wrap items-center justify-start gap-3 pt-1.5"}>
+                    <div
+                        className={
+                            isDesktop
+                                ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5"
+                                : "mt-auto flex flex-wrap items-center justify-start gap-3 pt-3"
+                        }
+                    >
                         {isDesktop ? (
                             <Link
                                 href={`/read/${card.id}`}
