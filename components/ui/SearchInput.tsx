@@ -53,19 +53,38 @@ export function SearchInput({
         });
     }, []);
 
+    useEffect(() => {
+        setQuery(initialQuery);
+    }, [initialQuery]);
+
+    const buildSearchHref = useCallback((searchQuery: string) => {
+        const params = new URLSearchParams();
+
+        if (searchQuery.trim()) params.set("q", searchQuery.trim());
+        if (category) params.set("category", category);
+        if (type && type.toLowerCase() !== "all") params.set("type", type.toLowerCase());
+
+        const search = params.toString();
+        return search ? `/search?${search}` : "/search";
+    }, [category, type]);
+
     // Navigate to search results
-    const performSearch = useCallback((searchQuery: string, saveHistory = true) => {
+    const performSearch = useCallback((
+        searchQuery: string,
+        { saveHistory = true, replace = false }: { saveHistory?: boolean; replace?: boolean } = {}
+    ) => {
         if (saveHistory && searchQuery.trim()) {
             saveToRecent(searchQuery.trim());
         }
 
-        const params = new URLSearchParams();
-        if (searchQuery.trim()) params.set("q", searchQuery.trim());
-        if (category) params.set("category", category);
-        if (type && type !== "All") params.set("type", type);
+        const href = buildSearchHref(searchQuery);
+        if (replace) {
+            router.replace(href);
+            return;
+        }
 
-        router.push(`/search?${params.toString()}`);
-    }, [router, category, type, saveToRecent]);
+        router.push(href);
+    }, [buildSearchHref, router, saveToRecent]);
 
     // Debounced search on input change
     useEffect(() => {
@@ -73,10 +92,9 @@ export function SearchInput({
             clearTimeout(debounceRef.current);
         }
 
-        // Only auto-search if query has content
-        if (query.trim().length > 0) {
+        if (query.trim() !== initialQuery.trim()) {
             debounceRef.current = setTimeout(() => {
-                performSearch(query, false); // Don't save to history on debounce
+                performSearch(query, { saveHistory: false, replace: true });
             }, 500);
         }
 
@@ -85,7 +103,7 @@ export function SearchInput({
                 clearTimeout(debounceRef.current);
             }
         };
-    }, [query, performSearch]);
+    }, [initialQuery, performSearch, query]);
 
     // Handle form submission (Enter key)
     const handleSubmit = (e: React.FormEvent) => {
@@ -93,14 +111,14 @@ export function SearchInput({
         if (debounceRef.current) {
             clearTimeout(debounceRef.current);
         }
-        performSearch(query, true); // Save to history on explicit submit
+        performSearch(query, { saveHistory: true });
         inputRef.current?.blur();
     };
 
     // Handle recent search click
     const handleRecentClick = (term: string) => {
         setQuery(term);
-        performSearch(term, true);
+        performSearch(term, { saveHistory: true });
         setIsFocused(false);
     };
 
@@ -108,11 +126,7 @@ export function SearchInput({
     const handleClear = () => {
         setQuery("");
         inputRef.current?.focus();
-        // Navigate to clean search page
-        const params = new URLSearchParams();
-        if (category) params.set("category", category);
-        if (type && type !== "All") params.set("type", type);
-        router.push(`/search?${params.toString()}`);
+        performSearch("", { saveHistory: false, replace: true });
     };
 
     // Clear a specific recent search
@@ -128,22 +142,27 @@ export function SearchInput({
     const showRecent = isFocused && !query.trim() && recentSearches.length > 0;
 
     return (
-        <div className="relative max-w-2xl">
+        <div className="relative w-full">
             <form onSubmit={handleSubmit}>
                 <div className="relative">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground pointer-events-none" />
                     <input
                         ref={inputRef}
-                        type="text"
+                        type="search"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setTimeout(() => setIsFocused(false), 200)}
                         placeholder={placeholder}
                         autoFocus={autoFocus}
+                        aria-label={category ? `Search in ${category}` : "Search content"}
+                        autoComplete="off"
+                        enterKeyHint="search"
+                        spellCheck={false}
                         className={cn(
                             "w-full h-14 pl-12 pr-12 rounded-xl bg-card border text-foreground placeholder:text-muted-foreground",
                             "focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-lg",
+                            "[&::-webkit-search-cancel-button]:appearance-none [&::-webkit-search-decoration]:appearance-none [&::-webkit-search-results-button]:appearance-none [&::-webkit-search-results-decoration]:appearance-none",
                             "transition-all duration-200",
                             isFocused ? "border-primary/50" : "border-border"
                         )}

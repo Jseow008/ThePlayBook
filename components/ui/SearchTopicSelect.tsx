@@ -39,11 +39,11 @@ export function SearchTopicSelect({ query, type, value = "", options }: SearchTo
     return (
         <div className="relative inline-flex min-w-[180px]">
             <label htmlFor="search-topic-select" className="sr-only">
-                Others
+                More topics
             </label>
             <select
                 id="search-topic-select"
-                aria-label="Others"
+                aria-label="More topics"
                 value={value}
                 onChange={(event) => {
                     const nextCategory = event.target.value || undefined;
@@ -51,7 +51,7 @@ export function SearchTopicSelect({ query, type, value = "", options }: SearchTo
                 }}
                 className="h-9 w-full appearance-none rounded-full border border-border bg-secondary/30 pl-4 pr-10 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary"
             >
-                <option value="">Others</option>
+                <option value="">More topics</option>
                 {options.map((option) => (
                     <option key={option} value={option}>
                         {option}

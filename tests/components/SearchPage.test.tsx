@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock } = vi.hoisted(() => {
@@ -96,7 +96,13 @@ vi.mock("@/components/ui/ContentCard", () => ({
 
 async function renderSearchPage(searchParams: { q?: string; category?: string; type?: string } = {}) {
     const { default: SearchPage } = await import("@/app/(public)/search/page");
-    return render(await SearchPage({ searchParams: Promise.resolve(searchParams) }));
+    let view: ReturnType<typeof render> | undefined;
+
+    await act(async () => {
+        view = render(await SearchPage({ searchParams: Promise.resolve(searchParams) }));
+    });
+
+    return view!;
 }
 
 describe("SearchPage", () => {
@@ -166,7 +172,7 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Business" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Productivity" })).toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Psychology" })).not.toBeInTheDocument();
-        expect(screen.getByRole("combobox", { name: "Others" })).toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: "More topics" })).toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();
     });
 
@@ -284,26 +290,48 @@ describe("SearchPage", () => {
     it("renders remaining normalized topics in the dropdown", async () => {
         await renderSearchPage({});
 
-        const select = screen.getByRole("combobox", { name: "Others" });
+        const select = screen.getByRole("combobox", { name: "More topics" });
         const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
 
-        expect(optionLabels).toEqual(["Others", "Christian", "Psychology"]);
+        expect(optionLabels).toEqual(["More topics", "Christian", "Psychology"]);
     });
 
     it("reflects a selected non-curated topic in the dropdown", async () => {
         await renderSearchPage({ category: "Psychology" });
 
-        expect(screen.getByRole("combobox", { name: "Others" })).toHaveValue("Psychology");
+        expect(screen.getByRole("combobox", { name: "More topics" })).toHaveValue("Psychology");
     });
 
     it("preserves query and type when selecting a dropdown topic", async () => {
         await renderSearchPage({ q: "focus", type: "podcast" });
 
-        fireEvent.change(screen.getByRole("combobox", { name: "Others" }), {
+        fireEvent.change(screen.getByRole("combobox", { name: "More topics" }), {
             target: { value: "Psychology" },
         });
 
         expect(routerPushMock).toHaveBeenCalledWith("/search?q=focus&category=Psychology&type=podcast");
+    });
+
+    it("treats invalid type params as the default All state", async () => {
+        await renderSearchPage({ type: "invalid" });
+
+        expect(screen.getByRole("link", { name: "All" })).toHaveClass("bg-primary");
+        expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute("href", "/search?type=podcast");
+        expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
+            p_limit: 10,
+            p_type: null,
+        });
+    });
+
+    it("quotes search values with reserved punctuation in the PostgREST or filter", async () => {
+        await renderSearchPage({ q: "focus, deep" });
+
+        await waitFor(() => {
+            expect(fromMock).toHaveBeenCalledWith("content_item");
+        });
+
+        const queryBuilder = getLatestQueryBuilder();
+        expect(queryBuilder?.or).toHaveBeenCalledWith('title.ilike."%focus, deep%",author.ilike."%focus, deep%",category.ilike."%focus, deep%"');
     });
 
     it("keeps the search input stack layer above the filter row", async () => {

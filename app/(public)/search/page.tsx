@@ -1,7 +1,7 @@
 /**
  * Search Page
  * 
- * Full-text search across content titles, authors, and descriptions.
+ * Full-text search across content titles, authors, and categories.
  * Supports filtering by category and type.
  */
 
@@ -44,12 +44,16 @@ function normalizeType(type?: string): ContentType | undefined {
     return SEARCHABLE_TYPES.includes(normalized) ? normalized : undefined;
 }
 
+function formatTypeLabel(type: ContentType) {
+    return type.charAt(0).toUpperCase() + type.slice(1);
+}
+
 function formatTrendingLabel(type?: ContentType) {
     if (!type) {
         return "Trending Now";
     }
 
-    return `Trending ${type.charAt(0).toUpperCase()}${type.slice(1)}s`;
+    return `Trending ${formatTypeLabel(type)}s`;
 }
 
 function normalizeCategoryLabel(category?: string | null) {
@@ -80,6 +84,18 @@ function buildSearchHref({ query, category, type }: { query?: string; category?:
 
     const search = params.toString();
     return search ? `/search?${search}` : "/search";
+}
+
+function escapePostgrestLikeValue(value: string) {
+    const escaped = `%${value}%`
+        .replace(/\\/g, "\\\\")
+        .replace(/"/g, '\\"');
+
+    if (/[,.:()]/.test(value)) {
+        return `"${escaped}"`;
+    }
+
+    return escaped;
 }
 
 function buildNormalizedTopics(categoryStats: CategoryStat[]) {
@@ -151,7 +167,7 @@ async function SearchResults({
         }
 
         if (hasQuery) {
-            const searchTerm = `%${trimmedQuery}%`;
+            const searchTerm = escapePostgrestLikeValue(trimmedQuery);
             queryBuilder = queryBuilder.or(`title.ilike.${searchTerm},author.ilike.${searchTerm},category.ilike.${searchTerm}`);
         }
 
@@ -213,6 +229,7 @@ function ResultsSkeleton() {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q: query, category, type } = await searchParams;
     const selectedType = normalizeType(type);
+    const selectedTypeParam = selectedType ?? undefined;
     const normalizedCategory = normalizeCategoryLabel(category);
     const hasContentSearch = (query?.trim().length ?? 0) > 0 || Boolean(normalizedCategory);
 
@@ -262,62 +279,68 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const selectedTopicValues = selectedTopic?.rawValues ?? [];
 
     return (
-        <div className="min-h-screen bg-background pb-8 lg:pb-24">
-            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
+        <div className="min-h-screen bg-background pb-5 md:pb-6 lg:pb-16">
+            <div className="max-w-7xl mx-auto px-6 lg:px-16 py-5 md:py-8">
 
-                <div className="flex flex-col gap-2 mb-8 mt-2 md:mt-4">
+                <div className="flex flex-col gap-2 mb-3 md:mb-4 mt-1 md:mt-3">
                     <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">
-                        {selectedTopicLabel ? `${selectedTopicLabel} Content` : "What do you want to learn?"}
+                        {selectedTopicLabel ? `${selectedTopicLabel} Content` : "Find Content"}
                     </h1>
                 </div>
 
                 {/* Smart Search Input */}
-                <div className="max-w-4xl w-full mb-8 relative z-20">
+                <div className="max-w-4xl w-full mb-4 md:mb-5 relative z-20">
                     <SearchInput
                         initialQuery={query || ""}
                         category={selectedTopicLabel}
-                        type={type}
+                        type={selectedTypeParam}
                         placeholder={selectedTopicLabel ? `Search in ${selectedTopicLabel}...` : "Search by title, author, or keyword..."}
-                        autoFocus
                     />
                 </div>
 
                 {/* Type Filters */}
-                <div className="flex flex-wrap justify-start gap-2 mb-12">
-                    {contentTypes.map((t) => {
-                        const isActive = (type === t) || (!type && t === "All") || (type && type.toLowerCase() === t.toLowerCase()) || (t === "All" && type === "All");
+                <div className="mb-6 md:mb-8">
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                        Type
+                    </p>
+                    <div className="flex flex-wrap justify-start gap-2">
+                        {contentTypes.map((t) => {
+                            const isActive = t === "All"
+                                ? !selectedType
+                                : selectedType === t.toLowerCase();
 
-                        return (
-                            <Link
-                                key={t}
-                                href={buildSearchHref({
-                                    query,
-                                    category: selectedTopicLabel,
-                                    type: t === "All" ? undefined : t,
-                                })}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
-                                    ? "bg-primary text-primary-foreground border-primary"
-                                    : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
-                                    }`}
-                            >
-                                {t}
-                            </Link>
-                        );
-                    })}
+                            return (
+                                <Link
+                                    key={t}
+                                    href={buildSearchHref({
+                                        query,
+                                        category: selectedTopicLabel,
+                                        type: t === "All" ? undefined : t.toLowerCase(),
+                                    })}
+                                    className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
+                                        }`}
+                                >
+                                    {t}
+                                </Link>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {curatedTopicItems.length > 0 || dropdownOptions.length > 0 ? (
-                    <div className="mb-12">
-                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
+                    <div className="mb-6 md:mb-8">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
                             Topics
                         </p>
                         <div className="flex flex-wrap justify-start gap-2">
                             <Link
                                 href={buildSearchHref({
                                     query,
-                                    type,
+                                    type: selectedTypeParam,
                                 })}
-                                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${!selectedTopicLabel
+                                className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${!selectedTopicLabel
                                     ? "bg-primary text-primary-foreground border-primary"
                                     : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
                                     }`}
@@ -334,9 +357,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                         href={buildSearchHref({
                                             query,
                                             category: item.label,
-                                            type,
+                                            type: selectedTypeParam,
                                         })}
-                                        className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
+                                        className={`px-3.5 md:px-4 py-1.5 rounded-full text-sm font-medium transition-all border ${isActive
                                             ? "bg-primary text-primary-foreground border-primary"
                                             : "bg-secondary/30 text-muted-foreground border-transparent hover:bg-secondary/50 hover:text-foreground"
                                             }`}
@@ -348,7 +371,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
                             <SearchTopicSelect
                                 query={query}
-                                type={type}
+                                type={selectedTypeParam}
                                 value={selectedTopicLabel && !CURATED_TOPICS.includes(selectedTopicLabel as typeof CURATED_TOPICS[number])
                                     ? selectedTopicLabel
                                     : ""}
@@ -365,7 +388,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             query={query}
                             categoryLabel={selectedTopicLabel}
                             categoryValues={selectedTopicValues}
-                            type={type}
+                            type={selectedTypeParam}
                         />
                     </Suspense>
                 ) : trendingItems.length > 0 ? (
