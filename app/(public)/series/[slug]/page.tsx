@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Clock3, Library } from "lucide-react";
+import { ArrowRight, Clock3 } from "lucide-react";
 import { APP_NAME } from "@/lib/brand";
 import { getSeriesPageData } from "@/lib/server/public-content";
 import type { ContentItem } from "@/types/database";
@@ -98,39 +98,38 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
         <div className="min-h-screen bg-background pb-8 lg:pb-24">
             <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
                 <section className="mb-8 mt-2 rounded-[1.75rem] border border-border/60 bg-card/20 px-5 py-6 md:mt-4 sm:px-6 sm:py-7 lg:flex lg:items-end lg:justify-between lg:gap-8">
-                    <div className="max-w-3xl space-y-4">
+                    <div className="max-w-3xl space-y-3.5 sm:space-y-4">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                             Series
                         </p>
-                        <div className="space-y-3">
+                        <div className="space-y-2 sm:space-y-2.5">
                             <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight sm:text-4xl">
                                 {data.series.title}
                             </h1>
                             {seriesAuthor ? (
-                                <p className="text-base font-medium text-foreground/80 sm:text-lg">
+                                <p className="text-base font-medium leading-snug text-foreground/80 sm:text-lg">
                                     by {seriesAuthor}
                                 </p>
                             ) : null}
                             {data.series.description ? (
-                                <p className="max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+                                <p className="max-w-2xl pt-0.5 text-base leading-relaxed text-muted-foreground sm:text-lg">
                                     {data.series.description}
                                 </p>
                             ) : null}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2.5">
-                            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/30 px-3 py-1.5 text-sm font-medium text-foreground">
-                                <Library className="size-4 text-muted-foreground" />
+                        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                            <span className="inline-flex items-center rounded-full border border-border/60 bg-card/30 px-3 py-1.5 text-xs font-medium text-foreground">
                                 {data.items.length} part{data.items.length === 1 ? "" : "s"}
                             </span>
                             {totalDurationLabel ? (
-                                <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/30 px-3 py-1.5 text-sm font-medium text-foreground">
+                                <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/30 px-3 py-1.5 text-xs font-medium text-foreground">
                                     <Clock3 className="size-4 text-muted-foreground" />
                                     {totalDurationLabel}
                                 </span>
                             ) : null}
                             {formatSummary ? (
-                                <span className="inline-flex items-center rounded-full border border-border/60 bg-card/30 px-3 py-1.5 text-sm font-medium text-foreground">
+                                <span className="inline-flex items-center rounded-full border border-border/60 bg-card/30 px-3 py-1.5 text-xs font-medium text-foreground">
                                     {formatSummary}
                                 </span>
                             ) : null}
