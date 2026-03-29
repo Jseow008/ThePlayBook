@@ -239,7 +239,7 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
-        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-4.5rem-4rem-env(safe-area-inset-bottom))]");
+        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-3.5rem-4rem-env(safe-area-inset-bottom))]");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100dvh-7.5rem)]");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("pb-4");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("md:pb-2");
@@ -259,7 +259,7 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-2");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0");
-        expect(firstCard).toHaveClass("min-h-[calc(100dvh-4.5rem-4rem-env(safe-area-inset-bottom))]");
+        expect(firstCard).toHaveClass("min-h-[calc(100dvh-3.5rem-4rem-env(safe-area-inset-bottom))]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
     });
