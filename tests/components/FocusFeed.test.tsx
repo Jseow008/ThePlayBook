@@ -218,8 +218,8 @@ describe("FocusFeed", () => {
             expect(fetchMock).toHaveBeenCalledWith("/api/focus?limit=6");
         });
 
-        expect(await screen.findByText("Focus Mode")).toBeInTheDocument();
-        expect(screen.getByText("Focus Mode").closest("section")).toHaveClass("pt-11");
+        expect(screen.queryByText("Focus Mode")).not.toBeInTheDocument();
+        expect(screen.getByTestId("focus-feed-list").closest("section")).toHaveClass("pt-4");
         expect(screen.queryByRole("heading", { name: "One idea per post" })).not.toBeInTheDocument();
         const cards = await screen.findAllByTestId("focus-feed-card");
         const firstCard = cards[0]!;
