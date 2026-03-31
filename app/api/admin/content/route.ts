@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
 
         // Create artifacts if provided
         if (artifacts && artifacts.length > 0) {
-            const artifactsToInsert = artifacts.map((artifact: { type: string; payload_schema: object }) => ({
+            const artifactsToInsert = artifacts.map((artifact) => ({
                 item_id: contentItem.id,
                 type: artifact.type,
                 payload_schema: artifact.payload_schema,

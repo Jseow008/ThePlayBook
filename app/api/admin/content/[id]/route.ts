@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
+import type { Json } from "@/types/database";
 import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import {
@@ -281,7 +282,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             );
         }
 
-        const contentPatch: Record<string, unknown> = {};
+        const contentPatch: Record<string, Json | undefined> = {};
         if (contentData.title !== undefined) contentPatch.title = contentData.title;
         if (contentData.author !== undefined) contentPatch.author = contentData.author;
         if (contentData.type !== undefined) contentPatch.type = contentData.type;

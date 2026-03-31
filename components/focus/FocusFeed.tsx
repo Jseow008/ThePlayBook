@@ -1048,7 +1048,9 @@ function FocusCardView({
 
                     <section
                         className={
-                            isDesktop ? "space-y-3" : "space-y-2"
+                            isDesktop
+                                ? "space-y-3"
+                                : "space-y-2"
                         }
                     >
                         <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75 sm:text-xs">
@@ -1059,7 +1061,11 @@ function FocusCardView({
                                 {visibleTakeaways.map((takeaway, index) => (
                                     <div
                                         key={`${card.id}-${index}`}
-                                        className={isDesktop ? "flex gap-3 px-1 py-1" : "flex gap-3 px-1 py-0"}
+                                        className={
+                                            isDesktop
+                                                ? "flex gap-3 px-1 py-1"
+                                                : "flex gap-3 rounded-2xl border border-border/40 bg-background/20 px-3 py-3"
+                                        }
                                     >
                                         <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-bold text-primary sm:text-xs">
                                             {index + 1}

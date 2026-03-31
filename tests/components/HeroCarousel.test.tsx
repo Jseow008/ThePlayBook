@@ -131,7 +131,7 @@ describe("HeroCarousel", () => {
         const description = screen.getByText("Experience this Flux content today.");
 
         expect(description).toBeInTheDocument();
-        expect(description).toHaveClass("text-sm", "md:text-xl");
+        expect(description).toHaveClass("text-sm", "md:text-lg", "lg:text-xl");
         expect(description).not.toHaveClass("hidden");
     });
 

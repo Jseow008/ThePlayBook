@@ -257,8 +257,8 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
         expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-2");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-3");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-3");
         expect(firstCard).toHaveClass("min-h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");

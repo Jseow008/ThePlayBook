@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
                 // Update row
                 const { error: updateError } = await supabase
                     .from("content_item")
-                    .update({ embedding })
+                    .update({ embedding: JSON.stringify(embedding) })
                     .eq("id", item.id);
 
                 if (updateError) {
