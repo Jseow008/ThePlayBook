@@ -6,6 +6,7 @@ import {
     type TouchEvent as ReactTouchEvent,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useMemo,
     useRef,
     useState,
@@ -38,6 +39,9 @@ const GESTURE_UNLOCK_TIMEOUT_MS = 200;
 const WHEEL_QUIET_PERIOD_MS = 180;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const FocusItemIdSchema = z.string().uuid();
+const MOBILE_MIN_VISIBLE_TAKEAWAYS = 1;
+const MOBILE_MAX_VISIBLE_TAKEAWAYS = 3;
+const MOBILE_CARD_FIT_BUFFER_PX = 10;
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 
@@ -154,6 +158,7 @@ export function FocusFeed() {
     const [hasInitialized, setHasInitialized] = useState(false);
     const [activeCardIndex, setActiveCardIndex] = useState(0);
     const [mounted, setMounted] = useState(false);
+    const [listViewportHeight, setListViewportHeight] = useState<number | null>(null);
     const [takeawaysSheetCard, setTakeawaysSheetCard] = useState<FocusCard | null>(null);
     const [takeawaysSheetPhase, setTakeawaysSheetPhase] = useState<TakeawaysSheetPhase>("closed");
     const [sheetDragOffset, setSheetDragOffset] = useState(0);
@@ -366,6 +371,31 @@ export function FocusFeed() {
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useEffect(() => {
+        const listElement = listRef.current;
+        if (!listElement) {
+            setListViewportHeight(null);
+            return;
+        }
+
+        const updateListViewportHeight = () => {
+            const nextHeight = Math.round(listElement.getBoundingClientRect().height);
+            setListViewportHeight((currentHeight) =>
+                currentHeight === nextHeight ? currentHeight : nextHeight
+            );
+        };
+
+        updateListViewportHeight();
+
+        const observer = new ResizeObserver(() => {
+            updateListViewportHeight();
+        });
+
+        observer.observe(listElement);
+
+        return () => observer.disconnect();
+    }, [cards.length, hasInitialized, loading, mounted]);
 
     useEffect(() => {
         if (!takeawaysSheetCard || prefersReducedMotion || takeawaysSheetPhase !== "entering") {
@@ -789,6 +819,7 @@ export function FocusFeed() {
                                     card={card}
                                     cardIndex={index}
                                     isDesktop={isDesktop}
+                                    mobileCardTargetHeight={listViewportHeight}
                                     onOpenTakeaways={openTakeawaysSheet}
                                     onDismiss={(cardId) => {
                                         dismissedIdsRef.current.add(cardId);
@@ -890,12 +921,14 @@ function FocusCardView({
     card,
     cardIndex,
     isDesktop,
+    mobileCardTargetHeight,
     onOpenTakeaways,
     onDismiss,
 }: {
     card: FocusCard;
     cardIndex: number;
     isDesktop: boolean;
+    mobileCardTargetHeight: number | null;
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
     onDismiss: (cardId: string) => void;
 }) {
@@ -903,15 +936,106 @@ function FocusCardView({
     const duration = formatDuration(card.duration_seconds);
     const isSaved = isInMyList(card.id);
     const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
+    const [mobileVisibleTakeawayCount, setMobileVisibleTakeawayCount] = useState(() =>
+        card.takeaways.length === 0 ? 0 : Math.min(MOBILE_MIN_VISIBLE_TAKEAWAYS, card.takeaways.length)
+    );
     const actionsMenuRef = useRef<HTMLDivElement | null>(null);
+    const cardRef = useRef<HTMLElement | null>(null);
+    const cardContentRef = useRef<HTMLDivElement | null>(null);
+    const [cardWidth, setCardWidth] = useState(0);
+    const maxMobileTakeawayCount = Math.min(MOBILE_MAX_VISIBLE_TAKEAWAYS, card.takeaways.length);
+    const visibleMobileTakeawayCount = maxMobileTakeawayCount === 0
+        ? 0
+        : Math.min(Math.max(mobileVisibleTakeawayCount, MOBILE_MIN_VISIBLE_TAKEAWAYS), maxMobileTakeawayCount);
     const visibleTakeaways = isDesktop
         ? card.takeaways.slice(0, 7)
-        : card.takeaways.slice(0, 2);
+        : card.takeaways.slice(0, visibleMobileTakeawayCount);
     const takeawayLabel = isDesktop
         ? "Key Takeaways"
         : card.totalTakeaways > visibleTakeaways.length
             ? `Key Takeaways (${visibleTakeaways.length} of ${card.totalTakeaways})`
             : `Key Takeaways (${card.totalTakeaways})`;
+
+    useEffect(() => {
+        const nextCount = card.takeaways.length === 0
+            ? 0
+            : Math.min(MOBILE_MIN_VISIBLE_TAKEAWAYS, card.takeaways.length);
+
+        setMobileVisibleTakeawayCount(nextCount);
+    }, [card.id, card.takeaways.length]);
+
+    useEffect(() => {
+        const cardElement = cardRef.current;
+        if (!cardElement) {
+            setCardWidth(0);
+            return;
+        }
+
+        const updateCardWidth = () => {
+            const nextWidth = Math.round(cardElement.getBoundingClientRect().width);
+            setCardWidth((currentWidth) => (currentWidth === nextWidth ? currentWidth : nextWidth));
+        };
+
+        updateCardWidth();
+
+        const observer = new ResizeObserver(() => {
+            updateCardWidth();
+        });
+
+        observer.observe(cardElement);
+
+        return () => observer.disconnect();
+    }, []);
+
+    useLayoutEffect(() => {
+        if (isDesktop || cardWidth === 0 || mobileCardTargetHeight === null) {
+            return;
+        }
+
+        const nextCount = maxMobileTakeawayCount === 0
+            ? 0
+            : maxMobileTakeawayCount;
+
+        setMobileVisibleTakeawayCount((currentCount) =>
+            currentCount === nextCount ? currentCount : nextCount
+        );
+    }, [cardWidth, isDesktop, maxMobileTakeawayCount, mobileCardTargetHeight]);
+
+    useLayoutEffect(() => {
+        if (isDesktop || maxMobileTakeawayCount === 0 || mobileCardTargetHeight === null) {
+            return;
+        }
+
+        const cardElement = cardRef.current;
+        const cardContentElement = cardContentRef.current;
+        if (!cardElement || !cardContentElement) {
+            return;
+        }
+
+        const computedStyle = window.getComputedStyle(cardElement);
+        const verticalPadding =
+            Number.parseFloat(computedStyle.paddingTop) + Number.parseFloat(computedStyle.paddingBottom);
+        const availableContentHeight = Math.max(
+            mobileCardTargetHeight - verticalPadding - MOBILE_CARD_FIT_BUFFER_PX,
+            0
+        );
+        const requiredContentHeight = Math.ceil(cardContentElement.scrollHeight);
+        const cardFits = requiredContentHeight <= availableContentHeight;
+
+        if (cardFits || mobileVisibleTakeawayCount <= MOBILE_MIN_VISIBLE_TAKEAWAYS) {
+            return;
+        }
+
+        setMobileVisibleTakeawayCount((currentCount) =>
+            currentCount > MOBILE_MIN_VISIBLE_TAKEAWAYS ? currentCount - 1 : currentCount
+        );
+    }, [
+        isDesktop,
+        maxMobileTakeawayCount,
+        mobileCardTargetHeight,
+        mobileVisibleTakeawayCount,
+        visibleTakeaways.length,
+    ]);
 
     useEffect(() => {
         if (!isActionsMenuOpen) {
@@ -943,9 +1067,10 @@ function FocusCardView({
         <article
             data-focus-card-index={cardIndex}
             data-testid="focus-feed-card"
+            ref={cardRef}
             className={`${FEED_CARD_HEIGHT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
-            <div className="flex h-full flex-col">
+            <div ref={cardContentRef} className="flex h-full flex-col">
                     <div className={isDesktop ? "space-y-3" : "space-y-2"}>
                         <div className="flex items-start justify-between gap-3">
                             <div className={isDesktop ? "min-w-0 flex-1 space-y-1.5" : "min-w-0 flex-1 space-y-1.5"}>
