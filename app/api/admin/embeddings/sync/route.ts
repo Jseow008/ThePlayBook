@@ -4,6 +4,13 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { GoogleGenAI } from "@google/genai";
 import { rateLimit } from "@/lib/server/rate-limit";
+import {
+    CONTENT_EMBEDDING_SYNC_METHOD,
+    CONTENT_EMBEDDING_SYNC_PATH,
+    getAdminAiReadinessMap,
+    getAdminAiReadinessWorkflow,
+    summarizeAdminAiReadiness,
+} from "@/lib/server/admin-ai-readiness";
 
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
@@ -27,6 +34,57 @@ function buildEmbeddingText(item: any): string {
     }
 
     return parts.join("\n");
+}
+
+export async function GET() {
+    const requestId = getRequestId();
+
+    try {
+        const isAdmin = await verifyAdminSession();
+        if (!isAdmin) {
+            return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
+        }
+
+        const supabase = getAdminClient();
+        const { data: items, error } = await supabase
+            .from("content_item")
+            .select("id, status, embedding")
+            .eq("status", "verified")
+            .is("deleted_at", null);
+
+        if (error) {
+            throw error;
+        }
+
+        const aiReadinessById = await getAdminAiReadinessMap(supabase as any, (items ?? []).map((item) => ({
+            id: item.id,
+            status: item.status,
+            embedding: item.embedding,
+        })));
+        const aiReadiness = summarizeAdminAiReadiness(Object.values(aiReadinessById));
+
+        return NextResponse.json({
+            summary: {
+                verified_items: aiReadiness.verified_items,
+                content_embedding_ready_items: aiReadiness.verified_items - aiReadiness.stale_content_embeddings,
+                missing_content_embeddings: aiReadiness.stale_content_embeddings,
+            },
+            ai_readiness: aiReadiness,
+            sync_action: {
+                method: CONTENT_EMBEDDING_SYNC_METHOD,
+                path: CONTENT_EMBEDDING_SYNC_PATH,
+            },
+            workflow: getAdminAiReadinessWorkflow(),
+        });
+    } catch (error) {
+        logApiError({
+            requestId,
+            route: "/api/admin/embeddings/sync",
+            message: "Failed to load content embedding readiness",
+            error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to load content embedding readiness", 500, requestId);
+    }
 }
 
 export async function POST(request: NextRequest) {

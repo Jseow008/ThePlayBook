@@ -14,7 +14,9 @@ import { AdminSearch } from "@/components/admin/AdminSearch";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { SyncEmbeddingsButton } from "@/components/admin/SyncEmbeddingsButton";
 import { SyncSegmentEmbeddingsButton } from "@/components/admin/SyncSegmentEmbeddingsButton";
+import { AiReadinessBadge } from "@/components/admin/AiReadinessBadge";
 import { APP_NAME } from "@/lib/brand";
+import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 
 // Type icons mapping
 const typeIcons = {
@@ -79,7 +81,7 @@ export default async function AdminDashboardPage({
     // Build Query
     let query = (supabase
         .from("content_item") as any)
-        .select("id, title, type, author, status, is_featured, created_at, updated_at, deleted_at", { count: "exact" })
+        .select("id, title, type, author, status, is_featured, embedding, created_at, updated_at, deleted_at", { count: "exact" })
         .is("deleted_at", null); // Default to showing non-deleted items
 
     // Apply Filters
@@ -106,6 +108,14 @@ export default async function AdminDashboardPage({
     }
 
     const items = contentItems || [];
+    const aiReadinessById = await getAdminAiReadinessMap(
+        supabase as any,
+        items.map((item: any) => ({
+            id: item.id,
+            status: item.status,
+            embedding: item.embedding,
+        }))
+    );
     const totalPages = count ? Math.ceil(count / PAGE_SIZE) : 1;
 
     return (
@@ -219,6 +229,9 @@ export default async function AdminDashboardPage({
                                                 <p className="text-sm text-muted-foreground">
                                                     {item.author || "Unknown author"} • {new Date(item.created_at).toLocaleDateString()}
                                                 </p>
+                                                <div className="mt-2">
+                                                    <AiReadinessBadge readiness={aiReadinessById[item.id]} />
+                                                </div>
                                             </div>
 
                                             {/* Featured Toggle */}

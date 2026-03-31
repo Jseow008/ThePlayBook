@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { reportException } from "@/lib/server/error-reporting";
 
 export type ApiErrorCode =
     | "UNAUTHORIZED"
@@ -51,10 +52,19 @@ export function logApiError(params: {
             error_name: params.error.name,
             error_message: params.error.message,
         });
-        return;
+    } else {
+        console.error(base, { error: params.error });
     }
 
-    console.error(base, { error: params.error });
+    void reportException({
+        source: "api",
+        message: params.message,
+        requestId: params.requestId,
+        route: params.route,
+        userId: params.userId,
+        error: params.error,
+        skipConsoleLog: true,
+    });
 }
 
 function getErrorCode(error: unknown): string | null {

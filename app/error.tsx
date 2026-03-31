@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { AlertCircle, RotateCcw, Home } from "lucide-react";
+import { reportClientException } from "@/app/error-reporting-client";
 
 interface ErrorProps {
     error: Error & { digest?: string };
@@ -11,8 +12,11 @@ interface ErrorProps {
 
 export default function GlobalError({ error, reset }: ErrorProps) {
     useEffect(() => {
-        // Log to error monitoring service in production
         console.error("[GlobalError]", error);
+        void reportClientException({
+            boundary: "app-error-boundary",
+            error,
+        });
     }, [error]);
 
     return (

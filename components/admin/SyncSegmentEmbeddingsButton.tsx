@@ -12,6 +12,10 @@ type CoverageSummary = {
 
 type CoverageResponse = {
     summary: CoverageSummary | null;
+    ai_readiness?: {
+        ai_stale_items: number;
+        stale_segment_embeddings: number;
+    };
     command?: string;
     dry_run_command?: string;
 };
@@ -25,6 +29,8 @@ export function SyncSegmentEmbeddingsButton() {
     const [command, setCommand] = useState("npm run embeddings:sync-segments");
     const [dryRunCommand, setDryRunCommand] = useState("npm run embeddings:sync-segments -- --dry-run");
     const [status, setStatus] = useState<{ tone: "error" | "info"; text: string } | null>(null);
+    const [aiStaleItems, setAiStaleItems] = useState<number | null>(null);
+    const [staleSegmentEmbeddings, setStaleSegmentEmbeddings] = useState<number | null>(null);
     const [isLoadingSummary, setIsLoadingSummary] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -47,6 +53,8 @@ export function SyncSegmentEmbeddingsButton() {
             }
 
             setSummary(data.summary ?? null);
+            setAiStaleItems(data.ai_readiness?.ai_stale_items ?? null);
+            setStaleSegmentEmbeddings(data.ai_readiness?.stale_segment_embeddings ?? null);
             if (data.command) {
                 setCommand(data.command);
             }
@@ -106,6 +114,9 @@ export function SyncSegmentEmbeddingsButton() {
                         <div>{summary.embedded_content_items} content items have Gemini segment embeddings</div>
                         <div>{summary.missing_segments} verified segments still need Gemini embeddings</div>
                         <div>{formatNumber(summary.estimated_remaining_characters)} characters remaining to embed</div>
+                        {aiStaleItems !== null && staleSegmentEmbeddings !== null && (
+                            <div>{staleSegmentEmbeddings} verified items are still AI-stale on segment coverage across {aiStaleItems} total stale items</div>
+                        )}
                     </>
                 ) : (
                     <span>No embedding coverage is available yet.</span>

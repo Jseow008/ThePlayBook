@@ -8,6 +8,7 @@ import { notFound } from "next/navigation";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { getAdminSeriesOptions } from "@/lib/server/admin-series";
+import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { Segment } from "@/types/database";
 
 interface EditContentPageProps {
@@ -36,6 +37,11 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
     }
 
     const contentItem = contentItemRaw as any;
+    const aiReadinessById = await getAdminAiReadinessMap(supabase as any, [{
+        id: contentItem.id,
+        status: contentItem.status,
+        embedding: contentItem.embedding,
+    }]);
 
     // Transform data for the form
     const formData = {
@@ -83,7 +89,12 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
                 </p>
             </div>
 
-            <ContentForm initialData={formData} isEditing seriesOptions={seriesOptions} />
+            <ContentForm
+                initialData={formData}
+                isEditing
+                seriesOptions={seriesOptions}
+                aiReadiness={aiReadinessById[contentItem.id]}
+            />
         </div>
     );
 }

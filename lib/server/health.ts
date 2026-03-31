@@ -1,3 +1,5 @@
+import { isErrorReportingConfigured } from "@/lib/server/error-reporting";
+
 export type ReadinessState =
     | "ready"
     | "missing"
@@ -16,6 +18,7 @@ export type RuntimeReadiness = {
         ai_generation: ReadinessState;
         ai_retrieval: ReadinessState;
         rate_limiting: ReadinessState;
+        error_reporting: ReadinessState;
     };
     issues: string[];
 };
@@ -52,6 +55,7 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
     const hasGemini = hasNonEmptyEnv(env.GEMINI_API_KEY);
     const hasUpstashUrl = hasNonEmptyEnv(env.UPSTASH_REDIS_REST_URL);
     const hasUpstashToken = hasNonEmptyEnv(env.UPSTASH_REDIS_REST_TOKEN);
+    const hasErrorReporting = isErrorReportingConfigured(env);
 
     const checks: RuntimeReadiness["checks"] = {
         supabase_public: hasSupabasePublicUrl && hasSupabaseAnonKey ? "ready" : "missing",
@@ -67,6 +71,11 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
         ai_generation: hasAnthropic || hasOpenAI ? "ready" : "missing",
         ai_retrieval: hasGemini ? "ready" : "missing",
         rate_limiting: hasUpstashUrl && hasUpstashToken
+            ? "ready"
+            : isProduction
+                ? "missing"
+                : "not_configured",
+        error_reporting: hasErrorReporting
             ? "ready"
             : isProduction
                 ? "missing"
@@ -99,6 +108,10 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
 
     if (checks.rate_limiting === "missing") {
         issues.push("Production rate limiting requires Upstash Redis configuration.");
+    }
+
+    if (checks.error_reporting === "missing") {
+        issues.push("Production exception monitoring requires ERROR_REPORTING_WEBHOOK_URL.");
     }
 
     return {

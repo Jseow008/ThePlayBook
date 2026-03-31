@@ -24,6 +24,7 @@ import {
     getVerifiedContentIssues,
     shouldInvalidateContentEmbedding,
 } from "@/lib/server/admin-content-publish";
+import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 
 type QuickModeValue = {
     hook?: string | null;
@@ -168,9 +169,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             throw contentError;
         }
 
+        const aiReadinessById = await getAdminAiReadinessMap(supabase as any, [{
+            id: contentItem.id,
+            status: contentItem.status,
+            embedding: contentItem.embedding,
+        }]);
+
         return NextResponse.json({
             success: true,
-            data: contentItem,
+            data: {
+                ...contentItem,
+                ai_readiness: aiReadinessById[contentItem.id],
+            },
         });
     } catch (error) {
         logApiError({
