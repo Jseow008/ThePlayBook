@@ -10,6 +10,7 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import type { Database } from "@/types/database";
 import {
     apiError,
     getRequestId,
@@ -18,6 +19,16 @@ import {
     logApiError,
 } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import {
+    getVerifiedContentIssues,
+    shouldInvalidateContentEmbedding,
+} from "@/lib/server/admin-content-publish";
+
+type QuickModeValue = {
+    hook?: string | null;
+    big_idea?: string | null;
+    key_takeaways?: string[] | null;
+} | null | undefined;
 
 function validateSeriesAssignment(
     value: { series_id?: string | null; series_order?: number | null },
@@ -216,7 +227,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const supabase = getAdminClient();
         const { data: existingContent, error: existingContentError } = await supabase
             .from("content_item")
-            .select("series_id")
+            .select("series_id, status, title, author, type, category, cover_image_url, quick_mode_json")
             .eq("id", id)
             .single();
 
@@ -226,6 +237,48 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
 
             throw existingContentError;
+        }
+
+        const currentStatus = existingContent?.status === "verified" ? "verified" : "draft";
+        const nextStatus = contentData.status ?? currentStatus;
+        const existingQuickMode = existingContent?.quick_mode_json as QuickModeValue;
+
+        let effectiveSegments: Array<{ markdown_body?: string | null }> | null = segments ?? null;
+        if (nextStatus === "verified" && effectiveSegments === null) {
+            const { data: existingSegments, error: segmentFetchError } = await supabase
+                .from("segment")
+                .select("markdown_body")
+                .eq("item_id", id);
+
+            if (segmentFetchError) {
+                throw segmentFetchError;
+            }
+
+            effectiveSegments = existingSegments ?? [];
+        }
+
+        const verificationIssues = getVerifiedContentIssues({
+            status: nextStatus,
+            cover_image_url: contentData.cover_image_url !== undefined
+                ? contentData.cover_image_url
+                : existingContent?.cover_image_url,
+            category: contentData.category !== undefined
+                ? contentData.category
+                : existingContent?.category,
+            quick_mode_json: contentData.quick_mode_json !== undefined
+                ? contentData.quick_mode_json
+                : existingQuickMode,
+            segments: effectiveSegments,
+        });
+
+        if (verificationIssues.length > 0) {
+            return apiError(
+                "VALIDATION_ERROR",
+                "Verified content is missing required publish fields",
+                400,
+                requestId,
+                verificationIssues
+            );
         }
 
         const contentPatch: Record<string, unknown> = {};
@@ -253,12 +306,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             version: "1.0.0",
         }));
 
-        const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", {
+        const rpcArgs: Database["public"]["Functions"]["admin_update_content_graph"]["Args"] = {
             p_content_id: id,
-            p_content_patch: contentPatch,
+            p_content_patch: contentPatch as Database["public"]["Functions"]["admin_update_content_graph"]["Args"]["p_content_patch"],
             p_segments: segments ?? null,
             p_artifacts: artifactPayload ?? null,
-        });
+        };
+
+        const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", rpcArgs);
 
         if (updateGraphError) {
             if (isUniqueConstraintViolation(updateGraphError, "idx_content_item_series_order_unique")) {
@@ -274,7 +329,38 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             throw updateGraphError;
         }
 
+        if (shouldInvalidateContentEmbedding({
+            currentStatus,
+            nextStatus,
+            current: {
+                title: existingContent?.title,
+                author: existingContent?.author,
+                type: existingContent?.type,
+                category: existingContent?.category,
+                quick_mode_json: existingQuickMode,
+            },
+            next: {
+                title: contentData.title ?? existingContent?.title,
+                author: contentData.author !== undefined ? contentData.author : existingContent?.author,
+                type: contentData.type ?? existingContent?.type,
+                category: contentData.category !== undefined ? contentData.category : existingContent?.category,
+                quick_mode_json: contentData.quick_mode_json !== undefined
+                    ? contentData.quick_mode_json
+                    : existingQuickMode,
+            },
+        })) {
+            const { error: embeddingResetError } = await supabase
+                .from("content_item")
+                .update({ embedding: null })
+                .eq("id", id);
+
+            if (embeddingResetError) {
+                throw embeddingResetError;
+            }
+        }
+
         revalidatePath("/");
+        revalidatePath("/browse");
         revalidatePath("/search");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
@@ -351,6 +437,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         }
 
         revalidatePath("/");
+        revalidatePath("/browse");
         revalidatePath("/search");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);

@@ -1,38 +1,44 @@
 import { NextResponse } from "next/server";
-import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { getRuntimeReadiness } from "@/lib/server/health";
 
 export async function GET() {
-    try {
-        const supabase = createPublicServerClient();
-        const { error } = await supabase
-            .from("content_item")
-            .select("id")
-            .limit(1);
+    const timestamp = new Date().toISOString();
+    const readiness = getRuntimeReadiness();
+    let database: "reachable" | "unreachable" = "unreachable";
+    const issues = [...readiness.issues];
 
-        if (error) {
-            return NextResponse.json(
-                {
-                    status: "degraded",
-                    database: "unreachable",
-                    timestamp: new Date().toISOString(),
-                },
-                { status: 503 }
-            );
+    if (readiness.checks.supabase_public === "ready") {
+        try {
+            const { createPublicServerClient } = await import("@/lib/supabase/public-server");
+            const supabase = createPublicServerClient();
+            const { error } = await supabase
+                .from("content_item")
+                .select("id")
+                .limit(1);
+
+            if (!error) {
+                database = "reachable";
+            } else {
+                issues.push("Database connectivity check failed.");
+            }
+        } catch {
+            issues.push("Database connectivity check failed.");
         }
-
-        return NextResponse.json({
-            status: "ok",
-            database: "reachable",
-            timestamp: new Date().toISOString(),
-        });
-    } catch {
-        return NextResponse.json(
-            {
-                status: "degraded",
-                database: "unreachable",
-                timestamp: new Date().toISOString(),
-            },
-            { status: 503 }
-        );
+    } else {
+        issues.push("Database connectivity check skipped because Supabase public configuration is incomplete.");
     }
+
+    const isHealthy = database === "reachable" && readiness.status === "ready";
+
+    return NextResponse.json(
+        {
+            status: isHealthy ? "ok" : "degraded",
+            environment: readiness.environment,
+            database,
+            readiness: readiness.checks,
+            issues,
+            timestamp,
+        },
+        { status: isHealthy ? 200 : 503 }
+    );
 }

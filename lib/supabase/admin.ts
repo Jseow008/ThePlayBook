@@ -1,19 +1,26 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// Note: SUPABASE_SERVICE_KEY should be in .env.local
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
+let adminClient: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase environment variables for admin client. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY.');
-}
+export const getAdminClient = () => {
+    if (adminClient) {
+        return adminClient;
+    }
 
-export const adminClient = createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-    },
-});
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
 
-export const getAdminClient = () => adminClient;
+    if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error('Missing Supabase environment variables for admin client. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY.');
+    }
+
+    adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+        },
+    });
+
+    return adminClient;
+};

@@ -11,6 +11,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
@@ -236,6 +237,24 @@ export async function POST(request: NextRequest) {
         }
 
         const { segments, artifacts, ...contentData } = parsed.data;
+        const verificationIssues = getVerifiedContentIssues({
+            status: contentData.status,
+            cover_image_url: contentData.cover_image_url,
+            category: contentData.category,
+            quick_mode_json: contentData.quick_mode_json,
+            segments,
+        });
+
+        if (verificationIssues.length > 0) {
+            return apiError(
+                "VALIDATION_ERROR",
+                "Verified content is missing required publish fields",
+                400,
+                requestId,
+                verificationIssues
+            );
+        }
+
         const supabase = getAdminClient();
 
         // Create content item
@@ -318,6 +337,7 @@ export async function POST(request: NextRequest) {
         }
 
         revalidatePath("/");
+        revalidatePath("/browse");
         revalidatePath("/search");
         revalidatePath(`/preview/${contentItem.id}`);
         revalidatePath(`/read/${contentItem.id}`);
