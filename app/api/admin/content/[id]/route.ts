@@ -10,6 +10,7 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import type { Database } from "@/types/database";
 import {
     apiError,
     getRequestId,
@@ -22,6 +23,12 @@ import {
     getVerifiedContentIssues,
     shouldInvalidateContentEmbedding,
 } from "@/lib/server/admin-content-publish";
+
+type QuickModeValue = {
+    hook?: string | null;
+    big_idea?: string | null;
+    key_takeaways?: string[] | null;
+} | null | undefined;
 
 function validateSeriesAssignment(
     value: { series_id?: string | null; series_order?: number | null },
@@ -234,8 +241,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
         const currentStatus = existingContent?.status === "verified" ? "verified" : "draft";
         const nextStatus = contentData.status ?? currentStatus;
+        const existingQuickMode = existingContent?.quick_mode_json as QuickModeValue;
 
-        let effectiveSegments = segments ?? null;
+        let effectiveSegments: Array<{ markdown_body?: string | null }> | null = segments ?? null;
         if (nextStatus === "verified" && effectiveSegments === null) {
             const { data: existingSegments, error: segmentFetchError } = await supabase
                 .from("segment")
@@ -259,7 +267,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 : existingContent?.category,
             quick_mode_json: contentData.quick_mode_json !== undefined
                 ? contentData.quick_mode_json
-                : existingContent?.quick_mode_json,
+                : existingQuickMode,
             segments: effectiveSegments,
         });
 
@@ -298,12 +306,14 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             version: "1.0.0",
         }));
 
-        const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", {
+        const rpcArgs: Database["public"]["Functions"]["admin_update_content_graph"]["Args"] = {
             p_content_id: id,
-            p_content_patch: contentPatch,
+            p_content_patch: contentPatch as Database["public"]["Functions"]["admin_update_content_graph"]["Args"]["p_content_patch"],
             p_segments: segments ?? null,
             p_artifacts: artifactPayload ?? null,
-        });
+        };
+
+        const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", rpcArgs);
 
         if (updateGraphError) {
             if (isUniqueConstraintViolation(updateGraphError, "idx_content_item_series_order_unique")) {
@@ -327,7 +337,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 author: existingContent?.author,
                 type: existingContent?.type,
                 category: existingContent?.category,
-                quick_mode_json: existingContent?.quick_mode_json,
+                quick_mode_json: existingQuickMode,
             },
             next: {
                 title: contentData.title ?? existingContent?.title,
@@ -336,7 +346,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                 category: contentData.category !== undefined ? contentData.category : existingContent?.category,
                 quick_mode_json: contentData.quick_mode_json !== undefined
                     ? contentData.quick_mode_json
-                    : existingContent?.quick_mode_json,
+                    : existingQuickMode,
             },
         })) {
             const { error: embeddingResetError } = await supabase

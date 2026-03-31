@@ -98,9 +98,12 @@ function normalizeQuickMode(quickMode: QuickModeShape) {
         return null;
     }
 
+    const hook = typeof quickMode.hook === "string" ? quickMode.hook.trim() : "";
+    const bigIdea = typeof quickMode.big_idea === "string" ? quickMode.big_idea.trim() : "";
+
     return {
-        hook: hasText(quickMode.hook) ? quickMode.hook.trim() : null,
-        big_idea: hasText(quickMode.big_idea) ? quickMode.big_idea.trim() : null,
+        hook: hook.length > 0 ? hook : null,
+        big_idea: bigIdea.length > 0 ? bigIdea : null,
         key_takeaways: Array.isArray(quickMode.key_takeaways)
             ? quickMode.key_takeaways
                 .filter((takeaway): takeaway is string => hasText(takeaway))
