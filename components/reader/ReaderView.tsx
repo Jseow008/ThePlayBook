@@ -323,9 +323,9 @@ export function ReaderView({ content }: ReaderViewProps) {
                             {content.seriesContext.previousItem ? (
                                 <Link
                                     href={`/read/${content.seriesContext.previousItem.id}`}
-                                    className="flex min-h-12 items-center justify-between rounded-2xl border border-border/50 bg-background/55 px-3 py-2 transition-colors hover:border-primary/35 hover:bg-accent/25"
+                                    className="flex min-h-12 w-full min-w-0 items-center justify-between overflow-hidden rounded-2xl border border-border/50 bg-background/55 px-3 py-2 transition-colors hover:border-primary/35 hover:bg-accent/25"
                                 >
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 flex-1 pr-3">
                                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                             Previous
                                         </p>
@@ -336,7 +336,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                                     <ArrowLeft className="size-4 flex-shrink-0 text-muted-foreground" />
                                 </Link>
                             ) : (
-                                <div className="flex min-h-12 items-center rounded-2xl border border-dashed border-border/45 px-3 py-2 text-sm text-muted-foreground/85">
+                                <div className="flex min-h-12 w-full min-w-0 items-center rounded-2xl border border-dashed border-border/45 px-3 py-2 text-sm text-muted-foreground/85">
                                     Start of the series
                                 </div>
                             )}
@@ -344,9 +344,9 @@ export function ReaderView({ content }: ReaderViewProps) {
                             {content.seriesContext.nextItem ? (
                                 <Link
                                     href={`/read/${content.seriesContext.nextItem.id}`}
-                                    className="flex min-h-12 items-center justify-between rounded-2xl border border-primary/15 bg-primary/[0.07] px-3 py-2 transition-colors hover:border-primary/30 hover:bg-primary/[0.1]"
+                                    className="flex min-h-12 w-full min-w-0 items-center justify-between overflow-hidden rounded-2xl border border-primary/15 bg-primary/[0.07] px-3 py-2 transition-colors hover:border-primary/30 hover:bg-primary/[0.1]"
                                 >
-                                    <div className="min-w-0">
+                                    <div className="min-w-0 flex-1 pr-3">
                                         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                             Next up
                                         </p>
@@ -357,7 +357,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                                     <ArrowRight className="size-4 flex-shrink-0 text-primary" />
                                 </Link>
                             ) : (
-                                <div className="flex min-h-12 items-center rounded-2xl border border-dashed border-border/45 px-3 py-2 text-sm text-muted-foreground/85">
+                                <div className="flex min-h-12 w-full min-w-0 items-center rounded-2xl border border-dashed border-border/45 px-3 py-2 text-sm text-muted-foreground/85">
                                     End of the series
                                 </div>
                             )}

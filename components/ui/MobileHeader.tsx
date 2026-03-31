@@ -53,11 +53,6 @@ export function MobileHeader({
         }
     }, [pathname]);
 
-    // Completely hide on immersive routes
-    if (pathname.startsWith("/read")) {
-        return null;
-    }
-
     return (
         <header
             className={cn(

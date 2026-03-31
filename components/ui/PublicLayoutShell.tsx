@@ -62,7 +62,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
                 }
             >
                 {/* Mobile padding for fixed header */}
-                {!isReadPage && !isFocusPage && !isAskPage && (
+                {!isFocusPage && !isAskPage && (
                     <div className={isBrowsePage ? "lg:hidden h-12" : "lg:hidden h-14"} />
                 )}
                 {children}
