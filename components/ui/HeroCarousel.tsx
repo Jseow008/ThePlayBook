@@ -83,7 +83,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     if (items.length === 0) {
         return (
-            <div className="relative flex min-h-[420px] h-[56svh] w-full items-center justify-center overflow-hidden bg-card md:h-[80vh] md:min-h-[500px] lg:h-[85vh]">
+            <div className="relative browse-hero-shell flex w-full items-center justify-center overflow-hidden bg-card">
                 <div className="absolute inset-0 bg-black/50" />
                 <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
                     <h1 className="mb-6 text-4xl font-black text-white md:text-7xl">
@@ -106,7 +106,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const description = quickMode?.hook || quickMode?.big_idea || `Experience this ${APP_NAME} content today.`;
 
     return (
-        <div className="relative min-h-[420px] h-[56svh] w-full overflow-hidden bg-background md:h-[80vh] md:min-h-[500px] lg:h-[85vh]">
+        <div className="relative browse-hero-shell w-full overflow-hidden bg-background">
             {/* Background Image Layer */}
             <div
                 className="absolute inset-0 w-full h-full"
@@ -157,12 +157,12 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             </div>
 
             {/* Content Layer */}
-            <div className="pointer-events-none absolute inset-0 z-30 flex items-end md:items-center">
+            <div className="pointer-events-none absolute inset-0 z-30 flex items-end md:items-center browse-hero-content-frame">
                 <div
-                    className="pointer-events-auto w-full px-4 pb-12 md:px-6 md:pb-0 lg:px-16"
+                    className="pointer-events-auto browse-hero-content w-full px-4 pb-12 md:px-6 md:pb-0 lg:px-16"
                     data-testid="hero-carousel-content"
                 >
-                    <div className="max-w-6xl space-y-3 md:space-y-8">
+                    <div className="max-w-6xl space-y-3 md:space-y-6 lg:space-y-7">
                         {/* Featured Badge */}
                         <div
                             className={cn(
@@ -183,7 +183,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Title */}
                         <h1
                             className={cn(
-                                "max-w-5xl origin-left font-display text-[2rem] font-bold leading-[1.02] tracking-[-0.025em] bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/60 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] transition-all duration-700 delay-100 md:text-5xl md:leading-[1.1] md:tracking-[-0.02em] lg:text-7xl",
+                                "browse-hero-title max-w-5xl origin-left font-display font-bold bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-white/60 drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] transition-all duration-700 delay-100",
                                 isTransitioning ? "opacity-0 scale-95 translate-y-4" : "opacity-100 scale-100 translate-y-0"
                             )}
                         >
@@ -219,7 +219,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Description */}
                         <p
                             className={cn(
-                                "max-w-lg text-sm font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-700 delay-300 md:max-w-xl md:text-xl",
+                                "max-w-lg text-sm font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-700 delay-300 md:max-w-xl md:text-lg lg:text-xl",
                                 isTransitioning ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"
                             )}
                         >
@@ -229,22 +229,22 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Action Buttons */}
                         <div
                             className={cn(
-                                "flex items-center gap-3 pt-1 transition-all duration-700 delay-500 md:gap-4 md:pt-4",
+                                "flex flex-wrap items-center gap-3 pt-1 transition-all duration-700 delay-500 md:gap-4 md:pt-3 lg:pt-4",
                                 isTransitioning ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
                             )}
                         >
                             <Link
                                 href={`/read/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
+                                className="focus-ring flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
                             >
-                                <BookOpen className="h-4 w-4 fill-black md:h-7 md:w-7" />
+                                <BookOpen className="h-4 w-4 fill-black md:h-6 md:w-6 lg:h-7 lg:w-7" />
                                 Read
                             </Link>
                             <Link
                                 href={`/preview/${activeItem.id}`}
-                                className="focus-ring flex items-center gap-2 rounded-full bg-black/20 px-5 py-2 text-sm font-semibold text-white backdrop-blur-md border border-white/20 shadow-[0_4px_20px_rgba(0,0,0,0.4)] transition-all hover:scale-105 hover:bg-black/40 hover:border-white/40 active:scale-95 md:gap-3 md:px-8 md:py-3 md:text-xl"
+                                className="focus-ring flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
                             >
-                                <Info className="h-4 w-4 md:h-7 md:w-7" />
+                                <Info className="h-4 w-4 md:h-6 md:w-6 lg:h-7 lg:w-7" />
                                 Preview
                             </Link>
                         </div>
