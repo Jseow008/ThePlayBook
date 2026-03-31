@@ -218,7 +218,7 @@ function HighlightListItem({
                     aria-hidden="true"
                     className={cn("absolute inset-y-0 left-0 w-[3px]", colorClasses.swatch)}
                 />
-                <div className="flex gap-2 p-3 sm:p-4">
+                <div className="flex items-start gap-2 p-3 sm:p-4">
                     {href ? (
                         <Link
                             href={href}
@@ -317,7 +317,7 @@ function HighlightListItem({
                         </div>
                     )}
 
-                    <div className="flex shrink-0 flex-col items-end gap-1 pt-1">
+                    <div className="mt-0.5 flex shrink-0 self-start items-center gap-1 sm:gap-1.5">
                         <button
                             type="button"
                             onClick={() => onEdit(item)}
