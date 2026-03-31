@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote, ArrowUpRight } from "lucide-react";
-import { useDeleteHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
+import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote, ArrowUpRight, Edit3 } from "lucide-react";
+import { useDeleteHighlight, useUpdateHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
+import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
+import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNoteComposer";
 
 interface NotesDrawerProps {
     highlights: HighlightWithContent[];
@@ -33,13 +33,38 @@ export function NotesDrawer({
     const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
     const deleteHighlight = useDeleteHighlight();
+    const updateHighlight = useUpdateHighlight();
     const [isMobile, setIsMobile] = useState(false);
-    const [isDismissed, setIsDismissed] = useState(false);
-    const [isDragging, setIsDragging] = useState(false);
+    const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
+    const [draftNote, setDraftNote] = useState("");
+    const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
     const sectionTitleMap = useMemo(
         () => new Map(sections.map((section) => [section.id, section.title])),
         [sections]
     );
+
+    const hasDraftChanges = useMemo(() => {
+        if (!editingHighlight) {
+            return false;
+        }
+
+        const originalNote = editingHighlight.note_body?.trim() || "";
+        const originalColor = normalizeHighlightColor(editingHighlight.color);
+        return draftNote.trim() !== originalNote || draftColor !== originalColor;
+    }, [draftColor, draftNote, editingHighlight]);
+
+    const composerContext = useMemo<MobileNoteComposerContext | null>(() => {
+        if (!editingHighlight) {
+            return null;
+        }
+
+        return {
+            title: editingHighlight.content_item?.title || "Saved passage",
+            sectionTitle: editingHighlight.segment?.title?.trim() || "Saved highlight",
+            highlightedText: editingHighlight.highlighted_text,
+            existingNoteBody: editingHighlight.note_body,
+        };
+    }, [editingHighlight]);
 
     useEffect(() => {
         setMounted(true);
@@ -48,16 +73,8 @@ export function NotesDrawer({
             checkMobile();
             window.addEventListener('resize', checkMobile);
 
-            if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {
-                setIsDismissed(true);
-            }
-
-            const handleUnhide = () => setIsDismissed(false);
-            window.addEventListener('flux_notes_fab_unhide', handleUnhide);
-
             return () => {
                 window.removeEventListener('resize', checkMobile);
-                window.removeEventListener('flux_notes_fab_unhide', handleUnhide);
             };
         }
     }, []);
@@ -73,6 +90,12 @@ export function NotesDrawer({
             document.addEventListener("keydown", handleKeyDown);
         }
         return () => document.removeEventListener("keydown", handleKeyDown);
+    }, [isOpen]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            setEditingHighlight(null);
+        }
     }, [isOpen]);
 
     const handleDelete = async (id: string) => {
@@ -91,64 +114,71 @@ export function NotesDrawer({
         }
     };
 
+    const handleOpenComposer = (item: HighlightWithContent) => {
+        setEditingHighlight(item);
+        setDraftNote(item.note_body?.trim() || "");
+        setDraftColor(normalizeHighlightColor(item.color));
+    };
+
+    const handleCloseComposer = () => {
+        if (updateHighlight.isPending) {
+            return;
+        }
+
+        setEditingHighlight(null);
+    };
+
+    const handleSaveComposer = async () => {
+        if (!editingHighlight || !hasDraftChanges) {
+            return;
+        }
+
+        const trimmedNote = draftNote.trim();
+        const hadNote = Boolean(editingHighlight.note_body?.trim());
+
+        try {
+            await updateHighlight.mutateAsync({
+                id: editingHighlight.id,
+                note_body: trimmedNote === "" ? null : trimmedNote,
+                color: draftColor,
+            });
+
+            setEditingHighlight(null);
+
+            if (trimmedNote === "") {
+                toast.success(hadNote ? "Note removed" : "Highlight updated");
+                return;
+            }
+
+            toast.success(hadNote ? "Note updated" : "Note added");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to save note");
+        }
+    };
+
     if (!mounted) return null;
 
     return createPortal(
         <>
             {/* Floating Toggle Button */}
-            {!isDismissed && (
-                <motion.div
-                    drag={isMobile}
-                    dragMomentum={false}
-                    dragElastic={0.1}
-                    onDragStart={() => setIsDragging(true)}
-                    onDragEnd={() => {
-                        // Small timeout to prevent the onClick from firing immediately after drag
-                        setTimeout(() => setIsDragging(false), 100);
-                    }}
-                    style={{ marginBottom: 'env(safe-area-inset-bottom)', touchAction: 'none' }}
-                    className="fixed bottom-24 sm:bottom-6 right-4 sm:right-6 z-40 flex flex-col items-end gap-2"
+            <div
+                style={{ marginBottom: 'env(safe-area-inset-bottom)', touchAction: 'none' }}
+                className="fixed bottom-8 sm:bottom-6 right-4 sm:right-6 z-40 flex flex-col items-end gap-2"
+            >
+                <button
+                    onClick={() => setIsOpen(true)}
+                    aria-label="Open notes drawer"
+                    className="relative flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
                 >
-                    {/* Close button - only visible on mobile */}
-                    {isMobile && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setIsDismissed(true);
-                                localStorage.setItem('flux_notes_fab_dismissed', 'true');
-                                toast.success("Notes icon hidden", {
-                                    action: {
-                                        label: "Undo",
-                                        onClick: () => {
-                                            setIsDismissed(false);
-                                            localStorage.removeItem('flux_notes_fab_dismissed');
-                                        }
-                                    }
-                                });
-                            }}
-                            className="bg-background/80 backdrop-blur-md p-1.5 rounded-full border border-border shadow-sm text-muted-foreground hover:text-foreground transition-colors mr-1"
-                            aria-label="Hide notes button"
-                        >
-                            <X className="size-3.5" />
-                        </button>
+                    <StickyNote className="size-5 shrink-0" />
+                    <span className="hidden sm:inline">Notes</span>
+                    {highlights && highlights.length > 0 && (
+                        <span className="absolute -top-1 -right-1 sm:static sm:-top-auto sm:-right-auto flex items-center justify-center w-5 h-5 sm:ml-1 text-xs font-bold bg-destructive text-destructive-foreground rounded-full shadow-sm">
+                            {highlights.length}
+                        </span>
                     )}
-                    <button
-                        onClick={() => {
-                            if (!isDragging) setIsOpen(true);
-                        }}
-                        aria-label="Open notes drawer"
-                        className="relative flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
-                    >
-                        <StickyNote className="size-5 shrink-0" />
-                        <span className="hidden sm:inline">Notes</span>
-                        {highlights && highlights.length > 0 && (
-                            <span className="absolute -top-1 -right-1 sm:static sm:-top-auto sm:-right-auto flex items-center justify-center w-5 h-5 sm:ml-1 text-xs font-bold bg-destructive text-destructive-foreground rounded-full shadow-sm">
-                                {highlights.length}
-                            </span>
-                        )}
-                    </button>
-                </motion.div>
-            )}
+                </button>
+            </div>
 
             {/* Backdrop */}
             <div
@@ -227,7 +257,8 @@ export function NotesDrawer({
                                             onClick={() => handleJump(item.id)}
                                             aria-label={`${itemLabel} ${sectionTitle}`}
                                             className={cn(
-                                                "focus-ring relative w-full rounded-lg pl-5 pr-14 py-2.5 text-left transition-colors duration-150",
+                                                "focus-ring relative w-full rounded-lg pl-5 py-2.5 text-left transition-colors duration-150",
+                                                isMobile ? "pr-28" : "pr-14",
                                                 isActive
                                                     ? "bg-card/50"
                                                     : "bg-card/[0.14] hover:bg-card/[0.28]"
@@ -279,6 +310,20 @@ export function NotesDrawer({
                                         </button>
 
                                         <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
+                                            {isMobile && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        handleOpenComposer(item);
+                                                    }}
+                                                    className="focus-ring inline-flex min-h-8 items-center gap-1 rounded-full border border-border/70 bg-background/72 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/82 transition-colors hover:bg-secondary/70 hover:text-foreground"
+                                                    aria-label={noteText ? `Edit note for ${sectionTitle}` : `Add note for ${sectionTitle}`}
+                                                >
+                                                    <Edit3 className="size-3" />
+                                                    <span>{noteText ? "Edit" : "Add"}</span>
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={(e) => {
                                                     e.preventDefault();
@@ -313,6 +358,22 @@ export function NotesDrawer({
                         </div>
                     )}
                 </div>
+
+                <MobileNoteComposer
+                    context={composerContext}
+                    isOpen={Boolean(editingHighlight)}
+                    noteValue={draftNote}
+                    colorValue={draftColor}
+                    canSave={hasDraftChanges}
+                    isSaving={updateHighlight.isPending}
+                    onClose={handleCloseComposer}
+                    onNoteChange={setDraftNote}
+                    onColorChange={setDraftColor}
+                    onClear={() => setDraftNote("")}
+                    onSave={() => {
+                        void handleSaveComposer();
+                    }}
+                />
             </div>
         </>,
         document.body

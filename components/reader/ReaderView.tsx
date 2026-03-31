@@ -17,6 +17,7 @@ import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { HighlightPopover } from "./HighlightPopover";
+import { MobileSelectionActions } from "./MobileSelectionActions";
 
 /**
  * Reader View — Accordion Layout
@@ -406,8 +407,14 @@ export function ReaderView({ content }: ReaderViewProps) {
             </div>
 
             {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
-            {/* Deferred mobile alternative: introduce a separate post-selection CTA instead of replacing the native iOS menu. */}
             {isDesktop && <TextSelectionToolbar contentItemId={content.id} />}
+            {!isDesktop && (
+                <MobileSelectionActions
+                    contentItemId={content.id}
+                    contentTitle={content.title}
+                    sections={sectionMeta}
+                />
+            )}
             <NotesDrawer
                 highlights={highlights}
                 isLoading={highlightsLoading}

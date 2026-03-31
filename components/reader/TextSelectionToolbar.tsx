@@ -6,52 +6,10 @@ import { Highlighter, Edit3, X, Check } from "lucide-react";
 import { useCreateHighlight } from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { findSegmentElement, getTrimmedSelection } from "./selection-utils";
 
 interface TextSelectionToolbarProps {
     contentItemId: string;
-}
-
-function findSegmentElement(node: Node | null): HTMLElement | null {
-    let current: HTMLElement | null =
-        node instanceof HTMLElement ? node : node?.parentElement ?? null;
-
-    while (current && current !== document.body) {
-        if (current.hasAttribute("data-segment-id")) {
-            return current;
-        }
-        current = current.parentElement;
-    }
-
-    return null;
-}
-
-function getTrimmedSelection(range: Range, segmentElement: HTMLElement) {
-    const rawText = range.toString();
-    const trimmedText = rawText.trim();
-
-    if (!trimmedText) {
-        return null;
-    }
-
-    const leadingWhitespace = rawText.match(/^\s*/)?.[0].length ?? 0;
-    const trailingWhitespace = rawText.match(/\s*$/)?.[0].length ?? 0;
-
-    const prefixRange = range.cloneRange();
-    prefixRange.selectNodeContents(segmentElement);
-    prefixRange.setEnd(range.startContainer, range.startOffset);
-
-    const selectionStart = prefixRange.toString().length + leadingWhitespace;
-    const selectionEnd = prefixRange.toString().length + rawText.length - trailingWhitespace;
-
-    if (selectionEnd <= selectionStart) {
-        return null;
-    }
-
-    return {
-        text: trimmedText,
-        anchorStart: selectionStart,
-        anchorEnd: selectionEnd,
-    };
 }
 
 export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProps) {
