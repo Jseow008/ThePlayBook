@@ -1,15 +1,20 @@
 import { test, expect } from '@playwright/test';
+import { GUEST_ONBOARDING_STORAGE_KEY, createGuestOnboardingEntry } from '@/lib/onboarding';
 
 test.describe('Critical User Journey', () => {
     test('browse -> preview -> read', async ({ page }) => {
+        await page.addInitScript(
+            ([storageKey, onboardingState]) => {
+                window.localStorage.setItem(storageKey, JSON.stringify(onboardingState));
+            },
+            [
+                GUEST_ONBOARDING_STORAGE_KEY,
+                createGuestOnboardingEntry("completed"),
+            ]
+        );
+
         // Step 1: Browse
         await page.goto('/browse');
-
-        const skipTourButton = page.getByRole('button', { name: 'Skip tour' });
-        if (await skipTourButton.isVisible().catch(() => false)) {
-            await skipTourButton.click();
-            await expect(skipTourButton).toHaveCount(0);
-        }
 
         // Wait for feed to load and click the first content card's link
         // Find links that go to /preview/...

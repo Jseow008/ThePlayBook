@@ -83,6 +83,7 @@ describe("Admin content series support", () => {
                 type: "book",
                 author: "Matthew",
                 category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
                 status: "verified",
                 series_id: seriesId,
                 series_order: 2,
@@ -91,7 +92,7 @@ describe("Admin content series support", () => {
                     big_idea: "Idea",
                     key_takeaways: ["A"],
                 },
-                segments: [],
+                segments: [{ order_index: 0, markdown_body: "Blessed are the poor in spirit." }],
                 artifacts: [],
             }),
         });
@@ -104,7 +105,43 @@ describe("Admin content series support", () => {
             series_id: seriesId,
             series_order: 2,
         }));
+        expect(revalidatePath).toHaveBeenCalledWith("/browse");
         expect(revalidatePath).toHaveBeenCalledWith("/series/matthew");
+    });
+
+    it("rejects verified content creation when publish requirements are missing", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/admin/content"), {
+            method: "POST",
+            body: JSON.stringify({
+                title: "Matthew 5-7: Sermon on the Mount",
+                type: "book",
+                category: "Christian",
+                status: "verified",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                segments: [],
+                artifacts: [],
+            }),
+        });
+
+        const res = await createAdminContent(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(400);
+        expect(json.error.code).toBe("VALIDATION_ERROR");
+        expect(json.error.details).toEqual(expect.arrayContaining([
+            {
+                path: ["cover_image_url"],
+                message: "A cover image is required before content can be verified",
+            },
+            {
+                path: ["segments"],
+                message: "At least one non-empty segment is required before content can be verified",
+            },
+        ]));
     });
 
     it("returns existing series assignment on detail fetch", async () => {
@@ -200,7 +237,145 @@ describe("Admin content series support", () => {
                 series_order: 2,
             }),
         }));
+        expect(revalidatePath).toHaveBeenCalledWith("/browse");
         expect(revalidatePath).toHaveBeenCalledWith("/series/matthew");
+    });
+
+    it("rejects updates that would leave verified content missing publish requirements", async () => {
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: seriesId,
+                status: "draft",
+                cover_image_url: null,
+                category: "Christian",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+            },
+            error: null,
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                    };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc: vi.fn(),
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                status: "verified",
+                segments: [],
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+        const json = await res.json();
+
+        expect(res.status).toBe(400);
+        expect(json.error.code).toBe("VALIDATION_ERROR");
+        expect(json.error.details).toEqual(expect.arrayContaining([
+            {
+                path: ["cover_image_url"],
+                message: "A cover image is required before content can be verified",
+            },
+            {
+                path: ["segments"],
+                message: "At least one non-empty segment is required before content can be verified",
+            },
+        ]));
+    });
+
+    it("invalidates content embeddings when verified metadata changes", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: seriesId,
+                status: "verified",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+                data: [{ markdown_body: "Blessed are the poor in spirit." }],
+                error: null,
+            }),
+        });
+        const contentUpdate = vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null }),
+        });
+        const slugLookup = vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+                data: [{ slug: "matthew" }],
+                error: null,
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                        update: contentUpdate,
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                if (table === "content_series") {
+                    return { select: slugLookup };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                title: "Gospel of Matthew",
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(contentUpdate).toHaveBeenCalledWith({ embedding: null });
+        expect(revalidatePath).toHaveBeenCalledWith("/browse");
     });
 
     it("returns field errors when creating content with a duplicate series order", async () => {
