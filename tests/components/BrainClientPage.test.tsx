@@ -5,12 +5,14 @@ import { vi } from "vitest";
 
 const {
     deleteHighlightMock,
+    updateHighlightMock,
     fetchNextPageMock,
     toastSuccessMock,
     toastErrorMock,
     infiniteHighlightsState,
 } = vi.hoisted(() => ({
     deleteHighlightMock: vi.fn(),
+    updateHighlightMock: vi.fn(),
     fetchNextPageMock: vi.fn(),
     toastSuccessMock: vi.fn(),
     toastErrorMock: vi.fn(),
@@ -39,6 +41,10 @@ vi.mock("@/hooks/useHighlights", () => ({
     useInfiniteHighlights: () => infiniteHighlightsState.value,
     useDeleteHighlight: () => ({
         mutateAsync: deleteHighlightMock,
+        isPending: false,
+    }),
+    useUpdateHighlight: () => ({
+        mutateAsync: updateHighlightMock,
         isPending: false,
     }),
 }));
