@@ -1,430 +1,230 @@
 # OPS.md: Operational Workflows
 
 > **Status:** Active  
-> **Purpose:** Development, deployment, and maintenance procedures for Flux.
+> **Purpose:** Development, deployment, admin operations, and troubleshooting for the current Flux implementation.
 
----
+## 1. Local Development
 
-## 1. Development Workflow
-
-### 1.1 Start Development Server
-
-**Note:** The database, authentication, and storage are now hosted on Supabase Cloud. No local Docker setup is required.
+### 1.1 Install and Run
 
 ```bash
-# Start Next.js development server
+npm install
+cp .env.example .env.local
 npm run dev
 ```
 
-The app will be available at [http://localhost:3000](http://localhost:3000).
+The app can run against either:
 
-The app connects to the hosted Supabase instance configured in `.env.local`.
+- a local Supabase CLI stack, or
+- a hosted Supabase project
 
-### 1.2 Database Migrations
+The old docs implied a hosted-only workflow. That is no longer accurate enough for this repo because `.env.example` still defaults to local-style Supabase values.
 
-**Rule:** Never edit the database via Supabase Dashboard. Always use migrations.
+### 1.2 Environment Variables
 
-```bash
-# Generate a migration after schema changes
-npx supabase db diff -f descriptive_name
+Required app/runtime variables:
 
-# Apply migrations to local instance (resets data)
-npx supabase db reset
-
-# Apply migrations without reset (riskier)
-npx supabase db push
-```
-
-### 1.3 Seed Data
-
-Seeds are automatically applied on `db reset` if `supabase/seed.sql` exists.
-
-```bash
-# Manual seed (if needed)
-psql $DATABASE_URL -f supabase/seed.sql
-```
-
-### 1.4 Environment Variables
-
-| File | Purpose |
-| --- | --- |
-| `.env.local` | Development & Production (Next.js) |
-| `.env.example` | Template for required vars |
-
-**Required Variables:**
 ```env
-# Supabase (Hosted)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_KEY=your-service-key
-
-# OAuth & API Additions
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_KEY=...
+NEXT_PUBLIC_SITE_URL=...
 AI_PROVIDER=anthropic
 AI_MODEL=claude-sonnet-4-20250514
 ANTHROPIC_API_KEY=...
 GEMINI_API_KEY=...
-OPENAI_API_KEY=...
 ```
 
-> **Note:** These environment variables now point to the hosted Supabase instance. Get these values from your Supabase project dashboard.
->
-> `ANTHROPIC_API_KEY` is the default generation provider for user-facing chat.
-> `GEMINI_API_KEY` powers both content-level and segment-level embeddings, including Ask My Library retrieval.
-> `OPENAI_API_KEY` is now optional and only needed if you still want OpenAI generation fallback.
+Optional:
 
----
+```env
+OPENAI_API_KEY=...
+OPENAI_FALLBACK_MODEL=gpt-4o-mini
+NEXT_PUBLIC_APP_URL=...
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+```
 
-## 2. Deployment
+Notes:
 
-### 2.1 Next.js App → Vercel
+- `NEXT_PUBLIC_SITE_URL` drives metadata, sitemap, robots, and default OG URLs
+- `NEXT_PUBLIC_APP_URL` is only used for API CORS header generation in `next.config.ts`
+- OAuth client credentials are typically configured in Supabase/provider dashboards rather than read directly by this app
 
-**Trigger:** Push to `main` branch.
+### 1.3 Supabase Migrations
 
-**Build Command:** `next build`
+If you are using a local Supabase stack:
 
-**Environment Variables (Vercel):**
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_KEY`
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
-
-### 2.2 Database → Supabase (Hosted)
-
-**Current Setup:** The database is hosted on Supabase Cloud and shared between development and production.
-
-**Database URL:** `https://xmuqsgfxuaaophxnwure.supabase.co`
-
-**Migrations (if needed):**
-1. Link project: `npx supabase link --project-ref xmuqsgfxuaaophxnwure`
-2. Push migrations: `npx supabase db push`
-
-### 2.3 Domain & SSL
-
-Configured via Vercel dashboard. SSL is automatic.
-
-### 2.3.1 Production Rate Limit Requirement
-
-Rate-limited API routes now require Upstash Redis in production.
-
-- Development may fall back to the in-memory limiter.
-- Production must not silently degrade to per-instance memory.
-- If Upstash is missing or unavailable in production, rate-limited routes are expected to fail closed until the backing store is restored.
-- Exception: low-risk read-only personalization endpoints (`/api/recommendations`, `/api/content/batch`, `/api/focus`) use best-effort rate limiting so public browse experiences remain available during temporary limiter-backend incidents.
-
-### 2.4 Google OAuth Setup (Custom Domain)
-
-To present the custom domain instead of the default `supabase.co` on the Google OAuth consent screen:
-1. Configure custom domain in Supabase project settings.
-2. Ensure Vercel custom domain redirects correctly.
-3. Add the custom domain callback URL to Google Cloud Platform OAuth Client ID (`https://customdomain.com/auth/v1/callback`).
-
-### 2.5 SEO & PWA Generation
-
-- **Robots & Sitemap**: `app/robots.ts` and `app/sitemap.ts` dynamically generate SEO metadata based on live content categories and dynamic routes.
-- **PWA Manifest**: `app/manifest.ts` generates standard PWA assets dynamically.
-- App icons and favicons are generated dynamically via Next.js metadata API where applicable.
-
----
-
-## 3. Content Management
-
-Content is managed via the admin panel.
-
-### 3.1 Adding New Content
-
-1. Go to `/admin-login` and sign in with an admin account
-2. Navigate to `/admin` dashboard
-3. Click "New Content"
-4. Fill in:
-   - Title, Author, Type (podcast/book/article)
-   - Category
-   - Source URL (optional)
-   - Cover image (upload or URL)
-   - Quick Mode content (hook, big idea, takeaways)
-5. Add segments (ordered sections of the summary)
-   - Drag to reorder segments
-   - Add title and markdown body
-   - Include timestamps for audio/video content
-6. Add artifacts (optional)
-   - Create checklists with items
-   - Mark mandatory items
-7. Save as Draft or Verify (Publish)
-
-### 3.2 Editing Content
-
-1. Go to `/admin`
-2. Click on content item row
-3. Make changes
-4. Save
-
-### 3.3 Featuring Content
-
-Toggle the star icon next to content items to add/remove from homepage hero carousel. Maximum 5 featured items recommended.
-
-### 3.4 Unpublishing Content
-
-Change status from "Verified" to "Draft" to hide from public.
-
-### 3.5 Bulk Imports & AI Processing
-
-For large imports, use SQL scripts via `supabase/seed.sql` and apply with `psql`.
-
-**Syncing Embeddings:**
-After bulk uploads or edits, use the admin dashboard to inspect coverage. Segment embeddings for Ask My Library are backfilled locally with `npm run embeddings:sync-segments`, which writes directly to Supabase using the service role key.
-
-### 3.6 Admin Session Flow
-
-1. Admin visits `/admin-login` and signs in through Supabase Auth.
-2. After sign-in, server components and API handlers verify session + `profiles.role = 'admin'`.
-3. Admin APIs run only when `verifyAdminSession()` passes.
-4. `/admin/*` routes redirect to `/admin-login` when the current user is not an admin.
-
----
-
-## 4. Troubleshooting
-
-### 4.1 "Relation does not exist"
-
-**Cause:** Migrations haven't been applied.
-
-**Fix:**
 ```bash
+npx supabase start
 npx supabase db reset
 ```
 
-### 4.2 Content not showing on homepage
+If you are using a hosted project:
 
-**Possible causes:**
-1. Content status is "draft" (must be "verified")
-2. ISR cache not invalidated yet (wait up to 1 hour)
-3. `deleted_at` is set
-
-**Fix for cache:** Redeploy or wait for revalidation.
-
-### 4.3 Admin login not working
-
-**Possible causes:**
-1. The user is not authenticated in Supabase
-2. `profiles.role` is not set to `admin`
-3. Supabase keys are misconfigured
-
-**Fix:** Verify Supabase auth state, ensure admin role in `profiles`, and confirm environment variables.
-
-### 4.4 Featured content not in hero
-
-**Possible causes:**
-1. Content not verified
-2. `is_featured` not set to true
-3. More than 5 featured items (only top 5 shown)
-
-**Fix:** Ensure content is verified and featured flag is enabled.
-
-### 4.5 Checklist progress not saving
-
-**Cause:** localStorage is cleared or blocked.
-
-**Fix:** Check browser settings for localStorage access.
-
-### 4.6 Public pages feel slower on Vercel than locally
-
-**Possible causes:**
-1. Public routes accidentally introduced cookie/auth reads
-2. Metadata and page render are hitting separate Supabase fetch paths
-3. Upstream Supabase latency is higher in production than in local development
-
-**Current expected behavior:**
-- `/` is public-first and redirects authenticated users client-side
-- `/preview/[id]` and `/read/[id]` share their server loader paths
-- `/focus` loads its first batch before reading-progress hydration finishes
-
-**Verification commands:**
 ```bash
-npm test
+npx supabase link --project-ref <your-project-ref>
+npx supabase db push
+```
+
+Rule: keep schema changes in `supabase/migrations/`. Do not rely on dashboard-only edits.
+
+## 2. Testing and Verification
+
+Primary project scripts:
+
+```bash
 npm run lint
+npm test
 npm run build
 ```
 
----
+CI runs:
 
-## 5. Monitoring
+- lint
+- Vitest
+- Next.js build
+- Playwright
 
-### 5.1 Vercel Analytics
+Relevant config:
 
-Enable in Vercel dashboard for:
-- Page views
-- Web Vitals
-- Error tracking
+- `vitest.config.ts`
+- `playwright.config.ts`
+- `tests/setup.ts`
+- `.github/workflows/ci.yml`
 
-### 5.2 Supabase Dashboard
+## 3. Admin Operations
 
-Monitor:
-- Database size
-- API requests
-- Active connections
-- Storage usage
+### 3.1 Admin Access
 
-### 5.2.1 Internal/Test Accounts
+Admin users sign in through `/admin-login`. Access is considered valid only when:
 
-Mark any production testing account with `profiles.is_internal = true` so admin insights exclude its bookmarks, highlights, feedback, and future content-level reading activity.
+- the user has a Supabase session, and
+- `profiles.role = 'admin'`
 
-### 5.3 Health Check
+Useful bootstrap script:
 
-**GET** `/api/health`
-
-Returns 200 if database is reachable.
-
----
-
-## 6. Backup & Recovery
-
-### 6.1 Database Backups
-
-Supabase provides automatic daily backups on Pro plan.
-
-**Manual backup:**
 ```bash
-pg_dump $DATABASE_URL > backup.sql
+node scripts/create-admin.mjs
 ```
 
-### 6.2 Content Export
+### 3.2 Content Management
 
-Export via SQL or Supabase dashboard exports.
+Admin tools currently cover:
 
----
+- content CRUD
+- featured toggles
+- homepage sections
+- content series
+- image uploads to the `media` bucket
+- audio uploads to the `audio` bucket
+- insights
 
-## 7. Performance Optimization
+### 3.3 Embeddings
 
-### 7.1 Image Optimization
+Content-level embeddings:
 
-- Use `next/image` for all images
-- Store images in Supabase Storage
-- Use WebP format when possible
-- Images served via CDN
+- endpoint: `POST /api/admin/embeddings/sync`
+- behavior: processes verified content items that still have `embedding IS NULL`
 
-### 7.2 Bundle Size
+Segment-level Gemini embeddings:
 
-Run bundle analyzer:
+- status endpoint: `GET /api/admin/embeddings/sync-segments`
+- local backfill command:
+
 ```bash
-ANALYZE=true npm run build
+npm run embeddings:sync-segments
 ```
 
-Target sizes:
-- Homepage: < 150kb gzipped
-- Reader: < 200kb gzipped
+Dry run:
 
-### 7.3 Caching
+```bash
+npm run embeddings:sync-segments -- --dry-run
+```
 
-| Route | Cache Duration |
-| --- | --- |
-| `/` | 1 hour (ISR) |
-| `/read/[id]` | 1 hour (ISR) |
-| `/admin/*` | No cache |
-| `/library`, `/notes`, `/ask` | Dynamic (No cache) |
+This is intentionally a local trusted-machine workflow now. `POST /api/admin/embeddings/sync-segments` returns `405`.
 
----
+## 4. Deployment
 
-## 8. Security & Production Hardening Checklist
+### 4.1 App Hosting
 
-- [x] Admin users are managed in Supabase Auth and `profiles.role = 'admin'` is tightly controlled
-- [x] `SUPABASE_SERVICE_KEY` is not exposed to client
-- [x] RLS policies are enabled on all tables
-- [x] Markdown content is sanitized before rendering
-- [x] Admin routes check session cookie
-- [x] Image uploads validated for type and size
-- [x] **Content Security Policy (CSP)** via Next.js middleware headers.
-- [x] **API Rate Limiting** implemented on unprotected public routes and all admin APIs (e.g., upstash/ratelimit).
-- [x] Graceful Error Boundaries configured network-wide (`error.tsx`).
+The Next.js app is intended for Vercel deployment.
 
----
+Build command:
 
-## 9. Database Schema
+```bash
+next build
+```
 
-### Tables
+### 4.2 Production Environment Expectations
 
-**content_item**
-- `id` (UUID, PK)
-- `type` (enum: podcast, book, article, video)
-- `title` (TEXT)
-- `author` (TEXT, nullable)
-- `source_url` (TEXT, nullable)
-- `cover_image_url` (TEXT, nullable)
-- `hero_image_url` (TEXT, nullable)
-- `audio_url` (TEXT, nullable)
-- `category` (TEXT, nullable)
-- `quick_mode_json` (JSONB, nullable)
-- `status` (enum: draft, verified)
-- `duration_seconds` (INTEGER, nullable)
-- `is_featured` (BOOLEAN, default false)
-- `embedding` (VECTOR, nullable)
-- `created_at`, `updated_at`, `deleted_at`
+At minimum, production needs:
 
-**segment**
-- `id` (UUID, PK)
-- `item_id` (UUID, FK → content_item)
-- `order_index` (INTEGER)
-- `title` (TEXT, nullable)
-- `markdown_body` (TEXT)
-- `start_time_sec` (INTEGER, nullable)
-- `end_time_sec` (INTEGER, nullable)
-- `created_at`, `updated_at`, `deleted_at`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_KEY`
+- `NEXT_PUBLIC_SITE_URL`
+- AI provider keys used by your deployment
 
-**segment_embedding**
-- `id` (UUID, PK)
-- `segment_id` (UUID, FK → segment)
-- `content_item_id` (UUID, FK → content_item)
-- `embedding` (VECTOR)
-- `created_at`
+For rate-limited routes in production:
 
-**segment_embedding_gemini**
-- `id` (UUID, PK)
-- `segment_id` (UUID, FK → segment)
-- `content_item_id` (UUID, FK → content_item)
-- `embedding` (VECTOR(768))
-- `created_at`
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
 
-**artifact**
-- `id` (UUID, PK)
-- `item_id` (UUID, FK → content_item)
-- `type` (enum: checklist, plan, script)
-- `payload_schema` (JSONB)
-- `version` (TEXT, default '1.0.0')
-- `created_at`, `updated_at`
+Important distinction:
 
-**user_library**
-- `user_id` (UUID, FK → profiles)
-- `content_id` (UUID, FK → content_item)
-- `is_bookmarked` (BOOLEAN)
-- `progress` (JSONB)
-- `last_interacted_at` (TIMESTAMP)
+- in development, the rate limiter can fall back to in-memory
+- in production, most protected routes fail closed if Upstash is unavailable
+- low-risk browse/personalization endpoints use best-effort rate limiting instead
 
-**user_highlights**
-- `id` (UUID, PK)
-- `user_id` (UUID, FK → profiles)
-- `content_item_id` (UUID, FK → content_item)
-- `segment_id` (UUID, FK → segment)
-- `highlighted_text` (TEXT)
-- `note_body` (TEXT, nullable)
-- `color` (TEXT, nullable)
-- `created_at`, `updated_at`
+### 4.3 Metadata and Web Surfaces
 
-**reading_activity**
-- `id` (UUID, PK)
-- `user_id` (UUID, FK → profiles)
-- `activity_date` (DATE)
-- `duration_seconds` (INTEGER)
-- `pages_read` (INTEGER)
-- `created_at`, `updated_at`
+These routes/files are generated from runtime configuration:
 
----
+- `app/manifest.ts`
+- `app/robots.ts`
+- `app/sitemap.ts`
 
-## 10. Future Operations
+## 5. Troubleshooting
 
-When scaling, consider:
+### 5.1 `Missing Supabase environment variables`
 
-1. **CDN for images** — Move to Cloudflare or similar
-2. **Analytics** — Add Plausible or Posthog
-3. **Monitoring** — Add Sentry for error tracking
-4. **Email** — Add Resend for newsletters
+Check:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_KEY`
+
+### 5.2 Public pages show no content
+
+Check:
+
+- content status is `verified`
+- `deleted_at` is null
+- migrations and RLS policies are applied
+- ISR cache has revalidated or the page was revalidated by admin actions
+
+### 5.3 Admin routes redirect or return 401/403
+
+Check:
+
+- active Supabase session
+- `profiles.role = 'admin'`
+- auth callback flow is working for the current site URL / forwarded host
+
+### 5.4 Chat routes fail
+
+Check:
+
+- `ANTHROPIC_API_KEY` for default generation
+- `GEMINI_API_KEY` for library retrieval embeddings and sync
+- `OPENAI_API_KEY` only if you expect fallback generation
+
+### 5.5 Rate-limited routes fail only in production
+
+Check:
+
+- `UPSTASH_REDIS_REST_URL`
+- `UPSTASH_REDIS_REST_TOKEN`
+
+If those are missing, production behavior is expected to be stricter than local development.

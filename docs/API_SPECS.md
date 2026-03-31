@@ -1,520 +1,352 @@
-# API_SPECS.md: Flux API Contracts
+# API_SPECS.md: Flux API Surface
 
 > **Status:** Active  
-> **Purpose:** API definitions for public data fetching, admin content management, and exports.
+> **Purpose:** Describe the route handlers that currently exist under `app/api`.
 
----
+## 1. Conventions
 
-## 1. Public & Authenticated Data Access
+Most modern routes use the shared API helpers in `lib/server/api.ts` and return:
 
-Public content is fetched directly from Supabase using the anon key with RLS policies. No custom API routes needed for simple reads. However, specific features like AI chat, library management, and progress tracking use dedicated API routes.
-
-### 1.1 Content List Query
-
-```typescript
-// Fetch verified content items
-const { data } = await supabase
-  .from('content_item')
-  .select('id, title, author, type, category, cover_image_url, duration_seconds, quick_mode_json, is_featured')
-  .eq('status', 'verified')
-  .is('deleted_at', null)
-  .order('created_at', { ascending: false })
-```
-
-### 1.2 Featured Content Query
-
-```typescript
-// Fetch featured items for hero carousel
-const { data } = await supabase
-  .from('content_item')
-  .select('*')
-  .eq('status', 'verified')
-  .eq('is_featured', true)
-  .is('deleted_at', null)
-  .order('created_at', { ascending: false })
-  .limit(5)
-```
-
-### 1.3 Content Detail Query
-
-```typescript
-// Fetch single item with segments and artifacts
-const { data } = await supabase
-  .from('content_item')
-  .select(`
-    *,
-    segments:segment(id, order_index, title, markdown_body, start_time_sec, end_time_sec),
-    artifacts:artifact(id, type, payload_schema, version)
-  `)
-  .eq('id', itemId)
-  .eq('status', 'verified')
-  .is('deleted_at', null)
-  .order('order_index', { foreignTable: 'segment' })
-  .single()
-```
-
----
-
-## 2. Authenticated API Endpoints
-
-These endpoints are used by authenticated regular users (or visitors acting upon the AI chat).
-
-### 2.1 AI Chat (`/api/chat`)
-
-**POST** `/api/chat`
-
-Streaming endpoint for Ask AI feature. Handles AI responses based on vector similarity search against content embeddings.
-
-### 2.2 Library & Progress (`/api/library/*`)
-
-- **POST / DELETE** `/api/library/bookmarks`: Add or remove content items from the user's library.
-- **GET / POST / PUT / DELETE** `/api/library/highlights`: Manage text highlights and notes for read segments.
-
-### 2.3 Reading Activity (`/api/activity/log`)
-
-**POST** `/api/activity/log`
-
-Records users' valid reading sessions to populate the Reading Heatmap on their profile. Uses a local-first checkpointing architecture where time is accumulated in the browser and only synced on tab blur or page close (with a minimum 60s threshold) via the `increment_reading_activity` RPC. This architecture optimizes serverless invocations and protects database connection pools.
-
----
-
-## 3. Admin API Endpoints
-
-All admin endpoints require a valid Supabase session and an admin role (`profiles.role = 'admin'`).
-
-### 2.1 Admin Login
-
-Admin login is handled by the `/admin-login` page with Supabase Auth email/password sign-in.
-There is no custom `/api/admin/login` endpoint.
-
----
-
-### 2.2 Admin Logout
-
-**POST** `/api/admin/logout`
-
-Signs out the current Supabase session for the active admin user.
-
-**Response (200 OK):**
 ```json
 {
-  "success": true
-}
-```
-
----
-
-### 2.3 Create Content
-
-**POST** `/api/admin/content`
-
-**Request Body:**
-```typescript
-z.object({
-  title: z.string().min(1),
-  author: z.string().optional(),
-  type: z.enum(['podcast', 'book', 'article', 'video']),
-  category: z.string().optional(),
-  source_url: z.string().url().optional(),
-  cover_image_url: z.string().url().optional(),
-  hero_image_url: z.string().url().optional(),
-  audio_url: z.string().url().optional(),
-  duration_seconds: z.number().int().positive().optional(),
-  is_featured: z.boolean().default(false),
-  quick_mode_json: z.object({
-    hook: z.string(),
-    big_idea: z.string(),
-    key_takeaways: z.array(z.string())
-  }).optional(),
-  status: z.enum(['draft', 'verified']).default('draft'),
-  segments: z.array(z.object({
-    order_index: z.number().int(),
-    title: z.string().optional(),
-    markdown_body: z.string(),
-    start_time_sec: z.number().int().optional(),
-    end_time_sec: z.number().int().optional()
-  })),
-  artifacts: z.array(z.object({
-    type: z.enum(['checklist', 'plan', 'script']),
-    payload_schema: z.object({
-      title: z.string(),
-      items: z.array(z.object({
-        id: z.string(),
-        label: z.string(),
-        mandatory: z.boolean().default(false)
-      }))
-    })
-  })).optional()
-})
-```
-
-**Response (201 Created):**
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "title": "...",
-    "status": "draft"
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Human readable message",
+    "request_id": "uuid"
   }
 }
 ```
 
----
+Some older public endpoints still return simpler payloads or raw arrays. Treat the implementation as authoritative when those differ.
 
-### 2.4 Update Content
+Auth tiers used below:
 
-**PUT** `/api/admin/content/[id]`
+- `public`: no session required
+- `auth`: authenticated user required
+- `admin`: authenticated user with `profiles.role = 'admin'`
 
-**Request Body:** Same as create, all fields optional.
+## 2. Chat APIs
 
-**Response (200 OK):**
+| Route | Method | Auth | Purpose |
+| --- | --- | --- | --- |
+| `/api/chat` | `POST` | `auth` | Ask My Library. Uses library snapshot plus Gemini segment retrieval. |
+| `/api/chat/notes` | `POST` | `auth` | Ask These Notes. Grounded only in highlight IDs currently in scope. |
+| `/api/chat/author` | `POST` | `public` | Author-style chat over a single content item's segments. Guests have stricter limits. |
+
+### 2.1 `/api/chat`
+
+Request body:
+
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "uuid",
-    "updated_at": "ISO-timestamp"
-  }
+  "messages": [
+    { "role": "user", "content": "What themes keep showing up in my library?" }
+  ]
 }
 ```
 
----
+Notes:
 
-### 2.5 Delete Content
+- last message must be a user message
+- authenticated only
+- uses Gemini embeddings for retrieval and Anthropic by default for generation
 
-**DELETE** `/api/admin/content/[id]`
+### 2.2 `/api/chat/notes`
 
-Performs soft delete (sets `deleted_at`).
+Request body:
 
-**Response (200 OK):**
 ```json
 {
-  "success": true
+  "messages": [
+    { "role": "user", "content": "What contradictions show up across these notes?" }
+  ],
+  "highlightIds": ["uuid"],
+  "scopeLabel": "Search: discipline"
 }
 ```
 
----
+### 2.3 `/api/chat/author`
 
-### 2.6 List All Content (Admin)
+Request body:
 
-**GET** `/api/admin/content`
+```json
+{
+  "contentId": "uuid",
+  "authorName": "Author Name",
+  "bookTitle": "Book Title",
+  "messages": [
+    { "role": "user", "content": "What do you mean by discipline?" }
+  ]
+}
+```
 
-Returns all content including drafts and deleted items.
+## 3. Authenticated User APIs
 
-**Query Parameters:**
-- `status`: Filter by status (draft, verified, deleted)
-- `type`: Filter by content type
-- `featured`: Filter by featured flag
-- `limit`: Default 50
-- `offset`: Default 0
+| Route | Method | Auth | Purpose |
+| --- | --- | --- | --- |
+| `/api/activity/log` | `POST` | `auth` | Log reading time through Supabase RPCs. |
+| `/api/activity/history` | `GET` | `auth` | Fetch reading activity rows for a date range. |
+| `/api/library/bookmarks` | `POST`, `DELETE` | `auth` | Add/remove a bookmarked item. |
+| `/api/library/highlights` | `GET`, `POST` | `auth` | List or create highlights. |
+| `/api/library/highlights/[id]` | `PATCH`, `DELETE` | `auth` | Update note body/color or delete a highlight. |
+| `/api/feedback/content` | `GET`, `POST`, `DELETE` | `auth` for writes | Read/save/remove a user’s content feedback. |
 
-**Response (200 OK):**
+### 3.1 Activity
+
+`POST /api/activity/log`
+
+```json
+{
+  "duration_seconds": 120,
+  "activity_date": "2026-03-29",
+  "content_id": "uuid"
+}
+```
+
+Behavior:
+
+- if `content_id` is present, calls `log_reading_activity`
+- otherwise calls `increment_reading_activity`
+
+`GET /api/activity/history?start=2026-03-01&end=2026-03-29`
+
+Returns ordered `reading_activity` rows for the current user.
+
+### 3.2 Bookmarks
+
+Request body for both `POST` and `DELETE`:
+
+```json
+{
+  "content_item_id": "uuid"
+}
+```
+
+Delete behavior is intentionally conservative:
+
+- if a row only exists for bookmarking, it can be deleted
+- if the row also stores progress, the bookmark is cleared but the row is retained
+
+### 3.3 Highlights
+
+Create request:
+
+```json
+{
+  "content_item_id": "uuid",
+  "segment_id": "uuid",
+  "highlighted_text": "Important passage",
+  "note_body": "Why this matters",
+  "color": "blue",
+  "anchor_start": 10,
+  "anchor_end": 42
+}
+```
+
+List query params:
+
+- `content_item_id`
+- `cursor`
+- `limit`
+
+Update request for `/api/library/highlights/[id]`:
+
+```json
+{
+  "note_body": "Updated note",
+  "color": "purple"
+}
+```
+
+### 3.4 Feedback
+
+`GET /api/feedback/content?contentId=<uuid>`
+
+Returns:
+
 ```json
 {
   "success": true,
-  "data": [
+  "data": { "status": "up" }
+}
+```
+
+Write request:
+
+```json
+{
+  "content_id": "uuid",
+  "is_positive": true,
+  "reason": "helpful",
+  "details": "clear framing"
+}
+```
+
+Delete request:
+
+```json
+{
+  "content_id": "uuid"
+}
+```
+
+## 4. Public Product APIs
+
+| Route | Method | Auth | Purpose |
+| --- | --- | --- | --- |
+| `/api/content/batch` | `POST` | `public` | Fetch multiple verified content items by ID. |
+| `/api/focus` | `GET` | `public` | Return randomized quick-mode-ready focus feed items. |
+| `/api/recommendations` | `POST` | `public` | RPC-backed recommendations based on completed IDs. |
+| `/api/health` | `GET` | `public` | Basic Supabase reachability health check. |
+| `/api/monitor/image-fallback` | `POST` | `public` | Diagnostic logging for image fallback events. |
+
+### 4.1 `/api/content/batch`
+
+```json
+{
+  "ids": ["uuid", "uuid"]
+}
+```
+
+Returns a JSON array of verified content rows.
+
+### 4.2 `/api/focus`
+
+Query params:
+
+- `limit` (1-12)
+- `excludeIds` as comma-separated UUIDs
+
+Returns shuffled focus-feed items whose `quick_mode_json` passes validation.
+
+### 4.3 `/api/recommendations`
+
+```json
+{
+  "completedIds": ["uuid"]
+}
+```
+
+Returns the result of the `match_recommendations` RPC.
+
+## 5. Admin APIs
+
+All admin routes are protected by session + role checks.
+
+| Route | Method | Purpose |
+| --- | --- | --- |
+| `/api/admin/content` | `GET`, `POST` | List or create content items |
+| `/api/admin/content/[id]` | `GET`, `PUT`, `DELETE` | Fetch, update, or soft-delete content |
+| `/api/admin/content/[id]/featured` | `PATCH` | Toggle featured status |
+| `/api/admin/sections` | `GET`, `POST` | List or create homepage sections |
+| `/api/admin/sections/[id]` | `PUT`, `DELETE` | Update or delete a homepage section |
+| `/api/admin/series` | `GET`, `POST` | List or create content series |
+| `/api/admin/series/[id]` | `PUT`, `DELETE` | Update or delete a series |
+| `/api/admin/upload` | `POST` | Upload cover/media images to Supabase Storage |
+| `/api/admin/upload-audio` | `POST` | Upload audio files to Supabase Storage |
+| `/api/admin/logout` | `POST` | Sign out the active admin session |
+| `/api/admin/embeddings/sync` | `POST` | Backfill content-level embeddings |
+| `/api/admin/embeddings/sync-segments` | `GET` | Return Gemini segment coverage plus local commands |
+| `/api/admin/embeddings/sync-segments` | `POST` | Disabled, responds `405` with local-command guidance |
+
+### 5.1 Content Create / Update
+
+Key fields used by both create and update payloads:
+
+```json
+{
+  "title": "Title",
+  "author": "Author",
+  "type": "book",
+  "category": "Mindset",
+  "source_url": "https://example.com",
+  "cover_image_url": "https://...",
+  "hero_image_url": "https://...",
+  "audio_url": "https://...",
+  "duration_seconds": 1800,
+  "status": "verified",
+  "is_featured": true,
+  "quick_mode_json": {
+    "hook": "Hook",
+    "big_idea": "Big idea",
+    "key_takeaways": ["One", "Two"]
+  },
+  "series_id": "uuid",
+  "series_order": 1,
+  "segments": [
     {
-      "id": "uuid",
-      "title": "...",
-      "type": "podcast",
-      "status": "verified",
-      "is_featured": true,
-      "created_at": "...",
-      "updated_at": "..."
+      "order_index": 0,
+      "title": "Section",
+      "markdown_body": "Markdown"
     }
   ],
-  "pagination": {
-    "total": 25,
-    "limit": 50,
-    "offset": 0
-  }
-}
-```
-
----
-
-### 2.7 Toggle Featured Status
-
-**PATCH** `/api/admin/content/[id]/featured`
-
-Toggle the `is_featured` flag.
-
-**Request Body:**
-```typescript
-z.object({
-  is_featured: z.boolean()
-})
-```
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "data": {
-    "is_featured": true
-  }
-}
-```
-
----
-
-### 3.8 Image Upload
-
-**POST** `/api/admin/upload`
-
-Upload an image to Supabase Storage.
-
-**Request:** `multipart/form-data` with `file` field
-
-**Response (200 OK):**
-```json
-{
-  "success": true,
-  "url": "https://..."
-}
-```
-
----
-
-### 3.9 AI Operations
-
-- **POST** `/api/admin/embeddings/sync`: Regenerates global embeddings for all items.
-- **GET** `/api/admin/embeddings/sync-segments`: Returns coverage plus the local CLI command used to backfill missing segment embeddings.
-
----
-
-## 4. Response Standards
-
-### 3.1 Success Response
-
-```json
-{
-  "success": true,
-  "data": { ... }
-}
-```
-
-### 3.2 Error Response
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "ERROR_CODE",
-    "message": "Human readable message",
-    "details": [ ... ]
-  }
-}
-```
-
-### 3.3 Error Codes
-
-| Code | HTTP Status | Description |
-| --- | --- | --- |
-| `VALIDATION_ERROR` | 400 | Invalid request body |
-| `UNAUTHORIZED` | 401 | Missing/invalid Supabase session or non-admin role |
-| `NOT_FOUND` | 404 | Resource not found |
-| `INTERNAL_ERROR` | 500 | Server error |
-
----
-
-## 4. Security
-
-### 5.1 Admin Authentication
-
-- Authentication is handled by Supabase Auth (with Google OAuth support).
-- Authorization is enforced by checking `profiles.role = 'admin'`.
-- Admin APIs validate role server-side before using service-role operations.
-
-### 5.2 Input Validation
-
-All inputs validated with Zod before processing.
-
-### 5.3 Database Access
-
-The database is hosted on **Supabase Cloud**.
-
-- Admin endpoints use Supabase service role key for full access
-- Public queries use anon key with RLS policies
-- Authenticated endpoints enforce user isolation (users only access their own library, notes, activity)
-- Image uploads stored in Supabase Storage bucket
-
----
-
-## 6. Type Definitions
-
-```typescript
-// /types/database.ts
-
-export type ContentStatus = "draft" | "verified";
-export type ContentType = "podcast" | "book" | "article" | "video";
-export type ArtifactType = "checklist" | "plan" | "script";
-export type UserRole = "user" | "admin";
-
-export interface ContentItem {
-  id: string;
-  type: ContentType;
-  title: string;
-  author?: string;
-  source_url?: string;
-  cover_image_url?: string;
-  hero_image_url?: string;
-  audio_url?: string;
-  category?: string;
-  quick_mode_json?: QuickModeContent;
-  status: ContentStatus;
-  duration_seconds?: number;
-  is_featured: boolean;
-  embedding?: string;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-}
-
-export interface QuickModeContent {
-  hook: string;
-  big_idea: string;
-  key_takeaways: string[];
-}
-
-export interface Segment {
-  id: string;
-  item_id: string;
-  order_index: number;
-  title?: string;
-  markdown_body: string;
-  start_time_sec?: number;
-  end_time_sec?: number;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-}
-
-export interface Artifact {
-  id: string;
-  item_id: string;
-  type: ArtifactType;
-  payload_schema: ChecklistPayload | ScriptPayload;
-  version: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ChecklistPayload {
-  title: string;
-  items: Array<{
-    id: string;
-    label: string;
-    mandatory: boolean;
-  }>;
-}
-
-export interface ItemProgress {
-  [itemId: string]: boolean;
-}
-
-export interface ContentItemWithSegments extends ContentItem {
-  segments: Segment[];
-  artifacts: Artifact[];
-}
-
-export interface UserLibrary {
-  user_id: string;
-  content_id: string;
-  is_bookmarked?: boolean;
-  progress?: any;
-  last_interacted_at?: string;
-}
-
-export interface UserHighlight {
-  id: string;
-  user_id: string;
-  content_item_id: string;
-  segment_id?: string;
-  highlighted_text: string;
-  note_body?: string;
-  color?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface ReadingActivity {
-  id: string;
-  user_id: string;
-  activity_date: string;
-  duration_seconds: number;
-  pages_read: number;
-  created_at: string;
-  updated_at: string;
-}
-```
-
----
-
-## 7. Additional Implemented Endpoints (Codebase Synced)
-
-The following routes are currently implemented and should be treated as active contracts.
-
-### 7.1 Public/Authenticated Utility APIs
-
-- **GET** `/api/focus`
-  - Returns a shuffled batch of verified items with `quick_mode_json` for the Focus feed.
-  - Query params: `limit` and optional `excludeIds`.
-  - Rate limited.
-
-- **POST** `/api/content/batch`
-  - Fetches multiple verified content items by UUID list (`ids`, max 50).
-  - Used by library/history UIs to hydrate multiple cards efficiently.
-  - Rate limited.
-
-- **POST** `/api/recommendations`
-  - Body: `{ completedIds: string[] }`.
-  - Returns personalized recommendations from RPC `match_recommendations`.
-  - Rate limited.
-
-### 7.2 Authenticated User APIs
-
-- **GET** `/api/activity/history`
-  - Returns reading activity rows for current user.
-  - Optional query params: `start`, `end` (`YYYY-MM-DD`) with bounded range validation.
-  - Rate limited.
-
-- **GET / POST / DELETE** `/api/feedback/content`
-  - Reads/upserts/removes per-user content feedback.
-  - POST payload:
-    ```ts
+  "artifacts": [
     {
-      content_id: string; // uuid
-      is_positive: boolean;
-      reason?: string | null;
-      details?: string | null;
+      "type": "checklist",
+      "payload_schema": {
+        "title": "Checklist",
+        "items": [
+          { "id": "one", "label": "Item", "mandatory": true }
+        ]
+      }
     }
-    ```
-  - DELETE payload:
-    ```ts
-    {
-      content_id: string; // uuid
-    }
-    ```
-  - Rate limited.
+  ]
+}
+```
 
-### 7.3 AI APIs
+Implementation notes:
 
-- **POST** `/api/chat/author`
-  - Public author-persona conversational endpoint.
-  - Uses Anthropic streaming responses.
-  - Enforces payload validation, message windowing, context truncation, and hybrid throttling (`user.id` for signed-in users, IP-based buckets for guests).
+- checklist is the only artifact type currently accepted by the API
+- create and update both validate series assignment consistency
+- update uses the `admin_update_content_graph` RPC for the content/segment/artifact graph
 
-### 7.4 Admin APIs (Protected)
+### 5.2 Homepage Sections
 
-- **GET / POST** `/api/admin/sections`
-  - Manage homepage lane/section configuration.
+Section create/update fields:
 
-- **PUT / DELETE** `/api/admin/sections/[id]`
-  - Update or remove a specific homepage section.
+```json
+{
+  "title": "Recommended in Business",
+  "filter_type": "category",
+  "filter_value": "Business",
+  "order_index": 0,
+  "is_active": true
+}
+```
 
-- **POST** `/api/admin/upload-audio`
-  - Upload audio assets to storage for media-enabled content.
+Allowed `filter_type` values:
 
-> Note: All `/api/admin/*` endpoints require a valid admin session and server-side role verification.
+- `author`
+- `category`
+- `title`
+- `featured`
+
+### 5.3 Series
+
+Create/update fields:
+
+```json
+{
+  "title": "Matthew",
+  "slug": "matthew",
+  "description": "Optional description"
+}
+```
+
+Delete safeguard:
+
+- a series cannot be deleted while non-deleted content items still point at it
+
+### 5.4 Uploads
+
+`POST /api/admin/upload`
+
+- multipart form-data with `file`
+- accepts image uploads
+- writes to the `media` bucket under `covers/`
+
+`POST /api/admin/upload-audio`
+
+- multipart form-data with `file`
+- accepts `mp3`, `wav`, `m4a`
+- writes to the `audio` bucket

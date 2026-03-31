@@ -1,312 +1,197 @@
 # ARCHITECTURE.md: Flux
 
-> **Status:** Active
-> **Last Updated:** March 2026
-> **North Star:** "Curated knowledge, publicly accessible, beautifully presented."
-
-## 1. Product Overview
-
-Flux is a **curated content platform** with public browsing and personalized user experiences. The founder uploads summaries of podcasts, books, articles, and videos. Visitors browse and read freely, while authenticated users can track their reading progress, save highlights, take notes, and interact with an AI answering engine about the content.
-
-### Key Principles
-
-1. **Public-First Discovery**: All content is publicly accessible. No login required to browse or read.
-2. **Personalized State (Authenticated)**: Reading progress, highlights, notes, and library bookmarks are securely synced across devices for signed-in users.
-3. **Local State (Unauthenticated)**: Guest users utilize browser localStorage for checklist progress tracking.
-4. **Admin-Only Content Creation**: Only the founder can add/edit content or sync AI embeddings via a protected admin panel.
-5. **AI Enhanced**: Provides semantic search and a generative AI Chat interface based on vectorized content summaries.
-
----
-
-## 2. High-Level System Design
-
-### Zone A: Public Content (The Stream)
-
-* **Strategy:** Incremental Static Regeneration (ISR) for SEO and performance.
-* **Goal:** Sub-100ms TTFB, excellent SEO for discoverability.
-* **Routes:** `/` (Home), `/read/[id]`, `/search`, `/focus`.
-* **Data Source:** Supabase with public read access.
-* **Constraint:** Public routes avoid cookie-bound auth reads whenever possible so they remain cache-friendly on Vercel.
-
-### Zone B: Admin Panel (Content Management & AI Ops)
-
-* **Strategy:** Server-side protected route.
-* **Goal:** Powerful interface for founder to upload/edit content and sync AI embeddings.
-* **Routes:** `/admin`, `/admin/content/new`, `/admin/content/[id]/edit`.
-* **Protection:** Supabase Auth session + RBAC (`profiles.role = 'admin'`).
-
-### Zone C: Authenticated User Features
-
-* **Strategy:** Client-side data fetching with Server Actions.
-* **Goal:** Cross-device synchronization of library, highlights, notes, and reading activity heatmap.
-* **Routes:** `/login`, `/profile`, `/library`, `/notes`, `/ask`, `/settings`.
-* **Protection:** Supabase Auth session via cookies.
-
----
-
-## 3. Technology Stack
-
-| Layer | Technology | Purpose |
-| --- | --- | --- |
-| **Framework** | Next.js (App Router) | Server Components + ISR + Server Actions |
-| **Language** | TypeScript (strict) | Type safety |
-| **Styling** | Tailwind CSS | Utility-first CSS |
-| **Database** | Supabase (PostgreSQL, pgvector) | Content storage & Vector Similarity |
-| **Storage** | Supabase Storage (Hosted) | Image/media uploads |
-| **Auth** | Supabase Auth (Hosted) | Email/Google OAuth authentication |
-| **AI LLMs** | Langchain/OpenAI | Content Generation & Chat Inference |
-| **Local Storage** | localStorage | Guest checklist state, temporary cache |
-| **Drag & Drop** | dnd-kit | Segment reordering in admin |
-| **Validation** | Zod | Runtime type validation |
-
----
-
-## 4. Data Architecture
-
-### 4.1 Entity Relationship Diagram
-
-```mermaid
-erDiagram
-    Content_Item ||--|{ Segment : contains
-    Content_Item ||--|{ Artifact : has
-    Content_Item ||--|{ User_Library : "saved in"
-    Content_Item ||--|{ User_Highlights : "has"
-    Content_Item ||--|{ Content_Feedback : "receives"
-    
-    Segment ||--|| Segment_Embedding : "vectorized as"
-    Segment ||--|{ User_Highlights : "highlighted in"
-
-    Profiles ||--|{ User_Library : "bookmarks"
-    Profiles ||--|{ User_Highlights : "creates"
-    Profiles ||--|{ Reading_Activity : "tracks"
-    Profiles ||--|{ Content_Feedback : "submits"
-
-    Content_Item {
-        uuid id PK
-        string type "podcast|book|article|video"
-        string title
-        string author
-        string source_url
-        string cover_image_url
-        string hero_image_url
-        string audio_url
-        string category
-        jsonb quick_mode_json
-        string status "draft|verified"
-        int duration_seconds
-        boolean is_featured
-        vector embedding
-        timestamp created_at
-        timestamp updated_at
-        timestamp deleted_at "Soft Delete"
-    }
-
-    Segment {
-        uuid id PK
-        uuid item_id FK
-        int order_index
-        string title
-        text markdown_body
-        int start_time_sec
-        int end_time_sec
-    }
-    
-    Segment_Embedding {
-        uuid id PK
-        uuid segment_id FK
-        uuid content_item_id FK
-        vector embedding
-    }
-
-    Artifact {
-        uuid id PK
-        uuid item_id FK
-        string type "checklist|plan|script"
-        jsonb payload_schema
-        string version
-    }
-
-    Profiles {
-        uuid id PK
-        string email
-        string role "user|admin"
-        jsonb reader_settings "user preferences for reading"
-    }
-
-    User_Library {
-        uuid user_id FK
-        uuid content_id FK
-        boolean is_bookmarked
-        jsonb progress
-        timestamp last_interacted_at
-    }
-
-    User_Highlights {
-        uuid id PK
-        uuid user_id FK
-        uuid content_item_id FK
-        uuid segment_id FK
-        string highlighted_text
-        text note_body
-        string color
-    }
-    
-    Reading_Activity {
-        uuid id PK
-        uuid user_id FK
-        date activity_date
-        int duration_seconds
-        int pages_read
-    }
-```
-
-### 4.2 Quick Mode JSON Schema
-
-Stored in `content_item.quick_mode_json`:
-
-```json
-{
-  "hook": "One sentence that captures attention.",
-  "big_idea": "The core thesis or main takeaway.",
-  "key_takeaways": [
-    "Bullet point 1",
-    "Bullet point 2",
-    "Bullet point 3"
-  ]
-}
-```
-
-### 4.3 Artifact Payload Schemas
-
-**Checklist** (`artifact.type = 'checklist'`):
-
-```json
-{
-  "title": "Morning Routine Checklist",
-  "items": [
-    { "id": "item-1", "label": "Wake up at 5 AM", "mandatory": true },
-    { "id": "item-2", "label": "Drink water", "mandatory": false }
-  ]
-}
-```
-
-### 4.4 Data Rules
-
-1. **Soft Deletes**: Primary queries filter `WHERE deleted_at IS NULL`.
-2. **Verified Only**: Public queries filter `WHERE status = 'verified'`.
-3. **Timestamps**: Most tables have `created_at` and `updated_at`.
-4. **Featured Content**: `is_featured = true` items appear in hero carousel.
-5. **AI Vector Storage**: Uses pgvector integration within Supabase (`vector` data type on embeddings table + HNSW indices).
-6. **Data Isolation**: Read operations on user tables (profiles, highlights, libraries) require identical user_id.
-
----
-
-## 5. Client-Side State
-
-Since many functions moved to remote syncing (Auth), local state caching acts mostly as temporary or guest functionality.
-
-### 5.1 Checklist Progress (localStorage, guest)
-
-```typescript
-// Key: "flux-checklist-{artifactId}"
-// Value: Record<itemId, boolean>
-
-export interface ChecklistProgress {
-  [itemId: string]: boolean;
-}
-```
-
-### 5.2 Remote User Progress (Supabase `user_library`)
-
-- Once authenticated, user interactions hit the `user_library` and `reading_activity` tables directly for persisting reading locations and history. Reading activity accumulates locally and triggers an atomic database save on tab blur or page close (via RPC `increment_reading_activity` with a 60-second minimum threshold) to map out a GitHub-style activity Heatmap. This local-first checkpointing minimizes serverless function invocations and database connection pool exhaustion.
-- **Reading Position Sync**: The `useReadingProgress` hook captures the `lastSegmentIndex` locally, but cross-checks with `user_library.progress` upon initial mount, prioritizing the data entry with the most recent `last_interacted_at` / `lastReadAt` timestamp to ensure seamless cross-device reading experiences.
-
-### 5.3 Reader Preferences (Supabase `profiles`)
-
-- User reading preferences (font size, typography, line height, and theme) are managed by `useReaderSettings` via `zustand` and `localStorage`, but instantly dispatch a background sync to `profiles.reader_settings` upon any change, allowing a seamless reading environment across devices and sessions.
-
----
-
-## 6. Security
-
-### 6.1 Database Access
-
-| Table | Public Access | Authenticated | Admin Access |
-| --- | --- | --- | --- |
-| `content_item` | SELECT (verified) | SELECT (verified) | ALL |
-| `segment` | SELECT (via item) | SELECT | ALL |
-| `profiles`, `user_library`, etc. | NONE | User's own data only | ALL |
-| `artifact` | SELECT | SELECT | ALL |
-
-### 6.2 Admin Protection
-
-The admin panel is protected by Supabase Auth session validation and server-side admin role checks.
-
-### 6.3 Input Validation
-
-* All admin form inputs validated with Zod schemas.
-* Markdown content sanitized before rendering.
-
----
-
-## 7. Performance
-
-### 7.1 Caching Strategy
-
-| Route | Strategy | Revalidation |
-| --- | --- | --- |
-| `/` (Home) | ISR | 1 hour |
-| `/read/[id]` | ISR | 1 hour |
-| `/search` | Dynamic | N/A |
-| `/admin/*` | No cache | N/A |
-| `/library`, `/notes`, `/ask` | Dynamic | N/A |
-
-### 7.2 Public Route Loading Rules
-
-1. **Shared Detail Loaders**: `/preview/[id]` and `/read/[id]` use shared server-side loader helpers so metadata generation and page rendering follow the same data path.
-2. **Cookie-Free Public Reads**: Public detail routes use the cookie-free public Supabase server client to avoid converting cache-friendly routes into auth-bound routes.
-3. **Landing Page Separation**: `/` renders as a public route first. Authenticated-user redirection to `/browse` happens client-side after hydration instead of server-side auth gating.
-4. **Search Empty-State Discipline**: Trending content is fetched only for empty-state search views. Search/category result pages avoid the trending path.
-5. **Focus Feed Responsiveness**: Focus mode does not wait for reading-progress hydration before fetching its initial batch. Personalization is applied after the first paint by pruning completed items and backfilling replacements.
-
-### 7.3 Failure Handling Rules
-
-1. **Truthful Write UI**: Feedback and other user-visible write paths must not show success until the server confirms the write.
-2. **Optimistic Rollback**: Any optimistic local state change must be reverted if the write fails.
-3. **Production Rate Limiting**: Shared Redis-backed rate limiting is required in production. Silent degradation to per-instance memory is not acceptable outside development.
-4. **Read-Only UX Fallbacks**: Low-risk discovery and personalization reads such as `/api/recommendations`, `/api/content/batch`, and `/api/focus` may use best-effort rate limiting so browse surfaces remain available when the shared limiter backend is degraded.
-
-### 7.4 Bundle Budget
-
-* Homepage: < 150kb gzipped
-* Reader: < 200kb gzipped
-
----
-
-## 8. Content Categories
-
-Categories for organizing content lanes on homepage:
-
-- **Health** — Nutrition, mental health, wellness
-- **Fitness** — Exercise, sports, physical training
-- **Wealth** — Investing, saving, financial independence
-- **Finance** — Money management, budgeting
-- **Productivity** — Time management, habits, focus
-- **Mindset** — Psychology, cognitive biases, motivation
-- **Relationships** — Communication, dating, family
-- **Science** — Research, discoveries, learning
-- **Business** — Startups, leadership, entrepreneurship
-- **Philosophy** — Meaning, ethics, life lessons
-- **Technology** — AI, software, innovation
-- **Lifestyle** — Routines, life optimization
-
----
-
-### 9. Future Considerations
-
-These features are **not in MVP** but may be added later:
-
-1. **PDF Export** — Download content as PDF
-2. **Offline Cache** — Advanced IndexedDB for full offline caching (Service Workers)
-3. **Comments** — Discussion section on content
-4. **Newsletter** — Email notifications for new content
+> **Status:** Active  
+> **Last Updated:** March 2026  
+> **Goal:** Keep the docs aligned with the implementation that currently ships.
+
+## 1. Product Shape
+
+Flux is a public-first reading product for curated knowledge. Visitors can discover and read content without logging in. Authenticated users add cross-device state on top: saved items, reading progress, highlights, notes, reading history, and AI chat. Admin users manage publishing, series, homepage sections, media uploads, and embedding operations.
+
+## 2. Route Zones
+
+### 2.1 Public Discovery
+
+- `/` marketing landing page
+- `/browse` browse feed with featured items plus configurable homepage sections
+- `/search` public search across verified content
+- `/focus` quick-take swipe/feed experience
+- `/preview/[id]` preview page for a content item
+- `/read/[id]` full reader page
+- `/series/[slug]` public series page
+- `/about`, `/privacy`, `/terms`
+
+These routes prefer the cookie-free public Supabase client so they remain cache-friendly.
+
+### 2.2 Authenticated Workspace
+
+- `/login`
+- `/ask`
+- `/notes`
+- `/profile`
+- `/settings`
+- `/library/my-list`
+- `/library/reading`
+- `/library/completed`
+
+These routes use the cookie-bound Supabase SSR client and redirect unauthenticated users to `/login`.
+
+### 2.3 Admin
+
+- `/admin`
+- `/admin/content/new`
+- `/admin/content/[id]/edit`
+- `/admin/sections`
+- `/admin/series`
+- `/admin/insights`
+- `/admin-login`
+
+Admin access is enforced twice:
+
+- `proxy.ts` gates `/admin*` and `/api/admin/*`
+- route handlers and server code re-check with `verifyAdminSession()`
+
+## 3. Runtime Architecture
+
+### 3.1 App Shell
+
+- `app/layout.tsx` sets global fonts, global CSS, ambient background, React Query provider, `sonner`, and Vercel telemetry
+- `app/(public)/layout.tsx` wraps public app routes with auth and reading-progress providers
+- `components/ui/PublicLayoutShell.tsx` conditionally applies app chrome based on the current route
+
+### 3.2 Supabase Client Split
+
+- `lib/supabase/public-server.ts`
+  - cookie-free client for public pages and read-only public APIs
+- `lib/supabase/server.ts`
+  - cookie-aware SSR client for authenticated routes and handlers
+- `lib/supabase/admin.ts`
+  - service-role client for admin-only operations and storage uploads
+- `lib/supabase/middleware.ts`
+  - refreshes auth cookies for routes that pass through the proxy
+
+This split is important: public SEO pages avoid `cookies()` whenever possible, while authenticated flows still get SSR auth.
+
+### 3.3 Shared Public Content Loaders
+
+`lib/server/public-content.ts` centralizes the public fetch path for:
+
+- page metadata
+- preview page data
+- read page data
+- series page data
+
+That avoids drift between `/preview/[id]`, `/read/[id]`, and metadata generation.
+
+## 4. Data Model Overview
+
+### 4.1 Core Content
+
+- `content_item`
+  - main content row
+  - types: `podcast`, `book`, `article`, `video`
+  - includes quick mode JSON, featured flag, optional audio URL, optional series assignment
+- `segment`
+  - ordered long-form content blocks for the reader
+- `artifact`
+  - interactive attachments
+  - current implementation uses checklist artifacts
+
+### 4.2 Discovery and Editorial Structure
+
+- `homepage_section`
+  - configurable browse/feed lanes for the public home feed
+- `content_series`
+  - public series pages plus ordered items inside a series
+
+### 4.3 User Data
+
+- `profiles`
+  - role and profile metadata
+- `user_library`
+  - bookmarks and reading progress snapshot
+- `user_highlights`
+  - highlights, note bodies, colors, optional anchors
+- `reading_activity`
+  - reading history used for heatmaps and recent activity
+- `content_feedback`
+  - thumbs up/down plus optional reason/details
+
+### 4.4 AI / Retrieval
+
+- `content_item.embedding`
+  - content-level embeddings
+- `segment_embedding_gemini`
+  - Gemini-based segment embeddings for library retrieval
+- RPCs back retrieval and aggregation flows such as:
+  - recommendations
+  - Gemini segment coverage
+  - reading activity logging
+  - homepage section item assembly
+
+## 5. Reader Architecture
+
+The current reader is a single-column accordion reader, not the older three-column layout.
+
+- `components/reader/ReaderView.tsx`
+  - orchestrates reading progress, highlights, feedback, notes drawer, and theme state
+- `hooks/useReadingProgress.ts`
+  - owns local/remote progress hydration and persistence behavior
+- `hooks/useHighlights.ts`
+  - highlight CRUD client integration
+- `hooks/useReaderSettings.ts`
+  - reader theme, font, and spacing preferences
+
+Reader themes are scoped separately from the browse UI:
+
+- `reader-dark`
+- `reader-light`
+- `reader-sepia`
+
+## 6. AI Architecture
+
+### 6.1 Generation
+
+- Default chat provider is Anthropic via `AI_PROVIDER=anthropic`
+- OpenAI is supported as fallback for chat routes that allow it
+- AI responses are streamed through the AI SDK
+
+### 6.2 Retrieval
+
+- `/api/chat`
+  - authenticated “Ask My Library”
+  - combines library metadata with Gemini segment retrieval
+- `/api/chat/notes`
+  - authenticated “Ask These Notes”
+  - grounded only in highlights currently in scope
+- `/api/chat/author`
+  - author-style chat over the segments of a single content item
+
+### 6.3 Embeddings
+
+- `/api/admin/embeddings/sync`
+  - syncs missing content-level embeddings for verified items
+- `npm run embeddings:sync-segments`
+  - local CLI backfill for Gemini segment embeddings
+- `/api/admin/embeddings/sync-segments`
+  - reports coverage and returns the local command to run
+
+## 7. Rendering and Caching
+
+- `/` uses ISR with `revalidate = 3600`
+- `/browse`, `/preview/[id]`, `/read/[id]`, `/series/[slug]` use shorter revalidation windows
+- public APIs such as recommendations and content batch set cache headers directly
+- personalization endpoints with low product risk use best-effort rate limiting so browse experiences degrade more gracefully
+
+## 8. Security Model
+
+- Content Security Policy and CORS headers are set in `next.config.ts`
+- admin and authenticated routes rely on Supabase Auth cookies
+- admin APIs require both session presence and `profiles.role = 'admin'`
+- production rate-limited routes expect Upstash Redis; non-production can fall back to in-memory limits
+
+## 9. Current Architectural Notes
+
+- The shipped product brand is `Flux`
+- `design-system/flux/*` is not a runtime source of truth
+- some older docs and generated artifacts may still describe the pre-refactor homepage or reader; defer to `app/`, `components/`, and this file when they disagree

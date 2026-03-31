@@ -1,113 +1,114 @@
 # Flux
 
-> **Continuous flow of knowledge.** Distilled wisdom from podcasts, books, and articles — made accessible for everyone.
+> Distilled ideas. Applied better.
 
-## What is Flux?
+Flux is a Next.js knowledge platform for publishing curated summaries of books, podcasts, articles, and videos. The product is public-first for discovery, then layers in authenticated reading progress, highlights, notes, AI chat, and an admin workflow for publishing and embeddings.
 
-Flux is a **public knowledge platform** where curated summaries of high-value content are published for free consumption. Think of it as a personal stream of distilled insights.
+## What Ships Today
 
-### Features
+- Public landing page, browse feed, search, focus mode, preview pages, reader pages, and public series pages
+- Authenticated library features: saved items, continue reading, completed history, notes, ask, profile, and settings
+- Reader features: quick mode, accordion-based deep reading, highlights, notes drawer, feedback, and scoped reader themes
+- AI surfaces: Ask My Library, Ask These Notes, and author-style chat on content pages
+- Admin tools: content CRUD, featured toggles, homepage sections, content series, media uploads, analytics, and embedding sync utilities
 
-- **Quick Mode**: Get the key takeaways in bullet points
-- **Deep Mode**: Read the full, structured summary with context
-- **Interactive Checklists**: Track your progress on actionable items
-- **Progress Tracking**: Pick up where you left off (stored locally, no account needed)
-- **Netflix-style UI**: Beautiful hero carousel and category lanes
-- **Featured Content**: Spotlight the best content in the hero section
+## Stack
 
-### Content Types
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS v4
+- Supabase Auth, Postgres, Storage, and RPCs
+- Vercel Analytics / Speed Insights
+- AI SDK with Anthropic/OpenAI generation and Gemini embeddings
+- Upstash Redis for production rate limiting
 
-- 🎧 **Podcasts** — Episode summaries and key insights
-- 📚 **Books** — Chapter breakdowns and actionable takeaways
-- 📰 **Articles** — Condensed versions of long-form content
-
-### Categories
-
-Health • Fitness • Wealth • Finance • Productivity • Mindset • Relationships • Science • Business • Philosophy • Technology • Lifestyle
-
-## Tech Stack
-
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript (strict mode)
-- **Styling**: Tailwind CSS
-- **Database**: Supabase (PostgreSQL)
-- **Validation**: Zod
-- **Drag & Drop**: dnd-kit
-- **Deployment**: Vercel
-
-## Getting Started
+## Local Development
 
 ```bash
-# Install dependencies
 npm install
-
-# Set up environment variables
 cp .env.example .env.local
-# Edit .env.local with your Supabase credentials
+```
 
-# Apply hosted database migrations (if needed)
-npx supabase db push
+Then point `.env.local` at either:
 
-# Run the development server
+- a local Supabase CLI stack, or
+- a hosted Supabase project
+
+The app expects at least:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_KEY=...
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+AI_PROVIDER=anthropic
+AI_MODEL=claude-sonnet-4-20250514
+ANTHROPIC_API_KEY=...
+GEMINI_API_KEY=...
+```
+
+Optional:
+
+```env
+OPENAI_API_KEY=...
+OPENAI_FALLBACK_MODEL=gpt-4o-mini
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+```
+
+Start the app:
+
+```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the app.
+If you are using a local Supabase stack, run the usual CLI flow first:
 
-## Project Structure
-
-```
-/app
-  /(public)       # Public pages (home, search, random)
-  /read/[id]      # Content reader page
-  /admin          # Protected admin panel
-  /admin-login    # Admin login page
-  /api            # API routes
-/components
-  /admin          # Admin UI components
-  /reader         # Reader view components
-  /ui             # Shared UI components
-/lib              # Utilities and Supabase clients
-/types            # TypeScript type definitions
-/supabase         # Database migrations and seed data
-/docs             # Architecture and design documentation
+```bash
+npx supabase start
+npx supabase db reset
 ```
 
-## Admin Panel
+If you are targeting a hosted project, apply migrations through the linked project instead.
 
-Access the admin panel at `/admin-login` with a Supabase account that has `profiles.role = 'admin'`.
+## Useful Scripts
 
-**Admin Features:**
-- Create/edit content items
-- Manage segments with drag-and-drop reordering
-- Add interactive checklists
-- Toggle featured status for hero carousel
-- Upload cover images
-- Filter by status and featured flag
+```bash
+npm run dev
+npm run lint
+npm test
+npm run build
+npm run embeddings:sync-segments
+```
+
+## Project Shape
+
+```text
+app/                  App Router routes, layouts, metadata, and API handlers
+components/           UI, reader, notes, focus, admin, and provider components
+hooks/                Auth, highlights, reader settings, reading progress, media-query helpers
+lib/                  Supabase clients, server helpers, AI support, rate limiting, domain utilities
+supabase/migrations/  Database schema history, RLS, RPCs, and embedding support
+tests/                Playwright coverage
+docs/                 Architecture, ops, API, design, and implementation notes
+```
 
 ## Documentation
 
-- [ARCHITECTURE.md](./docs/ARCHITECTURE.md) — System design and data model
-- [DESIGN.md](./docs/DESIGN.md) — UI/UX design system
-- [AGENT.md](./docs/AGENT.md) — Implementation roadmap
-- [API_SPECS.md](./docs/API_SPECS.md) — API contracts
-- [OPS.md](./docs/OPS.md) — Operational workflows
+- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- [docs/API_SPECS.md](./docs/API_SPECS.md)
+- [docs/OPS.md](./docs/OPS.md)
+- [docs/DESIGN.md](./docs/DESIGN.md)
+- [docs/AGENT.md](./docs/AGENT.md)
 
-## Recent UX Hardening
+## Design-System Note
 
-The latest production-focused pass tightened the public app shell, route data loading, and failure handling:
-
-- Public detail pages now use shared server loaders so `/preview/[id]` and `/read/[id]` derive metadata and page data from the same fetch path.
-- The landing page no longer blocks on a server-side auth lookup. Logged-in users are redirected client-side to `/browse` after hydration.
-- Focus mode now fetches the first batch immediately, then removes completed items once reading progress hydrates and backfills replacements as needed.
-- Search keeps trending content limited to empty-state views while category stats are loaded through a dedicated shared helper.
-- Content feedback only shows success after confirmed API writes and rolls back optimistic UI on failure.
-- Rate limiting now requires Upstash Redis in production. In-memory fallback remains development-only.
-- Low-risk read-only personalization endpoints such as recommendations, focus feed, and content batch now degrade gracefully if the shared rate-limit backend is temporarily unavailable, so browse personalization does not disappear.
+`design-system/flux/*` is reference material for assistants and design exploration. The shipped source of truth is the app itself, especially `app/globals.css`, `components/ui/*`, and `docs/DESIGN.md`.
 
 ## Verification
 
-Current verification baseline for these changes:
+Current baseline:
 
 ```bash
 npm test
