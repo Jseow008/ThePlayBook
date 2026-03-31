@@ -7,7 +7,9 @@ import { format } from "date-fns";
 import {
     BotMessageSquare,
     BookOpen,
+    Check,
     ChevronDown,
+    Edit3,
     ExternalLink,
     Filter,
     Highlighter,
@@ -20,12 +22,13 @@ import {
 import {
     useDeleteHighlight,
     useInfiniteHighlights,
+    useUpdateHighlight,
     type HighlightsPage,
     type HighlightWithContent,
 } from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
+import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 
@@ -55,6 +58,7 @@ const VIRTUALIZATION_MIN_ITEMS = 60;
 const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
 const VIRTUAL_OVERSCAN_PX = 720;
+const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
 
 function getValidTypeFilter(value: string | null): ItemTypeFilter {
     return value === "note" || value === "highlight" ? value : DEFAULT_SELECTED_TYPE;
@@ -154,6 +158,7 @@ interface HighlightListItemProps {
     deletePending: boolean;
     isDeleteArmed: boolean;
     onDelete: (id: string, itemType: "Note" | "Highlight") => void;
+    onEdit: (item: HighlightWithContent) => void;
     onHeightChange?: (height: number) => void;
     style?: CSSProperties;
 }
@@ -163,6 +168,7 @@ function HighlightListItem({
     deletePending,
     isDeleteArmed,
     onDelete,
+    onEdit,
     onHeightChange,
     style,
 }: HighlightListItemProps) {
@@ -311,7 +317,16 @@ function HighlightListItem({
                         </div>
                     )}
 
-                    <div className="flex shrink-0 items-start gap-1 pt-1">
+                    <div className="flex shrink-0 flex-col items-end gap-1 pt-1">
+                        <button
+                            type="button"
+                            onClick={() => onEdit(item)}
+                            className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-card/35 px-2.5 py-1.5 text-[0.72rem] font-medium text-foreground/85 transition-colors hover:bg-card/55 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            aria-label={noteText ? "Edit note" : "Add note"}
+                        >
+                            <Edit3 className="size-3.5" />
+                            <span>{noteText ? "Edit" : "Add"}</span>
+                        </button>
                         {href && (
                             <Link
                                 href={href}
@@ -343,6 +358,183 @@ function HighlightListItem({
     );
 }
 
+interface NoteEditorOverlayProps {
+    item: HighlightWithContent | null;
+    draftNote: string;
+    draftColor: HighlightColor;
+    canSave: boolean;
+    isSaving: boolean;
+    onClose: () => void;
+    onDraftNoteChange: (value: string) => void;
+    onDraftColorChange: (value: HighlightColor) => void;
+    onClearDraft: () => void;
+    onSave: () => void;
+}
+
+function NoteEditorOverlay({
+    item,
+    draftNote,
+    draftColor,
+    canSave,
+    isSaving,
+    onClose,
+    onDraftNoteChange,
+    onDraftColorChange,
+    onClearDraft,
+    onSave,
+}: NoteEditorOverlayProps) {
+    if (!item) {
+        return null;
+    }
+
+    const noteText = item.note_body?.trim() || "";
+    const isExistingNote = noteText.length > 0;
+    const colorClasses = HIGHLIGHT_COLOR_CLASSES[draftColor];
+    const segmentTitle = item.segment?.title?.trim() || null;
+
+    return (
+        <div className="fixed inset-0 z-[70]">
+            <button
+                type="button"
+                aria-label="Close note editor"
+                onClick={onClose}
+                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+
+            <div className="absolute inset-x-0 bottom-0 flex justify-center px-0 sm:inset-0 sm:items-center sm:px-4">
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="note-editor-title"
+                    className="relative flex w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-background/96 shadow-[0_-20px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:rounded-[1.75rem]"
+                >
+                    <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/14 sm:hidden" />
+
+                    <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 pb-4 pt-4 sm:px-6 sm:pt-5">
+                        <div className="min-w-0">
+                            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75">
+                                {isExistingNote ? "Edit note" : "Add note"}
+                            </p>
+                            <h2
+                                id="note-editor-title"
+                                className="mt-1 line-clamp-1 text-lg font-semibold text-foreground"
+                            >
+                                {item.content_item?.title || "Saved passage"}
+                            </h2>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                {segmentTitle || "Saved highlight"}
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-card/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            aria-label="Close note editor"
+                        >
+                            <X className="size-4" />
+                        </button>
+                    </div>
+
+                    <div className="flex max-h-[78vh] flex-col gap-5 overflow-y-auto px-5 py-5 sm:px-6">
+                        <div className={cn("rounded-2xl border bg-card/40 p-4", colorClasses.border)}>
+                            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/72">
+                                Highlight
+                            </p>
+                            <p className="mt-2 text-[0.96rem] leading-7 text-foreground/92 italic">
+                                &ldquo;{item.highlighted_text}&rdquo;
+                            </p>
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between gap-3">
+                                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                                    Highlight color
+                                </p>
+                                <span className="text-xs text-muted-foreground">
+                                    Saved highlight stays linked
+                                </span>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                {NOTE_EDITOR_COLORS.map((color) => (
+                                    <button
+                                        key={color}
+                                        type="button"
+                                        onClick={() => onDraftColorChange(color)}
+                                        className={cn(
+                                            "flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary",
+                                            draftColor === color
+                                                ? "border-white/20 bg-card/70 text-foreground"
+                                                : "border-white/10 bg-card/35 text-muted-foreground hover:bg-card/50 hover:text-foreground",
+                                        )}
+                                        aria-label={`Set highlight color to ${color}`}
+                                        aria-pressed={draftColor === color}
+                                    >
+                                        <span
+                                            aria-hidden="true"
+                                            className={cn("size-2.5 rounded-full", HIGHLIGHT_COLOR_CLASSES[color].swatch)}
+                                        />
+                                        <span className="capitalize">{color}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div>
+                            <div className="flex items-center justify-between gap-3">
+                                <label
+                                    htmlFor="note-editor-textarea"
+                                    className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80"
+                                >
+                                    Your note
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={onClearDraft}
+                                    disabled={draftNote.length === 0}
+                                    className="text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+
+                            <textarea
+                                id="note-editor-textarea"
+                                autoFocus
+                                value={draftNote}
+                                onChange={(event) => onDraftNoteChange(event.target.value)}
+                                placeholder="Capture what matters about this passage."
+                                className="mt-3 min-h-40 w-full rounded-2xl border border-white/10 bg-card/35 px-4 py-3 text-sm leading-6 text-foreground placeholder:text-muted-foreground/65 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 border-t border-white/8 bg-background/92 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-4">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/84 transition-colors hover:bg-card/50 hover:text-foreground"
+                        >
+                            Cancel
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={onSave}
+                            disabled={isSaving || !canSave}
+                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                            {isExistingNote ? "Save changes" : "Save note"}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainClientPageProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -359,12 +551,16 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     const [armedDeleteId, setArmedDeleteId] = useState<string | null>(null);
     const [itemHeights, setItemHeights] = useState<Record<number, number>>({});
     const [virtualRange, setVirtualRange] = useState({ start: 0, end: 0 });
+    const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
+    const [draftNote, setDraftNote] = useState("");
+    const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
     const listContainerRef = useRef<HTMLDivElement | null>(null);
     const scrollFrameRef = useRef<number | null>(null);
     const deleteArmTimeoutRef = useRef<number | null>(null);
     const previousSearchParamsRef = useRef<string | null>(null);
     const shouldRespectInitialAskOpenRef = useRef(initialAskOpen);
     const deleteHighlight = useDeleteHighlight();
+    const updateHighlight = useUpdateHighlight();
     const {
         data,
         fetchNextPage,
@@ -421,6 +617,40 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             }
         };
     }, [armedDeleteId]);
+
+    useEffect(() => {
+        if (!editingHighlight) {
+            return;
+        }
+
+        const previousBodyOverflow = document.body.style.overflow;
+        const previousHtmlOverflow = document.documentElement.style.overflow;
+        document.body.style.overflow = "hidden";
+        document.documentElement.style.overflow = "hidden";
+
+        return () => {
+            document.body.style.overflow = previousBodyOverflow;
+            document.documentElement.style.overflow = previousHtmlOverflow;
+        };
+    }, [editingHighlight]);
+
+    useEffect(() => {
+        if (!editingHighlight) {
+            return;
+        }
+
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape" && !updateHighlight.isPending) {
+                setEditingHighlight(null);
+            }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            document.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [editingHighlight, updateHighlight.isPending]);
 
     useEffect(() => {
         const currentQuery = searchParams.toString();
@@ -746,6 +976,16 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         return `/ask?${askParams.toString()}`;
     }, [notesChatScope, pathname, searchParams]);
 
+    const hasDraftChanges = useMemo(() => {
+        if (!editingHighlight) {
+            return false;
+        }
+
+        const originalNote = editingHighlight.note_body?.trim() || "";
+        const originalColor = normalizeHighlightColor(editingHighlight.color);
+        return draftNote.trim() !== originalNote || draftColor !== originalColor;
+    }, [draftColor, draftNote, editingHighlight]);
+
     const handleDelete = async (id: string) => {
         if (armedDeleteId !== id) {
             setArmedDeleteId(id);
@@ -758,6 +998,48 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             toast.success("Highlight deleted");
         } catch (error: any) {
             toast.error(error.message || "Failed to delete highlight");
+        }
+    };
+
+    const handleOpenEditor = (item: HighlightWithContent) => {
+        setEditingHighlight(item);
+        setDraftNote(item.note_body?.trim() || "");
+        setDraftColor(normalizeHighlightColor(item.color));
+    };
+
+    const handleCloseEditor = () => {
+        if (updateHighlight.isPending) {
+            return;
+        }
+
+        setEditingHighlight(null);
+    };
+
+    const handleSaveEditor = async () => {
+        if (!editingHighlight || !hasDraftChanges) {
+            return;
+        }
+
+        const trimmedNote = draftNote.trim();
+        const hadNote = Boolean(editingHighlight.note_body?.trim());
+
+        try {
+            await updateHighlight.mutateAsync({
+                id: editingHighlight.id,
+                note_body: trimmedNote === "" ? null : trimmedNote,
+                color: draftColor,
+            });
+
+            setEditingHighlight(null);
+
+            if (trimmedNote === "") {
+                toast.success(hadNote ? "Note removed" : "Highlight updated");
+                return;
+            }
+
+            toast.success(hadNote ? "Note updated" : "Note added");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to save note");
         }
     };
 
@@ -1192,15 +1474,16 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
 
                                                 return (
                                                     <HighlightListItem
-                                                        key={item.id}
-                                                        item={item}
-                                                        deletePending={deleteHighlight.isPending}
-                                                        isDeleteArmed={armedDeleteId === item.id}
-                                                        onDelete={(id) => {
-                                                            void handleDelete(id);
-                                                        }}
-                                                        onHeightChange={(height) => {
-                                                            setItemHeights((current) => (
+                                                key={item.id}
+                                                item={item}
+                                                deletePending={deleteHighlight.isPending}
+                                                isDeleteArmed={armedDeleteId === item.id}
+                                                onEdit={handleOpenEditor}
+                                                onDelete={(id) => {
+                                                    void handleDelete(id);
+                                                }}
+                                                onHeightChange={(height) => {
+                                                    setItemHeights((current) => (
                                                                 current[index] === height
                                                                     ? current
                                                                     : { ...current, [index]: height }
@@ -1221,6 +1504,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                                 item={item}
                                                 deletePending={deleteHighlight.isPending}
                                                 isDeleteArmed={armedDeleteId === item.id}
+                                                onEdit={handleOpenEditor}
                                                 onDelete={(id) => {
                                                     void handleDelete(id);
                                                 }}
@@ -1259,6 +1543,20 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                 </div>
             </main>
 
+            <NoteEditorOverlay
+                item={editingHighlight}
+                draftNote={draftNote}
+                draftColor={draftColor}
+                canSave={hasDraftChanges}
+                isSaving={updateHighlight.isPending}
+                onClose={handleCloseEditor}
+                onDraftNoteChange={setDraftNote}
+                onDraftColorChange={setDraftColor}
+                onClearDraft={() => setDraftNote("")}
+                onSave={() => {
+                    void handleSaveEditor();
+                }}
+            />
         </div>
     );
 }
