@@ -87,6 +87,15 @@ interface ContentFormProps {
     };
     isEditing?: boolean;
     seriesOptions?: AdminSeriesOption[];
+    aiReadiness?: {
+        status: "not_applicable" | "stale" | "ready";
+        stale_reasons: string[];
+        next_actions: string[];
+        segment_embeddings: {
+            missing_segments: number;
+            total_segments: number;
+        };
+    } | null;
 }
 
 const defaultQuickMode: QuickModeJson = {
@@ -237,7 +246,7 @@ function SortableSegmentItem({
     );
 }
 
-export function ContentForm({ initialData, isEditing = false, seriesOptions = [] }: ContentFormProps) {
+export function ContentForm({ initialData, isEditing = false, seriesOptions = [], aiReadiness = null }: ContentFormProps) {
     const router = useRouter();
 
     // Initialize form data with client_ids for segments and artifacts if missing
@@ -561,6 +570,19 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
 
     return (
         <div className="max-w-4xl mx-auto space-y-8">
+            {isEditing && aiReadiness && aiReadiness.status !== "not_applicable" && (
+                <div className={`rounded-xl border px-4 py-3 shadow-sm ${aiReadiness.status === "ready" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-800"}`}>
+                    <div className="text-sm font-semibold">
+                        {aiReadiness.status === "ready" ? "AI retrieval is ready for this item." : "AI retrieval needs a sync after the latest verified changes."}
+                    </div>
+                    <div className="mt-1 text-xs leading-5">
+                        {aiReadiness.status === "ready"
+                            ? `${aiReadiness.segment_embeddings.total_segments} published segments are covered for Ask My Library.`
+                            : `${aiReadiness.segment_embeddings.missing_segments} published segments still need embeddings. Next actions: ${aiReadiness.next_actions.join(", ")}.`}
+                    </div>
+                </div>
+            )}
+
             {/* Error Message */}
             {error && (
                 <div className="flex flex-col gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">

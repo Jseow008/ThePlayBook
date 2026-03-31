@@ -5,7 +5,10 @@ import {
     GET as getAdminContentDetail,
     PUT as updateAdminContent,
 } from "@/app/api/admin/content/[id]/route";
-import { POST as createAdminContent } from "@/app/api/admin/content/route";
+import {
+    GET as listAdminContent,
+    POST as createAdminContent,
+} from "@/app/api/admin/content/route";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/server/rate-limit";
@@ -158,15 +161,45 @@ describe("Admin content series support", () => {
         });
 
         (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            from: vi.fn(() => ({
-                select: vi.fn().mockReturnValue({
-                    eq: vi.fn().mockReturnValue({
-                        order: vi.fn().mockReturnValue({
-                            single,
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                order: vi.fn().mockReturnValue({
+                                    single,
+                                }),
+                            }),
                         }),
-                    }),
-                }),
-            })),
+                    };
+                }
+
+                if (table === "segment") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            is: vi.fn().mockReturnValue({
+                                in: vi.fn().mockResolvedValue({
+                                    data: [],
+                                    error: null,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment_embedding_gemini") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            in: vi.fn().mockResolvedValue({
+                                data: [],
+                                error: null,
+                            }),
+                        }),
+                    };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
         });
 
         const req = new NextRequest(new URL("http://localhost/api/admin/content/content-1"));
@@ -178,6 +211,171 @@ describe("Admin content series support", () => {
         expect(res.status).toBe(200);
         expect(json.data.series_id).toBe(seriesId);
         expect(json.data.series_order).toBe(2);
+    });
+
+    it("adds AI readiness to content list responses", async () => {
+        const contentRange = vi.fn().mockResolvedValue({
+            data: [
+                {
+                    id: "verified-ready",
+                    title: "Ready item",
+                    type: "book",
+                    author: "Matthew",
+                    category: "Christian",
+                    status: "verified",
+                    is_featured: false,
+                    embedding: "[1,2,3]",
+                    created_at: "2026-03-01T00:00:00Z",
+                    updated_at: "2026-03-01T00:00:00Z",
+                    deleted_at: null,
+                },
+                {
+                    id: "draft-item",
+                    title: "Draft item",
+                    type: "book",
+                    author: "Matthew",
+                    category: "Christian",
+                    status: "draft",
+                    is_featured: false,
+                    embedding: null,
+                    created_at: "2026-03-02T00:00:00Z",
+                    updated_at: "2026-03-02T00:00:00Z",
+                    deleted_at: null,
+                },
+            ],
+            error: null,
+            count: 2,
+        });
+        const listQuery = {
+            is: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnValue({
+                range: contentRange,
+            }),
+        };
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue(listQuery),
+                    };
+                }
+
+                if (table === "segment") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            is: vi.fn().mockReturnValue({
+                                in: vi.fn().mockResolvedValue({
+                                    data: [
+                                        { id: "segment-1", item_id: "verified-ready", markdown_body: "Ready segment" },
+                                    ],
+                                    error: null,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment_embedding_gemini") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            in: vi.fn().mockResolvedValue({
+                                data: [{ content_item_id: "verified-ready", segment_id: "segment-1" }],
+                                error: null,
+                            }),
+                        }),
+                    };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content"));
+        const res = await listAdminContent(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(json.data[0].ai_readiness.status).toBe("ready");
+        expect(json.data[0].ai_readiness.segment_embeddings.missing_segments).toBe(0);
+        expect(json.data[1].ai_readiness.status).toBe("not_applicable");
+        expect(json.data[1].ai_readiness.stale_reasons).toEqual(["CONTENT_NOT_VERIFIED"]);
+    });
+
+    it("adds AI readiness to content detail responses", async () => {
+        const single = vi.fn().mockResolvedValue({
+            data: {
+                id: "content-1",
+                title: "Matthew 5-7: Sermon on the Mount",
+                status: "verified",
+                embedding: null,
+                segments: [{ id: "segment-1", markdown_body: "Blessed are the poor in spirit." }],
+                artifacts: [],
+            },
+            error: null,
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                order: vi.fn().mockReturnValue({
+                                    single,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            is: vi.fn().mockReturnValue({
+                                in: vi.fn().mockResolvedValue({
+                                    data: [
+                                        { id: "segment-1", item_id: "content-1", markdown_body: "Blessed are the poor in spirit." },
+                                    ],
+                                    error: null,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment_embedding_gemini") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            in: vi.fn().mockResolvedValue({
+                                data: [],
+                                error: null,
+                            }),
+                        }),
+                    };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/content-1"));
+        const res = await getAdminContentDetail(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+        const json = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(json.data.ai_readiness.status).toBe("stale");
+        expect(json.data.ai_readiness.stale_reasons).toEqual([
+            "CONTENT_EMBEDDING_MISSING",
+            "SEGMENT_EMBEDDINGS_MISSING",
+        ]);
+        expect(json.data.ai_readiness.next_actions).toEqual([
+            "run_content_embedding_sync",
+            "run_segment_embedding_sync",
+        ]);
     });
 
     it("forwards series updates through the graph RPC and revalidates the series page", async () => {

@@ -43,12 +43,16 @@ OPENAI_FALLBACK_MODEL=gpt-4o-mini
 NEXT_PUBLIC_APP_URL=...
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
+ERROR_REPORTING_WEBHOOK_URL=...
+ERROR_REPORTING_BEARER_TOKEN=...
 ```
 
 Notes:
 
 - `NEXT_PUBLIC_SITE_URL` drives metadata, sitemap, robots, and default OG URLs
 - `NEXT_PUBLIC_APP_URL` is only used for API CORS header generation in `next.config.ts`
+- `ERROR_REPORTING_WEBHOOK_URL` is the production exception sink used by API failures and the root/app error boundaries
+- `ERROR_REPORTING_BEARER_TOKEN` is optional when your ingest endpoint expects bearer auth
 - OAuth client credentials are typically configured in Supabase/provider dashboards rather than read directly by this app
 
 ### 1.3 Supabase Migrations
@@ -93,6 +97,23 @@ Relevant config:
 - `tests/setup.ts`
 - `.github/workflows/ci.yml`
 
+### 2.1 Launch Smoke Checklist
+
+Use this checklist before a production push or after a preview deploy:
+
+- `GET /browse` loads content and the first card opens a preview
+- `GET /preview/[id]` renders title, CTA, and metadata
+- `GET /read/[id]` renders segments and reader controls
+- `/login` signs in and `/auth/callback` redirects back to the requested page
+- `/admin-login` reaches an admin session
+- Admin-only routes reject non-admins with `401` or `403`
+- Create a content item, upload a cover image, save, and publish
+- Refresh `/browse`, `/search`, `/preview/[id]`, and `/read/[id]` after publish
+- Run content embedding sync for new or edited verified content
+- Check Gemini segment coverage for verified items before using Ask My Library
+
+If any of the above fails, stop the launch and fix the underlying route or environment issue before retrying.
+
 ## 3. Admin Operations
 
 ### 3.1 Admin Access
@@ -126,10 +147,12 @@ Content-level embeddings:
 
 - endpoint: `POST /api/admin/embeddings/sync`
 - behavior: processes verified content items that still have `embedding IS NULL`
+- use when a verified item is newly published or its title, author, category, or quick mode changes
 
 Segment-level Gemini embeddings:
 
 - status endpoint: `GET /api/admin/embeddings/sync-segments`
+- response includes coverage summary plus the local sync and dry-run commands
 - local backfill command:
 
 ```bash
@@ -143,6 +166,13 @@ npm run embeddings:sync-segments -- --dry-run
 ```
 
 This is intentionally a local trusted-machine workflow now. `POST /api/admin/embeddings/sync-segments` returns `405`.
+
+Operator rule:
+
+- after any verified content publish or edit, run content embeddings sync first
+- then check `/api/admin/embeddings/sync-segments`
+- if the response shows missing verified segments, run the local backfill command from a trusted machine
+- do not treat Ask My Library as launch-ready until verified content coverage is clean
 
 ## 4. Deployment
 
@@ -177,7 +207,35 @@ Important distinction:
 - in production, most protected routes fail closed if Upstash is unavailable
 - low-risk browse/personalization endpoints use best-effort rate limiting instead
 
-### 4.3 Metadata and Web Surfaces
+### 4.3 Preflight Environment Validation
+
+Before a production deploy, verify:
+
+- `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set
+- `SUPABASE_SERVICE_KEY` is set
+- `NEXT_PUBLIC_SITE_URL` is a valid production URL
+- `AI_PROVIDER` and `AI_MODEL` match the intended generation setup
+- at least one of `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is present
+- `GEMINI_API_KEY` is present for retrieval and embedding sync
+- `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present in production
+
+Recommended validation steps:
+
+```bash
+npm run lint
+npm test
+npm run build
+```
+
+Then run the deployment health endpoint and confirm it reports `ok`:
+
+```bash
+curl https://<your-production-domain>/api/health
+```
+
+Then trigger one handled server error and one browser error in preview/staging and confirm both appear in your monitoring sink. Browser boundary errors post through `/api/monitor/exceptions`; API failures emit directly from the server helper.
+
+### 4.4 Metadata and Web Surfaces
 
 These routes/files are generated from runtime configuration:
 
@@ -228,3 +286,19 @@ Check:
 - `UPSTASH_REDIS_REST_TOKEN`
 
 If those are missing, production behavior is expected to be stricter than local development.
+
+### 5.6 Backup and Restore Drill
+
+Run one backup and one restore drill before launch:
+
+- confirm the database backup/export path you will actually use in production
+- restore that backup into a disposable environment
+- verify public browse, admin login, and one representative content item after restore
+- verify the restore does not break `profiles.role = 'admin'`, content visibility, or embedding coverage
+
+Record:
+
+- where the backup was taken from
+- where it was restored
+- who ran the drill
+- what failed, if anything

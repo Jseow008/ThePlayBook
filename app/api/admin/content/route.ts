@@ -12,6 +12,7 @@ import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
+import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
@@ -150,7 +151,7 @@ export async function GET(request: NextRequest) {
 
         let query = supabase
             .from("content_item")
-            .select("id, title, type, author, category, status, is_featured, created_at, updated_at, deleted_at", { count: "exact" });
+            .select("id, title, type, author, category, status, is_featured, embedding, created_at, updated_at, deleted_at", { count: "exact" });
 
         if (status === "deleted") {
             query = query.not("deleted_at", "is", null);
@@ -178,9 +179,22 @@ export async function GET(request: NextRequest) {
             throw error;
         }
 
+        const items = data || [];
+        const aiReadinessById = await getAdminAiReadinessMap(
+            supabase as any,
+            items.map((item) => ({
+                id: item.id,
+                status: item.status,
+                embedding: item.embedding,
+            }))
+        );
+
         return NextResponse.json({
             success: true,
-            data: data || [],
+            data: items.map((item) => ({
+                ...item,
+                ai_readiness: aiReadinessById[item.id],
+            })),
             pagination: {
                 total: count ?? 0,
                 limit,

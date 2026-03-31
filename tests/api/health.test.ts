@@ -26,6 +26,7 @@ describe("Health API", () => {
             GEMINI_API_KEY: "gemini-key",
             UPSTASH_REDIS_REST_URL: "https://upstash.example",
             UPSTASH_REDIS_REST_TOKEN: "upstash-token",
+            ERROR_REPORTING_WEBHOOK_URL: "https://monitoring.example/ingest",
         };
         mockLimit.mockResolvedValue({ error: null });
         (createPublicServerClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
@@ -52,6 +53,7 @@ describe("Health API", () => {
             ai_generation: "ready",
             ai_retrieval: "ready",
             rate_limiting: "ready",
+            error_reporting: "ready",
         });
         expect(json.issues).toEqual([]);
         expect(mockFrom).toHaveBeenCalledWith("content_item");
@@ -62,6 +64,7 @@ describe("Health API", () => {
         delete process.env.GEMINI_API_KEY;
         delete process.env.UPSTASH_REDIS_REST_URL;
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
+        delete process.env.ERROR_REPORTING_WEBHOOK_URL;
         mockLimit.mockResolvedValueOnce({ error: { message: "db-down" } });
 
         const response = await GET();
@@ -73,9 +76,11 @@ describe("Health API", () => {
         expect(json.readiness.supabase_admin).toBe("missing");
         expect(json.readiness.ai_retrieval).toBe("missing");
         expect(json.readiness.rate_limiting).toBe("missing");
+        expect(json.readiness.error_reporting).toBe("missing");
         expect(json.issues).toContain("Supabase admin client configuration is incomplete.");
         expect(json.issues).toContain("Ask My Library retrieval requires GEMINI_API_KEY.");
         expect(json.issues).toContain("Production rate limiting requires Upstash Redis configuration.");
+        expect(json.issues).toContain("Production exception monitoring requires ERROR_REPORTING_WEBHOOK_URL.");
         expect(json.issues).toContain("Database connectivity check failed.");
     });
 
