@@ -101,14 +101,14 @@ function isLocalProgressNewer(localData: ReadingProgressData | null, cloudTimest
     return new Date(localData.lastReadAt).getTime() > new Date(cloudTimestamp).getTime();
 }
 
-function useReadingProgressController() {
+function useReadingProgressController(initialUser?: User | null) {
     const [inProgressIds, setInProgressIds] = useState<string[]>([]);
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [myListIds, setMyListIds] = useState<string[]>([]);
     const [progressMap, setProgressMap] = useState<Record<string, ReadingProgressData>>({});
     const [isLoaded, setIsLoaded] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
-    const [storageScope, setStorageScope] = useState<StorageScope>(getStorageScope(null));
+    const [user, setUser] = useState<User | null>(initialUser ?? null);
+    const [storageScope, setStorageScope] = useState<StorageScope>(getStorageScope(initialUser?.id));
     const supabaseRef = useRef(createClient());
     const supabase = supabaseRef.current;
 
@@ -413,12 +413,18 @@ function useReadingProgressController() {
         let isMounted = true;
 
         const initialize = async () => {
-            const { user, error } = resolveAuthUserResult(await supabase.auth.getUser());
+            await hydrateForUser(initialUser ?? null);
+            if (!isMounted) return;
+
+            const { user: resolvedUser, error } = resolveAuthUserResult(await supabase.auth.getUser());
             if (!isMounted) return;
             if (error) {
                 console.error("Failed to resolve auth state for reading progress:", error);
             }
-            await hydrateForUser(user);
+
+            if (resolvedUser?.id !== (initialUser?.id ?? null)) {
+                await hydrateForUser(resolvedUser);
+            }
         };
 
         initialize();
@@ -437,7 +443,7 @@ function useReadingProgressController() {
             hydrateRunRef.current += 1;
             subscription.unsubscribe();
         };
-    }, [hydrateForUser, supabase]);
+    }, [hydrateForUser, initialUser, supabase]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -570,8 +576,14 @@ type ReadingProgressValue = ReturnType<typeof useReadingProgressController>;
 
 const ReadingProgressContext = createContext<ReadingProgressValue | undefined>(undefined);
 
-export function ReadingProgressProvider({ children }: { children: ReactNode }) {
-    const value = useReadingProgressController();
+export function ReadingProgressProvider({
+    children,
+    initialUser,
+}: {
+    children: ReactNode;
+    initialUser?: User | null;
+}) {
+    const value = useReadingProgressController(initialUser);
 
     return createElement(ReadingProgressContext.Provider, { value }, children);
 }
