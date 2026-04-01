@@ -967,82 +967,84 @@ export function FocusFeed() {
                 ) : !loading && cards.length === 0 ? (
                     <EmptyState error={error} />
                 ) : (
-                    <div
-                        ref={listRef}
-                        data-testid="focus-feed-list"
-                        className={`${FEED_LIST_VIEWPORT_CLASS} scrollbar-hide snap-y snap-mandatory overflow-y-auto overscroll-y-contain`}
-                    >
-                        <div className="space-y-3 pb-4 md:pb-2">
-                            {cards.map((card, index) => (
-                                <FocusCardView
-                                    key={card.id}
-                                    card={card}
-                                    cardIndex={index}
-                                    isDesktop={isDesktop}
-                                    isActive={index === activeCardIndex}
-                                    showDesktopScrollCue={isDesktopScrollCueVisible && index < cards.length - 1}
-                                    mobileCardTargetHeight={listViewportHeight}
-                                    onOpenTakeaways={openTakeawaysSheet}
-                                    onDismiss={(cardId) => {
-                                        dismissedIdsRef.current.add(cardId);
+                    <div className="relative">
+                        <div
+                            ref={listRef}
+                            data-testid="focus-feed-list"
+                            className={`${FEED_LIST_VIEWPORT_CLASS} scrollbar-hide snap-y snap-mandatory overflow-y-auto overscroll-y-contain`}
+                        >
+                            <div className="space-y-3 pb-4 md:pb-2">
+                                {cards.map((card, index) => (
+                                    <FocusCardView
+                                        key={card.id}
+                                        card={card}
+                                        cardIndex={index}
+                                        isDesktop={isDesktop}
+                                        isActive={index === activeCardIndex}
+                                        showDesktopScrollCue={isDesktopScrollCueVisible && index < cards.length - 1}
+                                        mobileCardTargetHeight={listViewportHeight}
+                                        onOpenTakeaways={openTakeawaysSheet}
+                                        onDismiss={(cardId) => {
+                                            dismissedIdsRef.current.add(cardId);
 
-                                        const currentIndex = items.findIndex((item) => item.id === cardId);
-                                        if (currentIndex === -1) {
-                                            return;
-                                        }
+                                            const currentIndex = items.findIndex((item) => item.id === cardId);
+                                            if (currentIndex === -1) {
+                                                return;
+                                            }
 
-                                        const nextItems = items.filter((item) => item.id !== cardId);
-                                        const shouldShiftActiveIndex = currentIndex < activeCardIndexRef.current;
-                                        const nextActiveIndex = nextItems.length === 0
-                                            ? 0
-                                            : Math.min(
-                                                Math.max(
-                                                    0,
-                                                    activeCardIndexRef.current - (shouldShiftActiveIndex ? 1 : 0)
-                                                ),
-                                                nextItems.length - 1
-                                            );
+                                            const nextItems = items.filter((item) => item.id !== cardId);
+                                            const shouldShiftActiveIndex = currentIndex < activeCardIndexRef.current;
+                                            const nextActiveIndex = nextItems.length === 0
+                                                ? 0
+                                                : Math.min(
+                                                    Math.max(
+                                                        0,
+                                                        activeCardIndexRef.current - (shouldShiftActiveIndex ? 1 : 0)
+                                                    ),
+                                                    nextItems.length - 1
+                                                );
 
-                                        activeCardIndexRef.current = nextActiveIndex;
-                                        setActiveCardIndex(nextActiveIndex);
-                                        setItems(nextItems);
-                                        writeFocusRestoreState({
-                                            items: nextItems,
-                                            activeCardIndex: nextActiveIndex,
-                                            hasMore,
-                                            seenIds: Array.from(seenIdsRef.current),
-                                            dismissedIds: Array.from(dismissedIdsRef.current),
-                                        });
-                                        toast.success("Removed from focus feed");
+                                            activeCardIndexRef.current = nextActiveIndex;
+                                            setActiveCardIndex(nextActiveIndex);
+                                            setItems(nextItems);
+                                            writeFocusRestoreState({
+                                                items: nextItems,
+                                                activeCardIndex: nextActiveIndex,
+                                                hasMore,
+                                                seenIds: Array.from(seenIdsRef.current),
+                                                dismissedIds: Array.from(dismissedIdsRef.current),
+                                            });
+                                            toast.success("Removed from focus feed");
 
-                                        if (hasMore && nextItems.length - nextActiveIndex <= 3) {
-                                            void fetchBatch();
-                                        }
-                                    }}
-                                />
-                            ))}
+                                            if (hasMore && nextItems.length - nextActiveIndex <= 3) {
+                                                void fetchBatch();
+                                            }
+                                        }}
+                                    />
+                                ))}
 
-                            {loading && cards.length > 0 && (
-                                <div className="flex min-h-20 items-center justify-center py-3 text-sm text-muted-foreground">
-                                    <Loader2 className="mr-2 size-4 animate-spin text-primary" />
-                                    Loading more
-                                </div>
-                            )}
+                                {loading && cards.length > 0 && (
+                                    <div className="flex min-h-20 items-center justify-center py-3 text-sm text-muted-foreground">
+                                        <Loader2 className="mr-2 size-4 animate-spin text-primary" />
+                                        Loading more
+                                    </div>
+                                )}
+                            </div>
                         </div>
+                        {!isDesktop && isMobileScrollHintVisible ? (
+                            <div className="pointer-events-none absolute inset-x-0 bottom-3 z-40 flex justify-center px-4">
+                                <div
+                                    data-testid="focus-navigation-cue"
+                                    className="focus-scroll-cue inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/88 px-3 py-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground shadow-sm backdrop-blur-md"
+                                >
+                                    <span>Swipe up for next</span>
+                                    <ChevronUp className="size-3.5" aria-hidden="true" />
+                                </div>
+                            </div>
+                        ) : null}
                     </div>
                 )}
             </div>
-            {!isDesktop && isMobileScrollHintVisible ? (
-                <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4">
-                    <div
-                        data-testid="focus-navigation-cue"
-                        className="focus-scroll-cue inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/88 px-3 py-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground shadow-sm backdrop-blur-md"
-                    >
-                        <span>Swipe up for next</span>
-                        <ChevronUp className="size-3.5" aria-hidden="true" />
-                    </div>
-                </div>
-            ) : null}
             {mounted && isTakeawaysSheetOpen && takeawaysSheetCard
                 ? createPortal(
                     <FocusTakeawaysSheet
