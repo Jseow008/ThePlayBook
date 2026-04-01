@@ -56,6 +56,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             throw error;
         }
 
+        if (!data) {
+            return apiError("NOT_FOUND", "Content not found", 404, requestId);
+        }
+
         return NextResponse.json({
             success: true,
             data: {
@@ -105,6 +109,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             throw error;
         }
 
+        if (!contentItem) {
+            return apiError("NOT_FOUND", "Content not found", 404, requestId);
+        }
+
         if (contentItem.status !== "verified") {
             return apiError("VALIDATION_ERROR", "Narration can only be generated for verified content.", 400, requestId);
         }
@@ -139,6 +147,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
         if (queueError) {
             throw queueError;
+        }
+
+        if (!queuedItem) {
+            return apiError("INTERNAL_ERROR", "Failed to queue AI narration", 500, requestId);
         }
 
         return NextResponse.json({
