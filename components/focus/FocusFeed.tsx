@@ -12,7 +12,7 @@ import {
     useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Bookmark, Info, Loader2, MoreHorizontal, X } from "lucide-react";
+import { BookOpen, Bookmark, ChevronDown, ChevronUp, Info, Loader2, MoreHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -37,7 +37,10 @@ const WHEEL_TRIGGER = 40;
 const TOUCH_TRIGGER = 40;
 const GESTURE_UNLOCK_TIMEOUT_MS = 200;
 const WHEEL_QUIET_PERIOD_MS = 180;
+const DESKTOP_SCROLL_CUE_DELAY_MS = 5000;
+const MOBILE_SCROLL_HINT_DELAY_MS = 2400;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
+const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 const FocusItemIdSchema = z.string().uuid();
 const MOBILE_MIN_VISIBLE_TAKEAWAYS = 1;
 const MOBILE_MAX_VISIBLE_TAKEAWAYS = 3;
@@ -147,6 +150,22 @@ function writeFocusRestoreState(snapshot: FocusRestoreState) {
     );
 }
 
+function readMobileScrollHintDismissed() {
+    if (typeof window === "undefined") {
+        return false;
+    }
+
+    return window.sessionStorage.getItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY) === "true";
+}
+
+function writeMobileScrollHintDismissed() {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    window.sessionStorage.setItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY, "true");
+}
+
 export function FocusFeed() {
     const { completedIds, isLoaded } = useReadingProgress();
     const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -162,6 +181,8 @@ export function FocusFeed() {
     const [takeawaysSheetCard, setTakeawaysSheetCard] = useState<FocusCard | null>(null);
     const [takeawaysSheetPhase, setTakeawaysSheetPhase] = useState<TakeawaysSheetPhase>("closed");
     const [sheetDragOffset, setSheetDragOffset] = useState(0);
+    const [isDesktopScrollCueVisible, setIsDesktopScrollCueVisible] = useState(false);
+    const [isMobileScrollHintVisible, setIsMobileScrollHintVisible] = useState(false);
     const listRef = useRef<HTMLDivElement | null>(null);
     const seenIdsRef = useRef<Set<string>>(new Set());
     const dismissedIdsRef = useRef<Set<string>>(new Set());
@@ -184,6 +205,11 @@ export function FocusFeed() {
     const takeawaysSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
     const takeawaysSheetOpenerRef = useRef<HTMLElement | null>(null);
     const pendingRestoreCardIndexRef = useRef<number | null>(null);
+    const desktopScrollCueTimeoutRef = useRef<number | null>(null);
+    const mobileScrollHintShowTimeoutRef = useRef<number | null>(null);
+    const hasDismissedMobileScrollHintRef = useRef(false);
+    const hasScheduledMobileScrollHintRef = useRef(false);
+    const mobileScrollHintAnchorIndexRef = useRef<number | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
     const isTakeawaysSheetOpen = !isDesktop && takeawaysSheetCard !== null;
@@ -204,6 +230,64 @@ export function FocusFeed() {
             wheelQuietTimeoutRef.current = null;
         }
     }, []);
+
+    const clearDesktopScrollCueTimeout = useCallback(() => {
+        if (desktopScrollCueTimeoutRef.current !== null) {
+            window.clearTimeout(desktopScrollCueTimeoutRef.current);
+            desktopScrollCueTimeoutRef.current = null;
+        }
+    }, []);
+
+    const clearMobileScrollHintTimeouts = useCallback(() => {
+        if (mobileScrollHintShowTimeoutRef.current !== null) {
+            window.clearTimeout(mobileScrollHintShowTimeoutRef.current);
+            mobileScrollHintShowTimeoutRef.current = null;
+        }
+    }, []);
+
+    const dismissMobileScrollHint = useCallback(() => {
+        clearMobileScrollHintTimeouts();
+        setIsMobileScrollHintVisible(false);
+        mobileScrollHintAnchorIndexRef.current = null;
+        hasDismissedMobileScrollHintRef.current = true;
+        writeMobileScrollHintDismissed();
+    }, [clearMobileScrollHintTimeouts]);
+
+    const resetDesktopScrollCueTimer = useCallback(() => {
+        clearDesktopScrollCueTimeout();
+        setIsDesktopScrollCueVisible(false);
+
+        if (!isDesktop || activeCardIndexRef.current >= cards.length - 1) {
+            return;
+        }
+
+        desktopScrollCueTimeoutRef.current = window.setTimeout(() => {
+            setIsDesktopScrollCueVisible(true);
+            desktopScrollCueTimeoutRef.current = null;
+        }, DESKTOP_SCROLL_CUE_DELAY_MS);
+    }, [cards.length, clearDesktopScrollCueTimeout, isDesktop]);
+
+    const scheduleMobileScrollHint = useCallback(() => {
+        clearMobileScrollHintTimeouts();
+        setIsMobileScrollHintVisible(false);
+
+        if (
+            isDesktop
+            || hasDismissedMobileScrollHintRef.current
+            || hasScheduledMobileScrollHintRef.current
+            || cards.length <= 1
+        ) {
+            return;
+        }
+
+        hasScheduledMobileScrollHintRef.current = true;
+
+        mobileScrollHintShowTimeoutRef.current = window.setTimeout(() => {
+            mobileScrollHintAnchorIndexRef.current = Math.min(activeCardIndexRef.current, cards.length - 1);
+            setIsMobileScrollHintVisible(true);
+            mobileScrollHintShowTimeoutRef.current = null;
+        }, MOBILE_SCROLL_HINT_DELAY_MS);
+    }, [cards.length, clearMobileScrollHintTimeouts, isDesktop]);
 
     const refreshWheelQuietPeriod = useCallback(() => {
         isWheelMomentumLockedRef.current = true;
@@ -571,12 +655,18 @@ export function FocusFeed() {
     }, [activeCardIndex]);
 
     useEffect(() => {
+        hasDismissedMobileScrollHintRef.current = readMobileScrollHintDismissed();
+    }, []);
+
+    useEffect(() => {
         const list = listRef.current;
         if (!list || cards.length === 0) {
             return;
         }
 
         const handleWheel = (event: WheelEvent) => {
+            resetDesktopScrollCueTimer();
+
             if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
                 return;
             }
@@ -606,6 +696,8 @@ export function FocusFeed() {
         };
 
         const handleTouchStart = (event: TouchEvent) => {
+            resetDesktopScrollCueTimer();
+
             if (event.touches.length !== 1) {
                 touchStartRef.current = null;
                 return;
@@ -638,7 +730,9 @@ export function FocusFeed() {
             }
 
             touchStartRef.current = null;
-            moveByDirection(deltaY < 0 ? 1 : -1);
+            if (moveByDirection(deltaY < 0 ? 1 : -1) && !isDesktop) {
+                dismissMobileScrollHint();
+            }
         };
 
         const resetTouchTracking = () => {
@@ -658,15 +752,81 @@ export function FocusFeed() {
             list.removeEventListener("touchend", resetTouchTracking);
             list.removeEventListener("touchcancel", resetTouchTracking);
         };
-    }, [cards.length, moveByDirection, refreshWheelQuietPeriod]);
+    }, [cards.length, dismissMobileScrollHint, isDesktop, moveByDirection, refreshWheelQuietPeriod, resetDesktopScrollCueTimer]);
+
+    useEffect(() => {
+        resetDesktopScrollCueTimer();
+
+        return () => {
+            clearDesktopScrollCueTimeout();
+        };
+    }, [activeCardIndex, cards.length, clearDesktopScrollCueTimeout, isDesktop, resetDesktopScrollCueTimer]);
+
+    useEffect(() => {
+        if (isDesktop) {
+            clearMobileScrollHintTimeouts();
+            setIsMobileScrollHintVisible(false);
+            mobileScrollHintAnchorIndexRef.current = null;
+            hasScheduledMobileScrollHintRef.current = false;
+            return;
+        }
+
+        if (
+            isMobileScrollHintVisible
+            && mobileScrollHintAnchorIndexRef.current !== null
+            && activeCardIndex !== mobileScrollHintAnchorIndexRef.current
+        ) {
+            dismissMobileScrollHint();
+            return;
+        }
+
+        if (isTakeawaysSheetOpen) {
+            clearMobileScrollHintTimeouts();
+            setIsMobileScrollHintVisible(false);
+            mobileScrollHintAnchorIndexRef.current = null;
+            if (!hasDismissedMobileScrollHintRef.current) {
+                hasScheduledMobileScrollHintRef.current = false;
+            }
+            return;
+        }
+
+        if (
+            mounted
+            && hasInitialized
+            && cards.length > 1
+            && !hasDismissedMobileScrollHintRef.current
+            && !hasScheduledMobileScrollHintRef.current
+        ) {
+            scheduleMobileScrollHint();
+        }
+    }, [
+        activeCardIndex,
+        cards.length,
+        clearMobileScrollHintTimeouts,
+        dismissMobileScrollHint,
+        hasInitialized,
+        isDesktop,
+        isMobileScrollHintVisible,
+        isTakeawaysSheetOpen,
+        mounted,
+        scheduleMobileScrollHint,
+    ]);
 
     useEffect(() => {
         return () => {
             unlockGestures();
             clearWheelQuietTimeout();
+            clearDesktopScrollCueTimeout();
+            clearMobileScrollHintTimeouts();
             clearSheetAnimationTimeouts();
         };
-    }, [clearSheetAnimationTimeouts, clearWheelQuietTimeout, unlockGestures]);
+    }, [
+        clearDesktopScrollCueTimeout,
+        clearMobileScrollHintTimeouts,
+        clearSheetAnimationTimeouts,
+        clearWheelQuietTimeout,
+        unlockGestures,
+    ]);
 
     useEffect(() => {
         if (!isDesktop || takeawaysSheetCard === null) {
@@ -819,6 +979,8 @@ export function FocusFeed() {
                                     card={card}
                                     cardIndex={index}
                                     isDesktop={isDesktop}
+                                    isActive={index === activeCardIndex}
+                                    showDesktopScrollCue={isDesktopScrollCueVisible && index < cards.length - 1}
                                     mobileCardTargetHeight={listViewportHeight}
                                     onOpenTakeaways={openTakeawaysSheet}
                                     onDismiss={(cardId) => {
@@ -870,6 +1032,17 @@ export function FocusFeed() {
                     </div>
                 )}
             </div>
+            {!isDesktop && isMobileScrollHintVisible ? (
+                <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4">
+                    <div
+                        data-testid="focus-navigation-cue"
+                        className="focus-scroll-cue inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/88 px-3 py-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground shadow-sm backdrop-blur-md"
+                    >
+                        <span>Swipe up for next</span>
+                        <ChevronUp className="size-3.5" aria-hidden="true" />
+                    </div>
+                </div>
+            ) : null}
             {mounted && isTakeawaysSheetOpen && takeawaysSheetCard
                 ? createPortal(
                     <FocusTakeawaysSheet
@@ -921,6 +1094,8 @@ function FocusCardView({
     card,
     cardIndex,
     isDesktop,
+    isActive,
+    showDesktopScrollCue,
     mobileCardTargetHeight,
     onOpenTakeaways,
     onDismiss,
@@ -928,6 +1103,8 @@ function FocusCardView({
     card: FocusCard;
     cardIndex: number;
     isDesktop: boolean;
+    isActive: boolean;
+    showDesktopScrollCue: boolean;
     mobileCardTargetHeight: number | null;
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
     onDismiss: (cardId: string) => void;
@@ -1068,7 +1245,7 @@ function FocusCardView({
             data-focus-card-index={cardIndex}
             data-testid="focus-feed-card"
             ref={cardRef}
-            className={`${FEED_CARD_HEIGHT_CLASS} snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
+            className={`${FEED_CARD_HEIGHT_CLASS} relative snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div ref={cardContentRef} className="flex h-full flex-col">
                     <div className={isDesktop ? "space-y-3" : "space-y-2"}>
@@ -1238,6 +1415,17 @@ function FocusCardView({
                     </div>
                 </div>
             </div>
+            {isDesktop && isActive && showDesktopScrollCue ? (
+                <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center">
+                    <div
+                        data-testid="focus-navigation-cue"
+                        className="focus-scroll-cue inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-[11px] font-medium tracking-[0.12em] text-muted-foreground shadow-sm backdrop-blur-md"
+                    >
+                        <span>Scroll for next</span>
+                        <ChevronDown className="size-3.5" aria-hidden="true" />
+                    </div>
+                </div>
+            ) : null}
         </article>
     );
 }

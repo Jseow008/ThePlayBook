@@ -464,6 +464,29 @@ mark[data-highlight-spotlight="true"] {
   background: transparent !important;
 }
 
+.focus-scroll-cue {
+  animation: focus-scroll-cue-float 1.8s ease-in-out infinite;
+}
+
+@keyframes focus-scroll-cue-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: translateY(3px);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-scroll-cue {
+    animation: none;
+  }
+}
+
 /* Focus ring for accessibility */
 .focus-ring {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;

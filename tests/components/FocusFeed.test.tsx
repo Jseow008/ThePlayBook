@@ -4,6 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { FocusFeed } from "@/components/focus/FocusFeed";
 
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
+const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 
 const { readingProgressState, mediaQueryState, toggleMyListMock, toastSuccessMock } = vi.hoisted(() => ({
     readingProgressState: {
@@ -744,6 +745,217 @@ describe("FocusFeed", () => {
         expect(screen.getByRole("menuitem", {
             name: "Not interested in Essentialism",
         })).toBeInTheDocument();
+    });
+
+    it("shows the mobile navigation hint on the first visible restored card", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: false,
+                seenIds: focusItems.map((item) => item.id),
+                dismissedIds: [],
+            })
+        );
+
+        vi.useFakeTimers();
+
+        try {
+            render(<FocusFeed />);
+
+            await act(async () => {});
+
+            expect(screen.getByText("Deep Work")).toBeInTheDocument();
+
+            expect(screen.queryByTestId("focus-navigation-cue")).not.toBeInTheDocument();
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(2400);
+            });
+
+            expect(screen.getByTestId("focus-navigation-cue")).toHaveTextContent("Swipe up for next");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("dismisses the mobile navigation hint after the user advances past the anchored card", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: false,
+                seenIds: focusItems.map((item) => item.id),
+                dismissedIds: [],
+            })
+        );
+
+        vi.useFakeTimers();
+
+        try {
+            render(<FocusFeed />);
+
+            await act(async () => {});
+
+            const list = screen.getByTestId("focus-feed-list");
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(2400);
+            });
+
+            expect(screen.getByTestId("focus-navigation-cue")).toHaveTextContent("Swipe up for next");
+
+            await act(async () => {
+                fireEvent.touchStart(list, {
+                    touches: [{ clientX: 32, clientY: 260 }],
+                });
+                fireEvent.touchMove(list, {
+                    touches: [{ clientX: 36, clientY: 180 }],
+                });
+            });
+
+            expect(screen.queryByTestId("focus-navigation-cue")).not.toBeInTheDocument();
+            expect(window.sessionStorage.getItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY)).toBe("true");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("dismisses the mobile navigation hint when the visible card changes after the hint is shown", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: false,
+                seenIds: focusItems.map((item) => item.id),
+                dismissedIds: [],
+            })
+        );
+
+        vi.useFakeTimers();
+
+        try {
+            render(<FocusFeed />);
+
+            await act(async () => {});
+
+            const cards = screen.getAllByTestId("focus-feed-card");
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(2400);
+            });
+
+            expect(screen.getByTestId("focus-navigation-cue")).toHaveTextContent("Swipe up for next");
+            expect(observerInstances.length).toBeGreaterThan(0);
+
+            await act(async () => {
+                observerInstances.at(-1)!.trigger(cards[2]!);
+            });
+
+            expect(screen.queryByTestId("focus-navigation-cue")).not.toBeInTheDocument();
+            expect(window.sessionStorage.getItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY)).toBe("true");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("dismisses the mobile navigation hint when the active card changes after the hint is shown", async () => {
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: false,
+                seenIds: focusItems.map((item) => item.id),
+                dismissedIds: [],
+            })
+        );
+
+        vi.useFakeTimers();
+
+        try {
+            render(<FocusFeed />);
+
+            await act(async () => {});
+
+            const cards = screen.getAllByTestId("focus-feed-card");
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(2400);
+            });
+
+            expect(screen.getByTestId("focus-navigation-cue")).toHaveTextContent("Swipe up for next");
+            expect(observerInstances.length).toBeGreaterThan(0);
+
+            await act(async () => {
+                observerInstances.at(-1)!.trigger(cards[2]!);
+            });
+
+            expect(screen.queryByTestId("focus-navigation-cue")).not.toBeInTheDocument();
+            expect(window.sessionStorage.getItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY)).toBe("true");
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("does not reshow the mobile navigation hint after it was dismissed in the current session", async () => {
+        window.sessionStorage.setItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY, "true");
+
+        vi.useFakeTimers();
+
+        try {
+            render(<FocusFeed />);
+
+            await act(async () => {});
+
+            expect(screen.getByText("Essentialism")).toBeInTheDocument();
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(2400);
+            });
+
+            expect(screen.queryByTestId("focus-navigation-cue")).not.toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("reschedules the mobile navigation hint after the takeaways sheet temporarily interrupts it", async () => {
+        mediaQueryState.value = {
+            isDesktop: false,
+            prefersReducedMotion: true,
+        };
+
+        vi.useFakeTimers();
+
+        try {
+            render(<FocusFeed />);
+
+            await act(async () => {});
+
+            fireEvent.click(
+                screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+            );
+
+            expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
+
+            await act(async () => {
+                fireEvent.keyDown(document, { key: "Escape" });
+            });
+
+            expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(2400);
+            });
+
+            expect(screen.getByTestId("focus-navigation-cue")).toHaveTextContent("Swipe up for next");
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it("saves a mobile focus item to My List", async () => {
