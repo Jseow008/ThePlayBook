@@ -197,7 +197,7 @@ Delete request:
 | `/api/content/batch` | `POST` | `public` | Fetch multiple verified content items by ID. |
 | `/api/focus` | `GET` | `public` | Return randomized quick-mode-ready focus feed items. |
 | `/api/recommendations` | `POST` | `public` | RPC-backed recommendations based on completed IDs. |
-| `/api/health` | `GET` | `public` | Basic Supabase reachability health check. |
+| `/api/health` | `GET` | `public` | Deployment readiness checker for env config and database reachability. |
 | `/api/monitor/image-fallback` | `POST` | `public` | Diagnostic logging for image fallback events. |
 
 ### 4.1 `/api/content/batch`
@@ -235,8 +235,8 @@ All admin routes are protected by session + role checks.
 
 | Route | Method | Purpose |
 | --- | --- | --- |
-| `/api/admin/content` | `GET`, `POST` | List or create content items |
-| `/api/admin/content/[id]` | `GET`, `PUT`, `DELETE` | Fetch, update, or soft-delete content |
+| `/api/admin/content` | `GET`, `POST` | List or create content items. Verified rows include `ai_readiness`. |
+| `/api/admin/content/[id]` | `GET`, `PUT`, `DELETE` | Fetch, update, or soft-delete content. Verified rows include `ai_readiness`. |
 | `/api/admin/content/[id]/featured` | `PATCH` | Toggle featured status |
 | `/api/admin/sections` | `GET`, `POST` | List or create homepage sections |
 | `/api/admin/sections/[id]` | `PUT`, `DELETE` | Update or delete a homepage section |
@@ -245,8 +245,9 @@ All admin routes are protected by session + role checks.
 | `/api/admin/upload` | `POST` | Upload cover/media images to Supabase Storage |
 | `/api/admin/upload-audio` | `POST` | Upload audio files to Supabase Storage |
 | `/api/admin/logout` | `POST` | Sign out the active admin session |
-| `/api/admin/embeddings/sync` | `POST` | Backfill content-level embeddings |
-| `/api/admin/embeddings/sync-segments` | `GET` | Return Gemini segment coverage plus local commands |
+| `/api/admin/launch-readiness` | `GET` | Admin-only launch validation summary for runtime, storage, and AI readiness |
+| `/api/admin/embeddings/sync` | `GET`, `POST` | `GET` returns content embedding readiness plus the sync workflow. `POST` backfills content-level embeddings. |
+| `/api/admin/embeddings/sync-segments` | `GET` | Return segment coverage, AI readiness, and local sync commands. |
 | `/api/admin/embeddings/sync-segments` | `POST` | Disabled, responds `405` with local-command guidance |
 
 ### 5.1 Content Create / Update
@@ -299,6 +300,7 @@ Implementation notes:
 - checklist is the only artifact type currently accepted by the API
 - create and update both validate series assignment consistency
 - update uses the `admin_update_content_graph` RPC for the content/segment/artifact graph
+- admin content list/detail responses include `ai_readiness` for verified items so the dashboard can show publish vs. AI-stale state
 
 ### 5.2 Homepage Sections
 
@@ -350,3 +352,12 @@ Delete safeguard:
 - multipart form-data with `file`
 - accepts `mp3`, `wav`, `m4a`
 - writes to the `audio` bucket
+
+### 5.5 Launch Readiness Surfaces
+
+The admin UI consumes the readiness endpoints above in:
+
+- `/admin`
+- `/admin/content/[id]/edit`
+
+Those screens render the AI readiness badge and the content/segment sync actions. Treat them as the operator panel for launch validation.

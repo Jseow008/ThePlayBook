@@ -5,10 +5,12 @@ import type { HighlightWithContent } from "@/hooks/useHighlights";
 
 const {
     deleteHighlightMock,
+    updateHighlightMock,
     toastSuccessMock,
     toastErrorMock,
 } = vi.hoisted(() => ({
     deleteHighlightMock: vi.fn(),
+    updateHighlightMock: vi.fn(),
     toastSuccessMock: vi.fn(),
     toastErrorMock: vi.fn(),
 }));
@@ -28,6 +30,16 @@ vi.mock("@/hooks/useHighlights", () => ({
     useDeleteHighlight: () => ({
         mutateAsync: deleteHighlightMock,
         isPending: false,
+    }),
+    useUpdateHighlight: () => ({
+        mutateAsync: updateHighlightMock,
+        isPending: false,
+    }),
+}));
+
+vi.mock("@/hooks/useReaderSettings", () => ({
+    useReaderSettings: () => ({
+        readerTheme: "light",
     }),
 }));
 

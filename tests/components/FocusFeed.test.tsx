@@ -205,7 +205,7 @@ describe("FocusFeed", () => {
         vi.stubGlobal("fetch", fetchMock);
     });
 
-    it("loads focus items immediately before reading progress hydration and shows two mobile takeaways", async () => {
+    it("loads focus items immediately before reading progress hydration and shows the current mobile takeaway count", async () => {
         readingProgressState.value = {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             isLoaded: false,
@@ -227,12 +227,12 @@ describe("FocusFeed", () => {
 
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
         expect(within(firstCard).queryByText("Hook")).not.toBeInTheDocument();
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)")).toBeInTheDocument();
-        expect(within(secondCard).getByText("Key Takeaways (2 of 3)")).toBeInTheDocument();
+        expect(within(firstCard).getByText("Key Takeaways (1 of 8)")).toBeInTheDocument();
+        expect(within(secondCard).getByText("Key Takeaways (1 of 3)")).toBeInTheDocument();
         expect(screen.queryByText("What stands out")).not.toBeInTheDocument();
         expect(screen.getByText("Do less, but better.")).toBeInTheDocument();
         expect(screen.queryByText("Eliminate the trivial to make room for the essential.")).not.toBeInTheDocument();
-        expect(screen.getByText("Protect white space")).toBeInTheDocument();
+        expect(screen.queryByText("Protect white space")).not.toBeInTheDocument();
         expect(screen.queryByText("Trade busyness for clarity")).not.toBeInTheDocument();
         expect(screen.queryByText("Audit every commitment")).not.toBeInTheDocument();
         expect(screen.queryByText("Reduce shallow obligations")).not.toBeInTheDocument();
@@ -256,7 +256,7 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").closest("section")).toHaveClass("space-y-2");
+        expect(within(firstCard).getByText("Key Takeaways (1 of 8)").closest("section")).toHaveClass("space-y-2");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-3");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-3");
         expect(firstCard).toHaveClass("min-h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))]");
@@ -735,8 +735,8 @@ describe("FocusFeed", () => {
         expect(button).toHaveClass("touch-manipulation");
         expect(button.parentElement).toHaveClass("justify-start");
         expect(button.parentElement).toHaveClass("pt-1.5");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("grid");
-        expect(within(firstCard).getByText("Key Takeaways (2 of 8)").nextElementSibling).toHaveClass("gap-2");
+        expect(within(firstCard).getByText("Key Takeaways (1 of 8)").nextElementSibling).toHaveClass("grid");
+        expect(within(firstCard).getByText("Key Takeaways (1 of 8)").nextElementSibling).toHaveClass("gap-2");
 
         fireEvent.click(moreActionsButton);
 

@@ -75,12 +75,22 @@ Rule: keep schema changes in `supabase/migrations/`. Do not rely on dashboard-on
 
 ## 2. Testing and Verification
 
+Use the launch-validation sequence below before a production push or after a preview deploy:
+
+1. Validate production env values against `.env.example`.
+2. Run `npm run lint`, `npm test`, and `npm run build`.
+3. Check `GET /api/health` and confirm the response is `ok`.
+4. Open `/admin` and confirm the launch-readiness panel plus the AI readiness badges and sync actions render.
+5. Verify content and segment embedding coverage before treating Ask My Library as launch-ready.
+
 Primary project scripts:
 
 ```bash
 npm run lint
 npm test
 npm run build
+npm run validate:launch-env
+npm run check:deployment-health -- --url https://<your-production-domain>
 ```
 
 CI runs:
@@ -99,7 +109,7 @@ Relevant config:
 
 ### 2.1 Launch Smoke Checklist
 
-Use this checklist before a production push or after a preview deploy:
+Use this checklist after the validation sequence above:
 
 - `GET /browse` loads content and the first card opens a preview
 - `GET /preview/[id]` renders title, CTA, and metadata
@@ -141,18 +151,19 @@ Admin tools currently cover:
 - audio uploads to the `audio` bucket
 - insights
 
-### 3.3 Embeddings
+### 3.3 Launch Readiness and Embeddings
 
 Content-level embeddings:
 
 - endpoint: `POST /api/admin/embeddings/sync`
+- readiness view: `GET /api/admin/embeddings/sync`
 - behavior: processes verified content items that still have `embedding IS NULL`
 - use when a verified item is newly published or its title, author, category, or quick mode changes
 
 Segment-level Gemini embeddings:
 
 - status endpoint: `GET /api/admin/embeddings/sync-segments`
-- response includes coverage summary plus the local sync and dry-run commands
+- response includes coverage summary, AI readiness, and the local sync and dry-run commands
 - local backfill command:
 
 ```bash
@@ -173,6 +184,7 @@ Operator rule:
 - then check `/api/admin/embeddings/sync-segments`
 - if the response shows missing verified segments, run the local backfill command from a trusted machine
 - do not treat Ask My Library as launch-ready until verified content coverage is clean
+- the admin dashboard shows the same readiness state in `/admin` and `/admin/content/[id]/edit`
 
 ## 4. Deployment
 
@@ -222,16 +234,28 @@ Before a production deploy, verify:
 Recommended validation steps:
 
 ```bash
+npm run validate:launch-env
 npm run lint
 npm test
 npm run build
+npm run check:deployment-health -- --url https://<your-production-domain>
 ```
 
-Then run the deployment health endpoint and confirm it reports `ok`:
+If you want to validate a file instead of the current process environment, make the source explicit:
+
+```bash
+npm run validate:launch-env -- --env-file .env.local
+```
+
+Then confirm `/api/health` reports `ok` and `/api/admin/launch-readiness` is clean in the admin panel:
 
 ```bash
 curl https://<your-production-domain>/api/health
 ```
+
+The launch-readiness endpoint is admin-only. Use `/admin` as the operator surface for that check.
+
+If you wrap these checks in automation, keep the same order: env check, lint, test, build, health, admin readiness.
 
 Then trigger one handled server error and one browser error in preview/staging and confirm both appear in your monitoring sink. Browser boundary errors post through `/api/monitor/exceptions`; API failures emit directly from the server helper.
 

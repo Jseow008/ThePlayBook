@@ -62,12 +62,12 @@ describe("MobileHeader", () => {
         expect(container.firstChild).toHaveClass("translate-y-0");
     });
 
-    it("returns null on immersive read routes", () => {
+    it("keeps rendering on read routes", () => {
         pathnameState.value = "/read/test-item-1";
 
         const { container } = render(<MobileHeader />);
 
-        expect(container.firstChild).toBeNull();
-        expect(screen.queryByTestId("user-nav")).not.toBeInTheDocument();
+        expect(container.firstChild).not.toBeNull();
+        expect(screen.getByTestId("user-nav")).toBeInTheDocument();
     });
 });

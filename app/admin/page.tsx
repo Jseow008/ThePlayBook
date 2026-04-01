@@ -15,6 +15,7 @@ import { PaginationControls } from "@/components/admin/PaginationControls";
 import { SyncEmbeddingsButton } from "@/components/admin/SyncEmbeddingsButton";
 import { SyncSegmentEmbeddingsButton } from "@/components/admin/SyncSegmentEmbeddingsButton";
 import { AiReadinessBadge } from "@/components/admin/AiReadinessBadge";
+import { LaunchReadinessPanel } from "@/components/admin/LaunchReadinessPanel";
 import { APP_NAME } from "@/lib/brand";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 
@@ -166,6 +167,8 @@ export default async function AdminDashboardPage({
                     <FileText className="absolute -bottom-4 -right-4 w-24 h-24 text-amber-500/5 z-0" strokeWidth={1} />
                 </div>
             </div>
+
+            <LaunchReadinessPanel />
 
             {/* Content Table */}
             <div className="bg-card text-card-foreground rounded-xl border border-border overflow-hidden shadow-sm">
