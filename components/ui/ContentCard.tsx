@@ -215,15 +215,14 @@ function BaseContentCard({
                         {item.title}
                     </h3>
 
-                    <div className="w-full">
-                        <p className="flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest">
+                    <div className="w-full space-y-0.5">
+                        {item.category ? (
+                            <p className="line-clamp-1 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest">
+                                {item.category}
+                            </p>
+                        ) : null}
+                        <p className="flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest">
                             <span>{item.type}</span>
-                            {item.category ? (
-                                <span className="flex items-center gap-1.5">
-                                    <span className="opacity-40">•</span>
-                                    <span>{item.category}</span>
-                                </span>
-                            ) : null}
                             {item.duration_seconds ? (
                                 <span className="flex items-center gap-1.5 whitespace-nowrap">
                                     <span className="opacity-40">•</span>
