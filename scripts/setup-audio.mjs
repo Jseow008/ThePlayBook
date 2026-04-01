@@ -33,7 +33,7 @@ async function setupAudio() {
     const { error: createError } = await supabase.storage.createBucket("audio", {
         public: true,
         fileSizeLimit: 50 * 1024 * 1024,
-        allowedMimeTypes: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-m4a", "audio/m4a", "audio/mp4"],
+        allowedMimeTypes: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-m4a", "audio/m4a"],
     });
 
     if (createError) {

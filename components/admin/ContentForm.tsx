@@ -23,6 +23,7 @@ import {
     Music,
 } from "lucide-react";
 import { ArtifactEditor, Artifact } from "./ArtifactEditor";
+import { GenerateNarrationButton } from "./GenerateNarrationButton";
 
 // DnD Kit Imports
 import {
@@ -935,6 +936,22 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
                             Audio Narration <span className="text-zinc-400 font-normal">(Optional - &quot;Read For Me&quot;)</span>
                         </label>
                         <div className="space-y-4">
+                            {isEditing && formData.id && (
+                                <div className="space-y-2">
+                                    <GenerateNarrationButton
+                                        contentId={formData.id}
+                                        audioUrl={formData.audio_url}
+                                        disabled={isSubmitting || isUploadingAudio || formData.status !== "verified"}
+                                        onGenerated={(url) => updateField("audio_url", url)}
+                                    />
+                                    {formData.status !== "verified" && (
+                                        <p className="text-xs text-amber-600">
+                                            Verify this content before generating AI narration.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Upload Area */}
                             <label
                                 className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingAudio

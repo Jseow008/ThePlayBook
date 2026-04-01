@@ -11,7 +11,6 @@ const ALLOWED_AUDIO_TYPES = [
     "audio/wav",
     "audio/x-m4a",
     "audio/m4a",
-    "audio/mp4",
 ];
 const ALLOWED_AUDIO_EXTENSIONS = new Set(["mp3", "wav", "m4a"]);
 

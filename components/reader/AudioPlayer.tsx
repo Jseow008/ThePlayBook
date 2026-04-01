@@ -22,6 +22,7 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
+    const [playbackError, setPlaybackError] = useState("");
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -30,28 +31,69 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
         const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
         const handleLoadedMetadata = () => setDuration(audio.duration);
         const handleEnded = () => setIsPlaying(false);
+        const handleCanPlay = () => setPlaybackError("");
+        const handleError = () => {
+            const mediaError = audio.error;
+
+            if (!mediaError) {
+                setPlaybackError("This audio file could not be played.");
+                return;
+            }
+
+            switch (mediaError.code) {
+                case MediaError.MEDIA_ERR_ABORTED:
+                    setPlaybackError("Audio playback was aborted.");
+                    break;
+                case MediaError.MEDIA_ERR_NETWORK:
+                    setPlaybackError("The audio file could not be loaded due to a network error.");
+                    break;
+                case MediaError.MEDIA_ERR_DECODE:
+                    setPlaybackError("The audio file was loaded but could not be decoded.");
+                    break;
+                case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+                    setPlaybackError("This audio format is not supported in the current browser.");
+                    break;
+                default:
+                    setPlaybackError("This audio file could not be played.");
+            }
+        };
 
         audio.addEventListener("timeupdate", handleTimeUpdate);
         audio.addEventListener("loadedmetadata", handleLoadedMetadata);
         audio.addEventListener("ended", handleEnded);
+        audio.addEventListener("canplay", handleCanPlay);
+        audio.addEventListener("error", handleError);
 
         return () => {
             audio.removeEventListener("timeupdate", handleTimeUpdate);
             audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
             audio.removeEventListener("ended", handleEnded);
+            audio.removeEventListener("canplay", handleCanPlay);
+            audio.removeEventListener("error", handleError);
         };
-    }, []);
+    }, [src]);
 
-    const togglePlay = () => {
+    const togglePlay = async () => {
         const audio = audioRef.current;
         if (!audio) return;
 
         if (isPlaying) {
             audio.pause();
-        } else {
-            audio.play();
+            setIsPlaying(false);
+            return;
         }
-        setIsPlaying(!isPlaying);
+
+        try {
+            setPlaybackError("");
+            await audio.play();
+            setIsPlaying(true);
+        } catch (error) {
+            const message = error instanceof Error && error.message.trim().length > 0
+                ? error.message
+                : "This audio file could not be played.";
+            setPlaybackError(message);
+            setIsPlaying(false);
+        }
     };
 
     const toggleMute = () => {
@@ -176,6 +218,12 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
                     </button>
                 </div>
             </div>
+
+            {playbackError && (
+                <div className="border-t border-border bg-destructive/5 px-5 py-3 text-xs font-medium text-destructive">
+                    {playbackError}
+                </div>
+            )}
         </div>
     );
 }
