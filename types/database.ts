@@ -173,6 +173,11 @@ export type Database = {
           hero_image_url: string | null
           id: string
           is_featured: boolean
+          narration_completed_at: string | null
+          narration_error: string | null
+          narration_requested_at: string | null
+          narration_started_at: string | null
+          narration_status: string
           quick_mode_json: Json | null
           series_id: string | null
           series_order: number | null
@@ -194,6 +199,11 @@ export type Database = {
           hero_image_url?: string | null
           id?: string
           is_featured?: boolean
+          narration_completed_at?: string | null
+          narration_error?: string | null
+          narration_requested_at?: string | null
+          narration_started_at?: string | null
+          narration_status?: string
           quick_mode_json?: Json | null
           series_id?: string | null
           series_order?: number | null
@@ -215,6 +225,11 @@ export type Database = {
           hero_image_url?: string | null
           id?: string
           is_featured?: boolean
+          narration_completed_at?: string | null
+          narration_error?: string | null
+          narration_requested_at?: string | null
+          narration_started_at?: string | null
+          narration_status?: string
           quick_mode_json?: Json | null
           series_id?: string | null
           series_order?: number | null

@@ -77,6 +77,26 @@ async function getSeriesSlugsByIds(
     return Array.from(new Set(data.map((entry) => entry.slug).filter(Boolean)));
 }
 
+function buildNarrationStateForAudioUrl(audioUrl: string | null | undefined) {
+    if (audioUrl) {
+        return {
+            narration_status: "ready",
+            narration_error: null,
+            narration_requested_at: null,
+            narration_started_at: null,
+            narration_completed_at: new Date().toISOString(),
+        } as const;
+    }
+
+    return {
+        narration_status: "idle",
+        narration_error: null,
+        narration_requested_at: null,
+        narration_started_at: null,
+        narration_completed_at: null,
+    } as const;
+}
+
 // Zod schema for updating content
 const UpdateContentSchema = z.object({
     title: z.string().min(1).optional(),
@@ -300,7 +320,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (contentData.source_url !== undefined) contentPatch.source_url = contentData.source_url;
         if (contentData.cover_image_url !== undefined) contentPatch.cover_image_url = contentData.cover_image_url;
         if (contentData.hero_image_url !== undefined) contentPatch.hero_image_url = contentData.hero_image_url;
-        if (contentData.audio_url !== undefined) contentPatch.audio_url = contentData.audio_url;
+        if (contentData.audio_url !== undefined) {
+            contentPatch.audio_url = contentData.audio_url;
+            const manualNarrationState = buildNarrationStateForAudioUrl(contentData.audio_url);
+            contentPatch.narration_status = manualNarrationState.narration_status;
+            contentPatch.narration_error = manualNarrationState.narration_error;
+            contentPatch.narration_requested_at = manualNarrationState.narration_requested_at;
+            contentPatch.narration_started_at = manualNarrationState.narration_started_at;
+            contentPatch.narration_completed_at = manualNarrationState.narration_completed_at;
+        }
         if (contentData.duration_seconds !== undefined) contentPatch.duration_seconds = contentData.duration_seconds;
         if (contentData.status !== undefined) contentPatch.status = contentData.status;
         if (contentData.is_featured !== undefined) contentPatch.is_featured = contentData.is_featured;

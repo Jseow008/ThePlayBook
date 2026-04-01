@@ -67,6 +67,26 @@ async function getSeriesSlugsByIds(
     return Array.from(new Set(data.map((entry) => entry.slug).filter(Boolean)));
 }
 
+function buildNarrationStateForAudioUrl(audioUrl: string | null | undefined) {
+    if (audioUrl) {
+        return {
+            narration_status: "ready",
+            narration_error: null,
+            narration_requested_at: null,
+            narration_started_at: null,
+            narration_completed_at: new Date().toISOString(),
+        } as const;
+    }
+
+    return {
+        narration_status: "idle",
+        narration_error: null,
+        narration_requested_at: null,
+        narration_started_at: null,
+        narration_completed_at: null,
+    } as const;
+}
+
 // Zod schema for creating content
 const CreateContentSchema = z.object({
     title: z.string().min(1, "Title is required"),
@@ -270,6 +290,7 @@ export async function POST(request: NextRequest) {
         }
 
         const supabase = getAdminClient();
+        const manualNarrationState = buildNarrationStateForAudioUrl(contentData.audio_url || null);
 
         // Create content item
         const { data: contentItem, error: contentError } = await supabase
@@ -283,6 +304,7 @@ export async function POST(request: NextRequest) {
                 cover_image_url: contentData.cover_image_url || null,
                 hero_image_url: contentData.hero_image_url || null,
                 audio_url: contentData.audio_url || null,
+                ...manualNarrationState,
                 duration_seconds: contentData.duration_seconds || null,
                 status: contentData.status,
                 is_featured: contentData.is_featured,

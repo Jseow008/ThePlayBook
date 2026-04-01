@@ -44,6 +44,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { AdminSeriesOption } from "@/lib/server/admin-series";
+import type { NarrationJobStatus } from "@/lib/narration-job";
 
 interface Segment {
     id?: string;
@@ -73,6 +74,8 @@ interface ContentFormData {
     cover_image_url: string;
     hero_image_url: string;
     audio_url: string;
+    narration_status: NarrationJobStatus;
+    narration_error: string | null;
     duration_seconds: number | null;
     status: "draft" | "verified";
     is_featured: boolean;
@@ -135,6 +138,8 @@ const defaultFormData: ContentFormData = {
     cover_image_url: "",
     hero_image_url: "",
     audio_url: "",
+    narration_status: "idle",
+    narration_error: null,
     duration_seconds: null,
     status: "draft",
     is_featured: false,
@@ -941,8 +946,18 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
                                     <GenerateNarrationButton
                                         contentId={formData.id}
                                         audioUrl={formData.audio_url}
+                                        initialStatus={formData.narration_status}
+                                        initialError={formData.narration_error}
                                         disabled={isSubmitting || isUploadingAudio || formData.status !== "verified"}
-                                        onGenerated={(url) => updateField("audio_url", url)}
+                                        onGenerated={(url) => {
+                                            updateField("audio_url", url);
+                                            updateField("narration_status", "ready");
+                                            updateField("narration_error", null);
+                                        }}
+                                        onStatusChange={(nextStatus, nextError) => {
+                                            updateField("narration_status", nextStatus);
+                                            updateField("narration_error", nextError);
+                                        }}
                                     />
                                     {formData.status !== "verified" && (
                                         <p className="text-xs text-amber-600">

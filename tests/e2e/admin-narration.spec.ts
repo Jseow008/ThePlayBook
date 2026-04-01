@@ -101,7 +101,7 @@ test.describe("Admin narration flow", () => {
         await generateButton.click();
 
         await expect(
-            page.getByText(/ai narration saved to this content item/i)
+            page.getByText(/ai narration is ready/i)
         ).toBeVisible({ timeout: 180_000 });
 
         const adminAudioPreview = page.locator("audio").last();
