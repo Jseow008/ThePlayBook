@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/admin/narration/process",
-      "schedule": "*/5 * * * *"
-    }
-  ]
-}
