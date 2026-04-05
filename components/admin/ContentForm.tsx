@@ -594,7 +594,13 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
             const data = await response.json();
 
             if (data.success) {
-                router.push("/admin");
+                const narrationWarning = typeof data.data?.narration_warning === "string"
+                    ? data.data.narration_warning
+                    : "";
+                const destination = narrationWarning
+                    ? `/admin?narration_warning=${encodeURIComponent(narrationWarning)}`
+                    : "/admin";
+                router.push(destination);
                 router.refresh();
             } else {
                 if (data.error?.details && Array.isArray(data.error.details)) {

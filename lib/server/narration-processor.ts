@@ -165,13 +165,18 @@ export function buildProcessErrorResponseMessage(error: unknown) {
 
 export async function processNarrationJobs(requestId: string, maxJobs: number = 1) {
     const results: Array<Awaited<ReturnType<typeof processNextNarrationJob>>> = [];
+    let processedCount = 0;
 
-    for (let index = 0; index < maxJobs; index += 1) {
-        const result = await processNextNarrationJob(`${requestId}:job-${index + 1}`);
+    for (let attempt = 0; processedCount < maxJobs; attempt += 1) {
+        const result = await processNextNarrationJob(`${requestId}:job-${attempt + 1}`);
         results.push(result);
 
-        if (!result.processed) {
+        if (!result.processed && !("discarded" in result && result.discarded)) {
             break;
+        }
+
+        if (result.processed) {
+            processedCount += 1;
         }
     }
 

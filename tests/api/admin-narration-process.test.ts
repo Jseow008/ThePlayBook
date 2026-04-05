@@ -99,15 +99,30 @@ describe("Admin narration processor API", () => {
         expect(generateNarrationAudio).not.toHaveBeenCalled();
     });
 
+    it("requires cron authentication for GET processing", async () => {
+        const req = new NextRequest("http://localhost/api/admin/narration/process", {
+            method: "GET",
+        });
+
+        const res = await GET(req);
+
+        expect(res.status).toBe(401);
+    });
+
     it("claims and processes one queued narration job", async () => {
         const queueSelectChain = {
             eq: vi.fn().mockReturnThis(),
             is: vi.fn().mockReturnThis(),
             order: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({
-                data: [{ id: "11111111-1111-1111-1111-111111111111" }],
-                error: null,
-            }),
+            limit: vi.fn()
+                .mockResolvedValueOnce({
+                    data: [{ id: "11111111-1111-1111-1111-111111111111" }],
+                    error: null,
+                })
+                .mockResolvedValueOnce({
+                    data: [],
+                    error: null,
+                }),
         };
 
         const claimMaybeSingleMock = vi.fn().mockResolvedValue({
@@ -186,6 +201,9 @@ describe("Admin narration processor API", () => {
                 })
                 .mockReturnValueOnce({
                     update: contentUpdateMock,
+                })
+                .mockReturnValueOnce({
+                    select: vi.fn().mockReturnValue(queueSelectChain),
                 }),
             storage: {
                 from: vi.fn(() => ({
@@ -230,10 +248,15 @@ describe("Admin narration processor API", () => {
             eq: vi.fn().mockReturnThis(),
             is: vi.fn().mockReturnThis(),
             order: vi.fn().mockReturnThis(),
-            limit: vi.fn().mockResolvedValue({
-                data: [{ id: "11111111-1111-1111-1111-111111111111" }],
-                error: null,
-            }),
+            limit: vi.fn()
+                .mockResolvedValueOnce({
+                    data: [{ id: "11111111-1111-1111-1111-111111111111" }],
+                    error: null,
+                })
+                .mockResolvedValueOnce({
+                    data: [],
+                    error: null,
+                }),
         };
 
         const claimMaybeSingleMock = vi.fn().mockResolvedValue({
@@ -311,6 +334,9 @@ describe("Admin narration processor API", () => {
                 })
                 .mockReturnValueOnce({
                     update: contentUpdateMock,
+                })
+                .mockReturnValueOnce({
+                    select: vi.fn().mockReturnValue(queueSelectChain),
                 }),
             storage: {
                 from: vi.fn(() => ({
@@ -330,7 +356,7 @@ describe("Admin narration processor API", () => {
 
         expect(res.status).toBe(200);
         expect(json.data.processed).toBe(false);
-        expect(json.data.discarded).toBe(true);
+        expect(json.data.discardedCount).toBe(1);
         expect(removeMock).toHaveBeenCalledWith([
             expect.stringMatching(/^generated\/11111111-1111-1111-1111-111111111111\/ai-narration-.*\.mp3$/),
         ]);
@@ -534,5 +560,157 @@ describe("Admin narration processor API", () => {
         expect(json.data.processedCount).toBe(2);
         expect(generateNarrationAudio).toHaveBeenCalledTimes(2);
         expect(rateLimit).not.toHaveBeenCalled();
+    });
+
+    it("continues draining after a discarded job and still processes later queued work", async () => {
+        process.env.CRON_SECRET = "test-cron-secret";
+        (verifyAdminSession as any).mockResolvedValue(true);
+
+        const queueSelectChain = {
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn()
+                .mockResolvedValueOnce({
+                    data: [{ id: "job-1" }],
+                    error: null,
+                })
+                .mockResolvedValueOnce({
+                    data: [{ id: "job-2" }],
+                    error: null,
+                })
+                .mockResolvedValueOnce({
+                    data: [],
+                    error: null,
+                }),
+        };
+
+        const claimMaybeSingleMock = vi.fn()
+            .mockResolvedValueOnce({
+                data: {
+                    id: "job-1",
+                    narration_started_at: "2026-04-05T08:00:05.000Z",
+                },
+                error: null,
+            })
+            .mockResolvedValueOnce({
+                data: {
+                    id: "job-2",
+                    narration_started_at: "2026-04-05T08:05:05.000Z",
+                },
+                error: null,
+            });
+
+        const claimUpdateChain = {
+            eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                    select: vi.fn().mockReturnValue({
+                        maybeSingle: claimMaybeSingleMock,
+                    }),
+                }),
+            }),
+        };
+
+        const releaseClaimChain = {
+            eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                    eq: vi.fn().mockResolvedValue({ error: null }),
+                }),
+            }),
+        };
+
+        const fetchDraftContentChain = {
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({
+                data: {
+                    id: "job-1",
+                    status: "draft",
+                    title: "Job 1",
+                    author: "Author 1",
+                    audio_url: null,
+                    narration_completed_at: null,
+                    quick_mode_json: null,
+                    segments: [],
+                },
+                error: null,
+            }),
+        };
+
+        const fetchVerifiedContentChain = {
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({
+                data: {
+                    id: "job-2",
+                    status: "verified",
+                    title: "Job 2",
+                    author: "Author 2",
+                    audio_url: null,
+                    narration_completed_at: null,
+                    quick_mode_json: null,
+                    segments: [{ order_index: 1, title: "B", markdown_body: "B body", deleted_at: null }],
+                },
+                error: null,
+            }),
+        };
+
+        const readyUpdateMaybeSingleTwo = vi.fn().mockResolvedValue({
+            data: { id: "job-2" },
+            error: null,
+        });
+
+        contentUpdateMock
+            .mockReturnValueOnce(claimUpdateChain)
+            .mockReturnValueOnce(releaseClaimChain)
+            .mockReturnValueOnce(claimUpdateChain)
+            .mockReturnValueOnce({
+                eq: vi.fn().mockReturnValue({
+                    eq: vi.fn().mockReturnValue({
+                        eq: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                select: vi.fn().mockReturnValue({
+                                    maybeSingle: readyUpdateMaybeSingleTwo,
+                                }),
+                            }),
+                        }),
+                    }),
+                }),
+            });
+
+        (getAdminClient as any).mockReturnValue({
+            from: vi.fn()
+                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) })
+                .mockReturnValueOnce({ update: contentUpdateMock })
+                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(fetchDraftContentChain) })
+                .mockReturnValueOnce({ update: contentUpdateMock })
+                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) })
+                .mockReturnValueOnce({ update: contentUpdateMock })
+                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(fetchVerifiedContentChain) })
+                .mockReturnValueOnce({ update: contentUpdateMock })
+                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) }),
+            storage: {
+                from: vi.fn(() => ({
+                    upload: uploadMock,
+                    getPublicUrl: getPublicUrlMock,
+                    remove: removeMock,
+                })),
+            },
+        });
+
+        const req = new NextRequest("http://localhost/api/admin/narration/process", {
+            method: "POST",
+        });
+
+        const res = await POST(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(json.data.processed).toBe(true);
+        expect(json.data.processedCount).toBe(1);
+        expect(json.data.discardedCount).toBe(1);
+        expect(generateNarrationAudio).toHaveBeenCalledTimes(1);
     });
 });

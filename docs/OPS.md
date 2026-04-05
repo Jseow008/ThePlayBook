@@ -203,22 +203,30 @@ Background worker:
 
 - queue route: `POST /api/admin/content/[id]/narration`
 - status route: `GET /api/admin/content/[id]/narration`
-- worker route: `GET /api/admin/narration/process`
+- worker route: `GET /api/admin/narration/process` for cron or external schedulers
+- manual recovery route: `POST /api/admin/narration/process`
 - queueing a narration job also schedules a server-side background attempt immediately after the response returns
-- production automation: `vercel.json` runs the worker every 5 minutes
-- each cron invocation drains up to 3 queued jobs before exiting
+- current production path on Vercel Hobby: there is no platform cron configured
+- queued narration still runs immediately through the server-side `after(...)` handoff
+- if you are deploying on a plan with scheduled jobs, point your scheduler at the same worker route instead
+
+Optional scheduled recovery worker:
+
+- the worker route supports cron-style invocation and drains up to 3 queued jobs before exiting
 - cron auth: `Authorization: Bearer $CRON_SECRET`
-- if you are not deploying on Vercel, point your scheduler at the same worker route instead
+- if you upgrade Vercel to Pro, restore a `vercel.json` cron for `/api/admin/narration/process`
+- if you are not deploying on Vercel, use any external scheduler against the same worker route
 
 Recovery path:
 
-- `POST /api/admin/narration/process` still works from an authenticated admin session for debugging or manual recovery
+- `POST /api/admin/narration/process` drains up to 3 queued narration jobs from an authenticated admin session
+- `/admin` now includes a `Retry Narration Jobs` control that manually drains the queued narration worker on demand
 
 If narration remains stuck in `queued`, verify:
 
-- `CRON_SECRET` is configured in production
-- the Vercel cron job is enabled for the deployment
-- the worker route returns `200` when invoked with the cron secret
+- the initial `after(...)` background handoff is succeeding
+- if you have configured a scheduler, `CRON_SECRET` is configured in production
+- if you have configured a scheduler, the worker route returns `200` when invoked with the cron secret
 - OpenAI and Supabase storage credentials are healthy
 
 ## 4. Deployment
@@ -242,7 +250,6 @@ At minimum, production needs:
 - `SUPABASE_SERVICE_KEY`
 - `NEXT_PUBLIC_SITE_URL`
 - AI provider keys used by your deployment
-- `CRON_SECRET`
 
 For rate-limited routes in production:
 
@@ -266,7 +273,7 @@ Before a production deploy, verify:
 - at least one of `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is present
 - `GEMINI_API_KEY` is present for retrieval and embedding sync
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present in production
-- `CRON_SECRET` is present and matches the narration cron caller
+- if you have a scheduled narration worker, `CRON_SECRET` is present and matches the cron caller
 
 Recommended validation steps:
 

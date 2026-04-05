@@ -504,6 +504,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         ]);
         seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
 
+        let narrationWarning: string | null = null;
+
         if (shouldAutoQueueNarration) {
             const resultingAudioUrl = isManualAudioOverride ? nextAudioUrl : existingAudioUrl;
             const resultingNarrationRow = {
@@ -537,6 +539,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
                     });
                 }
             } catch (queueError) {
+                narrationWarning = "Content was published, but AI narration could not be queued automatically.";
                 logApiError({
                     requestId,
                     route: "/api/admin/content/[id]",
@@ -551,6 +554,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             data: {
                 id,
                 message: "Content updated successfully",
+                narration_warning: narrationWarning,
             },
         });
     } catch (error) {

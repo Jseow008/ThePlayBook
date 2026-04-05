@@ -132,31 +132,41 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             }, { status: 202 });
         }
 
-        const { job } = await queueNarrationJobIfEligible({
+        const { queued, job } = await queueNarrationJobIfEligible({
             supabase,
             contentId: id,
             row: contentItem,
             allowReplaceExisting: true,
         });
 
-        after(async () => {
-            try {
-                await processNextNarrationJob(`${requestId}:background`);
-            } catch (backgroundError) {
-                logApiError({
-                    requestId,
-                    route: "/api/admin/content/[id]/narration",
-                    message: "Background AI narration processor failed after queueing",
-                    error: backgroundError,
-                });
-            }
-        });
+        if (queued) {
+            after(async () => {
+                try {
+                    await processNextNarrationJob(`${requestId}:background`);
+                } catch (backgroundError) {
+                    logApiError({
+                        requestId,
+                        route: "/api/admin/content/[id]/narration",
+                        message: "Background AI narration processor failed after queueing",
+                        error: backgroundError,
+                    });
+                }
+            });
+        }
+
+        const message = job.status === "queued"
+            ? "AI narration queued. Generation will continue in the background."
+            : job.status === "processing"
+                ? "AI narration is already generating in the background."
+                : job.audio_url
+                    ? "AI narration is already ready."
+                    : "AI narration could not be queued right now. Please try again.";
 
         return NextResponse.json({
             success: true,
             data: {
                 job,
-                message: "AI narration queued. Generation will continue in the background.",
+                message,
             },
         }, { status: 202 });
     } catch (error) {

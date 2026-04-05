@@ -14,6 +14,7 @@ import { AdminSearch } from "@/components/admin/AdminSearch";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import { SyncEmbeddingsButton } from "@/components/admin/SyncEmbeddingsButton";
 import { SyncSegmentEmbeddingsButton } from "@/components/admin/SyncSegmentEmbeddingsButton";
+import { DrainNarrationJobsButton } from "@/components/admin/DrainNarrationJobsButton";
 import { AiReadinessBadge } from "@/components/admin/AiReadinessBadge";
 import { LaunchReadinessPanel } from "@/components/admin/LaunchReadinessPanel";
 import { NarrationRowAction } from "@/components/admin/NarrationRowAction";
@@ -56,7 +57,7 @@ function StatusBadge({ status, deleted }: { status: string; deleted: boolean }) 
 export default async function AdminDashboardPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; status?: string; featured?: string; q?: string }>;
+    searchParams: Promise<{ page?: string; status?: string; featured?: string; q?: string; narration_warning?: string }>;
 }) {
     const supabase = getAdminClient();
     const params = await searchParams;
@@ -64,6 +65,7 @@ export default async function AdminDashboardPage({
     const statusFilter = params?.status;
     const featuredFilter = params?.featured === "true";
     const searchQuery = params?.q || "";
+    const narrationWarning = params?.narration_warning || "";
 
     const PAGE_SIZE = 5;
     const from = (page - 1) * PAGE_SIZE;
@@ -123,6 +125,12 @@ export default async function AdminDashboardPage({
 
     return (
         <div className="space-y-8">
+            {narrationWarning && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800 shadow-sm">
+                    {narrationWarning}
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex flex-col xl:flex-row xl:items-start justify-between gap-6">
                 <div className="flex-shrink-0">
@@ -142,6 +150,7 @@ export default async function AdminDashboardPage({
                     </Link>
                     <SyncEmbeddingsButton />
                     <SyncSegmentEmbeddingsButton />
+                    <DrainNarrationJobsButton />
                 </div>
             </div>
 

@@ -80,6 +80,7 @@ describe("Admin content narration API", () => {
                         return this;
                     }),
                     single: contentSelectSingleMock,
+                    maybeSingle: contentSelectSingleMock,
                 };
 
                 const updateChain = {
@@ -91,6 +92,7 @@ describe("Admin content narration API", () => {
                     }),
                     select: vi.fn().mockReturnValue({
                         single: updateSelectSingleMock,
+                        maybeSingle: updateSelectSingleMock,
                     }),
                 };
 

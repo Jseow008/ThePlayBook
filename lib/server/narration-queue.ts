@@ -15,13 +15,31 @@ type QueueNarrationJobResult = {
     job: ReturnType<typeof getNarrationJobState>;
 };
 
+async function loadNarrationRow(supabase: AdminClient, contentId: string) {
+    const { data, error } = await supabase
+        .from("content_item")
+        .select("audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at")
+        .eq("id", contentId)
+        .is("deleted_at", null)
+        .maybeSingle();
+
+    if (error || !data) {
+        throw error ?? new Error("Failed to load narration job state");
+    }
+
+    return data;
+}
+
 export async function queueNarrationJobIfEligible({
     supabase,
     contentId,
-    row,
+    row: _row,
     allowReplaceExisting = false,
 }: QueueNarrationJobParams): Promise<QueueNarrationJobResult> {
-    const currentJob = getNarrationJobState(row);
+    void _row;
+    const currentRow = await loadNarrationRow(supabase, contentId);
+    const currentJob = getNarrationJobState(currentRow);
+
     if (
         (currentJob.audio_url && !allowReplaceExisting)
         || currentJob.status === "queued"
@@ -44,12 +62,21 @@ export async function queueNarrationJobIfEligible({
             narration_completed_at: null,
         })
         .eq("id", contentId)
+        .eq("narration_status", currentJob.status)
         .is("deleted_at", null)
         .select("audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at")
-        .single();
+        .maybeSingle();
 
-    if (error || !queuedItem) {
+    if (error) {
         throw error ?? new Error("Failed to queue narration job");
+    }
+
+    if (!queuedItem) {
+        const refreshedRow = await loadNarrationRow(supabase, contentId);
+        return {
+            queued: false,
+            job: getNarrationJobState(refreshedRow),
+        };
     }
 
     return {

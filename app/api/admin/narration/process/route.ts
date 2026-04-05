@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { buildProcessErrorResponseMessage, processNarrationJobs, processNextNarrationJob } from "@/lib/server/narration-processor";
+import { buildProcessErrorResponseMessage, processNarrationJobs } from "@/lib/server/narration-processor";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const result = await processNextNarrationJob(requestId);
+        const result = await processNarrationJobs(requestId, CRON_BATCH_SIZE);
         return NextResponse.json({
             success: true,
             data: result,

@@ -382,6 +382,8 @@ export async function POST(request: NextRequest) {
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [contentItem.series_id]);
         seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
 
+        let narrationWarning: string | null = null;
+
         if (contentData.status === "verified" && !contentData.audio_url) {
             try {
                 const { queued } = await queueNarrationJobIfEligible({
@@ -412,6 +414,7 @@ export async function POST(request: NextRequest) {
                     });
                 }
             } catch (queueError) {
+                narrationWarning = "Content was published, but AI narration could not be queued automatically.";
                 logApiError({
                     requestId,
                     route: "/api/admin/content",
@@ -426,6 +429,7 @@ export async function POST(request: NextRequest) {
             data: {
                 id: contentItem.id,
                 message: "Content created successfully",
+                narration_warning: narrationWarning,
             },
         }, { status: 201 });
     } catch (error) {
