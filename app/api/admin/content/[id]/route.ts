@@ -32,6 +32,12 @@ type QuickModeValue = {
     key_takeaways?: string[] | null;
 } | null | undefined;
 
+type NarrationComparableSegment = {
+    order_index: number;
+    title?: string | null;
+    markdown_body?: string | null;
+};
+
 function validateSeriesAssignment(
     value: { series_id?: string | null; series_order?: number | null },
     ctx: z.RefinementCtx
@@ -95,6 +101,56 @@ function buildNarrationStateForAudioUrl(audioUrl: string | null | undefined) {
         narration_started_at: null,
         narration_completed_at: null,
     } as const;
+}
+
+function normalizeAudioUrl(audioUrl: string | null | undefined) {
+    return audioUrl?.trim() || null;
+}
+
+function buildStaleNarrationStateForExistingAudio(audioUrl: string | null | undefined) {
+    if (!audioUrl) {
+        return null;
+    }
+
+    return {
+        narration_status: "stale",
+        narration_error: null,
+        narration_requested_at: null,
+        narration_started_at: null,
+    } as const;
+}
+
+function normalizeNarrationSegmentForComparison(segment: NarrationComparableSegment) {
+    return {
+        order_index: segment.order_index,
+        title: (segment.title ?? "").trim(),
+        markdown_body: (segment.markdown_body ?? "").trim(),
+    };
+}
+
+function haveNarrationSegmentsChanged(
+    currentSegments: NarrationComparableSegment[],
+    nextSegments: NarrationComparableSegment[]
+) {
+    const normalizedCurrent = [...currentSegments]
+        .map(normalizeNarrationSegmentForComparison)
+        .sort((a, b) => a.order_index - b.order_index);
+    const normalizedNext = [...nextSegments]
+        .map(normalizeNarrationSegmentForComparison)
+        .sort((a, b) => a.order_index - b.order_index);
+
+    if (normalizedCurrent.length !== normalizedNext.length) {
+        return true;
+    }
+
+    return normalizedCurrent.some((segment, index) => {
+        const nextSegment = normalizedNext[index];
+        return (
+            segment.order_index !== nextSegment.order_index
+            || segment.title !== nextSegment.title
+            || segment.markdown_body !== nextSegment.markdown_body
+        );
+    });
 }
 
 // Zod schema for updating content
@@ -258,7 +314,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const supabase = getAdminClient();
         const { data: existingContent, error: existingContentError } = await supabase
             .from("content_item")
-            .select("series_id, status, title, author, type, category, cover_image_url, quick_mode_json")
+            .select("series_id, status, title, author, type, category, cover_image_url, quick_mode_json, audio_url, narration_status")
             .eq("id", id)
             .single();
 
@@ -273,12 +329,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const currentStatus = existingContent?.status === "verified" ? "verified" : "draft";
         const nextStatus = contentData.status ?? currentStatus;
         const existingQuickMode = existingContent?.quick_mode_json as QuickModeValue;
+        const existingAudioUrl = normalizeAudioUrl(existingContent?.audio_url);
+        const nextAudioUrl = contentData.audio_url !== undefined ? normalizeAudioUrl(contentData.audio_url) : undefined;
+        const isManualAudioOverride = nextAudioUrl !== undefined && nextAudioUrl !== existingAudioUrl;
+        const shouldTrackNarrationFreshness = currentStatus === "verified" || nextStatus === "verified";
+        const shouldCheckNarrationStale = Boolean(
+            shouldTrackNarrationFreshness
+            && existingAudioUrl
+            && !isManualAudioOverride
+            && segments !== undefined
+        );
+        let existingNarrationSegments: NarrationComparableSegment[] | null = null;
 
         let effectiveSegments: Array<{ markdown_body?: string | null }> | null = segments ?? null;
         if (nextStatus === "verified" && effectiveSegments === null) {
             const { data: existingSegments, error: segmentFetchError } = await supabase
                 .from("segment")
-                .select("markdown_body")
+                .select("order_index, title, markdown_body")
                 .eq("item_id", id);
 
             if (segmentFetchError) {
@@ -286,6 +353,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
 
             effectiveSegments = existingSegments ?? [];
+        }
+
+        if (shouldCheckNarrationStale) {
+            const { data: existingSegments, error: segmentFetchError } = await supabase
+                .from("segment")
+                .select("order_index, title, markdown_body")
+                .eq("item_id", id)
+                .order("order_index", { ascending: true });
+
+            if (segmentFetchError) {
+                throw segmentFetchError;
+            }
+
+            existingNarrationSegments = existingSegments ?? [];
         }
 
         const verificationIssues = getVerifiedContentIssues({
@@ -320,14 +401,25 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         if (contentData.source_url !== undefined) contentPatch.source_url = contentData.source_url;
         if (contentData.cover_image_url !== undefined) contentPatch.cover_image_url = contentData.cover_image_url;
         if (contentData.hero_image_url !== undefined) contentPatch.hero_image_url = contentData.hero_image_url;
-        if (contentData.audio_url !== undefined) {
-            contentPatch.audio_url = contentData.audio_url;
-            const manualNarrationState = buildNarrationStateForAudioUrl(contentData.audio_url);
+        if (isManualAudioOverride) {
+            contentPatch.audio_url = nextAudioUrl;
+            const manualNarrationState = buildNarrationStateForAudioUrl(nextAudioUrl);
             contentPatch.narration_status = manualNarrationState.narration_status;
             contentPatch.narration_error = manualNarrationState.narration_error;
             contentPatch.narration_requested_at = manualNarrationState.narration_requested_at;
             contentPatch.narration_started_at = manualNarrationState.narration_started_at;
             contentPatch.narration_completed_at = manualNarrationState.narration_completed_at;
+        }
+        if (shouldCheckNarrationStale && existingNarrationSegments && segments) {
+            const staleNarrationState = buildStaleNarrationStateForExistingAudio(existingContent?.audio_url);
+            if (staleNarrationState) {
+                if (haveNarrationSegmentsChanged(existingNarrationSegments, segments)) {
+                    contentPatch.narration_status = staleNarrationState.narration_status;
+                    contentPatch.narration_error = staleNarrationState.narration_error;
+                    contentPatch.narration_requested_at = staleNarrationState.narration_requested_at;
+                    contentPatch.narration_started_at = staleNarrationState.narration_started_at;
+                }
+            }
         }
         if (contentData.duration_seconds !== undefined) contentPatch.duration_seconds = contentData.duration_seconds;
         if (contentData.status !== undefined) contentPatch.status = contentData.status;

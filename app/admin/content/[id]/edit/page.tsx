@@ -10,6 +10,7 @@ import { ContentForm } from "@/components/admin/ContentForm";
 import { getAdminSeriesOptions } from "@/lib/server/admin-series";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { Segment } from "@/types/database";
+import type { NarrationJobStatus } from "@/lib/narration-job";
 
 interface EditContentPageProps {
     params: Promise<{ id: string }>;
@@ -54,7 +55,7 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
         cover_image_url: contentItem.cover_image_url || "",
         hero_image_url: contentItem.hero_image_url || "",
         audio_url: contentItem.audio_url || "",
-        narration_status: (contentItem.narration_status as "idle" | "queued" | "processing" | "ready" | "failed" | null) || (contentItem.audio_url ? "ready" : "idle"),
+        narration_status: (contentItem.narration_status as NarrationJobStatus | null) || (contentItem.audio_url ? "ready" : "idle"),
         narration_error: contentItem.narration_error || null,
         series_id: contentItem.series_id || "",
         series_order: contentItem.series_order ?? null,

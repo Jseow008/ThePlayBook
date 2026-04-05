@@ -114,6 +114,22 @@ describe("GenerateNarrationButton", () => {
         expect(screen.getByText(/will replace the stored audio file once the new job finishes/i)).toBeInTheDocument();
     });
 
+    it("shows a stale warning when narration is out of date", () => {
+        render(
+            <GenerateNarrationButton
+                contentId="11111111-1111-1111-1111-111111111111"
+                audioUrl="https://example.com/existing.mp3"
+                initialStatus="stale"
+                initialError={null}
+                onGenerated={vi.fn()}
+                onStatusChange={vi.fn()}
+            />
+        );
+
+        expect(screen.getByRole("button", { name: /regenerate ai narration/i })).toBeInTheDocument();
+        expect(screen.getByText(/out of date\. regenerate it to match the latest deep-mode content/i)).toHaveClass("text-amber-600");
+    });
+
     it("does not re-trigger queueing when narration is already queued", async () => {
         const onGenerated = vi.fn();
         global.fetch = vi.fn().mockResolvedValue({
@@ -258,5 +274,59 @@ describe("GenerateNarrationButton", () => {
 
         expect(screen.getByRole("button", { name: /queued/i })).toBeDisabled();
         expect(onStatusChange).not.toHaveBeenCalledWith("failed", "Too many requests.");
+    });
+
+    it("retries after a temporary status fetch failure instead of marking the job failed", async () => {
+        const onGenerated = vi.fn();
+        const onStatusChange = vi.fn();
+
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                json: async () => ({
+                    error: {
+                        message: "Temporary outage",
+                    },
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        job: {
+                            status: "ready",
+                            error: null,
+                            requested_at: "2026-04-01T12:00:00.000Z",
+                            started_at: "2026-04-01T12:00:05.000Z",
+                            completed_at: "2026-04-01T12:00:30.000Z",
+                            audio_url: "https://example.com/audio/generated-v2.mp3",
+                        },
+                    },
+                }),
+            }) as any;
+
+        render(
+            <GenerateNarrationButton
+                contentId="11111111-1111-1111-1111-111111111111"
+                audioUrl=""
+                initialStatus="queued"
+                initialError={null}
+                pollIntervalMs={10}
+                onGenerated={onGenerated}
+                onStatusChange={onStatusChange}
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText(/temporarily unavailable; retrying shortly/i)).toBeInTheDocument();
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText(/ai narration is ready and saved to this content item/i)).toBeInTheDocument();
+        });
+
+        expect(onGenerated).toHaveBeenCalledWith("https://example.com/audio/generated-v2.mp3");
+        expect(onStatusChange).not.toHaveBeenCalledWith("failed", expect.any(String));
     });
 });

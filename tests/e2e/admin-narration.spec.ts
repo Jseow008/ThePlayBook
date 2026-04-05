@@ -120,7 +120,7 @@ test.describe("Admin narration flow", () => {
         }
 
         const adminAudioPreview = page.locator("audio").last();
-        await expect(adminAudioPreview).toHaveAttribute("src", /generated\/.*\/ai-narration\.mp3/);
+        await expect(adminAudioPreview).toHaveAttribute("src", /generated\/.*\/ai-narration-.*\.mp3/);
 
         await page.addInitScript(
             ([storageKey, onboardingState]) => {
@@ -138,7 +138,7 @@ test.describe("Admin narration flow", () => {
         });
 
         const readAudio = page.locator("audio").first();
-        await expect(readAudio).toHaveAttribute("src", /generated\/.*\/ai-narration\.mp3/);
+        await expect(readAudio).toHaveAttribute("src", /generated\/.*\/ai-narration-.*\.mp3/);
 
         const playButton = page.getByRole("button", { name: "Play" }).first();
         await expect(playButton).toBeVisible();

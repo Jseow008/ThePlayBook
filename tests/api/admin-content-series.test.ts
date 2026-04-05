@@ -576,6 +576,321 @@ describe("Admin content series support", () => {
         expect(revalidatePath).toHaveBeenCalledWith("/browse");
     });
 
+    it("marks existing narration stale when verified segment content changes", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: null,
+                status: "verified",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                audio_url: "https://example.com/audio/current.mp3",
+                narration_status: "ready",
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({
+                    data: [{
+                        order_index: 0,
+                        title: "Current segment",
+                        markdown_body: "Old body",
+                    }],
+                    error: null,
+                }),
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                segments: [{
+                    order_index: 0,
+                    title: "Current segment",
+                    markdown_body: "Updated body",
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                }],
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+            p_content_patch: expect.objectContaining({
+                narration_status: "stale",
+                narration_error: null,
+                narration_requested_at: null,
+                narration_started_at: null,
+            }),
+        }));
+    });
+
+    it("keeps narration ready when only segment timing changes", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: null,
+                status: "verified",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                audio_url: "https://example.com/audio/current.mp3",
+                narration_status: "ready",
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({
+                    data: [{
+                        order_index: 0,
+                        title: "Current segment",
+                        markdown_body: "Stable body",
+                    }],
+                    error: null,
+                }),
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                segments: [{
+                    order_index: 0,
+                    title: "Current segment",
+                    markdown_body: "Stable body",
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                }],
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+            p_content_patch: expect.not.objectContaining({
+                narration_status: "stale",
+            }),
+        }));
+    });
+
+    it("still marks narration stale when an unchanged audio url is submitted with segment edits", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: null,
+                status: "verified",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                audio_url: "https://example.com/audio/current.mp3",
+                narration_status: "ready",
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({
+                    data: [{
+                        order_index: 0,
+                        title: "Current segment",
+                        markdown_body: "Old body",
+                    }],
+                    error: null,
+                }),
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                audio_url: "https://example.com/audio/current.mp3",
+                segments: [{
+                    order_index: 0,
+                    title: "Current segment",
+                    markdown_body: "Updated body",
+                }],
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+            p_content_patch: expect.objectContaining({
+                narration_status: "stale",
+            }),
+        }));
+    });
+
+    it("does not reset a stale narration when saving unrelated edits with an unchanged audio url", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: null,
+                status: "verified",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                audio_url: "https://example.com/audio/current.mp3",
+                narration_status: "stale",
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+                data: [{ order_index: 0, title: "Current segment", markdown_body: "Stable body" }],
+                error: null,
+            }),
+        });
+        const contentUpdate = vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({ error: null }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                        update: contentUpdate,
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                title: "Updated title only",
+                audio_url: "https://example.com/audio/current.mp3",
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+            p_content_patch: expect.not.objectContaining({
+                narration_status: "ready",
+            }),
+        }));
+    });
+
     it("returns field errors when creating content with a duplicate series order", async () => {
         const contentInsert = vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({

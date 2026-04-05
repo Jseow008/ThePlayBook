@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     buildNarrationScript,
     concatenateWavBuffers,
+    mapWithConcurrency,
     splitNarrationIntoChunks,
     synthesizeNarrationChunkWav,
     transcodeWavToMp3,
@@ -160,5 +161,29 @@ describe("AI narration helpers", () => {
         await vi.runAllTimersAsync();
         await expectation;
         expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it("stops scheduling new concurrent work after the first chunk failure", async () => {
+        const started: number[] = [];
+
+        await expect(
+            mapWithConcurrency([0, 1, 2, 3], 2, async (item, _index, signal) => {
+                started.push(item);
+
+                if (item === 0) {
+                    throw new Error("boom");
+                }
+
+                await new Promise((_, reject) => {
+                    signal.addEventListener("abort", () => {
+                        reject(Object.assign(new Error("Aborted"), { name: "AbortError" }));
+                    }, { once: true });
+                });
+
+                return item;
+            })
+        ).rejects.toThrow("boom");
+
+        expect(started).toEqual([0, 1]);
     });
 });

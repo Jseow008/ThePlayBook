@@ -54,11 +54,11 @@ describe("Admin narration processor API", () => {
 
         uploadMock.mockResolvedValue({ error: null });
         removeMock.mockResolvedValue({ error: null });
-        getPublicUrlMock.mockReturnValue({
+        getPublicUrlMock.mockImplementation((path: string) => ({
             data: {
-                publicUrl: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.mp3",
+                publicUrl: `https://example.supabase.co/storage/v1/object/public/audio/${path}`,
             },
-        });
+        }));
     });
 
     it("returns processed false when no queued jobs are available", async () => {
@@ -111,7 +111,10 @@ describe("Admin narration processor API", () => {
         };
 
         const claimMaybeSingleMock = vi.fn().mockResolvedValue({
-            data: { id: "11111111-1111-1111-1111-111111111111" },
+            data: {
+                id: "11111111-1111-1111-1111-111111111111",
+                narration_started_at: "2026-04-05T08:00:05.000Z",
+            },
             error: null,
         });
         const claimUpdateChain = {
@@ -131,8 +134,11 @@ describe("Admin narration processor API", () => {
             single: vi.fn().mockResolvedValue({
                 data: {
                     id: "11111111-1111-1111-1111-111111111111",
+                    status: "verified",
                     title: "Atomic Habits Summary",
                     author: "James Clear",
+                    audio_url: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration-old.mp3",
+                    narration_completed_at: "2026-04-05T07:59:00.000Z",
                     quick_mode_json: null,
                     segments: [
                         {
@@ -147,11 +153,24 @@ describe("Admin narration processor API", () => {
             }),
         };
 
-        const readyUpdateEqMock = vi.fn().mockResolvedValue({ error: null });
+        const readyUpdateMaybeSingleMock = vi.fn().mockResolvedValue({
+            data: { id: "11111111-1111-1111-1111-111111111111" },
+            error: null,
+        });
         contentUpdateMock
             .mockReturnValueOnce(claimUpdateChain)
             .mockReturnValueOnce({
-                eq: readyUpdateEqMock,
+                eq: vi.fn().mockReturnValue({
+                    eq: vi.fn().mockReturnValue({
+                        eq: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                select: vi.fn().mockReturnValue({
+                                    maybeSingle: readyUpdateMaybeSingleMock,
+                                }),
+                            }),
+                        }),
+                    }),
+                }),
             });
 
         (getAdminClient as any).mockReturnValue({
@@ -193,15 +212,128 @@ describe("Admin narration processor API", () => {
         expect(json.data.processed).toBe(true);
         expect(generateNarrationAudio).toHaveBeenCalled();
         expect(uploadMock).toHaveBeenCalledWith(
-            "generated/11111111-1111-1111-1111-111111111111/ai-narration.mp3",
+            expect.stringMatching(/^generated\/11111111-1111-1111-1111-111111111111\/ai-narration-.*\.mp3$/),
             expect.any(Blob),
             expect.objectContaining({
                 contentType: "audio/mpeg",
                 upsert: true,
             })
         );
-        expect(readyUpdateEqMock).toHaveBeenCalledWith("id", "11111111-1111-1111-1111-111111111111");
+        expect(removeMock).toHaveBeenCalledWith([
+            "generated/11111111-1111-1111-1111-111111111111/ai-narration-old.mp3",
+        ]);
         expect(revalidatePathMock).toHaveBeenCalledWith("/read/11111111-1111-1111-1111-111111111111");
+    });
+
+    it("discards uploaded audio if the worker loses ownership before final save", async () => {
+        const queueSelectChain = {
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockResolvedValue({
+                data: [{ id: "11111111-1111-1111-1111-111111111111" }],
+                error: null,
+            }),
+        };
+
+        const claimMaybeSingleMock = vi.fn().mockResolvedValue({
+            data: {
+                id: "11111111-1111-1111-1111-111111111111",
+                narration_started_at: "2026-04-05T08:00:05.000Z",
+            },
+            error: null,
+        });
+        const claimUpdateChain = {
+            eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                    select: vi.fn().mockReturnValue({
+                        maybeSingle: claimMaybeSingleMock,
+                    }),
+                }),
+            }),
+        };
+
+        const fetchContentChain = {
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({
+                data: {
+                    id: "11111111-1111-1111-1111-111111111111",
+                    status: "verified",
+                    title: "Atomic Habits Summary",
+                    author: "James Clear",
+                    audio_url: null,
+                    narration_completed_at: null,
+                    quick_mode_json: null,
+                    segments: [
+                        {
+                            order_index: 1,
+                            title: "Make it obvious",
+                            markdown_body: "Cue your habits with visible triggers.",
+                            deleted_at: null,
+                        },
+                    ],
+                },
+                error: null,
+            }),
+        };
+
+        contentUpdateMock
+            .mockReturnValueOnce(claimUpdateChain)
+            .mockReturnValueOnce({
+                eq: vi.fn().mockReturnValue({
+                    eq: vi.fn().mockReturnValue({
+                        eq: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                select: vi.fn().mockReturnValue({
+                                    maybeSingle: vi.fn().mockResolvedValue({
+                                        data: null,
+                                        error: null,
+                                    }),
+                                }),
+                            }),
+                        }),
+                    }),
+                }),
+            });
+
+        (getAdminClient as any).mockReturnValue({
+            from: vi.fn()
+                .mockReturnValueOnce({
+                    select: vi.fn().mockReturnValue(queueSelectChain),
+                })
+                .mockReturnValueOnce({
+                    update: contentUpdateMock,
+                })
+                .mockReturnValueOnce({
+                    select: vi.fn().mockReturnValue(fetchContentChain),
+                })
+                .mockReturnValueOnce({
+                    update: contentUpdateMock,
+                }),
+            storage: {
+                from: vi.fn(() => ({
+                    upload: uploadMock,
+                    getPublicUrl: getPublicUrlMock,
+                    remove: removeMock,
+                })),
+            },
+        });
+
+        const req = new NextRequest("http://localhost/api/admin/narration/process", {
+            method: "POST",
+        });
+
+        const res = await POST(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(json.data.processed).toBe(false);
+        expect(json.data.discarded).toBe(true);
+        expect(removeMock).toHaveBeenCalledWith([
+            expect.stringMatching(/^generated\/11111111-1111-1111-1111-111111111111\/ai-narration-.*\.mp3$/),
+        ]);
     });
 
     it("allows cron-authenticated GET processing without an admin session", async () => {

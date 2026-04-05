@@ -1,4 +1,4 @@
-export type NarrationJobStatus = "idle" | "queued" | "processing" | "ready" | "failed";
+export type NarrationJobStatus = "idle" | "queued" | "processing" | "ready" | "failed" | "stale";
 
 export interface NarrationJobState {
     status: NarrationJobStatus;
@@ -18,14 +18,14 @@ export interface NarrationJobRowLike {
     narration_completed_at?: string | null;
 }
 
-export const NARRATION_TERMINAL_STATUSES: NarrationJobStatus[] = ["idle", "ready", "failed"];
+export const NARRATION_TERMINAL_STATUSES: NarrationJobStatus[] = ["idle", "ready", "failed", "stale"];
 
 export function isNarrationTerminalStatus(status: NarrationJobStatus) {
     return NARRATION_TERMINAL_STATUSES.includes(status);
 }
 
 export function normalizeNarrationJobStatus(value: string | null | undefined, audioUrl?: string | null): NarrationJobStatus {
-    if (value === "queued" || value === "processing" || value === "ready" || value === "failed" || value === "idle") {
+    if (value === "queued" || value === "processing" || value === "ready" || value === "failed" || value === "idle" || value === "stale") {
         return value;
     }
 

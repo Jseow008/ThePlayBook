@@ -38,6 +38,21 @@ describe("NarrationRowAction", () => {
         expect(screen.getByText(/publish first to enable voice/i)).toBeInTheDocument();
     });
 
+    it("shows stale narration status when audio needs regeneration", () => {
+        render(
+            <NarrationRowAction
+                contentId="11111111-1111-1111-1111-111111111111"
+                contentStatus="verified"
+                audioUrl="https://example.com/audio/generated.mp3"
+                initialStatus="stale"
+                initialError={null}
+            />
+        );
+
+        expect(screen.getByRole("button", { name: /regenerate voice/i })).toBeInTheDocument();
+        expect(screen.getByText(/voice out of date/i)).toHaveClass("text-amber-600");
+    });
+
     it("queues and completes narration from the list row", async () => {
         global.fetch = vi.fn()
             .mockResolvedValueOnce({

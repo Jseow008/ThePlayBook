@@ -148,6 +148,20 @@ const defaultFormData: ContentFormData = {
     artifacts: [],
 };
 
+function getManualNarrationStateForAudioUrl(audioUrl: string) {
+    if (audioUrl.trim()) {
+        return {
+            narration_status: "ready" as const,
+            narration_error: null,
+        };
+    }
+
+    return {
+        narration_status: "idle" as const,
+        narration_error: null,
+    };
+}
+
 // Sortable Segment Item Component
 function SortableSegmentItem({
     segment,
@@ -315,6 +329,25 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
             setFieldErrors((prev) => {
                 const next = { ...prev };
                 delete next[field];
+                return next;
+            });
+        }
+    };
+
+    const updateAudioUrl = (nextAudioUrl: string) => {
+        const manualNarrationState = getManualNarrationStateForAudioUrl(nextAudioUrl);
+
+        setFormData((prev) => ({
+            ...prev,
+            audio_url: nextAudioUrl,
+            narration_status: manualNarrationState.narration_status,
+            narration_error: manualNarrationState.narration_error,
+        }));
+
+        if (fieldErrors.audio_url) {
+            setFieldErrors((prev) => {
+                const next = { ...prev };
+                delete next.audio_url;
                 return next;
             });
         }
@@ -489,7 +522,7 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
             }
 
             const data = await response.json();
-            updateField("audio_url", data.url);
+            updateAudioUrl(data.url);
         } catch (err: unknown) {
             console.error("Audio upload failed:", err);
             const message = err instanceof Error ? err.message : "Failed to upload audio. Please try again.";
@@ -515,7 +548,10 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
             return rest;
         });
 
-        const dataToSubmit = {
+        const normalizedAudioUrl = formData.audio_url.trim();
+        const initialAudioUrl = initialData?.audio_url?.trim() ?? "";
+        const didAudioUrlChange = !isEditing || normalizedAudioUrl !== initialAudioUrl;
+        const dataToSubmit: Record<string, unknown> = {
             ...formData,
             status,
             segments: segmentsToSubmit,
@@ -525,11 +561,14 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
             source_url: formData.source_url || null,
             cover_image_url: formData.cover_image_url || null,
             hero_image_url: formData.hero_image_url || null,
-            audio_url: formData.audio_url || null,
             category: formData.category || null,
             series_id: formData.series_id || null,
             series_order: formData.series_id ? formData.series_order : null,
         };
+
+        if (didAudioUrlChange) {
+            dataToSubmit.audio_url = normalizedAudioUrl || null;
+        }
 
         try {
             const url = isEditing
@@ -959,6 +998,11 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
                                             updateField("narration_error", nextError);
                                         }}
                                     />
+                                    {formData.narration_status === "stale" && formData.audio_url && (
+                                        <p className="text-xs text-amber-600">
+                                            The current narration is out of date. Regenerate it to match the latest deep-mode content.
+                                        </p>
+                                    )}
                                     {formData.status !== "verified" && (
                                         <p className="text-xs text-amber-600">
                                             Verify this content before generating AI narration.
@@ -1005,7 +1049,7 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
                                 <input
                                     type="url"
                                     value={formData.audio_url}
-                                    onChange={(e) => updateField("audio_url", e.target.value)}
+                                    onChange={(e) => updateAudioUrl(e.target.value)}
                                     placeholder="Or paste audio URL directly..."
                                     className="w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
                                 />
@@ -1024,7 +1068,7 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
                                     </audio>
                                     <button
                                         type="button"
-                                        onClick={() => updateField("audio_url", "")}
+                                        onClick={() => updateAudioUrl("")}
                                         className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
                                     >
                                         <Trash2 className="w-4 h-4" />

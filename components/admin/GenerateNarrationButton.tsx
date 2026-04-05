@@ -2,7 +2,7 @@
 
 import { Loader2, Sparkles } from "lucide-react";
 import { type NarrationJobStatus, isNarrationTerminalStatus } from "@/lib/narration-job";
-import { useNarrationGeneration } from "./useNarrationGeneration";
+import { STALE_NARRATION_MESSAGE, useNarrationGeneration } from "./useNarrationGeneration";
 
 interface GenerateNarrationButtonProps {
     contentId: string;
@@ -10,6 +10,7 @@ interface GenerateNarrationButtonProps {
     initialStatus?: NarrationJobStatus;
     initialError?: string | null;
     disabled?: boolean;
+    pollIntervalMs?: number;
     onGenerated: (url: string) => void;
     onStatusChange?: (status: NarrationJobStatus, error: string | null) => void;
 }
@@ -20,6 +21,7 @@ export function GenerateNarrationButton({
     initialStatus = "idle",
     initialError = null,
     disabled = false,
+    pollIntervalMs,
     onGenerated,
     onStatusChange = () => {},
 }: GenerateNarrationButtonProps) {
@@ -36,6 +38,7 @@ export function GenerateNarrationButton({
         initialError,
         onGenerated,
         onStatusChange,
+        pollIntervalMs,
     });
 
     const buttonLabel = buttonBusy
@@ -43,6 +46,13 @@ export function GenerateNarrationButton({
             ? "Generating..."
             : "Queued"
         : currentAudioUrl ? "Regenerate AI Narration" : "Generate AI Narration";
+    const statusTone = statusText.startsWith("Error:")
+        ? "text-red-600"
+        : statusText === STALE_NARRATION_MESSAGE
+            || statusText.toLowerCase().includes("temporarily rate limited")
+            || statusText.toLowerCase().includes("temporarily unavailable")
+            ? "text-amber-600"
+            : "text-emerald-600";
 
     return (
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
@@ -76,7 +86,7 @@ export function GenerateNarrationButton({
             </div>
 
             {statusText && (
-                <p className={`mt-3 text-xs font-medium ${statusText.startsWith("Error:") ? "text-red-600" : "text-emerald-600"}`}>
+                <p className={`mt-3 text-xs font-medium ${statusTone}`}>
                     {statusText}
                 </p>
             )}

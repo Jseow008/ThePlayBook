@@ -441,8 +441,30 @@ function isRetryableFetchFailure(error: unknown) {
         || message.includes("timeout");
 }
 
-function delay(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+function delay(ms: number, signal?: AbortSignal) {
+    return new Promise<void>((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(signal.reason ?? new DOMException("Aborted", "AbortError"));
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            cleanup();
+            resolve();
+        }, ms);
+
+        const handleAbort = () => {
+            cleanup();
+            reject(signal?.reason ?? new DOMException("Aborted", "AbortError"));
+        };
+
+        const cleanup = () => {
+            clearTimeout(timeout);
+            signal?.removeEventListener("abort", handleAbort);
+        };
+
+        signal?.addEventListener("abort", handleAbort, { once: true });
+    });
 }
 
 function getRetryDelayMs(attempt: number) {
@@ -494,28 +516,56 @@ function buildOpenAiHttpError(status: number, providerMessage: string) {
     });
 }
 
-async function mapWithConcurrency<T, R>(
+function getCombinedAbortSignal(signal?: AbortSignal) {
+    if (!signal) {
+        return AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS);
+    }
+
+    if (typeof AbortSignal.any === "function") {
+        return AbortSignal.any([signal, AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS)]);
+    }
+
+    return AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS);
+}
+
+export async function mapWithConcurrency<T, R>(
     items: T[],
     concurrency: number,
-    mapper: (item: T, index: number) => Promise<R>
+    mapper: (item: T, index: number, signal: AbortSignal) => Promise<R>
 ) {
     const results = new Array<R>(items.length);
     let nextIndex = 0;
+    let firstError: unknown = null;
+    const abortController = new AbortController();
 
     async function worker() {
-        while (nextIndex < items.length) {
+        while (!firstError && !abortController.signal.aborted && nextIndex < items.length) {
             const currentIndex = nextIndex;
             nextIndex += 1;
-            results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+
+            try {
+                results[currentIndex] = await mapper(items[currentIndex], currentIndex, abortController.signal);
+            } catch (error) {
+                if (!firstError) {
+                    firstError = error;
+                    abortController.abort(error);
+                }
+                break;
+            }
         }
     }
 
     const workerCount = Math.max(1, Math.min(concurrency, items.length));
     await Promise.all(Array.from({ length: workerCount }, () => worker()));
+
+    if (firstError) {
+        throw firstError;
+    }
+
     return results;
 }
 
-export async function synthesizeNarrationChunkWav(chunk: string) {
+export async function synthesizeNarrationChunkWav(chunk: string, signal?: AbortSignal) {
     if (!process.env.OPENAI_API_KEY) {
         throw new NarrationError({
             code: "OPENAI_NOT_CONFIGURED",
@@ -538,7 +588,7 @@ export async function synthesizeNarrationChunkWav(chunk: string) {
                     input: chunk,
                     response_format: OPENAI_WAV_FORMAT,
                 }),
-                signal: AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS),
+                signal: getCombinedAbortSignal(signal),
             });
 
             if (!response.ok) {
@@ -546,7 +596,7 @@ export async function synthesizeNarrationChunkWav(chunk: string) {
                 const error = buildOpenAiHttpError(response.status, providerMessage);
 
                 if (RETRYABLE_OPENAI_STATUSES.has(response.status) && attempt < OPENAI_MAX_ATTEMPTS) {
-                    await delay(getRetryDelayMs(attempt));
+                    await delay(getRetryDelayMs(attempt), signal);
                     continue;
                 }
 
@@ -563,8 +613,17 @@ export async function synthesizeNarrationChunkWav(chunk: string) {
             const isRetryable = isAbortError(error) || isRetryableFetchFailure(error);
 
             if (isRetryable && attempt < OPENAI_MAX_ATTEMPTS) {
-                await delay(getRetryDelayMs(attempt));
+                await delay(getRetryDelayMs(attempt), signal);
                 continue;
+            }
+
+            if (signal?.aborted) {
+                throw new NarrationError({
+                    code: "NARRATION_ABORTED",
+                    status: 499,
+                    userMessage: "AI narration generation was cancelled.",
+                    cause: error,
+                });
             }
 
             if (isAbortError(error)) {
@@ -598,7 +657,7 @@ export async function generateNarrationAudio(content: NarrationContentSource) {
     const wavChunks = await mapWithConcurrency(
         chunks,
         TTS_CONCURRENCY,
-        async (chunk) => synthesizeNarrationChunkWav(chunk)
+        async (chunk, _index, signal) => synthesizeNarrationChunkWav(chunk, signal)
     );
 
     const wavBuffer = concatenateWavBuffers(wavChunks);

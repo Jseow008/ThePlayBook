@@ -26,6 +26,8 @@ interface UseNarrationGenerationOptions {
 export const FALLBACK_GENERATION_ERROR = "AI narration could not be completed right now. Please try again.";
 export const FALLBACK_NETWORK_ERROR = "Could not reach the narration service. Please try again.";
 export const STATUS_RATE_LIMIT_MESSAGE = "AI narration is still generating. Status checks are temporarily rate limited; retrying shortly.";
+export const STATUS_FETCH_RETRY_MESSAGE = "AI narration is still generating. Status checks are temporarily unavailable; retrying shortly.";
+export const STALE_NARRATION_MESSAGE = "AI narration is out of date. Regenerate it to match the latest deep-mode content.";
 const DEFAULT_POLL_INTERVAL_MS = 5_000;
 
 async function parseNarrationResponse(response: Response): Promise<NarrationRouteResponse | null> {
@@ -81,6 +83,7 @@ export function useNarrationGeneration({
     const [statusText, setStatusText] = useState(initialError ? `Error: ${initialError}` : "");
     const [currentAudioUrl, setCurrentAudioUrl] = useState(audioUrl);
     const pollingRef = useRef<number | null>(null);
+    const pollRunIdRef = useRef(0);
     const latestAudioUrlRef = useRef(audioUrl);
 
     useEffect(() => {
@@ -100,6 +103,11 @@ export function useNarrationGeneration({
             return;
         }
 
+        if (initialStatus === "stale" && currentAudioUrl) {
+            setStatusText(STALE_NARRATION_MESSAGE);
+            return;
+        }
+
         if (initialStatus === "ready" && currentAudioUrl) {
             setStatusText("AI narration is ready and saved to this content item.");
             return;
@@ -111,11 +119,25 @@ export function useNarrationGeneration({
     useEffect(() => {
         if (jobStatus !== "queued" && jobStatus !== "processing") {
             if (pollingRef.current !== null) {
-                window.clearInterval(pollingRef.current);
+                window.clearTimeout(pollingRef.current);
                 pollingRef.current = null;
             }
             return;
         }
+
+        let cancelled = false;
+        const pollRunId = pollRunIdRef.current + 1;
+        pollRunIdRef.current = pollRunId;
+
+        const scheduleNextPoll = () => {
+            if (cancelled) {
+                return;
+            }
+
+            pollingRef.current = window.setTimeout(() => {
+                void poll();
+            }, pollIntervalMs);
+        };
 
         const poll = async () => {
             try {
@@ -125,13 +147,24 @@ export function useNarrationGeneration({
                 });
                 const data = await parseNarrationResponse(response);
 
+                if (cancelled || pollRunId !== pollRunIdRef.current) {
+                    return;
+                }
+
                 if (response.status === 429) {
                     setStatusText(STATUS_RATE_LIMIT_MESSAGE);
+                    scheduleNextPoll();
                     return;
                 }
 
                 if (!response.ok || !data?.data?.job) {
-                    throw new Error(data?.error?.message || FALLBACK_GENERATION_ERROR);
+                    if (!response.ok && response.status < 500) {
+                        throw new Error(data?.error?.message || FALLBACK_GENERATION_ERROR);
+                    }
+
+                    setStatusText(STATUS_FETCH_RETRY_MESSAGE);
+                    scheduleNextPoll();
+                    return;
                 }
 
                 const nextJob = data.data.job;
@@ -157,9 +190,25 @@ export function useNarrationGeneration({
                     return;
                 }
 
+                if (nextJob.status === "stale") {
+                    setStatusText(STALE_NARRATION_MESSAGE);
+                    return;
+                }
+
                 setStatusText(getQueuedMessage(nextJob.status));
+                scheduleNextPoll();
             } catch (error) {
+                if (cancelled || pollRunId !== pollRunIdRef.current) {
+                    return;
+                }
+
                 const message = getClientSafeErrorMessage(error);
+                if (message === FALLBACK_NETWORK_ERROR || message === FALLBACK_GENERATION_ERROR) {
+                    setStatusText(STATUS_FETCH_RETRY_MESSAGE);
+                    scheduleNextPoll();
+                    return;
+                }
+
                 setStatusText(`Error: ${message}`);
                 setJobStatus("failed");
                 onStatusChange("failed", message);
@@ -167,13 +216,11 @@ export function useNarrationGeneration({
         };
 
         void poll();
-        pollingRef.current = window.setInterval(() => {
-            void poll();
-        }, pollIntervalMs);
 
         return () => {
+            cancelled = true;
             if (pollingRef.current !== null) {
-                window.clearInterval(pollingRef.current);
+                window.clearTimeout(pollingRef.current);
                 pollingRef.current = null;
             }
         };

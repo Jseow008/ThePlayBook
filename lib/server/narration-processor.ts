@@ -4,6 +4,12 @@ import { isNarrationError, generateNarrationAudio } from "@/lib/server/ai-narrat
 import { logApiError } from "@/lib/server/api";
 
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
+const GENERATED_AUDIO_PREFIX = "/storage/v1/object/public/audio/";
+
+interface ClaimedNarrationJob {
+    id: string;
+    narration_started_at: string;
+}
 
 function getPersistedNarrationError(error: unknown) {
     if (isNarrationError(error)) {
@@ -38,6 +44,34 @@ async function cleanupUploadedNarration(
     }
 }
 
+function buildGeneratedNarrationStoragePath(contentId: string, startedAt: string, extension: string) {
+    const version = startedAt.replace(/[^0-9A-Za-z]/g, "");
+    return `generated/${contentId}/ai-narration-${version}.${extension}`;
+}
+
+function extractGeneratedNarrationStoragePath(publicUrl: string | null | undefined, contentId: string) {
+    if (!publicUrl) {
+        return null;
+    }
+
+    try {
+        const url = new URL(publicUrl);
+        const markerIndex = url.pathname.indexOf(GENERATED_AUDIO_PREFIX);
+        if (markerIndex < 0) {
+            return null;
+        }
+
+        const storagePath = decodeURIComponent(url.pathname.slice(markerIndex + GENERATED_AUDIO_PREFIX.length));
+        if (!storagePath.startsWith(`generated/${contentId}/`)) {
+            return null;
+        }
+
+        return storagePath;
+    } catch {
+        return null;
+    }
+}
+
 async function claimNextNarrationJob() {
     const supabase = getAdminClient();
     const { data: queuedItems, error: queueError } = await supabase
@@ -64,7 +98,7 @@ async function claimNextNarrationJob() {
             })
             .eq("id", item.id)
             .eq("narration_status", "queued")
-            .select("id")
+            .select("id, narration_started_at")
             .maybeSingle();
 
         if (claimError) {
@@ -74,13 +108,13 @@ async function claimNextNarrationJob() {
         if (!claimedRow) {
             continue;
         }
-        return claimedRow;
+        return claimedRow as ClaimedNarrationJob;
     }
 
     return null;
 }
 
-async function markNarrationFailed(contentId: string, error: unknown) {
+async function markNarrationFailed(contentId: string, startedAt: string, error: unknown) {
     const supabase = getAdminClient();
     await supabase
         .from("content_item")
@@ -89,7 +123,30 @@ async function markNarrationFailed(contentId: string, error: unknown) {
             narration_error: getPersistedNarrationError(error),
             narration_completed_at: new Date().toISOString(),
         })
-        .eq("id", contentId);
+        .eq("id", contentId)
+        .eq("narration_status", "processing")
+        .eq("narration_started_at", startedAt);
+}
+
+async function releaseNarrationClaim(
+    contentId: string,
+    startedAt: string,
+    existingAudioUrl: string | null,
+    completedAt: string | null
+) {
+    const supabase = getAdminClient();
+    await supabase
+        .from("content_item")
+        .update({
+            narration_status: existingAudioUrl ? "ready" : "idle",
+            narration_error: null,
+            narration_requested_at: null,
+            narration_started_at: null,
+            narration_completed_at: existingAudioUrl ? (completedAt ?? new Date().toISOString()) : null,
+        })
+        .eq("id", contentId)
+        .eq("narration_status", "processing")
+        .eq("narration_started_at", startedAt);
 }
 
 export function buildProcessErrorResponseMessage(error: unknown) {
@@ -114,14 +171,18 @@ export async function processNextNarrationJob(requestId: string) {
         return { processed: false as const };
     }
     const contentId = claimedJob.id;
+    const claimStartedAt = claimedJob.narration_started_at;
 
     try {
         const { data: contentItem, error: fetchError } = await supabase
             .from("content_item")
             .select(`
                 id,
+                status,
                 title,
                 author,
+                audio_url,
+                narration_completed_at,
                 quick_mode_json,
                 segments:segment(order_index, title, markdown_body, deleted_at)
             `)
@@ -130,8 +191,23 @@ export async function processNextNarrationJob(requestId: string) {
             .order("order_index", { referencedTable: "segment" })
             .single();
 
-        if (fetchError || !contentItem) {
-            throw fetchError ?? new Error("Content not found");
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        if (!contentItem) {
+            await releaseNarrationClaim(contentId, claimStartedAt, null, null);
+            return { processed: false as const, contentId, discarded: true as const };
+        }
+
+        if (contentItem.status !== "verified") {
+            await releaseNarrationClaim(
+                contentId,
+                claimStartedAt,
+                contentItem.audio_url ?? null,
+                contentItem.narration_completed_at ?? null
+            );
+            return { processed: false as const, contentId, discarded: true as const };
         }
 
         const segments = ((contentItem.segments ?? []) as Array<{
@@ -156,7 +232,8 @@ export async function processNextNarrationJob(requestId: string) {
             throw new Error("Generated narration is too large to store.");
         }
 
-        const storagePath = `generated/${contentId}/ai-narration.${extension}`;
+        const storagePath = buildGeneratedNarrationStoragePath(contentId, claimStartedAt, extension);
+        const previousGeneratedStoragePath = extractGeneratedNarrationStoragePath(contentItem.audio_url ?? null, contentId);
         const audioBucket = supabase.storage.from("audio");
         const uploadBlob = new Blob([new Uint8Array(audioBuffer)], { type: contentType });
 
@@ -173,19 +250,35 @@ export async function processNextNarrationJob(requestId: string) {
             data: { publicUrl },
         } = audioBucket.getPublicUrl(storagePath);
 
-        const { error: updateError } = await supabase
+        const { data: updatedRow, error: updateError } = await supabase
             .from("content_item")
             .update({
                 audio_url: publicUrl,
                 narration_status: "ready",
                 narration_error: null,
+                narration_requested_at: null,
+                narration_started_at: null,
                 narration_completed_at: new Date().toISOString(),
             })
-            .eq("id", contentId);
+            .eq("id", contentId)
+            .eq("status", "verified")
+            .eq("narration_status", "processing")
+            .eq("narration_started_at", claimStartedAt)
+            .select("id")
+            .maybeSingle();
 
         if (updateError) {
             await cleanupUploadedNarration(audioBucket, storagePath, requestId);
             throw updateError;
+        }
+
+        if (!updatedRow) {
+            await cleanupUploadedNarration(audioBucket, storagePath, requestId);
+            return { processed: false as const, contentId, discarded: true as const };
+        }
+
+        if (previousGeneratedStoragePath && previousGeneratedStoragePath !== storagePath) {
+            await cleanupUploadedNarration(audioBucket, previousGeneratedStoragePath, requestId);
         }
 
         revalidatePath("/");
@@ -202,7 +295,7 @@ export async function processNextNarrationJob(requestId: string) {
             publicUrl,
         };
     } catch (error) {
-        await markNarrationFailed(contentId, error);
+        await markNarrationFailed(contentId, claimStartedAt, error);
         throw error;
     }
 }

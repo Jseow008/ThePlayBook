@@ -27,6 +27,13 @@ function getCompactStatus(status: NarrationJobStatus, currentAudioUrl: string, s
         };
     }
 
+    if (statusText.toLowerCase().includes("temporarily unavailable")) {
+        return {
+            label: "Status checks unavailable; retrying.",
+            tone: "text-amber-600",
+        };
+    }
+
     if (status === "processing") {
         return {
             label: "Generating voice",
@@ -37,6 +44,13 @@ function getCompactStatus(status: NarrationJobStatus, currentAudioUrl: string, s
     if (status === "queued") {
         return {
             label: "Voice queued",
+            tone: "text-amber-600",
+        };
+    }
+
+    if (status === "stale" && currentAudioUrl) {
+        return {
+            label: "Voice out of date",
             tone: "text-amber-600",
         };
     }
