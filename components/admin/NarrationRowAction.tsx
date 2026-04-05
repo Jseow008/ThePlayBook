@@ -3,6 +3,7 @@
 import { Sparkles } from "lucide-react";
 import { type NarrationJobStatus } from "@/lib/narration-job";
 import { useNarrationGeneration } from "./useNarrationGeneration";
+import { getNarrationStatusPresentation } from "./narration-status";
 
 interface NarrationRowActionProps {
     contentId: string;
@@ -10,62 +11,9 @@ interface NarrationRowActionProps {
     audioUrl: string;
     initialStatus?: NarrationJobStatus;
     initialError?: string | null;
-}
-
-function getCompactStatus(status: NarrationJobStatus, currentAudioUrl: string, statusText: string) {
-    if (statusText.startsWith("Error:")) {
-        return {
-            label: statusText.replace(/^Error:\s*/, ""),
-            tone: "text-red-600",
-        };
-    }
-
-    if (statusText.toLowerCase().includes("temporarily rate limited")) {
-        return {
-            label: "Status checks throttled; retrying.",
-            tone: "text-amber-600",
-        };
-    }
-
-    if (statusText.toLowerCase().includes("temporarily unavailable")) {
-        return {
-            label: "Status checks unavailable; retrying.",
-            tone: "text-amber-600",
-        };
-    }
-
-    if (status === "processing") {
-        return {
-            label: "Generating voice",
-            tone: "text-blue-600",
-        };
-    }
-
-    if (status === "queued") {
-        return {
-            label: "Voice queued",
-            tone: "text-amber-600",
-        };
-    }
-
-    if (status === "stale" && currentAudioUrl) {
-        return {
-            label: "Voice out of date",
-            tone: "text-amber-600",
-        };
-    }
-
-    if (status === "ready" || currentAudioUrl) {
-        return {
-            label: "Voice ready",
-            tone: "text-emerald-600",
-        };
-    }
-
-    return {
-        label: "No voice yet",
-        tone: "text-zinc-500",
-    };
+    initialRequestedAt?: string | null;
+    initialStartedAt?: string | null;
+    initialCompletedAt?: string | null;
 }
 
 export function NarrationRowAction({
@@ -74,6 +22,9 @@ export function NarrationRowAction({
     audioUrl,
     initialStatus = "idle",
     initialError = null,
+    initialRequestedAt = null,
+    initialStartedAt = null,
+    initialCompletedAt = null,
 }: NarrationRowActionProps) {
     const {
         buttonBusy,
@@ -81,11 +32,17 @@ export function NarrationRowAction({
         jobStatus,
         queueNarration,
         statusText,
+        requestedAt,
+        startedAt,
+        completedAt,
     } = useNarrationGeneration({
         contentId,
         audioUrl,
         initialStatus,
         initialError,
+        initialRequestedAt,
+        initialStartedAt,
+        initialCompletedAt,
     });
 
     if (contentStatus !== "verified") {
@@ -104,7 +61,15 @@ export function NarrationRowAction({
         );
     }
 
-    const compactStatus = getCompactStatus(jobStatus, currentAudioUrl, statusText);
+    const compactStatus = getNarrationStatusPresentation({
+        status: jobStatus,
+        statusText,
+        audioUrl: currentAudioUrl,
+        requestedAt,
+        startedAt,
+        completedAt,
+        error: initialError,
+    });
     const buttonLabel = buttonBusy
         ? jobStatus === "processing"
             ? "Generating..."
@@ -114,19 +79,26 @@ export function NarrationRowAction({
             : "Generate AI Voice";
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
-            <button
-                type="button"
-                onClick={queueNarration}
-                disabled={buttonBusy}
-                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-                <Sparkles className="h-3.5 w-3.5" />
-                {buttonLabel}
-            </button>
-            <span className={`text-xs font-medium ${compactStatus.tone}`}>
-                {compactStatus.label}
-            </span>
+        <div className="rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold ${compactStatus.badgeClassName}`}>
+                    {compactStatus.badgeLabel}
+                </span>
+                <span className={`text-xs ${compactStatus.detailClassName}`}>
+                    {compactStatus.detail}
+                </span>
+            </div>
+            <div className="mt-2">
+                <button
+                    type="button"
+                    onClick={queueNarration}
+                    disabled={buttonBusy}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {buttonLabel}
+                </button>
+            </div>
         </div>
     );
 }

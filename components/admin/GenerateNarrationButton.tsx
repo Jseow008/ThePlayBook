@@ -3,12 +3,16 @@
 import { Loader2, Sparkles } from "lucide-react";
 import { type NarrationJobStatus, isNarrationTerminalStatus } from "@/lib/narration-job";
 import { STALE_NARRATION_MESSAGE, useNarrationGeneration } from "./useNarrationGeneration";
+import { getNarrationStatusPresentation } from "./narration-status";
 
 interface GenerateNarrationButtonProps {
     contentId: string;
     audioUrl: string;
     initialStatus?: NarrationJobStatus;
     initialError?: string | null;
+    initialRequestedAt?: string | null;
+    initialStartedAt?: string | null;
+    initialCompletedAt?: string | null;
     disabled?: boolean;
     pollIntervalMs?: number;
     onGenerated: (url: string) => void;
@@ -20,6 +24,9 @@ export function GenerateNarrationButton({
     audioUrl,
     initialStatus = "idle",
     initialError = null,
+    initialRequestedAt = null,
+    initialStartedAt = null,
+    initialCompletedAt = null,
     disabled = false,
     pollIntervalMs,
     onGenerated,
@@ -31,11 +38,17 @@ export function GenerateNarrationButton({
         jobStatus,
         queueNarration,
         statusText,
+        requestedAt,
+        startedAt,
+        completedAt,
     } = useNarrationGeneration({
         contentId,
         audioUrl,
         initialStatus,
         initialError,
+        initialRequestedAt,
+        initialStartedAt,
+        initialCompletedAt,
         onGenerated,
         onStatusChange,
         pollIntervalMs,
@@ -46,13 +59,15 @@ export function GenerateNarrationButton({
             ? "Generating..."
             : "Queued"
         : currentAudioUrl ? "Regenerate AI Narration" : "Generate AI Narration";
-    const statusTone = statusText.startsWith("Error:")
-        ? "text-red-600"
-        : statusText === STALE_NARRATION_MESSAGE
-            || statusText.toLowerCase().includes("temporarily rate limited")
-            || statusText.toLowerCase().includes("temporarily unavailable")
-            ? "text-amber-600"
-            : "text-emerald-600";
+    const narrationStatus = getNarrationStatusPresentation({
+        status: jobStatus,
+        statusText,
+        audioUrl: currentAudioUrl,
+        requestedAt,
+        startedAt,
+        completedAt,
+        error: initialError,
+    });
 
     return (
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
@@ -66,6 +81,14 @@ export function GenerateNarrationButton({
                         Queue one AI narration audio file from the published summary, upload it to Supabase audio storage,
                         and save the resulting URL to this content item automatically.
                     </p>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${narrationStatus.badgeClassName}`}>
+                            {narrationStatus.badgeLabel}
+                        </span>
+                        <span className={`text-xs ${narrationStatus.detailClassName}`}>
+                            {narrationStatus.detail}
+                        </span>
+                    </div>
                     {currentAudioUrl && isNarrationTerminalStatus(jobStatus) && (
                         <p className="mt-2 text-xs font-medium text-zinc-600">
                             A narration file already exists. Generating again will replace the stored audio file once the new job finishes.
@@ -86,7 +109,7 @@ export function GenerateNarrationButton({
             </div>
 
             {statusText && (
-                <p className={`mt-3 text-xs font-medium ${statusTone}`}>
+                <p className={`mt-3 text-xs font-medium ${statusText === STALE_NARRATION_MESSAGE || statusText.toLowerCase().includes("temporarily") ? "text-amber-600" : statusText.startsWith("Error:") ? "text-red-600" : "text-emerald-600"}`}>
                     {statusText}
                 </p>
             )}

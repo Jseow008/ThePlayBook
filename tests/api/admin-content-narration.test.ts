@@ -153,6 +153,54 @@ describe("Admin content narration API", () => {
         expect(json.data.message).toMatch(/generation will continue in the background/i);
     });
 
+    it("re-queues narration when status is stuck on ready but no audio url exists", async () => {
+        contentSelectSingleMock.mockResolvedValueOnce({
+            data: {
+                id: "11111111-1111-1111-1111-111111111111",
+                title: "Atomic Habits Summary",
+                status: "verified",
+                audio_url: null,
+                narration_status: "ready",
+                narration_error: null,
+                narration_requested_at: null,
+                narration_started_at: null,
+                narration_completed_at: "2026-04-01T00:02:00.000Z",
+            },
+            error: null,
+        });
+
+        const req = new NextRequest("http://localhost/api/admin/content/11111111-1111-1111-1111-111111111111/narration", {
+            method: "POST",
+        });
+
+        const res = await POST(req, {
+            params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }),
+        });
+
+        expect(res.status).toBe(202);
+        expect(afterMock).toHaveBeenCalledTimes(1);
+
+        const json = await res.json();
+        expect(json.data.job.status).toBe("queued");
+    });
+
+    it("queues regeneration even when an audio file already exists", async () => {
+        const req = new NextRequest("http://localhost/api/admin/content/11111111-1111-1111-1111-111111111111/narration", {
+            method: "POST",
+        });
+
+        const res = await POST(req, {
+            params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }),
+        });
+
+        expect(res.status).toBe(202);
+        expect(afterMock).toHaveBeenCalledTimes(1);
+
+        const json = await res.json();
+        expect(json.data.job.status).toBe("queued");
+        expect(json.data.message).toMatch(/generation will continue in the background/i);
+    });
+
     it("returns the persisted narration job state", async () => {
         const req = new NextRequest("http://localhost/api/admin/content/11111111-1111-1111-1111-111111111111/narration", {
             method: "GET",

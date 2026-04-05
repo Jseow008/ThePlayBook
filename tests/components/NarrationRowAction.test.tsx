@@ -20,7 +20,8 @@ describe("NarrationRowAction", () => {
         );
 
         expect(screen.getByRole("button", { name: /generate ai voice/i })).toBeInTheDocument();
-        expect(screen.getByText(/no voice yet/i)).toBeInTheDocument();
+        expect(screen.getByText(/no voice/i)).toBeInTheDocument();
+        expect(screen.getByText(/no narration has been generated yet/i)).toBeInTheDocument();
     });
 
     it("shows publish guidance for draft content", () => {
@@ -50,7 +51,8 @@ describe("NarrationRowAction", () => {
         );
 
         expect(screen.getByRole("button", { name: /regenerate voice/i })).toBeInTheDocument();
-        expect(screen.getByText(/voice out of date/i)).toHaveClass("text-amber-600");
+        expect(screen.getByText(/out of date/i)).toHaveClass("text-amber-700");
+        expect(screen.getByText(/current audio is still playable, but it no longer matches the latest deep-mode content/i)).toHaveClass("text-amber-600");
     });
 
     it("queues and completes narration from the list row", async () => {
@@ -102,10 +104,11 @@ describe("NarrationRowAction", () => {
         fireEvent.click(screen.getByRole("button", { name: /generate ai voice/i }));
 
         await waitFor(() => {
-            expect(screen.getByText(/voice ready/i)).toBeInTheDocument();
+            expect(screen.getByText(/^ready$/i)).toBeInTheDocument();
         });
 
         expect(screen.getByRole("button", { name: /regenerate voice/i })).toBeInTheDocument();
+        expect(screen.getByText(/generated .* saved to this content item/i)).toBeInTheDocument();
         expect(global.fetch).toHaveBeenNthCalledWith(
             1,
             "/api/admin/content/11111111-1111-1111-1111-111111111111/narration",

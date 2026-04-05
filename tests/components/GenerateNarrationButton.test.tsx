@@ -112,6 +112,8 @@ describe("GenerateNarrationButton", () => {
 
         expect(screen.getByRole("button", { name: /regenerate ai narration/i })).toBeInTheDocument();
         expect(screen.getByText(/will replace the stored audio file once the new job finishes/i)).toBeInTheDocument();
+        expect(screen.getByText(/^ready$/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/narration is ready and saved to this content item/i).length).toBeGreaterThan(0);
     });
 
     it("shows a stale warning when narration is out of date", () => {
@@ -127,6 +129,7 @@ describe("GenerateNarrationButton", () => {
         );
 
         expect(screen.getByRole("button", { name: /regenerate ai narration/i })).toBeInTheDocument();
+        expect(screen.getAllByText(/out of date/i).length).toBeGreaterThan(0);
         expect(screen.getByText(/out of date\. regenerate it to match the latest deep-mode content/i)).toHaveClass("text-amber-600");
     });
 
@@ -196,8 +199,8 @@ describe("GenerateNarrationButton", () => {
 
         fireEvent.click(screen.getByRole("button", { name: /generate ai narration/i }));
 
-        const errorMessage = await screen.findByText(/narration can only be generated for verified content/i);
-        expect(errorMessage).toHaveClass("text-red-600");
+        const errorMessages = await screen.findAllByText(/narration can only be generated for verified content/i);
+        expect(errorMessages.some((element) => element.className.includes("text-red-600"))).toBe(true);
     });
 
     it("falls back to a safe message when the response is not valid JSON", async () => {
@@ -221,7 +224,8 @@ describe("GenerateNarrationButton", () => {
 
         fireEvent.click(screen.getByRole("button", { name: /generate ai narration/i }));
 
-        expect(await screen.findByText((content) => content.includes("AI narration could not be completed right now. Please try again."))).toHaveClass("text-red-600");
+        const errorMessages = await screen.findAllByText((content) => content.includes("AI narration could not be completed right now. Please try again."));
+        expect(errorMessages.some((element) => element.className.includes("text-red-600"))).toBe(true);
     });
 
     it("falls back to a safe message on network failures", async () => {
@@ -240,7 +244,8 @@ describe("GenerateNarrationButton", () => {
 
         fireEvent.click(screen.getByRole("button", { name: /generate ai narration/i }));
 
-        expect(await screen.findByText(/could not reach the narration service\. please try again\./i)).toHaveClass("text-red-600");
+        const errorMessages = await screen.findAllByText(/could not reach the narration service\. please try again\./i);
+        expect(errorMessages.some((element) => element.className.includes("text-red-600"))).toBe(true);
     });
 
     it("keeps queued state when status checks are temporarily rate limited", async () => {
@@ -291,6 +296,21 @@ describe("GenerateNarrationButton", () => {
                 }),
             })
             .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        job: {
+                            status: "ready",
+                            error: null,
+                            requested_at: "2026-04-01T12:00:00.000Z",
+                            started_at: "2026-04-01T12:00:05.000Z",
+                            completed_at: "2026-04-01T12:00:30.000Z",
+                            audio_url: "https://example.com/audio/generated-v2.mp3",
+                        },
+                    },
+                }),
+            })
+            .mockResolvedValue({
                 ok: true,
                 json: async () => ({
                     data: {

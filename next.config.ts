@@ -54,6 +54,28 @@ const corsHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  outputFileTracingIncludes: {
+    "/api/admin/content": [
+      "./node_modules/ffmpeg-static/ffmpeg",
+      "./node_modules/ffmpeg-static/ffmpeg.exe",
+      "./node_modules/ffmpeg-static/package.json",
+    ],
+    "/api/admin/content/[id]": [
+      "./node_modules/ffmpeg-static/ffmpeg",
+      "./node_modules/ffmpeg-static/ffmpeg.exe",
+      "./node_modules/ffmpeg-static/package.json",
+    ],
+    "/api/admin/content/[id]/narration": [
+      "./node_modules/ffmpeg-static/ffmpeg",
+      "./node_modules/ffmpeg-static/ffmpeg.exe",
+      "./node_modules/ffmpeg-static/package.json",
+    ],
+    "/api/admin/narration/process": [
+      "./node_modules/ffmpeg-static/ffmpeg",
+      "./node_modules/ffmpeg-static/ffmpeg.exe",
+      "./node_modules/ffmpeg-static/package.json",
+    ],
+  },
   images: {
     deviceSizes: [640, 768, 1024, 1280],
     dangerouslyAllowSVG: true,

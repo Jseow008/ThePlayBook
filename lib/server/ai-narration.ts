@@ -1,6 +1,9 @@
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
-import ffmpegPath from "ffmpeg-static";
+import { existsSync, chmodSync } from "node:fs";
+import { createRequire } from "node:module";
+import path from "node:path";
+import ffmpegStaticPath from "ffmpeg-static";
 
 const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
 const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE || "alloy";
@@ -13,6 +16,58 @@ const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 const OPENAI_MAX_ATTEMPTS = 3;
 const FFMPEG_TRANSCODE_TIMEOUT_MS = 60_000;
 const RETRYABLE_OPENAI_STATUSES = new Set([408, 409, 429, 500, 502, 503, 504]);
+const require = createRequire(import.meta.url);
+
+function shouldPreferWavOutput() {
+    const requestedFormat = process.env.NARRATION_OUTPUT_FORMAT?.trim().toLowerCase();
+    return requestedFormat === OPENAI_WAV_FORMAT;
+}
+
+function shouldAllowWavFallback() {
+    return process.env.NARRATION_ALLOW_WAV_FALLBACK?.trim().toLowerCase() === "true";
+}
+
+function normalizePotentialRootPath(candidatePath: string) {
+    if (!candidatePath.startsWith("/ROOT/")) {
+        return candidatePath;
+    }
+
+    return path.join(process.cwd(), candidatePath.slice("/ROOT/".length));
+}
+
+function resolveFfmpegBinaryPath() {
+    const explicitPath = process.env.FFMPEG_BIN?.trim();
+    if (explicitPath) {
+        return explicitPath;
+    }
+
+    const executableName = process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
+    const candidates = new Set<string>();
+
+    if (ffmpegStaticPath) {
+        candidates.add(ffmpegStaticPath);
+        candidates.add(normalizePotentialRootPath(ffmpegStaticPath));
+    }
+
+    candidates.add(path.join(process.cwd(), "node_modules", "ffmpeg-static", executableName));
+    candidates.add(path.join(process.cwd(), ".next", "server", "node_modules", "ffmpeg-static", executableName));
+
+    try {
+        const packageJsonPath = require.resolve("ffmpeg-static/package.json");
+        const packageDir = path.dirname(packageJsonPath);
+        candidates.add(path.join(packageDir, executableName));
+    } catch {
+        // ignore and continue through other traced candidates
+    }
+
+    for (const candidate of candidates) {
+        if (candidate && existsSync(candidate)) {
+            return candidate;
+        }
+    }
+
+    return null;
+}
 
 export interface NarrationSegmentSource {
     title: string | null;
@@ -307,7 +362,8 @@ export function concatenateWavBuffers(wavBuffers: Buffer[]) {
 }
 
 export async function transcodeWavToMp3(wavBuffer: Buffer) {
-    if (!ffmpegPath) {
+    const ffmpegBinaryPath = resolveFfmpegBinaryPath();
+    if (!ffmpegBinaryPath) {
         throw new NarrationError({
             code: "FFMPEG_NOT_AVAILABLE",
             status: 500,
@@ -315,7 +371,14 @@ export async function transcodeWavToMp3(wavBuffer: Buffer) {
             message: "ffmpeg-static did not provide a usable binary path.",
         });
     }
-    const ffmpegBinaryPath = ffmpegPath;
+
+    if (process.platform !== "win32") {
+        try {
+            chmodSync(ffmpegBinaryPath, 0o755);
+        } catch {
+            // Ignore chmod failures and let spawn surface the real execution error if needed.
+        }
+    }
 
     return await new Promise<Buffer>((resolve, reject) => {
         const child = spawn(ffmpegBinaryPath, [
@@ -661,13 +724,41 @@ export async function generateNarrationAudio(content: NarrationContentSource) {
     );
 
     const wavBuffer = concatenateWavBuffers(wavChunks);
-    const audioBuffer = await transcodeWavToMp3(wavBuffer);
+    if (shouldPreferWavOutput()) {
+        return {
+            script,
+            chunkCount: chunks.length,
+            audioBuffer: wavBuffer,
+            extension: OPENAI_WAV_FORMAT,
+            contentType: "audio/wav",
+        };
+    }
 
-    return {
-        script,
-        chunkCount: chunks.length,
-        audioBuffer,
-        extension: FINAL_AUDIO_FORMAT,
-        contentType: FINAL_AUDIO_CONTENT_TYPE,
-    };
+    try {
+        const audioBuffer = await transcodeWavToMp3(wavBuffer);
+
+        return {
+            script,
+            chunkCount: chunks.length,
+            audioBuffer,
+            extension: FINAL_AUDIO_FORMAT,
+            contentType: FINAL_AUDIO_CONTENT_TYPE,
+        };
+    } catch (error) {
+        if (!isNarrationError(error) || !error.code.startsWith("FFMPEG_")) {
+            throw error;
+        }
+
+        if (!shouldAllowWavFallback()) {
+            throw error;
+        }
+
+        return {
+            script,
+            chunkCount: chunks.length,
+            audioBuffer: wavBuffer,
+            extension: OPENAI_WAV_FORMAT,
+            contentType: "audio/wav",
+        };
+    }
 }

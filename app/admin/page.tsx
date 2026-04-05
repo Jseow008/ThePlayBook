@@ -19,6 +19,7 @@ import { LaunchReadinessPanel } from "@/components/admin/LaunchReadinessPanel";
 import { NarrationRowAction } from "@/components/admin/NarrationRowAction";
 import { APP_NAME } from "@/lib/brand";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import { getNarrationJobState } from "@/lib/narration-job";
 
 // Type icons mapping
 const typeIcons = {
@@ -83,7 +84,7 @@ export default async function AdminDashboardPage({
     // Build Query
     let query = (supabase
         .from("content_item") as any)
-        .select("id, title, type, author, status, is_featured, embedding, audio_url, narration_status, narration_error, created_at, updated_at, deleted_at", { count: "exact" })
+        .select("id, title, type, author, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at", { count: "exact" })
         .is("deleted_at", null); // Default to showing non-deleted items
 
     // Apply Filters
@@ -214,6 +215,14 @@ export default async function AdminDashboardPage({
                                 {items.map((item: any) => {
                                     const TypeIcon = typeIcons[item.type as keyof typeof typeIcons] || FileText;
                                     const isDeleted = !!item.deleted_at;
+                                    const narrationJob = getNarrationJobState({
+                                        audio_url: item.audio_url,
+                                        narration_status: item.narration_status,
+                                        narration_error: item.narration_error,
+                                        narration_requested_at: item.narration_requested_at,
+                                        narration_started_at: item.narration_started_at,
+                                        narration_completed_at: item.narration_completed_at,
+                                    });
 
                                     return (
                                         <div
@@ -239,9 +248,12 @@ export default async function AdminDashboardPage({
                                                         <NarrationRowAction
                                                             contentId={item.id}
                                                             contentStatus={item.status}
-                                                            audioUrl={item.audio_url || ""}
-                                                            initialStatus={item.narration_status || (item.audio_url ? "ready" : "idle")}
-                                                            initialError={item.narration_error}
+                                                            audioUrl={narrationJob.audio_url || ""}
+                                                            initialStatus={narrationJob.status}
+                                                            initialError={narrationJob.error}
+                                                            initialRequestedAt={narrationJob.requested_at}
+                                                            initialStartedAt={narrationJob.started_at}
+                                                            initialCompletedAt={narrationJob.completed_at}
                                                         />
                                                     )}
                                                 </div>

@@ -76,6 +76,9 @@ interface ContentFormData {
     audio_url: string;
     narration_status: NarrationJobStatus;
     narration_error: string | null;
+    narration_requested_at: string | null;
+    narration_started_at: string | null;
+    narration_completed_at: string | null;
     duration_seconds: number | null;
     status: "draft" | "verified";
     is_featured: boolean;
@@ -140,6 +143,9 @@ const defaultFormData: ContentFormData = {
     audio_url: "",
     narration_status: "idle",
     narration_error: null,
+    narration_requested_at: null,
+    narration_started_at: null,
+    narration_completed_at: null,
     duration_seconds: null,
     status: "draft",
     is_featured: false,
@@ -292,6 +298,7 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingHero, setIsUploadingHero] = useState(false);
     const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+    const [persistedAudioUrl, setPersistedAudioUrl] = useState(() => initialData?.audio_url?.trim() ?? "");
 
     // Auto-calculate duration based on words
     useEffect(() => {
@@ -342,6 +349,9 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
             audio_url: nextAudioUrl,
             narration_status: manualNarrationState.narration_status,
             narration_error: manualNarrationState.narration_error,
+            narration_requested_at: null,
+            narration_started_at: null,
+            narration_completed_at: nextAudioUrl.trim() ? prev.narration_completed_at : null,
         }));
 
         if (fieldErrors.audio_url) {
@@ -549,8 +559,7 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
         });
 
         const normalizedAudioUrl = formData.audio_url.trim();
-        const initialAudioUrl = initialData?.audio_url?.trim() ?? "";
-        const didAudioUrlChange = !isEditing || normalizedAudioUrl !== initialAudioUrl;
+        const didAudioUrlChange = !isEditing || normalizedAudioUrl !== persistedAudioUrl;
         const dataToSubmit: Record<string, unknown> = {
             ...formData,
             status,
@@ -987,15 +996,25 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
                                         audioUrl={formData.audio_url}
                                         initialStatus={formData.narration_status}
                                         initialError={formData.narration_error}
+                                        initialRequestedAt={formData.narration_requested_at}
+                                        initialStartedAt={formData.narration_started_at}
+                                        initialCompletedAt={formData.narration_completed_at}
                                         disabled={isSubmitting || isUploadingAudio || formData.status !== "verified"}
                                         onGenerated={(url) => {
                                             updateField("audio_url", url);
                                             updateField("narration_status", "ready");
                                             updateField("narration_error", null);
+                                            updateField("narration_requested_at", null);
+                                            updateField("narration_started_at", null);
+                                            updateField("narration_completed_at", new Date().toISOString());
+                                            setPersistedAudioUrl(url.trim());
                                         }}
                                         onStatusChange={(nextStatus, nextError) => {
                                             updateField("narration_status", nextStatus);
                                             updateField("narration_error", nextError);
+                                            if (nextStatus !== "ready") {
+                                                updateField("narration_completed_at", null);
+                                            }
                                         }}
                                     />
                                     {formData.narration_status === "stale" && formData.audio_url && (

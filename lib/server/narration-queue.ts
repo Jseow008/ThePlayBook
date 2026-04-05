@@ -7,6 +7,7 @@ type QueueNarrationJobParams = {
     supabase: AdminClient;
     contentId: string;
     row: NarrationJobRowLike;
+    allowReplaceExisting?: boolean;
 };
 
 type QueueNarrationJobResult = {
@@ -18,13 +19,13 @@ export async function queueNarrationJobIfEligible({
     supabase,
     contentId,
     row,
+    allowReplaceExisting = false,
 }: QueueNarrationJobParams): Promise<QueueNarrationJobResult> {
     const currentJob = getNarrationJobState(row);
     if (
-        currentJob.audio_url
+        (currentJob.audio_url && !allowReplaceExisting)
         || currentJob.status === "queued"
         || currentJob.status === "processing"
-        || currentJob.status === "ready"
     ) {
         return {
             queued: false,

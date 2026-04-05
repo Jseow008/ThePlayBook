@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     buildNarrationScript,
     concatenateWavBuffers,
+    generateNarrationAudio,
     mapWithConcurrency,
     splitNarrationIntoChunks,
     synthesizeNarrationChunkWav,
@@ -107,6 +108,100 @@ describe("AI narration helpers", () => {
         const hasId3Header = mp3[0] === 0x49 && mp3[1] === 0x44 && mp3[2] === 0x33;
         const hasMpegFrameHeader = mp3[0] === 0xff && (mp3[1] & 0xe0) === 0xe0;
         expect(hasId3Header || hasMpegFrameHeader).toBe(true);
+    });
+
+    it("returns WAV output when narration compression is disabled", async () => {
+        vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
+        vi.stubEnv("NARRATION_OUTPUT_FORMAT", "wav");
+
+        const wavBuffer = makeWav(7, 9);
+        const arrayBuffer = wavBuffer.buffer.slice(
+            wavBuffer.byteOffset,
+            wavBuffer.byteOffset + wavBuffer.byteLength
+        );
+
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            arrayBuffer: async () => arrayBuffer,
+        }) as any;
+
+        const result = await generateNarrationAudio({
+            title: "Deep Work",
+            author: "Cal Newport",
+            segments: [
+                {
+                    title: "Why focus matters",
+                    markdown_body: "Deep work compounds.",
+                },
+            ],
+        });
+
+        expect(result.extension).toBe("wav");
+        expect(result.contentType).toBe("audio/wav");
+        expect(result.audioBuffer.toString("ascii", 0, 4)).toBe("RIFF");
+    });
+
+    it("throws the ffmpeg error when WAV fallback is not explicitly allowed", async () => {
+        vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
+        vi.stubEnv("FFMPEG_BIN", "/definitely-missing-ffmpeg");
+
+        const wavBuffer = makeWav(7, 9);
+        const arrayBuffer = wavBuffer.buffer.slice(
+            wavBuffer.byteOffset,
+            wavBuffer.byteOffset + wavBuffer.byteLength
+        );
+
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            arrayBuffer: async () => arrayBuffer,
+        }) as any;
+
+        await expect(
+            generateNarrationAudio({
+                title: "Deep Work",
+                author: "Cal Newport",
+                segments: [
+                    {
+                        title: "Why focus matters",
+                        markdown_body: "Deep work compounds.",
+                    },
+                ],
+            })
+        ).rejects.toMatchObject({
+            userMessage: "AI narration could not finalize the audio file right now.",
+        });
+    });
+
+    it("falls back to WAV only when explicitly allowed", async () => {
+        vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
+        vi.stubEnv("NARRATION_ALLOW_WAV_FALLBACK", "true");
+        vi.stubEnv("FFMPEG_BIN", "/definitely-missing-ffmpeg");
+
+        const wavBuffer = makeWav(7, 9);
+        const arrayBuffer = wavBuffer.buffer.slice(
+            wavBuffer.byteOffset,
+            wavBuffer.byteOffset + wavBuffer.byteLength
+        );
+
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            arrayBuffer: async () => arrayBuffer,
+        }) as any;
+
+        const result = await generateNarrationAudio({
+            title: "Deep Work",
+            author: "Cal Newport",
+            segments: [
+                {
+                    title: "Why focus matters",
+                    markdown_body: "Deep work compounds.",
+                },
+            ],
+        });
+
+        expect(result.extension).toBe("wav");
+        expect(result.contentType).toBe("audio/wav");
+        expect(result.audioBuffer.toString("ascii", 0, 4)).toBe("RIFF");
     });
 
     it("retries temporary OpenAI failures before succeeding", async () => {

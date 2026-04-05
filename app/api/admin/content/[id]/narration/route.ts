@@ -136,6 +136,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             supabase,
             contentId: id,
             row: contentItem,
+            allowReplaceExisting: true,
         });
 
         after(async () => {

@@ -25,6 +25,10 @@ export function isNarrationTerminalStatus(status: NarrationJobStatus) {
 }
 
 export function normalizeNarrationJobStatus(value: string | null | undefined, audioUrl?: string | null): NarrationJobStatus {
+    if (!audioUrl && (value === "ready" || value === "stale")) {
+        return "idle";
+    }
+
     if (value === "queued" || value === "processing" || value === "ready" || value === "failed" || value === "idle" || value === "stale") {
         return value;
     }

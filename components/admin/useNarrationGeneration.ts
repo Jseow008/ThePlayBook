@@ -18,6 +18,9 @@ interface UseNarrationGenerationOptions {
     audioUrl: string;
     initialStatus?: NarrationJobStatus;
     initialError?: string | null;
+    initialRequestedAt?: string | null;
+    initialStartedAt?: string | null;
+    initialCompletedAt?: string | null;
     onGenerated?: (url: string) => void;
     onStatusChange?: (status: NarrationJobStatus, error: string | null) => void;
     pollIntervalMs?: number;
@@ -74,6 +77,9 @@ export function useNarrationGeneration({
     audioUrl,
     initialStatus = "idle",
     initialError = null,
+    initialRequestedAt = null,
+    initialStartedAt = null,
+    initialCompletedAt = null,
     onGenerated = () => {},
     onStatusChange = () => {},
     pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
@@ -82,6 +88,9 @@ export function useNarrationGeneration({
     const [jobStatus, setJobStatus] = useState<NarrationJobStatus>(initialStatus);
     const [statusText, setStatusText] = useState(initialError ? `Error: ${initialError}` : "");
     const [currentAudioUrl, setCurrentAudioUrl] = useState(audioUrl);
+    const [requestedAt, setRequestedAt] = useState<string | null>(initialRequestedAt);
+    const [startedAt, setStartedAt] = useState<string | null>(initialStartedAt);
+    const [completedAt, setCompletedAt] = useState<string | null>(initialCompletedAt);
     const pollingRef = useRef<number | null>(null);
     const pollRunIdRef = useRef(0);
     const latestAudioUrlRef = useRef(audioUrl);
@@ -90,6 +99,12 @@ export function useNarrationGeneration({
         latestAudioUrlRef.current = audioUrl;
         setCurrentAudioUrl(audioUrl);
     }, [audioUrl]);
+
+    useEffect(() => {
+        setRequestedAt(initialRequestedAt);
+        setStartedAt(initialStartedAt);
+        setCompletedAt(initialCompletedAt);
+    }, [initialCompletedAt, initialRequestedAt, initialStartedAt]);
 
     useEffect(() => {
         setJobStatus(initialStatus);
@@ -169,6 +184,9 @@ export function useNarrationGeneration({
 
                 const nextJob = data.data.job;
                 setJobStatus(nextJob.status);
+                setRequestedAt(nextJob.requested_at);
+                setStartedAt(nextJob.started_at);
+                setCompletedAt(nextJob.completed_at);
                 onStatusChange(nextJob.status, nextJob.error);
 
                 if (nextJob.status === "ready") {
@@ -255,6 +273,9 @@ export function useNarrationGeneration({
 
             const queuedJob = data.data.job;
             setJobStatus(queuedJob.status);
+            setRequestedAt(queuedJob.requested_at);
+            setStartedAt(queuedJob.started_at);
+            setCompletedAt(queuedJob.completed_at);
             onStatusChange(queuedJob.status, queuedJob.error);
             setStatusText(data.data.message || getQueuedMessage(queuedJob.status));
         } catch (error) {
@@ -274,5 +295,8 @@ export function useNarrationGeneration({
         queueNarration,
         statusText,
         buttonBusy: isSubmitting || jobStatus === "queued" || jobStatus === "processing",
+        requestedAt,
+        startedAt,
+        completedAt,
     };
 }
