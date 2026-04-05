@@ -16,6 +16,7 @@ import { SyncEmbeddingsButton } from "@/components/admin/SyncEmbeddingsButton";
 import { SyncSegmentEmbeddingsButton } from "@/components/admin/SyncSegmentEmbeddingsButton";
 import { AiReadinessBadge } from "@/components/admin/AiReadinessBadge";
 import { LaunchReadinessPanel } from "@/components/admin/LaunchReadinessPanel";
+import { NarrationRowAction } from "@/components/admin/NarrationRowAction";
 import { APP_NAME } from "@/lib/brand";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 
@@ -82,7 +83,7 @@ export default async function AdminDashboardPage({
     // Build Query
     let query = (supabase
         .from("content_item") as any)
-        .select("id, title, type, author, status, is_featured, embedding, created_at, updated_at, deleted_at", { count: "exact" })
+        .select("id, title, type, author, status, is_featured, embedding, audio_url, narration_status, narration_error, created_at, updated_at, deleted_at", { count: "exact" })
         .is("deleted_at", null); // Default to showing non-deleted items
 
     // Apply Filters
@@ -232,8 +233,17 @@ export default async function AdminDashboardPage({
                                                 <p className="text-sm text-muted-foreground">
                                                     {item.author || "Unknown author"} • {new Date(item.created_at).toLocaleDateString()}
                                                 </p>
-                                                <div className="mt-2">
+                                                <div className="mt-2 flex flex-col items-start gap-2">
                                                     <AiReadinessBadge readiness={aiReadinessById[item.id]} />
+                                                    {!isDeleted && (
+                                                        <NarrationRowAction
+                                                            contentId={item.id}
+                                                            contentStatus={item.status}
+                                                            audioUrl={item.audio_url || ""}
+                                                            initialStatus={item.narration_status || (item.audio_url ? "ready" : "idle")}
+                                                            initialError={item.narration_error}
+                                                        />
+                                                    )}
                                                 </div>
                                             </div>
 

@@ -1,0 +1,237 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { type NarrationJobState, type NarrationJobStatus } from "@/lib/narration-job";
+
+interface NarrationRouteResponse {
+    data?: {
+        job?: NarrationJobState;
+        message?: string;
+    };
+    error?: {
+        message?: string;
+    };
+}
+
+interface UseNarrationGenerationOptions {
+    contentId: string;
+    audioUrl: string;
+    initialStatus?: NarrationJobStatus;
+    initialError?: string | null;
+    onGenerated?: (url: string) => void;
+    onStatusChange?: (status: NarrationJobStatus, error: string | null) => void;
+    pollIntervalMs?: number;
+}
+
+export const FALLBACK_GENERATION_ERROR = "AI narration could not be completed right now. Please try again.";
+export const FALLBACK_NETWORK_ERROR = "Could not reach the narration service. Please try again.";
+export const STATUS_RATE_LIMIT_MESSAGE = "AI narration is still generating. Status checks are temporarily rate limited; retrying shortly.";
+const DEFAULT_POLL_INTERVAL_MS = 5_000;
+
+async function parseNarrationResponse(response: Response): Promise<NarrationRouteResponse | null> {
+    try {
+        return await response.json() as NarrationRouteResponse;
+    } catch {
+        return null;
+    }
+}
+
+function getClientSafeErrorMessage(error: unknown) {
+    if (!(error instanceof Error)) {
+        return FALLBACK_GENERATION_ERROR;
+    }
+
+    const message = error.message.trim();
+    if (!message) {
+        return FALLBACK_GENERATION_ERROR;
+    }
+
+    const normalized = message.toLowerCase();
+    if (
+        normalized.includes("failed to fetch")
+        || normalized.includes("networkerror")
+        || normalized.includes("load failed")
+        || normalized.includes("unexpected token")
+    ) {
+        return FALLBACK_NETWORK_ERROR;
+    }
+
+    return message;
+}
+
+function getQueuedMessage(status: NarrationJobStatus) {
+    if (status === "processing") {
+        return "AI narration is generating in the background...";
+    }
+
+    return "AI narration queued. Generation will continue in the background.";
+}
+
+export function useNarrationGeneration({
+    contentId,
+    audioUrl,
+    initialStatus = "idle",
+    initialError = null,
+    onGenerated = () => {},
+    onStatusChange = () => {},
+    pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
+}: UseNarrationGenerationOptions) {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [jobStatus, setJobStatus] = useState<NarrationJobStatus>(initialStatus);
+    const [statusText, setStatusText] = useState(initialError ? `Error: ${initialError}` : "");
+    const [currentAudioUrl, setCurrentAudioUrl] = useState(audioUrl);
+    const pollingRef = useRef<number | null>(null);
+    const latestAudioUrlRef = useRef(audioUrl);
+
+    useEffect(() => {
+        latestAudioUrlRef.current = audioUrl;
+        setCurrentAudioUrl(audioUrl);
+    }, [audioUrl]);
+
+    useEffect(() => {
+        setJobStatus(initialStatus);
+        if (initialError) {
+            setStatusText(`Error: ${initialError}`);
+            return;
+        }
+
+        if (initialStatus === "queued" || initialStatus === "processing") {
+            setStatusText(getQueuedMessage(initialStatus));
+            return;
+        }
+
+        if (initialStatus === "ready" && currentAudioUrl) {
+            setStatusText("AI narration is ready and saved to this content item.");
+            return;
+        }
+
+        setStatusText("");
+    }, [currentAudioUrl, initialError, initialStatus]);
+
+    useEffect(() => {
+        if (jobStatus !== "queued" && jobStatus !== "processing") {
+            if (pollingRef.current !== null) {
+                window.clearInterval(pollingRef.current);
+                pollingRef.current = null;
+            }
+            return;
+        }
+
+        const poll = async () => {
+            try {
+                const response = await fetch(`/api/admin/content/${contentId}/narration`, {
+                    method: "GET",
+                    cache: "no-store",
+                });
+                const data = await parseNarrationResponse(response);
+
+                if (response.status === 429) {
+                    setStatusText(STATUS_RATE_LIMIT_MESSAGE);
+                    return;
+                }
+
+                if (!response.ok || !data?.data?.job) {
+                    throw new Error(data?.error?.message || FALLBACK_GENERATION_ERROR);
+                }
+
+                const nextJob = data.data.job;
+                setJobStatus(nextJob.status);
+                onStatusChange(nextJob.status, nextJob.error);
+
+                if (nextJob.status === "ready") {
+                    if (nextJob.audio_url) {
+                        setCurrentAudioUrl(nextJob.audio_url);
+                    }
+
+                    if (nextJob.audio_url && nextJob.audio_url !== latestAudioUrlRef.current) {
+                        latestAudioUrlRef.current = nextJob.audio_url;
+                        onGenerated(nextJob.audio_url);
+                    }
+
+                    setStatusText("AI narration is ready and saved to this content item.");
+                    return;
+                }
+
+                if (nextJob.status === "failed") {
+                    setStatusText(`Error: ${nextJob.error || FALLBACK_GENERATION_ERROR}`);
+                    return;
+                }
+
+                setStatusText(getQueuedMessage(nextJob.status));
+            } catch (error) {
+                const message = getClientSafeErrorMessage(error);
+                setStatusText(`Error: ${message}`);
+                setJobStatus("failed");
+                onStatusChange("failed", message);
+            }
+        };
+
+        void poll();
+        pollingRef.current = window.setInterval(() => {
+            void poll();
+        }, pollIntervalMs);
+
+        return () => {
+            if (pollingRef.current !== null) {
+                window.clearInterval(pollingRef.current);
+                pollingRef.current = null;
+            }
+        };
+    }, [contentId, jobStatus, onGenerated, onStatusChange, pollIntervalMs]);
+
+    const queueNarration = useCallback(async () => {
+        if (isSubmitting) {
+            return;
+        }
+
+        if (jobStatus === "queued" || jobStatus === "processing") {
+            setStatusText(
+                jobStatus === "queued"
+                    ? "AI narration is already queued."
+                    : "AI narration is already generating in the background."
+            );
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+            setStatusText("Queuing AI narration...");
+
+            const response = await fetch(`/api/admin/content/${contentId}/narration`, {
+                method: "POST",
+            });
+            const data = await parseNarrationResponse(response);
+
+            if (!response.ok || !data?.data?.job) {
+                throw new Error(data?.error?.message || FALLBACK_GENERATION_ERROR);
+            }
+
+            const queuedJob = data.data.job;
+            setJobStatus(queuedJob.status);
+            onStatusChange(queuedJob.status, queuedJob.error);
+            setStatusText(data.data.message || getQueuedMessage(queuedJob.status));
+
+            if (queuedJob.status === "queued") {
+                void fetch("/api/admin/narration/process", {
+                    method: "POST",
+                });
+            }
+        } catch (error) {
+            const message = getClientSafeErrorMessage(error);
+            setStatusText(`Error: ${message}`);
+            setJobStatus("failed");
+            onStatusChange("failed", message);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }, [contentId, isSubmitting, jobStatus, onStatusChange]);
+
+    return {
+        currentAudioUrl,
+        isSubmitting,
+        jobStatus,
+        queueNarration,
+        statusText,
+        buttonBusy: isSubmitting || jobStatus === "queued" || jobStatus === "processing",
+    };
+}
