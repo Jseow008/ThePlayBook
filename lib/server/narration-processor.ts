@@ -158,7 +158,7 @@ export async function processNextNarrationJob(requestId: string) {
 
         const storagePath = `generated/${contentId}/ai-narration.${extension}`;
         const audioBucket = supabase.storage.from("audio");
-        const uploadBlob = new Blob([audioBuffer], { type: contentType });
+        const uploadBlob = new Blob([new Uint8Array(audioBuffer)], { type: contentType });
 
         const { error: uploadError } = await audioBucket.upload(storagePath, uploadBlob, {
             contentType,

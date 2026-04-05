@@ -1,12 +1,17 @@
 import { Buffer } from "node:buffer";
+import { spawn } from "node:child_process";
+import ffmpegPath from "ffmpeg-static";
 
 const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
 const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE || "alloy";
 const OPENAI_WAV_FORMAT = "wav";
+const FINAL_AUDIO_FORMAT = "mp3";
+const FINAL_AUDIO_CONTENT_TYPE = "audio/mpeg";
 const MAX_CHARS_PER_CHUNK = 3_500;
 const TTS_CONCURRENCY = 3;
 const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 const OPENAI_MAX_ATTEMPTS = 3;
+const FFMPEG_TRANSCODE_TIMEOUT_MS = 60_000;
 const RETRYABLE_OPENAI_STATUSES = new Set([408, 409, 429, 500, 502, 503, 504]);
 
 export interface NarrationSegmentSource {
@@ -301,6 +306,109 @@ export function concatenateWavBuffers(wavBuffers: Buffer[]) {
     return createWavBuffer(firstChunk, pcmData);
 }
 
+export async function transcodeWavToMp3(wavBuffer: Buffer) {
+    if (!ffmpegPath) {
+        throw new NarrationError({
+            code: "FFMPEG_NOT_AVAILABLE",
+            status: 500,
+            userMessage: "AI narration is not configured correctly right now.",
+            message: "ffmpeg-static did not provide a usable binary path.",
+        });
+    }
+    const ffmpegBinaryPath = ffmpegPath;
+
+    return await new Promise<Buffer>((resolve, reject) => {
+        const child = spawn(ffmpegBinaryPath, [
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-f",
+            "wav",
+            "-i",
+            "pipe:0",
+            "-vn",
+            "-codec:a",
+            "libmp3lame",
+            "-b:a",
+            "64k",
+            "-ac",
+            "1",
+            "-ar",
+            "24000",
+            "-f",
+            "mp3",
+            "pipe:1",
+        ], {
+            stdio: ["pipe", "pipe", "pipe"],
+        });
+
+        const stdoutChunks: Buffer[] = [];
+        const stderrChunks: Buffer[] = [];
+
+        const timeout = setTimeout(() => {
+            child.kill("SIGKILL");
+            reject(new NarrationError({
+                code: "FFMPEG_TIMEOUT",
+                status: 504,
+                userMessage: "AI narration timed out while finalizing audio. Please try again.",
+                message: "Timed out while transcoding narration WAV to MP3.",
+            }));
+        }, FFMPEG_TRANSCODE_TIMEOUT_MS);
+
+        child.stdout.on("data", (chunk: Buffer | string) => {
+            stdoutChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+
+        child.stderr.on("data", (chunk: Buffer | string) => {
+            stderrChunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        });
+
+        child.on("error", (error) => {
+            clearTimeout(timeout);
+            reject(new NarrationError({
+                code: "FFMPEG_EXECUTION_FAILED",
+                status: 500,
+                userMessage: "AI narration could not finalize the audio file right now.",
+                message: "Failed to start ffmpeg for narration transcoding.",
+                cause: error,
+            }));
+        });
+
+        child.on("close", (code) => {
+            clearTimeout(timeout);
+
+            if (code !== 0) {
+                reject(new NarrationError({
+                    code: "FFMPEG_TRANSCODE_FAILED",
+                    status: 502,
+                    userMessage: "AI narration could not finalize the audio file right now.",
+                    message: `ffmpeg failed to transcode narration WAV to MP3: ${Buffer.concat(stderrChunks).toString("utf8").trim() || `exit code ${code}`}`,
+                }));
+                return;
+            }
+
+            const output = Buffer.concat(stdoutChunks);
+            if (output.byteLength === 0) {
+                reject(new NarrationError({
+                    code: "FFMPEG_EMPTY_OUTPUT",
+                    status: 502,
+                    userMessage: "AI narration could not finalize the audio file right now.",
+                    message: "ffmpeg produced an empty MP3 output.",
+                }));
+                return;
+            }
+
+            resolve(output);
+        });
+
+        child.stdin.on("error", () => {
+            // Ignored: ffmpeg may close stdin after consuming the WAV input.
+        });
+
+        child.stdin.end(wavBuffer);
+    });
+}
+
 async function extractOpenAiError(response: Response) {
     const fallbackMessage = `OpenAI TTS request failed with status ${response.status}.`;
 
@@ -493,13 +601,14 @@ export async function generateNarrationAudio(content: NarrationContentSource) {
         async (chunk) => synthesizeNarrationChunkWav(chunk)
     );
 
-    const audioBuffer = concatenateWavBuffers(wavChunks);
+    const wavBuffer = concatenateWavBuffers(wavChunks);
+    const audioBuffer = await transcodeWavToMp3(wavBuffer);
 
     return {
         script,
         chunkCount: chunks.length,
         audioBuffer,
-        extension: "wav",
-        contentType: "audio/wav",
+        extension: FINAL_AUDIO_FORMAT,
+        contentType: FINAL_AUDIO_CONTENT_TYPE,
     };
 }

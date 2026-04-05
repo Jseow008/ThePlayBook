@@ -54,7 +54,7 @@ describe("GenerateNarrationButton", () => {
                             requested_at: "2026-04-01T12:00:00.000Z",
                             started_at: "2026-04-01T12:00:05.000Z",
                             completed_at: "2026-04-01T12:00:30.000Z",
-                            audio_url: "https://example.com/audio/generated.wav",
+                            audio_url: "https://example.com/audio/generated.mp3",
                         },
                     },
                 }),
@@ -86,7 +86,7 @@ describe("GenerateNarrationButton", () => {
         });
 
         await waitFor(() => {
-            expect(onGenerated).toHaveBeenCalledWith("https://example.com/audio/generated.wav");
+            expect(onGenerated).toHaveBeenCalledWith("https://example.com/audio/generated.mp3");
             expect(onStatusChange).toHaveBeenCalledWith("ready", null);
             expect(screen.getByText(/ai narration is ready and saved to this content item/i)).toBeInTheDocument();
         });
@@ -102,7 +102,7 @@ describe("GenerateNarrationButton", () => {
         render(
             <GenerateNarrationButton
                 contentId="11111111-1111-1111-1111-111111111111"
-                audioUrl="https://example.com/existing.wav"
+                audioUrl="https://example.com/existing.mp3"
                 initialStatus="ready"
                 initialError={null}
                 onGenerated={vi.fn()}

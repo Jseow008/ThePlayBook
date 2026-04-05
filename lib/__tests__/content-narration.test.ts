@@ -4,6 +4,7 @@ import {
     concatenateWavBuffers,
     splitNarrationIntoChunks,
     synthesizeNarrationChunkWav,
+    transcodeWavToMp3,
 } from "@/lib/server/ai-narration";
 
 describe("AI narration helpers", () => {
@@ -90,6 +91,21 @@ describe("AI narration helpers", () => {
         expect(wav.readUInt16LE(46)).toBe(2);
         expect(wav.readUInt16LE(48)).toBe(3);
         expect(wav.readUInt16LE(50)).toBe(4);
+    });
+
+    it("transcodes the merged WAV narration into an MP3 asset", async () => {
+        const wav = concatenateWavBuffers([
+            makeWav(1, 2),
+            makeWav(3, 4),
+        ]);
+
+        const mp3 = await transcodeWavToMp3(wav);
+
+        expect(Buffer.isBuffer(mp3)).toBe(true);
+        expect(mp3.byteLength).toBeGreaterThan(0);
+        const hasId3Header = mp3[0] === 0x49 && mp3[1] === 0x44 && mp3[2] === 0x33;
+        const hasMpegFrameHeader = mp3[0] === 0xff && (mp3[1] & 0xe0) === 0xe0;
+        expect(hasId3Header || hasMpegFrameHeader).toBe(true);
     });
 
     it("retries temporary OpenAI failures before succeeding", async () => {

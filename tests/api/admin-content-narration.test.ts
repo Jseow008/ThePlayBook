@@ -44,7 +44,7 @@ describe("Admin content narration API", () => {
                 id: "11111111-1111-1111-1111-111111111111",
                 title: "Atomic Habits Summary",
                 status: "verified",
-                audio_url: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.wav",
+                audio_url: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.mp3",
                 narration_status: "ready",
                 narration_error: null,
                 narration_requested_at: "2026-04-01T00:00:00.000Z",
@@ -56,7 +56,7 @@ describe("Admin content narration API", () => {
 
         updateSelectSingleMock.mockResolvedValue({
             data: {
-                audio_url: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.wav",
+                audio_url: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.mp3",
                 narration_status: "queued",
                 narration_error: null,
                 narration_requested_at: "2026-04-01T01:00:00.000Z",
@@ -156,7 +156,7 @@ describe("Admin content narration API", () => {
 
         const json = await res.json();
         expect(json.data.job.status).toBe("ready");
-        expect(json.data.job.audio_url).toContain("/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.wav");
+        expect(json.data.job.audio_url).toContain("/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.mp3");
     });
 
     it("rejects draft content", async () => {

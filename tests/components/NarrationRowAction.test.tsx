@@ -68,7 +68,7 @@ describe("NarrationRowAction", () => {
                             requested_at: "2026-04-05T08:00:00.000Z",
                             started_at: "2026-04-05T08:00:05.000Z",
                             completed_at: "2026-04-05T08:00:30.000Z",
-                            audio_url: "https://example.com/audio/generated.wav",
+                            audio_url: "https://example.com/audio/generated.mp3",
                         },
                     },
                 }),

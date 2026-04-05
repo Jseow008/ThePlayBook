@@ -47,16 +47,16 @@ describe("Admin narration processor API", () => {
         (verifyAdminSession as any).mockResolvedValue(true);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
         (generateNarrationAudio as any).mockResolvedValue({
-            audioBuffer: Buffer.from("wav-data"),
-            extension: "wav",
-            contentType: "audio/wav",
+            audioBuffer: Buffer.from("mp3-data"),
+            extension: "mp3",
+            contentType: "audio/mpeg",
         });
 
         uploadMock.mockResolvedValue({ error: null });
         removeMock.mockResolvedValue({ error: null });
         getPublicUrlMock.mockReturnValue({
             data: {
-                publicUrl: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.wav",
+                publicUrl: "https://example.supabase.co/storage/v1/object/public/audio/generated/11111111-1111-1111-1111-111111111111/ai-narration.mp3",
             },
         });
     });
@@ -193,10 +193,10 @@ describe("Admin narration processor API", () => {
         expect(json.data.processed).toBe(true);
         expect(generateNarrationAudio).toHaveBeenCalled();
         expect(uploadMock).toHaveBeenCalledWith(
-            "generated/11111111-1111-1111-1111-111111111111/ai-narration.wav",
+            "generated/11111111-1111-1111-1111-111111111111/ai-narration.mp3",
             expect.any(Blob),
             expect.objectContaining({
-                contentType: "audio/wav",
+                contentType: "audio/mpeg",
                 upsert: true,
             })
         );
