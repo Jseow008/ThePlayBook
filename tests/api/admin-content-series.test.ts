@@ -14,6 +14,18 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { revalidatePath } from "next/cache";
 
+const { afterMock } = vi.hoisted(() => ({
+    afterMock: vi.fn(),
+}));
+
+vi.mock("next/server", async () => {
+    const actual = await vi.importActual<typeof import("next/server")>("next/server");
+    return {
+        ...actual,
+        after: afterMock,
+    };
+});
+
 vi.mock("@/lib/admin/auth", () => ({
     verifyAdminSession: vi.fn(),
 }));
@@ -37,6 +49,7 @@ describe("Admin content series support", () => {
         vi.clearAllMocks();
         (verifyAdminSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(true);
         (rateLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        afterMock.mockImplementation(() => {});
     });
 
     it("persists series metadata when creating content", async () => {
@@ -45,6 +58,24 @@ describe("Admin content series support", () => {
                 single: vi.fn().mockResolvedValue({
                     data: { id: "content-1", series_id: seriesId },
                     error: null,
+                }),
+            }),
+        });
+        const contentUpdate = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({
+                        data: {
+                            audio_url: null,
+                            narration_status: "queued",
+                            narration_error: null,
+                            narration_requested_at: "2026-04-05T00:00:00.000Z",
+                            narration_started_at: null,
+                            narration_completed_at: null,
+                        },
+                        error: null,
+                    }),
                 }),
             }),
         });
@@ -60,7 +91,10 @@ describe("Admin content series support", () => {
         (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
             from: vi.fn((table: string) => {
                 if (table === "content_item") {
-                    return { insert: contentInsert };
+                    return {
+                        insert: contentInsert,
+                        update: contentUpdate,
+                    };
                 }
 
                 if (table === "segment") {
@@ -110,6 +144,163 @@ describe("Admin content series support", () => {
         }));
         expect(revalidatePath).toHaveBeenCalledWith("/browse");
         expect(revalidatePath).toHaveBeenCalledWith("/series/matthew");
+    });
+
+    it("auto-queues narration when creating verified content without manual audio", async () => {
+        const contentInsert = vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                    data: { id: "content-1", series_id: null },
+                    error: null,
+                }),
+            }),
+        });
+        const contentUpdate = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({
+                        data: {
+                            audio_url: null,
+                            narration_status: "queued",
+                            narration_error: null,
+                            narration_requested_at: "2026-04-05T00:00:00.000Z",
+                            narration_started_at: null,
+                            narration_completed_at: null,
+                        },
+                        error: null,
+                    }),
+                }),
+            }),
+        });
+        const segmentInsert = vi.fn().mockResolvedValue({ error: null });
+        const seriesLookup = vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+                data: [],
+                error: null,
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        insert: contentInsert,
+                        update: contentUpdate,
+                    };
+                }
+
+                if (table === "segment") {
+                    return { insert: segmentInsert };
+                }
+
+                if (table === "content_series") {
+                    return { select: seriesLookup };
+                }
+
+                if (table === "artifact") {
+                    return { insert: vi.fn().mockResolvedValue({ error: null }) };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content"), {
+            method: "POST",
+            body: JSON.stringify({
+                title: "Matthew 5-7: Sermon on the Mount",
+                type: "book",
+                author: "Matthew",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                status: "verified",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                segments: [{ order_index: 0, markdown_body: "Blessed are the poor in spirit." }],
+            }),
+        });
+
+        const res = await createAdminContent(req);
+
+        expect(res.status).toBe(201);
+        expect(contentUpdate).toHaveBeenCalledWith(expect.objectContaining({
+            narration_status: "queued",
+            narration_error: null,
+        }));
+        expect(afterMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not auto-queue narration when creating verified content with manual audio", async () => {
+        const contentInsert = vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                    data: { id: "content-1", series_id: null },
+                    error: null,
+                }),
+            }),
+        });
+        const contentUpdate = vi.fn();
+        const segmentInsert = vi.fn().mockResolvedValue({ error: null });
+        const seriesLookup = vi.fn().mockReturnValue({
+            in: vi.fn().mockResolvedValue({
+                data: [],
+                error: null,
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        insert: contentInsert,
+                        update: contentUpdate,
+                    };
+                }
+
+                if (table === "segment") {
+                    return { insert: segmentInsert };
+                }
+
+                if (table === "content_series") {
+                    return { select: seriesLookup };
+                }
+
+                if (table === "artifact") {
+                    return { insert: vi.fn().mockResolvedValue({ error: null }) };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content"), {
+            method: "POST",
+            body: JSON.stringify({
+                title: "Matthew 5-7: Sermon on the Mount",
+                type: "book",
+                author: "Matthew",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                status: "verified",
+                audio_url: "https://example.com/manual-audio.mp3",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                segments: [{ order_index: 0, markdown_body: "Blessed are the poor in spirit." }],
+            }),
+        });
+
+        const res = await createAdminContent(req);
+
+        expect(res.status).toBe(201);
+        expect(contentUpdate).not.toHaveBeenCalled();
+        expect(afterMock).not.toHaveBeenCalled();
     });
 
     it("rejects verified content creation when publish requirements are missing", async () => {
@@ -178,9 +369,11 @@ describe("Admin content series support", () => {
                     return {
                         select: vi.fn().mockReturnValue({
                             is: vi.fn().mockReturnValue({
-                                in: vi.fn().mockResolvedValue({
-                                    data: [],
-                                    error: null,
+                                in: vi.fn().mockReturnValue({
+                                    range: vi.fn().mockResolvedValue({
+                                        data: [],
+                                        error: null,
+                                    }),
                                 }),
                             }),
                         }),
@@ -190,9 +383,11 @@ describe("Admin content series support", () => {
                 if (table === "segment_embedding_gemini") {
                     return {
                         select: vi.fn().mockReturnValue({
-                            in: vi.fn().mockResolvedValue({
-                                data: [],
-                                error: null,
+                            in: vi.fn().mockReturnValue({
+                                range: vi.fn().mockResolvedValue({
+                                    data: [],
+                                    error: null,
+                                }),
                             }),
                         }),
                     };
@@ -266,11 +461,13 @@ describe("Admin content series support", () => {
                     return {
                         select: vi.fn().mockReturnValue({
                             is: vi.fn().mockReturnValue({
-                                in: vi.fn().mockResolvedValue({
-                                    data: [
-                                        { id: "segment-1", item_id: "verified-ready", markdown_body: "Ready segment" },
-                                    ],
-                                    error: null,
+                                in: vi.fn().mockReturnValue({
+                                    range: vi.fn().mockResolvedValue({
+                                        data: [
+                                            { id: "segment-1", item_id: "verified-ready", markdown_body: "Ready segment" },
+                                        ],
+                                        error: null,
+                                    }),
                                 }),
                             }),
                         }),
@@ -280,9 +477,11 @@ describe("Admin content series support", () => {
                 if (table === "segment_embedding_gemini") {
                     return {
                         select: vi.fn().mockReturnValue({
-                            in: vi.fn().mockResolvedValue({
-                                data: [{ content_item_id: "verified-ready", segment_id: "segment-1" }],
-                                error: null,
+                            in: vi.fn().mockReturnValue({
+                                range: vi.fn().mockResolvedValue({
+                                    data: [{ content_item_id: "verified-ready", segment_id: "segment-1" }],
+                                    error: null,
+                                }),
                             }),
                         }),
                     };
@@ -334,11 +533,13 @@ describe("Admin content series support", () => {
                     return {
                         select: vi.fn().mockReturnValue({
                             is: vi.fn().mockReturnValue({
-                                in: vi.fn().mockResolvedValue({
-                                    data: [
-                                        { id: "segment-1", item_id: "content-1", markdown_body: "Blessed are the poor in spirit." },
-                                    ],
-                                    error: null,
+                                in: vi.fn().mockReturnValue({
+                                    range: vi.fn().mockResolvedValue({
+                                        data: [
+                                            { id: "segment-1", item_id: "content-1", markdown_body: "Blessed are the poor in spirit." },
+                                        ],
+                                        error: null,
+                                    }),
                                 }),
                             }),
                         }),
@@ -348,9 +549,11 @@ describe("Admin content series support", () => {
                 if (table === "segment_embedding_gemini") {
                     return {
                         select: vi.fn().mockReturnValue({
-                            in: vi.fn().mockResolvedValue({
-                                data: [],
-                                error: null,
+                            in: vi.fn().mockReturnValue({
+                                range: vi.fn().mockResolvedValue({
+                                    data: [],
+                                    error: null,
+                                }),
                             }),
                         }),
                     };
@@ -889,6 +1092,188 @@ describe("Admin content series support", () => {
                 narration_status: "ready",
             }),
         }));
+    });
+
+    it("auto-queues narration when publishing draft content without manual audio", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: null,
+                status: "draft",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                audio_url: null,
+                narration_status: "idle",
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+                data: [{ order_index: 0, title: "Current segment", markdown_body: "Stable body" }],
+                error: null,
+            }),
+        });
+        const contentUpdate = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                    single: vi.fn().mockResolvedValue({
+                        data: {
+                            audio_url: null,
+                            narration_status: "queued",
+                            narration_error: null,
+                            narration_requested_at: "2026-04-05T00:00:00.000Z",
+                            narration_started_at: null,
+                            narration_completed_at: null,
+                        },
+                        error: null,
+                    }),
+                }),
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                        update: contentUpdate,
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                status: "verified",
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(contentUpdate).toHaveBeenCalledWith(expect.objectContaining({
+            narration_status: "queued",
+            narration_error: null,
+        }));
+        expect(afterMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not auto-queue narration when saving already verified content", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: null,
+                status: "verified",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                audio_url: null,
+                narration_status: "idle",
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+                data: [{ order_index: 0, title: "Current segment", markdown_body: "Stable body" }],
+                error: null,
+            }),
+        });
+        const contentUpdate = vi.fn((payload?: Record<string, unknown>) => {
+            if (payload && "embedding" in payload) {
+                return {
+                    eq: vi.fn().mockResolvedValue({ error: null }),
+                };
+            }
+
+            return {
+                eq: vi.fn().mockReturnThis(),
+                is: vi.fn().mockReturnValue({
+                    select: vi.fn().mockReturnValue({
+                        single: vi.fn().mockResolvedValue({
+                            data: {
+                                audio_url: null,
+                                narration_status: "queued",
+                                narration_error: null,
+                                narration_requested_at: "2026-04-05T00:00:00.000Z",
+                                narration_started_at: null,
+                                narration_completed_at: null,
+                            },
+                            error: null,
+                        }),
+                    }),
+                }),
+            };
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                        update: contentUpdate,
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                title: "Minor verified edit",
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(contentUpdate).toHaveBeenCalledWith({ embedding: null });
+        expect(contentUpdate).not.toHaveBeenCalledWith(expect.objectContaining({
+            narration_status: "queued",
+        }));
+        expect(afterMock).not.toHaveBeenCalled();
     });
 
     it("returns field errors when creating content with a duplicate series order", async () => {

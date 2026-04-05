@@ -5,7 +5,7 @@
  * DELETE /api/admin/content/[id] - Soft delete content
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
@@ -25,6 +25,8 @@ import {
     shouldInvalidateContentEmbedding,
 } from "@/lib/server/admin-content-publish";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import { processNextNarrationJob } from "@/lib/server/narration-processor";
+import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 
 type QuickModeValue = {
     hook?: string | null;
@@ -333,6 +335,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const nextAudioUrl = contentData.audio_url !== undefined ? normalizeAudioUrl(contentData.audio_url) : undefined;
         const isManualAudioOverride = nextAudioUrl !== undefined && nextAudioUrl !== existingAudioUrl;
         const shouldTrackNarrationFreshness = currentStatus === "verified" || nextStatus === "verified";
+        const shouldAutoQueueNarration = currentStatus === "draft" && nextStatus === "verified";
         const shouldCheckNarrationStale = Boolean(
             shouldTrackNarrationFreshness
             && existingAudioUrl
@@ -500,6 +503,48 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             contentData.series_id,
         ]);
         seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
+
+        if (shouldAutoQueueNarration) {
+            const resultingAudioUrl = isManualAudioOverride ? nextAudioUrl : existingAudioUrl;
+            const resultingNarrationRow = {
+                audio_url: resultingAudioUrl,
+                narration_status: (contentPatch.narration_status as string | undefined) ?? existingContent?.narration_status,
+                narration_error: (contentPatch.narration_error as string | undefined) ?? null,
+                narration_requested_at: (contentPatch.narration_requested_at as string | undefined) ?? null,
+                narration_started_at: (contentPatch.narration_started_at as string | undefined) ?? null,
+                narration_completed_at: (contentPatch.narration_completed_at as string | undefined) ?? null,
+            };
+
+            try {
+                const { queued } = await queueNarrationJobIfEligible({
+                    supabase,
+                    contentId: id,
+                    row: resultingNarrationRow,
+                });
+
+                if (queued) {
+                    after(async () => {
+                        try {
+                            await processNextNarrationJob(`${requestId}:background`);
+                        } catch (backgroundError) {
+                            logApiError({
+                                requestId,
+                                route: "/api/admin/content/[id]",
+                                message: "Background AI narration processor failed after auto-queueing on publish",
+                                error: backgroundError,
+                            });
+                        }
+                    });
+                }
+            } catch (queueError) {
+                logApiError({
+                    requestId,
+                    route: "/api/admin/content/[id]",
+                    message: "Failed to auto-queue AI narration after publish",
+                    error: queueError,
+                });
+            }
+        }
 
         return NextResponse.json({
             success: true,

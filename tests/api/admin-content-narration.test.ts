@@ -117,6 +117,21 @@ describe("Admin content narration API", () => {
     });
 
     it("queues narration generation", async () => {
+        contentSelectSingleMock.mockResolvedValueOnce({
+            data: {
+                id: "11111111-1111-1111-1111-111111111111",
+                title: "Atomic Habits Summary",
+                status: "verified",
+                audio_url: null,
+                narration_status: "idle",
+                narration_error: null,
+                narration_requested_at: null,
+                narration_started_at: null,
+                narration_completed_at: null,
+            },
+            error: null,
+        });
+
         const req = new NextRequest("http://localhost/api/admin/content/11111111-1111-1111-1111-111111111111/narration", {
             method: "POST",
         });

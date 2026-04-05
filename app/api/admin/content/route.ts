@@ -4,7 +4,7 @@
  * POST /api/admin/content - Create new content
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
@@ -13,6 +13,8 @@ import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import { processNextNarrationJob } from "@/lib/server/narration-processor";
+import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
@@ -379,6 +381,45 @@ export async function POST(request: NextRequest) {
         revalidatePath(`/read/${contentItem.id}`);
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [contentItem.series_id]);
         seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
+
+        if (contentData.status === "verified" && !contentData.audio_url) {
+            try {
+                const { queued } = await queueNarrationJobIfEligible({
+                    supabase,
+                    contentId: contentItem.id,
+                    row: {
+                        audio_url: null,
+                        narration_status: manualNarrationState.narration_status,
+                        narration_error: manualNarrationState.narration_error,
+                        narration_requested_at: manualNarrationState.narration_requested_at,
+                        narration_started_at: manualNarrationState.narration_started_at,
+                        narration_completed_at: manualNarrationState.narration_completed_at,
+                    },
+                });
+
+                if (queued) {
+                    after(async () => {
+                        try {
+                            await processNextNarrationJob(`${requestId}:background`);
+                        } catch (backgroundError) {
+                            logApiError({
+                                requestId,
+                                route: "/api/admin/content",
+                                message: "Background AI narration processor failed after auto-queueing on create",
+                                error: backgroundError,
+                            });
+                        }
+                    });
+                }
+            } catch (queueError) {
+                logApiError({
+                    requestId,
+                    route: "/api/admin/content",
+                    message: "Failed to auto-queue AI narration after verified content creation",
+                    error: queueError,
+                });
+            }
+        }
 
         return NextResponse.json({
             success: true,

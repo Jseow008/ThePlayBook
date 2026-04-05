@@ -6,6 +6,7 @@ import { apiError, getRequestId, isSupabaseNotFoundError, logApiError } from "@/
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getNarrationJobState } from "@/lib/narration-job";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
+import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 
 const ContentIdSchema = z.string().uuid();
 
@@ -131,28 +132,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             }, { status: 202 });
         }
 
-        const now = new Date().toISOString();
-        const { data: queuedItem, error: queueError } = await supabase
-            .from("content_item")
-            .update({
-                narration_status: "queued",
-                narration_error: null,
-                narration_requested_at: now,
-                narration_started_at: null,
-                narration_completed_at: null,
-            })
-            .eq("id", id)
-            .is("deleted_at", null)
-            .select("audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at")
-            .single();
-
-        if (queueError) {
-            throw queueError;
-        }
-
-        if (!queuedItem) {
-            return apiError("INTERNAL_ERROR", "Failed to queue AI narration", 500, requestId);
-        }
+        const { job } = await queueNarrationJobIfEligible({
+            supabase,
+            contentId: id,
+            row: contentItem,
+        });
 
         after(async () => {
             try {
@@ -170,7 +154,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         return NextResponse.json({
             success: true,
             data: {
-                job: getNarrationJobState(queuedItem),
+                job,
                 message: "AI narration queued. Generation will continue in the background.",
             },
         }, { status: 202 });
