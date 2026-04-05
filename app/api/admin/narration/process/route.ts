@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { buildProcessErrorResponseMessage, processNextNarrationJob } from "@/lib/server/narration-processor";
+import { buildProcessErrorResponseMessage, processNarrationJobs, processNextNarrationJob } from "@/lib/server/narration-processor";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
+const CRON_BATCH_SIZE = 3;
 
 function hasValidCronSecret(request: NextRequest) {
     const cronSecret = process.env.CRON_SECRET;
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const result = await processNextNarrationJob(requestId);
+        const result = await processNarrationJobs(requestId, CRON_BATCH_SIZE);
         return NextResponse.json({
             success: true,
             data: result,

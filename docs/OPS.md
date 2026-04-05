@@ -205,8 +205,10 @@ Background worker:
 - status route: `GET /api/admin/content/[id]/narration`
 - worker route: `GET /api/admin/narration/process`
 - queueing a narration job also schedules a server-side background attempt immediately after the response returns
+- production automation: `vercel.json` runs the worker every 5 minutes
+- each cron invocation drains up to 3 queued jobs before exiting
 - cron auth: `Authorization: Bearer $CRON_SECRET`
-- optional automation: invoke the worker route from Vercel Cron or another scheduler if you want periodic retry/backfill coverage
+- if you are not deploying on Vercel, point your scheduler at the same worker route instead
 
 Recovery path:
 

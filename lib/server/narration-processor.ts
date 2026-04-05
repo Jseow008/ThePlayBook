@@ -163,6 +163,29 @@ export function buildProcessErrorResponseMessage(error: unknown) {
     };
 }
 
+export async function processNarrationJobs(requestId: string, maxJobs: number = 1) {
+    const results: Array<Awaited<ReturnType<typeof processNextNarrationJob>>> = [];
+
+    for (let index = 0; index < maxJobs; index += 1) {
+        const result = await processNextNarrationJob(`${requestId}:job-${index + 1}`);
+        results.push(result);
+
+        if (!result.processed) {
+            break;
+        }
+    }
+
+    const processedResults = results.filter((result) => result.processed);
+    const discardedResults = results.filter((result) => !result.processed && "discarded" in result && result.discarded);
+
+    return {
+        processed: processedResults.length > 0,
+        processedCount: processedResults.length,
+        discardedCount: discardedResults.length,
+        results,
+    };
+}
+
 export async function processNextNarrationJob(requestId: string) {
     const supabase = getAdminClient();
     const claimedJob = await claimNextNarrationJob();
