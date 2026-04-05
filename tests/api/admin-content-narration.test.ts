@@ -5,6 +5,18 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/server/rate-limit";
 
+const { afterMock } = vi.hoisted(() => ({
+    afterMock: vi.fn(),
+}));
+
+vi.mock("next/server", async () => {
+    const actual = await vi.importActual<typeof import("next/server")>("next/server");
+    return {
+        ...actual,
+        after: afterMock,
+    };
+});
+
 vi.mock("@/lib/admin/auth", () => ({
     verifyAdminSession: vi.fn(),
 }));
@@ -25,6 +37,7 @@ describe("Admin content narration API", () => {
         vi.clearAllMocks();
         (verifyAdminSession as any).mockResolvedValue(true);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        afterMock.mockImplementation(() => {});
 
         contentSelectSingleMock.mockResolvedValue({
             data: {
@@ -118,6 +131,7 @@ describe("Admin content narration API", () => {
             windowMs: 60_000,
             key: "queue",
         }));
+        expect(afterMock).toHaveBeenCalledTimes(1);
 
         const json = await res.json();
         expect(json.data.job.status).toBe("queued");

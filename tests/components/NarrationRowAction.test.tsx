@@ -61,14 +61,6 @@ describe("NarrationRowAction", () => {
                 ok: true,
                 status: 200,
                 json: async () => ({
-                    success: true,
-                    data: { processed: true },
-                }),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                status: 200,
-                json: async () => ({
                     data: {
                         job: {
                             status: "ready",
@@ -102,11 +94,6 @@ describe("NarrationRowAction", () => {
         expect(global.fetch).toHaveBeenNthCalledWith(
             1,
             "/api/admin/content/11111111-1111-1111-1111-111111111111/narration",
-            { method: "POST" }
-        );
-        expect(global.fetch).toHaveBeenNthCalledWith(
-            2,
-            "/api/admin/narration/process",
             { method: "POST" }
         );
     });

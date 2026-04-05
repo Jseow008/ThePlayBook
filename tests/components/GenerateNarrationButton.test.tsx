@@ -8,7 +8,7 @@ describe("GenerateNarrationButton", () => {
         vi.useRealTimers();
     });
 
-    it("queues narration, triggers background processing, and polls until ready", async () => {
+    it("queues narration and polls until ready", async () => {
         const onGenerated = vi.fn();
         const onStatusChange = vi.fn();
 
@@ -27,13 +27,6 @@ describe("GenerateNarrationButton", () => {
                         },
                         message: "AI narration queued. Generation will continue in the background.",
                     },
-                }),
-            })
-            .mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({
-                    success: true,
-                    data: { processed: true },
                 }),
             })
             .mockResolvedValueOnce({
@@ -86,7 +79,7 @@ describe("GenerateNarrationButton", () => {
 
         await waitFor(() => {
             expect(global.fetch).toHaveBeenNthCalledWith(
-                3,
+                2,
                 "/api/admin/content/11111111-1111-1111-1111-111111111111/narration",
                 { method: "GET", cache: "no-store" }
             );
@@ -101,11 +94,6 @@ describe("GenerateNarrationButton", () => {
         expect(global.fetch).toHaveBeenNthCalledWith(
             1,
             "/api/admin/content/11111111-1111-1111-1111-111111111111/narration",
-            { method: "POST" }
-        );
-        expect(global.fetch).toHaveBeenNthCalledWith(
-            2,
-            "/api/admin/narration/process",
             { method: "POST" }
         );
     });

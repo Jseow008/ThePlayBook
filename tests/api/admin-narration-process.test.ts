@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { POST } from "@/app/api/admin/narration/process/route";
+import { GET, POST } from "@/app/api/admin/narration/process/route";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { generateNarrationAudio } from "@/lib/server/ai-narration";
 import { getAdminClient } from "@/lib/supabase/admin";
@@ -35,6 +35,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
 }));
 
 describe("Admin narration processor API", () => {
+    const originalCronSecret = process.env.CRON_SECRET;
     const uploadMock = vi.fn();
     const getPublicUrlMock = vi.fn();
     const removeMock = vi.fn();
@@ -42,6 +43,7 @@ describe("Admin narration processor API", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        process.env.CRON_SECRET = originalCronSecret;
         (verifyAdminSession as any).mockResolvedValue(true);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
         (generateNarrationAudio as any).mockResolvedValue({
@@ -200,5 +202,44 @@ describe("Admin narration processor API", () => {
         );
         expect(readyUpdateEqMock).toHaveBeenCalledWith("id", "11111111-1111-1111-1111-111111111111");
         expect(revalidatePathMock).toHaveBeenCalledWith("/read/11111111-1111-1111-1111-111111111111");
+    });
+
+    it("allows cron-authenticated GET processing without an admin session", async () => {
+        process.env.CRON_SECRET = "test-cron-secret";
+        (verifyAdminSession as any).mockResolvedValue(false);
+
+        const queueSelectChain = {
+            eq: vi.fn().mockReturnThis(),
+            is: vi.fn().mockReturnThis(),
+            order: vi.fn().mockReturnThis(),
+            limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+        };
+
+        (getAdminClient as any).mockReturnValue({
+            from: vi.fn(() => ({
+                select: vi.fn().mockReturnValue(queueSelectChain),
+            })),
+            storage: {
+                from: vi.fn(() => ({
+                    upload: uploadMock,
+                    getPublicUrl: getPublicUrlMock,
+                    remove: removeMock,
+                })),
+            },
+        });
+
+        const req = new NextRequest("http://localhost/api/admin/narration/process", {
+            method: "GET",
+            headers: {
+                authorization: "Bearer test-cron-secret",
+            },
+        });
+
+        const res = await GET(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(200);
+        expect(json.data.processed).toBe(false);
+        expect(rateLimit).not.toHaveBeenCalled();
     });
 });

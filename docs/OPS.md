@@ -45,6 +45,7 @@ UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
 ERROR_REPORTING_WEBHOOK_URL=...
 ERROR_REPORTING_BEARER_TOKEN=...
+CRON_SECRET=...
 ```
 
 Notes:
@@ -53,6 +54,7 @@ Notes:
 - `NEXT_PUBLIC_APP_URL` is only used for API CORS header generation in `next.config.ts`
 - `ERROR_REPORTING_WEBHOOK_URL` is the production exception sink used by API failures and the root/app error boundaries
 - `ERROR_REPORTING_BEARER_TOKEN` is optional when your ingest endpoint expects bearer auth
+- `CRON_SECRET` protects background worker routes such as AI narration processing
 - OAuth client credentials are typically configured in Supabase/provider dashboards rather than read directly by this app
 
 ### 1.3 Supabase Migrations
@@ -186,6 +188,37 @@ Operator rule:
 - do not treat Ask My Library as launch-ready until verified content coverage is clean
 - the admin dashboard shows the same readiness state in `/admin` and `/admin/content/[id]/edit`
 
+### 3.4 AI Narration Operations
+
+AI narration now runs as a queued background job.
+
+Operator workflow:
+
+- queue narration from `/admin` or `/admin/content/[id]/edit`
+- let the background worker pick up queued jobs automatically
+- use the persisted row status to monitor `queued`, `processing`, `ready`, or `failed`
+- use the edit page only when you need the full narration detail panel or manual audio upload
+
+Background worker:
+
+- queue route: `POST /api/admin/content/[id]/narration`
+- status route: `GET /api/admin/content/[id]/narration`
+- worker route: `GET /api/admin/narration/process`
+- queueing a narration job also schedules a server-side background attempt immediately after the response returns
+- cron auth: `Authorization: Bearer $CRON_SECRET`
+- optional automation: invoke the worker route from Vercel Cron or another scheduler if you want periodic retry/backfill coverage
+
+Recovery path:
+
+- `POST /api/admin/narration/process` still works from an authenticated admin session for debugging or manual recovery
+
+If narration remains stuck in `queued`, verify:
+
+- `CRON_SECRET` is configured in production
+- the Vercel cron job is enabled for the deployment
+- the worker route returns `200` when invoked with the cron secret
+- OpenAI and Supabase storage credentials are healthy
+
 ## 4. Deployment
 
 ### 4.1 App Hosting
@@ -207,6 +240,7 @@ At minimum, production needs:
 - `SUPABASE_SERVICE_KEY`
 - `NEXT_PUBLIC_SITE_URL`
 - AI provider keys used by your deployment
+- `CRON_SECRET`
 
 For rate-limited routes in production:
 
@@ -230,6 +264,7 @@ Before a production deploy, verify:
 - at least one of `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is present
 - `GEMINI_API_KEY` is present for retrieval and embedding sync
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present in production
+- `CRON_SECRET` is present and matches the narration cron caller
 
 Recommended validation steps:
 

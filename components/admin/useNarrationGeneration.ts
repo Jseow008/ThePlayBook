@@ -210,12 +210,6 @@ export function useNarrationGeneration({
             setJobStatus(queuedJob.status);
             onStatusChange(queuedJob.status, queuedJob.error);
             setStatusText(data.data.message || getQueuedMessage(queuedJob.status));
-
-            if (queuedJob.status === "queued") {
-                void fetch("/api/admin/narration/process", {
-                    method: "POST",
-                });
-            }
         } catch (error) {
             const message = getClientSafeErrorMessage(error);
             setStatusText(`Error: ${message}`);

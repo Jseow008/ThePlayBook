@@ -101,8 +101,23 @@ test.describe("Admin narration flow", () => {
         await generateButton.click();
 
         await expect(
-            page.getByText(/ai narration is ready/i)
-        ).toBeVisible({ timeout: 180_000 });
+            page.getByText(/generation will continue in the background/i)
+        ).toBeVisible({ timeout: 15_000 });
+
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+            const processResponse = await page.request.post("/api/admin/narration/process");
+            expect(processResponse.ok()).toBeTruthy();
+
+            const readyMessage = page.getByText(/ai narration is ready/i);
+            try {
+                await expect(readyMessage).toBeVisible({ timeout: 30_000 });
+                break;
+            } catch (error) {
+                if (attempt === 5) {
+                    throw error;
+                }
+            }
+        }
 
         const adminAudioPreview = page.locator("audio").last();
         await expect(adminAudioPreview).toHaveAttribute("src", /generated\/.*\/ai-narration\.wav/);

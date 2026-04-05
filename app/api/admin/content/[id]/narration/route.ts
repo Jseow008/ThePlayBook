@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, isSupabaseNotFoundError, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getNarrationJobState } from "@/lib/narration-job";
+import { processNextNarrationJob } from "@/lib/server/narration-processor";
 
 const ContentIdSchema = z.string().uuid();
 
@@ -152,6 +153,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         if (!queuedItem) {
             return apiError("INTERNAL_ERROR", "Failed to queue AI narration", 500, requestId);
         }
+
+        after(async () => {
+            try {
+                await processNextNarrationJob(`${requestId}:background`);
+            } catch (backgroundError) {
+                logApiError({
+                    requestId,
+                    route: "/api/admin/content/[id]/narration",
+                    message: "Background AI narration processor failed after queueing",
+                    error: backgroundError,
+                });
+            }
+        });
 
         return NextResponse.json({
             success: true,
