@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
     Bot,
+    ChevronDown,
     Database,
     Loader2,
     RefreshCw,
@@ -116,16 +117,16 @@ function formatNumber(value: number) {
 function toneClasses(state: RuntimeCheckState | LaunchReadinessStatus) {
     switch (state) {
         case "ready":
-            return "border-emerald-500/20 bg-emerald-500/10 text-emerald-300";
+            return "border-emerald-200 bg-emerald-50 text-emerald-700";
         case "derived":
-            return "border-sky-500/20 bg-sky-500/10 text-sky-300";
+            return "border-sky-200 bg-sky-50 text-sky-700";
         case "not_configured":
-            return "border-zinc-500/20 bg-zinc-500/10 text-zinc-300";
+            return "border-zinc-200 bg-zinc-100 text-zinc-600";
         case "missing":
         case "invalid":
         case "degraded":
         default:
-            return "border-amber-500/20 bg-amber-500/10 text-amber-300";
+            return "border-amber-200 bg-amber-50 text-amber-700";
     }
 }
 
@@ -197,6 +198,7 @@ export function LaunchReadinessPanel({
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
         let active = true;
@@ -247,17 +249,25 @@ export function LaunchReadinessPanel({
     const segmentSummary = report?.database.segment_coverage.summary;
     const visibleIssues = report?.issues.slice(0, 4) ?? [];
     const hiddenIssueCount = report ? Math.max(report.issues.length - visibleIssues.length, 0) : 0;
+    const formattedTimestamp = report
+        ? new Date(report.timestamp).toLocaleString(undefined, {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+        })
+        : null;
 
     return (
         <section className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
-            <div className="flex flex-col gap-4 border-b border-border px-6 py-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className={`flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-start lg:justify-between ${isExpanded && !isLoading ? "border-b border-border" : ""}`}>
                 <div className="space-y-2">
                     <div className="flex items-center gap-3">
                         <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background/50 text-muted-foreground">
                             {report?.status === "ready" ? (
-                                <ShieldCheck className="h-5 w-5 text-emerald-300" />
+                                <ShieldCheck className="h-5 w-5 text-emerald-600" />
                             ) : (
-                                <TriangleAlert className="h-5 w-5 text-amber-300" />
+                                <TriangleAlert className="h-5 w-5 text-amber-600" />
                             )}
                         </div>
                         <div>
@@ -283,38 +293,54 @@ export function LaunchReadinessPanel({
                                 <span className="text-xs text-muted-foreground">
                                     Env: {report.runtime.environment}
                                 </span>
+                                {formattedTimestamp ? (
+                                    <span className="text-xs text-muted-foreground">
+                                        Updated {formattedTimestamp}
+                                    </span>
+                                ) : null}
                             </>
                         ) : null}
                     </div>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={async () => {
-                        try {
-                            setIsRefreshing(true);
-                            const nextReport = await fetchLaunchReadiness(endpoint);
-                            setReport(nextReport);
-                            setMessage("Launch readiness refreshed.");
-                        } catch (error) {
-                            const nextMessage = error instanceof Error
-                                ? error.message
-                                : "Failed to load launch readiness";
-                            setMessage(`Error: ${nextMessage}`);
-                        } finally {
-                            setIsRefreshing(false);
-                        }
-                    }}
-                    disabled={isLoading || isRefreshing}
-                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                    {isRefreshing ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                        <RefreshCw className="h-4 w-4" />
-                    )}
-                    Refresh
-                </button>
+                <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            try {
+                                setIsRefreshing(true);
+                                const nextReport = await fetchLaunchReadiness(endpoint);
+                                setReport(nextReport);
+                                setMessage("Launch readiness refreshed.");
+                            } catch (error) {
+                                const nextMessage = error instanceof Error
+                                    ? error.message
+                                    : "Failed to load launch readiness";
+                                setMessage(`Error: ${nextMessage}`);
+                            } finally {
+                                setIsRefreshing(false);
+                            }
+                        }}
+                        disabled={isLoading || isRefreshing}
+                        className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {isRefreshing ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <RefreshCw className="h-4 w-4" />
+                        )}
+                        Refresh
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsExpanded((current) => !current)}
+                        className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted/60"
+                        aria-expanded={isExpanded}
+                    >
+                        {isExpanded ? "Hide details" : "Show details"}
+                        <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-180" : ""}`} />
+                    </button>
+                </div>
             </div>
 
             {isLoading ? (
@@ -324,108 +350,53 @@ export function LaunchReadinessPanel({
                 </div>
             ) : (
                 <div className="space-y-5 px-6 py-5">
-                    <div className="grid gap-4 xl:grid-cols-[1.3fr_1fr_1fr]">
+                    <div className="grid gap-3 md:grid-cols-3">
                         <div className="rounded-xl border border-border bg-background/30 p-4">
-                            <div className="mb-3 flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                                <h3 className="text-sm font-semibold text-foreground">Dependencies</h3>
-                            </div>
-                            <div className="grid gap-2 sm:grid-cols-2">
-                                {report ? (
-                                    Object.entries(report.runtime.checks).map(([key, value]) => (
-                                        <div
-                                            key={key}
-                                            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-3 py-2"
-                                        >
-                                            <span className="text-sm text-muted-foreground">
-                                                {CHECK_LABELS[key as keyof LaunchReadinessResponse["runtime"]["checks"]]}
-                                            </span>
-                                            <StatusPill state={value}>{formatStateLabel(value)}</StatusPill>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p className="text-sm text-amber-300">Readiness data unavailable.</p>
-                                )}
-                            </div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                Dependencies
+                            </p>
+                            <p className={`mt-2 text-lg font-semibold ${report?.runtime.status === "ready" ? "text-emerald-600" : "text-amber-600"}`}>
+                                {report?.runtime.status === "ready" ? "Runtime ready" : "Needs review"}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                {report ? report.runtime.issues.length : 0} issue{report?.runtime.issues.length === 1 ? "" : "s"} across environment wiring.
+                            </p>
                         </div>
-
                         <div className="rounded-xl border border-border bg-background/30 p-4">
-                            <div className="mb-3 flex items-center gap-2">
-                                <Bot className="h-4 w-4 text-muted-foreground" />
-                                <h3 className="text-sm font-semibold text-foreground">AI</h3>
-                            </div>
-                            <div className="grid gap-3">
-                                <SummaryMetric
-                                    label="AI-ready verified items"
-                                    testId="launch-readiness-ai-ready"
-                                    value={aiSummary
-                                        ? `${formatNumber(aiSummary.ai_ready_items)} / ${formatNumber(aiSummary.verified_items)}`
-                                        : "unavailable"}
-                                    tone={report?.database.ai_readiness.status === "ready" ? "text-emerald-300" : "text-amber-300"}
-                                />
-                                <SummaryMetric
-                                    label="Missing content embeddings"
-                                    testId="launch-readiness-missing-content"
-                                    value={aiSummary
-                                        ? formatNumber(aiSummary.stale_content_embeddings)
-                                        : "unavailable"}
-                                    tone={aiSummary?.stale_content_embeddings === 0 ? "text-emerald-300" : "text-amber-300"}
-                                />
-                                <SummaryMetric
-                                    label="Missing retrieval segments"
-                                    testId="launch-readiness-missing-segments"
-                                    value={segmentSummary
-                                        ? formatNumber(segmentSummary.missing_segments)
-                                        : "unavailable"}
-                                    tone={segmentSummary?.missing_segments === 0 ? "text-emerald-300" : "text-amber-300"}
-                                />
-                            </div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                AI coverage
+                            </p>
+                            <p className={`mt-2 text-lg font-semibold ${segmentSummary?.missing_segments === 0 && aiSummary?.stale_content_embeddings === 0 ? "text-emerald-600" : "text-amber-600"}`}>
+                                {aiSummary
+                                    ? `${formatNumber(aiSummary.ai_ready_items)} / ${formatNumber(aiSummary.verified_items)} ready`
+                                    : "Unavailable"}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                {segmentSummary
+                                    ? `${formatNumber(segmentSummary.missing_segments)} retrieval segments missing`
+                                    : "Coverage summary unavailable"}
+                            </p>
                         </div>
-
                         <div className="rounded-xl border border-border bg-background/30 p-4">
-                            <div className="mb-3 flex items-center gap-2">
-                                <Database className="h-4 w-4 text-muted-foreground" />
-                                <h3 className="text-sm font-semibold text-foreground">Storage</h3>
-                            </div>
-                            <div className="grid gap-3">
-                                <SummaryMetric
-                                    label="Media bucket"
-                                    testId="launch-readiness-media-bucket"
-                                    value={report
-                                        ? report.database.storage.buckets.media.status === "ready"
-                                            ? "ready"
-                                            : "degraded"
-                                        : "unavailable"}
-                                    tone={report?.database.storage.buckets.media.status === "ready" ? "text-emerald-300" : "text-amber-300"}
-                                />
-                                <SummaryMetric
-                                    label="Audio bucket"
-                                    testId="launch-readiness-audio-bucket"
-                                    value={report
-                                        ? report.database.storage.buckets.audio.status === "ready"
-                                            ? "ready"
-                                            : "degraded"
-                                        : "unavailable"}
-                                    tone={report?.database.storage.buckets.audio.status === "ready" ? "text-emerald-300" : "text-amber-300"}
-                                />
-                                <SummaryMetric
-                                    label="Segment coverage"
-                                    testId="launch-readiness-segment-coverage"
-                                    value={segmentSummary
-                                        ? `${formatNumber(segmentSummary.embedded_content_items)} / ${formatNumber(segmentSummary.total_library_content_items)}`
-                                        : "unavailable"}
-                                />
-                            </div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                                Storage
+                            </p>
+                            <p className={`mt-2 text-lg font-semibold ${report?.database.storage.status === "ready" ? "text-emerald-600" : "text-amber-600"}`}>
+                                {report?.database.storage.status === "ready" ? "Buckets ready" : "Storage degraded"}
+                            </p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Media {report?.database.storage.buckets.media.status === "ready" ? "ready" : "degraded"} and audio {report?.database.storage.buckets.audio.status === "ready" ? "ready" : "degraded"}.
+                            </p>
                         </div>
                     </div>
 
                     {report && report.issues.length > 0 ? (
-                        <div className="rounded-xl border border-amber-500/20 bg-amber-500/8 p-4">
-                            <div className="mb-2 flex items-center gap-2 text-amber-200">
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                            <div className="mb-2 flex items-center gap-2 text-amber-700">
                                 <TriangleAlert className="h-4 w-4" />
                                 <h3 className="text-sm font-semibold">Operator attention</h3>
                             </div>
-                            <ul className="space-y-2 text-sm text-amber-100/90">
+                            <ul className="space-y-2 text-sm text-amber-800">
                                 {visibleIssues.map((issue) => (
                                     <li key={issue}>{issue}</li>
                                 ))}
@@ -442,8 +413,105 @@ export function LaunchReadinessPanel({
                         ) : null
                     )}
 
+                    {isExpanded ? (
+                        <div className="grid gap-4 border-t border-border pt-5 xl:grid-cols-[1.3fr_1fr_1fr]">
+                            <div className="rounded-xl border border-border bg-background/30 p-4">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                                    <h3 className="text-sm font-semibold text-foreground">Dependencies</h3>
+                                </div>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                    {report ? (
+                                        Object.entries(report.runtime.checks).map(([key, value]) => (
+                                            <div
+                                                key={key}
+                                                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-3 py-2"
+                                            >
+                                                <span className="text-sm text-muted-foreground">
+                                                    {CHECK_LABELS[key as keyof LaunchReadinessResponse["runtime"]["checks"]]}
+                                                </span>
+                                                <StatusPill state={value}>{formatStateLabel(value)}</StatusPill>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-amber-700">Readiness data unavailable.</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl border border-border bg-background/30 p-4">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <Bot className="h-4 w-4 text-muted-foreground" />
+                                    <h3 className="text-sm font-semibold text-foreground">AI</h3>
+                                </div>
+                                <div className="grid gap-3">
+                                    <SummaryMetric
+                                        label="AI-ready verified items"
+                                        testId="launch-readiness-ai-ready"
+                                        value={aiSummary
+                                            ? `${formatNumber(aiSummary.ai_ready_items)} / ${formatNumber(aiSummary.verified_items)}`
+                                            : "unavailable"}
+                                        tone={report?.database.ai_readiness.status === "ready" ? "text-emerald-600" : "text-amber-600"}
+                                    />
+                                    <SummaryMetric
+                                        label="Missing content embeddings"
+                                        testId="launch-readiness-missing-content"
+                                        value={aiSummary
+                                            ? formatNumber(aiSummary.stale_content_embeddings)
+                                            : "unavailable"}
+                                        tone={aiSummary?.stale_content_embeddings === 0 ? "text-emerald-600" : "text-amber-600"}
+                                    />
+                                    <SummaryMetric
+                                        label="Missing retrieval segments"
+                                        testId="launch-readiness-missing-segments"
+                                        value={segmentSummary
+                                            ? formatNumber(segmentSummary.missing_segments)
+                                            : "unavailable"}
+                                        tone={segmentSummary?.missing_segments === 0 ? "text-emerald-600" : "text-amber-600"}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="rounded-xl border border-border bg-background/30 p-4">
+                                <div className="mb-3 flex items-center gap-2">
+                                    <Database className="h-4 w-4 text-muted-foreground" />
+                                    <h3 className="text-sm font-semibold text-foreground">Storage</h3>
+                                </div>
+                                <div className="grid gap-3">
+                                    <SummaryMetric
+                                        label="Media bucket"
+                                        testId="launch-readiness-media-bucket"
+                                        value={report
+                                            ? report.database.storage.buckets.media.status === "ready"
+                                                ? "ready"
+                                                : "degraded"
+                                            : "unavailable"}
+                                        tone={report?.database.storage.buckets.media.status === "ready" ? "text-emerald-600" : "text-amber-600"}
+                                    />
+                                    <SummaryMetric
+                                        label="Audio bucket"
+                                        testId="launch-readiness-audio-bucket"
+                                        value={report
+                                            ? report.database.storage.buckets.audio.status === "ready"
+                                                ? "ready"
+                                                : "degraded"
+                                            : "unavailable"}
+                                        tone={report?.database.storage.buckets.audio.status === "ready" ? "text-emerald-600" : "text-amber-600"}
+                                    />
+                                    <SummaryMetric
+                                        label="Segment coverage"
+                                        testId="launch-readiness-segment-coverage"
+                                        value={segmentSummary
+                                            ? `${formatNumber(segmentSummary.embedded_content_items)} / ${formatNumber(segmentSummary.total_library_content_items)}`
+                                            : "unavailable"}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    ) : null}
+
                     {message ? (
-                        <p className={`text-xs font-medium ${message.startsWith("Error:") ? "text-red-500" : "text-emerald-300"}`}>
+                        <p className={`text-xs font-medium ${message.startsWith("Error:") ? "text-red-500" : "text-emerald-600"}`}>
                             {message}
                         </p>
                     ) : null}

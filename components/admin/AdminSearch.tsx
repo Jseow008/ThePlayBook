@@ -5,7 +5,11 @@ import { Search, X } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 
-export function AdminSearch() {
+export function AdminSearch({
+    basePath = "/admin/content",
+}: {
+    basePath?: string;
+}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const queryParam = searchParams.get("q") || "";
@@ -38,7 +42,7 @@ export function AdminSearch() {
                 params.delete("q");
             }
 
-            router.push(`/admin?${params.toString()}`);
+            router.push(`${basePath}?${params.toString()}`);
         }, 300);
     };
 

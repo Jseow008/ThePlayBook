@@ -496,6 +496,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         revalidatePath("/");
         revalidatePath("/browse");
         revalidatePath("/search");
+        revalidatePath("/admin");
+        revalidatePath("/admin/content");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [
@@ -619,6 +621,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         revalidatePath("/");
         revalidatePath("/browse");
         revalidatePath("/search");
+        revalidatePath("/admin");
+        revalidatePath("/admin/content");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [existingContent?.series_id]);

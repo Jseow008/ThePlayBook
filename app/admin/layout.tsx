@@ -8,8 +8,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { verifyAdminSession } from "@/lib/admin/auth";
-import { LayoutDashboard, BookOpen, LayoutGrid, BarChart3, Layers3 } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { AdminLogoutButton } from "@/components/admin/AdminLogoutButton";
+import { AdminPrimaryNav } from "@/components/admin/AdminPrimaryNav";
 import { APP_NAME } from "@/lib/brand";
 
 export const dynamic = "force-dynamic";
@@ -40,36 +41,8 @@ export default async function AdminLayout({
                         </Link>
 
                         {/* Navigation */}
-                        <nav className="flex items-center gap-1">
-                            <Link
-                                href="/admin"
-                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
-                            >
-                                <LayoutDashboard className="w-4 h-4" />
-                                <span className="hidden sm:inline">Dashboard</span>
-                            </Link>
-
-                            <Link
-                                href="/admin/sections"
-                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
-                            >
-                                <LayoutGrid className="w-4 h-4" />
-                                <span className="hidden sm:inline">Sections</span>
-                            </Link>
-                            <Link
-                                href="/admin/series"
-                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
-                            >
-                                <Layers3 className="w-4 h-4" />
-                                <span className="hidden sm:inline">Series</span>
-                            </Link>
-                            <Link
-                                href="/admin/insights"
-                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
-                            >
-                                <BarChart3 className="w-4 h-4" />
-                                <span className="hidden sm:inline">Insights</span>
-                            </Link>
+                        <div className="flex items-center gap-1">
+                            <AdminPrimaryNav />
                             <div className="w-px h-6 bg-zinc-200 mx-2" />
                             <Link
                                 href="/browse"
@@ -79,7 +52,7 @@ export default async function AdminLayout({
                                 <span className="hidden sm:inline">View Site</span>
                             </Link>
                             <AdminLogoutButton />
-                        </nav>
+                        </div>
                     </div>
                 </div>
             </header>

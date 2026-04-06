@@ -4,7 +4,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Filter } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function ContentFilters() {
+export function ContentFilters({
+    basePath = "/admin/content",
+}: {
+    basePath?: string;
+}) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [isPermanent, setIsPermanent] = useState(false);
@@ -38,14 +42,14 @@ export function ContentFilters() {
                         if (status && status !== "all") newParams.set("status", status);
                         if (featured) newParams.set("featured", "true");
 
-                        router.replace(`/admin?${newParams.toString()}`);
+                        router.replace(`${basePath}?${newParams.toString()}`);
                     }
                 } catch (e) {
                     console.error("Failed to parse saved filters", e);
                 }
             }
         }
-    }, [router, searchParams]); // Run once on mount
+    }, [basePath, router, searchParams]); // Run once on mount
 
     // Save filters when they change, if permanent is enabled
     useEffect(() => {
@@ -77,7 +81,7 @@ export function ContentFilters() {
             params.delete(key);
         }
 
-        router.push(`/admin?${params.toString()}`);
+        router.push(`${basePath}?${params.toString()}`);
     };
 
     return (

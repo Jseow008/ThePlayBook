@@ -316,6 +316,7 @@ export async function processNextNarrationJob(requestId: string) {
         revalidatePath(`/read/${contentId}`);
         revalidatePath(`/admin/content/${contentId}/edit`);
         revalidatePath("/admin");
+        revalidatePath("/admin/content");
 
         return {
             processed: true as const,

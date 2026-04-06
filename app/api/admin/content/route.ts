@@ -377,6 +377,8 @@ export async function POST(request: NextRequest) {
         revalidatePath("/");
         revalidatePath("/browse");
         revalidatePath("/search");
+        revalidatePath("/admin");
+        revalidatePath("/admin/content");
         revalidatePath(`/preview/${contentItem.id}`);
         revalidatePath(`/read/${contentItem.id}`);
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [contentItem.series_id]);

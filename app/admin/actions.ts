@@ -37,6 +37,7 @@ export async function toggleFeaturedStatus(contentId: string, currentStatus: boo
         }
 
         revalidatePath("/admin");
+        revalidatePath("/admin/content");
         revalidatePath(`/admin/content/${validContentId}/edit`);
         revalidatePath("/"); // Also update homepage to show changes immediately
         return { success: true };

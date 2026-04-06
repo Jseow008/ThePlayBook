@@ -45,6 +45,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import type { AdminSeriesOption } from "@/lib/server/admin-series";
 import type { NarrationJobStatus } from "@/lib/narration-job";
+import { normalizeAdminReturnTo, withNarrationWarning } from "@/lib/admin-return-to";
 
 interface Segment {
     id?: string;
@@ -103,6 +104,7 @@ interface ContentFormProps {
             total_segments: number;
         };
     } | null;
+    returnTo?: string;
 }
 
 const defaultQuickMode: QuickModeJson = {
@@ -272,8 +274,15 @@ function SortableSegmentItem({
     );
 }
 
-export function ContentForm({ initialData, isEditing = false, seriesOptions = [], aiReadiness = null }: ContentFormProps) {
+export function ContentForm({
+    initialData,
+    isEditing = false,
+    seriesOptions = [],
+    aiReadiness = null,
+    returnTo,
+}: ContentFormProps) {
     const router = useRouter();
+    const safeReturnTo = normalizeAdminReturnTo(returnTo);
 
     // Initialize form data with client_ids for segments and artifacts if missing
     const [formData, setFormData] = useState<ContentFormData>(() => {
@@ -597,9 +606,7 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
                 const narrationWarning = typeof data.data?.narration_warning === "string"
                     ? data.data.narration_warning
                     : "";
-                const destination = narrationWarning
-                    ? `/admin?narration_warning=${encodeURIComponent(narrationWarning)}`
-                    : "/admin";
+                const destination = withNarrationWarning(safeReturnTo, narrationWarning);
                 router.push(destination);
                 router.refresh();
             } else {
@@ -1280,7 +1287,7 @@ export function ContentForm({ initialData, isEditing = false, seriesOptions = []
             <div className="flex items-center justify-end gap-3">
                 <button
                     type="button"
-                    onClick={() => router.push("/admin")}
+                    onClick={() => router.push(safeReturnTo)}
                     className="px-4 py-2 text-zinc-600 hover:text-zinc-900 font-medium transition-colors"
                 >
                     Cancel

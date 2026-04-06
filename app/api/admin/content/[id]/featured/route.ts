@@ -70,6 +70,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
         revalidatePath("/");
         revalidatePath("/admin");
+        revalidatePath("/admin/content");
         revalidatePath(`/admin/content/${id}/edit`);
 
         return NextResponse.json({

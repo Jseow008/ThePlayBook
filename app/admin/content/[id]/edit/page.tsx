@@ -14,10 +14,12 @@ import { getNarrationJobState } from "@/lib/narration-job";
 
 interface EditContentPageProps {
     params: Promise<{ id: string }>;
+    searchParams?: Promise<{ returnTo?: string }>;
 }
 
-export default async function EditContentPage({ params }: EditContentPageProps) {
+export default async function EditContentPage({ params, searchParams }: EditContentPageProps) {
     const { id } = await params;
+    const resolvedSearchParams = await searchParams;
     const supabase = getAdminClient();
     const seriesOptions = await getAdminSeriesOptions();
 
@@ -108,6 +110,7 @@ export default async function EditContentPage({ params }: EditContentPageProps) 
                 isEditing
                 seriesOptions={seriesOptions}
                 aiReadiness={aiReadinessById[contentItem.id]}
+                returnTo={resolvedSearchParams?.returnTo}
             />
         </div>
     );
