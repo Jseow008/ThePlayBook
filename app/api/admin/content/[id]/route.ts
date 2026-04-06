@@ -35,9 +35,12 @@ type QuickModeValue = {
 } | null | undefined;
 
 type NarrationComparableSegment = {
+    id?: string;
     order_index: number;
     title?: string | null;
     markdown_body?: string | null;
+    start_time_sec?: number | null;
+    end_time_sec?: number | null;
 };
 
 function validateSeriesAssignment(
@@ -62,6 +65,41 @@ function validateSeriesAssignment(
             message: "Series selection is required when a series order is set",
         });
     }
+}
+
+function validateSegmentTimingRanges(
+    value: { segments?: Array<{ start_time_sec?: number | null; end_time_sec?: number | null }> },
+    ctx: z.RefinementCtx
+) {
+    value.segments?.forEach((segment, index) => {
+        if (typeof segment.start_time_sec === "number" && segment.start_time_sec < 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["segments", index, "start_time_sec"],
+                message: "Start time must be zero or greater.",
+            });
+        }
+
+        if (typeof segment.end_time_sec === "number" && segment.end_time_sec < 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["segments", index, "end_time_sec"],
+                message: "End time must be zero or greater.",
+            });
+        }
+
+        if (
+            typeof segment.start_time_sec === "number"
+            && typeof segment.end_time_sec === "number"
+            && segment.end_time_sec <= segment.start_time_sec
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["segments", index, "end_time_sec"],
+                message: "End time must be greater than start time.",
+            });
+        }
+    });
 }
 
 async function getSeriesSlugsByIds(
@@ -155,6 +193,39 @@ function haveNarrationSegmentsChanged(
     });
 }
 
+function mergeNarrationSegmentTimings(
+    currentSegments: NarrationComparableSegment[],
+    nextSegments: Array<{
+        id?: string;
+        order_index: number;
+        title?: string | null;
+        markdown_body: string;
+        start_time_sec?: number | null;
+        end_time_sec?: number | null;
+    }>,
+    clearTimings: boolean
+) {
+    const currentById = new Map(
+        currentSegments
+            .filter((segment): segment is NarrationComparableSegment & { id: string } => typeof segment.id === "string")
+            .map((segment) => [segment.id, segment])
+    );
+
+    return nextSegments.map((segment) => {
+        const currentSegment = segment.id ? currentById.get(segment.id) : null;
+
+        return {
+            ...segment,
+            start_time_sec: clearTimings
+                ? null
+                : segment.start_time_sec ?? currentSegment?.start_time_sec ?? null,
+            end_time_sec: clearTimings
+                ? null
+                : segment.end_time_sec ?? currentSegment?.end_time_sec ?? null,
+        };
+    });
+}
+
 // Zod schema for updating content
 const UpdateContentSchema = z.object({
     title: z.string().min(1).optional(),
@@ -195,7 +266,7 @@ const UpdateContentSchema = z.object({
             })),
         }),
     })).optional(),
-}).superRefine(validateSeriesAssignment);
+}).superRefine(validateSeriesAssignment).superRefine(validateSegmentTimingRanges);
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -358,10 +429,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             effectiveSegments = existingSegments ?? [];
         }
 
-        if (shouldCheckNarrationStale) {
+        if (segments !== undefined && (shouldTrackNarrationFreshness || isManualAudioOverride)) {
             const { data: existingSegments, error: segmentFetchError } = await supabase
                 .from("segment")
-                .select("order_index, title, markdown_body")
+                .select("id, order_index, title, markdown_body, start_time_sec, end_time_sec")
                 .eq("item_id", id)
                 .order("order_index", { ascending: true });
 
@@ -371,6 +442,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
             existingNarrationSegments = existingSegments ?? [];
         }
+
+        const narrationSegmentsChanged = Boolean(
+            shouldCheckNarrationStale
+            && existingNarrationSegments
+            && segments
+            && haveNarrationSegmentsChanged(existingNarrationSegments, segments)
+        );
+        const shouldClearSegmentTimings = Boolean(isManualAudioOverride || narrationSegmentsChanged);
+        const segmentsForPersistence = segments && existingNarrationSegments
+            ? mergeNarrationSegmentTimings(existingNarrationSegments, segments, shouldClearSegmentTimings)
+            : segments;
 
         const verificationIssues = getVerifiedContentIssues({
             status: nextStatus,
@@ -413,15 +495,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             contentPatch.narration_started_at = manualNarrationState.narration_started_at;
             contentPatch.narration_completed_at = manualNarrationState.narration_completed_at;
         }
-        if (shouldCheckNarrationStale && existingNarrationSegments && segments) {
+        if (narrationSegmentsChanged) {
             const staleNarrationState = buildStaleNarrationStateForExistingAudio(existingContent?.audio_url);
             if (staleNarrationState) {
-                if (haveNarrationSegmentsChanged(existingNarrationSegments, segments)) {
-                    contentPatch.narration_status = staleNarrationState.narration_status;
-                    contentPatch.narration_error = staleNarrationState.narration_error;
-                    contentPatch.narration_requested_at = staleNarrationState.narration_requested_at;
-                    contentPatch.narration_started_at = staleNarrationState.narration_started_at;
-                }
+                contentPatch.narration_status = staleNarrationState.narration_status;
+                contentPatch.narration_error = staleNarrationState.narration_error;
+                contentPatch.narration_requested_at = staleNarrationState.narration_requested_at;
+                contentPatch.narration_started_at = staleNarrationState.narration_started_at;
             }
         }
         if (contentData.duration_seconds !== undefined) contentPatch.duration_seconds = contentData.duration_seconds;
@@ -443,7 +523,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const rpcArgs: Database["public"]["Functions"]["admin_update_content_graph"]["Args"] = {
             p_content_id: id,
             p_content_patch: contentPatch as Database["public"]["Functions"]["admin_update_content_graph"]["Args"]["p_content_patch"],
-            p_segments: segments ?? null,
+            p_segments: segmentsForPersistence ?? null,
             p_artifacts: artifactPayload ?? null,
         };
 
@@ -461,6 +541,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
 
             throw updateGraphError;
+        }
+
+        if (isManualAudioOverride && !segmentsForPersistence) {
+            const { error: clearSegmentTimingError } = await supabase
+                .from("segment")
+                .update({
+                    start_time_sec: null,
+                    end_time_sec: null,
+                })
+                .eq("item_id", id);
+
+            if (clearSegmentTimingError) {
+                throw clearSegmentTimingError;
+            }
         }
 
         if (shouldInvalidateContentEmbedding({

@@ -18,6 +18,7 @@ import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
+import { findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
 
 /**
  * Reader View — Accordion Layout
@@ -46,6 +47,8 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
+    const [audioCurrentTimeSec, setAudioCurrentTimeSec] = useState(0);
+    const [hasSyncedAudioPosition, setHasSyncedAudioPosition] = useState(false);
     const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded } = useReadingProgress();
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
@@ -66,9 +69,17 @@ export function ReaderView({ content }: ReaderViewProps) {
             })),
         [content.segments]
     );
+    const activeNarrationSegmentId = useMemo(
+        () => findSegmentIdForPlaybackTime(content.segments, audioCurrentTimeSec),
+        [audioCurrentTimeSec, content.segments]
+    );
+    const handleAudioTimeChange = useCallback((timeSec: number) => {
+        setHasSyncedAudioPosition(true);
+        setAudioCurrentTimeSec(timeSec);
+    }, []);
 
-    // Start tracking reading time
-    useReadingTimer(content.id);
+    // Track reading time once at the reader level and pass display text down.
+    const { formattedTime } = useReadingTimer(content.id);
 
     const savedProgress = getProgress(content.id);
 
@@ -285,6 +296,19 @@ export function ReaderView({ content }: ReaderViewProps) {
         void handleHighlightJump(urlHighlightId).finally(clearUrlParam);
     }, [handleHighlightJump, highlights, highlightsLoading, pathname, router, searchParams]);
 
+    useEffect(() => {
+        if (!hasSyncedAudioPosition || !activeNarrationSegmentId || expandedSegmentId === activeNarrationSegmentId) {
+            return;
+        }
+
+        const targetSegment = content.segments.find((segment) => segment.id === activeNarrationSegmentId);
+        if (!targetSegment) {
+            return;
+        }
+
+        setExpandedSegmentId(activeNarrationSegmentId);
+    }, [activeNarrationSegmentId, content.segments, expandedSegmentId, hasSyncedAudioPosition]);
+
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
             <div ref={setPopoverPortalEl} aria-hidden="true" />
@@ -299,6 +323,8 @@ export function ReaderView({ content }: ReaderViewProps) {
                     durationSeconds={content.duration_seconds}
                     segmentsTotal={content.segments.length}
                     segmentsRead={completedSegments.size}
+                    formattedReadingTime={formattedTime}
+                    onAudioTimeChange={handleAudioTimeChange}
                 />
 
                 {content.seriesContext && (

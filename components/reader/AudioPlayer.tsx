@@ -13,9 +13,10 @@ import { Play, Pause, Volume2, VolumeX, Headphones } from "lucide-react";
 interface AudioPlayerProps {
     src: string;
     title?: string;
+    onTimeChange?: (timeSec: number) => void;
 }
 
-export function AudioPlayer({ src, title }: AudioPlayerProps) {
+export function AudioPlayer({ src, title, onTimeChange }: AudioPlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
@@ -28,9 +29,15 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
         const audio = audioRef.current;
         if (!audio) return;
 
-        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+        const handleTimeUpdate = () => {
+            setCurrentTime(audio.currentTime);
+            onTimeChange?.(audio.currentTime);
+        };
         const handleLoadedMetadata = () => setDuration(audio.duration);
-        const handleEnded = () => setIsPlaying(false);
+        const handleEnded = () => {
+            setIsPlaying(false);
+            onTimeChange?.(audio.currentTime);
+        };
         const handleCanPlay = () => setPlaybackError("");
         const handleError = () => {
             const mediaError = audio.error;
@@ -71,7 +78,7 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
             audio.removeEventListener("canplay", handleCanPlay);
             audio.removeEventListener("error", handleError);
         };
-    }, [src]);
+    }, [onTimeChange, src]);
 
     const togglePlay = async () => {
         const audio = audioRef.current;
@@ -111,6 +118,7 @@ export function AudioPlayer({ src, title }: AudioPlayerProps) {
         const newTime = parseFloat(e.target.value);
         audio.currentTime = newTime;
         setCurrentTime(newTime);
+        onTimeChange?.(newTime);
     };
 
     const cyclePlaybackRate = () => {

@@ -1,8 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     buildNarrationScript,
+    buildNarrationSegmentScript,
     concatenateWavBuffers,
     generateNarrationAudio,
+    getWavDurationSeconds,
     mapWithConcurrency,
     splitNarrationIntoChunks,
     synthesizeNarrationChunkWav,
@@ -36,6 +38,32 @@ describe("AI narration helpers", () => {
         return wav;
     };
 
+    const makeDurationWav = (durationSeconds: number) => {
+        const sampleRate = 24_000;
+        const bitsPerSample = 16;
+        const channels = 1;
+        const bytesPerSample = bitsPerSample / 8;
+        const frameCount = Math.max(1, Math.round(sampleRate * durationSeconds));
+        const pcmByteLength = frameCount * channels * bytesPerSample;
+        const wav = Buffer.alloc(44 + pcmByteLength);
+
+        wav.write("RIFF", 0, "ascii");
+        wav.writeUInt32LE(36 + pcmByteLength, 4);
+        wav.write("WAVE", 8, "ascii");
+        wav.write("fmt ", 12, "ascii");
+        wav.writeUInt32LE(16, 16);
+        wav.writeUInt16LE(1, 20);
+        wav.writeUInt16LE(channels, 22);
+        wav.writeUInt32LE(sampleRate, 24);
+        wav.writeUInt32LE(sampleRate * channels * bytesPerSample, 28);
+        wav.writeUInt16LE(channels * bytesPerSample, 32);
+        wav.writeUInt16LE(bitsPerSample, 34);
+        wav.write("data", 36, "ascii");
+        wav.writeUInt32LE(pcmByteLength, 40);
+
+        return wav;
+    };
+
     it("builds a speech-friendly narration script from deep-mode segments only", () => {
         const script = buildNarrationScript({
             title: "Deep Work",
@@ -62,6 +90,21 @@ describe("AI narration helpers", () => {
         expect(script).not.toContain("Focus is a superpower.");
         expect(script).not.toContain("Big idea.");
         expect(script).not.toContain("Protect blocks of focus");
+        expect(script).not.toContain("##");
+        expect(script).not.toContain("- ");
+    });
+
+    it("builds a speech-friendly narration script for a single segment", () => {
+        const script = buildNarrationSegmentScript({
+            id: "segment-1",
+            order_index: 1,
+            title: "Why focus matters",
+            markdown_body: "## Attention\n\n- Deep work compounds.\n- Context switching hurts.",
+        }, 0);
+
+        expect(script).toContain("Why focus matters.");
+        expect(script).toContain("Attention");
+        expect(script).toContain("Deep work compounds.");
         expect(script).not.toContain("##");
         expect(script).not.toContain("- ");
     });
@@ -93,6 +136,15 @@ describe("AI narration helpers", () => {
         expect(wav.readUInt16LE(46)).toBe(2);
         expect(wav.readUInt16LE(48)).toBe(3);
         expect(wav.readUInt16LE(50)).toBe(4);
+    });
+
+    it("measures WAV duration from the merged PCM data", () => {
+        const wav = concatenateWavBuffers([
+            makeWav(1, 2),
+            makeWav(3, 4),
+        ]);
+
+        expect(getWavDurationSeconds(wav)).toBeCloseTo(8 / 48_000, 8);
     });
 
     it("transcodes the merged WAV narration into an MP3 asset", async () => {
@@ -139,6 +191,14 @@ describe("AI narration helpers", () => {
         expect(result.extension).toBe("wav");
         expect(result.contentType).toBe("audio/wav");
         expect(result.audioBuffer.toString("ascii", 0, 4)).toBe("RIFF");
+        expect(result.segmentTimings).toEqual([
+            {
+                id: null,
+                order_index: 1,
+                start_time_sec: 0,
+                end_time_sec: 1,
+            },
+        ]);
     });
 
     it("throws the ffmpeg error when WAV fallback is not explicitly allowed", async () => {
@@ -202,6 +262,66 @@ describe("AI narration helpers", () => {
         expect(result.extension).toBe("wav");
         expect(result.contentType).toBe("audio/wav");
         expect(result.audioBuffer.toString("ascii", 0, 4)).toBe("RIFF");
+    });
+
+    it("derives contiguous segment timings from segment-by-segment narration audio", async () => {
+        vi.stubEnv("OPENAI_API_KEY", "test-openai-key");
+        vi.stubEnv("NARRATION_OUTPUT_FORMAT", "wav");
+
+        const shortWav = makeDurationWav(2.2);
+        const longWav = makeDurationWav(3.4);
+        const shortArrayBuffer = shortWav.buffer.slice(
+            shortWav.byteOffset,
+            shortWav.byteOffset + shortWav.byteLength
+        );
+        const longArrayBuffer = longWav.buffer.slice(
+            longWav.byteOffset,
+            longWav.byteOffset + longWav.byteLength
+        );
+
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                arrayBuffer: async () => shortArrayBuffer,
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                arrayBuffer: async () => longArrayBuffer,
+            }) as any;
+
+        const result = await generateNarrationAudio({
+            title: "Deep Work",
+            author: "Cal Newport",
+            segments: [
+                {
+                    id: "segment-1",
+                    order_index: 1,
+                    title: "Why focus matters",
+                    markdown_body: "Deep work compounds.",
+                },
+                {
+                    id: "segment-2",
+                    order_index: 2,
+                    title: "Protect focus",
+                    markdown_body: "Reduce distractions to go deeper.",
+                },
+            ],
+        });
+
+        expect(result.segmentTimings).toEqual([
+            {
+                id: "segment-1",
+                order_index: 1,
+                start_time_sec: 0,
+                end_time_sec: 2,
+            },
+            {
+                id: "segment-2",
+                order_index: 2,
+                start_time_sec: 2,
+                end_time_sec: 6,
+            },
+        ]);
     });
 
     it("retries temporary OpenAI failures before succeeding", async () => {

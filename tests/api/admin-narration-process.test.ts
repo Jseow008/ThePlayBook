@@ -40,6 +40,7 @@ describe("Admin narration processor API", () => {
     const getPublicUrlMock = vi.fn();
     const removeMock = vi.fn();
     const contentUpdateMock = vi.fn();
+    const rpcMock = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -50,10 +51,12 @@ describe("Admin narration processor API", () => {
             audioBuffer: Buffer.from("mp3-data"),
             extension: "mp3",
             contentType: "audio/mpeg",
+            segmentTimings: [],
         });
 
         uploadMock.mockResolvedValue({ error: null });
         removeMock.mockResolvedValue({ error: null });
+        rpcMock.mockResolvedValue({ data: true, error: null });
         getPublicUrlMock.mockImplementation((path: string) => ({
             data: {
                 publicUrl: `https://example.supabase.co/storage/v1/object/public/audio/${path}`,
@@ -110,6 +113,20 @@ describe("Admin narration processor API", () => {
     });
 
     it("claims and processes one queued narration job", async () => {
+        (generateNarrationAudio as any).mockResolvedValueOnce({
+            audioBuffer: Buffer.from("mp3-data"),
+            extension: "mp3",
+            contentType: "audio/mpeg",
+            segmentTimings: [
+                {
+                    id: "segment-1",
+                    order_index: 1,
+                    start_time_sec: 0,
+                    end_time_sec: 12,
+                },
+            ],
+        });
+
         const queueSelectChain = {
             eq: vi.fn().mockReturnThis(),
             is: vi.fn().mockReturnThis(),
@@ -157,6 +174,7 @@ describe("Admin narration processor API", () => {
                     quick_mode_json: null,
                     segments: [
                         {
+                            id: "segment-1",
                             order_index: 1,
                             title: "Make it obvious",
                             markdown_body: "Cue your habits with visible triggers.",
@@ -168,25 +186,7 @@ describe("Admin narration processor API", () => {
             }),
         };
 
-        const readyUpdateMaybeSingleMock = vi.fn().mockResolvedValue({
-            data: { id: "11111111-1111-1111-1111-111111111111" },
-            error: null,
-        });
-        contentUpdateMock
-            .mockReturnValueOnce(claimUpdateChain)
-            .mockReturnValueOnce({
-                eq: vi.fn().mockReturnValue({
-                    eq: vi.fn().mockReturnValue({
-                        eq: vi.fn().mockReturnValue({
-                            eq: vi.fn().mockReturnValue({
-                                select: vi.fn().mockReturnValue({
-                                    maybeSingle: readyUpdateMaybeSingleMock,
-                                }),
-                            }),
-                        }),
-                    }),
-                }),
-            });
+        contentUpdateMock.mockReturnValueOnce(claimUpdateChain);
 
         (getAdminClient as any).mockReturnValue({
             from: vi.fn()
@@ -200,9 +200,6 @@ describe("Admin narration processor API", () => {
                     select: vi.fn().mockReturnValue(fetchContentChain),
                 })
                 .mockReturnValueOnce({
-                    update: contentUpdateMock,
-                })
-                .mockReturnValueOnce({
                     select: vi.fn().mockReturnValue(queueSelectChain),
                 }),
             storage: {
@@ -212,6 +209,7 @@ describe("Admin narration processor API", () => {
                     remove: removeMock,
                 })),
             },
+            rpc: rpcMock,
         });
 
         const req = new NextRequest("http://localhost/api/admin/narration/process", {
@@ -240,6 +238,17 @@ describe("Admin narration processor API", () => {
         expect(removeMock).toHaveBeenCalledWith([
             "generated/11111111-1111-1111-1111-111111111111/ai-narration-old.mp3",
         ]);
+        expect(rpcMock).toHaveBeenCalledWith("admin_finalize_narration_generation", expect.objectContaining({
+            p_content_id: "11111111-1111-1111-1111-111111111111",
+            p_audio_url: expect.stringMatching(/^https:\/\/example\.supabase\.co\/storage\/v1\/object\/public\/audio\/generated\/11111111-1111-1111-1111-111111111111\/ai-narration-.*\.mp3$/),
+            p_segment_timings: [
+                {
+                    id: "segment-1",
+                    start_time_sec: 0,
+                    end_time_sec: 12,
+                },
+            ],
+        }));
         expect(revalidatePathMock).toHaveBeenCalledWith("/read/11111111-1111-1111-1111-111111111111");
     });
 
@@ -291,6 +300,7 @@ describe("Admin narration processor API", () => {
                     quick_mode_json: null,
                     segments: [
                         {
+                            id: "segment-1",
                             order_index: 1,
                             title: "Make it obvious",
                             markdown_body: "Cue your habits with visible triggers.",
@@ -302,24 +312,8 @@ describe("Admin narration processor API", () => {
             }),
         };
 
-        contentUpdateMock
-            .mockReturnValueOnce(claimUpdateChain)
-            .mockReturnValueOnce({
-                eq: vi.fn().mockReturnValue({
-                    eq: vi.fn().mockReturnValue({
-                        eq: vi.fn().mockReturnValue({
-                            eq: vi.fn().mockReturnValue({
-                                select: vi.fn().mockReturnValue({
-                                    maybeSingle: vi.fn().mockResolvedValue({
-                                        data: null,
-                                        error: null,
-                                    }),
-                                }),
-                            }),
-                        }),
-                    }),
-                }),
-            });
+        contentUpdateMock.mockReturnValueOnce(claimUpdateChain);
+        rpcMock.mockResolvedValueOnce({ data: false, error: null });
 
         (getAdminClient as any).mockReturnValue({
             from: vi.fn()
@@ -333,9 +327,6 @@ describe("Admin narration processor API", () => {
                     select: vi.fn().mockReturnValue(fetchContentChain),
                 })
                 .mockReturnValueOnce({
-                    update: contentUpdateMock,
-                })
-                .mockReturnValueOnce({
                     select: vi.fn().mockReturnValue(queueSelectChain),
                 }),
             storage: {
@@ -345,6 +336,7 @@ describe("Admin narration processor API", () => {
                     remove: removeMock,
                 })),
             },
+            rpc: rpcMock,
         });
 
         const req = new NextRequest("http://localhost/api/admin/narration/process", {
@@ -384,6 +376,7 @@ describe("Admin narration processor API", () => {
                     remove: removeMock,
                 })),
             },
+            rpc: rpcMock,
         });
 
         const req = new NextRequest("http://localhost/api/admin/narration/process", {
@@ -462,7 +455,7 @@ describe("Admin narration processor API", () => {
                     audio_url: null,
                     narration_completed_at: null,
                     quick_mode_json: null,
-                    segments: [{ order_index: 1, title: "A", markdown_body: "A body", deleted_at: null }],
+                    segments: [{ id: "segment-1", order_index: 1, title: "A", markdown_body: "A body", deleted_at: null }],
                 },
                 error: null,
             }),
@@ -480,61 +473,25 @@ describe("Admin narration processor API", () => {
                     audio_url: null,
                     narration_completed_at: null,
                     quick_mode_json: null,
-                    segments: [{ order_index: 1, title: "B", markdown_body: "B body", deleted_at: null }],
+                    segments: [{ id: "segment-2", order_index: 1, title: "B", markdown_body: "B body", deleted_at: null }],
                 },
                 error: null,
             }),
         };
 
-        const readyUpdateMaybeSingleOne = vi.fn().mockResolvedValue({
-            data: { id: "job-1" },
-            error: null,
-        });
-        const readyUpdateMaybeSingleTwo = vi.fn().mockResolvedValue({
-            data: { id: "job-2" },
-            error: null,
-        });
-
         contentUpdateMock
             .mockReturnValueOnce(claimUpdateChain)
-            .mockReturnValueOnce({
-                eq: vi.fn().mockReturnValue({
-                    eq: vi.fn().mockReturnValue({
-                        eq: vi.fn().mockReturnValue({
-                            eq: vi.fn().mockReturnValue({
-                                select: vi.fn().mockReturnValue({
-                                    maybeSingle: readyUpdateMaybeSingleOne,
-                                }),
-                            }),
-                        }),
-                    }),
-                }),
-            })
             .mockReturnValueOnce(claimUpdateChain)
-            .mockReturnValueOnce({
-                eq: vi.fn().mockReturnValue({
-                    eq: vi.fn().mockReturnValue({
-                        eq: vi.fn().mockReturnValue({
-                            eq: vi.fn().mockReturnValue({
-                                select: vi.fn().mockReturnValue({
-                                    maybeSingle: readyUpdateMaybeSingleTwo,
-                                }),
-                            }),
-                        }),
-                    }),
-                }),
-            });
+            .mockReturnValueOnce(claimUpdateChain);
 
         (getAdminClient as any).mockReturnValue({
             from: vi.fn()
                 .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) })
                 .mockReturnValueOnce({ update: contentUpdateMock })
                 .mockReturnValueOnce({ select: vi.fn().mockReturnValue(fetchContentChainOne) })
-                .mockReturnValueOnce({ update: contentUpdateMock })
                 .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) })
                 .mockReturnValueOnce({ update: contentUpdateMock })
                 .mockReturnValueOnce({ select: vi.fn().mockReturnValue(fetchContentChainTwo) })
-                .mockReturnValueOnce({ update: contentUpdateMock })
                 .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) }),
             storage: {
                 from: vi.fn(() => ({
@@ -543,6 +500,7 @@ describe("Admin narration processor API", () => {
                     remove: removeMock,
                 })),
             },
+            rpc: rpcMock,
         });
 
         const req = new NextRequest("http://localhost/api/admin/narration/process", {
@@ -651,46 +609,56 @@ describe("Admin narration processor API", () => {
                     audio_url: null,
                     narration_completed_at: null,
                     quick_mode_json: null,
-                    segments: [{ order_index: 1, title: "B", markdown_body: "B body", deleted_at: null }],
+                    segments: [{ id: "segment-2", order_index: 1, title: "B", markdown_body: "B body", deleted_at: null }],
                 },
                 error: null,
             }),
         };
 
-        const readyUpdateMaybeSingleTwo = vi.fn().mockResolvedValue({
-            data: { id: "job-2" },
-            error: null,
-        });
+        let contentSelectCall = 0;
+        let contentUpdateCall = 0;
 
-        contentUpdateMock
-            .mockReturnValueOnce(claimUpdateChain)
-            .mockReturnValueOnce(releaseClaimChain)
-            .mockReturnValueOnce(claimUpdateChain)
-            .mockReturnValueOnce({
-                eq: vi.fn().mockReturnValue({
-                    eq: vi.fn().mockReturnValue({
-                        eq: vi.fn().mockReturnValue({
-                            eq: vi.fn().mockReturnValue({
-                                select: vi.fn().mockReturnValue({
-                                    maybeSingle: readyUpdateMaybeSingleTwo,
-                                }),
-                            }),
-                        }),
-                    }),
-                }),
-            });
+        const contentTable = {
+            select: vi.fn(() => {
+                contentSelectCall += 1;
+
+                if (contentSelectCall === 1 || contentSelectCall === 3 || contentSelectCall === 5) {
+                    return queueSelectChain;
+                }
+
+                if (contentSelectCall === 2) {
+                    return fetchDraftContentChain;
+                }
+
+                if (contentSelectCall === 4) {
+                    return fetchVerifiedContentChain;
+                }
+
+                throw new Error(`Unexpected content select call ${contentSelectCall}`);
+            }),
+            update: vi.fn(() => {
+                contentUpdateCall += 1;
+
+                if (contentUpdateCall === 1 || contentUpdateCall === 3) {
+                    return claimUpdateChain;
+                }
+
+                if (contentUpdateCall === 2) {
+                    return releaseClaimChain;
+                }
+
+                throw new Error(`Unexpected content update call ${contentUpdateCall}`);
+            }),
+        };
 
         (getAdminClient as any).mockReturnValue({
-            from: vi.fn()
-                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) })
-                .mockReturnValueOnce({ update: contentUpdateMock })
-                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(fetchDraftContentChain) })
-                .mockReturnValueOnce({ update: contentUpdateMock })
-                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) })
-                .mockReturnValueOnce({ update: contentUpdateMock })
-                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(fetchVerifiedContentChain) })
-                .mockReturnValueOnce({ update: contentUpdateMock })
-                .mockReturnValueOnce({ select: vi.fn().mockReturnValue(queueSelectChain) }),
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return contentTable;
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
             storage: {
                 from: vi.fn(() => ({
                     upload: uploadMock,
@@ -698,6 +666,7 @@ describe("Admin narration processor API", () => {
                     remove: removeMock,
                 })),
             },
+            rpc: rpcMock,
         });
 
         const req = new NextRequest("http://localhost/api/admin/narration/process", {

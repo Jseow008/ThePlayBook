@@ -48,6 +48,41 @@ function validateSeriesAssignment(
     }
 }
 
+function validateSegmentTimingRanges(
+    value: { segments?: Array<{ start_time_sec?: number | null; end_time_sec?: number | null }> | null },
+    ctx: z.RefinementCtx
+) {
+    value.segments?.forEach((segment, index) => {
+        if (typeof segment.start_time_sec === "number" && segment.start_time_sec < 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["segments", index, "start_time_sec"],
+                message: "Start time must be zero or greater.",
+            });
+        }
+
+        if (typeof segment.end_time_sec === "number" && segment.end_time_sec < 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["segments", index, "end_time_sec"],
+                message: "End time must be zero or greater.",
+            });
+        }
+
+        if (
+            typeof segment.start_time_sec === "number"
+            && typeof segment.end_time_sec === "number"
+            && segment.end_time_sec <= segment.start_time_sec
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["segments", index, "end_time_sec"],
+                message: "End time must be greater than start time.",
+            });
+        }
+    });
+}
+
 async function getSeriesSlugsByIds(
     supabase: ReturnType<typeof getAdminClient>,
     seriesIds: Array<string | null | undefined>
@@ -128,7 +163,7 @@ const CreateContentSchema = z.object({
             })),
         }),
     })).optional().nullable(),
-}).superRefine(validateSeriesAssignment);
+}).superRefine(validateSeriesAssignment).superRefine(validateSegmentTimingRanges);
 
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();

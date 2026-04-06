@@ -541,6 +541,45 @@ describe("Admin content series support", () => {
                     };
                 }
 
+                if (table === "segment") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                order: vi.fn().mockResolvedValue({
+                                    data: [],
+                                    error: null,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                order: vi.fn().mockResolvedValue({
+                                    data: [],
+                                    error: null,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                order: vi.fn().mockResolvedValue({
+                                    data: [],
+                                    error: null,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
                 throw new Error(`Unexpected table ${table}`);
             }),
         });
@@ -818,6 +857,19 @@ describe("Admin content series support", () => {
                     };
                 }
 
+                if (table === "segment") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                order: vi.fn().mockResolvedValue({
+                                    data: [],
+                                    error: null,
+                                }),
+                            }),
+                        }),
+                    };
+                }
+
                 throw new Error(`Unexpected table ${table}`);
             }),
             rpc: vi.fn(),
@@ -965,9 +1017,12 @@ describe("Admin content series support", () => {
             eq: vi.fn().mockReturnValue({
                 order: vi.fn().mockResolvedValue({
                     data: [{
+                        id: "11111111-1111-1111-1111-111111111111",
                         order_index: 0,
                         title: "Current segment",
                         markdown_body: "Old body",
+                        start_time_sec: 0,
+                        end_time_sec: 30,
                     }],
                     error: null,
                 }),
@@ -999,6 +1054,7 @@ describe("Admin content series support", () => {
             method: "PUT",
             body: JSON.stringify({
                 segments: [{
+                    id: "11111111-1111-1111-1111-111111111111",
                     order_index: 0,
                     title: "Current segment",
                     markdown_body: "Updated body",
@@ -1020,6 +1076,13 @@ describe("Admin content series support", () => {
                 narration_requested_at: null,
                 narration_started_at: null,
             }),
+            p_segments: [
+                expect.objectContaining({
+                    id: "11111111-1111-1111-1111-111111111111",
+                    start_time_sec: null,
+                    end_time_sec: null,
+                }),
+            ],
         }));
     });
 
@@ -1100,6 +1163,92 @@ describe("Admin content series support", () => {
             p_content_patch: expect.not.objectContaining({
                 narration_status: "stale",
             }),
+        }));
+    });
+
+    it("preserves existing segment timings when verified content saves unchanged segments without timing fields", async () => {
+        const rpc = vi.fn().mockResolvedValue({ error: null });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: {
+                series_id: null,
+                status: "verified",
+                title: "Matthew",
+                author: "Matthew",
+                type: "book",
+                category: "Christian",
+                cover_image_url: "https://example.com/matthew.jpg",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Idea",
+                    key_takeaways: ["A"],
+                },
+                audio_url: "https://example.com/audio/current.mp3",
+                narration_status: "ready",
+            },
+            error: null,
+        });
+        const segmentSelect = vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+                order: vi.fn().mockResolvedValue({
+                    data: [{
+                        id: "11111111-1111-1111-1111-111111111111",
+                        order_index: 0,
+                        title: "Current segment",
+                        markdown_body: "Stable body",
+                        start_time_sec: 12,
+                        end_time_sec: 34,
+                    }],
+                    error: null,
+                }),
+            }),
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                    };
+                }
+
+                if (table === "segment") {
+                    return { select: segmentSelect };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                segments: [{
+                    id: "11111111-1111-1111-1111-111111111111",
+                    order_index: 0,
+                    title: "Current segment",
+                    markdown_body: "Stable body",
+                }],
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+
+        expect(res.status).toBe(200);
+        expect(rpc).toHaveBeenCalledWith("admin_update_content_graph", expect.objectContaining({
+            p_segments: [
+                expect.objectContaining({
+                    id: "11111111-1111-1111-1111-111111111111",
+                    start_time_sec: 12,
+                    end_time_sec: 34,
+                }),
+            ],
         }));
     });
 
@@ -1723,6 +1872,75 @@ describe("Admin content series support", () => {
 
         expect(res.status).toBe(500);
         expect(json.error.code).toBe("INTERNAL_ERROR");
+    });
+
+    it("rejects invalid segment timing ranges when creating content", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/admin/content"), {
+            method: "POST",
+            body: JSON.stringify({
+                title: "Timing Validation",
+                type: "article",
+                status: "verified",
+                cover_image_url: "https://example.com/cover.jpg",
+                category: "Health",
+                quick_mode_json: {
+                    hook: "Hook",
+                    big_idea: "Big idea",
+                    key_takeaways: ["Takeaway"],
+                },
+                segments: [
+                    {
+                        order_index: 0,
+                        markdown_body: "Body",
+                        start_time_sec: -1,
+                        end_time_sec: 4,
+                    },
+                ],
+            }),
+        });
+
+        const res = await createAdminContent(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(400);
+        expect(json.error.code).toBe("VALIDATION_ERROR");
+        expect(json.error.details).toEqual([
+            expect.objectContaining({
+                path: ["segments", 0, "start_time_sec"],
+                message: "Start time must be zero or greater.",
+            }),
+        ]);
+    });
+
+    it("rejects segment timing ranges whose end time is not after the start time", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                title: "Timing Validation",
+                segments: [
+                    {
+                        order_index: 0,
+                        markdown_body: "Body",
+                        start_time_sec: 12,
+                        end_time_sec: 12,
+                    },
+                ],
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+        const json = await res.json();
+
+        expect(res.status).toBe(400);
+        expect(json.error.code).toBe("VALIDATION_ERROR");
+        expect(json.error.details).toEqual([
+            expect.objectContaining({
+                path: ["segments", 0, "end_time_sec"],
+                message: "End time must be greater than start time.",
+            }),
+        ]);
     });
 
     it("returns 404 when deleting content that no longer exists", async () => {

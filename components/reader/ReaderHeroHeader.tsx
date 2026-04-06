@@ -6,7 +6,6 @@ import { AudioPlayer } from "./AudioPlayer";
 import { APP_NAME } from "@/lib/brand";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
-import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 
 /**
@@ -25,6 +24,8 @@ interface ReaderHeroHeaderProps {
     durationSeconds: number | null;
     segmentsTotal: number;
     segmentsRead: number;
+    formattedReadingTime: string;
+    onAudioTimeChange?: (timeSec: number) => void;
 }
 
 export function ReaderHeroHeader({
@@ -36,16 +37,13 @@ export function ReaderHeroHeader({
     durationSeconds,
     segmentsTotal,
     segmentsRead,
+    formattedReadingTime,
+    onAudioTimeChange,
 }: ReaderHeroHeaderProps) {
     const progressPercent =
         segmentsTotal > 0
             ? Math.round((segmentsRead / segmentsTotal) * 100)
             : 0;
-
-    // Use the existing reading timer, passing contentId (from window.location or props if available later. Here we can use undefined as it's optional)
-    // Actually we should get contentId from url but for timer display we don't strictly need it to just show elapsed time
-    const contentId = typeof window !== 'undefined' ? window.location.pathname.split('/').pop() : undefined;
-    const { formattedTime } = useReadingTimer(contentId);
 
     // Update Tab Title with Progress
     useEffect(() => {
@@ -120,10 +118,10 @@ export function ReaderHeroHeader({
                         {/* Time Spent Reading */}
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 text-xs font-medium text-muted-foreground border border-border/50">
                             <span className="relative flex size-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75"></span>
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
                             </span>
-                            {formattedTime} read
+                            {formattedReadingTime} read
                         </span>
 
                         {/* Display Settings */}
@@ -146,6 +144,7 @@ export function ReaderHeroHeader({
                     <AudioPlayer
                         src={audioUrl}
                         title="Listen to this summary"
+                        onTimeChange={onAudioTimeChange}
                     />
                 </div>
             )}

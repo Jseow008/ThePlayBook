@@ -1,18 +1,24 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ReaderView } from '@/components/reader/ReaderView';
 import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
 
 const {
     notesDrawerSpy,
+    readerHeroHeaderSpy,
     routerReplaceMock,
+    saveReadingProgressMock,
     searchParamsState,
+    segmentAccordionSpy,
     highlightsState,
     syncFromCloudMock,
 } = vi.hoisted(() => ({
     notesDrawerSpy: vi.fn(),
+    readerHeroHeaderSpy: vi.fn(),
     routerReplaceMock: vi.fn(),
+    saveReadingProgressMock: vi.fn(),
     searchParamsState: { value: '' },
+    segmentAccordionSpy: vi.fn(),
     highlightsState: {
         value: [] as Array<{
             id: string;
@@ -49,11 +55,22 @@ vi.mock('next/link', () => ({
 
 // Mock child components to isolate ReaderView testing
 vi.mock('@/components/reader/ReaderHeroHeader', () => ({
-    ReaderHeroHeader: () => <div data-testid="mock-hero-header" />
+    ReaderHeroHeader: (props: any) => {
+        readerHeroHeaderSpy(props);
+        return (
+            <div data-testid="mock-hero-header">
+                <button data-testid="sync-audio-seg-1" onClick={() => props.onAudioTimeChange?.(5)} />
+                <button data-testid="sync-audio-seg-2" onClick={() => props.onAudioTimeChange?.(35)} />
+            </div>
+        );
+    }
 }));
 
 vi.mock('@/components/reader/SegmentAccordion', () => ({
-    SegmentAccordion: () => <div data-testid="mock-segment-accordion" />
+    SegmentAccordion: (props: any) => {
+        segmentAccordionSpy(props);
+        return <div data-testid="mock-segment-accordion">{props.expandedSegmentId ?? 'none'}</div>;
+    }
 }));
 
 vi.mock('@/components/reader/NotesDrawer', () => ({
@@ -77,14 +94,16 @@ vi.mock('@/components/reader/CompletionCard', () => ({
 
 vi.mock('@/hooks/useReadingProgress', () => ({
     useReadingProgress: () => ({
-        saveReadingProgress: vi.fn(),
+        saveReadingProgress: saveReadingProgressMock,
         getProgress: vi.fn(() => null),
         isLoaded: true,
     }),
 }));
 
 vi.mock('@/hooks/useReadingTimer', () => ({
-    useReadingTimer: vi.fn(),
+    useReadingTimer: vi.fn(() => ({
+        formattedTime: '0:00',
+    })),
 }));
 
 vi.mock('@/hooks/useHighlights', () => ({
@@ -148,9 +167,12 @@ describe('ReaderView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         notesDrawerSpy.mockClear();
+        readerHeroHeaderSpy.mockClear();
         routerReplaceMock.mockClear();
         searchParamsState.value = '';
+        segmentAccordionSpy.mockClear();
         highlightsState.value = [];
+        saveReadingProgressMock.mockClear();
         window.scrollTo = vi.fn();
         localStorage.clear();
         document.body.innerHTML = '';
@@ -167,6 +189,14 @@ describe('ReaderView', () => {
 
         // Before completion, displays feedback form
         expect(screen.getByTestId('mock-content-feedback')).toBeInTheDocument();
+    });
+
+    it('passes the audio sync callback into the hero header when narration exists', () => {
+        render(<ReaderView content={{ ...mockContent, audio_url: 'https://example.com/audio.mp3' }} />);
+
+        expect(readerHeroHeaderSpy).toHaveBeenCalledWith(expect.objectContaining({
+            onAudioTimeChange: expect.any(Function),
+        }));
     });
 
     it('renders the big idea if available', () => {
@@ -315,5 +345,102 @@ describe('ReaderView', () => {
         await waitFor(() => {
             expect(routerReplaceMock).toHaveBeenCalledWith('/read/test-item-1', { scroll: false });
         });
+    });
+
+    it('expands the matching deep-mode segment when playback time changes', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={timedContent} />);
+
+        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+        });
+    });
+
+    it('does not auto-expand a segment when narration timings are unavailable', async () => {
+        render(<ReaderView content={{ ...mockContent, audio_url: 'https://example.com/audio.mp3' }} />);
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-1'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+        });
+    });
+
+    it('does not save reading progress when audio playback expands a segment', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const timedContent = {
+                ...mockContent,
+                audio_url: 'https://example.com/audio.mp3',
+                segments: [
+                    {
+                        id: 'seg-1',
+                        item_id: 'item-1',
+                        order_index: 0,
+                        title: 'Segment 1',
+                        markdown_body: 'Body 1',
+                        start_time_sec: 0,
+                        end_time_sec: 30,
+                    },
+                    {
+                        id: 'seg-2',
+                        item_id: 'item-1',
+                        order_index: 1,
+                        title: 'Segment 2',
+                        markdown_body: 'Body 2',
+                        start_time_sec: 30,
+                        end_time_sec: 60,
+                    },
+                ],
+            } as ContentItemWithSegments;
+
+            render(<ReaderView content={timedContent} />);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1000);
+            });
+            saveReadingProgressMock.mockClear();
+
+            fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1000);
+            });
+
+            expect(saveReadingProgressMock).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

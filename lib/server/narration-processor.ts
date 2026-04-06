@@ -1,6 +1,10 @@
 import { revalidatePath } from "next/cache";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { isNarrationError, generateNarrationAudio } from "@/lib/server/ai-narration";
+import {
+    type GeneratedNarrationSegmentTiming,
+    isNarrationError,
+    generateNarrationAudio,
+} from "@/lib/server/ai-narration";
 import { logApiError } from "@/lib/server/api";
 
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
@@ -42,6 +46,35 @@ async function cleanupUploadedNarration(
             error,
         });
     }
+}
+
+async function finalizeNarrationGeneration(params: {
+    contentId: string;
+    claimStartedAt: string;
+    publicUrl: string;
+    segmentTimings: GeneratedNarrationSegmentTiming[];
+}) {
+    const supabase = getAdminClient();
+    const completedAt = new Date().toISOString();
+    const { data, error } = await (supabase as any).rpc("admin_finalize_narration_generation", {
+        p_content_id: params.contentId,
+        p_expected_started_at: params.claimStartedAt,
+        p_audio_url: params.publicUrl,
+        p_completed_at: completedAt,
+        p_segment_timings: params.segmentTimings
+            .filter((segment) => Boolean(segment.id))
+            .map((segment) => ({
+                id: segment.id,
+                start_time_sec: segment.start_time_sec,
+                end_time_sec: segment.end_time_sec,
+            })),
+    });
+
+    if (error) {
+        throw error;
+    }
+
+    return Boolean(data);
 }
 
 function buildGeneratedNarrationStoragePath(contentId: string, startedAt: string, extension: string) {
@@ -212,7 +245,7 @@ export async function processNextNarrationJob(requestId: string) {
                 audio_url,
                 narration_completed_at,
                 quick_mode_json,
-                segments:segment(order_index, title, markdown_body, deleted_at)
+                segments:segment(id, order_index, title, markdown_body, deleted_at)
             `)
             .eq("id", contentId)
             .is("deleted_at", null)
@@ -239,13 +272,14 @@ export async function processNextNarrationJob(requestId: string) {
         }
 
         const segments = ((contentItem.segments ?? []) as Array<{
+            id: string;
             order_index: number;
             title: string | null;
             markdown_body: string;
             deleted_at?: string | null;
         }>).filter((segment) => !segment.deleted_at);
 
-        const { audioBuffer, extension, contentType } = await generateNarrationAudio({
+        const { audioBuffer, extension, contentType, segmentTimings } = await generateNarrationAudio({
             title: contentItem.title,
             author: contentItem.author,
             quick_mode_json: contentItem.quick_mode_json as {
@@ -278,29 +312,20 @@ export async function processNextNarrationJob(requestId: string) {
             data: { publicUrl },
         } = audioBucket.getPublicUrl(storagePath);
 
-        const { data: updatedRow, error: updateError } = await supabase
-            .from("content_item")
-            .update({
-                audio_url: publicUrl,
-                narration_status: "ready",
-                narration_error: null,
-                narration_requested_at: null,
-                narration_started_at: null,
-                narration_completed_at: new Date().toISOString(),
-            })
-            .eq("id", contentId)
-            .eq("status", "verified")
-            .eq("narration_status", "processing")
-            .eq("narration_started_at", claimStartedAt)
-            .select("id")
-            .maybeSingle();
-
-        if (updateError) {
+        let finalized = false;
+        try {
+            finalized = await finalizeNarrationGeneration({
+                contentId,
+                claimStartedAt,
+                publicUrl,
+                segmentTimings,
+            });
+        } catch (error) {
             await cleanupUploadedNarration(audioBucket, storagePath, requestId);
-            throw updateError;
+            throw error;
         }
 
-        if (!updatedRow) {
+        if (!finalized) {
             await cleanupUploadedNarration(audioBucket, storagePath, requestId);
             return { processed: false as const, contentId, discarded: true as const };
         }

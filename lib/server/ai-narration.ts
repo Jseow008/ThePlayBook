@@ -70,6 +70,8 @@ function resolveFfmpegBinaryPath() {
 }
 
 export interface NarrationSegmentSource {
+    id?: string;
+    order_index?: number;
     title: string | null;
     markdown_body: string;
 }
@@ -93,6 +95,13 @@ interface WavChunk {
     blockAlign: number;
     bitsPerSample: number;
     pcmData: Buffer;
+}
+
+export interface GeneratedNarrationSegmentTiming {
+    id: string | null;
+    order_index: number;
+    start_time_sec: number | null;
+    end_time_sec: number | null;
 }
 
 export class NarrationError extends Error {
@@ -187,16 +196,20 @@ function splitLongParagraph(paragraph: string, maxChars: number) {
     return chunks;
 }
 
+export function buildNarrationSegmentScript(segment: NarrationSegmentSource, index: number) {
+    const body = stripMarkdown(segment.markdown_body);
+    if (!body) {
+        return null;
+    }
+
+    const title = stripMarkdown(segment.title || "");
+    const header = title ? `${title}.` : `Section ${index + 1}.`;
+    return `${header}\n\n${body}`;
+}
+
 export function buildNarrationScript(content: NarrationContentSource) {
     const segments = content.segments
-        .map((segment, index) => {
-            const body = stripMarkdown(segment.markdown_body);
-            if (!body) return null;
-
-            const title = stripMarkdown(segment.title || "");
-            const header = title ? `${title}.` : `Section ${index + 1}.`;
-            return `${header}\n\n${body}`;
-        })
+        .map((segment, index) => buildNarrationSegmentScript(segment, index))
         .filter((segment): segment is string => Boolean(segment));
 
     const script = normalizeWhitespace(segments.join("\n\n"));
@@ -359,6 +372,11 @@ export function concatenateWavBuffers(wavBuffers: Buffer[]) {
 
     const pcmData = Buffer.concat(parsedChunks.map((chunk) => chunk.pcmData));
     return createWavBuffer(firstChunk, pcmData);
+}
+
+export function getWavDurationSeconds(wavBuffer: Buffer) {
+    const chunk = parseWavChunk(wavBuffer);
+    return chunk.pcmData.byteLength / chunk.byteRate;
 }
 
 export async function transcodeWavToMp3(wavBuffer: Buffer) {
@@ -715,19 +733,76 @@ export async function synthesizeNarrationChunkWav(chunk: string, signal?: AbortS
 }
 
 export async function generateNarrationAudio(content: NarrationContentSource) {
-    const script = buildNarrationScript(content);
-    const chunks = splitNarrationIntoChunks(script);
-    const wavChunks = await mapWithConcurrency(
-        chunks,
-        TTS_CONCURRENCY,
-        async (chunk, _index, signal) => synthesizeNarrationChunkWav(chunk, signal)
-    );
+    const synthesizedSegments = [];
+    let totalChunkCount = 0;
+    let cumulativeSeconds = 0;
+    let previousStoredEndSeconds = 0;
 
-    const wavBuffer = concatenateWavBuffers(wavChunks);
+    for (const [index, segment] of content.segments.entries()) {
+        const segmentScript = buildNarrationSegmentScript(segment, index);
+
+        if (!segmentScript) {
+            synthesizedSegments.push({
+                id: segment.id ?? null,
+                order_index: segment.order_index ?? index + 1,
+                script: null,
+                wavBuffer: null,
+                start_time_sec: null,
+                end_time_sec: null,
+            });
+            continue;
+        }
+
+        const chunks = splitNarrationIntoChunks(segmentScript);
+        const wavChunks = await mapWithConcurrency(
+            chunks,
+            TTS_CONCURRENCY,
+            async (chunk, _index, signal) => synthesizeNarrationChunkWav(chunk, signal)
+        );
+
+        const segmentWavBuffer = concatenateWavBuffers(wavChunks);
+        const segmentDurationSeconds = getWavDurationSeconds(segmentWavBuffer);
+        const exactEndSeconds = cumulativeSeconds + segmentDurationSeconds;
+        const storedStartSeconds = previousStoredEndSeconds;
+        const storedEndSeconds = Math.max(storedStartSeconds + 1, Math.round(exactEndSeconds));
+
+        totalChunkCount += chunks.length;
+        cumulativeSeconds = exactEndSeconds;
+        previousStoredEndSeconds = storedEndSeconds;
+
+        synthesizedSegments.push({
+            id: segment.id ?? null,
+            order_index: segment.order_index ?? index + 1,
+            script: segmentScript,
+            wavBuffer: segmentWavBuffer,
+            start_time_sec: storedStartSeconds,
+            end_time_sec: storedEndSeconds,
+        });
+    }
+
+    const spokenSegments = synthesizedSegments.filter((segment) => segment.script && segment.wavBuffer);
+    if (spokenSegments.length === 0) {
+        throw new NarrationError({
+            code: "NARRATION_EMPTY",
+            status: 400,
+            userMessage: "There is no deep-mode summary content available for narration.",
+        });
+    }
+
+    const script = normalizeWhitespace(spokenSegments.map((segment) => segment.script).join("\n\n"));
+    const wavBuffer = concatenateWavBuffers(spokenSegments.map((segment) => segment.wavBuffer as Buffer));
+    const segmentTimings: GeneratedNarrationSegmentTiming[] = synthesizedSegments.map((segment) => ({
+        id: segment.id,
+        order_index: segment.order_index,
+        start_time_sec: segment.start_time_sec,
+        end_time_sec: segment.end_time_sec,
+    }));
+
     if (shouldPreferWavOutput()) {
         return {
             script,
-            chunkCount: chunks.length,
+            chunkCount: totalChunkCount,
+            segmentTimings,
             audioBuffer: wavBuffer,
             extension: OPENAI_WAV_FORMAT,
             contentType: "audio/wav",
@@ -739,7 +814,8 @@ export async function generateNarrationAudio(content: NarrationContentSource) {
 
         return {
             script,
-            chunkCount: chunks.length,
+            chunkCount: totalChunkCount,
+            segmentTimings,
             audioBuffer,
             extension: FINAL_AUDIO_FORMAT,
             contentType: FINAL_AUDIO_CONTENT_TYPE,
@@ -755,7 +831,8 @@ export async function generateNarrationAudio(content: NarrationContentSource) {
 
         return {
             script,
-            chunkCount: chunks.length,
+            chunkCount: totalChunkCount,
+            segmentTimings,
             audioBuffer: wavBuffer,
             extension: OPENAI_WAV_FORMAT,
             contentType: "audio/wav",
