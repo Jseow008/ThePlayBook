@@ -71,10 +71,10 @@ describe("GenerateNarrationButton", () => {
             />
         );
 
-        fireEvent.click(screen.getByRole("button", { name: /generate ai narration/i }));
+        fireEvent.click(screen.getByRole("button", { name: /generate narration/i }));
 
         await waitFor(() => {
-            expect(screen.getByText(/generation will continue in the background/i)).toBeInTheDocument();
+            expect(screen.getByText("Queued Apr 1 at 8:00 PM.")).toBeInTheDocument();
         });
 
         await waitFor(() => {
@@ -88,7 +88,7 @@ describe("GenerateNarrationButton", () => {
         await waitFor(() => {
             expect(onGenerated).toHaveBeenCalledWith("https://example.com/audio/generated.mp3");
             expect(onStatusChange).toHaveBeenCalledWith("ready", null);
-            expect(screen.getByText(/ai narration is ready and saved to this content item/i)).toBeInTheDocument();
+            expect(screen.getByText("Generated Apr 1 at 8:00 PM.")).toBeInTheDocument();
         });
 
         expect(global.fetch).toHaveBeenNthCalledWith(
@@ -110,10 +110,9 @@ describe("GenerateNarrationButton", () => {
             />
         );
 
-        expect(screen.getByRole("button", { name: /regenerate ai narration/i })).toBeInTheDocument();
-        expect(screen.getByText(/will replace the stored audio file once the new job finishes/i)).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /regenerate narration/i })).toBeInTheDocument();
         expect(screen.getByText(/^ready$/i)).toBeInTheDocument();
-        expect(screen.getAllByText(/narration is ready and saved to this content item/i).length).toBeGreaterThan(0);
+        expect(screen.getByText(/narration is ready\./i)).toBeInTheDocument();
     });
 
     it("renders ready timestamps with a deterministic format", () => {
@@ -129,7 +128,7 @@ describe("GenerateNarrationButton", () => {
             />
         );
 
-        expect(screen.getByText("Generated Apr 7 at 3:04 PM and saved to this content item.")).toBeInTheDocument();
+        expect(screen.getByText("Generated Apr 7 at 3:04 PM.")).toBeInTheDocument();
     });
 
     it("shows a stale warning when narration is out of date", () => {
@@ -144,9 +143,9 @@ describe("GenerateNarrationButton", () => {
             />
         );
 
-        expect(screen.getByRole("button", { name: /regenerate ai narration/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /regenerate narration/i })).toBeInTheDocument();
         expect(screen.getAllByText(/out of date/i).length).toBeGreaterThan(0);
-        expect(screen.getByText(/out of date\. regenerate it to match the latest deep-mode content/i)).toHaveClass("text-amber-600");
+        expect(screen.getByText(/current audio no longer matches the latest content\./i)).toHaveClass("text-amber-600");
     });
 
     it("does not re-trigger queueing when narration is already queued", async () => {
@@ -187,7 +186,7 @@ describe("GenerateNarrationButton", () => {
 
         const button = screen.getByRole("button", { name: /queued/i });
         expect(button).toBeDisabled();
-        expect(screen.getByText(/generation will continue in the background/i)).toBeInTheDocument();
+        expect(screen.getByText("Queued Apr 1 at 8:00 PM.")).toBeInTheDocument();
         expect(global.fetch).toHaveBeenCalledTimes(1);
         expect(onGenerated).not.toHaveBeenCalled();
     });
@@ -213,7 +212,7 @@ describe("GenerateNarrationButton", () => {
             />
         );
 
-        fireEvent.click(screen.getByRole("button", { name: /generate ai narration/i }));
+        fireEvent.click(screen.getByRole("button", { name: /generate narration/i }));
 
         const errorMessages = await screen.findAllByText(/narration can only be generated for verified content/i);
         expect(errorMessages.some((element) => element.className.includes("text-red-600"))).toBe(true);
@@ -238,7 +237,7 @@ describe("GenerateNarrationButton", () => {
             />
         );
 
-        fireEvent.click(screen.getByRole("button", { name: /generate ai narration/i }));
+        fireEvent.click(screen.getByRole("button", { name: /generate narration/i }));
 
         const errorMessages = await screen.findAllByText((content) => content.includes("AI narration could not be completed right now. Please try again."));
         expect(errorMessages.some((element) => element.className.includes("text-red-600"))).toBe(true);
@@ -258,7 +257,7 @@ describe("GenerateNarrationButton", () => {
             />
         );
 
-        fireEvent.click(screen.getByRole("button", { name: /generate ai narration/i }));
+        fireEvent.click(screen.getByRole("button", { name: /generate narration/i }));
 
         const errorMessages = await screen.findAllByText(/could not reach the narration service\. please try again\./i);
         expect(errorMessages.some((element) => element.className.includes("text-red-600"))).toBe(true);
@@ -359,7 +358,7 @@ describe("GenerateNarrationButton", () => {
         });
 
         await waitFor(() => {
-            expect(screen.getByText(/ai narration is ready and saved to this content item/i)).toBeInTheDocument();
+            expect(screen.getByText("Generated Apr 1 at 8:00 PM.")).toBeInTheDocument();
         });
 
         expect(onGenerated).toHaveBeenCalledWith("https://example.com/audio/generated-v2.mp3");

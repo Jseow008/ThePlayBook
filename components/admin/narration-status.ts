@@ -105,8 +105,8 @@ export function getNarrationStatusPresentation({
             badgeLabel: "Generating",
             badgeClassName: "border-blue-200 bg-blue-50 text-blue-700",
             detail: formattedStartedAt
-                ? `Started ${formattedStartedAt}. The audio file will appear automatically when it finishes.`
-                : "Narration is generating in the background now.",
+                ? `Started ${formattedStartedAt}.`
+                : "Generating in the background.",
             detailClassName: "text-blue-600",
         };
     }
@@ -116,7 +116,7 @@ export function getNarrationStatusPresentation({
             badgeLabel: "Queued",
             badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
             detail: formattedRequestedAt
-                ? `Queued ${formattedRequestedAt}. Background processing will pick it up automatically.`
+                ? `Queued ${formattedRequestedAt}.`
                 : "Queued for background generation.",
             detailClassName: "text-amber-600",
         };
@@ -127,8 +127,8 @@ export function getNarrationStatusPresentation({
             badgeLabel: "Out of date",
             badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
             detail: formattedCompletedAt
-                ? `Current audio was last generated ${formattedCompletedAt}. Regenerate it to match the latest deep-mode content.`
-                : "Current audio is still playable, but it no longer matches the latest deep-mode content.",
+                ? `Last generated ${formattedCompletedAt}.`
+                : "Current audio no longer matches the latest content.",
             detailClassName: "text-amber-600",
         };
     }
@@ -138,8 +138,8 @@ export function getNarrationStatusPresentation({
             badgeLabel: "Ready",
             badgeClassName: "border-emerald-200 bg-emerald-50 text-emerald-700",
             detail: formattedCompletedAt
-                ? `Generated ${formattedCompletedAt} and saved to this content item.`
-                : "Narration is ready and saved to this content item.",
+                ? `Generated ${formattedCompletedAt}.`
+                : "Narration is ready.",
             detailClassName: "text-emerald-600",
         };
     }
