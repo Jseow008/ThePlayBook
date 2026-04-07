@@ -62,6 +62,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [initialAudioTimeSec, setInitialAudioTimeSec] = useState(0);
     const [hasSyncedAudioPosition, setHasSyncedAudioPosition] = useState(false);
     const [isAudioFollowEnabled, setIsAudioFollowEnabled] = useState(true);
+    const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [hasCompletedAudioPlayback, setHasCompletedAudioPlayback] = useState(false);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
@@ -91,6 +92,9 @@ export function ReaderView({ content }: ReaderViewProps) {
         () => findSegmentIdForPlaybackTime(content.segments, audioCurrentTimeSec),
         [audioCurrentTimeSec, content.segments]
     );
+    const activeNarratedSegmentId = isAudioFollowEnabled && isAudioPlaying
+        ? activeNarrationSegmentId
+        : null;
     const authorName = content.author || "the Author";
     const handleAudioTimeChange = useCallback((timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => {
         latestAudioStateRef.current = {
@@ -117,13 +121,55 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         setIsAudioFollowEnabled(false);
     }, [activeNarrationSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
+    const scrollNarratedSegmentIntoView = useCallback((
+        segmentId: string,
+        options?: { force?: boolean; initialScrollY?: number; respectUserScroll?: boolean }
+    ) => {
+        const {
+            force = false,
+            initialScrollY = window.scrollY,
+            respectUserScroll = false,
+        } = options || {};
+
+        if (audioFollowScrollTimeoutRef.current !== null) {
+            window.clearTimeout(audioFollowScrollTimeoutRef.current);
+        }
+
+        audioFollowScrollTimeoutRef.current = window.setTimeout(() => {
+            if (respectUserScroll && Math.abs(window.scrollY - initialScrollY) > 50) {
+                return;
+            }
+
+            const targetElement = document.querySelector<HTMLElement>(
+                `[data-reader-segment-id="${segmentId}"]`
+            );
+            if (!targetElement) {
+                return;
+            }
+
+            const rect = targetElement.getBoundingClientRect();
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            const topPadding = 110;
+            const bottomPadding = 180;
+            const isAboveViewportComfortZone = rect.top < topPadding;
+            const isBelowViewportComfortZone = rect.bottom > viewportHeight - bottomPadding;
+
+            if (!force && !isAboveViewportComfortZone && !isBelowViewportComfortZone) {
+                return;
+            }
+
+            const y = rect.top + window.scrollY - topPadding;
+            window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        }, 310);
+    }, []);
     const resumeAudioFollow = useCallback(() => {
         setIsAudioFollowEnabled(true);
 
         if (activeNarrationSegmentId) {
             setExpandedSegmentId(activeNarrationSegmentId);
+            scrollNarratedSegmentIntoView(activeNarrationSegmentId, { force: true });
         }
-    }, [activeNarrationSegmentId]);
+    }, [activeNarrationSegmentId, scrollNarratedSegmentIntoView]);
 
     // Track reading time once at the reader level and pass display text down.
     const { formattedTime } = useReadingTimer(content.id);
@@ -193,6 +239,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         setHasSyncedAudioPosition(false);
         setHasCompletedAudioPlayback(false);
         setIsAudioFollowEnabled(true);
+        setIsAudioPlaying(false);
         lastPersistedAudioTimeRef.current = null;
         previousStorageScopeRef.current = storageScope;
         latestAudioStateRef.current = { timeSec: 0, durationSec: 0 };
@@ -502,45 +549,13 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
-        const targetSegment = content.segments.find((segment) => segment.id === activeNarrationSegmentId);
-        if (!targetSegment) {
-            return;
-        }
-
         const initialScrollY = window.scrollY;
         setExpandedSegmentId(activeNarrationSegmentId);
-
-        if (audioFollowScrollTimeoutRef.current !== null) {
-            window.clearTimeout(audioFollowScrollTimeoutRef.current);
-        }
-
-        audioFollowScrollTimeoutRef.current = window.setTimeout(() => {
-            if (Math.abs(window.scrollY - initialScrollY) > 50) {
-                return;
-            }
-
-            const targetElement = document.querySelector<HTMLElement>(
-                `[data-reader-segment-id="${activeNarrationSegmentId}"]`
-            );
-            if (!targetElement) {
-                return;
-            }
-
-            const rect = targetElement.getBoundingClientRect();
-            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-            const topPadding = 110;
-            const bottomPadding = 180;
-            const isAboveViewportComfortZone = rect.top < topPadding;
-            const isBelowViewportComfortZone = rect.bottom > viewportHeight - bottomPadding;
-
-            if (!isAboveViewportComfortZone && !isBelowViewportComfortZone) {
-                return;
-            }
-
-            const y = rect.top + window.scrollY - topPadding;
-            window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-        }, 310);
-    }, [activeNarrationSegmentId, content.segments, expandedSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
+        scrollNarratedSegmentIntoView(activeNarrationSegmentId, {
+            initialScrollY,
+            respectUserScroll: true,
+        });
+    }, [activeNarrationSegmentId, expandedSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled, scrollNarratedSegmentIntoView]);
 
     useEffect(() => {
         if (!hasSyncedAudioPosition) {
@@ -601,6 +616,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onResumeAudioFollow={resumeAudioFollow}
                     initialAudioTimeSec={initialAudioTimeSec}
                     onAudioTimeChange={handleAudioTimeChange}
+                    onAudioPlaybackStateChange={setIsAudioPlaying}
                 />
 
                 {content.seriesContext && (
@@ -688,6 +704,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     highlights={highlights}
                     expandedSegmentId={expandedSegmentId}
                     onExpandedSegmentChange={handleExpandedSegmentChange}
+                    activeNarratedSegmentId={activeNarratedSegmentId}
                     onHighlightActivate={(highlightId, position) => {
                         setActiveHighlightId(highlightId);
                         setPopoverHighlightId(highlightId);

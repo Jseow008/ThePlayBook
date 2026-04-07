@@ -80,4 +80,28 @@ describe("AudioPlayer", () => {
             expect(screen.getByText("0:30")).toBeInTheDocument();
         });
     });
+
+    it("reports playback state changes from native media events", async () => {
+        const onPlaybackStateChange = vi.fn();
+        const { container } = render(
+            <AudioPlayer
+                src="https://example.com/audio.mp3"
+                onPlaybackStateChange={onPlaybackStateChange}
+            />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        fireEvent(audio, new Event("play"));
+        fireEvent(audio, new Event("pause"));
+
+        await waitFor(() => {
+            expect(onPlaybackStateChange).toHaveBeenCalledWith(true);
+            expect(onPlaybackStateChange).toHaveBeenCalledWith(false);
+        });
+    });
 });

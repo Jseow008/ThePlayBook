@@ -15,9 +15,16 @@ interface AudioPlayerProps {
     title?: string;
     initialTimeSec?: number;
     onTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
+    onPlaybackStateChange?: (isPlaying: boolean) => void;
 }
 
-export function AudioPlayer({ src, title, initialTimeSec = 0, onTimeChange }: AudioPlayerProps) {
+export function AudioPlayer({
+    src,
+    title,
+    initialTimeSec = 0,
+    onTimeChange,
+    onPlaybackStateChange,
+}: AudioPlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
     const hasAppliedInitialTimeRef = useRef(false);
     const [isPlaying, setIsPlaying] = useState(false);
@@ -33,7 +40,8 @@ export function AudioPlayer({ src, title, initialTimeSec = 0, onTimeChange }: Au
         setCurrentTime(0);
         setDuration(0);
         setPlaybackError("");
-    }, [src]);
+        onPlaybackStateChange?.(false);
+    }, [onPlaybackStateChange, src]);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -51,13 +59,20 @@ export function AudioPlayer({ src, title, initialTimeSec = 0, onTimeChange }: Au
         };
         const handleEnded = () => {
             setIsPlaying(false);
+            onPlaybackStateChange?.(false);
             onTimeChange?.(audio.currentTime, {
                 durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
                 isEnded: true,
             });
         };
-        const handlePlay = () => setIsPlaying(true);
-        const handlePause = () => setIsPlaying(false);
+        const handlePlay = () => {
+            setIsPlaying(true);
+            onPlaybackStateChange?.(true);
+        };
+        const handlePause = () => {
+            setIsPlaying(false);
+            onPlaybackStateChange?.(false);
+        };
         const handleCanPlay = () => setPlaybackError("");
         const handleError = () => {
             const mediaError = audio.error;
@@ -102,7 +117,7 @@ export function AudioPlayer({ src, title, initialTimeSec = 0, onTimeChange }: Au
             audio.removeEventListener("canplay", handleCanPlay);
             audio.removeEventListener("error", handleError);
         };
-    }, [onTimeChange, src]);
+    }, [onPlaybackStateChange, onTimeChange, src]);
 
     useEffect(() => {
         const audio = audioRef.current;

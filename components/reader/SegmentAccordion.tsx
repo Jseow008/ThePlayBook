@@ -237,6 +237,7 @@ interface SegmentAccordionProps {
     onHighlightActivate?: (highlightId: string, position: HighlightPosition) => void;
     expandedSegmentId?: string | null;
     onExpandedSegmentChange?: (segmentId: string | null) => void;
+    activeNarratedSegmentId?: string | null;
 }
 
 export function SegmentAccordion({
@@ -248,6 +249,7 @@ export function SegmentAccordion({
     onHighlightActivate,
     expandedSegmentId,
     onExpandedSegmentChange,
+    activeNarratedSegmentId = null,
 }: SegmentAccordionProps) {
     const [uncontrolledExpandedId, setUncontrolledExpandedId] = useState<string | null>(null);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
@@ -352,6 +354,7 @@ export function SegmentAccordion({
             {segments.map((segment, index) => {
                 const isExpanded = currentExpandedId === segment.id;
                 const isCompleted = completedSegments.has(segment.id);
+                const isAudioActive = activeNarratedSegmentId === segment.id;
                 const segmentHighlights = highlights.filter((highlight) => highlight.segment_id === segment.id);
                 const remarkPlugins: any[] = [remarkGfm, remarkBreaks];
 
@@ -375,18 +378,22 @@ export function SegmentAccordion({
                                 "md:hover:bg-accent/40 active:scale-[0.99] active:bg-accent/60",
                                 isExpanded
                                     ? "bg-accent/50 border border-border"
-                                    : "bg-card/60 border border-transparent md:hover:border-border"
+                                    : "bg-card/60 border border-transparent md:hover:border-border",
+                                isAudioActive && !isExpanded && "border-primary/40 bg-primary/[0.07] ring-1 ring-primary/15 shadow-[0_10px_30px_-24px_rgba(99,102,241,0.55)] md:hover:bg-primary/[0.09]",
+                                isAudioActive && isExpanded && "border-primary/40 bg-primary/[0.1] ring-1 ring-primary/20 shadow-[0_12px_32px_-22px_rgba(99,102,241,0.55)]"
                             )}
                             aria-expanded={isExpanded}
+                            aria-current={isAudioActive ? "step" : undefined}
                         >
                             <span
                                 className={cn(
-                                    "flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-colors",
+                                    "flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold transition-all",
                                     isCompleted
                                         ? "bg-green-500/15 text-green-400"
                                         : isExpanded
                                             ? "bg-primary/20 text-primary"
-                                            : "bg-muted text-muted-foreground"
+                                            : "bg-muted text-muted-foreground",
+                                    isAudioActive && !isCompleted && "bg-primary/18 text-primary ring-2 ring-primary/30 shadow-[0_0_0_1px_rgba(99,102,241,0.08)]"
                                 )}
                             >
                                 {isCompleted ? (
@@ -414,6 +421,18 @@ export function SegmentAccordion({
                                                 <span className="text-[10px]">•</span>
                                                 <span>
                                                     {Math.round((segment.end_time_sec - segment.start_time_sec) / 60)} min audio
+                                                </span>
+                                            </>
+                                        )}
+                                        {isAudioActive && (
+                                            <>
+                                                <span className="text-[10px]">•</span>
+                                                <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
+                                                    <span className="relative flex size-1.5">
+                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75"></span>
+                                                        <span className="relative inline-flex size-1.5 rounded-full bg-primary"></span>
+                                                    </span>
+                                                    Playing now
                                                 </span>
                                             </>
                                         )}

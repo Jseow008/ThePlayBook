@@ -219,4 +219,18 @@ describe('SegmentAccordion', () => {
 
         expect(onHighlightActivate).not.toHaveBeenCalled();
     });
+
+    it('renders a visible narrated cue when the active audio segment is provided', () => {
+        render(
+            <SegmentAccordion
+                {...defaultProps}
+                expandedSegmentId="seg-2"
+                activeNarratedSegmentId="seg-2"
+            />
+        );
+
+        const activeButton = screen.getByText('Chapter 1').closest('button');
+        expect(activeButton).toHaveAttribute('aria-current', 'step');
+        expect(screen.getByText('Playing now')).toBeInTheDocument();
+    });
 });

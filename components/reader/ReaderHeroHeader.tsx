@@ -29,6 +29,7 @@ interface ReaderHeroHeaderProps {
     onResumeAudioFollow?: () => void;
     initialAudioTimeSec?: number;
     onAudioTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
+    onAudioPlaybackStateChange?: (isPlaying: boolean) => void;
 }
 
 export function ReaderHeroHeader({
@@ -45,6 +46,7 @@ export function ReaderHeroHeader({
     onResumeAudioFollow,
     initialAudioTimeSec = 0,
     onAudioTimeChange,
+    onAudioPlaybackStateChange,
 }: ReaderHeroHeaderProps) {
     const progressPercent =
         segmentsTotal > 0
@@ -152,6 +154,7 @@ export function ReaderHeroHeader({
                         title="Listen to this summary"
                         initialTimeSec={initialAudioTimeSec}
                         onTimeChange={onAudioTimeChange}
+                        onPlaybackStateChange={onAudioPlaybackStateChange}
                     />
                     {showResumeAudioFollow && (
                         <div className="mt-3 flex flex-col gap-2 rounded-xl border border-border/60 bg-card/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
