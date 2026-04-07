@@ -116,6 +116,22 @@ describe("GenerateNarrationButton", () => {
         expect(screen.getAllByText(/narration is ready and saved to this content item/i).length).toBeGreaterThan(0);
     });
 
+    it("renders ready timestamps with a deterministic format", () => {
+        render(
+            <GenerateNarrationButton
+                contentId="11111111-1111-1111-1111-111111111111"
+                audioUrl="https://example.com/existing.mp3"
+                initialStatus="ready"
+                initialError={null}
+                initialCompletedAt="2026-04-07T07:04:00.000Z"
+                onGenerated={vi.fn()}
+                onStatusChange={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText("Generated Apr 7 at 3:04 PM and saved to this content item.")).toBeInTheDocument();
+    });
+
     it("shows a stale warning when narration is out of date", () => {
         render(
             <GenerateNarrationButton

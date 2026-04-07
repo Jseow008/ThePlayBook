@@ -2,6 +2,14 @@ import type { NarrationJobStatus } from "@/lib/narration-job";
 
 const NARRATION_STATUS_LOCALE = "en-US";
 const NARRATION_STATUS_TIME_ZONE = "Asia/Singapore";
+const narrationTimestampFormatter = new Intl.DateTimeFormat(NARRATION_STATUS_LOCALE, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: NARRATION_STATUS_TIME_ZONE,
+});
 
 type NarrationStatusPresentation = {
     badgeLabel: string;
@@ -30,13 +38,25 @@ function formatNarrationTimestamp(value?: string | null) {
         return null;
     }
 
-    return new Intl.DateTimeFormat(NARRATION_STATUS_LOCALE, {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        timeZone: NARRATION_STATUS_TIME_ZONE,
-    }).format(date);
+    const parts = narrationTimestampFormatter.formatToParts(date);
+    const month = parts.find((part) => part.type === "month")?.value;
+    const day = parts.find((part) => part.type === "day")?.value;
+    const hour = parts.find((part) => part.type === "hour")?.value;
+    const minute = parts.find((part) => part.type === "minute")?.value;
+
+    if (!month || !day || !hour || !minute) {
+        return null;
+    }
+
+    const hours24 = Number.parseInt(hour, 10);
+    if (Number.isNaN(hours24)) {
+        return null;
+    }
+
+    const displayHour = hours24 % 12 || 12;
+    const meridiem = hours24 >= 12 ? "PM" : "AM";
+
+    return `${month} ${day} at ${displayHour}:${minute} ${meridiem}`;
 }
 
 export function getNarrationStatusPresentation({
