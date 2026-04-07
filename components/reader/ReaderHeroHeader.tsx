@@ -25,6 +25,8 @@ interface ReaderHeroHeaderProps {
     segmentsTotal: number;
     segmentsRead: number;
     formattedReadingTime: string;
+    showResumeAudioFollow?: boolean;
+    onResumeAudioFollow?: () => void;
     onAudioTimeChange?: (timeSec: number) => void;
 }
 
@@ -38,6 +40,8 @@ export function ReaderHeroHeader({
     segmentsTotal,
     segmentsRead,
     formattedReadingTime,
+    showResumeAudioFollow = false,
+    onResumeAudioFollow,
     onAudioTimeChange,
 }: ReaderHeroHeaderProps) {
     const progressPercent =
@@ -146,6 +150,20 @@ export function ReaderHeroHeader({
                         title="Listen to this summary"
                         onTimeChange={onAudioTimeChange}
                     />
+                    {showResumeAudioFollow && (
+                        <div className="mt-3 flex flex-col gap-2 rounded-xl border border-border/60 bg-card/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                Audio follow is paused while you browse another section.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={onResumeAudioFollow}
+                                className="inline-flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                Follow audio
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 

@@ -49,6 +49,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
     const [audioCurrentTimeSec, setAudioCurrentTimeSec] = useState(0);
     const [hasSyncedAudioPosition, setHasSyncedAudioPosition] = useState(false);
+    const [isAudioFollowEnabled, setIsAudioFollowEnabled] = useState(true);
     const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded } = useReadingProgress();
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
@@ -77,6 +78,28 @@ export function ReaderView({ content }: ReaderViewProps) {
         setHasSyncedAudioPosition(true);
         setAudioCurrentTimeSec(timeSec);
     }, []);
+    const handleExpandedSegmentChange = useCallback((segmentId: string | null) => {
+        setExpandedSegmentId(segmentId);
+
+        if (
+            !segmentId
+            || !hasSyncedAudioPosition
+            || !isAudioFollowEnabled
+            || !activeNarrationSegmentId
+            || segmentId === activeNarrationSegmentId
+        ) {
+            return;
+        }
+
+        setIsAudioFollowEnabled(false);
+    }, [activeNarrationSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
+    const resumeAudioFollow = useCallback(() => {
+        setIsAudioFollowEnabled(true);
+
+        if (activeNarrationSegmentId) {
+            setExpandedSegmentId(activeNarrationSegmentId);
+        }
+    }, [activeNarrationSegmentId]);
 
     // Track reading time once at the reader level and pass display text down.
     const { formattedTime } = useReadingTimer(content.id);
@@ -98,6 +121,12 @@ export function ReaderView({ content }: ReaderViewProps) {
                 : savedProgress.lastSegmentIndex ?? -1,
         );
     }, [savedProgress]);
+
+    useEffect(() => {
+        setAudioCurrentTimeSec(0);
+        setHasSyncedAudioPosition(false);
+        setIsAudioFollowEnabled(true);
+    }, [content.id]);
 
     useEffect(() => {
         if (popoverHighlightId && !popoverHighlight) {
@@ -297,7 +326,12 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, [handleHighlightJump, highlights, highlightsLoading, pathname, router, searchParams]);
 
     useEffect(() => {
-        if (!hasSyncedAudioPosition || !activeNarrationSegmentId || expandedSegmentId === activeNarrationSegmentId) {
+        if (
+            !isAudioFollowEnabled
+            || !hasSyncedAudioPosition
+            || !activeNarrationSegmentId
+            || expandedSegmentId === activeNarrationSegmentId
+        ) {
             return;
         }
 
@@ -307,7 +341,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         setExpandedSegmentId(activeNarrationSegmentId);
-    }, [activeNarrationSegmentId, content.segments, expandedSegmentId, hasSyncedAudioPosition]);
+    }, [activeNarrationSegmentId, content.segments, expandedSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
@@ -324,6 +358,8 @@ export function ReaderView({ content }: ReaderViewProps) {
                     segmentsTotal={content.segments.length}
                     segmentsRead={completedSegments.size}
                     formattedReadingTime={formattedTime}
+                    showResumeAudioFollow={hasSyncedAudioPosition && !isAudioFollowEnabled && Boolean(activeNarrationSegmentId)}
+                    onResumeAudioFollow={resumeAudioFollow}
                     onAudioTimeChange={handleAudioTimeChange}
                 />
 
@@ -411,7 +447,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     onSegmentComplete={handleSegmentComplete}
                     highlights={highlights}
                     expandedSegmentId={expandedSegmentId}
-                    onExpandedSegmentChange={setExpandedSegmentId}
+                    onExpandedSegmentChange={handleExpandedSegmentChange}
                     onHighlightActivate={(highlightId, position) => {
                         setActiveHighlightId(highlightId);
                         setPopoverHighlightId(highlightId);

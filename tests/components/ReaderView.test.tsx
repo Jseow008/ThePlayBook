@@ -61,6 +61,8 @@ vi.mock('@/components/reader/ReaderHeroHeader', () => ({
             <div data-testid="mock-hero-header">
                 <button data-testid="sync-audio-seg-1" onClick={() => props.onAudioTimeChange?.(5)} />
                 <button data-testid="sync-audio-seg-2" onClick={() => props.onAudioTimeChange?.(35)} />
+                <button data-testid="sync-audio-seg-3" onClick={() => props.onAudioTimeChange?.(65)} />
+                <button data-testid="resume-audio-follow" onClick={() => props.onResumeAudioFollow?.()} />
             </div>
         );
     }
@@ -69,7 +71,25 @@ vi.mock('@/components/reader/ReaderHeroHeader', () => ({
 vi.mock('@/components/reader/SegmentAccordion', () => ({
     SegmentAccordion: (props: any) => {
         segmentAccordionSpy(props);
-        return <div data-testid="mock-segment-accordion">{props.expandedSegmentId ?? 'none'}</div>;
+        return (
+            <div>
+                <div data-testid="mock-segment-accordion">{props.expandedSegmentId ?? 'none'}</div>
+                <button
+                    data-testid="manual-open-seg-1"
+                    onClick={() => {
+                        props.onExpandedSegmentChange?.('seg-1');
+                        props.onSegmentOpen?.('seg-1', 0);
+                    }}
+                />
+                <button
+                    data-testid="manual-open-seg-2"
+                    onClick={() => {
+                        props.onExpandedSegmentChange?.('seg-2');
+                        props.onSegmentOpen?.('seg-2', 1);
+                    }}
+                />
+            </div>
+        );
     }
 }));
 
@@ -370,6 +390,15 @@ describe('ReaderView', () => {
                     start_time_sec: 30,
                     end_time_sec: 60,
                 },
+                {
+                    id: 'seg-3',
+                    item_id: 'item-1',
+                    order_index: 2,
+                    title: 'Segment 3',
+                    markdown_body: 'Body 3',
+                    start_time_sec: 60,
+                    end_time_sec: 90,
+                },
             ],
         } as ContentItemWithSegments;
 
@@ -381,6 +410,68 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+        });
+    });
+
+    it('lets manual segment browsing pause audio follow until the user resumes it', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+                {
+                    id: 'seg-3',
+                    item_id: 'item-1',
+                    order_index: 2,
+                    title: 'Segment 3',
+                    markdown_body: 'Body 3',
+                    start_time_sec: 60,
+                    end_time_sec: 90,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={timedContent} />);
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+        });
+
+        fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
+        });
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-3'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
+        });
+
+        fireEvent.click(screen.getByTestId('resume-audio-follow'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-3');
         });
     });
 
