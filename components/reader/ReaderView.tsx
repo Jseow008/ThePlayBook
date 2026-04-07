@@ -18,7 +18,14 @@ import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
-import { findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
+import { findCompletedSegmentIdsForPlaybackTime, findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
+import {
+    clearScopedAudioResume,
+    getStorageScope,
+    migrateScopedAudioResume,
+    readScopedAudioResume,
+    writeScopedAudioResume,
+} from "@/lib/local-user-storage";
 
 /**
  * Reader View — Accordion Layout
@@ -34,6 +41,7 @@ interface ReaderViewProps {
 
 export function ReaderView({ content }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
+    const segmentIdSet = useMemo(() => new Set(content.segments.map((segment) => segment.id)), [content.segments]);
     const [maxSegmentIndex, setMaxSegmentIndex] = useState(-1);
     const [completedSegments, setCompletedSegments] = useState<Set<string>>(new Set());
     const [activeHighlightId, setActiveHighlightId] = useState<string | null>(null);
@@ -48,9 +56,14 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
     const [audioCurrentTimeSec, setAudioCurrentTimeSec] = useState(0);
+    const [audioDurationSec, setAudioDurationSec] = useState(0);
+    const [initialAudioTimeSec, setInitialAudioTimeSec] = useState(0);
     const [hasSyncedAudioPosition, setHasSyncedAudioPosition] = useState(false);
     const [isAudioFollowEnabled, setIsAudioFollowEnabled] = useState(true);
-    const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded } = useReadingProgress();
+    const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
+    const lastPersistedAudioTimeRef = useRef<number | null>(null);
+    const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded, storageScope } = useReadingProgress();
+    const previousStorageScopeRef = useRef(storageScope);
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
@@ -74,9 +87,14 @@ export function ReaderView({ content }: ReaderViewProps) {
         () => findSegmentIdForPlaybackTime(content.segments, audioCurrentTimeSec),
         [audioCurrentTimeSec, content.segments]
     );
-    const handleAudioTimeChange = useCallback((timeSec: number) => {
+    const handleAudioTimeChange = useCallback((timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => {
+        latestAudioStateRef.current = {
+            timeSec,
+            durationSec: metadata?.durationSec ?? 0,
+        };
         setHasSyncedAudioPosition(true);
         setAudioCurrentTimeSec(timeSec);
+        setAudioDurationSec(metadata?.durationSec ?? 0);
     }, []);
     const handleExpandedSegmentChange = useCallback((segmentId: string | null) => {
         setExpandedSegmentId(segmentId);
@@ -106,6 +124,39 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     const savedProgress = getProgress(content.id);
 
+    const persistAudioResume = useCallback((timeSec: number, durationSec: number, force = false) => {
+        if (typeof window === "undefined" || !content.audio_url) {
+            return;
+        }
+
+        const roundedTimeSec = Math.max(0, Math.floor(timeSec));
+        const effectiveDurationSec = Number.isFinite(durationSec) ? Math.max(0, durationSec) : 0;
+
+        if (
+            roundedTimeSec < 1
+            || (effectiveDurationSec > 0 && roundedTimeSec >= Math.max(0, Math.floor(effectiveDurationSec) - 1))
+        ) {
+            clearScopedAudioResume(localStorage, storageScope, content.id);
+            lastPersistedAudioTimeRef.current = 0;
+            return;
+        }
+
+        if (
+            !force
+            && lastPersistedAudioTimeRef.current !== null
+            && Math.abs(roundedTimeSec - lastPersistedAudioTimeRef.current) < 5
+        ) {
+            return;
+        }
+
+        writeScopedAudioResume(localStorage, storageScope, content.id, {
+            currentTimeSec: roundedTimeSec,
+            lastUpdatedAt: new Date().toISOString(),
+            audioSource: content.audio_url,
+        });
+        lastPersistedAudioTimeRef.current = roundedTimeSec;
+    }, [content.audio_url, content.id, storageScope]);
+
     // Load progress from scoped storage on mount and account changes
     useEffect(() => {
         if (!savedProgress) {
@@ -114,19 +165,91 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
-        setCompletedSegments(new Set(savedProgress.completed || []));
+        const sanitizedCompletedSegments = (savedProgress.completed || []).filter((segmentId) => segmentIdSet.has(segmentId));
+        setCompletedSegments(new Set(sanitizedCompletedSegments));
         setMaxSegmentIndex(
-            typeof savedProgress.maxSegmentIndex === "number"
-                ? savedProgress.maxSegmentIndex
-                : savedProgress.lastSegmentIndex ?? -1,
+            Math.min(
+                content.segments.length - 1,
+                Math.max(
+                    -1,
+                    typeof savedProgress.maxSegmentIndex === "number"
+                        ? savedProgress.maxSegmentIndex
+                        : savedProgress.lastSegmentIndex ?? -1,
+                )
+            ),
         );
-    }, [savedProgress]);
+    }, [content.segments.length, savedProgress, segmentIdSet]);
 
     useEffect(() => {
         setAudioCurrentTimeSec(0);
+        setAudioDurationSec(0);
+        setInitialAudioTimeSec(0);
         setHasSyncedAudioPosition(false);
         setIsAudioFollowEnabled(true);
-    }, [content.id]);
+        lastPersistedAudioTimeRef.current = null;
+        previousStorageScopeRef.current = storageScope;
+        latestAudioStateRef.current = { timeSec: 0, durationSec: 0 };
+        setExpandedSegmentId(null);
+    }, [content.audio_url, content.id, storageScope]);
+
+    useEffect(() => {
+        if (typeof window === "undefined" || !content.audio_url) {
+            previousStorageScopeRef.current = storageScope;
+            return;
+        }
+
+        const scopeChanged = previousStorageScopeRef.current !== storageScope;
+        previousStorageScopeRef.current = storageScope;
+
+        if (scopeChanged && hasSyncedAudioPosition) {
+            const { timeSec, durationSec } = latestAudioStateRef.current;
+            persistAudioResume(timeSec, durationSec, true);
+            return;
+        }
+
+        if (hasSyncedAudioPosition) {
+            return;
+        }
+
+        const guestScope = getStorageScope(null);
+        const hydratedResume =
+            storageScope === guestScope
+                ? readScopedAudioResume(localStorage, storageScope, content.id)
+                : migrateScopedAudioResume(localStorage, guestScope, storageScope, content.id);
+
+        if (hydratedResume && hydratedResume.audioSource !== content.audio_url) {
+            clearScopedAudioResume(localStorage, storageScope, content.id);
+            setExpandedSegmentId(null);
+            return;
+        }
+
+        const resumeTimeSec = hydratedResume?.currentTimeSec ?? 0;
+        setInitialAudioTimeSec(resumeTimeSec);
+
+        if (resumeTimeSec <= 0) {
+            setExpandedSegmentId(null);
+            return;
+        }
+
+        setHasSyncedAudioPosition(true);
+        setAudioCurrentTimeSec(resumeTimeSec);
+        latestAudioStateRef.current = { timeSec: resumeTimeSec, durationSec: 0 };
+        lastPersistedAudioTimeRef.current = Math.floor(resumeTimeSec);
+
+        const resumedSegmentId = findSegmentIdForPlaybackTime(content.segments, resumeTimeSec);
+        setExpandedSegmentId(resumedSegmentId);
+    }, [
+        content.audio_url,
+        content.id,
+        content.segments,
+        hasSyncedAudioPosition,
+        persistAudioResume,
+        storageScope,
+    ]);
+
+    useEffect(() => {
+        latestAudioStateRef.current.durationSec = audioDurationSec;
+    }, [audioCurrentTimeSec, audioDurationSec]);
 
     useEffect(() => {
         if (popoverHighlightId && !popoverHighlight) {
@@ -139,8 +262,18 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
     }, [activeHighlightId, highlights, popoverHighlight, popoverHighlightId]);
 
-    // Handle segment open — only track max index for progress visibility
+    // Handle manual segment open — treat it as completion for lightweight progress tracking.
     const handleSegmentOpen = (segmentId: string, index: number) => {
+        setCompletedSegments((prev) => {
+            if (prev.has(segmentId)) {
+                return prev;
+            }
+
+            const next = new Set(prev);
+            next.add(segmentId);
+            return next;
+        });
+
         // Update max opened index
         setMaxSegmentIndex((prev) => Math.max(prev, index));
     };
@@ -159,14 +292,14 @@ export function ReaderView({ content }: ReaderViewProps) {
     };
 
     // Derive book completion state
-    const isBookCompleted = completedSegments.size >= content.segments.length && content.segments.length > 0;
+    const isBookCompleted = content.segments.length > 0 && completedSegments.size >= content.segments.length;
 
     // Save progress on changes (debounced)
     useEffect(() => {
         if (!readingProgressLoaded) return;
 
         const timeoutId = setTimeout(() => {
-            const isCompleted = completedSegments.size >= content.segments.length;
+            const isCompleted = content.segments.length > 0 && completedSegments.size >= content.segments.length;
 
             const progressData = {
                 completed: Array.from(completedSegments),
@@ -183,6 +316,31 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         return () => clearTimeout(timeoutId);
     }, [completedSegments, content.id, content.segments.length, maxSegmentIndex, readingProgressLoaded, saveReadingProgress]);
+
+    useEffect(() => {
+        if (!hasSyncedAudioPosition || !content.audio_url) {
+            return;
+        }
+
+        persistAudioResume(audioCurrentTimeSec, audioDurationSec);
+    }, [audioCurrentTimeSec, audioDurationSec, content.audio_url, hasSyncedAudioPosition, persistAudioResume]);
+
+    useEffect(() => {
+        if (typeof window === "undefined" || !content.audio_url) {
+            return;
+        }
+
+        const flushAudioResume = () => {
+            const { timeSec, durationSec } = latestAudioStateRef.current;
+            persistAudioResume(timeSec, durationSec, true);
+        };
+
+        window.addEventListener("pagehide", flushAudioResume);
+        return () => {
+            flushAudioResume();
+            window.removeEventListener("pagehide", flushAudioResume);
+        };
+    }, [content.audio_url, persistAudioResume]);
 
     // ── Keyboard Shortcuts (Fullscreen) ──────────────────────────
     useEffect(() => {
@@ -284,12 +442,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         setIsPopoverHovered(false);
 
         if (highlight.segment_id) {
-            const targetIndex = content.segments.findIndex((segment) => segment.id === highlight.segment_id);
             setExpandedSegmentId(highlight.segment_id);
-
-            if (targetIndex !== -1) {
-                handleSegmentOpen(highlight.segment_id, targetIndex);
-            }
         }
 
         const marks = await waitForHighlightMarks(highlightId);
@@ -299,7 +452,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
         window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
         applyHighlightSpotlight(highlightId, marks);
-    }, [content.segments, highlights]);
+    }, [highlights]);
 
     useEffect(() => {
         const urlHighlightId = searchParams.get("highlightId");
@@ -343,6 +496,44 @@ export function ReaderView({ content }: ReaderViewProps) {
         setExpandedSegmentId(activeNarrationSegmentId);
     }, [activeNarrationSegmentId, content.segments, expandedSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
 
+    useEffect(() => {
+        if (!hasSyncedAudioPosition) {
+            return;
+        }
+
+        const completedByAudio = findCompletedSegmentIdsForPlaybackTime(content.segments, audioCurrentTimeSec);
+        if (completedByAudio.length === 0) {
+            return;
+        }
+
+        setCompletedSegments((prev) => {
+            let changed = false;
+            const next = new Set(prev);
+
+            for (const segmentId of completedByAudio) {
+                if (!next.has(segmentId)) {
+                    next.add(segmentId);
+                    changed = true;
+                }
+            }
+
+            return changed ? next : prev;
+        });
+
+        const completedSegmentIdSet = new Set(completedByAudio);
+        const furthestCompletedIndex = content.segments.reduce((maxIndex, segment, index) => {
+            if (!completedSegmentIdSet.has(segment.id)) {
+                return maxIndex;
+            }
+
+            return Math.max(maxIndex, index);
+        }, -1);
+
+        if (furthestCompletedIndex >= 0) {
+            setMaxSegmentIndex((prev) => Math.max(prev, furthestCompletedIndex));
+        }
+    }, [audioCurrentTimeSec, content.segments, hasSyncedAudioPosition]);
+
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
             <div ref={setPopoverPortalEl} aria-hidden="true" />
@@ -360,6 +551,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     formattedReadingTime={formattedTime}
                     showResumeAudioFollow={hasSyncedAudioPosition && !isAudioFollowEnabled && Boolean(activeNarrationSegmentId)}
                     onResumeAudioFollow={resumeAudioFollow}
+                    initialAudioTimeSec={initialAudioTimeSec}
                     onAudioTimeChange={handleAudioTimeChange}
                 />
 

@@ -13,11 +13,13 @@ import { Play, Pause, Volume2, VolumeX, Headphones } from "lucide-react";
 interface AudioPlayerProps {
     src: string;
     title?: string;
-    onTimeChange?: (timeSec: number) => void;
+    initialTimeSec?: number;
+    onTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
 }
 
-export function AudioPlayer({ src, title, onTimeChange }: AudioPlayerProps) {
+export function AudioPlayer({ src, title, initialTimeSec = 0, onTimeChange }: AudioPlayerProps) {
     const audioRef = useRef<HTMLAudioElement>(null);
+    const hasAppliedInitialTimeRef = useRef(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
@@ -26,18 +28,36 @@ export function AudioPlayer({ src, title, onTimeChange }: AudioPlayerProps) {
     const [playbackError, setPlaybackError] = useState("");
 
     useEffect(() => {
+        hasAppliedInitialTimeRef.current = false;
+        setIsPlaying(false);
+        setCurrentTime(0);
+        setDuration(0);
+        setPlaybackError("");
+    }, [src]);
+
+    useEffect(() => {
         const audio = audioRef.current;
         if (!audio) return;
 
         const handleTimeUpdate = () => {
             setCurrentTime(audio.currentTime);
-            onTimeChange?.(audio.currentTime);
+            onTimeChange?.(audio.currentTime, {
+                durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
+                isEnded: false,
+            });
         };
-        const handleLoadedMetadata = () => setDuration(audio.duration);
+        const handleLoadedMetadata = () => {
+            setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
+        };
         const handleEnded = () => {
             setIsPlaying(false);
-            onTimeChange?.(audio.currentTime);
+            onTimeChange?.(audio.currentTime, {
+                durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
+                isEnded: true,
+            });
         };
+        const handlePlay = () => setIsPlaying(true);
+        const handlePause = () => setIsPlaying(false);
         const handleCanPlay = () => setPlaybackError("");
         const handleError = () => {
             const mediaError = audio.error;
@@ -68,6 +88,8 @@ export function AudioPlayer({ src, title, onTimeChange }: AudioPlayerProps) {
         audio.addEventListener("timeupdate", handleTimeUpdate);
         audio.addEventListener("loadedmetadata", handleLoadedMetadata);
         audio.addEventListener("ended", handleEnded);
+        audio.addEventListener("play", handlePlay);
+        audio.addEventListener("pause", handlePause);
         audio.addEventListener("canplay", handleCanPlay);
         audio.addEventListener("error", handleError);
 
@@ -75,10 +97,38 @@ export function AudioPlayer({ src, title, onTimeChange }: AudioPlayerProps) {
             audio.removeEventListener("timeupdate", handleTimeUpdate);
             audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
             audio.removeEventListener("ended", handleEnded);
+            audio.removeEventListener("play", handlePlay);
+            audio.removeEventListener("pause", handlePause);
             audio.removeEventListener("canplay", handleCanPlay);
             audio.removeEventListener("error", handleError);
         };
     }, [onTimeChange, src]);
+
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (
+            !audio
+            || hasAppliedInitialTimeRef.current
+            || initialTimeSec <= 0
+            || duration <= 0
+        ) {
+            return;
+        }
+
+        const safeResumeTime = Math.min(initialTimeSec, Math.max(0, duration - 0.25));
+        if (safeResumeTime <= 0) {
+            hasAppliedInitialTimeRef.current = true;
+            return;
+        }
+
+        audio.currentTime = safeResumeTime;
+        setCurrentTime(safeResumeTime);
+        hasAppliedInitialTimeRef.current = true;
+        onTimeChange?.(safeResumeTime, {
+            durationSec: duration,
+            isEnded: false,
+        });
+    }, [duration, initialTimeSec, onTimeChange]);
 
     const togglePlay = async () => {
         const audio = audioRef.current;
@@ -118,7 +168,10 @@ export function AudioPlayer({ src, title, onTimeChange }: AudioPlayerProps) {
         const newTime = parseFloat(e.target.value);
         audio.currentTime = newTime;
         setCurrentTime(newTime);
-        onTimeChange?.(newTime);
+        onTimeChange?.(newTime, {
+            durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
+            isEnded: false,
+        });
     };
 
     const cyclePlaybackRate = () => {

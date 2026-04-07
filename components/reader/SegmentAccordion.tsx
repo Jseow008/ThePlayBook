@@ -479,20 +479,22 @@ export function SegmentAccordion({
                                             }}
                                             className={cn(
                                                 "px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2",
-                                                isCompleted
+                                                index < segments.length - 1
+                                                    ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-md shadow-primary/20"
+                                                    : isCompleted
                                                     ? "bg-green-500/15 text-green-500 hover:bg-green-500/25"
                                                     : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-md shadow-primary/20"
                                             )}
                                         >
-                                            {isCompleted ? (
+                                            {index < segments.length - 1 ? (
+                                                <>
+                                                    <CheckCircle2 className="size-4" />
+                                                    Continue to Next Section
+                                                </>
+                                            ) : isCompleted ? (
                                                 <>
                                                     <CheckCircle2 className="size-4" />
                                                     Completed
-                                                </>
-                                            ) : index < segments.length - 1 ? (
-                                                <>
-                                                    <CheckCircle2 className="size-4" />
-                                                    Mark as Completed & Continue
                                                 </>
                                             ) : (
                                                 <>

@@ -48,3 +48,17 @@ export function findSegmentIdForPlaybackTime(
 
     return null;
 }
+
+export function findCompletedSegmentIdsForPlaybackTime(
+    segments: TimedSegmentLike[],
+    currentTimeSec: number
+) {
+    return segments
+        .filter(
+            (segment) =>
+                typeof segment.end_time_sec === "number"
+                && currentTimeSec >= segment.end_time_sec
+        )
+        .sort((a, b) => a.order_index - b.order_index)
+        .map((segment) => segment.id);
+}

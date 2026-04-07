@@ -27,7 +27,8 @@ interface ReaderHeroHeaderProps {
     formattedReadingTime: string;
     showResumeAudioFollow?: boolean;
     onResumeAudioFollow?: () => void;
-    onAudioTimeChange?: (timeSec: number) => void;
+    initialAudioTimeSec?: number;
+    onAudioTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
 }
 
 export function ReaderHeroHeader({
@@ -42,11 +43,12 @@ export function ReaderHeroHeader({
     formattedReadingTime,
     showResumeAudioFollow = false,
     onResumeAudioFollow,
+    initialAudioTimeSec = 0,
     onAudioTimeChange,
 }: ReaderHeroHeaderProps) {
     const progressPercent =
         segmentsTotal > 0
-            ? Math.round((segmentsRead / segmentsTotal) * 100)
+            ? Math.min(100, Math.max(0, Math.round((segmentsRead / segmentsTotal) * 100)))
             : 0;
 
     // Update Tab Title with Progress
@@ -148,6 +150,7 @@ export function ReaderHeroHeader({
                     <AudioPlayer
                         src={audioUrl}
                         title="Listen to this summary"
+                        initialTimeSec={initialAudioTimeSec}
                         onTimeChange={onAudioTimeChange}
                     />
                     {showResumeAudioFollow && (

@@ -2,23 +2,32 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { ReaderView } from '@/components/reader/ReaderView';
 import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
+import { audioResumeKey } from '@/lib/local-user-storage';
 
 const {
+    localStorageState,
     notesDrawerSpy,
+    progressState,
     readerHeroHeaderSpy,
     routerReplaceMock,
     saveReadingProgressMock,
     searchParamsState,
     segmentAccordionSpy,
+    storageScopeState,
     highlightsState,
     syncFromCloudMock,
 } = vi.hoisted(() => ({
+    localStorageState: new Map<string, string>(),
     notesDrawerSpy: vi.fn(),
+    progressState: {
+        value: null as { completed?: string[]; maxSegmentIndex?: number; lastSegmentIndex?: number } | null,
+    },
     readerHeroHeaderSpy: vi.fn(),
     routerReplaceMock: vi.fn(),
     saveReadingProgressMock: vi.fn(),
     searchParamsState: { value: '' },
     segmentAccordionSpy: vi.fn(),
+    storageScopeState: { value: 'guest' },
     highlightsState: {
         value: [] as Array<{
             id: string;
@@ -59,9 +68,10 @@ vi.mock('@/components/reader/ReaderHeroHeader', () => ({
         readerHeroHeaderSpy(props);
         return (
             <div data-testid="mock-hero-header">
-                <button data-testid="sync-audio-seg-1" onClick={() => props.onAudioTimeChange?.(5)} />
-                <button data-testid="sync-audio-seg-2" onClick={() => props.onAudioTimeChange?.(35)} />
-                <button data-testid="sync-audio-seg-3" onClick={() => props.onAudioTimeChange?.(65)} />
+                <button data-testid="sync-audio-seg-1" onClick={() => props.onAudioTimeChange?.(5, { durationSec: 90, isEnded: false })} />
+                <button data-testid="sync-audio-seg-2" onClick={() => props.onAudioTimeChange?.(35, { durationSec: 90, isEnded: false })} />
+                <button data-testid="sync-audio-seg-3" onClick={() => props.onAudioTimeChange?.(65, { durationSec: 90, isEnded: false })} />
+                <button data-testid="sync-audio-ended" onClick={() => props.onAudioTimeChange?.(90, { durationSec: 90, isEnded: true })} />
                 <button data-testid="resume-audio-follow" onClick={() => props.onResumeAudioFollow?.()} />
             </div>
         );
@@ -115,8 +125,9 @@ vi.mock('@/components/reader/CompletionCard', () => ({
 vi.mock('@/hooks/useReadingProgress', () => ({
     useReadingProgress: () => ({
         saveReadingProgress: saveReadingProgressMock,
-        getProgress: vi.fn(() => null),
+        getProgress: vi.fn(() => progressState.value),
         isLoaded: true,
+        storageScope: storageScopeState.value,
     }),
 }));
 
@@ -187,13 +198,26 @@ describe('ReaderView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         notesDrawerSpy.mockClear();
+        progressState.value = null;
         readerHeroHeaderSpy.mockClear();
         routerReplaceMock.mockClear();
         searchParamsState.value = '';
         segmentAccordionSpy.mockClear();
+        storageScopeState.value = 'guest';
         highlightsState.value = [];
         saveReadingProgressMock.mockClear();
         window.scrollTo = vi.fn();
+        localStorageState.clear();
+        vi.mocked(window.localStorage.getItem).mockImplementation((key: string) => localStorageState.get(key) ?? null);
+        vi.mocked(window.localStorage.setItem).mockImplementation((key: string, value: string) => {
+            localStorageState.set(key, value);
+        });
+        vi.mocked(window.localStorage.removeItem).mockImplementation((key: string) => {
+            localStorageState.delete(key);
+        });
+        vi.mocked(window.localStorage.clear).mockImplementation(() => {
+            localStorageState.clear();
+        });
         localStorage.clear();
         document.body.innerHTML = '';
         syncFromCloudMock.mockClear();
@@ -217,6 +241,36 @@ describe('ReaderView', () => {
         expect(readerHeroHeaderSpy).toHaveBeenCalledWith(expect.objectContaining({
             onAudioTimeChange: expect.any(Function),
         }));
+    });
+
+    it('marks a segment as completed when the user opens it manually', async () => {
+        render(<ReaderView content={mockContent} />);
+
+        fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.completedSegments.has('seg-1')).toBe(true);
+        });
+    });
+
+    it('filters stale saved completed segments against the current deep-mode segments', async () => {
+        progressState.value = {
+            completed: ['seg-1', 'seg-missing'],
+            maxSegmentIndex: 4,
+            lastSegmentIndex: 4,
+        };
+
+        render(<ReaderView content={mockContent} />);
+
+        await waitFor(() => {
+            const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+
+            expect(latestHeroProps?.segmentsRead).toBe(1);
+            expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-missing')).toBe(false);
+        });
     });
 
     it('renders the big idea if available', () => {
@@ -413,6 +467,250 @@ describe('ReaderView', () => {
         });
     });
 
+    it('restores the saved local audio position and expands the matching segment on return', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        localStorage.setItem(audioResumeKey('guest', 'test-item-1'), JSON.stringify({
+            currentTimeSec: 35,
+            lastUpdatedAt: '2026-04-07T12:00:00.000Z',
+            audioSource: 'https://example.com/audio.mp3',
+        }));
+
+        render(<ReaderView content={timedContent} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+            expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+                initialAudioTimeSec: 35,
+            }));
+        });
+    });
+
+    it('migrates guest audio resume into signed-in scope without resetting the active position', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        localStorage.setItem(audioResumeKey('guest', 'test-item-1'), JSON.stringify({
+            currentTimeSec: 35,
+            lastUpdatedAt: '2026-04-07T12:00:00.000Z',
+            audioSource: 'https://example.com/audio.mp3',
+        }));
+
+        const { rerender } = render(<ReaderView content={timedContent} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+        });
+
+        storageScopeState.value = 'user:user-a';
+        rerender(<ReaderView content={timedContent} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+            expect(JSON.parse(localStorageState.get(audioResumeKey('user:user-a', 'test-item-1')) || '{}')).toEqual(
+                expect.objectContaining({
+                    currentTimeSec: 35,
+                    audioSource: 'https://example.com/audio.mp3',
+                })
+            );
+        });
+    });
+
+    it('marks fully passed segments as completed when audio playback advances', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+                {
+                    id: 'seg-3',
+                    item_id: 'item-1',
+                    order_index: 2,
+                    title: 'Segment 3',
+                    markdown_body: 'Body 3',
+                    start_time_sec: 60,
+                    end_time_sec: 90,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={timedContent} />);
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+
+        await waitFor(() => {
+            const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+
+            expect(latestHeroProps?.segmentsRead).toBe(1);
+            expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(false);
+        });
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-3'));
+
+        await waitFor(() => {
+            const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+
+            expect(latestHeroProps?.segmentsRead).toBe(2);
+            expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-3')).toBe(false);
+        });
+    });
+
+    it('ignores a saved audio resume point when it belongs to an older narration asset', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio-v2.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        localStorage.setItem(audioResumeKey('guest', 'test-item-1'), JSON.stringify({
+            currentTimeSec: 35,
+            lastUpdatedAt: '2026-04-07T12:00:00.000Z',
+            audioSource: 'https://example.com/audio-v1.mp3',
+        }));
+
+        render(<ReaderView content={timedContent} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+            expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
+            expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+                initialAudioTimeSec: 0,
+            }));
+        });
+    });
+
+    it('preserves the in-memory audio position when auth hydration changes storage scope mid-session', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        const { rerender } = render(<ReaderView content={timedContent} />);
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+        });
+
+        storageScopeState.value = 'user:user-a';
+        rerender(<ReaderView content={timedContent} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
+            expect(JSON.parse(localStorageState.get(audioResumeKey('user:user-a', 'test-item-1')) || '{}')).toEqual(
+                expect.objectContaining({
+                    currentTimeSec: 35,
+                })
+            );
+        });
+    });
+
     it('lets manual segment browsing pause audio follow until the user resumes it', async () => {
         const timedContent = {
             ...mockContent,
@@ -468,6 +766,11 @@ describe('ReaderView', () => {
             expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
         });
 
+        await waitFor(() => {
+            const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
+            expect(latestHeroProps?.segmentsRead).toBe(2);
+        });
+
         fireEvent.click(screen.getByTestId('resume-audio-follow'));
 
         await waitFor(() => {
@@ -485,7 +788,7 @@ describe('ReaderView', () => {
         });
     });
 
-    it('does not save reading progress when audio playback expands a segment', async () => {
+    it('saves reading progress when audio playback covers a completed segment boundary', async () => {
         vi.useFakeTimers();
 
         try {
@@ -529,9 +832,123 @@ describe('ReaderView', () => {
                 await vi.advanceTimersByTimeAsync(1000);
             });
 
-            expect(saveReadingProgressMock).not.toHaveBeenCalled();
+            expect(saveReadingProgressMock).toHaveBeenCalledWith(
+                'test-item-1',
+                expect.objectContaining({
+                    completed: ['seg-1'],
+                    isCompleted: false,
+                    maxSegmentIndex: 0,
+                })
+            );
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it('persists a local audio resume point while playback advances', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={timedContent} />);
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+
+        await waitFor(() => {
+            expect(JSON.parse(localStorageState.get(audioResumeKey('guest', 'test-item-1')) || '{}')).toEqual(
+                expect.objectContaining({
+                    currentTimeSec: 35,
+                    audioSource: 'https://example.com/audio.mp3',
+                })
+            );
+        });
+    });
+
+    it('clears the local audio resume point once playback reaches the end', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={timedContent} />);
+
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+        await waitFor(() => {
+            expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(true);
+        });
+
+        fireEvent.click(screen.getByTestId('sync-audio-ended'));
+
+        await waitFor(() => {
+            expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
+        });
+    });
+
+    it('removes malformed local audio resume payloads during restore', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        localStorageState.set(audioResumeKey('guest', 'test-item-1'), '{broken-json');
+
+        render(<ReaderView content={timedContent} />);
+
+        await waitFor(() => {
+            expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+        });
     });
 });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
+import { findCompletedSegmentIdsForPlaybackTime, findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
 
 describe("reader audio sync", () => {
     const segments = [
@@ -29,5 +29,12 @@ describe("reader audio sync", () => {
         expect(findSegmentIdForPlaybackTime([
             { id: "seg-1", order_index: 0, start_time_sec: null, end_time_sec: null },
         ], 10)).toBeNull();
+    });
+
+    it("returns completed segment ids for playback times that have passed segment end boundaries", () => {
+        expect(findCompletedSegmentIdsForPlaybackTime(segments, 29)).toEqual([]);
+        expect(findCompletedSegmentIdsForPlaybackTime(segments, 30)).toEqual(["seg-1"]);
+        expect(findCompletedSegmentIdsForPlaybackTime(segments, 89)).toEqual(["seg-1", "seg-2"]);
+        expect(findCompletedSegmentIdsForPlaybackTime(segments, 90)).toEqual(["seg-1", "seg-2", "seg-3"]);
     });
 });

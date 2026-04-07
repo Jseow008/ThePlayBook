@@ -9,6 +9,22 @@ export const LEGACY_READER_SETTINGS_KEY = "flux_reader_settings";
 export const PROGRESS_KEY_PREFIX = "flux_progress_";
 export const MY_LIST_KEY_PREFIX = "flux_mylist_";
 export const READER_SETTINGS_KEY_PREFIX = "flux_reader_settings_";
+export const AUDIO_RESUME_KEY_PREFIX = "flux_audio_resume_";
+
+export interface AudioResumeData {
+    currentTimeSec: number;
+    lastUpdatedAt: string;
+    audioSource: string;
+}
+
+function getResumeTimestampMs(value: Pick<AudioResumeData, "lastUpdatedAt"> | null) {
+    if (!value?.lastUpdatedAt) {
+        return Number.NEGATIVE_INFINITY;
+    }
+
+    const parsed = Date.parse(value.lastUpdatedAt);
+    return Number.isFinite(parsed) ? parsed : Number.NEGATIVE_INFINITY;
+}
 
 export function getStorageScope(userId?: string | null): StorageScope {
     return userId ? `user:${userId}` : GUEST_STORAGE_SCOPE;
@@ -26,6 +42,10 @@ export function readerSettingsKey(scope: StorageScope) {
     return `${READER_SETTINGS_KEY_PREFIX}${scope}`;
 }
 
+export function audioResumeKey(scope: StorageScope, itemId: string) {
+    return `${AUDIO_RESUME_KEY_PREFIX}${scope}_${itemId}`;
+}
+
 export function isScopedProgressKey(key: string) {
     return key.startsWith(`${PROGRESS_KEY_PREFIX}${GUEST_STORAGE_SCOPE}_`)
         || key.startsWith(`${PROGRESS_KEY_PREFIX}user:`);
@@ -37,6 +57,12 @@ export function isLegacyProgressKey(key: string) {
 
 export function parseProgressItemId(key: string, scope: StorageScope) {
     const scopedPrefix = `${PROGRESS_KEY_PREFIX}${scope}_`;
+    if (!key.startsWith(scopedPrefix)) return null;
+    return key.slice(scopedPrefix.length);
+}
+
+export function parseAudioResumeItemId(key: string, scope: StorageScope) {
+    const scopedPrefix = `${AUDIO_RESUME_KEY_PREFIX}${scope}_`;
     if (!key.startsWith(scopedPrefix)) return null;
     return key.slice(scopedPrefix.length);
 }
@@ -55,6 +81,20 @@ export function getScopedProgressKeys(storage: Storage, scope: StorageScope) {
     return keys;
 }
 
+export function getScopedAudioResumeKeys(storage: Storage, scope: StorageScope) {
+    const keys: string[] = [];
+
+    for (let i = 0; i < storage.length; i += 1) {
+        const key = storage.key(i);
+        if (!key) continue;
+        if (parseAudioResumeItemId(key, scope) !== null) {
+            keys.push(key);
+        }
+    }
+
+    return keys;
+}
+
 export function readScopedMyList(storage: Storage, scope: StorageScope) {
     try {
         const list = JSON.parse(storage.getItem(myListKey(scope)) || "[]");
@@ -62,6 +102,65 @@ export function readScopedMyList(storage: Storage, scope: StorageScope) {
     } catch {
         return [];
     }
+}
+
+export function readScopedAudioResume(storage: Storage, scope: StorageScope, itemId: string) {
+    const key = audioResumeKey(scope, itemId);
+
+    try {
+        const raw = storage.getItem(key);
+        if (!raw) {
+            return null;
+        }
+
+        const parsed = JSON.parse(raw) as Partial<AudioResumeData>;
+        if (typeof parsed.currentTimeSec !== "number" || !Number.isFinite(parsed.currentTimeSec)) {
+            storage.removeItem(key);
+            return null;
+        }
+
+        return {
+            currentTimeSec: parsed.currentTimeSec,
+            lastUpdatedAt: typeof parsed.lastUpdatedAt === "string" ? parsed.lastUpdatedAt : "",
+            audioSource: typeof parsed.audioSource === "string" ? parsed.audioSource : "",
+        } satisfies AudioResumeData;
+    } catch {
+        storage.removeItem(key);
+        return null;
+    }
+}
+
+export function writeScopedAudioResume(storage: Storage, scope: StorageScope, itemId: string, data: AudioResumeData) {
+    storage.setItem(audioResumeKey(scope, itemId), JSON.stringify(data));
+}
+
+export function clearScopedAudioResume(storage: Storage, scope: StorageScope, itemId: string) {
+    storage.removeItem(audioResumeKey(scope, itemId));
+}
+
+export function migrateScopedAudioResume(
+    storage: Storage,
+    fromScope: StorageScope,
+    toScope: StorageScope,
+    itemId: string,
+) {
+    if (fromScope === toScope) {
+        return readScopedAudioResume(storage, toScope, itemId);
+    }
+
+    const sourceResume = readScopedAudioResume(storage, fromScope, itemId);
+    const targetResume = readScopedAudioResume(storage, toScope, itemId);
+
+    if (!sourceResume) {
+        return targetResume;
+    }
+
+    if (getResumeTimestampMs(targetResume) >= getResumeTimestampMs(sourceResume)) {
+        return targetResume;
+    }
+
+    writeScopedAudioResume(storage, toScope, itemId, sourceResume);
+    return sourceResume;
 }
 
 export function writeScopedMyList(storage: Storage, scope: StorageScope, ids: string[]) {
@@ -74,6 +173,7 @@ export function clearScopedProgress(storage: Storage, scope: StorageScope) {
 
 export function clearScopedUserState(storage: Storage, scope: StorageScope) {
     clearScopedProgress(storage, scope);
+    getScopedAudioResumeKeys(storage, scope).forEach((key) => storage.removeItem(key));
     storage.removeItem(myListKey(scope));
     storage.removeItem(readerSettingsKey(scope));
 }
