@@ -12,6 +12,7 @@ interface AuthorChatProps {
     contentId: string;
     authorName: string;
     bookTitle: string;
+    hasCompletedReading?: boolean;
     onClose: () => void;
 }
 
@@ -66,7 +67,7 @@ function getDisplayErrorMessage(error: unknown): string {
     return FALLBACK_CHAT_ERROR;
 }
 
-export function AuthorChat({ contentId, authorName, bookTitle, onClose }: AuthorChatProps) {
+export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReading = true, onClose }: AuthorChatProps) {
     const transport = useMemo(
         () =>
             new TextStreamChatTransport({
@@ -205,7 +206,15 @@ export function AuthorChat({ contentId, authorName, bookTitle, onClose }: Author
                                                     Keep the conversation going
                                                 </p>
                                                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
-                                                    You&apos;ve finished reading <span className="font-medium text-foreground">{bookTitle}</span>. Use this space to test the ideas, pressure the arguments, or pull out the point that matters most.
+                                                    {hasCompletedReading ? (
+                                                        <>
+                                                            You&apos;ve finished reading <span className="font-medium text-foreground">{bookTitle}</span>. Use this space to test the ideas, pressure the arguments, or pull out the point that matters most.
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            You&apos;re partway through <span className="font-medium text-foreground">{bookTitle}</span>. Use this space to clarify an idea, challenge an argument, or go deeper before you finish.
+                                                        </>
+                                                    )}
                                                 </p>
                                                 <div className="mt-5">
                                                     <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">

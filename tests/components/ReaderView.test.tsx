@@ -72,6 +72,7 @@ vi.mock('@/components/reader/ReaderHeroHeader', () => ({
                 <button data-testid="sync-audio-seg-2" onClick={() => props.onAudioTimeChange?.(35, { durationSec: 90, isEnded: false })} />
                 <button data-testid="sync-audio-seg-3" onClick={() => props.onAudioTimeChange?.(65, { durationSec: 90, isEnded: false })} />
                 <button data-testid="sync-audio-ended" onClick={() => props.onAudioTimeChange?.(90, { durationSec: 90, isEnded: true })} />
+                <button data-testid="sync-audio-ended-short" onClick={() => props.onAudioTimeChange?.(89.4, { durationSec: 90, isEnded: true })} />
                 <button data-testid="resume-audio-follow" onClick={() => props.onResumeAudioFollow?.()} />
             </div>
         );
@@ -120,6 +121,16 @@ vi.mock('@/components/ui/ContentFeedback', () => ({
 
 vi.mock('@/components/reader/CompletionCard', () => ({
     CompletionCard: () => <div data-testid="mock-completion-card" />
+}));
+
+vi.mock('@/components/reader/AuthorChat', () => ({
+    AuthorChat: (props: any) => (
+        <div data-testid="mock-author-chat">
+            <div>{props.authorName}</div>
+            <div>{props.hasCompletedReading ? 'completed-chat' : 'in-progress-chat'}</div>
+            <button data-testid="close-author-chat" onClick={props.onClose} />
+        </div>
+    ),
 }));
 
 vi.mock('@/hooks/useReadingProgress', () => ({
@@ -230,9 +241,39 @@ describe('ReaderView', () => {
         expect(screen.getByTestId('mock-segment-accordion')).toBeInTheDocument();
         expect(screen.getByTestId('mock-notes-drawer')).toBeInTheDocument();
         expect(screen.getByTestId('mock-text-toolbar')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Open chat' })).toBeInTheDocument();
 
         // Before completion, displays feedback form
         expect(screen.getByTestId('mock-content-feedback')).toBeInTheDocument();
+    });
+
+    it('lets readers open Ask Author before full completion', async () => {
+        render(<ReaderView content={mockContent} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-author-chat')).toBeInTheDocument();
+            expect(screen.getByText('Test Author')).toBeInTheDocument();
+            expect(screen.getByText('in-progress-chat')).toBeInTheDocument();
+        });
+    });
+
+    it('closes the pre-completion author chat once the reader reaches completion', async () => {
+        render(<ReaderView content={mockContent} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+
+        await waitFor(() => {
+            expect(screen.getByTestId('mock-author-chat')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+
+        await waitFor(() => {
+            expect(screen.queryByTestId('mock-author-chat')).not.toBeInTheDocument();
+            expect(screen.getByTestId('mock-completion-card')).toBeInTheDocument();
+        });
     });
 
     it('passes the audio sync callback into the hero header when narration exists', () => {
@@ -922,6 +963,56 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
+        });
+    });
+
+    it('marks all segments completed when playback ends even if final currentTime is slightly below the last boundary', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+                {
+                    id: 'seg-3',
+                    item_id: 'item-1',
+                    order_index: 2,
+                    title: 'Segment 3',
+                    markdown_body: 'Body 3',
+                    start_time_sec: 60,
+                    end_time_sec: 90,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={timedContent} />);
+
+        fireEvent.click(screen.getByTestId('sync-audio-ended-short'));
+
+        await waitFor(() => {
+            const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+
+            expect(latestHeroProps?.segmentsRead).toBe(3);
+            expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-3')).toBe(true);
         });
     });
 

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, List } from "lucide-react";
+import { ArrowLeft, ArrowRight, BotMessageSquare, List } from "lucide-react";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
@@ -12,6 +12,7 @@ import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
 import { CompletionCard } from "./CompletionCard";
+import { AuthorChat } from "./AuthorChat";
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
@@ -55,11 +56,13 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
+    const [showAuthorChat, setShowAuthorChat] = useState(false);
     const [audioCurrentTimeSec, setAudioCurrentTimeSec] = useState(0);
     const [audioDurationSec, setAudioDurationSec] = useState(0);
     const [initialAudioTimeSec, setInitialAudioTimeSec] = useState(0);
     const [hasSyncedAudioPosition, setHasSyncedAudioPosition] = useState(false);
     const [isAudioFollowEnabled, setIsAudioFollowEnabled] = useState(true);
+    const [hasCompletedAudioPlayback, setHasCompletedAudioPlayback] = useState(false);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
     const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded, storageScope } = useReadingProgress();
@@ -87,12 +90,14 @@ export function ReaderView({ content }: ReaderViewProps) {
         () => findSegmentIdForPlaybackTime(content.segments, audioCurrentTimeSec),
         [audioCurrentTimeSec, content.segments]
     );
+    const authorName = content.author || "the Author";
     const handleAudioTimeChange = useCallback((timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => {
         latestAudioStateRef.current = {
             timeSec,
             durationSec: metadata?.durationSec ?? 0,
         };
         setHasSyncedAudioPosition(true);
+        setHasCompletedAudioPlayback(Boolean(metadata?.isEnded));
         setAudioCurrentTimeSec(timeSec);
         setAudioDurationSec(metadata?.durationSec ?? 0);
     }, []);
@@ -185,6 +190,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         setAudioDurationSec(0);
         setInitialAudioTimeSec(0);
         setHasSyncedAudioPosition(false);
+        setHasCompletedAudioPlayback(false);
         setIsAudioFollowEnabled(true);
         lastPersistedAudioTimeRef.current = null;
         previousStorageScopeRef.current = storageScope;
@@ -293,6 +299,10 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Derive book completion state
     const isBookCompleted = content.segments.length > 0 && completedSegments.size >= content.segments.length;
+
+    useEffect(() => {
+        setShowAuthorChat(false);
+    }, [content.id, isBookCompleted]);
 
     // Save progress on changes (debounced)
     useEffect(() => {
@@ -501,7 +511,9 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
-        const completedByAudio = findCompletedSegmentIdsForPlaybackTime(content.segments, audioCurrentTimeSec);
+        const completedByAudio = hasCompletedAudioPlayback
+            ? content.segments.map((segment) => segment.id)
+            : findCompletedSegmentIdsForPlaybackTime(content.segments, audioCurrentTimeSec);
         if (completedByAudio.length === 0) {
             return;
         }
@@ -532,7 +544,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (furthestCompletedIndex >= 0) {
             setMaxSegmentIndex((prev) => Math.max(prev, furthestCompletedIndex));
         }
-    }, [audioCurrentTimeSec, content.segments, hasSyncedAudioPosition]);
+    }, [audioCurrentTimeSec, content.segments, hasCompletedAudioPlayback, hasSyncedAudioPosition]);
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
@@ -647,6 +659,35 @@ export function ReaderView({ content }: ReaderViewProps) {
                     }}
                 />
 
+                {!isBookCompleted && (
+                    <div className="mt-8 rounded-2xl border border-border/60 bg-card/60 p-5">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
+                                        <BotMessageSquare className="size-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-semibold text-foreground">
+                                            Ask {authorName}
+                                        </h2>
+                                        <p className="text-sm text-muted-foreground">
+                                            Jump into the ideas before you finish the whole summary.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowAuthorChat(true)}
+                                className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                Open chat
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Completion Card or Content Feedback */}
                 {isBookCompleted ? (
                     <CompletionCard
@@ -692,6 +733,15 @@ export function ReaderView({ content }: ReaderViewProps) {
                         setIsPopoverHovered(false);
                         closeActiveHighlight();
                     }}
+                />
+            )}
+            {showAuthorChat && (
+                <AuthorChat
+                    contentId={content.id}
+                    authorName={authorName}
+                    bookTitle={content.title}
+                    hasCompletedReading={isBookCompleted}
+                    onClose={() => setShowAuthorChat(false)}
                 />
             )}
         </div>
