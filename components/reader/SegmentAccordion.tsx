@@ -362,6 +362,7 @@ export function SegmentAccordion({
                 return (
                     <div
                         key={segment.id}
+                        data-reader-segment-id={segment.id}
                         ref={(el) => {
                             if (el) itemRefs.current.set(segment.id, el);
                         }}

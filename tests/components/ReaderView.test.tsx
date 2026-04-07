@@ -85,6 +85,9 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
         return (
             <div>
                 <div data-testid="mock-segment-accordion">{props.expandedSegmentId ?? 'none'}</div>
+                {props.segments?.map((segment: { id: string }) => (
+                    <div key={segment.id} data-reader-segment-id={segment.id} />
+                ))}
                 <button
                     data-testid="manual-open-seg-1"
                     onClick={() => {
@@ -508,6 +511,75 @@ describe('ReaderView', () => {
         });
     });
 
+    it('smooth-scrolls the active segment into view while follow audio is enabled', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const timedContent = {
+                ...mockContent,
+                audio_url: 'https://example.com/audio.mp3',
+                segments: [
+                    {
+                        id: 'seg-1',
+                        item_id: 'item-1',
+                        order_index: 0,
+                        title: 'Segment 1',
+                        markdown_body: 'Body 1',
+                        start_time_sec: 0,
+                        end_time_sec: 30,
+                    },
+                    {
+                        id: 'seg-2',
+                        item_id: 'item-1',
+                        order_index: 1,
+                        title: 'Segment 2',
+                        markdown_body: 'Body 2',
+                        start_time_sec: 30,
+                        end_time_sec: 60,
+                    },
+                ],
+            } as ContentItemWithSegments;
+
+            render(<ReaderView content={timedContent} />);
+
+            const segmentNode = document.querySelector('[data-reader-segment-id="seg-2"]');
+            expect(segmentNode).not.toBeNull();
+            if (!segmentNode) {
+                return;
+            }
+
+            Object.defineProperty(window, 'innerHeight', {
+                configurable: true,
+                value: 800,
+            });
+
+            vi.spyOn(segmentNode, 'getBoundingClientRect').mockReturnValue({
+                x: 0,
+                y: 720,
+                top: 720,
+                bottom: 920,
+                left: 0,
+                right: 200,
+                width: 200,
+                height: 200,
+                toJSON: () => ({}),
+            } as DOMRect);
+
+            fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(320);
+            });
+
+            expect(window.scrollTo).toHaveBeenCalledWith({
+                top: 610,
+                behavior: 'smooth',
+            });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('restores the saved local audio position and expands the matching segment on return', async () => {
         const timedContent = {
             ...mockContent,
@@ -795,6 +867,11 @@ describe('ReaderView', () => {
             expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
         });
 
+        await act(async () => {
+            await new Promise((resolve) => window.setTimeout(resolve, 320));
+        });
+        vi.mocked(window.scrollTo).mockClear();
+
         fireEvent.click(screen.getByTestId('manual-open-seg-1'));
 
         await waitFor(() => {
@@ -803,9 +880,14 @@ describe('ReaderView', () => {
 
         fireEvent.click(screen.getByTestId('sync-audio-seg-3'));
 
+        await act(async () => {
+            await new Promise((resolve) => window.setTimeout(resolve, 320));
+        });
+
         await waitFor(() => {
             expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
         });
+        expect(window.scrollTo).not.toHaveBeenCalled();
 
         await waitFor(() => {
             const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];

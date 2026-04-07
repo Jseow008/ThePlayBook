@@ -77,6 +77,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
         : null;
     const spotlightTimeoutRef = useRef<number | null>(null);
+    const audioFollowScrollTimeoutRef = useRef<number | null>(null);
     const handledUrlHighlightRef = useRef<string | null>(null);
     const sectionMeta = useMemo(
         () =>
@@ -390,6 +391,9 @@ export function ReaderView({ content }: ReaderViewProps) {
             if (spotlightTimeoutRef.current !== null) {
                 window.clearTimeout(spotlightTimeoutRef.current);
             }
+            if (audioFollowScrollTimeoutRef.current !== null) {
+                window.clearTimeout(audioFollowScrollTimeoutRef.current);
+            }
             document
                 .querySelectorAll<HTMLElement>('mark[data-highlight-spotlight="true"]')
                 .forEach((mark) => mark.removeAttribute("data-highlight-spotlight"));
@@ -503,7 +507,39 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
+        const initialScrollY = window.scrollY;
         setExpandedSegmentId(activeNarrationSegmentId);
+
+        if (audioFollowScrollTimeoutRef.current !== null) {
+            window.clearTimeout(audioFollowScrollTimeoutRef.current);
+        }
+
+        audioFollowScrollTimeoutRef.current = window.setTimeout(() => {
+            if (Math.abs(window.scrollY - initialScrollY) > 50) {
+                return;
+            }
+
+            const targetElement = document.querySelector<HTMLElement>(
+                `[data-reader-segment-id="${activeNarrationSegmentId}"]`
+            );
+            if (!targetElement) {
+                return;
+            }
+
+            const rect = targetElement.getBoundingClientRect();
+            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+            const topPadding = 110;
+            const bottomPadding = 180;
+            const isAboveViewportComfortZone = rect.top < topPadding;
+            const isBelowViewportComfortZone = rect.bottom > viewportHeight - bottomPadding;
+
+            if (!isAboveViewportComfortZone && !isBelowViewportComfortZone) {
+                return;
+            }
+
+            const y = rect.top + window.scrollY - topPadding;
+            window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        }, 310);
     }, [activeNarrationSegmentId, content.segments, expandedSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
 
     useEffect(() => {
