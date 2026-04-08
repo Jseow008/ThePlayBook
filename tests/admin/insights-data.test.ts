@@ -114,9 +114,13 @@ describe("getAdminInsights", () => {
         const insights = await getAdminInsights("7d");
 
         expect(insights.cards[0].value).toBe("3");
+        expect(insights.cards[0].detail).toContain("guest visitors");
         expect(insights.cards[1].value).toBe("30 min");
+        expect(insights.cards[1].detail).toContain("signed-in and guest readers");
         expect(insights.cards[2].value).toBe("4");
+        expect(insights.cards[2].detail).toContain("signed-in users");
         expect(insights.cards[3].value).toBe("2");
+        expect(insights.cards[3].detail).toContain("signed-in users");
         expect(insights.feedbackSummary).toEqual([
             {
                 id: "content-1",

@@ -57,21 +57,17 @@ describe("useReadingTimer", () => {
         expect(result.current.secondsRead).toBe(1);
     });
 
-    it("sends a heartbeat when timer stops and pending > 60s", async () => {
+    it("flushes a full batch while the reader remains open", async () => {
         Object.defineProperty(document, "visibilityState", {
             configurable: true,
             get: () => "visible",
         });
 
-        const { unmount } = renderHook(() => useReadingTimer("test-content-id"));
+        renderHook(() => useReadingTimer("test-content-id"));
 
-        act(() => {
+        await act(async () => {
             vi.advanceTimersByTime(65 * 1000); // 65 seconds
-        });
-
-        // unmounting should trigger heartbeat
-        act(() => {
-            unmount();
+            await Promise.resolve();
         });
 
         expect(fetch).toHaveBeenCalledTimes(1);
@@ -82,11 +78,11 @@ describe("useReadingTimer", () => {
         const reqOpts = fetchArgs[1];
         const bodyObj = JSON.parse(reqOpts?.body as string);
 
-        expect(bodyObj.duration_seconds).toBe(65);
+        expect(bodyObj.duration_seconds).toBe(60);
         expect(bodyObj.content_id).toBe("test-content-id");
     });
 
-    it("does not send a heartbeat if pending < 60s", () => {
+    it("flushes a short session on unmount", () => {
         Object.defineProperty(document, "visibilityState", {
             configurable: true,
             get: () => "visible",
@@ -103,6 +99,57 @@ describe("useReadingTimer", () => {
             unmount();
         });
 
-        expect(fetch).not.toHaveBeenCalled();
+        expect(fetch).toHaveBeenCalledTimes(1);
+        const fetchArgs = vi.mocked(fetch).mock.calls[0];
+        expect(fetchArgs[0]).toBe("/api/activity/log");
+
+        const reqOpts = fetchArgs[1];
+        const bodyObj = JSON.parse(reqOpts?.body as string);
+
+        expect(bodyObj.duration_seconds).toBe(30);
+        expect(bodyObj.content_id).toBe("test-content-id");
+        expect(typeof bodyObj.visitor_id).toBe("string");
+    });
+
+    it("flushes a short session on pagehide", () => {
+        Object.defineProperty(document, "visibilityState", {
+            configurable: true,
+            get: () => "visible",
+        });
+
+        renderHook(() => useReadingTimer("test-content-id"));
+
+        act(() => {
+            vi.advanceTimersByTime(30 * 1000);
+            window.dispatchEvent(new Event("pagehide"));
+        });
+
+        expect(fetch).toHaveBeenCalledTimes(1);
+        const fetchArgs = vi.mocked(fetch).mock.calls[0];
+        const reqOpts = fetchArgs[1];
+        const bodyObj = JSON.parse(reqOpts?.body as string);
+
+        expect(bodyObj.duration_seconds).toBe(30);
+        expect(bodyObj.content_id).toBe("test-content-id");
+    });
+
+    it("does not double-send when pagehide is followed by unmount", () => {
+        Object.defineProperty(document, "visibilityState", {
+            configurable: true,
+            get: () => "visible",
+        });
+
+        const deferred = Promise.resolve(new Response(null, { status: 200 }));
+        global.fetch = vi.fn(() => deferred);
+
+        const { unmount } = renderHook(() => useReadingTimer("test-content-id"));
+
+        act(() => {
+            vi.advanceTimersByTime(30 * 1000);
+            window.dispatchEvent(new Event("pagehide"));
+            unmount();
+        });
+
+        expect(fetch).toHaveBeenCalledTimes(1);
     });
 });
