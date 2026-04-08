@@ -118,6 +118,13 @@ describe("ContentForm", () => {
         expect(screen.queryByPlaceholderText("Takeaway 4")).not.toBeInTheDocument();
     });
 
+    it("includes pregnancy and parenthood in the category options", () => {
+        render(<ContentForm initialData={createInitialData()} seriesOptions={seriesOptions} />);
+
+        expect(screen.getByRole("option", { name: "Pregnancy" })).toBeInTheDocument();
+        expect(screen.getByRole("option", { name: "Parenthood" })).toBeInTheDocument();
+    });
+
     it("enables series order only when a series is selected and clears it when reset to standalone", () => {
         render(<ContentForm initialData={createInitialData()} seriesOptions={seriesOptions} />);
 

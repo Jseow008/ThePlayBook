@@ -119,6 +119,8 @@ const defaultQuickMode: QuickModeJson = {
 const CATEGORIES = [
     "Health",
     "Fitness",
+    "Pregnancy",
+    "Parenthood",
     "Wealth",
     "Finance",
     "Productivity",

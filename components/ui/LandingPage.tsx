@@ -36,6 +36,8 @@ interface LandingPageProps {
 const CATEGORY_ICONS = {
   Mindset: Brain,
   Health: Activity,
+  Pregnancy: Heart,
+  Parenthood: Heart,
   Wealth: CircleDollarSign,
   Business: Briefcase,
   Philosophy: Lightbulb,
@@ -53,6 +55,8 @@ const CATEGORY_ICONS = {
 const CURATED_CATEGORY_ORDER = [
   "Mindset",
   "Health",
+  "Pregnancy",
+  "Parenthood",
   "Wealth",
   "Productivity",
   "Philosophy",
