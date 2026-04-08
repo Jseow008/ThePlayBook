@@ -18,6 +18,10 @@ export function RecommendationsRow({
         () => Array.from(new Set([...completedIds, ...myListIds])),
         [completedIds, myListIds]
     );
+    const knownRecommendationIds = useMemo(
+        () => Array.from(new Set([...completedIds, ...inProgressIds, ...myListIds])),
+        [completedIds, inProgressIds, myListIds],
+    );
 
     const isWorthFetchingGeneral = clusterIds.length >= 5;
 
@@ -54,18 +58,41 @@ export function RecommendationsRow({
         mostRecentId ? [mostRecentId] : [],
         {
             enabled: isLoaded && shouldLoadRecommendations && !!mostRecentId,
+            excludeIds: knownRecommendationIds,
         }
+    );
+    const generalExcludeIds = useMemo(
+        () => Array.from(new Set([
+            ...knownRecommendationIds,
+            ...recentItems.map((item) => item.id),
+        ])),
+        [knownRecommendationIds, recentItems],
+    );
+    const shouldFetchGeneral = (
+        isLoaded
+        && shouldLoadRecommendations
+        && isWorthFetchingGeneral
+        && (!mostRecentId || !recentLoading)
     );
 
     const { data: generalItems = [], isLoading: generalLoading } = useRecommendations(
         clusterIds,
         {
-            enabled: isLoaded && shouldLoadRecommendations && isWorthFetchingGeneral,
+            enabled: shouldFetchGeneral,
+            excludeIds: generalExcludeIds,
         }
+    );
+    const recentItemIds = useMemo(
+        () => new Set(recentItems.map((item) => item.id)),
+        [recentItems],
+    );
+    const dedupedGeneralItems = useMemo(
+        () => generalItems.filter((item) => !recentItemIds.has(item.id)),
+        [generalItems, recentItemIds],
     );
 
     const isLoading = recentLoading || generalLoading;
-    const hasItems = recentItems.length > 0 || generalItems.length > 0;
+    const hasItems = recentItems.length > 0 || dedupedGeneralItems.length > 0;
 
     if (!isLoaded || (!mostRecentId && clusterIds.length === 0)) return null;
     if (!isLoading && !hasItems) return null;
@@ -97,10 +124,10 @@ export function RecommendationsRow({
             )}
 
             {/* Lane 2: General Taste */}
-            {isWorthFetchingGeneral && generalItems.length > 0 && (
+            {isWorthFetchingGeneral && dedupedGeneralItems.length > 0 && (
                 <ContentLane
                     title="Recommended for You"
-                    items={generalItems}
+                    items={dedupedGeneralItems}
                     cardTitleDensity={cardTitleDensity}
                 />
             )}

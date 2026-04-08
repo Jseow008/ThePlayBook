@@ -236,11 +236,16 @@ Returns shuffled focus-feed items whose `quick_mode_json` passes validation.
 
 ```json
 {
-  "completedIds": ["uuid"]
+  "seedIds": ["uuid"],
+  "completedIds": ["uuid"],
+  "excludeIds": ["uuid"],
+  "matchCount": 6
 }
 ```
 
-Returns the result of the `match_recommendations` RPC.
+`seedIds` drives recommendation retrieval. `completedIds` and `excludeIds` are excluded from the result set. If `seedIds` is omitted, the route falls back to `completedIds` for backward compatibility.
+
+Returns the reranked result of the `match_recommendations` RPC.
 
 ## 5. Admin APIs
 

@@ -62,12 +62,37 @@ describe('Recommendations API', () => {
         expect(res.status).toBe(200);
 
         expect(mockRpc).toHaveBeenCalledWith('match_recommendations', {
-            completed_ids: [validId], // Deduplicated
-            match_count: 10,
+            seed_ids: [validId],
+            exclude_ids: [validId],
+            match_count: 40,
         });
 
         const json = await res.json();
         expect(json.length).toBe(1);
+    });
+
+    it('supports separate seed and exclusion ids', async () => {
+        const seedId = '123e4567-e89b-12d3-a456-426614174000';
+        const completedId = '123e4567-e89b-12d3-a456-426614174001';
+        const recentId = '123e4567-e89b-12d3-a456-426614174002';
+        const req = new NextRequest(new URL('http://localhost/api/recommendations'), {
+            method: 'POST',
+            body: JSON.stringify({
+                seedIds: [seedId, seedId],
+                completedIds: [completedId],
+                excludeIds: [recentId, recentId],
+                matchCount: 3,
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
+
+        expect(mockRpc).toHaveBeenCalledWith('match_recommendations', {
+            seed_ids: [seedId],
+            exclude_ids: [seedId, completedId, recentId],
+            match_count: 12,
+        });
     });
 
     it('handles RPC errors', async () => {
@@ -95,8 +120,9 @@ describe('Recommendations API', () => {
         const res = await POST(req);
         expect(res.status).toBe(200);
         expect(mockRpc).toHaveBeenCalledWith('match_recommendations', {
-            completed_ids: [validId],
-            match_count: 10,
+            seed_ids: [validId],
+            exclude_ids: [validId],
+            match_count: 40,
         });
     });
 });

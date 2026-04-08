@@ -1,21 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { BotMessageSquare, BookOpen, ArrowRight, PartyPopper } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthorChat } from "./AuthorChat";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
 import Link from "next/link";
 import { ResilientImage } from "@/components/ui/ResilientImage";
-
-interface RecommendedBook {
-    id: string;
-    title: string;
-    author: string | null;
-    cover_image_url: string | null;
-    category: string | null;
-    similarity: number;
-}
+import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useRecommendations } from "@/hooks/use-content-queries";
 
 interface CompletionCardProps {
     contentId: string;
@@ -25,35 +18,18 @@ interface CompletionCardProps {
 }
 
 export function CompletionCard({ contentId, title, author, segmentCount }: CompletionCardProps) {
+    const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
     const [showChat, setShowChat] = useState(false);
-    const [recommendation, setRecommendation] = useState<RecommendedBook | null>(null);
-    const [loadingRec, setLoadingRec] = useState(true);
-
-    // Fetch embedding-based recommendation
-    useEffect(() => {
-        const fetchRecommendation = async () => {
-            try {
-                const res = await fetch("/api/recommendations", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ completedIds: [contentId] }),
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                        setRecommendation(data[0]);
-                    }
-                }
-            } catch (err) {
-                console.error("Failed to fetch recommendation", err);
-            } finally {
-                setLoadingRec(false);
-            }
-        };
-
-        fetchRecommendation();
-    }, [contentId]);
+    const { data: recommendationItems = [], isLoading: loadingRec } = useRecommendations(
+        [contentId],
+        {
+            enabled: isLoaded,
+            excludeIds: [...completedIds, ...inProgressIds, ...myListIds],
+            matchCount: 1,
+        }
+    );
+    const recommendation = recommendationItems[0] ?? null;
+    const isRecommendationLoading = !isLoaded || loadingRec;
 
     const authorName = author || "the Author";
 
@@ -106,7 +82,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                     </button>
 
                     {/* Card B: Read Next */}
-                    {loadingRec ? (
+                    {isRecommendationLoading ? (
                         <div className="rounded-2xl border border-border/60 bg-card/60 p-6 flex items-center justify-center">
                             <div className="flex items-center gap-3 text-muted-foreground">
                                 <div className="size-4 rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground animate-spin" />

@@ -650,7 +650,11 @@ export type Database = {
         }[]
       }
       match_recommendations: {
-        Args: { completed_ids: string[]; match_count?: number }
+        Args: {
+          exclude_ids?: string[]
+          match_count?: number
+          seed_ids: string[]
+        }
         Returns: {
           audio_url: string
           author: string
