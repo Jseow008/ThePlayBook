@@ -15,6 +15,7 @@ vi.mock('@/lib/server/rate-limit', () => ({
 
 // Mock streamText to avoid actual AI call
 vi.mock('ai', () => ({
+    smoothStream: vi.fn().mockReturnValue('mock-smooth-transform'),
     streamText: vi.fn().mockImplementation(() => ({
         toTextStreamResponse: () => new Response('mocked-stream')
     })),
@@ -181,6 +182,21 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 250,
         }));
+    });
+
+    it('falls back to Anthropic when AI_PROVIDER prefers OpenAI but only Anthropic is configured', async () => {
+        process.env.AI_PROVIDER = 'openai';
+        delete process.env.OPENAI_API_KEY;
+
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: 'What have I completed in my library?' }],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
     });
 
     it('processes a valid request successfully via Gemini embeddings and RAG', async () => {

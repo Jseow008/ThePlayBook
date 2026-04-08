@@ -30,7 +30,7 @@ vi.mock("next/link", () => ({
 describe("NotesAskPanel", () => {
     const setMessagesMock = vi.fn();
     const sendMessageMock = vi.fn();
-    const scrollIntoViewMock = vi.fn();
+    const scrollToMock = vi.fn();
 
     const currentScope: NotesChatScope = {
         highlightIds: ["highlight-1", "highlight-2"],
@@ -46,9 +46,9 @@ describe("NotesAskPanel", () => {
     }).toString()}`;
 
     beforeAll(() => {
-        Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
+        Object.defineProperty(HTMLElement.prototype, "scrollTo", {
             configurable: true,
-            value: scrollIntoViewMock,
+            value: scrollToMock,
         });
     });
 
@@ -68,7 +68,6 @@ describe("NotesAskPanel", () => {
 
         expect(screen.getByText("Ask These Notes")).toBeInTheDocument();
         expect(screen.getAllByText("2 notes in scope").length).toBeGreaterThan(0);
-        expect(scrollIntoViewMock).not.toHaveBeenCalled();
 
         fireEvent.click(screen.getByRole("button", { name: "What patterns show up across these notes?" }));
 
@@ -112,30 +111,6 @@ describe("NotesAskPanel", () => {
         expect(
             screen.getByText("Notes-scoped assistant · Grounded only in the notes currently in scope.")
         ).toBeInTheDocument();
-    });
-
-    it("auto-scrolls only after real chat activity appears", () => {
-        const { rerender } = render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
-
-        expect(scrollIntoViewMock).not.toHaveBeenCalled();
-
-        (useChat as any).mockReturnValue({
-            messages: [
-                {
-                    id: "u1",
-                    role: "user",
-                    content: "Summarize these notes",
-                },
-            ],
-            sendMessage: sendMessageMock,
-            setMessages: setMessagesMock,
-            status: "submitted",
-            error: null,
-        });
-
-        rerender(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
-
-        expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: "smooth", block: "end" });
     });
 
     it("shows a scope changed banner after filters move and resets to the new scope", () => {

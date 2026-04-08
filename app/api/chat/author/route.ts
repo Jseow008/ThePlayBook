@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic } from "@ai-sdk/anthropic";
-import { streamText } from "ai";
+import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
@@ -63,7 +63,7 @@ function normalizeMessages(rawMessages: any[]): Array<{ role: "user" | "assistan
         .filter((m: any) => m.role === "user" || m.role === "assistant")
         .map((m: any) => ({
             role: m.role as "user" | "assistant",
-            content: getMessageText(m),
+            content: getMessageText(m).trim(),
         }))
         .filter((m) => m.content.length > 0);
 }
@@ -213,6 +213,7 @@ Rules:
             system: systemPrompt,
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
+            experimental_transform: smoothStream({ delayInMs: 6 }),
         });
 
         return result.toTextStreamResponse();

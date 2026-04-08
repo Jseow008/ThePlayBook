@@ -9,12 +9,20 @@ vi.mock("@ai-sdk/react", () => ({
 
 describe("AuthorChat", () => {
     const mockOnClose = vi.fn();
+    const scrollToMock = vi.fn();
     const defaultProps = {
         contentId: "123",
         authorName: "Test Author",
         bookTitle: "Test Book",
         onClose: mockOnClose,
     };
+
+    beforeAll(() => {
+        Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+            configurable: true,
+            value: scrollToMock,
+        });
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();

@@ -14,6 +14,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
 }));
 
 vi.mock("ai", () => ({
+    smoothStream: vi.fn().mockReturnValue("mock-smooth-transform"),
     streamText: vi.fn().mockImplementation(() => ({
         toTextStreamResponse: () => new Response("mocked-stream"),
     })),
@@ -204,6 +205,22 @@ describe("Notes chat API", () => {
 
         const res = await POST(req);
         expect(res.status).toBe(500);
+    });
+
+    it("falls back to Anthropic when AI_PROVIDER prefers OpenAI but only Anthropic is configured", async () => {
+        process.env.AI_PROVIDER = "openai";
+        delete process.env.OPENAI_API_KEY;
+
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "Summarize these notes" }],
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
     });
 
     it("uses the higher output cap for synthesis-style note questions", async () => {

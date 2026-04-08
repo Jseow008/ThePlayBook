@@ -7,6 +7,7 @@ import { TextStreamChatTransport } from "ai";
 import { Bot, User, Send, Loader2, X, BotMessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
+import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 
 interface AuthorChatProps {
     contentId: string;
@@ -96,14 +97,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReadi
     const displayErrorMessage = useMemo(() => getDisplayErrorMessage(error), [error]);
 
     const [input, setInput] = useState("");
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const mainRef = useRef<HTMLDivElement>(null);
-
-    // Auto-scroll to bottom when new messages arrive
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages, status]);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -121,6 +115,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReadi
         if (!trimmed || isStreaming) return;
         setInput("");
         if (textareaRef.current) textareaRef.current.style.height = "auto";
+        scrollToBottom();
         await sendMessage({ text: trimmed });
     };
 
@@ -149,6 +144,17 @@ export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReadi
             role: m.role,
             content: getMessageText(m),
         };
+    });
+    const lastDisplayMessage = displayMessages[displayMessages.length - 1];
+    const {
+        containerRef: messagesContainerRef,
+        endRef: messagesEndRef,
+        scrollToBottom,
+    } = useChatAutoScroll<HTMLElement>({
+        messageCount: displayMessages.length,
+        lastMessageId: lastDisplayMessage?.id,
+        lastMessageTextLength: lastDisplayMessage?.content.length ?? 0,
+        status,
     });
 
     const latestAssistantMessageId = [...displayMessages]
@@ -188,8 +194,8 @@ export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReadi
             </header>
 
             <main
-                ref={mainRef}
-                className="flex-1 overflow-y-auto overscroll-contain"
+                ref={messagesContainerRef}
+                className="flex-1 overflow-y-auto overscroll-contain [overflow-anchor:none]"
             >
                 <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pt-6 pb-3 sm:px-6">
                     <div className="flex-1 rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">

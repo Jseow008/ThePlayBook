@@ -14,6 +14,7 @@ vi.mock('@/lib/server/rate-limit', () => ({
 }));
 
 vi.mock('ai', () => ({
+    smoothStream: vi.fn().mockReturnValue('mock-smooth-transform'),
     streamText: vi.fn().mockImplementation(() => ({
         toTextStreamResponse: () => new Response('mocked-stream')
     })),
@@ -157,6 +158,20 @@ describe('Author Chat API', () => {
 
         const json = await res.json();
         expect(json.error.code).toBe('VALIDATION_ERROR');
+    });
+
+    it('rejects whitespace-only author messages after normalization', async () => {
+        const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
+            method: 'POST',
+            body: JSON.stringify({
+                ...validBody,
+                messages: [{ role: 'user', content: '   ' }],
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(400);
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it('prefers Anthropic Sonnet by default when both providers are configured', async () => {

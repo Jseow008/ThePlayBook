@@ -6,9 +6,11 @@ import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
 
 const {
     scrollIntoViewMock,
+    scrollToMock,
     infiniteHighlightsState,
 } = vi.hoisted(() => ({
     scrollIntoViewMock: vi.fn(),
+    scrollToMock: vi.fn(),
     infiniteHighlightsState: {
         value: {
             data: undefined,
@@ -67,6 +69,10 @@ describe("AskClientPage", () => {
             configurable: true,
             value: scrollIntoViewMock,
         });
+        Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+            configurable: true,
+            value: scrollToMock,
+        });
     });
 
     beforeEach(() => {
@@ -111,6 +117,7 @@ describe("AskClientPage", () => {
         expect(screen.queryByText("Library Assistant · AI Search")).not.toBeInTheDocument();
         expect(screen.getByText("Good places to start")).toBeInTheDocument();
         expect(scrollIntoViewMock).not.toHaveBeenCalled();
+        expect(scrollToMock).not.toHaveBeenCalled();
         expect(screen.getByRole("button", { name: "What have I completed in my library?" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Which authors show up most in my saved books?" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Which saved book is most relevant to discipline, and why?" })).toBeInTheDocument();

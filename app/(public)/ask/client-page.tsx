@@ -7,6 +7,7 @@ import { Bot, User, Send, BotMessageSquare, Loader2, ArrowLeft } from "lucide-re
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
+import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useInfiniteHighlights, type HighlightsPage } from "@/hooks/useHighlights";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
@@ -149,11 +150,7 @@ export function AskClientPage({
     });
 
     const [input, setInput] = useState("");
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const hasMountedRef = useRef(false);
-    const previousMessageCountRef = useRef(0);
-    const previousStatusRef = useRef<string | null>(null);
     const isDesktop = useIsDesktop();
     const resolvedScope = scope;
 
@@ -165,25 +162,6 @@ export function AskClientPage({
         initialPage: initialNotesPage,
         enabled: resolvedScope === "notes" && !initialNotesScope,
     });
-
-    useEffect(() => {
-        const previousMessageCount = previousMessageCountRef.current;
-        const previousStatus = previousStatusRef.current;
-        const hasMessages = messages.length > 0;
-        const hasNewMessage = messages.length > previousMessageCount;
-        const isStreamingUpdate =
-            hasMessages
-            && status === "streaming"
-            && previousStatus !== "streaming";
-
-        if (resolvedScope === "library" && hasMountedRef.current && (hasNewMessage || isStreamingUpdate)) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        }
-
-        hasMountedRef.current = true;
-        previousMessageCountRef.current = messages.length;
-        previousStatusRef.current = status;
-    }, [messages.length, resolvedScope, status]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -201,6 +179,7 @@ export function AskClientPage({
         if (!trimmed || isStreaming) return;
         setInput("");
         if (textareaRef.current) textareaRef.current.style.height = "auto";
+        scrollToBottom();
         await sendMessage({ text: trimmed });
     };
 
@@ -214,6 +193,18 @@ export function AskClientPage({
         role: message.role,
         content: getMessageText(message as { parts?: Array<{ type: string; text?: string }>; content?: unknown }),
     }));
+    const lastDisplayMessage = displayMessages[displayMessages.length - 1];
+    const {
+        containerRef: messagesContainerRef,
+        endRef: messagesEndRef,
+        scrollToBottom,
+    } = useChatAutoScroll<HTMLDivElement>({
+        messageCount: displayMessages.length,
+        lastMessageId: lastDisplayMessage?.id,
+        lastMessageTextLength: lastDisplayMessage?.content.length ?? 0,
+        status,
+        enabled: resolvedScope === "library",
+    });
 
     const latestAssistantMessageId = [...displayMessages]
         .reverse()
@@ -333,7 +324,7 @@ export function AskClientPage({
                         <section className="flex h-full min-h-0 flex-1 flex-col">
                             <div className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
                                 <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
-                                    <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                                    <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto pr-1 [overflow-anchor:none]">
                                         <div className="space-y-5 pb-2">
                                             {initialLibrarySnapshot && (
                                                 <LibraryScopeOverview snapshot={initialLibrarySnapshot} />

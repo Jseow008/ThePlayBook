@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { streamText } from "ai";
+import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
@@ -213,9 +213,12 @@ Rules:
         if (provider === "anthropic" && hasAnthropic) {
             const { anthropic } = await import("@ai-sdk/anthropic");
             aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
-        } else {
+        } else if (hasOpenAI) {
             const { openai } = await import("@ai-sdk/openai");
             aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
+        } else {
+            const { anthropic } = await import("@ai-sdk/anthropic");
+            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
         }
 
         const result = streamText({
@@ -223,6 +226,7 @@ Rules:
             system: systemPrompt,
             messages: trimmedMessages,
             maxOutputTokens: prefersLongerSynthesis ? NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS : NOTES_DEFAULT_MAX_OUTPUT_TOKENS,
+            experimental_transform: smoothStream({ delayInMs: 6 }),
         });
 
         return result.toTextStreamResponse();

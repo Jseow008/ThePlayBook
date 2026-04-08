@@ -26,6 +26,7 @@ import {
     readNotesChatSession,
     writeNotesChatSession,
 } from "@/lib/notes-chat-session";
+import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 
 const chatTransport = new TextStreamChatTransport({ api: "/api/chat/notes" });
 
@@ -200,12 +201,8 @@ export function NotesAskPanel({
     const [input, setInput] = useState("");
     const [showAllStarterPrompts, setShowAllStarterPrompts] = useState(false);
     const [activeScope, setActiveScope] = useState<NotesChatScope>(currentScope);
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const hasMountedRef = useRef(false);
     const hasHydratedSessionRef = useRef(false);
-    const previousMessageCountRef = useRef(0);
-    const previousStatusRef = useRef<string | null>(null);
 
     const {
         messages,
@@ -263,25 +260,6 @@ export function NotesAskPanel({
             updatedAt: Date.now(),
         });
     }, [activeScope, currentScope.signature, messages]);
-
-    useEffect(() => {
-        const previousMessageCount = previousMessageCountRef.current;
-        const previousStatus = previousStatusRef.current;
-        const hasMessages = messages.length > 0;
-        const hasNewMessage = messages.length > previousMessageCount;
-        const isStreamingUpdate =
-            hasMessages
-            && status === "streaming"
-            && previousStatus !== "streaming";
-
-        if (hasMountedRef.current && (hasNewMessage || isStreamingUpdate)) {
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        }
-
-        hasMountedRef.current = true;
-        previousMessageCountRef.current = messages.length;
-        previousStatusRef.current = status;
-    }, [messages.length, status]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -343,6 +321,7 @@ export function NotesAskPanel({
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";
         }
+        scrollToBottom();
 
         await sendMessage(
             { text: trimmed },
@@ -398,6 +377,17 @@ export function NotesAskPanel({
         role: message.role,
         content: getMessageText(message),
     }));
+    const lastDisplayMessage = displayMessages[displayMessages.length - 1];
+    const {
+        containerRef: messagesContainerRef,
+        endRef: messagesEndRef,
+        scrollToBottom,
+    } = useChatAutoScroll<HTMLDivElement>({
+        messageCount: displayMessages.length,
+        lastMessageId: lastDisplayMessage?.id,
+        lastMessageTextLength: lastDisplayMessage?.content.length ?? 0,
+        status,
+    });
 
     const latestAssistantMessageId = [...displayMessages]
         .reverse()
@@ -416,7 +406,7 @@ export function NotesAskPanel({
                     )}
 
                     <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
-                        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+                        <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto pr-1 [overflow-anchor:none]">
                             <div className="space-y-5 pb-2">
                                 <ScopeOverview scope={activeScope} />
 
@@ -717,10 +707,13 @@ export function NotesAskPanel({
                 </div>
             )}
 
-            <div className={cn(
-                "min-h-0 flex-1 overflow-y-auto px-4 py-4",
+            <div
+                ref={messagesContainerRef}
+                className={cn(
+                "min-h-0 flex-1 overflow-y-auto px-4 py-4 [overflow-anchor:none]",
                 isSidebar && "px-5 py-5"
-            )}>
+                )}
+            >
                 <div className={cn("space-y-4", isSidebar && "space-y-5")}>
                     {isEmptyState && (
                         <section className={cn(
