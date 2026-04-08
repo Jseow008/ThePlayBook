@@ -457,6 +457,11 @@ export function FocusFeed() {
     }, []);
 
     useEffect(() => {
+        if (isDesktop) {
+            setListViewportHeight(null);
+            return;
+        }
+
         const listElement = listRef.current;
         if (!listElement) {
             setListViewportHeight(null);
@@ -479,7 +484,7 @@ export function FocusFeed() {
         observer.observe(listElement);
 
         return () => observer.disconnect();
-    }, [cards.length, hasInitialized, loading, mounted]);
+    }, [cards.length, hasInitialized, isDesktop, loading, mounted]);
 
     useEffect(() => {
         if (!takeawaysSheetCard || prefersReducedMotion || takeawaysSheetPhase !== "entering") {
@@ -739,14 +744,20 @@ export function FocusFeed() {
             touchStartRef.current = null;
         };
 
-        list.addEventListener("wheel", handleWheel, { passive: false });
+        if (isDesktop) {
+            list.addEventListener("wheel", handleWheel, { passive: false });
+
+            return () => {
+                list.removeEventListener("wheel", handleWheel);
+            };
+        }
+
         list.addEventListener("touchstart", handleTouchStart, { passive: true });
         list.addEventListener("touchmove", handleTouchMove, { passive: false });
         list.addEventListener("touchend", resetTouchTracking);
         list.addEventListener("touchcancel", resetTouchTracking);
 
         return () => {
-            list.removeEventListener("wheel", handleWheel);
             list.removeEventListener("touchstart", handleTouchStart);
             list.removeEventListener("touchmove", handleTouchMove);
             list.removeEventListener("touchend", resetTouchTracking);
@@ -1144,6 +1155,11 @@ function FocusCardView({
     }, [card.id, card.takeaways.length]);
 
     useEffect(() => {
+        if (isDesktop) {
+            setCardWidth(0);
+            return;
+        }
+
         const cardElement = cardRef.current;
         if (!cardElement) {
             setCardWidth(0);
@@ -1164,7 +1180,7 @@ function FocusCardView({
         observer.observe(cardElement);
 
         return () => observer.disconnect();
-    }, []);
+    }, [isDesktop]);
 
     useLayoutEffect(() => {
         if (isDesktop || cardWidth === 0 || mobileCardTargetHeight === null) {

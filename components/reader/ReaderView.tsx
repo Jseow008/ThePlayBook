@@ -384,7 +384,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, [audioCurrentTimeSec, audioDurationSec, content.audio_url, hasSyncedAudioPosition, persistAudioResume]);
 
     useEffect(() => {
-        if (typeof window === "undefined" || !content.audio_url) {
+        if (typeof window === "undefined" || !content.audio_url || !hasSyncedAudioPosition) {
             return;
         }
 
@@ -398,7 +398,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             flushAudioResume();
             window.removeEventListener("pagehide", flushAudioResume);
         };
-    }, [content.audio_url, persistAudioResume]);
+    }, [content.audio_url, hasSyncedAudioPosition, persistAudioResume]);
 
     // ── Keyboard Shortcuts (Fullscreen) ──────────────────────────
     useEffect(() => {
@@ -423,8 +423,11 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, []);
 
     useEffect(() => {
+        if (!isDesktop || !popoverHighlightId || isPopoverHovered) {
+            return;
+        }
+
         const handleScroll = () => {
-            if (!isDesktop || !popoverHighlightId || isPopoverHovered) return;
             setPopoverHighlightId(null);
             setActiveHighlightPosition(null);
         };

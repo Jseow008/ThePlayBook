@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentLane } from "@/components/ui/ContentLane";
-import { useBatchContentItems, useRecommendations } from "@/hooks/use-content-queries";
+import { useRecommendations } from "@/hooks/use-content-queries";
 
 export function RecommendationsRow({
     cardTitleDensity = "default",
@@ -11,6 +11,7 @@ export function RecommendationsRow({
     cardTitleDensity?: "default" | "app-compact";
 }) {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
+    const [shouldLoadRecommendations, setShouldLoadRecommendations] = useState(false);
 
     const mostRecentId = completedIds[0] || inProgressIds[0] || null;
     const clusterIds = useMemo(
@@ -20,23 +21,52 @@ export function RecommendationsRow({
 
     const isWorthFetchingGeneral = clusterIds.length >= 5;
 
+    useEffect(() => {
+        if (!isLoaded) {
+            setShouldLoadRecommendations(false);
+            return;
+        }
+
+        let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+        let idleId: number | null = null;
+
+        const enableRecommendations = () => {
+            setShouldLoadRecommendations(true);
+        };
+
+        if ("requestIdleCallback" in globalThis) {
+            idleId = globalThis.requestIdleCallback(enableRecommendations, { timeout: 1200 });
+        } else {
+            timeoutId = globalThis.setTimeout(enableRecommendations, 400);
+        }
+
+        return () => {
+            if (idleId !== null && "cancelIdleCallback" in globalThis) {
+                globalThis.cancelIdleCallback(idleId);
+            }
+            if (timeoutId !== null) {
+                globalThis.clearTimeout(timeoutId);
+            }
+        };
+    }, [isLoaded]);
+
     const { data: recentItems = [], isLoading: recentLoading } = useRecommendations(
         mostRecentId ? [mostRecentId] : [],
-        { enabled: isLoaded && !!mostRecentId }
-    );
-
-    const { data: recentTitleItems = [], isLoading: recentTitleLoading } = useBatchContentItems(
-        mostRecentId ? [mostRecentId] : [],
-        { enabled: isLoaded && !!mostRecentId }
+        {
+            enabled: isLoaded && shouldLoadRecommendations && !!mostRecentId,
+            excludeIds: completedIds,
+        }
     );
 
     const { data: generalItems = [], isLoading: generalLoading } = useRecommendations(
         clusterIds,
-        { enabled: isLoaded && isWorthFetchingGeneral }
+        {
+            enabled: isLoaded && shouldLoadRecommendations && isWorthFetchingGeneral,
+            excludeIds: completedIds,
+        }
     );
 
-    const recentTitle = recentTitleItems[0]?.title || "";
-    const isLoading = recentLoading || recentTitleLoading || generalLoading;
+    const isLoading = recentLoading || generalLoading;
     const hasItems = recentItems.length > 0 || generalItems.length > 0;
 
     if (!isLoaded || (!mostRecentId && clusterIds.length === 0)) return null;
@@ -62,7 +92,7 @@ export function RecommendationsRow({
             {/* Lane 1: Specific Context */}
             {recentItems.length > 0 && (
                 <ContentLane
-                    title={recentTitle ? `Because you read "${recentTitle}"` : "Because of your recent reading"}
+                    title="Because of your recent reading"
                     items={recentItems}
                     cardTitleDensity={cardTitleDensity}
                 />

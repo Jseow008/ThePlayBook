@@ -15,10 +15,8 @@ interface HeroCarouselProps {
 export function HeroCarousel({ items }: HeroCarouselProps) {
     const [activeIndex, setActiveIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const [scrollY, setScrollY] = useState(0);
     const autoRotateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const scrollFrameRef = useRef<number | null>(null);
 
     const clearAutoRotate = useCallback(() => {
         if (!autoRotateTimeoutRef.current) return;
@@ -43,25 +41,6 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             transitionTimeoutRef.current = null;
         }, durationMs);
     }, [clearAutoRotate, clearTransition]);
-
-    // Parallax Scroll Effect
-    useEffect(() => {
-        const handleScroll = () => {
-            if (scrollFrameRef.current !== null) return;
-
-            scrollFrameRef.current = window.requestAnimationFrame(() => {
-                setScrollY(window.scrollY);
-                scrollFrameRef.current = null;
-            });
-        };
-        window.addEventListener("scroll", handleScroll, { passive: true });
-        return () => {
-            window.removeEventListener("scroll", handleScroll);
-            if (scrollFrameRef.current !== null) {
-                window.cancelAnimationFrame(scrollFrameRef.current);
-            }
-        };
-    }, []);
 
     useEffect(() => {
         if (items.length <= 1) return;
@@ -108,13 +87,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     return (
         <div className="relative browse-hero-shell w-full overflow-hidden bg-background">
             {/* Background Image Layer */}
-            <div
-                className="absolute inset-0 w-full h-full"
-                style={{
-                    transform: `translateY(${scrollY * 0.5}px)`, // Parallax: moves slower than scroll
-                    opacity: Math.max(0, 1 - scrollY / 700), // Fade out
-                }}
-            >
+            <div className="absolute inset-0 w-full h-full">
                 {/* Current Image */}
                 <div
                     key={activeItem.id}

@@ -13,7 +13,10 @@ import type { ContentItem, Database, HomepageSection } from "@/types/database";
 
 export const revalidate = 300; // Revalidate every 5 minutes
 
-const CONTENT_CARD_SELECT = "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, is_featured, audio_url, created_at, updated_at, deleted_at";
+const FEED_CARD_SELECT =
+    "id, type, title, duration_seconds, author, cover_image_url, category, created_at";
+const HERO_CARD_SELECT =
+    "id, type, title, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, created_at";
 type HomepageSectionsRpcRow = Database["public"]["Functions"]["get_homepage_sections_with_items"]["Returns"][number];
 
 export default function BrowsePage() {
@@ -48,7 +51,7 @@ async function HomeFeedServer() {
     const [featuredResult, latestResult, sectionsResult] = await Promise.all([
         supabase
             .from("content_item")
-            .select(CONTENT_CARD_SELECT)
+            .select(HERO_CARD_SELECT)
             .eq("status", "verified")
             .eq("is_featured", true)
             .is("deleted_at", null)
@@ -56,7 +59,7 @@ async function HomeFeedServer() {
             .limit(5),
         supabase
             .from("content_item")
-            .select(CONTENT_CARD_SELECT)
+            .select(FEED_CARD_SELECT)
             .eq("status", "verified")
             .is("deleted_at", null)
             .order("created_at", { ascending: false })

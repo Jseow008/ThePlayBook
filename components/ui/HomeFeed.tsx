@@ -42,6 +42,7 @@ export function HomeFeed({
                                 New on <Logo width={100} height={30} className="inline-flex" />
                             </div>
                         }
+                        enableCardUserState={false}
                         items={items.slice(0, 10)}
                         cardTitleDensity="app-compact"
                     />
@@ -59,6 +60,7 @@ export function HomeFeed({
                         return (
                             <ContentLane
                                 key={section.id}
+                                enableCardUserState={false}
                                 title={section.title}
                                 items={sectionContent}
                                 cardTitleDensity="app-compact"

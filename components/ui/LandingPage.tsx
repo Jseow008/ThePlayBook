@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -92,8 +92,6 @@ const CORE_SUPPORT_FEATURES = [
   },
 ] as const;
 
-const FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND = 22;
-const FEATURED_READS_RESUME_DELAY_MS = 2000;
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
 const PRIMARY_CTA_CLASS =
@@ -273,7 +271,6 @@ function HeroSection() {
                 alt="Flux dashboard desktop experience"
                 fill
                 priority
-                unoptimized
                 sizes="(max-width: 1024px) 0px, 700px"
                 className="object-cover opacity-90"
               />
@@ -286,7 +283,6 @@ function HeroSection() {
                 src="/images/mobile-reader-view.png"
                 alt="Flux mobile reader experience"
                 fill
-                unoptimized
                 sizes="140px"
                 className="object-cover"
               />
@@ -309,17 +305,9 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
   const firstLoopRef = useRef<HTMLDivElement>(null);
   const middleLoopRef = useRef<HTMLDivElement>(null);
   const lastLoopRef = useRef<HTMLDivElement>(null);
-  const frameRef = useRef<number | null>(null);
-  const lastFrameTimeRef = useRef<number | null>(null);
-  const autoScrollRemainderRef = useRef(0);
   const loopWidthRef = useRef(0);
   const hasInitializedLoopRef = useRef(false);
-  const isHoveringRef = useRef(false);
   const isDraggingRef = useRef(false);
-  const isTouchingRef = useRef(false);
-  const isFocusWithinRef = useRef(false);
-  const pauseUntilRef = useRef(0);
-  const isAutoScrollingRef = useRef(false);
   const suppressClickRef = useRef(false);
   const dragStateRef = useRef<{
     pointerId: number;
@@ -327,19 +315,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     startScrollLeft: number;
     moved: boolean;
   } | null>(null);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const updateMotionPreference = () => {
-      setPrefersReducedMotion(mediaQuery.matches);
-    };
-
-    updateMotionPreference();
-    mediaQuery.addEventListener("change", updateMotionPreference);
-
-    return () => mediaQuery.removeEventListener("change", updateMotionPreference);
-  }, []);
 
   useEffect(() => {
     const scrollElement = scrollRef.current;
@@ -357,7 +332,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       const normalizedScrollLeft = getNormalizedScrollLeft(scrollElement.scrollLeft, loopWidth);
 
       if (!hasInitializedLoopRef.current || scrollElement.scrollLeft !== normalizedScrollLeft) {
-        isAutoScrollingRef.current = true;
         scrollElement.scrollLeft = hasInitializedLoopRef.current ? normalizedScrollLeft : loopWidth;
         hasInitializedLoopRef.current = true;
       }
@@ -381,83 +355,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     };
   }, [items.length]);
 
-  useEffect(() => {
-    const scrollElement = scrollRef.current;
-
-    if (!scrollElement) return;
-
-    const normalizeScrollPosition = () => {
-      const loopWidth = loopWidthRef.current;
-      if (
-        loopWidth <= 0
-        || !hasInitializedLoopRef.current
-        || scrollElement.scrollWidth <= scrollElement.clientWidth + 1
-      ) {
-        return;
-      }
-
-      if (scrollElement.scrollLeft < loopWidth) {
-        isAutoScrollingRef.current = true;
-        scrollElement.scrollLeft += loopWidth;
-        return;
-      }
-
-      if (scrollElement.scrollLeft >= loopWidth * 2) {
-        isAutoScrollingRef.current = true;
-        scrollElement.scrollLeft -= loopWidth;
-      }
-    };
-
-    const tick = (timestamp: number) => {
-      const shouldPause =
-        prefersReducedMotion
-        || isHoveringRef.current
-        || isDraggingRef.current
-        || isTouchingRef.current
-        || isFocusWithinRef.current
-        || Date.now() < pauseUntilRef.current;
-
-      const lastTimestamp = lastFrameTimeRef.current ?? timestamp;
-      lastFrameTimeRef.current = timestamp;
-
-      if (
-        !shouldPause
-        && hasInitializedLoopRef.current
-        && loopWidthRef.current > 0
-        && scrollElement.scrollWidth > scrollElement.clientWidth + 1
-      ) {
-        const deltaSeconds = (timestamp - lastTimestamp) / 1000;
-        if (deltaSeconds > 0) {
-          const distanceToApply = (
-            deltaSeconds * FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND
-          ) + autoScrollRemainderRef.current;
-          const wholePixels = Math.trunc(distanceToApply);
-          autoScrollRemainderRef.current = distanceToApply - wholePixels;
-
-          if (wholePixels > 0) {
-            isAutoScrollingRef.current = true;
-            scrollElement.scrollLeft += wholePixels;
-            normalizeScrollPosition();
-          }
-        }
-      }
-
-      frameRef.current = window.requestAnimationFrame(tick);
-    };
-
-    frameRef.current = window.requestAnimationFrame(tick);
-
-    return () => {
-      if (frameRef.current !== null) {
-        window.cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, [prefersReducedMotion]);
-
-  function extendPause() {
-    pauseUntilRef.current = Date.now() + FEATURED_READS_RESUME_DELAY_MS;
-  }
-
   function normalizeScrollPosition(element: HTMLDivElement) {
     const loopWidth = loopWidthRef.current;
     if (
@@ -470,7 +367,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
 
     const normalizedScrollLeft = getNormalizedScrollLeft(element.scrollLeft, loopWidth);
     if (normalizedScrollLeft !== element.scrollLeft) {
-      isAutoScrollingRef.current = true;
       element.scrollLeft = normalizedScrollLeft;
     }
   }
@@ -494,8 +390,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       moved: false,
     };
     suppressClickRef.current = false;
-    lastFrameTimeRef.current = null;
-    autoScrollRemainderRef.current = 0;
     element.setPointerCapture?.(event.pointerId);
     event.preventDefault();
   }
@@ -519,7 +413,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     element.scrollLeft = dragState.startScrollLeft - deltaX;
     normalizeScrollPosition(element);
     suppressClickRef.current = true;
-    extendPause();
     event.preventDefault();
   }
 
@@ -531,9 +424,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     isDraggingRef.current = false;
     dragStateRef.current = null;
-    lastFrameTimeRef.current = null;
-    autoScrollRemainderRef.current = 0;
-    extendPause();
   }
 
   function handlePointerCancel(event: React.PointerEvent<HTMLDivElement>) {
@@ -544,17 +434,9 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     isDraggingRef.current = false;
     dragStateRef.current = null;
-    lastFrameTimeRef.current = null;
-    autoScrollRemainderRef.current = 0;
-    extendPause();
   }
 
   function handleScroll() {
-    if (isAutoScrollingRef.current) {
-      isAutoScrollingRef.current = false;
-      return;
-    }
-
     if (isDraggingRef.current) {
       return;
     }
@@ -563,9 +445,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     if (!element) return;
 
     normalizeScrollPosition(element);
-    lastFrameTimeRef.current = null;
-    autoScrollRemainderRef.current = 0;
-    extendPause();
   }
 
   if (items.length === 0) return null;
@@ -586,22 +465,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       <FadeIn delayMs={100}>
         <div
           className="relative mx-auto flex w-full max-w-7xl overflow-hidden pb-8 pt-4"
-          onFocusCapture={() => {
-            isFocusWithinRef.current = true;
-            lastFrameTimeRef.current = null;
-            autoScrollRemainderRef.current = 0;
-          }}
-          onBlurCapture={(event) => {
-            const nextFocusedElement = event.relatedTarget as Node | null;
-            if (nextFocusedElement && event.currentTarget.contains(nextFocusedElement)) {
-              return;
-            }
-
-            isFocusWithinRef.current = false;
-            lastFrameTimeRef.current = null;
-            autoScrollRemainderRef.current = 0;
-            extendPause();
-          }}
           onClickCapture={(event) => {
             if (!suppressClickRef.current) {
               return;
@@ -619,34 +482,6 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
             aria-label="Featured reads"
             data-testid="featured-reads-carousel"
             className="scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-x] cursor-grab"
-            onMouseEnter={() => {
-              isHoveringRef.current = true;
-              lastFrameTimeRef.current = null;
-              autoScrollRemainderRef.current = 0;
-            }}
-            onMouseLeave={() => {
-              isHoveringRef.current = false;
-              lastFrameTimeRef.current = null;
-              autoScrollRemainderRef.current = 0;
-              extendPause();
-            }}
-            onTouchStart={() => {
-              isTouchingRef.current = true;
-              lastFrameTimeRef.current = null;
-              autoScrollRemainderRef.current = 0;
-            }}
-            onTouchEnd={() => {
-              isTouchingRef.current = false;
-              lastFrameTimeRef.current = null;
-              autoScrollRemainderRef.current = 0;
-              extendPause();
-            }}
-            onTouchCancel={() => {
-              isTouchingRef.current = false;
-              lastFrameTimeRef.current = null;
-              autoScrollRemainderRef.current = 0;
-              extendPause();
-            }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
@@ -746,7 +581,6 @@ function CorePlatformFeaturesSection() {
                       src={CORE_ANCHOR_FEATURE.image}
                       alt={`Screenshot illustrating ${CORE_ANCHOR_FEATURE.title}`}
                       fill
-                      unoptimized
                       sizes="(max-width: 640px) 100vw, 50vw"
                       className="object-cover object-top opacity-90 transition-transform duration-300 group-hover:scale-105 group-hover:opacity-100"
                     />
@@ -773,7 +607,6 @@ function CorePlatformFeaturesSection() {
                           src={feature.image}
                           alt={`Screenshot illustrating ${feature.title}`}
                           fill
-                          unoptimized
                           sizes="80px"
                           className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
                         />

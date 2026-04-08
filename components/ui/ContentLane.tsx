@@ -13,6 +13,7 @@ interface ContentLaneProps {
     viewAllHref?: string;
     cardNavigationMode?: "preview" | "resume";
     cardTitleDensity?: "default" | "app-compact";
+    enableCardUserState?: boolean;
 }
 
 
@@ -22,6 +23,7 @@ export function ContentLane({
     viewAllHref,
     cardNavigationMode = "preview",
     cardTitleDensity = "default",
+    enableCardUserState = true,
 }: ContentLaneProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -111,6 +113,7 @@ export function ContentLane({
                             <div key={item.id} className="w-[168px] min-w-[168px] md:w-[240px] md:min-w-[240px]">
                                 <ContentCard
                                     item={item}
+                                    enableUserState={enableCardUserState}
                                     navigationMode={cardNavigationMode}
                                     titleDensity={cardTitleDensity}
                                 />
