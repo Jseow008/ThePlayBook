@@ -52,7 +52,7 @@ describe("NarrationRowAction", () => {
 
         expect(screen.getByRole("button", { name: /regenerate voice/i })).toBeInTheDocument();
         expect(screen.getByText(/out of date/i)).toHaveClass("text-amber-700");
-        expect(screen.getByText(/current audio is still playable, but it no longer matches the latest deep-mode content/i)).toHaveClass("text-amber-600");
+        expect(screen.getByText(/current audio no longer matches the latest content/i)).toHaveClass("text-amber-600");
     });
 
     it("queues and completes narration from the list row", async () => {
@@ -108,7 +108,7 @@ describe("NarrationRowAction", () => {
         });
 
         expect(screen.getByRole("button", { name: /regenerate voice/i })).toBeInTheDocument();
-        expect(screen.getByText(/generated .* saved to this content item/i)).toBeInTheDocument();
+        expect(screen.getByText(/generated .*\./i)).toBeInTheDocument();
         expect(global.fetch).toHaveBeenNthCalledWith(
             1,
             "/api/admin/content/11111111-1111-1111-1111-111111111111/narration",

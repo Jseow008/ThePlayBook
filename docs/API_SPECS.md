@@ -84,7 +84,7 @@ Request body:
 
 | Route | Method | Auth | Purpose |
 | --- | --- | --- | --- |
-| `/api/activity/log` | `POST` | `auth` | Log reading time through Supabase RPCs. |
+| `/api/activity/log` | `POST` | `public` | Log reading time through Supabase RPCs for signed-in readers or anonymous content readers. |
 | `/api/activity/history` | `GET` | `auth` | Fetch reading activity rows for a date range. |
 | `/api/library/bookmarks` | `POST`, `DELETE` | `auth` | Add/remove a bookmarked item. |
 | `/api/library/highlights` | `GET`, `POST` | `auth` | List or create highlights. |
@@ -95,18 +95,31 @@ Request body:
 
 `POST /api/activity/log`
 
+Authenticated example:
+
 ```json
 {
   "duration_seconds": 120,
-  "activity_date": "2026-03-29",
   "content_id": "uuid"
+}
+```
+
+Anonymous content-reading example:
+
+```json
+{
+  "duration_seconds": 45,
+  "content_id": "uuid",
+  "visitor_id": "uuid"
 }
 ```
 
 Behavior:
 
-- if `content_id` is present, calls `log_reading_activity`
-- otherwise calls `increment_reading_activity`
+- signed-in requests with `content_id` call the service-role `log_reading_activity_for_user` entrypoint
+- signed-in requests without `content_id` call the service-role `increment_reading_activity_for_user` entrypoint
+- anonymous requests require both `content_id` and `visitor_id`, then call the service-role `log_anonymous_reading_activity` entrypoint
+- the server normalizes `activity_date` to the current UTC date instead of trusting a client-supplied day
 
 `GET /api/activity/history?start=2026-03-01&end=2026-03-29`
 

@@ -59,7 +59,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
         id: contentItem.id,
         title: contentItem.title,
         author: contentItem.author || "",
-        type: contentItem.type as "podcast" | "book" | "article",
+        type: contentItem.type as "podcast" | "book" | "article" | "video",
         category: contentItem.category || "",
         source_url: contentItem.source_url || "",
         cover_image_url: contentItem.cover_image_url || "",

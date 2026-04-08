@@ -120,6 +120,8 @@ describe("SearchPage", () => {
                         { category: "Finance", count: 4 },
                         { category: "Productivity", count: 5 },
                         { category: "Health", count: 3 },
+                        { category: "Pregnancy", count: 3 },
+                        { category: "Parenthood", count: 2 },
                         { category: "Productivity", count: 5 },
                         { category: "Mindset", count: 3 },
                         { category: "Psychology", count: 2 },
@@ -145,6 +147,8 @@ describe("SearchPage", () => {
                         { category: "Business", count: 6 },
                         { category: "'Business'", count: 2 },
                         { category: "Productivity", count: 5 },
+                        { category: "Pregnancy", count: 3 },
+                        { category: "Parenthood", count: 2 },
                         { category: "Psychology", count: 2 },
                     ],
                 });
@@ -171,6 +175,8 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "All topics" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Business" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Productivity" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Pregnancy" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Parenthood" })).toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Psychology" })).not.toBeInTheDocument();
         expect(screen.getByRole("combobox", { name: "More topics" })).toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();

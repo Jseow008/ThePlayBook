@@ -288,22 +288,22 @@ export async function getAdminInsights(range: InsightsRange): Promise<AdminInsig
             {
                 title: `Readers (${days}d)`,
                 value: totalReaders.toLocaleString(),
-                detail: "Unique reader-days across all content",
+                detail: "Unique reader-days across all content, including guest visitors",
             },
             {
                 title: `Reading Time (${days}d)`,
                 value: formatReadingTime(totalReadingTimeSeconds),
-                detail: `${totalReadingTimeSeconds.toLocaleString()} seconds captured`,
+                detail: `${totalReadingTimeSeconds.toLocaleString()} seconds captured from signed-in and guest readers`,
             },
             {
                 title: "Bookmarks",
                 value: totalBookmarks.toLocaleString(),
-                detail: "Current saved items across users",
+                detail: "Current saved items across signed-in users",
             },
             {
                 title: `Highlights (${days}d)`,
                 value: totalHighlights.toLocaleString(),
-                detail: "Created within the selected range",
+                detail: "Created by signed-in users within the selected range",
             },
         ],
         topByDuration: buildRankedContent(aggregates, contentMap, "duration"),

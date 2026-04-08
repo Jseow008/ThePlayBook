@@ -17,6 +17,7 @@ import {
     BookOpen,
     Headphones,
     FileText,
+    Video,
     UploadCloud,
     Image as ImageIcon,
     Monitor,
@@ -63,11 +64,13 @@ interface QuickModeJson {
     key_takeaways: string[];
 }
 
+type UploadZone = "cover" | "hero" | "audio";
+
 interface ContentFormData {
     id?: string;
     title: string;
     author: string;
-    type: "podcast" | "book" | "article";
+    type: "podcast" | "book" | "article" | "video";
     category: string;
     series_id: string;
     series_order: number | null;
@@ -116,6 +119,8 @@ const defaultQuickMode: QuickModeJson = {
 const CATEGORIES = [
     "Health",
     "Fitness",
+    "Pregnancy",
+    "Parenthood",
     "Wealth",
     "Finance",
     "Productivity",
@@ -307,6 +312,7 @@ export function ContentForm({
     const [isUploading, setIsUploading] = useState(false);
     const [isUploadingHero, setIsUploadingHero] = useState(false);
     const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+    const [activeDropZone, setActiveDropZone] = useState<UploadZone | null>(null);
     const [persistedAudioUrl, setPersistedAudioUrl] = useState(() => initialData?.audio_url?.trim() ?? "");
 
     // Auto-calculate duration based on words
@@ -341,13 +347,34 @@ export function ContentForm({
         value: ContentFormData[K]
     ) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
-        if (fieldErrors[field]) {
-            setFieldErrors((prev) => {
-                const next = { ...prev };
-                delete next[field];
-                return next;
-            });
+        if (fieldErrors[String(field)]) {
+            const nextFieldErrors = { ...fieldErrors };
+            delete nextFieldErrors[String(field)];
+            setFieldErrors(nextFieldErrors);
+            if (Object.keys(nextFieldErrors).length === 0 && error.startsWith("Please fix ")) {
+                setError("");
+            }
         }
+    };
+
+    const clearFieldErrorsMatching = (matcher: (field: string) => boolean) => {
+        const matchingFields = Object.keys(fieldErrors).filter(matcher);
+        if (matchingFields.length === 0) {
+            return;
+        }
+
+        const nextFieldErrors = { ...fieldErrors };
+        matchingFields.forEach((field) => {
+            delete nextFieldErrors[field];
+        });
+        setFieldErrors(nextFieldErrors);
+        if (Object.keys(nextFieldErrors).length === 0 && error.startsWith("Please fix ")) {
+            setError("");
+        }
+    };
+
+    const clearFieldErrors = (...keys: string[]) => {
+        clearFieldErrorsMatching((field) => keys.includes(field));
     };
 
     const updateAudioUrl = (nextAudioUrl: string) => {
@@ -363,13 +390,7 @@ export function ContentForm({
             narration_completed_at: nextAudioUrl.trim() ? prev.narration_completed_at : null,
         }));
 
-        if (fieldErrors.audio_url) {
-            setFieldErrors((prev) => {
-                const next = { ...prev };
-                delete next.audio_url;
-                return next;
-            });
-        }
+        clearFieldErrors("audio_url");
     };
 
     const updateQuickMode = <K extends keyof QuickModeJson>(
@@ -383,6 +404,8 @@ export function ContentForm({
                 [field]: value,
             },
         }));
+        const errorPath = `quick_mode_json.${field}`;
+        clearFieldErrorsMatching((candidate) => candidate === errorPath || candidate.startsWith(`${errorPath}.`));
     };
 
     const updateTakeaway = (index: number, value: string) => {
@@ -401,6 +424,15 @@ export function ContentForm({
             (_, i) => i !== index
         );
         updateQuickMode("key_takeaways", takeaways);
+    };
+
+    const updateSeriesAssignment = (nextSeriesId: string) => {
+        setFormData((prev) => ({
+            ...prev,
+            series_id: nextSeriesId,
+            series_order: nextSeriesId ? prev.series_order : null,
+        }));
+        clearFieldErrors("series_id", "series_order");
     };
 
     const addSegment = () => {
@@ -455,18 +487,29 @@ export function ContentForm({
         }
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setIsUploading(true);
-        setError(""); // Clear previous errors
+    const uploadFile = async ({
+        file,
+        endpoint,
+        setUploading,
+        onUploaded,
+        failureMessage,
+        logLabel,
+    }: {
+        file: File;
+        endpoint: string;
+        setUploading: (value: boolean) => void;
+        onUploaded: (url: string) => void;
+        failureMessage: string;
+        logLabel: string;
+    }) => {
+        setUploading(true);
+        setError("");
 
         try {
             const formData = new FormData();
             formData.append("file", file);
 
-            const response = await fetch("/api/admin/upload", {
+            const response = await fetch(endpoint, {
                 method: "POST",
                 body: formData,
             });
@@ -477,78 +520,132 @@ export function ContentForm({
             }
 
             const data = await response.json();
-            updateField("cover_image_url", data.url);
+            onUploaded(data.url);
         } catch (err: unknown) {
-            console.error("Upload failed:", err);
-            const message = err instanceof Error ? err.message : "Failed to upload image. Please try again.";
+            console.error(`${logLabel} upload failed:`, err);
+            const message = err instanceof Error ? err.message : failureMessage;
             setError(message);
         } finally {
-            setIsUploading(false);
+            setUploading(false);
         }
+    };
+
+    const uploadCoverImage = async (file: File) => {
+        await uploadFile({
+            file,
+            endpoint: "/api/admin/upload",
+            setUploading: setIsUploading,
+            onUploaded: (url) => updateField("cover_image_url", url),
+            failureMessage: "Failed to upload image. Please try again.",
+            logLabel: "Cover image",
+        });
+    };
+
+    const uploadHeroImage = async (file: File) => {
+        await uploadFile({
+            file,
+            endpoint: "/api/admin/upload",
+            setUploading: setIsUploadingHero,
+            onUploaded: (url) => updateField("hero_image_url", url),
+            failureMessage: "Failed to upload hero image. Please try again.",
+            logLabel: "Hero image",
+        });
+    };
+
+    const uploadAudioFile = async (file: File) => {
+        await uploadFile({
+            file,
+            endpoint: "/api/admin/upload-audio",
+            setUploading: setIsUploadingAudio,
+            onUploaded: (url) => updateAudioUrl(url),
+            failureMessage: "Failed to upload audio. Please try again.",
+            logLabel: "Audio",
+        });
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        await uploadCoverImage(file);
+        e.target.value = "";
     };
 
     const handleHeroImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        setIsUploadingHero(true);
-        setError("");
-
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            const response = await fetch("/api/admin/upload", {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Upload failed");
-            }
-
-            const data = await response.json();
-            updateField("hero_image_url", data.url);
-        } catch (err: unknown) {
-            console.error("Hero image upload failed:", err);
-            const message = err instanceof Error ? err.message : "Failed to upload hero image. Please try again.";
-            setError(message);
-        } finally {
-            setIsUploadingHero(false);
-        }
+        await uploadHeroImage(file);
+        e.target.value = "";
     };
 
     const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        setIsUploadingAudio(true);
-        setError("");
+        await uploadAudioFile(file);
+        e.target.value = "";
+    };
 
-        try {
-            const formData = new FormData();
-            formData.append("file", file);
-
-            const response = await fetch("/api/admin/upload-audio", {
-                method: "POST",
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || "Upload failed");
-            }
-
-            const data = await response.json();
-            updateAudioUrl(data.url);
-        } catch (err: unknown) {
-            console.error("Audio upload failed:", err);
-            const message = err instanceof Error ? err.message : "Failed to upload audio. Please try again.";
-            setError(message);
-        } finally {
-            setIsUploadingAudio(false);
+    const acceptsDroppedFile = (file: File, zone: UploadZone) => {
+        if (zone === "audio") {
+            return file.type.startsWith("audio/") || /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name);
         }
+
+        return file.type.startsWith("image/") || /\.(png|jpe?g|gif|svg|webp|bmp|avif)$/i.test(file.name);
+    };
+
+    const handleUploadDragEnter = (zone: UploadZone, e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setActiveDropZone(zone);
+    };
+
+    const handleUploadDragOver = (zone: UploadZone, e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.dataTransfer.dropEffect = "copy";
+        if (activeDropZone !== zone) {
+            setActiveDropZone(zone);
+        }
+    };
+
+    const handleUploadDragLeave = (zone: UploadZone, e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const relatedTarget = e.relatedTarget;
+        if (!(relatedTarget instanceof Node) || !e.currentTarget.contains(relatedTarget)) {
+            setActiveDropZone((currentZone) => (currentZone === zone ? null : currentZone));
+        }
+    };
+
+    const handleUploadDrop = async (zone: UploadZone, e: React.DragEvent<HTMLLabelElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setActiveDropZone((currentZone) => (currentZone === zone ? null : currentZone));
+
+        const file = e.dataTransfer.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        if (!acceptsDroppedFile(file, zone)) {
+            setError(zone === "audio" ? "Please drop an audio file here." : "Please drop an image file here.");
+            return;
+        }
+
+        if (zone === "cover") {
+            await uploadCoverImage(file);
+            return;
+        }
+
+        if (zone === "hero") {
+            await uploadHeroImage(file);
+            return;
+        }
+
+        await uploadAudioFile(file);
     };
 
     const handleSubmit = async (status: "draft" | "verified") => {
@@ -633,6 +730,7 @@ export function ContentForm({
         podcast: Headphones,
         book: BookOpen,
         article: FileText,
+        video: Video,
     };
 
     return (
@@ -680,6 +778,7 @@ export function ContentForm({
                         type="checkbox"
                         checked={formData.is_featured}
                         onChange={(e) => updateField("is_featured", e.target.checked)}
+                        aria-label="Featured content"
                         className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-zinc-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-zinc-900"></div>
@@ -688,446 +787,515 @@ export function ContentForm({
 
             {/* Basic Info */}
             <section className="bg-white rounded-xl border border-zinc-200 p-6 space-y-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-zinc-900">Basic Information</h2>
+                <div className="space-y-1">
+                    <h2 className="text-lg font-semibold text-zinc-900">Basic Information</h2>
+                    <p className="text-sm text-zinc-500">
+                        Organize the core metadata first, then add source and media details.
+                    </p>
+                </div>
 
-                <div className="grid gap-6 md:grid-cols-2">
-                    {/* Title */}
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Title <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.title}
-                            onChange={(e) => updateField("title", e.target.value)}
-                            placeholder="Enter content title"
-                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.title ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
-                        />
-                        {fieldErrors.title && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors.title}</p>
-                        )}
-                    </div>
-
-                    {/* Author */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Author
-                        </label>
-                        <input
-                            type="text"
-                            value={formData.author}
-                            onChange={(e) => updateField("author", e.target.value)}
-                            placeholder="Author name"
-                            className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
-                        />
-                    </div>
-
-                    {/* Category */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Category
-                        </label>
-                        <select
-                            value={formData.category}
-                            onChange={(e) => updateField("category", e.target.value)}
-                            className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
-                        >
-                            <option value="">Select a category</option>
-                            {CATEGORIES.map((cat) => (
-                                <option key={cat} value={cat}>
-                                    {cat}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Series <span className="text-zinc-400 font-normal">(Optional)</span>
-                        </label>
-                        <select
-                            value={formData.series_id}
-                            onChange={(e) => {
-                                const nextSeriesId = e.target.value;
-                                setFormData((prev) => ({
-                                    ...prev,
-                                    series_id: nextSeriesId,
-                                    series_order: nextSeriesId ? prev.series_order : null,
-                                }));
-                            }}
-                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.series_id ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
-                        >
-                            <option value="">Standalone content</option>
-                            {seriesOptions.map((series) => (
-                                <option key={series.id} value={series.id}>
-                                    {series.title}
-                                </option>
-                            ))}
-                        </select>
-                        {seriesOptions.length === 0 && (
-                            <p className="mt-1 text-xs text-zinc-500">No series available yet. Add one through a migration or seed first.</p>
-                        )}
-                        {fieldErrors.series_id && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors.series_id}</p>
-                        )}
-                    </div>
-
-                    {/* Type */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Type <span className="text-red-500">*</span>
-                        </label>
-                        <div className={`flex gap-2 ${fieldErrors.type ? 'ring-2 ring-red-500 rounded-lg' : ''}`}>
-                            {(["podcast", "book", "article"] as const).map((type) => {
-                                const Icon = typeIcons[type];
-                                return (
-                                    <button
-                                        key={type}
-                                        type="button"
-                                        onClick={() => updateField("type", type)}
-                                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border transition-colors ${formData.type === type
-                                            ? "border-zinc-900 bg-zinc-900 text-white"
-                                            : "border-zinc-300 text-zinc-600 hover:border-zinc-400"
-                                            }`}
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                        <span className="capitalize">{type}</span>
-                                    </button>
-                                );
-                            })}
+                <div className="space-y-5">
+                    <div className="rounded-xl border border-zinc-200 p-4 space-y-4">
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-zinc-900">Core Details</h3>
+                            <p className="text-sm text-zinc-500">
+                                Public-facing identity and classification for this content item.
+                            </p>
                         </div>
-                        {fieldErrors.type && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors.type}</p>
-                        )}
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Series Order
-                        </label>
-                        <input
-                            type="number"
-                            value={formData.series_order ?? ""}
-                            onChange={(e) =>
-                                updateField(
-                                    "series_order",
-                                    e.target.value ? parseInt(e.target.value, 10) : null
-                                )
-                            }
-                            placeholder={formData.series_id ? "1" : "Select a series first"}
-                            min="1"
-                            disabled={!formData.series_id}
-                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent disabled:bg-zinc-50 disabled:text-zinc-400 ${fieldErrors.series_order ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
-                        />
-                        <p className="mt-1 text-xs text-zinc-500">Required when this item belongs to a series.</p>
-                        {fieldErrors.series_order && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors.series_order}</p>
-                        )}
-                    </div>
-
-                    {/* Source URL */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Original Source Link <span className="text-zinc-400 font-normal">(Optional)</span>
-                        </label>
-                        <input
-                            type="url"
-                            value={formData.source_url}
-                            onChange={(e) => updateField("source_url", e.target.value)}
-                            placeholder="https://..."
-                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.source_url ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
-                        />
-                        {fieldErrors.source_url && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors.source_url}</p>
-                        )}
-                    </div>
-
-                    {/* Cover Image (Portrait - for Content Cards) */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-1">
-                            Card Image (2:3 Portrait)
-                        </label>
-                        <p className="text-xs text-zinc-400 mb-2">Portrait image for content cards. Recommended: 800×1200.</p>
-                        <div className="space-y-4">
-                            {/* Upload Area */}
-                            <label
-                                className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploading
-                                    ? "bg-zinc-50 border-zinc-300"
-                                    : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
-                                    }`}
-                            >
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    {isUploading ? (
-                                        <>
-                                            <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
-                                            <p className="text-sm text-zinc-500">Uploading...</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <UploadCloud className="w-8 h-8 mb-2 text-zinc-400" />
-                                            <p className="text-sm text-zinc-500 font-medium">Click to upload cover image</p>
-                                            <p className="text-xs text-zinc-400 mt-1">SVG, PNG, JPG or GIF</p>
-                                        </>
-                                    )}
-                                </div>
+                        <div className="grid gap-6 md:grid-cols-2">
+                            {/* Title */}
+                            <div className="md:col-span-2">
+                                <label htmlFor="content-title" className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Title <span className="text-red-500">*</span>
+                                </label>
                                 <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="image/*"
-                                    onChange={handleImageUpload}
-                                    disabled={isUploading}
+                                    id="content-title"
+                                    type="text"
+                                    value={formData.title}
+                                    onChange={(e) => updateField("title", e.target.value)}
+                                    placeholder="Enter content title"
+                                    className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.title ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
                                 />
-                            </label>
+                                {fieldErrors.title && (
+                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.title}</p>
+                                )}
+                            </div>
 
-                            {/* Manual URL Input (Optional / Fallback) */}
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <ImageIcon className="w-4 h-4 text-zinc-400" />
-                                </div>
+                            {/* Author */}
+                            <div>
+                                <label htmlFor="content-author" className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Author
+                                </label>
                                 <input
-                                    type="url"
-                                    value={formData.cover_image_url}
-                                    onChange={(e) => updateField("cover_image_url", e.target.value)}
-                                    placeholder="Or paste image URL directly..."
-                                    className={`w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.cover_image_url ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
+                                    id="content-author"
+                                    type="text"
+                                    value={formData.author}
+                                    onChange={(e) => updateField("author", e.target.value)}
+                                    placeholder="Author name"
+                                    className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
                                 />
                             </div>
 
-                            {/* Preview */}
-                            {formData.cover_image_url && (
-                                <div className="relative w-40 aspect-[2/3] rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 shadow-sm">
-                                    <img
-                                        src={formData.cover_image_url}
-                                        alt="Preview"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f4f4f5' width='200' height='300'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1aa' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
-                                        }}
-                                    />
-                                    {/* Remove Button */}
-                                    <button
-                                        type="button"
-                                        onClick={() => updateField("cover_image_url", "")}
-                                        className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-red-600 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                            {/* Type */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Type <span className="text-red-500">*</span>
+                                </label>
+                                <div className={`grid grid-cols-2 gap-2 xl:grid-cols-4 ${fieldErrors.type ? 'ring-2 ring-red-500 rounded-lg' : ''}`}>
+                                    {(["podcast", "book", "article", "video"] as const).map((type) => {
+                                        const Icon = typeIcons[type];
+                                        return (
+                                            <button
+                                                key={type}
+                                                type="button"
+                                                onClick={() => updateField("type", type)}
+                                                className={`flex min-w-0 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${formData.type === type
+                                                    ? "border-zinc-900 bg-zinc-900 text-white"
+                                                    : "border-zinc-300 text-zinc-600 hover:border-zinc-400"
+                                                    }`}
+                                            >
+                                                <Icon className="h-4 w-4 shrink-0" />
+                                                <span className="capitalize leading-none">{type}</span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
-                            )}
+                                {fieldErrors.type && (
+                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.type}</p>
+                                )}
+                            </div>
+
+                            {/* Category */}
+                            <div>
+                                <label htmlFor="content-category" className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Category
+                                </label>
+                                <select
+                                    id="content-category"
+                                    value={formData.category}
+                                    onChange={(e) => updateField("category", e.target.value)}
+                                    className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                                >
+                                    <option value="">Select a category</option>
+                                    {CATEGORIES.map((cat) => (
+                                        <option key={cat} value={cat}>
+                                            {cat}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            {/* Duration */}
+                            <div>
+                                <label htmlFor="content-duration" className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Duration (minutes) <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="content-duration"
+                                    type="number"
+                                    value={formData.duration_seconds ? Math.round(formData.duration_seconds / 60) : ""}
+                                    onChange={(e) =>
+                                        updateField(
+                                            "duration_seconds",
+                                            e.target.value ? parseInt(e.target.value) * 60 : null
+                                        )
+                                    }
+                                    placeholder="60"
+                                    min="1"
+                                    className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                                />
+                            </div>
                         </div>
-                        {fieldErrors.cover_image_url && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors.cover_image_url}</p>
-                        )}
                     </div>
 
-                    {/* Hero Image (Landscape - for Featured Carousel) */}
-                    {formData.is_featured && (
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-zinc-700 mb-1">
-                                Hero Image (16:9 Landscape)
-                            </label>
-                            <p className="text-xs text-zinc-400 mb-2">Landscape image for the homepage carousel. Recommended: 1920×1080.</p>
-                            <div className="space-y-4">
-                                {/* Upload Area */}
-                                <label
-                                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingHero
-                                        ? "bg-zinc-50 border-zinc-300"
-                                        : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
-                                        }`}
-                                >
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        {isUploadingHero ? (
-                                            <>
-                                                <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
-                                                <p className="text-sm text-zinc-500">Uploading...</p>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Monitor className="w-8 h-8 mb-2 text-zinc-400" />
-                                                <p className="text-sm text-zinc-500 font-medium">Click to upload hero image</p>
-                                                <p className="text-xs text-zinc-400 mt-1">16:9 landscape • PNG, JPG or WebP</p>
-                                            </>
-                                        )}
-                                    </div>
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={handleHeroImageUpload}
-                                        disabled={isUploadingHero}
-                                    />
+                    <div className="rounded-xl border border-zinc-200 p-4 space-y-4">
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-zinc-900">Series And Source</h3>
+                            <p className="text-sm text-zinc-500">
+                                Link this item to a series and keep the original source close at hand.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-6 md:grid-cols-2">
+                            <div>
+                                <label htmlFor="content-series" className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Series <span className="text-zinc-400 font-normal">(Optional)</span>
                                 </label>
+                                <select
+                                    id="content-series"
+                                    value={formData.series_id}
+                                    onChange={(e) => updateSeriesAssignment(e.target.value)}
+                                    className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.series_id ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
+                                >
+                                    <option value="">Standalone content</option>
+                                    {seriesOptions.map((series) => (
+                                        <option key={series.id} value={series.id}>
+                                            {series.title}
+                                        </option>
+                                    ))}
+                                </select>
+                                {seriesOptions.length === 0 && (
+                                    <p className="mt-1 text-xs text-zinc-500">No series available yet. Add one through a migration or seed first.</p>
+                                )}
+                                {fieldErrors.series_id && (
+                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.series_id}</p>
+                                )}
+                            </div>
 
-                                {/* Manual URL Input */}
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                        <Monitor className="w-4 h-4 text-zinc-400" />
-                                    </div>
-                                    <input
-                                        type="url"
-                                        value={formData.hero_image_url}
-                                        onChange={(e) => updateField("hero_image_url", e.target.value)}
-                                        placeholder="Or paste hero image URL directly..."
-                                        className="w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
-                                    />
-                                </div>
+                            <div>
+                                <label htmlFor="content-series-order" className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Series Order
+                                </label>
+                                <input
+                                    id="content-series-order"
+                                    type="number"
+                                    value={formData.series_order ?? ""}
+                                    onChange={(e) =>
+                                        updateField(
+                                            "series_order",
+                                            e.target.value ? parseInt(e.target.value, 10) : null
+                                        )
+                                    }
+                                    placeholder={formData.series_id ? "1" : "Select a series first"}
+                                    min="1"
+                                    disabled={!formData.series_id}
+                                    className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent disabled:bg-zinc-50 disabled:text-zinc-400 ${fieldErrors.series_order ? "border-red-500 bg-red-50" : "border-zinc-300"}`}
+                                />
+                                <p className="mt-1 text-xs text-zinc-500">Required when this item belongs to a series.</p>
+                                {fieldErrors.series_order && (
+                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.series_order}</p>
+                                )}
+                            </div>
 
-                                {/* Preview */}
-                                {formData.hero_image_url && (
-                                    <div className="relative w-full max-w-md aspect-video rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 shadow-sm">
-                                        <img
-                                            src={formData.hero_image_url}
-                                            alt="Hero Preview"
-                                            className="w-full h-full object-cover"
-                                            onError={(e) => {
-                                                (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225' viewBox='0 0 400 225'%3E%3Crect fill='%23f4f4f5' width='400' height='225'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1aa' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => updateField("hero_image_url", "")}
-                                            className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-red-600 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
+                            {/* Source URL */}
+                            <div className="md:col-span-2">
+                                <label htmlFor="content-source-url" className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Original Source Link <span className="text-zinc-400 font-normal">(Optional)</span>
+                                </label>
+                                <input
+                                    id="content-source-url"
+                                    type="url"
+                                    value={formData.source_url}
+                                    onChange={(e) => updateField("source_url", e.target.value)}
+                                    placeholder="https://..."
+                                    className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.source_url ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
+                                />
+                                {fieldErrors.source_url && (
+                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.source_url}</p>
                                 )}
                             </div>
                         </div>
-                    )}
-
-                    {/* Audio File (Read For Me) */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Audio Narration <span className="text-zinc-400 font-normal">(Optional - &quot;Read For Me&quot;)</span>
-                        </label>
-                        <div className="space-y-4">
-                            {isEditing && formData.id && (
-                                <div className="space-y-2">
-                                    <GenerateNarrationButton
-                                        contentId={formData.id}
-                                        audioUrl={formData.audio_url}
-                                        initialStatus={formData.narration_status}
-                                        initialError={formData.narration_error}
-                                        initialRequestedAt={formData.narration_requested_at}
-                                        initialStartedAt={formData.narration_started_at}
-                                        initialCompletedAt={formData.narration_completed_at}
-                                        disabled={isSubmitting || isUploadingAudio || formData.status !== "verified"}
-                                        onGenerated={(url) => {
-                                            updateField("audio_url", url);
-                                            updateField("narration_status", "ready");
-                                            updateField("narration_error", null);
-                                            updateField("narration_requested_at", null);
-                                            updateField("narration_started_at", null);
-                                            updateField("narration_completed_at", new Date().toISOString());
-                                            setPersistedAudioUrl(url.trim());
-                                        }}
-                                        onStatusChange={(nextStatus, nextError) => {
-                                            updateField("narration_status", nextStatus);
-                                            updateField("narration_error", nextError);
-                                            if (nextStatus !== "ready") {
-                                                updateField("narration_completed_at", null);
-                                            }
-                                        }}
-                                    />
-                                    {formData.narration_status === "stale" && formData.audio_url && (
-                                        <p className="text-xs text-amber-600">
-                                            The current narration is out of date. Regenerate it to match the latest deep-mode content.
-                                        </p>
-                                    )}
-                                    {formData.status !== "verified" && (
-                                        <p className="text-xs text-amber-600">
-                                            Verify this content before generating AI narration.
-                                        </p>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Upload Area */}
-                            <label
-                                className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingAudio
-                                    ? "bg-zinc-50 border-zinc-300"
-                                    : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
-                                    }`}
-                            >
-                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    {isUploadingAudio ? (
-                                        <>
-                                            <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
-                                            <p className="text-sm text-zinc-500">Uploading audio...</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Music className="w-8 h-8 mb-2 text-zinc-400" />
-                                            <p className="text-sm text-zinc-500 font-medium">Click to upload audio file</p>
-                                            <p className="text-xs text-zinc-400 mt-1">MP3, WAV, or M4A (max 50MB)</p>
-                                        </>
-                                    )}
-                                </div>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept="audio/*"
-                                    onChange={handleAudioUpload}
-                                    disabled={isUploadingAudio}
-                                />
-                            </label>
-
-                            {/* Manual URL Input */}
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                    <Music className="w-4 h-4 text-zinc-400" />
-                                </div>
-                                <input
-                                    type="url"
-                                    value={formData.audio_url}
-                                    onChange={(e) => updateAudioUrl(e.target.value)}
-                                    placeholder="Or paste audio URL directly..."
-                                    className="w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
-                                />
-                            </div>
-
-                            {/* Audio Preview */}
-                            {formData.audio_url && (
-                                <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200">
-                                    <Music className="w-5 h-5 text-zinc-500 flex-shrink-0" />
-                                    <audio
-                                        controls
-                                        className="flex-1 h-10"
-                                        src={formData.audio_url}
-                                    >
-                                        Your browser does not support the audio element.
-                                    </audio>
-                                    <button
-                                        type="button"
-                                        onClick={() => updateAudioUrl("")}
-                                        className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            )}
-                        </div>
                     </div>
 
-                    {/* Duration */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Duration (minutes) <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="number"
-                            value={formData.duration_seconds ? Math.round(formData.duration_seconds / 60) : ""}
-                            onChange={(e) =>
-                                updateField(
-                                    "duration_seconds",
-                                    e.target.value ? parseInt(e.target.value) * 60 : null
-                                )
-                            }
-                            placeholder="60"
-                            min="1"
-                            className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
-                        />
+                    <div className="rounded-xl border border-zinc-200 p-4 space-y-4">
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-semibold text-zinc-900">Media And Narration</h3>
+                            <p className="text-sm text-zinc-500">
+                                Upload the visuals and optional read-for-me audio associated with this item.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+                            {/* Cover Image (Portrait - for Content Cards) */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-700 mb-1">
+                                    Card Image (2:3 Portrait)
+                                </label>
+                                <p className="text-xs text-zinc-500 mb-2">Portrait image for content cards. Recommended: 800×1200.</p>
+                                <div className="space-y-4">
+                                    {/* Upload Area */}
+                                    <label
+                                        data-testid="cover-upload-dropzone"
+                                        onDragEnter={(e) => handleUploadDragEnter("cover", e)}
+                                        onDragOver={(e) => handleUploadDragOver("cover", e)}
+                                        onDragLeave={(e) => handleUploadDragLeave("cover", e)}
+                                        onDrop={(e) => void handleUploadDrop("cover", e)}
+                                        className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploading
+                                            ? "bg-zinc-50 border-zinc-300"
+                                            : activeDropZone === "cover"
+                                                ? "bg-zinc-50 border-zinc-900"
+                                                : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
+                                            }`}
+                                    >
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            {isUploading ? (
+                                                <>
+                                                    <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
+                                                    <p className="text-sm text-zinc-500">Uploading...</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <UploadCloud className={`w-8 h-8 mb-2 ${activeDropZone === "cover" ? "text-zinc-900" : "text-zinc-400"}`} />
+                                                    <p className="text-sm text-zinc-500 font-medium">
+                                                        {activeDropZone === "cover" ? "Drop cover image here" : "Click to upload cover image"}
+                                                    </p>
+                                                    <p className="text-xs text-zinc-400 mt-1">SVG, PNG, JPG or GIF</p>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            disabled={isUploading}
+                                        />
+                                    </label>
+
+                                    {/* Manual URL Input (Optional / Fallback) */}
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                            <ImageIcon className="w-4 h-4 text-zinc-400" />
+                                        </div>
+                                        <input
+                                            type="url"
+                                            value={formData.cover_image_url}
+                                            onChange={(e) => updateField("cover_image_url", e.target.value)}
+                                            placeholder="Or paste image URL directly..."
+                                            className={`w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors.cover_image_url ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
+                                        />
+                                    </div>
+
+                                    {/* Preview */}
+                                    {formData.cover_image_url && (
+                                        <div className="relative w-40 aspect-[2/3] rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 shadow-sm">
+                                            <img
+                                                src={formData.cover_image_url}
+                                                alt="Preview"
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='300' viewBox='0 0 200 300'%3E%3Crect fill='%23f4f4f5' width='200' height='300'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1aa' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                aria-label="Remove cover image"
+                                                onClick={() => updateField("cover_image_url", "")}
+                                                className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-red-600 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                {fieldErrors.cover_image_url && (
+                                    <p className="mt-1 text-sm text-red-600">{fieldErrors.cover_image_url}</p>
+                                )}
+                            </div>
+
+                            {/* Audio File (Read For Me) */}
+                            <div>
+                                <label className="block text-sm font-medium text-zinc-700 mb-2">
+                                    Audio Narration <span className="text-zinc-400 font-normal">(Optional - &quot;Read For Me&quot;)</span>
+                                </label>
+                                <div className="space-y-4">
+                                    {isEditing && formData.id && (
+                                        <div className="space-y-2">
+                                            <GenerateNarrationButton
+                                                contentId={formData.id}
+                                                audioUrl={formData.audio_url}
+                                                initialStatus={formData.narration_status}
+                                                initialError={formData.narration_error}
+                                                initialRequestedAt={formData.narration_requested_at}
+                                                initialStartedAt={formData.narration_started_at}
+                                                initialCompletedAt={formData.narration_completed_at}
+                                                disabled={isSubmitting || isUploadingAudio || formData.status !== "verified"}
+                                                onGenerated={(url) => {
+                                                    updateField("audio_url", url);
+                                                    updateField("narration_status", "ready");
+                                                    updateField("narration_error", null);
+                                                    updateField("narration_requested_at", null);
+                                                    updateField("narration_started_at", null);
+                                                    updateField("narration_completed_at", new Date().toISOString());
+                                                    setPersistedAudioUrl(url.trim());
+                                                }}
+                                                onStatusChange={(nextStatus, nextError) => {
+                                                    updateField("narration_status", nextStatus);
+                                                    updateField("narration_error", nextError);
+                                                    if (nextStatus !== "ready") {
+                                                        updateField("narration_completed_at", null);
+                                                    }
+                                                }}
+                                            />
+                                            {formData.narration_status === "stale" && formData.audio_url && (
+                                                <p className="text-xs text-amber-600">
+                                                    The current narration is out of date. Regenerate it to match the latest deep-mode content.
+                                                </p>
+                                            )}
+                                            {formData.status !== "verified" && (
+                                                <p className="text-xs text-amber-600">
+                                                    Verify this content before generating AI narration.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Upload Area */}
+                                    <label
+                                        data-testid="audio-upload-dropzone"
+                                        onDragEnter={(e) => handleUploadDragEnter("audio", e)}
+                                        onDragOver={(e) => handleUploadDragOver("audio", e)}
+                                        onDragLeave={(e) => handleUploadDragLeave("audio", e)}
+                                        onDrop={(e) => void handleUploadDrop("audio", e)}
+                                        className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingAudio
+                                            ? "bg-zinc-50 border-zinc-300"
+                                            : activeDropZone === "audio"
+                                                ? "bg-zinc-50 border-zinc-900"
+                                                : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
+                                            }`}
+                                    >
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            {isUploadingAudio ? (
+                                                <>
+                                                    <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
+                                                    <p className="text-sm text-zinc-500">Uploading audio...</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Music className={`w-8 h-8 mb-2 ${activeDropZone === "audio" ? "text-zinc-900" : "text-zinc-400"}`} />
+                                                    <p className="text-sm text-zinc-500 font-medium">
+                                                        {activeDropZone === "audio" ? "Drop audio file here" : "Click to upload audio file"}
+                                                    </p>
+                                                    <p className="text-xs text-zinc-400 mt-1">MP3, WAV, or M4A (max 50MB)</p>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="audio/*"
+                                            onChange={handleAudioUpload}
+                                            disabled={isUploadingAudio}
+                                        />
+                                    </label>
+
+                                    {/* Manual URL Input */}
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                            <Music className="w-4 h-4 text-zinc-400" />
+                                        </div>
+                                        <input
+                                            type="url"
+                                            value={formData.audio_url}
+                                            onChange={(e) => updateAudioUrl(e.target.value)}
+                                            placeholder="Or paste audio URL directly..."
+                                            className="w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    {/* Audio Preview */}
+                                    {formData.audio_url && (
+                                        <div className="flex items-center gap-3 p-3 bg-zinc-50 rounded-lg border border-zinc-200">
+                                            <Music className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+                                            <audio
+                                                controls
+                                                className="flex-1 h-10"
+                                                src={formData.audio_url}
+                                            >
+                                                Your browser does not support the audio element.
+                                            </audio>
+                                            <button
+                                                type="button"
+                                                aria-label="Remove audio narration"
+                                                onClick={() => updateAudioUrl("")}
+                                                className="p-1 text-zinc-400 hover:text-red-600 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Hero Image (Landscape - for Featured Carousel) */}
+                        {formData.is_featured && (
+                            <div className="space-y-4 border-t border-zinc-200 pt-4">
+                                <div className="space-y-1">
+                                    <label className="block text-sm font-medium text-zinc-700">
+                                        Hero Image (16:9 Landscape)
+                                    </label>
+                                    <p className="text-xs text-zinc-500">Landscape image for the homepage carousel. Recommended: 1920×1080.</p>
+                                </div>
+                                <div className="space-y-4">
+                                    {/* Upload Area */}
+                                    <label
+                                        data-testid="hero-upload-dropzone"
+                                        onDragEnter={(e) => handleUploadDragEnter("hero", e)}
+                                        onDragOver={(e) => handleUploadDragOver("hero", e)}
+                                        onDragLeave={(e) => handleUploadDragLeave("hero", e)}
+                                        onDrop={(e) => void handleUploadDrop("hero", e)}
+                                        className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isUploadingHero
+                                            ? "bg-zinc-50 border-zinc-300"
+                                            : activeDropZone === "hero"
+                                                ? "bg-zinc-50 border-zinc-900"
+                                                : "border-zinc-300 hover:bg-zinc-50 hover:border-zinc-400"
+                                            }`}
+                                    >
+                                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                            {isUploadingHero ? (
+                                                <>
+                                                    <Loader2 className="w-8 h-8 mb-2 text-zinc-500 animate-spin" />
+                                                    <p className="text-sm text-zinc-500">Uploading...</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Monitor className={`w-8 h-8 mb-2 ${activeDropZone === "hero" ? "text-zinc-900" : "text-zinc-400"}`} />
+                                                    <p className="text-sm text-zinc-500 font-medium">
+                                                        {activeDropZone === "hero" ? "Drop hero image here" : "Click to upload hero image"}
+                                                    </p>
+                                                    <p className="text-xs text-zinc-400 mt-1">16:9 landscape • PNG, JPG or WebP</p>
+                                                </>
+                                            )}
+                                        </div>
+                                        <input
+                                            type="file"
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={handleHeroImageUpload}
+                                            disabled={isUploadingHero}
+                                        />
+                                    </label>
+
+                                    {/* Manual URL Input */}
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                            <Monitor className="w-4 h-4 text-zinc-400" />
+                                        </div>
+                                        <input
+                                            type="url"
+                                            value={formData.hero_image_url}
+                                            onChange={(e) => updateField("hero_image_url", e.target.value)}
+                                            placeholder="Or paste hero image URL directly..."
+                                            className="w-full pl-10 pr-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                                        />
+                                    </div>
+
+                                    {/* Preview */}
+                                    {formData.hero_image_url && (
+                                        <div className="relative w-full max-w-md aspect-video rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 shadow-sm">
+                                            <img
+                                                src={formData.hero_image_url}
+                                                alt="Hero Preview"
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='225' viewBox='0 0 400 225'%3E%3Crect fill='%23f4f4f5' width='400' height='225'/%3E%3Ctext x='50%25' y='50%25' fill='%23a1a1aa' font-family='sans-serif' font-size='14' text-anchor='middle' dy='.3em'%3ENo Image%3C/text%3E%3C/svg%3E";
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                aria-label="Remove hero image"
+                                                onClick={() => updateField("hero_image_url", "")}
+                                                className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full hover:bg-red-600 transition-colors"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </section>
@@ -1138,19 +1306,23 @@ export function ContentForm({
                 <p className="text-sm text-zinc-500">
                     This is the summary view that readers see first.
                 </p>
+                <p className="text-sm text-zinc-500">
+                    Longer entries use multiline fields so you can review the full copy while editing.
+                </p>
 
                 <div className="space-y-4">
                     {/* Hook */}
                     <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
+                        <label htmlFor="quick-mode-hook" className="block text-sm font-medium text-zinc-700 mb-2">
                             Hook
                         </label>
-                        <input
-                            type="text"
+                        <textarea
+                            id="quick-mode-hook"
                             value={formData.quick_mode_json?.hook || ""}
                             onChange={(e) => updateQuickMode("hook", e.target.value)}
                             placeholder="One attention-grabbing sentence"
-                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent ${fieldErrors['quick_mode_json.hook'] ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
+                            rows={3}
+                            className={`w-full px-4 py-3 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y ${fieldErrors['quick_mode_json.hook'] ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
                         />
                         {fieldErrors['quick_mode_json.hook'] && (
                             <p className="mt-1 text-sm text-red-600">{fieldErrors['quick_mode_json.hook']}</p>
@@ -1159,15 +1331,16 @@ export function ContentForm({
 
                     {/* Big Idea */}
                     <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
+                        <label htmlFor="quick-mode-big-idea" className="block text-sm font-medium text-zinc-700 mb-2">
                             Big Idea
                         </label>
                         <textarea
+                            id="quick-mode-big-idea"
                             value={formData.quick_mode_json?.big_idea || ""}
                             onChange={(e) => updateQuickMode("big_idea", e.target.value)}
                             placeholder="The core thesis or main takeaway"
-                            rows={2}
-                            className={`w-full px-4 py-2 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-none ${fieldErrors['quick_mode_json.big_idea'] ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
+                            rows={6}
+                            className={`w-full min-h-40 px-4 py-3 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y ${fieldErrors['quick_mode_json.big_idea'] ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
                         />
                         {fieldErrors['quick_mode_json.big_idea'] && (
                             <p className="mt-1 text-sm text-red-600">{fieldErrors['quick_mode_json.big_idea']}</p>
@@ -1182,18 +1355,21 @@ export function ContentForm({
                         <div className="space-y-2">
                             {(formData.quick_mode_json?.key_takeaways || []).map(
                                 (takeaway, index) => (
-                                    <div key={index} className="flex gap-2">
-                                        <input
-                                            type="text"
+                                    <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-start">
+                                        <textarea
+                                            id={`quick-mode-takeaway-${index}`}
+                                            aria-label={`Key takeaway ${index + 1}`}
                                             value={takeaway}
                                             onChange={(e) => updateTakeaway(index, e.target.value)}
                                             placeholder={`Takeaway ${index + 1}`}
-                                            className="flex-1 px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
+                                            rows={2}
+                                            className="flex-1 px-4 py-3 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => removeTakeaway(index)}
-                                            className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            aria-label={`Remove takeaway ${index + 1}`}
+                                            className="self-end p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors sm:self-start sm:mt-1"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>

@@ -33,7 +33,7 @@ interface NormalizedTopic {
 const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url, duration_seconds, created_at, quick_mode_json";
 const TRENDING_LIMIT = 10;
 const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
-const CURATED_TOPICS = ["Business", "Finance", "Mindset", "Productivity", "Health"] as const;
+const CURATED_TOPICS = ["Business", "Finance", "Mindset", "Productivity", "Health", "Pregnancy", "Parenthood"] as const;
 
 function normalizeType(type?: string): ContentType | undefined {
     if (!type || type.toLowerCase() === "all") {

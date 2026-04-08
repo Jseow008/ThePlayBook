@@ -67,16 +67,22 @@ type SegmentEmbeddingRow = {
 type AdminAiReadinessSupabaseClient = {
     from: (table: string) => {
         select: (columns: string, options?: { count?: "exact" }) => {
-            in: (column: string, values: string[]) => PromiseLike<{ data: unknown[] | null; error: unknown }>;
+            in: (column: string, values: string[]) => {
+                range: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>;
+            };
             eq?: (column: string, value: string) => {
                 is?: (column: string, value: null) => PromiseLike<{ data: unknown[] | null; error: unknown }>;
             };
             is: (column: string, value: null) => {
-                in: (column: string, values: string[]) => PromiseLike<{ data: unknown[] | null; error: unknown }>;
+                in: (column: string, values: string[]) => {
+                    range: (from: number, to: number) => PromiseLike<{ data: unknown[] | null; error: unknown }>;
+                };
             };
         };
     };
 };
+
+const READINESS_QUERY_PAGE_SIZE = 1000;
 
 function hasText(value: string | null | undefined) {
     return typeof value === "string" && value.trim().length > 0;
@@ -183,27 +189,47 @@ export async function getAdminAiReadinessMap(
     }
 
     const itemIds = items.map((item) => item.id);
-    const segmentResult = await (supabase
-        .from("segment")
-        .select("id, item_id, markdown_body")
-        .is("deleted_at", null)
-        .in("item_id", itemIds));
+    const segmentRows: SegmentRow[] = [];
+    const embeddingRows: SegmentEmbeddingRow[] = [];
 
-    const embeddingResult = await (supabase
-        .from("segment_embedding_gemini")
-        .select("content_item_id, segment_id")
-        .in("content_item_id", itemIds));
+    for (let offset = 0; ; offset += READINESS_QUERY_PAGE_SIZE) {
+        const segmentResult = await supabase
+            .from("segment")
+            .select("id, item_id, markdown_body")
+            .is("deleted_at", null)
+            .in("item_id", itemIds)
+            .range(offset, offset + READINESS_QUERY_PAGE_SIZE - 1);
 
-    if (segmentResult.error) {
-        throw segmentResult.error;
+        if (segmentResult.error) {
+            throw segmentResult.error;
+        }
+
+        const page = toSegmentRows(segmentResult.data);
+        segmentRows.push(...page);
+
+        if (page.length < READINESS_QUERY_PAGE_SIZE) {
+            break;
+        }
     }
 
-    if (embeddingResult.error) {
-        throw embeddingResult.error;
-    }
+    for (let offset = 0; ; offset += READINESS_QUERY_PAGE_SIZE) {
+        const embeddingResult = await supabase
+            .from("segment_embedding_gemini")
+            .select("content_item_id, segment_id")
+            .in("content_item_id", itemIds)
+            .range(offset, offset + READINESS_QUERY_PAGE_SIZE - 1);
 
-    const segmentRows = toSegmentRows(segmentResult.data);
-    const embeddingRows = toSegmentEmbeddingRows(embeddingResult.data);
+        if (embeddingResult.error) {
+            throw embeddingResult.error;
+        }
+
+        const page = toSegmentEmbeddingRows(embeddingResult.data);
+        embeddingRows.push(...page);
+
+        if (page.length < READINESS_QUERY_PAGE_SIZE) {
+            break;
+        }
+    }
     const segmentIdsByItem = new Map<string, Set<string>>();
     const totalSegmentsByItem = new Map<string, number>();
 

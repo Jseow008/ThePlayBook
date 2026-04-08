@@ -43,7 +43,7 @@ export default async function AdminInsightsPage({
                 <div>
                     <h1 className="text-2xl font-bold text-zinc-900">Insights</h1>
                     <p className="mt-1 text-zinc-500">
-                        Reading and engagement signals for your published content.
+                        Reading and engagement signals for your published content. Reader metrics include guest traffic; bookmarks, highlights, and feedback are signed-in only.
                     </p>
                 </div>
 
@@ -97,7 +97,7 @@ export default async function AdminInsightsPage({
                     <div className="flex items-center justify-between border-b border-zinc-200 px-6 py-4">
                         <div>
                             <h2 className="font-semibold text-zinc-900">Top Content by Reading Time</h2>
-                            <p className="text-sm text-zinc-500">Sorted by total captured reading time.</p>
+                            <p className="text-sm text-zinc-500">Sorted by total captured reading time across signed-in and guest readers.</p>
                         </div>
                         <BarChart3 className="h-5 w-5 text-zinc-400" />
                     </div>
@@ -140,7 +140,7 @@ export default async function AdminInsightsPage({
                 <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
                     <div className="border-b border-zinc-200 px-6 py-4">
                         <h2 className="font-semibold text-zinc-900">Top Content by Readers</h2>
-                        <p className="text-sm text-zinc-500">Sorted by unique reader-days in the selected range.</p>
+                        <p className="text-sm text-zinc-500">Sorted by unique reader-days in the selected range, including guests.</p>
                     </div>
 
                     {insights.topByReaders.length === 0 ? (
@@ -183,7 +183,7 @@ export default async function AdminInsightsPage({
                 <div className="border-b border-zinc-200 px-6 py-4">
                     <h2 className="font-semibold text-zinc-900">Feedback Summary</h2>
                     <p className="text-sm text-zinc-500">
-                        Positive and negative feedback submitted in the selected range.
+                        Positive and negative feedback from signed-in users submitted in the selected range.
                     </p>
                 </div>
 
