@@ -12,9 +12,9 @@ import {
 } from "react";
 import { AuthUser as User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { deleteUserLibrary, upsertUserLibrary } from "@/lib/server/user-library-repository";
 import type { Json } from "@/types/database";
+import { useAuthUser } from "@/hooks/useAuthUser";
 import {
     clearScopedProgress,
     getScopedProgressKeys,
@@ -410,40 +410,12 @@ function useReadingProgressController(initialUser?: User | null) {
     }, [importGuestDataToScope, loadProgress, resetState, syncCloudForScope]);
 
     useEffect(() => {
-        let isMounted = true;
-
-        const initialize = async () => {
-            await hydrateForUser(initialUser ?? null);
-            if (!isMounted) return;
-
-            const { user: resolvedUser, error } = resolveAuthUserResult(await supabase.auth.getUser());
-            if (!isMounted) return;
-            if (error) {
-                console.error("Failed to resolve auth state for reading progress:", error);
-            }
-
-            if (resolvedUser?.id !== (initialUser?.id ?? null)) {
-                await hydrateForUser(resolvedUser);
-            }
-        };
-
-        initialize();
-
-        const { data: { subscription } } = (supabase.auth as {
-            onAuthStateChange: (callback: (event: string, session: { user: User | null } | null) => void) => {
-                data: { subscription: { unsubscribe: () => void } };
-            };
-        }).onAuthStateChange((_event, session) => {
-            if (!isMounted) return;
-            hydrateForUser(session?.user ?? null);
-        });
+        void hydrateForUser(initialUser ?? null);
 
         return () => {
-            isMounted = false;
             hydrateRunRef.current += 1;
-            subscription.unsubscribe();
         };
-    }, [hydrateForUser, initialUser, supabase]);
+    }, [hydrateForUser, initialUser]);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -578,12 +550,11 @@ const ReadingProgressContext = createContext<ReadingProgressValue | undefined>(u
 
 export function ReadingProgressProvider({
     children,
-    initialUser,
 }: {
     children: ReactNode;
-    initialUser?: User | null;
 }) {
-    const value = useReadingProgressController(initialUser);
+    const user = useAuthUser();
+    const value = useReadingProgressController(user);
 
     return createElement(ReadingProgressContext.Provider, { value }, children);
 }

@@ -1,28 +1,23 @@
 import { PublicLayoutShell } from "@/components/ui/PublicLayoutShell";
 import { AuthUserProvider } from "@/hooks/useAuthUser";
 import { ReadingProgressProvider } from "@/hooks/useReadingProgress";
-import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
-import { createClient } from "@/lib/supabase/server";
 
 /**
  * Public Layout
  * 
- * Wraps all public routes. The PublicLayoutShell client component
- * conditionally renders sidebar/nav chrome based on the current route.
- * Landing page (/) gets standalone layout, everything else gets full chrome.
+ * Shared layout for public-facing routes.
+ * Auth state is resolved on the client so cacheable pages can keep
+ * their static/ISR behavior instead of becoming request-time dynamic.
  */
 
-export default async function PublicLayout({
+export default function PublicLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const supabase = await createClient();
-    const { user } = resolveAuthUserResult(await supabase.auth.getUser());
-
     return (
-        <AuthUserProvider initialUser={user}>
-            <ReadingProgressProvider initialUser={user}>
+        <AuthUserProvider>
+            <ReadingProgressProvider>
                 <PublicLayoutShell>{children}</PublicLayoutShell>
             </ReadingProgressProvider>
         </AuthUserProvider>
