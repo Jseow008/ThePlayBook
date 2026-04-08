@@ -25,18 +25,20 @@ export function AuthUserProvider({
         const supabase = createClient();
         let isMounted = true;
 
-        supabase.auth.getUser().then((result) => {
-            if (!isMounted) return;
-            const { user, error } = resolveAuthUserResult(result);
-            if (error) {
+        if (initialUser === undefined) {
+            supabase.auth.getUser().then((result) => {
+                if (!isMounted) return;
+                const { user, error } = resolveAuthUserResult(result);
+                if (error) {
+                    setUser((current) => current === undefined ? null : current);
+                    return;
+                }
+                setUser(user);
+            }).catch(() => {
+                if (!isMounted) return;
                 setUser((current) => current === undefined ? null : current);
-                return;
-            }
-            setUser(user);
-        }).catch(() => {
-            if (!isMounted) return;
-            setUser((current) => current === undefined ? null : current);
-        });
+            });
+        }
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
@@ -47,7 +49,7 @@ export function AuthUserProvider({
             isMounted = false;
             subscription.unsubscribe();
         };
-    }, []);
+    }, [initialUser]);
 
     return createElement(AuthUserContext.Provider, { value: user }, children);
 }
