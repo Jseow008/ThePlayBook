@@ -54,7 +54,6 @@ export function RecommendationsRow({
         mostRecentId ? [mostRecentId] : [],
         {
             enabled: isLoaded && shouldLoadRecommendations && !!mostRecentId,
-            excludeIds: completedIds,
         }
     );
 
@@ -62,7 +61,6 @@ export function RecommendationsRow({
         clusterIds,
         {
             enabled: isLoaded && shouldLoadRecommendations && isWorthFetchingGeneral,
-            excludeIds: completedIds,
         }
     );
 
