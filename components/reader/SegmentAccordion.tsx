@@ -12,7 +12,6 @@ import type { SegmentFull } from "@/types/domain";
 import type { HighlightWithContent } from "@/hooks/useHighlights";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { calculateReadingTime } from "@/lib/utils";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 
 interface HighlightPosition {
@@ -415,18 +414,8 @@ export function SegmentAccordion({
                                     </h3>
 
                                     <div className="text-xs text-muted-foreground opacity-80 flex items-center gap-2">
-                                        <span>{calculateReadingTime(segment.markdown_body)} min read</span>
-                                        {segment.start_time_sec !== null && segment.end_time_sec !== null && (
-                                            <>
-                                                <span className="text-[10px]">•</span>
-                                                <span>
-                                                    {Math.round((segment.end_time_sec - segment.start_time_sec) / 60)} min audio
-                                                </span>
-                                            </>
-                                        )}
                                         {isAudioActive && (
                                             <>
-                                                <span className="text-[10px]">•</span>
                                                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary">
                                                     <span className="relative flex size-1.5">
                                                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60 opacity-75"></span>
