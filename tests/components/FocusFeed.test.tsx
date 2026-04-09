@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ImgHTMLAttributes } from "react";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { FocusFeed } from "@/components/focus/FocusFeed";
+import { FocusFeed, getDesktopCoverWidth, getMobileHookMaxHeight } from "@/components/focus/FocusFeed";
 
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
@@ -206,7 +206,7 @@ describe("FocusFeed", () => {
         vi.stubGlobal("fetch", fetchMock);
     });
 
-    it("loads focus items immediately before reading progress hydration and shows the current mobile takeaway count", async () => {
+    it("loads focus items immediately before reading progress hydration and renders the updated mobile focus card", async () => {
         readingProgressState.value = {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             isLoaded: false,
@@ -224,12 +224,11 @@ describe("FocusFeed", () => {
         expect(screen.queryByRole("heading", { name: "One idea per post" })).not.toBeInTheDocument();
         const cards = await screen.findAllByTestId("focus-feed-card");
         const firstCard = cards[0]!;
-        const secondCard = cards[1]!;
 
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
         expect(within(firstCard).queryByText("Hook")).not.toBeInTheDocument();
-        expect(within(firstCard).getByText("Key Takeaways (1 of 8)")).toBeInTheDocument();
-        expect(within(secondCard).getByText("Key Takeaways (1 of 3)")).toBeInTheDocument();
+        expect(within(firstCard).queryByText("Key Takeaways (1 of 8)")).not.toBeInTheDocument();
+        expect(within(firstCard).getByText("8 key takeaways")).toBeInTheDocument();
         expect(screen.queryByText("What stands out")).not.toBeInTheDocument();
         expect(screen.getByText("Do less, but better.")).toBeInTheDocument();
         expect(screen.queryByText("Eliminate the trivial to make room for the essential.")).not.toBeInTheDocument();
@@ -244,25 +243,65 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100dvh-7.5rem)]");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("pb-4");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("md:pb-2");
-        expect(screen.getByRole("button", { name: "Show full takeaways for Essentialism" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Preview Essentialism" })).toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("text-[1.2rem]");
         expect(screen.getByRole("heading", { name: "Essentialism" })).toHaveClass("sm:text-[1.5rem]");
         expect(screen.getByText("Greg McKeown")).toHaveClass("text-sm");
         expect(screen.getByText("Greg McKeown")).toHaveClass("font-medium");
-        expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("book");
-        expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("Productivity");
-        expect(screen.getByText("Greg McKeown").nextElementSibling).toHaveTextContent("15 min");
+        expect(within(firstCard).getByText("book")).toBeInTheDocument();
+        expect(within(firstCard).getByText("Productivity")).toBeInTheDocument();
+        expect(within(firstCard).getByText("15 min")).toBeInTheDocument();
         expect(screen.getByText("Do less, but better.")).toHaveClass("text-[0.95rem]");
-        expect(screen.getByText("Do less, but better.")).toHaveClass("line-clamp-8");
-        expect(screen.getByText("Say no more often")).toHaveClass("line-clamp-4");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
-        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
-        expect(within(firstCard).getByText("Key Takeaways (1 of 8)").closest("section")).toHaveClass("space-y-2");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-3");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-3");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border");
+        expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/20");
+        expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toHaveAttribute("src", "https://example.com/essentialism.jpg");
         expect(firstCard).toHaveClass("min-h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))]");
         expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
         expect(firstCard).toHaveClass("py-4");
+    });
+
+    it("calculates a hook clamp that preserves viewport containment when the card would overflow", () => {
+        expect(
+            getMobileHookMaxHeight({
+                availableContentHeight: 438,
+                requiredContentHeight: 520,
+                currentHookHeight: 220,
+            })
+        ).toBe(138);
+
+        expect(
+            getMobileHookMaxHeight({
+                availableContentHeight: 438,
+                requiredContentHeight: 420,
+                currentHookHeight: 220,
+            })
+        ).toBeNull();
+    });
+
+    it("calculates a desktop cover width fallback for short viewports", () => {
+        expect(
+            getDesktopCoverWidth({
+                availableContentHeight: 438,
+                requiredContentHeight: 520,
+                currentCoverHeight: 198,
+            })
+        ).toBe(77);
+
+        expect(
+            getDesktopCoverWidth({
+                availableContentHeight: 438,
+                requiredContentHeight: 700,
+                currentCoverHeight: 198,
+            })
+        ).toBe(0);
+
+        expect(
+            getDesktopCoverWidth({
+                availableContentHeight: 438,
+                requiredContentHeight: 420,
+                currentCoverHeight: 198,
+            })
+        ).toBeNull();
     });
 
     it("filters malformed completed IDs before building the focus exclude query", async () => {
@@ -513,7 +552,7 @@ describe("FocusFeed", () => {
 
         await screen.findByText("Essentialism");
         const trigger = screen.getByRole("button", {
-            name: "Show full takeaways for Essentialism",
+            name: "Preview Essentialism",
         });
         trigger.focus();
 
@@ -523,7 +562,7 @@ describe("FocusFeed", () => {
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
         const closeButton = screen.getByTestId("focus-takeaways-sheet-close");
         expect(sheetFrame).toHaveClass("px-5");
-        expect(sheet).toHaveAttribute("aria-label", "Full takeaways for Essentialism");
+        expect(sheet).toHaveAttribute("aria-label", "Preview for Essentialism");
         expect(sheet).toHaveClass("transition-transform");
         expect(sheet).toHaveClass("transition-opacity");
         expect(screen.getByTestId("focus-takeaways-sheet-backdrop")).toHaveClass("transition-opacity");
@@ -569,7 +608,7 @@ describe("FocusFeed", () => {
         await screen.findByText("Essentialism");
 
         fireEvent.click(
-            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+            screen.getByRole("button", { name: "Preview Essentialism" })
         );
 
         await screen.findByTestId("focus-takeaways-sheet");
@@ -611,7 +650,7 @@ describe("FocusFeed", () => {
         await screen.findByText("Essentialism");
 
         fireEvent.click(
-            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+            screen.getByRole("button", { name: "Preview Essentialism" })
         );
 
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
@@ -671,6 +710,7 @@ describe("FocusFeed", () => {
         render(<FocusFeed />);
 
         await screen.findByText("Deep Work");
+        await act(async () => {});
 
         const list = screen.getByTestId("focus-feed-list");
 
@@ -688,7 +728,7 @@ describe("FocusFeed", () => {
         });
     });
 
-    it("shows up to seven takeaways on desktop", async () => {
+    it("restores the full takeaway list on desktop while keeping the read CTA", async () => {
         mediaQueryState.value = {
             isDesktop: true,
             prefersReducedMotion: false,
@@ -702,19 +742,20 @@ describe("FocusFeed", () => {
         expect(within(firstCard).queryByText("Key Takeaways (2 of 8)")).not.toBeInTheDocument();
         expect(within(firstCard).queryByText("Key Takeaways (4 of 8)")).not.toBeInTheDocument();
         expect(within(firstCard).getAllByText(/^[1-7]$/)).toHaveLength(7);
+        expect(within(firstCard).queryByText("8 key takeaways")).not.toBeInTheDocument();
         expect(within(firstCard).queryByText("08")).not.toBeInTheDocument();
+        expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toBeInTheDocument();
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
-        expect(within(firstCard).getByText("Key Takeaways").closest("section")).toHaveClass("space-y-3");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
-        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-1");
-        expect(within(firstCard).queryByRole("button", { name: "Show full takeaways for Essentialism" })).not.toBeInTheDocument();
+        expect(within(firstCard).queryByRole("button", { name: "Preview Essentialism" })).not.toBeInTheDocument();
         expect(within(firstCard).queryByRole("button", { name: "Save Essentialism to My List" })).not.toBeInTheDocument();
         expect(within(firstCard).queryByRole("button", { name: "Not interested in Essentialism" })).not.toBeInTheDocument();
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
+        expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0.5");
         expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("renders header utility actions and full takeaways on mobile focus cards", async () => {
+    it("renders header utility actions and the preview CTA on mobile focus cards", async () => {
         render(<FocusFeed />);
 
         const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
@@ -722,29 +763,27 @@ describe("FocusFeed", () => {
             name: "Read Essentialism",
         })).not.toBeInTheDocument();
         const button = screen.getByRole("button", {
-            name: "Show full takeaways for Essentialism",
+            name: "Preview Essentialism",
         });
         expect(screen.getByRole("button", {
             name: "Save Essentialism to My List",
         })).toBeInTheDocument();
-        const moreActionsButton = screen.getByRole("button", {
-            name: "More actions for Essentialism",
-        });
-        expect(moreActionsButton).toBeInTheDocument();
+        expect(within(firstCard).getByRole("button", {
+            name: "Share this content",
+        })).toBeInTheDocument();
         expect(button).toBeInTheDocument();
         expect(button).toHaveClass("min-h-11");
         expect(button).toHaveClass("touch-manipulation");
-        expect(button.parentElement).toHaveClass("justify-start");
-        expect(button.parentElement).toHaveClass("pt-1.5");
-        expect(within(firstCard).getByText("Key Takeaways (1 of 8)").nextElementSibling).toHaveClass("grid");
-        expect(within(firstCard).getByText("Key Takeaways (1 of 8)").nextElementSibling).toHaveClass("gap-2");
-
-        fireEvent.click(moreActionsButton);
-
-        expect(screen.getByRole("menu", { name: "Actions for Essentialism" })).toBeInTheDocument();
-        expect(screen.getByRole("menuitem", {
+        expect(button.parentElement).toHaveClass("flex-col");
+        expect(within(firstCard).queryByText("Key Takeaways (1 of 8)")).not.toBeInTheDocument();
+        expect(within(firstCard).getByText("8 key takeaways")).toBeInTheDocument();
+        expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", {
+            name: "More actions for Essentialism",
+        })).not.toBeInTheDocument();
+        expect(screen.queryByRole("menuitem", {
             name: "Not interested in Essentialism",
-        })).toBeInTheDocument();
+        })).not.toBeInTheDocument();
     });
 
     it("shows the mobile navigation hint on the first visible restored card", async () => {
@@ -937,7 +976,7 @@ describe("FocusFeed", () => {
             await act(async () => {});
 
             fireEvent.click(
-                screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+                screen.getByRole("button", { name: "Preview Essentialism" })
             );
 
             expect(screen.getByTestId("focus-takeaways-sheet")).toBeInTheDocument();
@@ -971,102 +1010,13 @@ describe("FocusFeed", () => {
         expect(toastSuccessMock).toHaveBeenCalledWith("Added to My List");
     });
 
-    it("dismisses a mobile focus item for the current session", async () => {
-        render(<FocusFeed />);
-
-        await screen.findByText("Essentialism");
-
-        fireEvent.click(
-            screen.getByRole("button", { name: "More actions for Essentialism" })
-        );
-
-        fireEvent.click(
-            screen.getByRole("menuitem", { name: "Not interested in Essentialism" })
-        );
-
-        await waitFor(() => {
-            expect(screen.queryByText("Essentialism")).not.toBeInTheDocument();
-        });
-        expect(screen.getByText("Deep Work")).toBeInTheDocument();
-        expect(toastSuccessMock).toHaveBeenCalledWith("Removed from focus feed");
-    });
-
-    it("persists dismissed cards across a return even when the feed is temporarily empty", async () => {
-        const restoredCard = focusItems[0]!;
-        const refillCard = focusItems[1]!;
-        let resolveRefill: ((value: { ok: true; json: () => Promise<typeof focusItems> }) => void) | null = null;
-
-        window.sessionStorage.setItem(
-            FOCUS_FEED_RESTORE_STORAGE_KEY,
-            JSON.stringify({
-                items: [restoredCard],
-                activeCardIndex: 0,
-                hasMore: true,
-                seenIds: [restoredCard.id],
-                dismissedIds: [],
-            })
-        );
-
-        fetchMock.mockReset();
-        fetchMock.mockImplementationOnce(
-            () =>
-                new Promise((resolve) => {
-                    resolveRefill = resolve;
-                })
-        );
-
-        const view = render(<FocusFeed />);
-
-        await screen.findByText("Essentialism");
-        fireEvent.click(
-            screen.getByRole("button", { name: "More actions for Essentialism" })
-        );
-        fireEvent.click(
-            screen.getByRole("menuitem", { name: "Not interested in Essentialism" })
-        );
-
-        const storedStateAfterDismiss = JSON.parse(
-            window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY) || "{}"
-        );
-        expect(storedStateAfterDismiss).toMatchObject({
-            items: [],
-            activeCardIndex: 0,
-            hasMore: true,
-            dismissedIds: [restoredCard.id],
-        });
-
-        view.unmount();
-
-        fetchMock.mockImplementationOnce(async () => ({
-            ok: true,
-            json: async () => [refillCard],
-        }));
-
-        render(<FocusFeed />);
-
-        expect(screen.queryByText("Nothing queued yet")).not.toBeInTheDocument();
-
-        await waitFor(() => {
-            expect(fetchMock).toHaveBeenCalledTimes(2);
-        });
-        expect(fetchMock.mock.calls[1]?.[0]).toContain(restoredCard.id);
-
-        resolveRefill?.({
-            ok: true,
-            json: async () => [refillCard],
-        });
-
-        expect(await screen.findByText("Deep Work")).toBeInTheDocument();
-        expect(screen.queryByText("Essentialism")).not.toBeInTheDocument();
-    });
-
     it("keeps the full takeaway list available in the mobile bottom sheet regardless of the card limit", async () => {
         render(<FocusFeed />);
 
         await screen.findByText("Essentialism");
 
         fireEvent.click(
-            screen.getByRole("button", { name: "Show full takeaways for Essentialism" })
+            screen.getByRole("button", { name: "Preview Essentialism" })
         );
 
         const sheet = await screen.findByTestId("focus-takeaways-sheet");

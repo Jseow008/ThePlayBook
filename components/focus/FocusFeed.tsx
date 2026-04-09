@@ -12,9 +12,11 @@ import {
     useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { BookOpen, Bookmark, ChevronDown, ChevronUp, Info, Loader2, MoreHorizontal, X } from "lucide-react";
+import { BookOpen, Bookmark, ChevronDown, ChevronUp, Info, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ResilientImage } from "@/components/ui/ResilientImage";
+import { ShareButton } from "@/components/ui/ShareButton";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
@@ -42,9 +44,8 @@ const MOBILE_SCROLL_HINT_DELAY_MS = 2400;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 const FocusItemIdSchema = z.string().uuid();
-const MOBILE_MIN_VISIBLE_TAKEAWAYS = 1;
-const MOBILE_MAX_VISIBLE_TAKEAWAYS = 3;
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
+const DESKTOP_DEFAULT_COVER_WIDTH = 132;
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 
@@ -103,6 +104,41 @@ function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
 function formatDuration(durationSeconds: number | null) {
     if (!durationSeconds) return null;
     return `${Math.max(1, Math.round(durationSeconds / 60))} min`;
+}
+
+export function getMobileHookMaxHeight({
+    availableContentHeight,
+    requiredContentHeight,
+    currentHookHeight,
+}: {
+    availableContentHeight: number;
+    requiredContentHeight: number;
+    currentHookHeight: number;
+}) {
+    if (requiredContentHeight <= availableContentHeight) {
+        return null;
+    }
+
+    const nonHookContentHeight = requiredContentHeight - currentHookHeight;
+    return Math.max(0, availableContentHeight - nonHookContentHeight);
+}
+
+export function getDesktopCoverWidth({
+    availableContentHeight,
+    requiredContentHeight,
+    currentCoverHeight,
+}: {
+    availableContentHeight: number;
+    requiredContentHeight: number;
+    currentCoverHeight: number;
+}) {
+    if (requiredContentHeight <= availableContentHeight) {
+        return null;
+    }
+
+    const overflowHeight = requiredContentHeight - availableContentHeight;
+    const nextCoverHeight = Math.max(0, currentCoverHeight - overflowHeight);
+    return Math.max(0, Math.round(nextCoverHeight / 1.5));
 }
 
 function buildExcludeParam(ids: string[]) {
@@ -457,11 +493,6 @@ export function FocusFeed() {
     }, []);
 
     useEffect(() => {
-        if (isDesktop) {
-            setListViewportHeight(null);
-            return;
-        }
-
         const listElement = listRef.current;
         if (!listElement) {
             setListViewportHeight(null);
@@ -985,54 +1016,18 @@ export function FocusFeed() {
                             className={`${FEED_LIST_VIEWPORT_CLASS} scrollbar-hide snap-y snap-mandatory overflow-y-auto overscroll-y-contain`}
                         >
                             <div className="space-y-3 pb-4 md:pb-2">
-                                {cards.map((card, index) => (
-                                    <FocusCardView
-                                        key={card.id}
-                                        card={card}
-                                        cardIndex={index}
-                                        isDesktop={isDesktop}
-                                        isActive={index === activeCardIndex}
-                                        showDesktopScrollCue={isDesktopScrollCueVisible && index < cards.length - 1}
-                                        mobileCardTargetHeight={listViewportHeight}
-                                        onOpenTakeaways={openTakeawaysSheet}
-                                        onDismiss={(cardId) => {
-                                            dismissedIdsRef.current.add(cardId);
-
-                                            const currentIndex = items.findIndex((item) => item.id === cardId);
-                                            if (currentIndex === -1) {
-                                                return;
-                                            }
-
-                                            const nextItems = items.filter((item) => item.id !== cardId);
-                                            const shouldShiftActiveIndex = currentIndex < activeCardIndexRef.current;
-                                            const nextActiveIndex = nextItems.length === 0
-                                                ? 0
-                                                : Math.min(
-                                                    Math.max(
-                                                        0,
-                                                        activeCardIndexRef.current - (shouldShiftActiveIndex ? 1 : 0)
-                                                    ),
-                                                    nextItems.length - 1
-                                                );
-
-                                            activeCardIndexRef.current = nextActiveIndex;
-                                            setActiveCardIndex(nextActiveIndex);
-                                            setItems(nextItems);
-                                            writeFocusRestoreState({
-                                                items: nextItems,
-                                                activeCardIndex: nextActiveIndex,
-                                                hasMore,
-                                                seenIds: Array.from(seenIdsRef.current),
-                                                dismissedIds: Array.from(dismissedIdsRef.current),
-                                            });
-                                            toast.success("Removed from focus feed");
-
-                                            if (hasMore && nextItems.length - nextActiveIndex <= 3) {
-                                                void fetchBatch();
-                                            }
-                                        }}
-                                    />
-                                ))}
+                                    {cards.map((card, index) => (
+                                        <FocusCardView
+                                            key={card.id}
+                                            card={card}
+                                            cardIndex={index}
+                                            isDesktop={isDesktop}
+                                            isActive={index === activeCardIndex}
+                                            showDesktopScrollCue={isDesktopScrollCueVisible && index < cards.length - 1}
+                                            mobileCardTargetHeight={listViewportHeight}
+                                            onOpenTakeaways={openTakeawaysSheet}
+                                        />
+                                    ))}
 
                                 {loading && cards.length > 0 && (
                                     <div className="flex min-h-20 items-center justify-center py-3 text-sm text-muted-foreground">
@@ -1111,7 +1106,6 @@ function FocusCardView({
     showDesktopScrollCue,
     mobileCardTargetHeight,
     onOpenTakeaways,
-    onDismiss,
 }: {
     card: FocusCard;
     cardIndex: number;
@@ -1120,43 +1114,35 @@ function FocusCardView({
     showDesktopScrollCue: boolean;
     mobileCardTargetHeight: number | null;
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
-    onDismiss: (cardId: string) => void;
 }) {
     const { isInMyList, toggleMyList } = useReadingProgress();
     const duration = formatDuration(card.duration_seconds);
     const isSaved = isInMyList(card.id);
-    const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
-    const [mobileVisibleTakeawayCount, setMobileVisibleTakeawayCount] = useState(() =>
-        card.takeaways.length === 0 ? 0 : Math.min(MOBILE_MIN_VISIBLE_TAKEAWAYS, card.takeaways.length)
-    );
-    const actionsMenuRef = useRef<HTMLDivElement | null>(null);
+    const [mobileHookMaxHeight, setMobileHookMaxHeight] = useState<number | null>(null);
     const cardRef = useRef<HTMLElement | null>(null);
     const cardContentRef = useRef<HTMLDivElement | null>(null);
+    const hookBodyRef = useRef<HTMLDivElement | null>(null);
+    const desktopCoverRef = useRef<HTMLDivElement | null>(null);
     const [cardWidth, setCardWidth] = useState(0);
-    const maxMobileTakeawayCount = Math.min(MOBILE_MAX_VISIBLE_TAKEAWAYS, card.takeaways.length);
-    const visibleMobileTakeawayCount = maxMobileTakeawayCount === 0
-        ? 0
-        : Math.min(Math.max(mobileVisibleTakeawayCount, MOBILE_MIN_VISIBLE_TAKEAWAYS), maxMobileTakeawayCount);
-    const visibleTakeaways = isDesktop
-        ? card.takeaways.slice(0, 7)
-        : card.takeaways.slice(0, visibleMobileTakeawayCount);
-    const takeawayLabel = isDesktop
-        ? "Key Takeaways"
-        : card.totalTakeaways > visibleTakeaways.length
-            ? `Key Takeaways (${visibleTakeaways.length} of ${card.totalTakeaways})`
-            : `Key Takeaways (${card.totalTakeaways})`;
+    const [desktopCoverWidth, setDesktopCoverWidth] = useState(DESKTOP_DEFAULT_COVER_WIDTH);
+    const desktopVisibleTakeaways = card.takeaways.slice(0, 7);
+    const takeawaySummaryLabel = card.totalTakeaways === 1
+        ? "1 key takeaway"
+        : `${card.totalTakeaways} key takeaways`;
 
     useEffect(() => {
-        const nextCount = card.takeaways.length === 0
-            ? 0
-            : Math.min(MOBILE_MIN_VISIBLE_TAKEAWAYS, card.takeaways.length);
+        if (!isDesktop) {
+            setDesktopCoverWidth(DESKTOP_DEFAULT_COVER_WIDTH);
+            return;
+        }
 
-        setMobileVisibleTakeawayCount(nextCount);
-    }, [card.id, card.takeaways.length]);
+        setDesktopCoverWidth(DESKTOP_DEFAULT_COVER_WIDTH);
+    }, [card.id, isDesktop, mobileCardTargetHeight]);
 
     useEffect(() => {
         if (isDesktop) {
             setCardWidth(0);
+            setMobileHookMaxHeight(null);
             return;
         }
 
@@ -1182,22 +1168,17 @@ function FocusCardView({
         return () => observer.disconnect();
     }, [isDesktop]);
 
-    useLayoutEffect(() => {
-        if (isDesktop || cardWidth === 0 || mobileCardTargetHeight === null) {
+    useEffect(() => {
+        if (isDesktop) {
+            setMobileHookMaxHeight(null);
             return;
         }
 
-        const nextCount = maxMobileTakeawayCount === 0
-            ? 0
-            : maxMobileTakeawayCount;
-
-        setMobileVisibleTakeawayCount((currentCount) =>
-            currentCount === nextCount ? currentCount : nextCount
-        );
-    }, [cardWidth, isDesktop, maxMobileTakeawayCount, mobileCardTargetHeight]);
+        setMobileHookMaxHeight(null);
+    }, [card.id, cardWidth, isDesktop, mobileCardTargetHeight]);
 
     useLayoutEffect(() => {
-        if (isDesktop || maxMobileTakeawayCount === 0 || mobileCardTargetHeight === null) {
+        if (mobileCardTargetHeight === null) {
             return;
         }
 
@@ -1217,46 +1198,53 @@ function FocusCardView({
         const requiredContentHeight = Math.ceil(cardContentElement.scrollHeight);
         const cardFits = requiredContentHeight <= availableContentHeight;
 
-        if (cardFits || mobileVisibleTakeawayCount <= MOBILE_MIN_VISIBLE_TAKEAWAYS) {
+        if (cardFits) {
             return;
         }
 
-        setMobileVisibleTakeawayCount((currentCount) =>
-            currentCount > MOBILE_MIN_VISIBLE_TAKEAWAYS ? currentCount - 1 : currentCount
-        );
-    }, [
-        isDesktop,
-        maxMobileTakeawayCount,
-        mobileCardTargetHeight,
-        mobileVisibleTakeawayCount,
-        visibleTakeaways.length,
-    ]);
+        if (isDesktop) {
+            const desktopCoverElement = desktopCoverRef.current;
+            if (!desktopCoverElement) {
+                return;
+            }
 
-    useEffect(() => {
-        if (!isActionsMenuOpen) {
+            const currentCoverHeight = Math.ceil(desktopCoverElement.getBoundingClientRect().height);
+            const nextCoverWidth = getDesktopCoverWidth({
+                availableContentHeight,
+                requiredContentHeight,
+                currentCoverHeight,
+            });
+
+            if (nextCoverWidth === null || desktopCoverWidth === nextCoverWidth) {
+                return;
+            }
+
+            setDesktopCoverWidth(nextCoverWidth);
             return;
         }
 
-        function handlePointerDown(event: MouseEvent) {
-            if (!actionsMenuRef.current?.contains(event.target as Node)) {
-                setIsActionsMenuOpen(false);
-            }
+        if (cardWidth === 0) {
+            return;
         }
 
-        function handleEscape(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                setIsActionsMenuOpen(false);
-            }
+        const hookBodyElement = hookBodyRef.current;
+        if (!hookBodyElement) {
+            return;
         }
 
-        document.addEventListener("mousedown", handlePointerDown);
-        document.addEventListener("keydown", handleEscape);
+        const currentHookHeight = Math.ceil(hookBodyElement.getBoundingClientRect().height);
+        const nextHookMaxHeight = getMobileHookMaxHeight({
+            availableContentHeight,
+            requiredContentHeight,
+            currentHookHeight,
+        });
 
-        return () => {
-            document.removeEventListener("mousedown", handlePointerDown);
-            document.removeEventListener("keydown", handleEscape);
-        };
-    }, [isActionsMenuOpen]);
+        if (nextHookMaxHeight === null || mobileHookMaxHeight === nextHookMaxHeight) {
+            return;
+        }
+
+        setMobileHookMaxHeight(nextHookMaxHeight);
+    }, [cardWidth, desktopCoverWidth, isDesktop, mobileCardTargetHeight, mobileHookMaxHeight]);
 
     return (
         <article
@@ -1266,151 +1254,109 @@ function FocusCardView({
             className={`${FEED_CARD_HEIGHT_CLASS} relative snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div ref={cardContentRef} className="flex h-full flex-col">
-                    <div className={isDesktop ? "space-y-3" : "space-y-2"}>
-                        <div className="flex items-start justify-between gap-3">
-                            <div className={isDesktop ? "min-w-0 flex-1 space-y-1.5" : "min-w-0 flex-1 space-y-1.5"}>
-                                <h2 className="line-clamp-3 text-[1.2rem] font-semibold tracking-tight leading-[1.1] text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
+                {isDesktop ? (
+                    <div className="space-y-2.5">
+                        <div className="space-y-3 text-center">
+                            {desktopCoverWidth > 0 ? (
+                                <div className="flex justify-center">
+                                    <div className="relative">
+                                        <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
+                                        {card.cover_image_url ? (
+                                            <div
+                                                ref={desktopCoverRef}
+                                                className="relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
+                                                style={{ width: `${desktopCoverWidth}px` }}
+                                            >
+                                                <ResilientImage
+                                                    src={card.cover_image_url}
+                                                    alt={card.title}
+                                                    fill
+                                                    sizes={`${desktopCoverWidth}px`}
+                                                    surface="content-preview"
+                                                    className="object-cover"
+                                                    fallback={
+                                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
+                                                            <BookOpen className="size-10 text-muted-foreground" />
+                                                        </div>
+                                                    }
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div
+                                                ref={desktopCoverRef}
+                                                className="relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
+                                                style={{ width: `${desktopCoverWidth}px` }}
+                                            >
+                                                <BookOpen className="size-10 text-muted-foreground" />
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            <div className="space-y-1.5">
+                                <h2 className="mx-auto line-clamp-3 max-w-[34rem] text-[1.2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
                                     {card.title}
                                 </h2>
-                                <div className={isDesktop ? "space-y-1" : "space-y-1.5"}>
+                                <div className="space-y-1">
                                     {card.author && (
-                                        <p className="line-clamp-1 text-sm font-medium text-muted-foreground/80 sm:text-base">
+                                        <p className="line-clamp-1 text-[0.9rem] font-medium text-muted-foreground/80">
                                             {card.author}
                                         </p>
                                     )}
-                                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                    <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                                             {card.type}
                                         </span>
                                         {card.category && (
-                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                                                 {card.category}
                                             </span>
                                         )}
                                         {duration && (
-                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                            <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
                                                 {duration}
                                             </span>
                                         )}
                                     </div>
                                 </div>
                             </div>
-                            {!isDesktop && (
-                                <div ref={actionsMenuRef} className="relative flex items-center gap-1 pt-0.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            toggleMyList(card.id);
-                                            toast.success(isSaved ? "Removed from My List" : "Added to My List");
-                                        }}
-                                        className={`focus-ring inline-flex min-h-11 min-w-11 items-center justify-center rounded-full transition-colors touch-manipulation ${isSaved
-                                            ? "bg-primary text-primary-foreground"
-                                            : "bg-black/35 text-muted-foreground hover:bg-black/50 hover:text-foreground"
-                                            }`}
-                                        aria-label={isSaved ? `Remove ${card.title} from My List` : `Save ${card.title} to My List`}
-                                    >
-                                        <Bookmark className="size-5" fill={isSaved ? "currentColor" : "none"} />
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsActionsMenuOpen((open) => !open)}
-                                        className="focus-ring inline-flex min-h-11 min-w-11 items-center justify-center rounded-full bg-black/35 text-muted-foreground transition-colors hover:bg-black/50 hover:text-foreground touch-manipulation"
-                                        aria-label={`More actions for ${card.title}`}
-                                        aria-expanded={isActionsMenuOpen}
-                                        aria-haspopup="menu"
-                                    >
-                                        <MoreHorizontal className="size-5" />
-                                    </button>
-
-                                    {isActionsMenuOpen && (
-                                        <div
-                                            role="menu"
-                                            aria-label={`Actions for ${card.title}`}
-                                            className="absolute right-0 top-full z-20 mt-2 rounded-xl border border-border/80 bg-popover/95 p-1 text-popover-foreground shadow-lg backdrop-blur"
-                                        >
-                                            <button
-                                                type="button"
-                                                role="menuitem"
-                                                onClick={() => {
-                                                    setIsActionsMenuOpen(false);
-                                                    onDismiss(card.id);
-                                                }}
-                                                className="flex w-full items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-left text-sm font-medium text-destructive/90 transition-colors hover:bg-destructive/10 hover:text-destructive focus:bg-destructive/10 focus:text-destructive"
-                                                aria-label={`Not interested in ${card.title}`}
-                                            >
-                                                <X className="size-4 text-destructive" />
-                                                Not interested
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
 
-                    <section
-                        className={
-                            isDesktop
-                                ? "relative rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-3 pl-5 pr-4"
-                                : "relative rounded-r-xl border-l-[3px] border-primary/45 bg-secondary/25 py-2 pl-4 pr-3"
-                        }
-                    >
-                        <p
-                            className={
-                                isDesktop
-                                    ? "line-clamp-6 text-[0.95rem] leading-[1.6] text-foreground/92 sm:text-base sm:leading-[1.6]"
-                                    : "line-clamp-8 text-[0.95rem] leading-[1.6] text-foreground/92 sm:text-base sm:leading-[1.6]"
-                            }
-                        >
-                            {card.hook}
-                        </p>
-                    </section>
-
-                    <section
-                        className={
-                            isDesktop
-                                ? "space-y-3"
-                                : "space-y-2"
-                        }
-                    >
-                        <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75 sm:text-xs">
-                            {takeawayLabel}
-                        </p>
-                        {visibleTakeaways.length > 0 ? (
-                            <div className={isDesktop ? "grid gap-3" : "grid gap-2"}>
-                                {visibleTakeaways.map((takeaway, index) => (
-                                    <div
-                                        key={`${card.id}-${index}`}
-                                        className={
-                                            isDesktop
-                                                ? "flex gap-3 px-1 py-1"
-                                                : "flex gap-3 rounded-2xl border border-border/40 bg-background/20 px-3 py-3"
-                                        }
-                                    >
-                                        <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-bold text-primary sm:text-xs">
-                                            {index + 1}
-                                        </span>
-                                        <span
-                                            className={
-                                                isDesktop
-                                                    ? "line-clamp-2 text-[0.95rem] leading-[1.6] text-foreground/90"
-                                                    : "line-clamp-4 text-[0.9rem] leading-[1.6] text-foreground/88 sm:text-[0.95rem]"
-                                            }
-                                        >
-                                            {takeaway}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="px-1 text-[0.9rem] leading-[1.6] text-muted-foreground">
-                                Open the full summary for the complete breakdown.
+                        <section className="relative rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-2 pl-5 pr-4">
+                            <p className="line-clamp-6 text-[0.9rem] leading-[1.55] text-foreground/92">
+                                {card.hook}
                             </p>
-                        )}
-                    </section>
+                        </section>
 
-                    <div className={isDesktop ? "flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5" : "flex flex-wrap items-center justify-start gap-3 pt-1.5"}>
-                        {isDesktop ? (
+                        <section className="space-y-2.5">
+                            <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
+                                Key Takeaways
+                            </p>
+                            {desktopVisibleTakeaways.length > 0 ? (
+                                <div className="grid gap-2">
+                                    {desktopVisibleTakeaways.map((takeaway, index) => (
+                                        <div
+                                            key={`${card.id}-${index}`}
+                                            className="flex gap-3 px-1 py-0.5"
+                                        >
+                                            <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
+                                                {index + 1}
+                                            </span>
+                                            <span className="line-clamp-2 text-[0.9rem] leading-[1.55] text-foreground/90">
+                                                {takeaway}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="px-1 text-[0.9rem] leading-[1.6] text-muted-foreground">
+                                    Open the full summary for the complete breakdown.
+                                </p>
+                            )}
+                        </section>
+
+                        <div className="flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5">
                             <Link
                                 href={`/read/${card.id}`}
                                 className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -1419,19 +1365,122 @@ function FocusCardView({
                                 <BookOpen className="size-4" />
                                 Read
                             </Link>
-                        ) : (
+                        </div>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        <div className="flex flex-col items-center text-center">
+                            <div className="relative">
+                                <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
+                                {card.cover_image_url ? (
+                                    <div className="relative aspect-[2/3] w-[112px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] sm:w-[124px]">
+                                        <ResilientImage
+                                            src={card.cover_image_url}
+                                            alt={card.title}
+                                            fill
+                                            sizes="(max-width: 640px) 112px, 124px"
+                                            surface="content-preview"
+                                            className="object-cover"
+                                            fallback={
+                                                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
+                                                    <BookOpen className="size-10 text-muted-foreground" />
+                                                </div>
+                                            }
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="relative flex aspect-[2/3] w-[112px] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] sm:w-[124px]">
+                                        <BookOpen className="size-10 text-muted-foreground" />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 text-center">
+                            <h2 className="mx-auto max-w-[22rem] text-[1.2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:max-w-[30rem] sm:text-[1.5rem] sm:leading-[1.1]">
+                                {card.title}
+                            </h2>
+                            <div className="space-y-1">
+                                {card.author && (
+                                    <p className="line-clamp-1 text-sm font-medium text-muted-foreground/80 sm:text-base">
+                                        {card.author}
+                                    </p>
+                                )}
+                                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
+                                    <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                        {card.type}
+                                    </span>
+                                    {card.category && (
+                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                            {card.category}
+                                        </span>
+                                    )}
+                                    {duration && (
+                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                            {duration}
+                                        </span>
+                                    )}
+                                </div>
+                                <div className="flex items-center justify-center gap-3 pt-0.5">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            toggleMyList(card.id);
+                                            toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                                        }}
+                                        className={`focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors touch-manipulation ${isSaved
+                                            ? "bg-primary/10 text-primary"
+                                            : "text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
+                                            }`}
+                                        aria-label={isSaved ? `Remove ${card.title} from My List` : `Save ${card.title} to My List`}
+                                    >
+                                        <Bookmark className="size-3.5" fill={isSaved ? "currentColor" : "none"} />
+                                    </button>
+                                    <ShareButton
+                                        url={typeof window !== "undefined" ? `${window.location.origin}/preview/${card.id}` : ""}
+                                        title={card.title}
+                                        text={`Check out "${card.title}" on Flux`}
+                                        variant="icon"
+                                        className="focus-ring h-8 w-8 rounded-full p-0 text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <section className="relative rounded-[1.5rem] border border-border/50 bg-secondary/20 px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:px-5">
+                            <div
+                                ref={hookBodyRef}
+                                className="overflow-hidden"
+                                style={mobileHookMaxHeight !== null ? { maxHeight: `${mobileHookMaxHeight}px` } : undefined}
+                            >
+                                <p className="text-[0.95rem] leading-[1.65] text-foreground/92 sm:text-base">
+                                    {card.hook}
+                                </p>
+                            </div>
+                            {mobileHookMaxHeight !== null ? (
+                                <div
+                                    className="pointer-events-none absolute inset-x-4 bottom-4 h-12 bg-gradient-to-t from-secondary/95 via-secondary/65 to-transparent sm:inset-x-5"
+                                    aria-hidden="true"
+                                />
+                            ) : null}
+                        </section>
+
+                        <div className="flex flex-col items-center gap-2.5 pt-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75 sm:text-xs">
+                                {takeawaySummaryLabel}
+                            </p>
                             <button
                                 type="button"
                                 onClick={(event) => onOpenTakeaways(card, event.currentTarget)}
                                 className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 touch-manipulation"
-                                aria-label={`Show full takeaways for ${card.title}`}
+                                aria-label={`Preview ${card.title}`}
                             >
                                 <Info className="size-4" />
-                                Full takeaways
+                                Preview
                             </button>
-                        )}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
             {isDesktop && isActive && showDesktopScrollCue ? (
                 <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center">
@@ -1541,7 +1590,7 @@ function FocusTakeawaysSheet({
                 type="button"
                 data-testid="focus-takeaways-sheet-backdrop"
                 className={`absolute inset-0 bg-black/60 backdrop-blur-sm ${prefersReducedMotion ? "" : "transition-opacity"} ${backdropOpacityClass}`}
-                aria-label="Close full takeaways"
+                aria-label="Close preview"
                 onClick={onClose}
                 style={backdropTransitionStyle}
             />
@@ -1553,7 +1602,7 @@ function FocusTakeawaysSheet({
                 <div
                     role="dialog"
                     aria-modal="true"
-                    aria-label={`Full takeaways for ${card.title}`}
+                    aria-label={`Preview for ${card.title}`}
                     data-testid="focus-takeaways-sheet"
                     ref={dialogRef}
                     tabIndex={-1}
@@ -1574,7 +1623,7 @@ function FocusTakeawaysSheet({
                             ref={closeButtonRef}
                             data-testid="focus-takeaways-sheet-close"
                             className="focus-ring absolute right-3 top-2 rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
-                            aria-label="Close full takeaways"
+                            aria-label="Close preview"
                         >
                             <X className="size-4" />
                         </button>

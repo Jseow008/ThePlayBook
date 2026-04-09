@@ -34,6 +34,7 @@ describe("focus-feed-utils", () => {
         expect(cards[0]).toEqual(
             expect.objectContaining({
                 id: baseItem.id,
+                cover_image_url: baseItem.cover_image_url,
                 hook: baseItem.quick_mode_json.hook,
                 totalTakeaways: 8,
                 takeaways: baseItem.quick_mode_json.key_takeaways,

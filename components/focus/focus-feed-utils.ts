@@ -6,6 +6,7 @@ export interface FocusCard {
     author: string | null;
     type: string;
     category: string | null;
+    cover_image_url: string | null;
     duration_seconds: number | null;
     hook: string;
     totalTakeaways: number;
@@ -44,6 +45,7 @@ export function buildFocusCards(items: FocusFeedItem[]): FocusCard[] {
             author: item.author,
             type: item.type,
             category: item.category,
+            cover_image_url: item.cover_image_url,
             duration_seconds: item.duration_seconds,
             hook,
             totalTakeaways: takeaways.length,
