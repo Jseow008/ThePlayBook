@@ -45,7 +45,10 @@ const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 const FocusItemIdSchema = z.string().uuid();
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
+const MOBILE_MIN_READABLE_HOOK_HEIGHT_PX = 72;
 const DESKTOP_DEFAULT_COVER_WIDTH = 132;
+const DESKTOP_MEDIUM_COVER_WIDTH = 116;
+const DESKTOP_COMPACT_COVER_WIDTH = 104;
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 
@@ -66,7 +69,6 @@ const FocusRestoreStateSchema = z
         activeCardIndex: z.number().int().min(0),
         hasMore: z.boolean(),
         seenIds: z.array(z.string()),
-        dismissedIds: z.array(z.string()).default([]),
     })
     .superRefine((value, ctx) => {
         if (value.items.length === 0 && value.activeCardIndex !== 0) {
@@ -120,25 +122,57 @@ export function getMobileHookMaxHeight({
     }
 
     const nonHookContentHeight = requiredContentHeight - currentHookHeight;
-    return Math.max(0, availableContentHeight - nonHookContentHeight);
+    const minimumReadableHookHeight = Math.min(currentHookHeight, MOBILE_MIN_READABLE_HOOK_HEIGHT_PX);
+    const unclampedHookMaxHeight = availableContentHeight - nonHookContentHeight;
+
+    // Preserve a readable excerpt instead of collapsing the hook entirely on short mobile viewports.
+    return Math.min(currentHookHeight, Math.max(minimumReadableHookHeight, unclampedHookMaxHeight));
+}
+
+export function getDesktopAvailableContentHeight(viewportHeight: number) {
+    return Math.max(viewportHeight - 42, 0);
 }
 
 export function getDesktopCoverWidth({
     availableContentHeight,
-    requiredContentHeight,
-    currentCoverHeight,
 }: {
     availableContentHeight: number;
-    requiredContentHeight: number;
-    currentCoverHeight: number;
 }) {
-    if (requiredContentHeight <= availableContentHeight) {
-        return null;
+    if (availableContentHeight >= 700) {
+        return DESKTOP_DEFAULT_COVER_WIDTH;
     }
 
-    const overflowHeight = requiredContentHeight - availableContentHeight;
-    const nextCoverHeight = Math.max(0, currentCoverHeight - overflowHeight);
-    return Math.max(0, Math.round(nextCoverHeight / 1.5));
+    if (availableContentHeight >= 620) {
+        return DESKTOP_MEDIUM_COVER_WIDTH;
+    }
+
+    return DESKTOP_COMPACT_COVER_WIDTH;
+}
+
+export function getDesktopVisibleTakeawayCount({
+    availableContentHeight,
+    totalTakeaways,
+}: {
+    availableContentHeight: number;
+    totalTakeaways: number;
+}) {
+    if (totalTakeaways <= 0) {
+        return 0;
+    }
+
+    if (availableContentHeight >= 700) {
+        return totalTakeaways;
+    }
+
+    if (availableContentHeight >= 680) {
+        return Math.min(totalTakeaways, 4);
+    }
+
+    if (availableContentHeight >= 600) {
+        return Math.min(totalTakeaways, 3);
+    }
+
+    return Math.min(totalTakeaways, 2);
 }
 
 function buildExcludeParam(ids: string[]) {
@@ -221,7 +255,6 @@ export function FocusFeed() {
     const [isMobileScrollHintVisible, setIsMobileScrollHintVisible] = useState(false);
     const listRef = useRef<HTMLDivElement | null>(null);
     const seenIdsRef = useRef<Set<string>>(new Set());
-    const dismissedIdsRef = useRef<Set<string>>(new Set());
     const hasInitializedRef = useRef(false);
     const isFetchingRef = useRef(false);
     const activeCardIndexRef = useRef(0);
@@ -458,7 +491,6 @@ export function FocusFeed() {
             const excludeIds = buildExcludeParam([
                 ...(includeCompletedIds ? completedIds : []),
                 ...Array.from(seenIdsRef.current),
-                ...Array.from(dismissedIdsRef.current),
             ]);
 
             const params = new URLSearchParams({
@@ -543,7 +575,6 @@ export function FocusFeed() {
         const restoredState = readFocusRestoreState();
         if (restoredState) {
             seenIdsRef.current = new Set(restoredState.seenIds);
-            dismissedIdsRef.current = new Set(restoredState.dismissedIds);
             activeCardIndexRef.current = restoredState.activeCardIndex;
             isRestoringSnapshotRef.current = true;
             restorePrefetchArmedRef.current =
@@ -995,7 +1026,6 @@ export function FocusFeed() {
             activeCardIndex,
             hasMore,
             seenIds: Array.from(seenIdsRef.current),
-            dismissedIds: Array.from(dismissedIdsRef.current),
         };
 
         writeFocusRestoreState(snapshot);
@@ -1122,22 +1152,33 @@ function FocusCardView({
     const cardRef = useRef<HTMLElement | null>(null);
     const cardContentRef = useRef<HTMLDivElement | null>(null);
     const hookBodyRef = useRef<HTMLDivElement | null>(null);
-    const desktopCoverRef = useRef<HTMLDivElement | null>(null);
     const [cardWidth, setCardWidth] = useState(0);
-    const [desktopCoverWidth, setDesktopCoverWidth] = useState(DESKTOP_DEFAULT_COVER_WIDTH);
-    const desktopVisibleTakeaways = card.takeaways.slice(0, 7);
     const takeawaySummaryLabel = card.totalTakeaways === 1
         ? "1 key takeaway"
         : `${card.totalTakeaways} key takeaways`;
-
-    useEffect(() => {
-        if (!isDesktop) {
-            setDesktopCoverWidth(DESKTOP_DEFAULT_COVER_WIDTH);
-            return;
-        }
-
-        setDesktopCoverWidth(DESKTOP_DEFAULT_COVER_WIDTH);
-    }, [card.id, isDesktop, mobileCardTargetHeight]);
+    const desktopAvailableContentHeight = mobileCardTargetHeight === null || mobileCardTargetHeight <= 0
+        ? 720
+        : getDesktopAvailableContentHeight(mobileCardTargetHeight);
+    const desktopCoverWidth = getDesktopCoverWidth({
+        availableContentHeight: desktopAvailableContentHeight,
+    });
+    const desktopVisibleTakeawayCount = isDesktop
+        ? getDesktopVisibleTakeawayCount({
+            availableContentHeight: desktopAvailableContentHeight,
+            totalTakeaways: card.takeaways.length,
+        })
+        : card.takeaways.length;
+    const desktopVisibleTakeaways = card.takeaways.slice(0, desktopVisibleTakeawayCount);
+    const isCompactMobileLayout =
+        !isDesktop
+        && mobileHookMaxHeight !== null
+        && mobileHookMaxHeight <= MOBILE_MIN_READABLE_HOOK_HEIGHT_PX;
+    const isDesktopTakeawaysTruncated =
+        isDesktop
+        && desktopVisibleTakeawayCount < card.takeaways.length;
+    const desktopTakeawaysHeading = isDesktopTakeawaysTruncated
+        ? `Key Takeaways (${desktopVisibleTakeaways.length} of ${card.totalTakeaways})`
+        : "Key Takeaways";
 
     useEffect(() => {
         if (isDesktop) {
@@ -1175,10 +1216,10 @@ function FocusCardView({
         }
 
         setMobileHookMaxHeight(null);
-    }, [card.id, cardWidth, isDesktop, mobileCardTargetHeight]);
+    }, [card.id, isDesktop]);
 
     useLayoutEffect(() => {
-        if (mobileCardTargetHeight === null) {
+        if (isDesktop || mobileCardTargetHeight === null) {
             return;
         }
 
@@ -1199,31 +1240,9 @@ function FocusCardView({
         const cardFits = requiredContentHeight <= availableContentHeight;
 
         if (cardFits) {
-            return;
-        }
-
-        if (isDesktop) {
-            const desktopCoverElement = desktopCoverRef.current;
-            if (!desktopCoverElement) {
-                return;
+            if (mobileHookMaxHeight !== null) {
+                setMobileHookMaxHeight(null);
             }
-
-            const currentCoverHeight = Math.ceil(desktopCoverElement.getBoundingClientRect().height);
-            const nextCoverWidth = getDesktopCoverWidth({
-                availableContentHeight,
-                requiredContentHeight,
-                currentCoverHeight,
-            });
-
-            if (nextCoverWidth === null || desktopCoverWidth === nextCoverWidth) {
-                return;
-            }
-
-            setDesktopCoverWidth(nextCoverWidth);
-            return;
-        }
-
-        if (cardWidth === 0) {
             return;
         }
 
@@ -1244,7 +1263,12 @@ function FocusCardView({
         }
 
         setMobileHookMaxHeight(nextHookMaxHeight);
-    }, [cardWidth, desktopCoverWidth, isDesktop, mobileCardTargetHeight, mobileHookMaxHeight]);
+    }, [
+        cardWidth,
+        isDesktop,
+        mobileCardTargetHeight,
+        mobileHookMaxHeight,
+    ]);
 
     return (
         <article
@@ -1253,46 +1277,42 @@ function FocusCardView({
             ref={cardRef}
             className={`${FEED_CARD_HEIGHT_CLASS} relative snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
-            <div ref={cardContentRef} className="flex h-full flex-col">
+            <div ref={cardContentRef} data-testid="focus-card-content" className="flex h-full min-h-0 flex-col">
                 {isDesktop ? (
-                    <div className="space-y-2.5">
-                        <div className="space-y-3 text-center">
-                            {desktopCoverWidth > 0 ? (
-                                <div className="flex justify-center">
-                                    <div className="relative">
-                                        <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
-                                        {card.cover_image_url ? (
-                                            <div
-                                                ref={desktopCoverRef}
-                                                className="relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
-                                                style={{ width: `${desktopCoverWidth}px` }}
-                                            >
-                                                <ResilientImage
-                                                    src={card.cover_image_url}
-                                                    alt={card.title}
-                                                    fill
-                                                    sizes={`${desktopCoverWidth}px`}
-                                                    surface="content-preview"
-                                                    className="object-cover"
-                                                    fallback={
-                                                        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
-                                                            <BookOpen className="size-10 text-muted-foreground" />
-                                                        </div>
-                                                    }
-                                                />
-                                            </div>
-                                        ) : (
-                                            <div
-                                                ref={desktopCoverRef}
-                                                className="relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
-                                                style={{ width: `${desktopCoverWidth}px` }}
-                                            >
-                                                <BookOpen className="size-10 text-muted-foreground" />
-                                            </div>
-                                        )}
-                                    </div>
+                    <div className="flex h-full min-h-0 flex-col gap-3">
+                        <div className="shrink-0 space-y-3 text-center">
+                            <div className="flex justify-center">
+                                <div className="relative">
+                                    <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
+                                    {card.cover_image_url ? (
+                                        <div
+                                            className="relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
+                                            style={{ width: `${desktopCoverWidth}px` }}
+                                        >
+                                            <ResilientImage
+                                                src={card.cover_image_url}
+                                                alt={card.title}
+                                                fill
+                                                sizes={`${desktopCoverWidth}px`}
+                                                surface="content-preview"
+                                                className="object-cover"
+                                                fallback={
+                                                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">
+                                                        <BookOpen className="size-10 text-muted-foreground" />
+                                                    </div>
+                                                }
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)]"
+                                            style={{ width: `${desktopCoverWidth}px` }}
+                                        >
+                                            <BookOpen className="size-10 text-muted-foreground" />
+                                        </div>
+                                    )}
                                 </div>
-                            ) : null}
+                            </div>
 
                             <div className="space-y-1.5">
                                 <h2 className="mx-auto line-clamp-3 max-w-[34rem] text-[1.2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
@@ -1323,31 +1343,38 @@ function FocusCardView({
                             </div>
                         </div>
 
-                        <section className="relative rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-2 pl-5 pr-4">
+                        <section className="relative shrink-0 rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-2 pl-5 pr-4">
                             <p className="line-clamp-6 text-[0.9rem] leading-[1.55] text-foreground/92">
                                 {card.hook}
                             </p>
                         </section>
 
-                        <section className="space-y-2.5">
+                        <section className="flex min-h-0 flex-1 flex-col space-y-2.5">
                             <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
-                                Key Takeaways
+                                {desktopTakeawaysHeading}
                             </p>
-                            {desktopVisibleTakeaways.length > 0 ? (
-                                <div className="grid gap-2">
-                                    {desktopVisibleTakeaways.map((takeaway, index) => (
-                                        <div
-                                            key={`${card.id}-${index}`}
-                                            className="flex gap-3 px-1 py-0.5"
-                                        >
-                                            <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
-                                                {index + 1}
-                                            </span>
-                                            <span className="line-clamp-2 text-[0.9rem] leading-[1.55] text-foreground/90">
-                                                {takeaway}
-                                            </span>
-                                        </div>
-                                    ))}
+                            {card.takeaways.length > 0 ? (
+                                <div
+                                    data-testid="focus-desktop-takeaways-list"
+                                    className="min-h-0 overflow-hidden pr-1"
+                                    aria-label={`${card.title} key takeaways`}
+                                >
+                                    <div className="grid gap-2">
+                                        {desktopVisibleTakeaways.map((takeaway, index) => (
+                                            <div
+                                                key={`${card.id}-${index}`}
+                                                data-focus-desktop-takeaway-row
+                                                className="flex gap-3 px-1 py-0.5"
+                                            >
+                                                <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
+                                                    {index + 1}
+                                                </span>
+                                                <span className="text-[0.9rem] leading-[1.55] text-foreground/90">
+                                                    {takeaway}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ) : (
                                 <p className="px-1 text-[0.9rem] leading-[1.6] text-muted-foreground">
@@ -1357,6 +1384,16 @@ function FocusCardView({
                         </section>
 
                         <div className="flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5">
+                            {isDesktopTakeawaysTruncated ? (
+                                <Link
+                                    href={`/preview/${card.id}`}
+                                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-card/50 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
+                                    aria-label={`Preview ${card.title}`}
+                                >
+                                    <Info className="size-4" />
+                                    Preview
+                                </Link>
+                            ) : null}
                             <Link
                                 href={`/read/${card.id}`}
                                 className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -1368,17 +1405,17 @@ function FocusCardView({
                         </div>
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className={isCompactMobileLayout ? "space-y-2" : "space-y-2.5"}>
                         <div className="flex flex-col items-center text-center">
                             <div className="relative">
                                 <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
                                 {card.cover_image_url ? (
-                                    <div className="relative aspect-[2/3] w-[112px] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] sm:w-[124px]">
+                                    <div className={`relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[96px] sm:w-[112px]" : "w-[112px] sm:w-[124px]"}`}>
                                         <ResilientImage
                                             src={card.cover_image_url}
                                             alt={card.title}
                                             fill
-                                            sizes="(max-width: 640px) 112px, 124px"
+                                            sizes={isCompactMobileLayout ? "(max-width: 640px) 96px, 112px" : "(max-width: 640px) 112px, 124px"}
                                             surface="content-preview"
                                             className="object-cover"
                                             fallback={
@@ -1389,39 +1426,39 @@ function FocusCardView({
                                         />
                                     </div>
                                 ) : (
-                                    <div className="relative flex aspect-[2/3] w-[112px] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] sm:w-[124px]">
+                                    <div className={`relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[96px] sm:w-[112px]" : "w-[112px] sm:w-[124px]"}`}>
                                         <BookOpen className="size-10 text-muted-foreground" />
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div className="space-y-3 text-center">
-                            <h2 className="mx-auto max-w-[22rem] text-[1.2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:max-w-[30rem] sm:text-[1.5rem] sm:leading-[1.1]">
+                        <div className={`${isCompactMobileLayout ? "space-y-2" : "space-y-2.5"} text-center`}>
+                            <h2 className={`mx-auto max-w-[22rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:max-w-[30rem] sm:leading-[1.1] ${isCompactMobileLayout ? "text-[1.08rem] sm:text-[1.35rem]" : "text-[1.2rem] sm:text-[1.5rem]"}`}>
                                 {card.title}
                             </h2>
-                            <div className="space-y-1">
+                            <div className="space-y-0.5">
                                 {card.author && (
                                     <p className="line-clamp-1 text-sm font-medium text-muted-foreground/80 sm:text-base">
                                         {card.author}
                                     </p>
                                 )}
-                                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
-                                    <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                <div className={`flex flex-wrap items-center justify-center ${isCompactMobileLayout ? "gap-1 sm:gap-1.5" : "gap-1.5 sm:gap-2"}`}>
+                                    <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-semibold uppercase tracking-wider text-muted-foreground ${isCompactMobileLayout ? "px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px]" : "px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs"}`}>
                                         {card.type}
                                     </span>
                                     {card.category && (
-                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                        <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-medium text-muted-foreground ${isCompactMobileLayout ? "px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px]" : "px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs"}`}>
                                             {card.category}
                                         </span>
                                     )}
                                     {duration && (
-                                        <span className="inline-flex items-center rounded-full border border-border/50 bg-secondary/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:px-2.5 sm:py-1 sm:text-xs">
+                                        <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-medium text-muted-foreground ${isCompactMobileLayout ? "px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px]" : "px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs"}`}>
                                             {duration}
                                         </span>
                                     )}
                                 </div>
-                                <div className="flex items-center justify-center gap-3 pt-0.5">
+                                <div className={`flex items-center justify-center pt-0 ${isCompactMobileLayout ? "gap-2" : "gap-2.5"}`}>
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -1447,25 +1484,27 @@ function FocusCardView({
                             </div>
                         </div>
 
-                        <section className="relative rounded-[1.5rem] border border-border/50 bg-secondary/20 px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:px-5">
+                        <section className={`relative rounded-[1.4rem] border border-border/35 bg-secondary/20 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:px-5 ${isCompactMobileLayout ? "px-3.5 py-2.5" : "px-4 py-3.5"}`}>
                             <div
                                 ref={hookBodyRef}
+                                data-testid="focus-mobile-hook-body"
                                 className="overflow-hidden"
                                 style={mobileHookMaxHeight !== null ? { maxHeight: `${mobileHookMaxHeight}px` } : undefined}
                             >
-                                <p className="text-[0.95rem] leading-[1.65] text-foreground/92 sm:text-base">
+                                <p className={`text-foreground/92 sm:text-base ${isCompactMobileLayout ? "text-[0.92rem] leading-[1.52]" : "text-[0.95rem] leading-[1.58]"}`}>
                                     {card.hook}
                                 </p>
                             </div>
                             {mobileHookMaxHeight !== null ? (
                                 <div
-                                    className="pointer-events-none absolute inset-x-4 bottom-4 h-12 bg-gradient-to-t from-secondary/95 via-secondary/65 to-transparent sm:inset-x-5"
+                                    data-testid="focus-mobile-hook-fade"
+                                    className={`pointer-events-none absolute h-10 bg-gradient-to-t from-secondary/95 via-secondary/65 to-transparent sm:inset-x-5 ${isCompactMobileLayout ? "inset-x-3.5 bottom-2.5" : "inset-x-4 bottom-3.5"}`}
                                     aria-hidden="true"
                                 />
                             ) : null}
                         </section>
 
-                        <div className="flex flex-col items-center gap-2.5 pt-1">
+                        <div className={`flex flex-col items-center pt-0.5 ${isCompactMobileLayout ? "gap-1.5" : "gap-2"}`}>
                             <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75 sm:text-xs">
                                 {takeawaySummaryLabel}
                             </p>
