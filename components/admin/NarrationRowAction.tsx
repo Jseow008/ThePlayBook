@@ -1,6 +1,5 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
 import { type NarrationJobStatus } from "@/lib/narration-job";
 import { useNarrationGeneration } from "./useNarrationGeneration";
 import { getNarrationStatusPresentation } from "./narration-status";
@@ -51,9 +50,8 @@ export function NarrationRowAction({
                 <button
                     type="button"
                     disabled
-                    className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-100 px-2.5 py-1.5 text-xs font-medium text-zinc-400"
+                    className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-100 px-2.5 py-1.5 text-xs font-medium text-zinc-400"
                 >
-                    <Sparkles className="h-3.5 w-3.5" />
                     Generate AI Voice
                 </button>
                 <span className="text-xs text-amber-600">Publish first to enable voice.</span>
@@ -93,9 +91,8 @@ export function NarrationRowAction({
                     type="button"
                     onClick={queueNarration}
                     disabled={buttonBusy}
-                    className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center rounded-md border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    <Sparkles className="h-3.5 w-3.5" />
                     {buttonLabel}
                 </button>
             </div>

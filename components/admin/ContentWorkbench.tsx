@@ -161,6 +161,16 @@ export async function ContentWorkbench({
                                 {items.map((item: any) => {
                                     const TypeIcon = typeIcons[item.type as keyof typeof typeIcons] || FileText;
                                     const isDeleted = !!item.deleted_at;
+                                    const createdDate = item.created_at
+                                        ? new Date(item.created_at).toLocaleDateString()
+                                        : null;
+                                    const updatedDate = item.updated_at
+                                        ? new Date(item.updated_at).toLocaleDateString()
+                                        : null;
+                                    const showUpdatedDate = Boolean(
+                                        updatedDate
+                                        && (!item.created_at || new Date(item.updated_at).getTime() !== new Date(item.created_at).getTime())
+                                    );
                                     const narrationJob = getNarrationJobState({
                                         audio_url: item.audio_url,
                                         narration_status: item.narration_status,
@@ -182,8 +192,13 @@ export async function ContentWorkbench({
                                             <div className="min-w-0">
                                                 <p className="truncate font-medium text-foreground">{item.title}</p>
                                                 <p className="text-sm text-muted-foreground">
-                                                    {item.author || "Unknown author"} • {new Date(item.created_at).toLocaleDateString()}
+                                                    {item.author || "Unknown author"}{createdDate ? ` • ${createdDate}` : ""}
                                                 </p>
+                                                {showUpdatedDate && (
+                                                    <p className="mt-0.5 text-xs text-muted-foreground">
+                                                        Last updated {updatedDate}
+                                                    </p>
+                                                )}
                                                 <div className="mt-2 flex flex-col items-start gap-2">
                                                     <AiReadinessBadge readiness={aiReadinessById[item.id]} />
                                                     {!isDeleted && (
