@@ -75,7 +75,7 @@ describe("RecommendationsRow", () => {
 
         const { container } = render(<RecommendationsRow />);
 
-        expect(screen.getByRole("heading", { name: "Because of your recent reading" })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: "Based on your recent reading" })).toBeInTheDocument();
         expect(screen.getByText("The Comfort Crisis")).toBeInTheDocument();
         expect(container.querySelector(".animate-pulse")).not.toBeInTheDocument();
     });
@@ -163,7 +163,7 @@ describe("RecommendationsRow", () => {
 
         render(<RecommendationsRow />);
 
-        const generalLane = screen.getByRole("heading", { name: "Recommended for You" }).closest("section");
+        const generalLane = screen.getByRole("heading", { name: "Based on your library" }).closest("section");
         expect(generalLane).not.toBeNull();
         expect(within(generalLane!).getByText("Atomic Habits")).toBeInTheDocument();
         expect(within(generalLane!).queryByText(/The Comfort Crisis/)).not.toBeInTheDocument();

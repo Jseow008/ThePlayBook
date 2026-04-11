@@ -117,7 +117,7 @@ export function RecommendationsRow({
             {/* Lane 1: Specific Context */}
             {recentItems.length > 0 && (
                 <ContentLane
-                    title="Because of your recent reading"
+                    title="Based on your recent reading"
                     items={recentItems}
                     cardTitleDensity={cardTitleDensity}
                 />
@@ -126,7 +126,7 @@ export function RecommendationsRow({
             {/* Lane 2: General Taste */}
             {isWorthFetchingGeneral && dedupedGeneralItems.length > 0 && (
                 <ContentLane
-                    title="Recommended for You"
+                    title="Based on your library"
                     items={dedupedGeneralItems}
                     cardTitleDensity={cardTitleDensity}
                 />
