@@ -82,6 +82,11 @@ describe("LaunchReadinessPanel", () => {
             expect(screen.getByText("Launch Readiness")).toBeInTheDocument();
             expect(screen.getByText("Needs attention")).toBeInTheDocument();
             expect(screen.getByText("Env: production")).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: /show details/i }));
+
+        await waitFor(() => {
             expect(screen.getByTestId("launch-readiness-ai-ready")).toHaveTextContent("1 / 2");
             expect(screen.getByTestId("launch-readiness-missing-segments")).toHaveTextContent("4");
             expect(screen.getByTestId("launch-readiness-audio-bucket")).toHaveTextContent("degraded");
@@ -215,13 +220,19 @@ describe("LaunchReadinessPanel", () => {
 
         await waitFor(() => {
             expect(screen.getByText("Ready")).toBeInTheDocument();
-            expect(screen.getByTestId("launch-readiness-ai-ready")).toHaveTextContent("3 / 3");
             expect(screen.getByText("No launch-blocking issues were reported by the admin readiness endpoint.")).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: /show details/i }));
+
+        await waitFor(() => {
+            expect(screen.getByTestId("launch-readiness-ai-ready")).toHaveTextContent("3 / 3");
         });
 
         fireEvent.click(screen.getByRole("button", { name: /refresh/i }));
 
         await waitFor(() => {
+            expect(screen.getByRole("button", { name: /hide details/i })).toBeInTheDocument();
             expect(screen.getByTestId("launch-readiness-ai-ready")).toHaveTextContent("4 / 4");
             expect(screen.getByText("Launch readiness refreshed.")).toBeInTheDocument();
         });

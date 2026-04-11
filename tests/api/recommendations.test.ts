@@ -95,6 +95,28 @@ describe('Recommendations API', () => {
         });
     });
 
+    it('accepts larger exclusion sets for high-history users', async () => {
+        const seedId = '123e4567-e89b-12d3-a456-426614174000';
+        const excludeIds = Array.from({ length: 120 }, (_, index) =>
+            `123e4567-e89b-12d3-a456-426614174${String(index).padStart(3, '0')}`
+        );
+        const req = new NextRequest(new URL('http://localhost/api/recommendations'), {
+            method: 'POST',
+            body: JSON.stringify({
+                seedIds: [seedId],
+                excludeIds,
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
+        expect(mockRpc).toHaveBeenCalledWith('match_recommendations', {
+            seed_ids: [seedId],
+            exclude_ids: Array.from(new Set([seedId, ...excludeIds])),
+            match_count: 40,
+        });
+    });
+
     it('handles RPC errors', async () => {
         mockRpc.mockResolvedValueOnce({ error: new Error('RPC Failed') });
 

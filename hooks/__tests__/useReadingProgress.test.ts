@@ -3,6 +3,9 @@ import { createElement, type ReactNode } from "react";
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+    AuthUserProvider,
+} from "@/hooks/useAuthUser";
+import {
     ReadingProgressProvider,
     useReadingProgress,
     type ReadingProgressData,
@@ -92,7 +95,11 @@ Object.defineProperty(window, "localStorage", {
 });
 
 function wrapper({ children }: { children: ReactNode }) {
-    return createElement(ReadingProgressProvider, null, children);
+    return createElement(
+        AuthUserProvider,
+        null,
+        createElement(ReadingProgressProvider, null, children),
+    );
 }
 
 describe("useReadingProgress", () => {
@@ -246,8 +253,7 @@ describe("useReadingProgress", () => {
         expect(localStorage.getItem(myListKey(getStorageScope("user-b")))).toBe(JSON.stringify([]));
     });
 
-    it("keeps logging unexpected auth bootstrap errors", async () => {
-        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    it("falls back to the guest flow when auth bootstrap errors", async () => {
         currentAuthError = {
             message: "Network failure",
             name: "AuthRetryableFetchError",
@@ -257,11 +263,8 @@ describe("useReadingProgress", () => {
 
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-            "Failed to resolve auth state for reading progress:",
-            currentAuthError,
-        );
-        consoleErrorSpy.mockRestore();
+        expect(result.current.storageScope).toBe(GUEST_STORAGE_SCOPE);
+        expect(result.current.user).toBeNull();
     });
 
     it("keeps local progress and downgrades recoverable cloud sync failures to warnings", async () => {

@@ -8,7 +8,7 @@ import type { Database } from "@/types/database";
 const RecommendationsRequestSchema = z.object({
     seedIds: z.array(z.string().uuid()).max(50).optional(),
     completedIds: z.array(z.string().uuid()).max(50).default([]),
-    excludeIds: z.array(z.string().uuid()).max(100).default([]),
+    excludeIds: z.array(z.string().uuid()).max(500).default([]),
     matchCount: z.coerce.number().int().min(1).max(10).default(10),
 });
 

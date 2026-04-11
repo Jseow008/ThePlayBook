@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -94,6 +94,9 @@ const CORE_SUPPORT_FEATURES = [
 
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
+const FEATURED_READS_AUTOPLAY_INTERVAL_MS = 50;
+const FEATURED_READS_AUTOPLAY_STEP_PX = 2;
+const FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS = 2000;
 const PRIMARY_CTA_CLASS =
   "focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-16px_rgba(255,255,255,0.45)]";
 const SECONDARY_CTA_CLASS =
@@ -309,6 +312,9 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
   const hasInitializedLoopRef = useRef(false);
   const isDraggingRef = useRef(false);
   const suppressClickRef = useRef(false);
+  const autoplayIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoplayResumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAutoplayPausedRef = useRef(false);
   const dragStateRef = useRef<{
     pointerId: number;
     startX: number;
@@ -370,6 +376,65 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       element.scrollLeft = normalizedScrollLeft;
     }
   }
+
+  const clearAutoplayInterval = useCallback(() => {
+    if (autoplayIntervalRef.current === null) return;
+    clearInterval(autoplayIntervalRef.current);
+    autoplayIntervalRef.current = null;
+  }, []);
+
+  const clearAutoplayResumeTimeout = useCallback(() => {
+    if (autoplayResumeTimeoutRef.current === null) return;
+    clearTimeout(autoplayResumeTimeoutRef.current);
+    autoplayResumeTimeoutRef.current = null;
+  }, []);
+
+  const startAutoplay = useCallback(() => {
+    if (typeof window === "undefined" || items.length <= 1) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    clearAutoplayInterval();
+
+    autoplayIntervalRef.current = setInterval(() => {
+      if (isDraggingRef.current || isAutoplayPausedRef.current) return;
+
+      const element = scrollRef.current;
+      if (!element) return;
+
+      normalizeScrollPosition(element);
+      element.scrollLeft += FEATURED_READS_AUTOPLAY_STEP_PX;
+      normalizeScrollPosition(element);
+    }, FEATURED_READS_AUTOPLAY_INTERVAL_MS);
+  }, [clearAutoplayInterval, items.length]);
+
+  const pauseAutoplay = useCallback(() => {
+    isAutoplayPausedRef.current = true;
+    clearAutoplayResumeTimeout();
+    clearAutoplayInterval();
+  }, [clearAutoplayInterval, clearAutoplayResumeTimeout]);
+
+  const resumeAutoplayLater = useCallback(() => {
+    clearAutoplayResumeTimeout();
+    autoplayResumeTimeoutRef.current = setTimeout(() => {
+      isAutoplayPausedRef.current = false;
+      startAutoplay();
+    }, FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS);
+  }, [clearAutoplayResumeTimeout, startAutoplay]);
+
+  useEffect(() => {
+    if (items.length <= 1) {
+      pauseAutoplay();
+      return;
+    }
+
+    isAutoplayPausedRef.current = false;
+    startAutoplay();
+
+    return () => {
+      clearAutoplayInterval();
+      clearAutoplayResumeTimeout();
+    };
+  }, [clearAutoplayInterval, clearAutoplayResumeTimeout, items.length, pauseAutoplay, startAutoplay]);
 
   function prepareForDrag(element: HTMLDivElement) {
     normalizeScrollPosition(element);
@@ -482,6 +547,10 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
             aria-label="Featured reads"
             data-testid="featured-reads-carousel"
             className="scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-x] cursor-grab"
+            onMouseEnter={pauseAutoplay}
+            onMouseLeave={resumeAutoplayLater}
+            onFocus={pauseAutoplay}
+            onBlur={resumeAutoplayLater}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}

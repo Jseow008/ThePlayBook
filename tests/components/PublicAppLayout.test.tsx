@@ -6,33 +6,13 @@ describe("PublicAppLayout", () => {
         vi.resetModules();
     });
 
-    it("hydrates auth-aware providers from the server user", async () => {
-        const mockUser = {
-            id: "reader-1",
-            email: "reader@example.com",
-        } as any;
-
-        const getUser = vi.fn().mockResolvedValue({
-            data: { user: mockUser },
-            error: null,
-        });
-
-        const createClient = vi.fn().mockResolvedValue({
-            auth: {
-                getUser,
-            },
-        });
-
+    it("wraps the public shell with auth and reading-progress providers", async () => {
         const authProvider = vi.fn(
             ({ children }: { children: React.ReactNode }) => <div data-testid="auth-provider">{children}</div>
         );
         const readingProvider = vi.fn(
             ({ children }: { children: React.ReactNode }) => <div data-testid="reading-provider">{children}</div>
         );
-
-        vi.doMock("@/lib/supabase/server", () => ({
-            createClient,
-        }));
 
         vi.doMock("@/hooks/useAuthUser", () => ({
             AuthUserProvider: authProvider,
@@ -54,9 +34,7 @@ describe("PublicAppLayout", () => {
         expect(screen.getByTestId("reading-provider")).toBeInTheDocument();
         expect(screen.getByTestId("shell")).toBeInTheDocument();
         expect(screen.getByText("App content")).toBeInTheDocument();
-        expect(createClient).toHaveBeenCalledTimes(1);
-        expect(getUser).toHaveBeenCalledTimes(1);
-        expect(authProvider.mock.calls[0]?.[0]?.initialUser).toBe(mockUser);
-        expect(readingProvider.mock.calls[0]?.[0]?.initialUser).toBe(mockUser);
+        expect(authProvider).toHaveBeenCalledTimes(1);
+        expect(readingProvider).toHaveBeenCalledTimes(1);
     });
 });

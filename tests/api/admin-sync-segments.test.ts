@@ -44,12 +44,14 @@ describe("Admin segment embedding sync API", () => {
                     return {
                         select: vi.fn().mockReturnValue({
                             is: vi.fn().mockReturnValue({
-                                in: vi.fn().mockResolvedValue({
-                                    data: [
-                                        { id: "segment-1", item_id: "ready-item", markdown_body: "Ready" },
-                                        { id: "segment-2", item_id: "stale-item", markdown_body: "Needs embedding" },
-                                    ],
-                                    error: null,
+                                in: vi.fn().mockReturnValue({
+                                    range: vi.fn().mockResolvedValue({
+                                        data: [
+                                            { id: "segment-1", item_id: "ready-item", markdown_body: "Ready" },
+                                            { id: "segment-2", item_id: "stale-item", markdown_body: "Needs embedding" },
+                                        ],
+                                        error: null,
+                                    }),
                                 }),
                             }),
                         }),
@@ -59,9 +61,11 @@ describe("Admin segment embedding sync API", () => {
                 if (table === "segment_embedding_gemini") {
                     return {
                         select: vi.fn().mockReturnValue({
-                            in: vi.fn().mockResolvedValue({
-                                data: [{ content_item_id: "ready-item", segment_id: "segment-1" }],
-                                error: null,
+                            in: vi.fn().mockReturnValue({
+                                range: vi.fn().mockResolvedValue({
+                                    data: [{ content_item_id: "ready-item", segment_id: "segment-1" }],
+                                    error: null,
+                                }),
                             }),
                         }),
                     };

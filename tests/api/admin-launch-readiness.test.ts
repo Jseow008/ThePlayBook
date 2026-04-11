@@ -48,12 +48,14 @@ describe("Admin launch readiness API", () => {
                     return {
                         select: vi.fn().mockReturnValue({
                             is: vi.fn().mockReturnValue({
-                                in: vi.fn().mockResolvedValue({
-                                    data: [
-                                        { id: "segment-1", item_id: "verified-ready", markdown_body: "Ready segment" },
-                                        { id: "segment-2", item_id: "verified-stale", markdown_body: "Needs embedding" },
-                                    ],
-                                    error: null,
+                                in: vi.fn().mockReturnValue({
+                                    range: vi.fn().mockResolvedValue({
+                                        data: [
+                                            { id: "segment-1", item_id: "verified-ready", markdown_body: "Ready segment" },
+                                            { id: "segment-2", item_id: "verified-stale", markdown_body: "Needs embedding" },
+                                        ],
+                                        error: null,
+                                    }),
                                 }),
                             }),
                         }),
@@ -63,12 +65,14 @@ describe("Admin launch readiness API", () => {
                 if (table === "segment_embedding_gemini") {
                     return {
                         select: vi.fn().mockReturnValue({
-                            in: vi.fn().mockResolvedValue({
-                                data: [
-                                    { content_item_id: "verified-ready", segment_id: "segment-1" },
-                                    { content_item_id: "verified-stale", segment_id: "segment-2" },
-                                ],
-                                error: null,
+                            in: vi.fn().mockReturnValue({
+                                range: vi.fn().mockResolvedValue({
+                                    data: [
+                                        { content_item_id: "verified-ready", segment_id: "segment-1" },
+                                        { content_item_id: "verified-stale", segment_id: "segment-2" },
+                                    ],
+                                    error: null,
+                                }),
                             }),
                         }),
                     };

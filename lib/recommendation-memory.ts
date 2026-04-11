@@ -73,6 +73,13 @@ function removeEntries(storage: Storage, scope: StorageScope) {
     }
 }
 
+export function clearRecentRecommendations(
+    storage: Storage,
+    scope: StorageScope,
+) {
+    removeEntries(storage, scope);
+}
+
 export function readRecentRecommendationIds(
     storage: Storage,
     scope: StorageScope,

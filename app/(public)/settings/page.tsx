@@ -11,6 +11,7 @@ import type { User } from "@supabase/supabase-js";
 import { APP_NAME } from "@/lib/brand";
 import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/onboarding";
 import { clearScopedProgress } from "@/lib/local-user-storage";
+import { clearRecentRecommendations } from "@/lib/recommendation-memory";
 
 export default function SettingsPage() {
     const supabase = createClient();
@@ -109,6 +110,7 @@ export default function SettingsPage() {
 
         setIsClearing(true);
         clearScopedProgress(localStorage, storageScope);
+        clearRecentRecommendations(localStorage, storageScope);
         refresh(); // Update the hook state
         setTimeout(() => {
             setIsClearing(false);
