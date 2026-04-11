@@ -1153,9 +1153,6 @@ function FocusCardView({
     const cardContentRef = useRef<HTMLDivElement | null>(null);
     const hookBodyRef = useRef<HTMLDivElement | null>(null);
     const [cardWidth, setCardWidth] = useState(0);
-    const takeawaySummaryLabel = card.totalTakeaways === 1
-        ? "1 key takeaway"
-        : `${card.totalTakeaways} key takeaways`;
     const desktopAvailableContentHeight = mobileCardTargetHeight === null || mobileCardTargetHeight <= 0
         ? 720
         : getDesktopAvailableContentHeight(mobileCardTargetHeight);
@@ -1505,9 +1502,6 @@ function FocusCardView({
                         </section>
 
                         <div className={`flex flex-col items-center pt-0.5 ${isCompactMobileLayout ? "gap-1.5" : "gap-2"}`}>
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75 sm:text-xs">
-                                {takeawaySummaryLabel}
-                            </p>
                             <button
                                 type="button"
                                 onClick={(event) => onOpenTakeaways(card, event.currentTarget)}

@@ -248,7 +248,7 @@ describe("FocusFeed", () => {
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
         expect(within(firstCard).queryByText("Hook")).not.toBeInTheDocument();
         expect(within(firstCard).queryByText("Key Takeaways (1 of 8)")).not.toBeInTheDocument();
-        expect(within(firstCard).getByText("8 key takeaways")).toBeInTheDocument();
+        expect(within(firstCard).queryByText("8 key takeaways")).not.toBeInTheDocument();
         expect(screen.queryByText("What stands out")).not.toBeInTheDocument();
         expect(screen.getByText("Do less, but better.")).toBeInTheDocument();
         expect(screen.queryByText("Eliminate the trivial to make room for the essential.")).not.toBeInTheDocument();
@@ -941,7 +941,7 @@ describe("FocusFeed", () => {
         expect(button).toHaveClass("touch-manipulation");
         expect(button.parentElement).toHaveClass("flex-col");
         expect(within(firstCard).queryByText("Key Takeaways (1 of 8)")).not.toBeInTheDocument();
-        expect(within(firstCard).getByText("8 key takeaways")).toBeInTheDocument();
+        expect(within(firstCard).queryByText("8 key takeaways")).not.toBeInTheDocument();
         expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toBeInTheDocument();
         expect(screen.queryByRole("button", {
             name: "More actions for Essentialism",
