@@ -15,11 +15,17 @@ import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
+import {
+    ADMIN_CONTENT_SORT_OPTIONS,
+    getAdminContentSortOrder,
+    normalizeAdminContentSort,
+} from "@/lib/admin-content-sort";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
     type: z.enum(["podcast", "book", "article", "video"]).optional(),
     featured: z.boolean().optional(),
+    sort: z.enum(ADMIN_CONTENT_SORT_OPTIONS).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
 });
@@ -195,6 +201,7 @@ export async function GET(request: NextRequest) {
             status: searchParams.get("status") ?? undefined,
             type: searchParams.get("type") ?? undefined,
             featured: rawFeatured === null ? undefined : rawFeatured === "true",
+            sort: searchParams.get("sort") ?? undefined,
             limit: searchParams.get("limit") ?? undefined,
             offset: searchParams.get("offset") ?? undefined,
         });
@@ -204,6 +211,8 @@ export async function GET(request: NextRequest) {
         }
 
         const { status, type, featured, limit, offset } = parsedQuery.data;
+        const sort = normalizeAdminContentSort(parsedQuery.data.sort);
+        const sortOrder = getAdminContentSortOrder(sort);
         const supabase = getAdminClient();
 
         let query = supabase
@@ -227,8 +236,14 @@ export async function GET(request: NextRequest) {
             query = query.eq("is_featured", featured);
         }
 
-        const { data, error, count } = await query
-            .order("created_at", { ascending: false })
+        let orderedQuery = query.order(sortOrder.column, { ascending: sortOrder.ascending });
+
+        if (sortOrder.column !== "created_at") {
+            orderedQuery = orderedQuery.order("created_at", { ascending: false });
+        }
+
+        const { data, error, count } = await orderedQuery
+            .order("id", { ascending: true })
             .range(offset, offset + limit - 1);
 
 

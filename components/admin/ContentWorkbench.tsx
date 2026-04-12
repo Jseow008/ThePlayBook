@@ -12,6 +12,11 @@ import { AiReadinessBadge } from "@/components/admin/AiReadinessBadge";
 import { NarrationRowAction } from "@/components/admin/NarrationRowAction";
 import { ContentStatusBadge } from "@/components/admin/ContentStatusBadge";
 import { APP_NAME } from "@/lib/brand";
+import {
+    DEFAULT_ADMIN_CONTENT_SORT,
+    getAdminContentSortOrder,
+    normalizeAdminContentSort,
+} from "@/lib/admin-content-sort";
 
 const typeIcons = {
     podcast: Headphones,
@@ -23,15 +28,18 @@ export async function ContentWorkbench({
     searchParams,
     basePath = "/admin/content",
 }: {
-    searchParams: Promise<{ page?: string; status?: string; featured?: string; q?: string; narration_warning?: string }>;
+    searchParams: Promise<{ page?: string; status?: string; type?: string; featured?: string; q?: string; sort?: string; narration_warning?: string }>;
     basePath?: string;
 }) {
     const supabase = getAdminClient();
     const params = await searchParams;
     const page = Number(params?.page) || 1;
     const statusFilter = params?.status;
+    const typeFilter = params?.type;
     const featuredFilter = params?.featured === "true";
     const searchQuery = params?.q || "";
+    const sort = normalizeAdminContentSort(params?.sort);
+    const sortOrder = getAdminContentSortOrder(sort);
     const narrationWarning = params?.narration_warning || "";
     const returnParams = new URLSearchParams();
 
@@ -41,11 +49,17 @@ export async function ContentWorkbench({
     if (params?.status && params.status !== "all") {
         returnParams.set("status", params.status);
     }
+    if (params?.type && params.type !== "all") {
+        returnParams.set("type", params.type);
+    }
     if (params?.featured === "true") {
         returnParams.set("featured", "true");
     }
     if (params?.q) {
         returnParams.set("q", params.q);
+    }
+    if (sort !== DEFAULT_ADMIN_CONTENT_SORT) {
+        returnParams.set("sort", sort);
     }
 
     const returnTo = returnParams.toString() ? `${basePath}?${returnParams.toString()}` : basePath;
@@ -63,6 +77,10 @@ export async function ContentWorkbench({
         query = query.eq("status", statusFilter);
     }
 
+    if (typeFilter && typeFilter !== "all") {
+        query = query.eq("type", typeFilter);
+    }
+
     if (featuredFilter) {
         query = query.eq("is_featured", true);
     }
@@ -71,8 +89,13 @@ export async function ContentWorkbench({
         query = query.or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%`);
     }
 
-    const { data: contentItems, count, error } = await query
-        .order("created_at", { ascending: false })
+    let orderedQuery = query.order(sortOrder.column, { ascending: sortOrder.ascending });
+
+    if (sortOrder.column !== "created_at") {
+        orderedQuery = orderedQuery.order("created_at", { ascending: false });
+    }
+
+    const { data: contentItems, count, error } = await orderedQuery
         .order("id", { ascending: true })
         .range(from, to);
 
@@ -124,7 +147,7 @@ export async function ContentWorkbench({
                 <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
                     <div className="flex items-center gap-2">
                         <h2 className="font-semibold text-foreground">All Content</h2>
-                        {(statusFilter || featuredFilter || searchQuery) && (
+                        {(statusFilter || typeFilter || featuredFilter || searchQuery) && (
                             <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                                 Filtered
                             </span>
