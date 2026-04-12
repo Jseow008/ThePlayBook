@@ -12,7 +12,6 @@ import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
-import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 import {
@@ -20,15 +19,50 @@ import {
     getAdminContentSortOrder,
     normalizeAdminContentSort,
 } from "@/lib/admin-content-sort";
+import {
+    ADMIN_CONTENT_AI_FILTER_OPTIONS,
+    ADMIN_CONTENT_VOICE_FILTER_OPTIONS,
+} from "@/lib/admin-content-query";
+import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
     type: z.enum(["podcast", "book", "article", "video"]).optional(),
     featured: z.boolean().optional(),
     sort: z.enum(ADMIN_CONTENT_SORT_OPTIONS).optional(),
+    q: z.string().optional(),
+    ai: z.enum(ADMIN_CONTENT_AI_FILTER_OPTIONS).optional(),
+    voice: z.enum(ADMIN_CONTENT_VOICE_FILTER_OPTIONS).optional(),
     limit: z.coerce.number().int().min(1).max(100).default(50),
     offset: z.coerce.number().int().min(0).default(0),
 });
+
+function toTimestamp(value: string | null | undefined) {
+    return value ? new Date(value).getTime() : 0;
+}
+
+function sortAdminContentItems<T extends {
+    id: string;
+    created_at: string | null;
+    updated_at: string | null;
+}>(items: T[], sort: z.infer<typeof AdminContentListQuerySchema>["sort"]) {
+    const normalizedSort = normalizeAdminContentSort(sort);
+    const { column, ascending } = getAdminContentSortOrder(normalizedSort);
+
+    return [...items].sort((left, right) => {
+        const primaryDifference = toTimestamp(left[column]) - toTimestamp(right[column]);
+        if (primaryDifference !== 0) {
+            return ascending ? primaryDifference : -primaryDifference;
+        }
+
+        const createdDifference = toTimestamp(left.created_at) - toTimestamp(right.created_at);
+        if (createdDifference !== 0) {
+            return -createdDifference;
+        }
+
+        return left.id.localeCompare(right.id);
+    });
+}
 
 function validateSeriesAssignment(
     value: { series_id?: string | null; series_order?: number | null },
@@ -202,6 +236,9 @@ export async function GET(request: NextRequest) {
             type: searchParams.get("type") ?? undefined,
             featured: rawFeatured === null ? undefined : rawFeatured === "true",
             sort: searchParams.get("sort") ?? undefined,
+            q: searchParams.get("q") ?? undefined,
+            ai: searchParams.get("ai") ?? undefined,
+            voice: searchParams.get("voice") ?? undefined,
             limit: searchParams.get("limit") ?? undefined,
             offset: searchParams.get("offset") ?? undefined,
         });
@@ -210,14 +247,11 @@ export async function GET(request: NextRequest) {
             return apiError("VALIDATION_ERROR", "Invalid query parameters", 400, requestId);
         }
 
-        const { status, type, featured, limit, offset } = parsedQuery.data;
-        const sort = normalizeAdminContentSort(parsedQuery.data.sort);
-        const sortOrder = getAdminContentSortOrder(sort);
+        const { status, type, featured, limit, offset, q, ai, voice, sort } = parsedQuery.data;
         const supabase = getAdminClient();
-
         let query = supabase
             .from("content_item")
-            .select("id, title, type, author, category, status, is_featured, embedding, created_at, updated_at, deleted_at", { count: "exact" });
+            .select("id, title, type, author, category, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at", { count: "exact" });
 
         if (status === "deleted") {
             query = query.not("deleted_at", "is", null);
@@ -236,6 +270,69 @@ export async function GET(request: NextRequest) {
             query = query.eq("is_featured", featured);
         }
 
+        if (voice === "missing") {
+            query = query.is("audio_url", null);
+        }
+
+        if (q) {
+            query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%`);
+        }
+
+        if (ai === "stale") {
+            const { data: allItems, error } = await query;
+
+            if (error) {
+                throw error;
+            }
+
+            const items = (allItems ?? []) as Array<{
+                id: string;
+                title: string;
+                type: string;
+                author: string | null;
+                category: string | null;
+                status: string;
+                is_featured: boolean;
+                embedding: unknown;
+                audio_url: string | null;
+                narration_status: string | null;
+                narration_error: string | null;
+                narration_requested_at: string | null;
+                narration_started_at: string | null;
+                narration_completed_at: string | null;
+                created_at: string | null;
+                updated_at: string | null;
+                deleted_at: string | null;
+            }>;
+            const aiReadinessById = await getAdminAiReadinessMap(
+                supabase as any,
+                items.map((item) => ({
+                    id: item.id,
+                    status: item.status,
+                    embedding: item.embedding,
+                }))
+            );
+            const filteredItems = sortAdminContentItems(
+                items.filter((item) => aiReadinessById[item.id]?.status === "stale"),
+                sort
+            );
+            const pagedItems = filteredItems.slice(offset, offset + limit);
+
+            return NextResponse.json({
+                success: true,
+                data: pagedItems.map((item) => ({
+                    ...item,
+                    ai_readiness: aiReadinessById[item.id],
+                })),
+                pagination: {
+                    total: filteredItems.length,
+                    limit,
+                    offset,
+                },
+            });
+        }
+
+        const sortOrder = getAdminContentSortOrder(normalizeAdminContentSort(sort));
         let orderedQuery = query.order(sortOrder.column, { ascending: sortOrder.ascending });
 
         if (sortOrder.column !== "created_at") {
@@ -245,7 +342,6 @@ export async function GET(request: NextRequest) {
         const { data, error, count } = await orderedQuery
             .order("id", { ascending: true })
             .range(offset, offset + limit - 1);
-
 
         if (error) {
             throw error;

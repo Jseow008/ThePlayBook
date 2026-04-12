@@ -31,7 +31,7 @@ export default async function AdminLayout({
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-md border-b border-zinc-200 sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
+                    <div className="flex flex-col gap-3 py-3 lg:h-16 lg:flex-row lg:items-center lg:justify-between lg:py-0">
                         {/* Logo */}
                         <Link href="/admin" className="flex items-center gap-2 group">
                             <div className="w-8 h-8 bg-zinc-900 text-white rounded-lg flex items-center justify-center transition-transform group-hover:scale-110">
@@ -41,14 +41,15 @@ export default async function AdminLayout({
                         </Link>
 
                         {/* Navigation */}
-                        <div className="flex items-center gap-1">
+                        <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:justify-end">
                             <AdminPrimaryNav />
-                            <div className="w-px h-6 bg-zinc-200 mx-2" />
+                            <div className="hidden h-6 w-px bg-zinc-200 mx-2 lg:block" />
                             <Link
                                 href="/browse"
                                 target="_blank"
-                                className="focus-ring flex items-center gap-2 px-3 py-2 text-sm font-medium text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors"
+                                className="focus-ring ml-auto inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 lg:ml-0"
                             >
+                                <span className="sm:hidden">Site</span>
                                 <span className="hidden sm:inline">View Site</span>
                             </Link>
                             <AdminLogoutButton />

@@ -1,3 +1,5 @@
+"use client";
+
 type AiReadiness = {
     status: "not_applicable" | "stale" | "ready";
     stale_reasons: string[];

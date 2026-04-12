@@ -41,7 +41,7 @@ export function AdminPrimaryNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="flex items-center gap-1">
+        <nav className="flex flex-wrap items-center gap-1">
             {NAV_ITEMS.map(({ href, label, Icon, match }) => {
                 const isActive = match(pathname);
 

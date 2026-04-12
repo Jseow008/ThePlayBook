@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 
 interface DeleteContentButtonProps {
     contentId: string;
@@ -29,12 +30,14 @@ export function DeleteContentButton({ contentId, contentTitle }: DeleteContentBu
             });
 
             if (response.ok) {
+                toast.success(`Deleted "${contentTitle}"`);
                 router.refresh();
             } else {
-                console.error("Failed to delete content");
+                toast.error(`Failed to delete "${contentTitle}"`);
             }
         } catch (error) {
             console.error("Delete error:", error);
+            toast.error(`Failed to delete "${contentTitle}"`);
         } finally {
             setIsDeleting(false);
             setShowConfirm(false);

@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Star, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { toggleFeaturedStatus } from "@/app/admin/actions";
 
 interface FeaturedToggleProps {
@@ -11,6 +13,7 @@ interface FeaturedToggleProps {
 }
 
 export function FeaturedToggle({ contentId, isFeatured, title }: FeaturedToggleProps) {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
     const toggleFeatured = async () => {
@@ -19,12 +22,14 @@ export function FeaturedToggle({ contentId, isFeatured, title }: FeaturedToggleP
             const result = await toggleFeaturedStatus(contentId, isFeatured);
 
             if (!result.success) {
-                alert(`Failed to update ${title}: ${result.error}`);
+                toast.error(`Failed to update ${title}: ${result.error}`);
+                return;
             }
-            // No need to router.refresh() here because the server action does revalidatePath
+            toast.success(isFeatured ? `Removed "${title}" from featured` : `Featured "${title}"`);
+            router.refresh();
         } catch (error) {
             console.error("Error toggling featured status:", error);
-            alert(`Failed to update ${title}`);
+            toast.error(`Failed to update ${title}`);
         } finally {
             setIsLoading(false);
         }
