@@ -631,9 +631,8 @@ describe("Admin content series support", () => {
         const listQuery = {
             is: vi.fn().mockReturnThis(),
             eq: vi.fn().mockReturnThis(),
-            order: vi.fn().mockReturnValue({
-                range: contentRange,
-            }),
+            order: vi.fn().mockReturnThis(),
+            range: contentRange,
         };
 
         (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentLane } from "@/components/ui/ContentLane";
 import { useRecommendations } from "@/hooks/use-content-queries";
@@ -11,7 +11,7 @@ export function RecommendationsRow({
     cardTitleDensity?: "default" | "app-compact";
 }) {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
-    const [shouldLoadRecommendations, setShouldLoadRecommendations] = useState(false);
+    const shouldLoadRecommendations = isLoaded;
 
     const mostRecentId = completedIds[0] || inProgressIds[0] || null;
     const clusterIds = useMemo(
@@ -25,35 +25,6 @@ export function RecommendationsRow({
 
     const isWorthFetchingGeneral = clusterIds.length >= 5;
 
-    useEffect(() => {
-        if (!isLoaded) {
-            setShouldLoadRecommendations(false);
-            return;
-        }
-
-        let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
-        let idleId: number | null = null;
-
-        const enableRecommendations = () => {
-            setShouldLoadRecommendations(true);
-        };
-
-        if ("requestIdleCallback" in globalThis) {
-            idleId = globalThis.requestIdleCallback(enableRecommendations, { timeout: 1200 });
-        } else {
-            timeoutId = globalThis.setTimeout(enableRecommendations, 400);
-        }
-
-        return () => {
-            if (idleId !== null && "cancelIdleCallback" in globalThis) {
-                globalThis.cancelIdleCallback(idleId);
-            }
-            if (timeoutId !== null) {
-                globalThis.clearTimeout(timeoutId);
-            }
-        };
-    }, [isLoaded]);
-
     const { data: recentItems = [], isLoading: recentLoading } = useRecommendations(
         mostRecentId ? [mostRecentId] : [],
         {
@@ -61,25 +32,17 @@ export function RecommendationsRow({
             excludeIds: knownRecommendationIds,
         }
     );
-    const generalExcludeIds = useMemo(
-        () => Array.from(new Set([
-            ...knownRecommendationIds,
-            ...recentItems.map((item) => item.id),
-        ])),
-        [knownRecommendationIds, recentItems],
-    );
     const shouldFetchGeneral = (
         isLoaded
         && shouldLoadRecommendations
         && isWorthFetchingGeneral
-        && (!mostRecentId || !recentLoading)
     );
 
     const { data: generalItems = [], isLoading: generalLoading } = useRecommendations(
         clusterIds,
         {
             enabled: shouldFetchGeneral,
-            excludeIds: generalExcludeIds,
+            excludeIds: knownRecommendationIds,
         }
     );
     const recentItemIds = useMemo(
@@ -90,9 +53,38 @@ export function RecommendationsRow({
         () => generalItems.filter((item) => !recentItemIds.has(item.id)),
         [generalItems, recentItemIds],
     );
+    const shouldRefillGeneral = (
+        shouldFetchGeneral
+        && recentItems.length > 0
+        && !recentLoading
+        && !generalLoading
+        && generalItems.length > 0
+        && dedupedGeneralItems.length < Math.min(4, generalItems.length)
+    );
+    const generalRefillExcludeIds = useMemo(
+        () => Array.from(new Set([
+            ...knownRecommendationIds,
+            ...recentItems.map((item) => item.id),
+        ])),
+        [knownRecommendationIds, recentItems],
+    );
+    const { data: refilledGeneralItems = [], isLoading: refilledGeneralLoading } = useRecommendations(
+        clusterIds,
+        {
+            enabled: shouldRefillGeneral,
+            excludeIds: generalRefillExcludeIds,
+        }
+    );
+    const dedupedRefilledGeneralItems = useMemo(
+        () => refilledGeneralItems.filter((item) => !recentItemIds.has(item.id)),
+        [refilledGeneralItems, recentItemIds],
+    );
+    const finalGeneralItems = dedupedRefilledGeneralItems.length > dedupedGeneralItems.length
+        ? dedupedRefilledGeneralItems
+        : dedupedGeneralItems;
 
-    const isLoading = recentLoading || generalLoading;
-    const hasItems = recentItems.length > 0 || dedupedGeneralItems.length > 0;
+    const isLoading = recentLoading || generalLoading || refilledGeneralLoading;
+    const hasItems = recentItems.length > 0 || finalGeneralItems.length > 0;
 
     if (!isLoaded || (!mostRecentId && clusterIds.length === 0)) return null;
     if (!isLoading && !hasItems) return null;
@@ -124,10 +116,10 @@ export function RecommendationsRow({
             )}
 
             {/* Lane 2: General Taste */}
-            {isWorthFetchingGeneral && dedupedGeneralItems.length > 0 && (
+            {isWorthFetchingGeneral && finalGeneralItems.length > 0 && (
                 <ContentLane
                     title="Based on your library"
-                    items={dedupedGeneralItems}
+                    items={finalGeneralItems}
                     cardTitleDensity={cardTitleDensity}
                 />
             )}

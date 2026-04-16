@@ -53,6 +53,7 @@ describe("RecommendationsRow", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        useRecommendationsMock.mockReturnValue({ data: [], isLoading: false });
     });
 
     it("keeps rendering recommendation lanes when supporting title data is still loading", () => {
@@ -159,7 +160,8 @@ describe("RecommendationsRow", () => {
 
         useRecommendationsMock
             .mockReturnValueOnce({ data: [recommendation], isLoading: false })
-            .mockReturnValueOnce({ data: [recommendation, additionalRecommendation], isLoading: false });
+            .mockReturnValueOnce({ data: [recommendation, additionalRecommendation], isLoading: false })
+            .mockReturnValueOnce({ data: [additionalRecommendation], isLoading: false });
 
         render(<RecommendationsRow />);
 
@@ -167,6 +169,20 @@ describe("RecommendationsRow", () => {
         expect(generalLane).not.toBeNull();
         expect(within(generalLane!).getByText("Atomic Habits")).toBeInTheDocument();
         expect(within(generalLane!).queryByText(/The Comfort Crisis/)).not.toBeInTheDocument();
+        expect(useRecommendationsMock).toHaveBeenNthCalledWith(
+            3,
+            [
+                recommendation.id,
+                additionalRecommendation.id,
+                "33333333-3333-3333-3333-333333333333",
+                "44444444-4444-4444-4444-444444444444",
+                "55555555-5555-5555-5555-555555555555",
+            ],
+            expect.objectContaining({
+                enabled: true,
+                excludeIds: expect.arrayContaining([recommendation.id]),
+            }),
+        );
     });
 
     it("shows the loading skeleton only when no recommendation items are available yet", () => {
@@ -193,7 +209,7 @@ describe("RecommendationsRow", () => {
         expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
     });
 
-    it("waits for the recent lane to settle before enabling the general lane", () => {
+    it("starts the general lane without waiting for the recent lane to settle", () => {
         useReadingProgressMock.mockReturnValue({
             completedIds: [recommendation.id],
             inProgressIds: [],
@@ -217,7 +233,7 @@ describe("RecommendationsRow", () => {
             2,
             expect.any(Array),
             expect.objectContaining({
-                enabled: false,
+                enabled: true,
             }),
         );
     });

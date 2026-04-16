@@ -171,10 +171,14 @@ export function clearScopedProgress(storage: Storage, scope: StorageScope) {
     getScopedProgressKeys(storage, scope).forEach((key) => storage.removeItem(key));
 }
 
-export function clearScopedUserState(storage: Storage, scope: StorageScope) {
+export function clearScopedReadingHistory(storage: Storage, scope: StorageScope) {
     clearScopedProgress(storage, scope);
     getScopedAudioResumeKeys(storage, scope).forEach((key) => storage.removeItem(key));
     storage.removeItem(myListKey(scope));
+}
+
+export function clearScopedUserState(storage: Storage, scope: StorageScope) {
+    clearScopedReadingHistory(storage, scope);
     storage.removeItem(readerSettingsKey(scope));
 }
 

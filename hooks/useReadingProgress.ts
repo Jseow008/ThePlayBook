@@ -115,6 +115,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const scopeRef = useRef<StorageScope>(getStorageScope(null));
     const userRef = useRef<User | null>(null);
     const hydrateRunRef = useRef(0);
+    const didRunLegacyMigrationRef = useRef(false);
 
     const readProgressFromScope = useCallback((scope: StorageScope, itemId: string) => {
         try {
@@ -371,11 +372,26 @@ function useReadingProgressController(initialUser?: User | null) {
     const hydrateForUser = useCallback(async (nextUser: User | null) => {
         if (typeof window === "undefined") return;
 
+        const nextScope = getStorageScope(nextUser?.id);
+        const currentUserId = userRef.current?.id ?? null;
+        const nextUserId = nextUser?.id ?? null;
+
+        if (!didRunLegacyMigrationRef.current) {
+            migrateLegacyStorageToGuest(localStorage);
+            didRunLegacyMigrationRef.current = true;
+        }
+
+        if (
+            isLoaded
+            && scopeRef.current === nextScope
+            && currentUserId === nextUserId
+        ) {
+            return;
+        }
+
         const runId = ++hydrateRunRef.current;
         resetState();
-        migrateLegacyStorageToGuest(localStorage);
 
-        const nextScope = getStorageScope(nextUser?.id);
         userRef.current = nextUser;
         scopeRef.current = nextScope;
         setUser(nextUser);
@@ -407,7 +423,7 @@ function useReadingProgressController(initialUser?: User | null) {
             .catch((error) => {
                 console.error("Failed to sync reading progress during hydration:", error);
             });
-    }, [importGuestDataToScope, loadProgress, resetState, syncCloudForScope]);
+    }, [importGuestDataToScope, isLoaded, loadProgress, resetState, syncCloudForScope]);
 
     useEffect(() => {
         void hydrateForUser(initialUser ?? null);

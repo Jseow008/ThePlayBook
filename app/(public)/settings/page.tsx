@@ -10,8 +10,8 @@ import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 import { APP_NAME } from "@/lib/brand";
 import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/onboarding";
-import { clearScopedProgress } from "@/lib/local-user-storage";
-import { clearRecentRecommendations } from "@/lib/recommendation-memory";
+import { clearScopedReadingHistory } from "@/lib/local-user-storage";
+import { clearCachedRecommendations, clearRecentRecommendations } from "@/lib/recommendation-memory";
 
 export default function SettingsPage() {
     const supabase = createClient();
@@ -101,7 +101,7 @@ export default function SettingsPage() {
         await signOutAction();
     };
 
-    const handleClearHistory = () => {
+    const handleClearHistory = async () => {
         if (!confirmClear) {
             setConfirmClear(true);
             setTimeout(() => setConfirmClear(false), 3000); // Reset after 3s if not confirmed
@@ -109,14 +109,36 @@ export default function SettingsPage() {
         }
 
         setIsClearing(true);
-        clearScopedProgress(localStorage, storageScope);
-        clearRecentRecommendations(localStorage, storageScope);
-        refresh(); // Update the hook state
-        setTimeout(() => {
-            setIsClearing(false);
+        try {
+            const { data: { user: authenticatedUser }, error: authError } = await supabase.auth.getUser();
+            if (authError) {
+                throw authError;
+            }
+
+            const activeUser = authenticatedUser ?? user;
+
+            if (activeUser) {
+                const { error } = await supabase
+                    .from("user_library")
+                    .delete()
+                    .eq("user_id", activeUser.id);
+
+                if (error) {
+                    throw error;
+                }
+            }
+
+            clearScopedReadingHistory(localStorage, storageScope);
+            clearRecentRecommendations(localStorage, storageScope);
+            clearCachedRecommendations(localStorage, storageScope);
+            refresh();
             setConfirmClear(false);
             toast.success("Reading history cleared");
-        }, 500);
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to clear reading history");
+        } finally {
+            setIsClearing(false);
+        }
     };
 
     return (
@@ -232,7 +254,7 @@ export default function SettingsPage() {
                         </button>
                         <button
                             onClick={handleClearHistory}
-                            disabled={isClearing}
+                            disabled={isClearing || isLoadingAuth}
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left group"
                         >
                             <div className="flex items-center gap-3">
@@ -244,7 +266,7 @@ export default function SettingsPage() {
                                         {confirmClear ? "Click again to confirm" : "Clear Reading History"}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        {confirmClear ? "This action cannot be undone" : "Remove all progress from this device"}
+                                        {confirmClear ? "This action cannot be undone" : "Remove all progress and saved items from your account"}
                                     </p>
                                 </div>
                             </div>
