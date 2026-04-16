@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ImgHTMLAttributes } from "react";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     FocusFeed,
     getDesktopAvailableContentHeight,
@@ -130,6 +130,7 @@ vi.mock("sonner", () => ({
 
 describe("FocusFeed", () => {
     const fetchMock = vi.fn();
+    let mathRandomSpy: ReturnType<typeof vi.spyOn>;
     const focusItems = [
         {
             id: "123e4567-e89b-12d3-a456-426614174222",
@@ -207,6 +208,7 @@ describe("FocusFeed", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         observerInstances.length = 0;
+        mathRandomSpy = vi.spyOn(Math, "random").mockReturnValue(0.999999);
         readingProgressState.value = {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
             isLoaded: true,
@@ -224,6 +226,10 @@ describe("FocusFeed", () => {
             json: async () => focusItems,
         });
         vi.stubGlobal("fetch", fetchMock);
+    });
+
+    afterEach(() => {
+        mathRandomSpy.mockRestore();
     });
 
     it("loads focus items immediately before reading progress hydration and renders the updated mobile focus card", async () => {
@@ -369,6 +375,7 @@ describe("FocusFeed", () => {
                 items: focusItems,
                 activeCardIndex: 1,
                 hasMore: true,
+                nextCursor: focusItems[2]!.id,
                 seenIds: focusItems.map((item) => item.id),
             })
         );
@@ -513,28 +520,25 @@ describe("FocusFeed", () => {
             observer.trigger(cards[1]!);
         });
 
-        await waitFor(() => {
-            const savedState = JSON.parse(
-                window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY) || "{}"
-            );
+        fireEvent(window, new Event("pagehide"));
 
-            expect(savedState).toEqual(
-                expect.objectContaining({
-                    activeCardIndex: 1,
-                    hasMore: false,
-                    items: expect.arrayContaining([
-                        expect.objectContaining({ id: focusItems[0]!.id }),
-                        expect.objectContaining({ id: focusItems[1]!.id }),
-                        expect.objectContaining({ id: focusItems[2]!.id }),
-                    ]),
-                    seenIds: expect.arrayContaining([
-                        focusItems[0]!.id,
-                        focusItems[1]!.id,
-                        focusItems[2]!.id,
-                    ]),
-                })
-            );
-        });
+        const savedState = JSON.parse(
+            window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY) || "{}"
+        );
+
+        expect(savedState).toEqual(
+            expect.objectContaining({
+                activeCardIndex: 1,
+                hasMore: false,
+                nextCursor: null,
+                items: expect.arrayContaining([
+                    expect.objectContaining({ id: focusItems[0]!.id }),
+                    expect.objectContaining({ id: focusItems[1]!.id }),
+                    expect.objectContaining({ id: focusItems[2]!.id }),
+                ]),
+            })
+        );
+        expect(savedState.seenIds).toBeUndefined();
     });
 
     it("restores the exact focus batch and card from sessionStorage immediately", async () => {
@@ -581,6 +585,7 @@ describe("FocusFeed", () => {
                 items: focusItems,
                 activeCardIndex: 1,
                 hasMore: true,
+                nextCursor: focusItems[2]!.id,
                 seenIds: focusItems.map((item) => item.id),
             })
         );
@@ -595,9 +600,43 @@ describe("FocusFeed", () => {
 
         const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
         expect(requestUrl).toContain(readingProgressState.value.completedIds[0]!);
-        expect(requestUrl).toContain(focusItems[0]!.id);
-        expect(requestUrl).toContain(focusItems[1]!.id);
-        expect(requestUrl).toContain(focusItems[2]!.id);
+        expect(requestUrl).toContain(`cursor=${focusItems[2]!.id}`);
+    });
+
+    it("flushes the latest active card immediately on pagehide", async () => {
+        render(<FocusFeed />);
+
+        const cards = await screen.findAllByTestId("focus-feed-card");
+        await waitFor(() => {
+            expect(observerInstances.length).toBeGreaterThan(0);
+        });
+
+        await act(async () => {
+            observerInstances.at(-1)!.trigger(cards[1]!);
+            fireEvent(window, new Event("pagehide"));
+        });
+
+        const savedState = JSON.parse(
+            window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY) || "{}"
+        );
+
+        expect(savedState.activeCardIndex).toBe(1);
+    });
+
+    it("keeps save/remove toast feedback aligned on rapid repeated taps", async () => {
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+
+        const saveButton = screen.getByRole("button", { name: "Save Essentialism to My List" });
+
+        fireEvent.click(saveButton);
+        fireEvent.click(saveButton);
+
+        expect(toggleMyListMock).toHaveBeenNthCalledWith(1, focusItems[0]!.id);
+        expect(toggleMyListMock).toHaveBeenNthCalledWith(2, focusItems[0]!.id);
+        expect(toastSuccessMock).toHaveBeenNthCalledWith(1, "Added to My List");
+        expect(toastSuccessMock).toHaveBeenNthCalledWith(2, "Removed from My List");
     });
 
     it("opens a simplified mobile takeaways sheet with the full takeaway list and closes back to the same feed", async () => {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+    memo,
     type MutableRefObject,
     type TouchEvent as ReactTouchEvent,
     useCallback,
@@ -43,6 +44,7 @@ const DESKTOP_SCROLL_CUE_DELAY_MS = 5000;
 const MOBILE_SCROLL_HINT_DELAY_MS = 2400;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
+const RESTORE_STATE_WRITE_DELAY_MS = 250;
 const FocusItemIdSchema = z.string().uuid();
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
 const MOBILE_MIN_READABLE_HOOK_HEIGHT_PX = 72;
@@ -51,6 +53,14 @@ const DESKTOP_MEDIUM_COVER_WIDTH = 116;
 const DESKTOP_COMPACT_COVER_WIDTH = 104;
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
+
+type FocusFeedResponse = {
+    items: FocusFeedItem[];
+    pageInfo?: {
+        hasMore?: boolean;
+        nextCursor?: string | null;
+    };
+};
 
 const FocusRestoreItemSchema = z.object({
     id: z.string(),
@@ -68,7 +78,8 @@ const FocusRestoreStateSchema = z
         items: z.array(FocusRestoreItemSchema),
         activeCardIndex: z.number().int().min(0),
         hasMore: z.boolean(),
-        seenIds: z.array(z.string()),
+        nextCursor: z.string().uuid().nullable().optional(),
+        seenIds: z.array(z.string()).optional(),
     })
     .superRefine((value, ctx) => {
         if (value.items.length === 0 && value.activeCardIndex !== 0) {
@@ -106,6 +117,17 @@ function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
 function formatDuration(durationSeconds: number | null) {
     if (!durationSeconds) return null;
     return `${Math.max(1, Math.round(durationSeconds / 60))} min`;
+}
+
+function shuffleItems<T>(items: T[]): T[] {
+    const next = [...items];
+
+    for (let index = next.length - 1; index > 0; index -= 1) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
+    }
+
+    return next;
 }
 
 export function getMobileHookMaxHeight({
@@ -236,13 +258,26 @@ function writeMobileScrollHintDismissed() {
     window.sessionStorage.setItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY, "true");
 }
 
+function buildRestoreCursorFromSnapshot(snapshot: FocusRestoreState) {
+    if (snapshot.nextCursor !== undefined) {
+        return snapshot.nextCursor;
+    }
+
+    if (!snapshot.hasMore) {
+        return null;
+    }
+
+    return null;
+}
+
 export function FocusFeed() {
-    const { completedIds, isLoaded } = useReadingProgress();
+    const { completedIds, isLoaded, myListIds, toggleMyList } = useReadingProgress();
     const isDesktop = useMediaQuery("(min-width: 768px)");
     const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
     const [items, setItems] = useState<FocusFeedItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
+    const [nextCursor, setNextCursor] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [hasInitialized, setHasInitialized] = useState(false);
     const [activeCardIndex, setActiveCardIndex] = useState(0);
@@ -258,6 +293,10 @@ export function FocusFeed() {
     const hasInitializedRef = useRef(false);
     const isFetchingRef = useRef(false);
     const activeCardIndexRef = useRef(0);
+    const hasMoreRef = useRef(true);
+    const itemsRef = useRef<FocusFeedItem[]>([]);
+    const myListIdSetRef = useRef<Set<string>>(new Set());
+    const nextCursorRef = useRef<string | null>(null);
     const isGestureLockedRef = useRef(false);
     const pendingCardIndexRef = useRef<number | null>(null);
     const isRestoringSnapshotRef = useRef(false);
@@ -279,9 +318,19 @@ export function FocusFeed() {
     const hasDismissedMobileScrollHintRef = useRef(false);
     const hasScheduledMobileScrollHintRef = useRef(false);
     const mobileScrollHintAnchorIndexRef = useRef<number | null>(null);
+    const restoreStateWriteTimeoutRef = useRef<number | null>(null);
+    const pendingRestoreSnapshotRef = useRef<Omit<FocusRestoreState, "seenIds"> | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
+    const myListIdSet = useMemo(() => new Set(myListIds), [myListIds]);
     const isTakeawaysSheetOpen = !isDesktop && takeawaysSheetCard !== null;
+
+    const buildRestoreSnapshot = useCallback((): Omit<FocusRestoreState, "seenIds"> => ({
+        items: itemsRef.current,
+        activeCardIndex: activeCardIndexRef.current,
+        hasMore: hasMoreRef.current,
+        nextCursor: nextCursorRef.current,
+    }), []);
 
     const unlockGestures = useCallback(() => {
         isGestureLockedRef.current = false;
@@ -380,6 +429,31 @@ export function FocusFeed() {
         }
     }, []);
 
+    const flushRestoreStateWrite = useCallback(() => {
+        if (restoreStateWriteTimeoutRef.current !== null) {
+            window.clearTimeout(restoreStateWriteTimeoutRef.current);
+            restoreStateWriteTimeoutRef.current = null;
+        }
+
+        const snapshot = buildRestoreSnapshot();
+        pendingRestoreSnapshotRef.current = snapshot;
+        writeFocusRestoreState(snapshot);
+    }, [buildRestoreSnapshot]);
+
+    const scheduleRestoreStateWrite = useCallback((snapshot?: Omit<FocusRestoreState, "seenIds">) => {
+        const nextSnapshot = snapshot ?? buildRestoreSnapshot();
+        pendingRestoreSnapshotRef.current = nextSnapshot;
+
+        if (restoreStateWriteTimeoutRef.current !== null) {
+            window.clearTimeout(restoreStateWriteTimeoutRef.current);
+        }
+
+        restoreStateWriteTimeoutRef.current = window.setTimeout(() => {
+            restoreStateWriteTimeoutRef.current = null;
+            writeFocusRestoreState(nextSnapshot);
+        }, RESTORE_STATE_WRITE_DELAY_MS);
+    }, [buildRestoreSnapshot]);
+
     const restoreTakeawaysSheetFocus = useCallback(() => {
         const opener = takeawaysSheetOpenerRef.current;
         takeawaysSheetOpenerRef.current = null;
@@ -477,6 +551,17 @@ export function FocusFeed() {
         [cards.length, isTakeawaysSheetOpen, moveToCard]
     );
 
+    const handleToggleSave = useCallback((card: FocusCard) => {
+        const wasSaved = myListIdSetRef.current.has(card.id);
+        toggleMyList(card.id);
+        if (wasSaved) {
+            myListIdSetRef.current.delete(card.id);
+        } else {
+            myListIdSetRef.current.add(card.id);
+        }
+        toast.success(wasSaved ? "Removed from My List" : "Added to My List");
+    }, [toggleMyList]);
+
     const fetchBatch = useCallback(async (options?: { includeCompletedIds?: boolean }) => {
         if (isFetchingRef.current || !hasMore) {
             return;
@@ -488,10 +573,7 @@ export function FocusFeed() {
 
         try {
             const includeCompletedIds = options?.includeCompletedIds ?? isLoaded;
-            const excludeIds = buildExcludeParam([
-                ...(includeCompletedIds ? completedIds : []),
-                ...Array.from(seenIdsRef.current),
-            ]);
+            const excludeIds = buildExcludeParam(includeCompletedIds ? completedIds : []);
 
             const params = new URLSearchParams({
                 limit: String(BATCH_SIZE),
@@ -501,16 +583,32 @@ export function FocusFeed() {
                 params.set("excludeIds", excludeIds);
             }
 
+            if (nextCursorRef.current) {
+                params.set("cursor", nextCursorRef.current);
+            }
+
             const response = await fetch(`/api/focus?${params.toString()}`);
             if (!response.ok) {
                 throw new Error("Failed to load focus feed.");
             }
 
-            const data = (await response.json()) as FocusFeedItem[];
+            const payload = await response.json() as FocusFeedItem[] | FocusFeedResponse;
+            const data = Array.isArray(payload) ? payload : payload.items ?? [];
+            const pageInfo = Array.isArray(payload) ? undefined : payload.pageInfo;
+            const shuffledData = shuffleItems(data);
 
-            data.forEach((item) => seenIdsRef.current.add(item.id));
-            setItems((current) => mergeUniqueFocusItems(current, data));
-            setHasMore(data.length >= BATCH_SIZE);
+            shuffledData.forEach((item) => seenIdsRef.current.add(item.id));
+            setItems((current) => {
+                const nextItems = mergeUniqueFocusItems(current, shuffledData);
+                itemsRef.current = nextItems;
+                return nextItems;
+            });
+            const resolvedHasMore = pageInfo?.hasMore ?? data.length >= BATCH_SIZE;
+            hasMoreRef.current = resolvedHasMore;
+            setHasMore(resolvedHasMore);
+            const resolvedNextCursor = pageInfo?.nextCursor ?? null;
+            nextCursorRef.current = resolvedNextCursor;
+            setNextCursor(resolvedNextCursor);
         } catch (err) {
             console.error(err);
             setError("Focus mode is unavailable right now.");
@@ -574,16 +672,22 @@ export function FocusFeed() {
 
         const restoredState = readFocusRestoreState();
         if (restoredState) {
-            seenIdsRef.current = new Set(restoredState.seenIds);
+            seenIdsRef.current = new Set(restoredState.seenIds ?? restoredState.items.map((item) => item.id));
             activeCardIndexRef.current = restoredState.activeCardIndex;
             isRestoringSnapshotRef.current = true;
+            const restoredNextCursor = buildRestoreCursorFromSnapshot(restoredState);
             restorePrefetchArmedRef.current =
                 restoredState.hasMore
+                && restoredNextCursor !== null
                 && restoredState.items.length > 0
                 && restoredState.items.length - restoredState.activeCardIndex <= 3;
             pendingRestoreCardIndexRef.current =
                 restoredState.items.length > 0 ? restoredState.activeCardIndex : null;
-            setHasMore(restoredState.hasMore);
+            itemsRef.current = restoredState.items;
+            hasMoreRef.current = restoredState.hasMore && restoredNextCursor !== null;
+            setHasMore(restoredState.hasMore && restoredNextCursor !== null);
+            nextCursorRef.current = restoredNextCursor;
+            setNextCursor(restoredNextCursor);
             setItems(restoredState.items);
             setActiveCardIndex(restoredState.activeCardIndex);
             hasInitializedRef.current = true;
@@ -593,6 +697,9 @@ export function FocusFeed() {
 
         hasInitializedRef.current = true;
         setHasInitialized(true);
+        itemsRef.current = [];
+        hasMoreRef.current = true;
+        nextCursorRef.current = null;
         void fetchBatch({ includeCompletedIds: false });
     }, [fetchBatch]);
 
@@ -657,6 +764,7 @@ export function FocusFeed() {
             setActiveCardIndex(nextActiveIndex);
         }
 
+        itemsRef.current = filteredItems;
         setItems(filteredItems);
 
         if (hasMore && filteredItems.length - nextActiveIndex <= 3) {
@@ -720,6 +828,22 @@ export function FocusFeed() {
     useEffect(() => {
         activeCardIndexRef.current = activeCardIndex;
     }, [activeCardIndex]);
+
+    useEffect(() => {
+        itemsRef.current = items;
+    }, [items]);
+
+    useEffect(() => {
+        hasMoreRef.current = hasMore;
+    }, [hasMore]);
+
+    useEffect(() => {
+        nextCursorRef.current = nextCursor;
+    }, [nextCursor]);
+
+    useEffect(() => {
+        myListIdSetRef.current = new Set(myListIds);
+    }, [myListIds]);
 
     useEffect(() => {
         hasDismissedMobileScrollHintRef.current = readMobileScrollHintDismissed();
@@ -892,12 +1016,14 @@ export function FocusFeed() {
             clearDesktopScrollCueTimeout();
             clearMobileScrollHintTimeouts();
             clearSheetAnimationTimeouts();
+            flushRestoreStateWrite();
         };
     }, [
         clearDesktopScrollCueTimeout,
         clearMobileScrollHintTimeouts,
         clearSheetAnimationTimeouts,
         clearWheelQuietTimeout,
+        flushRestoreStateWrite,
         unlockGestures,
     ]);
 
@@ -981,7 +1107,7 @@ export function FocusFeed() {
     }, [closeTakeawaysSheet, isTakeawaysSheetOpen]);
 
     useEffect(() => {
-        if (!hasInitializedRef.current || !hasMore || items.length > 0 || error) {
+        if (!hasInitializedRef.current || isRestoringSnapshotRef.current || !hasMore || items.length > 0 || error) {
             return;
         }
 
@@ -1021,15 +1147,28 @@ export function FocusFeed() {
             return;
         }
 
-        const snapshot: FocusRestoreState = {
-            items,
-            activeCardIndex,
-            hasMore,
-            seenIds: Array.from(seenIdsRef.current),
+        scheduleRestoreStateWrite();
+    }, [activeCardIndex, hasInitialized, hasMore, items, mounted, nextCursor, scheduleRestoreStateWrite]);
+
+    useEffect(() => {
+        if (!mounted) {
+            return;
+        }
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "hidden") {
+                flushRestoreStateWrite();
+            }
         };
 
-        writeFocusRestoreState(snapshot);
-    }, [activeCardIndex, hasInitialized, hasMore, items, mounted]);
+        window.addEventListener("pagehide", flushRestoreStateWrite);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener("pagehide", flushRestoreStateWrite);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [flushRestoreStateWrite, mounted]);
 
     return (
         <section className="px-4 pt-5 md:px-6 md:pt-6 md:pb-6 lg:px-10">
@@ -1051,11 +1190,13 @@ export function FocusFeed() {
                                             key={card.id}
                                             card={card}
                                             cardIndex={index}
+                                            isSaved={myListIdSet.has(card.id)}
                                             isDesktop={isDesktop}
                                             isActive={index === activeCardIndex}
                                             showDesktopScrollCue={isDesktopScrollCueVisible && index < cards.length - 1}
                                             mobileCardTargetHeight={listViewportHeight}
                                             onOpenTakeaways={openTakeawaysSheet}
+                                            onToggleSave={handleToggleSave}
                                         />
                                     ))}
 
@@ -1128,26 +1269,28 @@ function EmptyState({ error }: { error: string | null }) {
     );
 }
 
-function FocusCardView({
+const FocusCardView = memo(function FocusCardView({
     card,
     cardIndex,
+    isSaved,
     isDesktop,
     isActive,
     showDesktopScrollCue,
     mobileCardTargetHeight,
     onOpenTakeaways,
+    onToggleSave,
 }: {
     card: FocusCard;
     cardIndex: number;
+    isSaved: boolean;
     isDesktop: boolean;
     isActive: boolean;
     showDesktopScrollCue: boolean;
     mobileCardTargetHeight: number | null;
     onOpenTakeaways: (card: FocusCard, opener: HTMLElement) => void;
+    onToggleSave: (card: FocusCard) => void;
 }) {
-    const { isInMyList, toggleMyList } = useReadingProgress();
     const duration = formatDuration(card.duration_seconds);
-    const isSaved = isInMyList(card.id);
     const [mobileHookMaxHeight, setMobileHookMaxHeight] = useState<number | null>(null);
     const cardRef = useRef<HTMLElement | null>(null);
     const cardContentRef = useRef<HTMLDivElement | null>(null);
@@ -1459,8 +1602,7 @@ function FocusCardView({
                                     <button
                                         type="button"
                                         onClick={() => {
-                                            toggleMyList(card.id);
-                                            toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                                            onToggleSave(card);
                                         }}
                                         className={`focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors touch-manipulation ${isSaved
                                             ? "bg-primary/10 text-primary"
@@ -1528,7 +1670,7 @@ function FocusCardView({
             ) : null}
         </article>
     );
-}
+});
 
 function FocusTakeawaysSheet({
     card,

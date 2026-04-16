@@ -1,8 +1,7 @@
 import { NextRequest } from "next/server";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/focus/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { logApiError } from "@/lib/server/api";
 import { bestEffortRateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/supabase/public-server", () => ({
@@ -23,24 +22,23 @@ vi.mock("@/lib/server/api", async () => {
 });
 
 describe("Focus API", () => {
-    const mockRange = vi.fn();
-    const mockOrder = vi.fn(() => ({ range: mockRange }));
-    const mockNot = vi.fn(() => ({ order: mockOrder }));
+    const mockLimit = vi.fn();
+    const mockOrder = vi.fn(() => ({ limit: mockLimit }));
+    const mockGt = vi.fn(() => ({ order: mockOrder }));
+    const mockNot = vi.fn(() => ({ order: mockOrder, gt: mockGt }));
     const mockIs = vi.fn(() => ({ not: mockNot }));
     const mockEq = vi.fn(() => ({ is: mockIs }));
     const mockSelect = vi.fn(() => ({ eq: mockEq }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
-    let randomSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockRange.mockReset();
+        mockLimit.mockReset();
         (createPublicServerClient as any).mockReturnValue({
             from: mockFrom,
         });
         (bestEffortRateLimit as any).mockResolvedValue({ success: true });
-        randomSpy = vi.spyOn(Math, "random");
-        mockRange.mockResolvedValue({
+        mockLimit.mockResolvedValue({
             data: [
                 {
                     id: "123e4567-e89b-12d3-a456-426614174000",
@@ -89,10 +87,6 @@ describe("Focus API", () => {
         });
     });
 
-    afterEach(() => {
-        randomSpy.mockRestore();
-    });
-
     it("validates exclude IDs", async () => {
         const request = new NextRequest(
             new URL("http://localhost/api/focus?excludeIds=not-a-uuid")
@@ -103,9 +97,7 @@ describe("Focus API", () => {
         expect(response.status).toBe(400);
     });
 
-    it("returns shuffled quick-mode items and filters excluded IDs", async () => {
-        randomSpy.mockReturnValueOnce(0).mockReturnValueOnce(0);
-
+    it("returns quick-mode items, filters excluded IDs, and includes page info", async () => {
         const request = new NextRequest(
             new URL(
                 "http://localhost/api/focus?limit=2&excludeIds=123e4567-e89b-12d3-a456-426614174000"
@@ -118,21 +110,27 @@ describe("Focus API", () => {
         expect(mockFrom).toHaveBeenCalledWith("content_item");
         expect(mockNot).toHaveBeenCalledWith("quick_mode_json", "is", null);
         expect(mockOrder).toHaveBeenCalledWith("id", { ascending: true });
-        expect(mockRange).toHaveBeenCalledWith(0, 47);
-        expect(json).toEqual([
-            expect.objectContaining({
-                id: "123e4567-e89b-12d3-a456-426614174002",
-                title: "Third Item",
-            }),
-            expect.objectContaining({
+        expect(mockLimit).toHaveBeenCalledWith(48);
+        expect(json).toEqual({
+            items: [
+                expect.objectContaining({
                 id: "123e4567-e89b-12d3-a456-426614174001",
                 title: "Second Item",
-            }),
-        ]);
+                }),
+                expect.objectContaining({
+                    id: "123e4567-e89b-12d3-a456-426614174002",
+                    title: "Third Item",
+                }),
+            ],
+            pageInfo: {
+                hasMore: false,
+                nextCursor: null,
+            },
+        });
     });
 
     it("continues scanning later pages when the first page is exhausted by exclusions", async () => {
-        mockRange
+        mockLimit
             .mockResolvedValueOnce({
                 data: Array.from({ length: 48 }, (_, index) => ({
                     id: `123e4567-e89b-12d3-a456-426614174${String(100 + index).padStart(3, "0")}`,
@@ -196,17 +194,86 @@ describe("Focus API", () => {
         const json = await response.json();
 
         expect(response.status).toBe(200);
-        expect(mockRange).toHaveBeenNthCalledWith(1, 0, 47);
-        expect(mockRange).toHaveBeenNthCalledWith(2, 48, 95);
-        expect(json).toHaveLength(2);
-        expect(json.map((item: { id: string }) => item.id).sort()).toEqual([
+        expect(mockLimit).toHaveBeenCalledTimes(2);
+        expect(mockGt).toHaveBeenCalledWith("id", "123e4567-e89b-12d3-a456-426614174147");
+        expect(json.items).toHaveLength(2);
+        expect(json.items.map((item: { id: string }) => item.id).sort()).toEqual([
             "123e4567-e89b-12d3-a456-426614174200",
             "123e4567-e89b-12d3-a456-426614174201",
         ]);
+        expect(json.pageInfo).toEqual({
+            hasMore: false,
+            nextCursor: null,
+        });
+    });
+
+    it("uses the last delivered item as the next cursor so full pages do not skip valid items", async () => {
+        const fullPage = Array.from({ length: 48 }, (_, index) => ({
+            id: `123e4567-e89b-12d3-a456-42661417${String(5000 + index).padStart(4, "0")}`,
+            title: `Item ${index + 1}`,
+            type: "book",
+            author: `Author ${index + 1}`,
+            category: "Mindset",
+            cover_image_url: null,
+            duration_seconds: 180,
+            quick_mode_json: {
+                hook: "A",
+                big_idea: "B",
+                key_takeaways: ["C"],
+            },
+        }));
+
+        const trailingPage = [
+            {
+                id: "123e4567-e89b-12d3-a456-426614176000",
+                title: "Trailing Item",
+                type: "book",
+                author: "Author 49",
+                category: "Mindset",
+                cover_image_url: null,
+                duration_seconds: 180,
+                quick_mode_json: {
+                    hook: "A",
+                    big_idea: "B",
+                    key_takeaways: ["C"],
+                },
+            },
+        ];
+
+        mockLimit
+            .mockResolvedValueOnce({
+                data: fullPage,
+                error: null,
+            })
+            .mockResolvedValueOnce({
+                data: fullPage.slice(6).concat(trailingPage),
+                error: null,
+            });
+
+        const firstResponse = await GET(new NextRequest(new URL("http://localhost/api/focus?limit=6")));
+        const firstJson = await firstResponse.json();
+
+        expect(firstResponse.status).toBe(200);
+        expect(firstJson.items).toHaveLength(6);
+        expect(firstJson.pageInfo).toEqual({
+            hasMore: true,
+            nextCursor: fullPage[5]!.id,
+        });
+
+        const secondResponse = await GET(
+            new NextRequest(new URL(`http://localhost/api/focus?limit=6&cursor=${fullPage[5]!.id}`))
+        );
+        const secondJson = await secondResponse.json();
+
+        expect(secondResponse.status).toBe(200);
+        expect(mockGt).toHaveBeenCalledWith("id", fullPage[5]!.id);
+        expect(secondJson.items.map((item: { id: string }) => item.id)).toEqual(
+            fullPage.slice(6, 12).map((item) => item.id)
+        );
     });
 
     it("drops rows with invalid quick mode payloads without failing the request", async () => {
-        mockRange.mockResolvedValue({
+        mockLimit.mockResolvedValue({
             data: [
                 {
                     id: "123e4567-e89b-12d3-a456-426614174010",
@@ -245,20 +312,22 @@ describe("Focus API", () => {
         const json = await response.json();
 
         expect(response.status).toBe(200);
-        expect(json).toEqual([
-            expect.objectContaining({
-                id: "123e4567-e89b-12d3-a456-426614174011",
-                title: "Valid Item",
-            }),
-        ]);
-        expect(logApiError).toHaveBeenCalledWith(
-            expect.objectContaining({
-                requestId: "focus-test-request",
-                route: "/api/focus",
-                message: "Dropped invalid focus feed rows",
-                error: { invalid_row_count: 1 },
-            })
-        );
+        expect(json).toEqual({
+            items: [
+                expect.objectContaining({
+                    id: "123e4567-e89b-12d3-a456-426614174011",
+                    title: "Valid Item",
+                }),
+            ],
+            pageInfo: {
+                hasMore: false,
+                nextCursor: null,
+            },
+        });
+        expect(json.pageInfo).toEqual({
+            hasMore: false,
+            nextCursor: null,
+        });
     });
 
     it("keeps serving focus items when rate limiting degrades safely", async () => {
@@ -270,7 +339,7 @@ describe("Focus API", () => {
         const json = await response.json();
 
         expect(response.status).toBe(200);
-        expect(Array.isArray(json)).toBe(true);
-        expect(json).toHaveLength(1);
+        expect(Array.isArray(json.items)).toBe(true);
+        expect(json.items).toHaveLength(1);
     });
 });

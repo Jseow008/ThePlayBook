@@ -8,22 +8,12 @@ import { bestEffortRateLimit } from "@/lib/server/rate-limit";
 const QUERY_SCHEMA = z.object({
     limit: z.coerce.number().int().min(1).max(12).default(6),
     excludeIds: z.array(z.string().uuid()).default([]),
+    cursor: z.string().uuid().optional(),
 });
 
 const FOCUS_SELECT =
     "id, title, type, author, category, cover_image_url, duration_seconds, quick_mode_json";
 const PAGE_SIZE = 48;
-
-function shuffleItems<T>(items: T[]): T[] {
-    const next = [...items];
-
-    for (let index = next.length - 1; index > 0; index -= 1) {
-        const swapIndex = Math.floor(Math.random() * (index + 1));
-        [next[index], next[swapIndex]] = [next[swapIndex], next[index]];
-    }
-
-    return next;
-}
 
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
@@ -53,6 +43,7 @@ export async function GET(request: NextRequest) {
             .split(",")
             .map((value) => value.trim())
             .filter(Boolean),
+        cursor: request.nextUrl.searchParams.get("cursor") ?? undefined,
     });
 
     if (!parsedQuery.success) {
@@ -65,17 +56,24 @@ export async function GET(request: NextRequest) {
     let invalidRowCount = 0;
     const collectedIds = new Set<string>();
     const candidateItems: FocusFeedItem[] = [];
-    let offset = 0;
+    let cursor = parsedQuery.data.cursor ?? null;
+    let hasMore = false;
 
-    while (candidateItems.length < limit) {
-        const { data, error } = await supabase
+    while (candidateItems.length <= limit) {
+        let query = supabase
             .from("content_item")
             .select(FOCUS_SELECT)
             .eq("status", "verified")
             .is("deleted_at", null)
-            .not("quick_mode_json", "is", null)
+            .not("quick_mode_json", "is", null);
+
+        if (cursor) {
+            query = query.gt("id", cursor);
+        }
+
+        const { data, error } = await query
             .order("id", { ascending: true })
-            .range(offset, offset + PAGE_SIZE - 1);
+            .limit(PAGE_SIZE);
 
         if (error) {
             logApiError({
@@ -88,6 +86,10 @@ export async function GET(request: NextRequest) {
         }
 
         const pageItems = (data ?? []) as FocusFeedItem[];
+
+        if (pageItems.length === 0) {
+            break;
+        }
 
         pageItems.forEach((item) => {
             const parsedQuickMode = QuickModeSchema.safeParse(item.quick_mode_json);
@@ -105,15 +107,20 @@ export async function GET(request: NextRequest) {
             candidateItems.push(item);
         });
 
+        if (candidateItems.length > limit) {
+            hasMore = true;
+            break;
+        }
+
         if (pageItems.length < PAGE_SIZE) {
             break;
         }
 
-        offset += PAGE_SIZE;
+        cursor = pageItems[pageItems.length - 1]?.id ?? null;
     }
 
     if (invalidRowCount > 0) {
-        logApiError({
+        console.warn({
             requestId,
             route: "/api/focus",
             message: "Dropped invalid focus feed rows",
@@ -121,9 +128,16 @@ export async function GET(request: NextRequest) {
         });
     }
 
-    const filteredItems = shuffleItems(candidateItems).slice(0, limit);
+    const items = candidateItems.slice(0, limit);
+    const nextCursor = hasMore ? items[items.length - 1]?.id ?? null : null;
 
-    return NextResponse.json(filteredItems, {
+    return NextResponse.json({
+        items,
+        pageInfo: {
+            hasMore,
+            nextCursor: hasMore ? nextCursor : null,
+        },
+    }, {
         headers: {
             "Cache-Control": "private, max-age=0, must-revalidate",
         },
