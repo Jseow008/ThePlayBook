@@ -8,18 +8,44 @@ describe("DrainNarrationJobsButton", () => {
     });
 
     it("shows a success message when queued narration jobs are processed", async () => {
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                data: {
-                    processed: true,
-                    processedCount: 2,
-                    discardedCount: 0,
-                },
-            }),
-        }) as any;
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        summary: {
+                            queuedCount: 2,
+                            processingCount: 0,
+                        },
+                        batchSize: 3,
+                    },
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        processed: true,
+                        processedCount: 2,
+                        discardedCount: 0,
+                        batchSize: 3,
+                        queueSummaryBefore: {
+                            queuedCount: 2,
+                            processingCount: 0,
+                        },
+                        queueSummaryAfter: {
+                            queuedCount: 0,
+                            processingCount: 0,
+                        },
+                    },
+                }),
+            }) as any;
 
         render(<DrainNarrationJobsButton />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/2 queued for recovery/i)).toBeInTheDocument();
+        });
 
         fireEvent.click(screen.getByRole("button", { name: /run recovery/i }));
 
@@ -27,24 +53,53 @@ describe("DrainNarrationJobsButton", () => {
             expect(screen.getByText(/processed 2 queued narration jobs/i)).toBeInTheDocument();
         });
 
+        expect(global.fetch).toHaveBeenCalledWith("/api/admin/narration/status", {
+            method: "GET",
+        });
         expect(global.fetch).toHaveBeenCalledWith("/api/admin/narration/process", {
             method: "POST",
         });
     });
 
     it("shows an idle message when there are no queued narration jobs", async () => {
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                data: {
-                    processed: false,
-                    processedCount: 0,
-                    discardedCount: 0,
-                },
-            }),
-        }) as any;
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        summary: {
+                            queuedCount: 0,
+                            processingCount: 0,
+                        },
+                        batchSize: 3,
+                    },
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        processed: false,
+                        processedCount: 0,
+                        discardedCount: 0,
+                        batchSize: 3,
+                        queueSummaryBefore: {
+                            queuedCount: 0,
+                            processingCount: 0,
+                        },
+                        queueSummaryAfter: {
+                            queuedCount: 0,
+                            processingCount: 0,
+                        },
+                    },
+                }),
+            }) as any;
 
         render(<DrainNarrationJobsButton />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/0 queued for recovery/i)).toBeInTheDocument();
+        });
 
         fireEvent.click(screen.getByRole("button", { name: /run recovery/i }));
 
@@ -54,16 +109,33 @@ describe("DrainNarrationJobsButton", () => {
     });
 
     it("surfaces recovery errors", async () => {
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: false,
-            json: async () => ({
-                error: {
-                    message: "Failed to process queued AI narration",
-                },
-            }),
-        }) as any;
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        summary: {
+                            queuedCount: 1,
+                            processingCount: 0,
+                        },
+                        batchSize: 3,
+                    },
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: false,
+                json: async () => ({
+                    error: {
+                        message: "Failed to process queued AI narration",
+                    },
+                }),
+            }) as any;
 
         render(<DrainNarrationJobsButton />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/1 queued for recovery/i)).toBeInTheDocument();
+        });
 
         fireEvent.click(screen.getByRole("button", { name: /run recovery/i }));
 

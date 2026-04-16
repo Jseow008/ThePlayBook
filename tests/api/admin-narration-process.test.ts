@@ -6,7 +6,8 @@ import { generateNarrationAudio } from "@/lib/server/ai-narration";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/server/rate-limit";
 
-const { revalidatePathMock } = vi.hoisted(() => ({
+const { getNarrationQueueSummaryMock, revalidatePathMock } = vi.hoisted(() => ({
+    getNarrationQueueSummaryMock: vi.fn(),
     revalidatePathMock: vi.fn(),
 }));
 
@@ -34,6 +35,14 @@ vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
 }));
 
+vi.mock("@/lib/server/narration-processor", async () => {
+    const actual = await vi.importActual<typeof import("@/lib/server/narration-processor")>("@/lib/server/narration-processor");
+    return {
+        ...actual,
+        getNarrationQueueSummary: getNarrationQueueSummaryMock,
+    };
+});
+
 describe("Admin narration processor API", () => {
     const originalCronSecret = process.env.CRON_SECRET;
     const uploadMock = vi.fn();
@@ -47,6 +56,10 @@ describe("Admin narration processor API", () => {
         process.env.CRON_SECRET = originalCronSecret;
         (verifyAdminSession as any).mockResolvedValue(true);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        getNarrationQueueSummaryMock.mockResolvedValue({
+            queuedCount: 0,
+            processingCount: 0,
+        });
         (generateNarrationAudio as any).mockResolvedValue({
             audioBuffer: Buffer.from("mp3-data"),
             extension: "mp3",

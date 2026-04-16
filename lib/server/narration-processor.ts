@@ -9,6 +9,12 @@ import { logApiError } from "@/lib/server/api";
 
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
 const GENERATED_AUDIO_PREFIX = "/storage/v1/object/public/audio/";
+export const NARRATION_PROCESS_BATCH_SIZE = 3;
+
+export interface NarrationQueueSummary {
+    queuedCount: number;
+    processingCount: number;
+}
 
 interface ClaimedNarrationJob {
     id: string;
@@ -145,6 +151,37 @@ async function claimNextNarrationJob() {
     }
 
     return null;
+}
+
+export async function getNarrationQueueSummary(): Promise<NarrationQueueSummary> {
+    const supabase = getAdminClient();
+    const [queuedResult, processingResult] = await Promise.all([
+        supabase
+            .from("content_item")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "verified")
+            .eq("narration_status", "queued")
+            .is("deleted_at", null),
+        supabase
+            .from("content_item")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "verified")
+            .eq("narration_status", "processing")
+            .is("deleted_at", null),
+    ]);
+
+    if (queuedResult.error) {
+        throw queuedResult.error;
+    }
+
+    if (processingResult.error) {
+        throw processingResult.error;
+    }
+
+    return {
+        queuedCount: queuedResult.count ?? 0,
+        processingCount: processingResult.count ?? 0,
+    };
 }
 
 async function markNarrationFailed(contentId: string, startedAt: string, error: unknown) {
