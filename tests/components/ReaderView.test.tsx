@@ -369,6 +369,22 @@ describe('ReaderView', () => {
         expect(syncFromCloudMock).not.toHaveBeenCalled();
     });
 
+    it('does not save reading progress when the reader is only opened passively', async () => {
+        vi.useFakeTimers();
+
+        try {
+            render(<ReaderView content={mockContent} />);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(1000);
+            });
+
+            expect(saveReadingProgressMock).not.toHaveBeenCalled();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('renders series navigation when the item belongs to a series', () => {
         render(
             <ReaderView
@@ -1128,6 +1144,31 @@ describe('ReaderView', () => {
                 expect.objectContaining({
                     completed: ['seg-1'],
                     isCompleted: false,
+                    maxSegmentIndex: 0,
+                })
+            );
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it('flushes pending reading progress when the reader unmounts before the debounce completes', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const { unmount } = render(<ReaderView content={mockContent} />);
+
+            fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+
+            expect(saveReadingProgressMock).not.toHaveBeenCalled();
+
+            unmount();
+
+            expect(saveReadingProgressMock).toHaveBeenCalledWith(
+                'test-item-1',
+                expect.objectContaining({
+                    completed: ['seg-1'],
+                    isCompleted: true,
                     maxSegmentIndex: 0,
                 })
             );

@@ -748,6 +748,7 @@ export function FocusFeed() {
             return;
         }
 
+        const activeItemId = items[activeCardIndexRef.current]?.id ?? null;
         const completedSet = new Set(completedIds);
         const filteredItems = items.filter((item) => !completedSet.has(item.id));
 
@@ -755,9 +756,15 @@ export function FocusFeed() {
             return;
         }
 
-        const nextActiveIndex = filteredItems.length === 0
-            ? 0
-            : Math.min(activeCardIndexRef.current, filteredItems.length - 1);
+        let nextActiveIndex = 0;
+        if (filteredItems.length > 0) {
+            const preservedActiveIndex = activeItemId === null
+                ? -1
+                : filteredItems.findIndex((item) => item.id === activeItemId);
+            nextActiveIndex = preservedActiveIndex >= 0
+                ? preservedActiveIndex
+                : Math.min(activeCardIndexRef.current, filteredItems.length - 1);
+        }
 
         if (nextActiveIndex !== activeCardIndexRef.current) {
             activeCardIndexRef.current = nextActiveIndex;

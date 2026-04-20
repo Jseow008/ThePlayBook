@@ -559,6 +559,53 @@ describe("FocusFeed", () => {
         expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
     });
 
+    it("preserves the same logical active card when an earlier completed item is pruned", async () => {
+        readingProgressState.value = {
+            completedIds: [],
+            isLoaded: false,
+            myListIds: [],
+        };
+
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: false,
+                nextCursor: null,
+                seenIds: focusItems.map((item) => item.id),
+            })
+        );
+
+        const { rerender } = render(<FocusFeed />);
+
+        expect(await screen.findByText("Deep Work")).toBeInTheDocument();
+
+        readingProgressState.value = {
+            completedIds: [focusItems[0]!.id],
+            isLoaded: true,
+            myListIds: [],
+        };
+
+        rerender(<FocusFeed />);
+
+        await waitFor(() => {
+            expect(screen.queryByText("Essentialism")).not.toBeInTheDocument();
+        });
+
+        fireEvent(window, new Event("pagehide"));
+
+        const savedState = JSON.parse(
+            window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY) || "{}"
+        );
+
+        expect(savedState.items.map((item: { id: string }) => item.id)).toEqual([
+            focusItems[1]!.id,
+            focusItems[2]!.id,
+        ]);
+        expect(savedState.activeCardIndex).toBe(0);
+    });
+
     it("falls back to the normal fetch path when restored state is invalid", async () => {
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,

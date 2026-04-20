@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, BotMessageSquare, List } from "lucide-react";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
-import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useReadingProgress, type ReadingProgressData } from "@/hooks/useReadingProgress";
 import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
@@ -64,8 +64,11 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [isAudioFollowEnabled, setIsAudioFollowEnabled] = useState(true);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [hasCompletedAudioPlayback, setHasCompletedAudioPlayback] = useState(false);
+    const [hasPendingProgressSave, setHasPendingProgressSave] = useState(false);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
+    const pendingProgressSaveRef = useRef(false);
+    const progressSnapshotRef = useRef<ReadingProgressData | null>(null);
     const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded, storageScope } = useReadingProgress();
     const previousStorageScopeRef = useRef(storageScope);
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
@@ -175,6 +178,33 @@ export function ReaderView({ content }: ReaderViewProps) {
     const { formattedTime } = useReadingTimer(content.id);
 
     const savedProgress = getProgress(content.id);
+    const progressSnapshot = useMemo<ReadingProgressData | null>(() => {
+        const hasMeaningfulProgress = completedSegments.size > 0 || maxSegmentIndex >= 0;
+        if (!hasMeaningfulProgress) {
+            return null;
+        }
+
+        const isCompleted = content.segments.length > 0 && completedSegments.size >= content.segments.length;
+
+        return {
+            completed: Array.from(completedSegments),
+            lastSegmentIndex: maxSegmentIndex,
+            maxSegmentIndex,
+            lastReadAt: new Date().toISOString(),
+            isCompleted,
+            itemId: content.id,
+            totalSegments: content.segments.length,
+        };
+    }, [completedSegments, content.id, content.segments.length, maxSegmentIndex]);
+    const persistReadingProgress = useCallback((progressData: ReadingProgressData | null = progressSnapshotRef.current) => {
+        if (!readingProgressLoaded || !progressData) {
+            return false;
+        }
+
+        saveReadingProgress(content.id, progressData);
+        setHasPendingProgressSave(false);
+        return true;
+    }, [content.id, readingProgressLoaded, saveReadingProgress]);
 
     const persistAudioResume = useCallback((timeSec: number, durationSec: number, force = false) => {
         if (typeof window === "undefined" || !content.audio_url) {
@@ -211,9 +241,18 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Load progress from scoped storage on mount and account changes
     useEffect(() => {
+        progressSnapshotRef.current = progressSnapshot;
+    }, [progressSnapshot]);
+
+    useEffect(() => {
+        pendingProgressSaveRef.current = hasPendingProgressSave;
+    }, [hasPendingProgressSave]);
+
+    useEffect(() => {
         if (!savedProgress) {
             setCompletedSegments(new Set());
             setMaxSegmentIndex(-1);
+            setHasPendingProgressSave(false);
             return;
         }
 
@@ -230,6 +269,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 )
             ),
         );
+        setHasPendingProgressSave(false);
     }, [content.segments.length, savedProgress, segmentIdSet]);
 
     useEffect(() => {
@@ -244,6 +284,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         previousStorageScopeRef.current = storageScope;
         latestAudioStateRef.current = { timeSec: 0, durationSec: 0 };
         setExpandedSegmentId(null);
+        setHasPendingProgressSave(false);
     }, [content.audio_url, content.id, storageScope]);
 
     useEffect(() => {
@@ -330,6 +371,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         // Update max opened index
         setMaxSegmentIndex((prev) => Math.max(prev, index));
+        setHasPendingProgressSave(true);
     };
 
     // Handle explicit segment completion
@@ -343,6 +385,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         // Update max opened index just in case
         setMaxSegmentIndex((prev) => Math.max(prev, index));
+        setHasPendingProgressSave(true);
     };
 
     // Derive book completion state
@@ -354,26 +397,34 @@ export function ReaderView({ content }: ReaderViewProps) {
 
     // Save progress on changes (debounced)
     useEffect(() => {
-        if (!readingProgressLoaded) return;
+        if (!readingProgressLoaded || !hasPendingProgressSave) return;
 
-        const timeoutId = setTimeout(() => {
-            const isCompleted = content.segments.length > 0 && completedSegments.size >= content.segments.length;
-
-            const progressData = {
-                completed: Array.from(completedSegments),
-                lastSegmentIndex: maxSegmentIndex,
-                maxSegmentIndex,
-                lastReadAt: new Date().toISOString(),
-                isCompleted,
-                itemId: content.id,
-                totalSegments: content.segments.length,
-            };
-
-            saveReadingProgress(content.id, progressData);
+        const timeoutId = window.setTimeout(() => {
+            persistReadingProgress();
         }, 1000);
 
-        return () => clearTimeout(timeoutId);
-    }, [completedSegments, content.id, content.segments.length, maxSegmentIndex, readingProgressLoaded, saveReadingProgress]);
+        return () => window.clearTimeout(timeoutId);
+    }, [hasPendingProgressSave, persistReadingProgress, readingProgressLoaded]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        const flushPendingProgress = () => {
+            if (!pendingProgressSaveRef.current) {
+                return;
+            }
+
+            persistReadingProgress();
+        };
+
+        window.addEventListener("pagehide", flushPendingProgress);
+        return () => {
+            flushPendingProgress();
+            window.removeEventListener("pagehide", flushPendingProgress);
+        };
+    }, [persistReadingProgress]);
 
     useEffect(() => {
         if (!hasSyncedAudioPosition || !content.audio_url) {
@@ -572,19 +623,12 @@ export function ReaderView({ content }: ReaderViewProps) {
             return;
         }
 
-        setCompletedSegments((prev) => {
-            let changed = false;
-            const next = new Set(prev);
+        const nextCompletedSegments = new Set(completedSegments);
+        for (const segmentId of completedByAudio) {
+            nextCompletedSegments.add(segmentId);
+        }
 
-            for (const segmentId of completedByAudio) {
-                if (!next.has(segmentId)) {
-                    next.add(segmentId);
-                    changed = true;
-                }
-            }
-
-            return changed ? next : prev;
-        });
+        const didAdvanceCompletedSegments = nextCompletedSegments.size !== completedSegments.size;
 
         const completedSegmentIdSet = new Set(completedByAudio);
         const furthestCompletedIndex = content.segments.reduce((maxIndex, segment, index) => {
@@ -595,10 +639,25 @@ export function ReaderView({ content }: ReaderViewProps) {
             return Math.max(maxIndex, index);
         }, -1);
 
-        if (furthestCompletedIndex >= 0) {
-            setMaxSegmentIndex((prev) => Math.max(prev, furthestCompletedIndex));
+        const nextMaxSegmentIndex = furthestCompletedIndex >= 0
+            ? Math.max(maxSegmentIndex, furthestCompletedIndex)
+            : maxSegmentIndex;
+        const didAdvanceMaxSegmentIndex = nextMaxSegmentIndex !== maxSegmentIndex;
+
+        if (!didAdvanceCompletedSegments && !didAdvanceMaxSegmentIndex) {
+            return;
         }
-    }, [audioCurrentTimeSec, content.segments, hasCompletedAudioPlayback, hasSyncedAudioPosition]);
+
+        if (didAdvanceCompletedSegments) {
+            setCompletedSegments(nextCompletedSegments);
+        }
+
+        if (didAdvanceMaxSegmentIndex) {
+            setMaxSegmentIndex(nextMaxSegmentIndex);
+        }
+
+        setHasPendingProgressSave(true);
+    }, [audioCurrentTimeSec, completedSegments, content.segments, hasCompletedAudioPlayback, hasSyncedAudioPosition, maxSegmentIndex]);
 
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
