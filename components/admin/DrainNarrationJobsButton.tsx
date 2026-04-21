@@ -25,7 +25,29 @@ type DrainNarrationResponse = {
 type NarrationStatusResponse = {
     data?: {
         summary?: NarrationQueueSummary;
+        processingJobs?: NarrationProcessingJob[];
+        staleProcessingJobs?: NarrationProcessingJob[];
         batchSize?: number;
+    };
+    error?: {
+        message?: string;
+    };
+};
+
+type NarrationProcessingJob = {
+    id: string;
+    title: string;
+    author: string | null;
+    requestedAt: string | null;
+    startedAt: string | null;
+    ageMs: number;
+    isStale: boolean;
+};
+
+type ResetNarrationResponse = {
+    data?: {
+        resetCount?: number;
+        jobs?: NarrationProcessingJob[];
     };
     error?: {
         message?: string;
@@ -36,10 +58,24 @@ function formatJobCount(count: number) {
     return `${count} job${count === 1 ? "" : "s"}`;
 }
 
+function formatJobAge(ageMs: number) {
+    const totalMinutes = Math.max(1, Math.round(ageMs / 60_000));
+    if (totalMinutes < 60) {
+        return `${totalMinutes}m`;
+    }
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
 export function DrainNarrationJobsButton() {
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isResetting, setIsResetting] = useState(false);
     const [isLoadingSummary, setIsLoadingSummary] = useState(true);
     const [queueSummary, setQueueSummary] = useState<NarrationQueueSummary | null>(null);
+    const [processingJobs, setProcessingJobs] = useState<NarrationProcessingJob[]>([]);
+    const [staleProcessingJobs, setStaleProcessingJobs] = useState<NarrationProcessingJob[]>([]);
     const [batchSize, setBatchSize] = useState(0);
     const [statusText, setStatusText] = useState("");
 
@@ -56,6 +92,8 @@ export function DrainNarrationJobsButton() {
             }
 
             setQueueSummary(data.data?.summary ?? null);
+            setProcessingJobs(data.data?.processingJobs ?? []);
+            setStaleProcessingJobs(data.data?.staleProcessingJobs ?? []);
             setBatchSize(data.data?.batchSize ?? 0);
         } catch (error: any) {
             setStatusText(`Error: ${error.message}`);
@@ -126,6 +164,49 @@ export function DrainNarrationJobsButton() {
         }
     };
 
+    const handleResetStaleJobs = async () => {
+        try {
+            setIsResetting(true);
+            setStatusText(
+                staleProcessingJobs.length > 0
+                    ? `Resetting ${formatJobCount(staleProcessingJobs.length)} that exceeded the processing safety window...`
+                    : "Resetting stale narration jobs..."
+            );
+
+            const res = await fetch("/api/admin/narration/reset", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    jobIds: staleProcessingJobs.map((job) => job.id),
+                }),
+            });
+            const data = await res.json() as ResetNarrationResponse;
+
+            if (!res.ok) {
+                throw new Error(data.error?.message || "Failed to reset stale narration jobs.");
+            }
+
+            const resetCount = data.data?.resetCount ?? 0;
+            const resetTitles = (data.data?.jobs ?? []).map((job) => job.title).filter(Boolean);
+            await loadSummary();
+
+            if (resetCount > 0) {
+                setStatusText(
+                    `Reset ${resetCount} stale narration job${resetCount === 1 ? "" : "s"}: ${resetTitles.join(", ")}.`
+                );
+                return;
+            }
+
+            setStatusText("No stale narration jobs required a reset.");
+        } catch (error: any) {
+            setStatusText(`Error: ${error.message}`);
+        } finally {
+            setIsResetting(false);
+        }
+    };
+
     useEffect(() => {
         void loadSummary();
 
@@ -141,6 +222,7 @@ export function DrainNarrationJobsButton() {
     const queuedCount = queueSummary?.queuedCount ?? 0;
     const processingCount = queueSummary?.processingCount ?? 0;
     const retryingCount = batchSize > 0 ? Math.min(queuedCount, batchSize) : queuedCount;
+    const isBusy = isProcessing || isResetting;
 
     return (
         <div className="min-w-[18rem] max-w-sm rounded-xl border border-border bg-card px-4 py-3 text-left shadow-sm">
@@ -159,6 +241,23 @@ export function DrainNarrationJobsButton() {
                     <>
                         <div>{queuedCount} queued for recovery</div>
                         <div>{processingCount} currently processing in the background</div>
+                        {processingJobs.length > 0 ? (
+                            <div className="pt-1">
+                                <div className="font-medium text-foreground">Currently processing</div>
+                                <div className="mt-1 space-y-1">
+                                    {processingJobs.map((job) => (
+                                        <div key={job.id}>
+                                            <span className={job.isStale ? "text-amber-600" : "text-zinc-500"}>
+                                                {job.title}
+                                                {job.author ? ` by ${job.author}` : ""}
+                                                {job.startedAt ? ` • ${formatJobAge(job.ageMs)}` : ""}
+                                                {job.isStale ? " • stale" : ""}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : null}
                         <div>{retryingCount} {retryingCount === 1 ? "job is" : "jobs are"} eligible for this recovery run</div>
                     </>
                 ) : (
@@ -166,17 +265,29 @@ export function DrainNarrationJobsButton() {
                 )}
             </div>
 
-            <button
-                type="button"
-                onClick={handleDrain}
-                disabled={isProcessing}
-                className="focus-ring mt-3 inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-                <RefreshCw className={`size-4 ${isProcessing ? "animate-spin" : ""}`} />
-                {isProcessing
-                    ? `Retrying ${retryingCount > 0 ? formatJobCount(retryingCount) : "jobs"}...`
-                    : "Run Recovery"}
-            </button>
+            <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    onClick={handleDrain}
+                    disabled={isBusy}
+                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-100 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <RefreshCw className={`size-4 ${isProcessing ? "animate-spin" : ""}`} />
+                    {isProcessing
+                        ? `Retrying ${retryingCount > 0 ? formatJobCount(retryingCount) : "jobs"}...`
+                        : "Run Recovery"}
+                </button>
+
+                <button
+                    type="button"
+                    onClick={handleResetStaleJobs}
+                    disabled={isBusy || staleProcessingJobs.length === 0}
+                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <RefreshCw className={`size-4 ${isResetting ? "animate-spin" : ""}`} />
+                    {isResetting ? "Resetting Stale Jobs..." : "Reset Stale Processing"}
+                </button>
+            </div>
 
             {statusText && (
                 <div className={`mt-3 text-xs font-medium ${statusText.startsWith("Error:") ? "text-red-500" : "text-emerald-500"}`}>

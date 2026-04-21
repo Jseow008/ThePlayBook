@@ -143,4 +143,97 @@ describe("DrainNarrationJobsButton", () => {
             expect(screen.getByText(/failed to process queued ai narration/i)).toBeInTheDocument();
         });
     });
+
+    it("shows stale processing titles and resets them", async () => {
+        global.fetch = vi.fn()
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        summary: {
+                            queuedCount: 0,
+                            processingCount: 1,
+                        },
+                        processingJobs: [
+                            {
+                                id: "11111111-1111-1111-1111-111111111111",
+                                title: "The Singapore Story",
+                                author: "Lee Kuan Yew",
+                                requestedAt: "2026-04-10T10:18:24.891Z",
+                                startedAt: "2026-04-10T10:18:25.116Z",
+                                ageMs: 172800000,
+                                isStale: true,
+                            },
+                        ],
+                        staleProcessingJobs: [
+                            {
+                                id: "11111111-1111-1111-1111-111111111111",
+                                title: "The Singapore Story",
+                                author: "Lee Kuan Yew",
+                                requestedAt: "2026-04-10T10:18:24.891Z",
+                                startedAt: "2026-04-10T10:18:25.116Z",
+                                ageMs: 172800000,
+                                isStale: true,
+                            },
+                        ],
+                        batchSize: 3,
+                    },
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        resetCount: 1,
+                        jobs: [
+                            {
+                                id: "11111111-1111-1111-1111-111111111111",
+                                title: "The Singapore Story",
+                                author: "Lee Kuan Yew",
+                                requestedAt: "2026-04-10T10:18:24.891Z",
+                                startedAt: "2026-04-10T10:18:25.116Z",
+                                ageMs: 172800000,
+                                isStale: true,
+                            },
+                        ],
+                    },
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    data: {
+                        summary: {
+                            queuedCount: 0,
+                            processingCount: 0,
+                        },
+                        processingJobs: [],
+                        staleProcessingJobs: [],
+                        batchSize: 3,
+                    },
+                }),
+            }) as any;
+
+        render(<DrainNarrationJobsButton />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/the singapore story by lee kuan yew/i)).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: /reset stale processing/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/reset 1 stale narration job/i)).toBeInTheDocument();
+        });
+
+        expect(global.fetch).toHaveBeenNthCalledWith(2, "/api/admin/narration/reset", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                jobIds: ["11111111-1111-1111-1111-111111111111"],
+            }),
+        });
+    });
 });

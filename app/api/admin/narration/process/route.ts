@@ -4,6 +4,7 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import {
     buildProcessErrorResponseMessage,
+    expireStaleNarrationProcessingJobs,
     getNarrationQueueSummary,
     NARRATION_PROCESS_BATCH_SIZE,
     processNarrationJobs,
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+        await expireStaleNarrationProcessingJobs(requestId);
         const summaryBefore = await getNarrationQueueSummary();
         const result = await processNarrationJobs(requestId, NARRATION_PROCESS_BATCH_SIZE);
         const summaryAfter = await getNarrationQueueSummary();
@@ -87,6 +89,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+        await expireStaleNarrationProcessingJobs(requestId);
         const summaryBefore = await getNarrationQueueSummary();
         const result = await processNarrationJobs(requestId, NARRATION_PROCESS_BATCH_SIZE);
         const summaryAfter = await getNarrationQueueSummary();

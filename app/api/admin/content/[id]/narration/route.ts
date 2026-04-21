@@ -5,6 +5,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, isSupabaseNotFoundError, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getNarrationJobState } from "@/lib/narration-job";
+import { expireStaleNarrationProcessingJobs } from "@/lib/server/narration-processor";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 
@@ -48,6 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     try {
+        await expireStaleNarrationProcessingJobs(requestId, { contentId: id });
         const { data, error } = await getNarrationRow(id);
 
         if (error) {
@@ -101,6 +103,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     try {
+        await expireStaleNarrationProcessingJobs(requestId, { contentId: id });
         const { supabase, data: contentItem, error } = await getNarrationRow(id);
 
         if (error) {

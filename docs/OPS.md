@@ -220,7 +220,8 @@ Optional scheduled recovery worker:
 Recovery path:
 
 - `POST /api/admin/narration/process` drains up to 3 queued narration jobs from an authenticated admin session
-- `/admin` now includes a `Retry Narration Jobs` control that manually drains the queued narration worker on demand
+- `POST /api/admin/narration/reset` marks stale `processing` jobs as failed so they can be re-queued cleanly
+- `/admin` now includes a `Retry Narration Jobs` control that shows the active processing titles, surfaces stale jobs, and can reset stale `processing` jobs on demand
 
 If narration remains stuck in `queued`, verify:
 
@@ -228,6 +229,13 @@ If narration remains stuck in `queued`, verify:
 - if you have configured a scheduler, `CRON_SECRET` is configured in production
 - if you have configured a scheduler, the worker route returns `200` when invoked with the cron secret
 - OpenAI and Supabase storage credentials are healthy
+
+If narration remains stuck in `processing`, verify:
+
+- the row has not exceeded the 2-hour stale-processing safety window
+- the admin maintenance panel identifies the current processing title and whether it is stale
+- use the stale reset control if the job is clearly orphaned
+- stale `processing` rows are automatically failed the next time the narration worker or per-item narration status route touches them
 
 ## 4. Deployment
 

@@ -5,8 +5,9 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/server/rate-limit";
 
-const { afterMock } = vi.hoisted(() => ({
+const { afterMock, expireStaleNarrationProcessingJobsMock } = vi.hoisted(() => ({
     afterMock: vi.fn(),
+    expireStaleNarrationProcessingJobsMock: vi.fn(),
 }));
 
 vi.mock("next/server", async () => {
@@ -29,6 +30,14 @@ vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
 }));
 
+vi.mock("@/lib/server/narration-processor", async () => {
+    const actual = await vi.importActual<typeof import("@/lib/server/narration-processor")>("@/lib/server/narration-processor");
+    return {
+        ...actual,
+        expireStaleNarrationProcessingJobs: expireStaleNarrationProcessingJobsMock,
+    };
+});
+
 describe("Admin content narration API", () => {
     const contentSelectSingleMock = vi.fn();
     const updateSelectSingleMock = vi.fn();
@@ -37,6 +46,10 @@ describe("Admin content narration API", () => {
         vi.clearAllMocks();
         (verifyAdminSession as any).mockResolvedValue(true);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        expireStaleNarrationProcessingJobsMock.mockResolvedValue({
+            expiredCount: 0,
+            jobs: [],
+        });
         afterMock.mockImplementation(() => {});
 
         contentSelectSingleMock.mockResolvedValue({

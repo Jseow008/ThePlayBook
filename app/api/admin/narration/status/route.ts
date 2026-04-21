@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { getNarrationQueueSummary, NARRATION_PROCESS_BATCH_SIZE } from "@/lib/server/narration-processor";
+import { getNarrationQueueStatus, NARRATION_PROCESS_BATCH_SIZE } from "@/lib/server/narration-processor";
 
 export const runtime = "nodejs";
 
@@ -13,11 +13,16 @@ export async function GET() {
     }
 
     try {
-        const summary = await getNarrationQueueSummary();
+        const status = await getNarrationQueueStatus();
         return NextResponse.json({
             success: true,
             data: {
-                summary,
+                summary: {
+                    queuedCount: status.queuedCount,
+                    processingCount: status.processingCount,
+                },
+                processingJobs: status.processingJobs,
+                staleProcessingJobs: status.staleProcessingJobs,
                 batchSize: NARRATION_PROCESS_BATCH_SIZE,
             },
         });

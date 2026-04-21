@@ -6,7 +6,8 @@ import { generateNarrationAudio } from "@/lib/server/ai-narration";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { rateLimit } from "@/lib/server/rate-limit";
 
-const { getNarrationQueueSummaryMock, revalidatePathMock } = vi.hoisted(() => ({
+const { expireStaleNarrationProcessingJobsMock, getNarrationQueueSummaryMock, revalidatePathMock } = vi.hoisted(() => ({
+    expireStaleNarrationProcessingJobsMock: vi.fn(),
     getNarrationQueueSummaryMock: vi.fn(),
     revalidatePathMock: vi.fn(),
 }));
@@ -39,6 +40,7 @@ vi.mock("@/lib/server/narration-processor", async () => {
     const actual = await vi.importActual<typeof import("@/lib/server/narration-processor")>("@/lib/server/narration-processor");
     return {
         ...actual,
+        expireStaleNarrationProcessingJobs: expireStaleNarrationProcessingJobsMock,
         getNarrationQueueSummary: getNarrationQueueSummaryMock,
     };
 });
@@ -56,6 +58,10 @@ describe("Admin narration processor API", () => {
         process.env.CRON_SECRET = originalCronSecret;
         (verifyAdminSession as any).mockResolvedValue(true);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        expireStaleNarrationProcessingJobsMock.mockResolvedValue({
+            expiredCount: 0,
+            jobs: [],
+        });
         getNarrationQueueSummaryMock.mockResolvedValue({
             queuedCount: 0,
             processingCount: 0,
