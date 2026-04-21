@@ -487,23 +487,21 @@ export function SegmentAccordion({
                                                 setExpandedId(null);
                                             }}
                                             className={cn(
-                                                "px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-300 flex items-center gap-2",
+                                                "focus-ring inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
                                                 index < segments.length - 1
-                                                    ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-md shadow-primary/20"
+                                                    ? "border-border/70 bg-background/60 text-foreground/90 hover:border-primary/30 hover:bg-accent/35 hover:text-foreground"
                                                     : isCompleted
-                                                    ? "bg-green-500/15 text-green-500 hover:bg-green-500/25"
-                                                    : "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-md shadow-primary/20"
+                                                    ? "border-border/65 bg-background/55 text-muted-foreground hover:border-border hover:bg-accent/25 hover:text-foreground"
+                                                    : "border-border/70 bg-background/60 text-foreground/90 hover:border-primary/30 hover:bg-accent/35 hover:text-foreground"
                                             )}
                                         >
                                             {index < segments.length - 1 ? (
                                                 <>
-                                                    <CheckCircle2 className="size-4" />
-                                                    Continue to Next Section
+                                                    <span>Next section</span>
                                                 </>
                                             ) : isCompleted ? (
                                                 <>
-                                                    <CheckCircle2 className="size-4" />
-                                                    Completed
+                                                    <span>Close section</span>
                                                 </>
                                             ) : (
                                                 <>
