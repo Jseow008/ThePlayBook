@@ -68,6 +68,11 @@ export default function SettingsPage() {
                 supabase.from("content_feedback").select("*").eq("user_id", user.id),
             ]);
 
+            const exportError = libraryRes.error ?? activityRes.error ?? feedbackRes.error;
+            if (exportError) {
+                throw exportError;
+            }
+
             const exportData = {
                 export_date: new Date().toISOString(),
                 user: { id: user.id, email: user.email, name: user.user_metadata?.full_name },
@@ -98,7 +103,12 @@ export default function SettingsPage() {
 
     const handleSignOut = async () => {
         setIsSigningOut(true);
-        await signOutAction();
+        try {
+            await signOutAction();
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to sign out");
+            setIsSigningOut(false);
+        }
     };
 
     const handleClearHistory = async () => {

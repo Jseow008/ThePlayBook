@@ -4,14 +4,22 @@ import SettingsPage from "@/app/(public)/settings/page";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const clearScopedReadingHistoryMock = vi.fn();
+const selectEqMock = vi.fn();
 const deleteEqMock = vi.fn();
-const deleteMock = vi.fn(() => ({ eq: deleteEqMock }));
-const fromMock = vi.fn(() => ({ delete: deleteMock }));
+const fromMock = vi.fn((table: string) => ({
+    select: () => ({
+        eq: (column: string, value: string) => selectEqMock(table, column, value),
+    }),
+    delete: () => ({
+        eq: (column: string, value: string) => deleteEqMock(column, value),
+    }),
+}));
 const refreshMock = vi.fn();
 const clearCachedRecommendationsMock = vi.fn();
 const clearRecentRecommendationsMock = vi.fn();
 const toastErrorMock = vi.fn();
 const toastSuccessMock = vi.fn();
+const signOutActionMock = vi.fn();
 let currentUser: { id: string; email?: string; user_metadata?: { full_name?: string } } | null = null;
 
 vi.mock("next/link", () => ({
@@ -41,7 +49,7 @@ vi.mock("@/hooks/useReadingProgress", () => ({
 }));
 
 vi.mock("@/lib/actions/auth", () => ({
-    signOutAction: vi.fn(),
+    signOutAction: () => signOutActionMock(),
 }));
 
 vi.mock("@/lib/local-user-storage", () => ({
@@ -64,6 +72,8 @@ describe("SettingsPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         currentUser = null;
+        signOutActionMock.mockResolvedValue(undefined);
+        selectEqMock.mockResolvedValue({ data: [], error: null });
         deleteEqMock.mockResolvedValue({ error: null });
     });
 
@@ -158,5 +168,52 @@ describe("SettingsPage", () => {
         expect(refreshMock).not.toHaveBeenCalled();
         expect(toastErrorMock).toHaveBeenCalledWith("Delete failed");
         vi.useRealTimers();
+    });
+
+    it("fails export instead of downloading partial data when any export query errors", async () => {
+        currentUser = {
+            id: "user-789",
+            email: "reader3@example.com",
+        };
+        selectEqMock.mockImplementation((table: string) => {
+            if (table === "reading_activity") {
+                return Promise.resolve({ data: null, error: { message: "Activity export failed" } });
+            }
+
+            return Promise.resolve({ data: [], error: null });
+        });
+
+        render(<SettingsPage />);
+
+        await screen.findByDisplayValue("reader3@example.com");
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole("button", { name: /download my data/i }));
+        });
+
+        expect(toastErrorMock).toHaveBeenCalledWith("Failed to export data");
+        expect(toastSuccessMock).not.toHaveBeenCalledWith("Data export complete");
+    });
+
+    it("recovers the sign-out button when sign-out fails", async () => {
+        currentUser = {
+            id: "user-999",
+            email: "reader4@example.com",
+        };
+        signOutActionMock.mockRejectedValue(new Error("Sign out failed"));
+
+        render(<SettingsPage />);
+
+        await screen.findByDisplayValue("reader4@example.com");
+
+        const signOutButton = screen.getByRole("button", { name: /sign out/i });
+
+        await act(async () => {
+            fireEvent.click(signOutButton);
+        });
+
+        expect(toastErrorMock).toHaveBeenCalledWith("Sign out failed");
+        expect(screen.getByRole("button", { name: /sign out/i })).not.toBeDisabled();
+        expect(screen.queryByText("Signing out...")).not.toBeInTheDocument();
     });
 });
