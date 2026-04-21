@@ -217,3 +217,41 @@ describe("useRecommendations", () => {
         await waitFor(() => expect(result.current.data).toEqual(freshItems));
     });
 });
+
+describe("useBatchContentItems", () => {
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    it("chunks large library requests into 50-item batch calls and preserves input order", async () => {
+        const { useBatchContentItems } = await loadUseRecommendations();
+        const wrapper = createWrapper();
+        const ids = Array.from({ length: 55 }, (_, index) => `00000000-0000-0000-0000-${String(index + 1).padStart(12, "0")}`);
+
+        fetchMock.mockImplementation(async (_input: RequestInfo | URL, init?: RequestInit) => {
+            const body = JSON.parse(String(init?.body ?? "{}")) as { ids?: string[] };
+            const chunkIds = body.ids ?? [];
+
+            return {
+                ok: true,
+                json: vi.fn().mockResolvedValue(
+                    chunkIds.map((id) => createRecommendationItem(id, `Item ${id}`)),
+                ),
+            };
+        });
+
+        const { result } = renderHook(
+            () => useBatchContentItems(ids, { enabled: true }),
+            { wrapper },
+        );
+
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? "{}")).ids.length)).toEqual([50, 5]);
+        expect(result.current.data?.map((item) => item.id)).toEqual(ids);
+    });
+});

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Clock } from "lucide-react";
+import { AlertCircle, Clock } from "lucide-react";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -23,11 +23,14 @@ export default function ContinueReadingPage() {
 
     const {
         data: allItems = [],
+        isError,
         isLoading,
+        isSuccess,
+        refetch,
     } = useBatchContentItems(inProgressIds, { enabled: isLoaded });
 
     useEffect(() => {
-        if (!isLoaded || isLoading || inProgressIds.length === 0) return;
+        if (!isLoaded || !isSuccess || isLoading || inProgressIds.length === 0) return;
 
         const validIds = new Set(allItems.map((item) => item.id));
         const invalidIds = inProgressIds.filter((id) => !validIds.has(id));
@@ -35,7 +38,7 @@ export default function ContinueReadingPage() {
         if (invalidIds.length > 0) {
             invalidIds.forEach((id) => removeFromProgress(id));
         }
-    }, [allItems, inProgressIds, isLoaded, isLoading, removeFromProgress]);
+    }, [allItems, inProgressIds, isLoaded, isLoading, isSuccess, removeFromProgress]);
 
     // Apply Filters & Sort
     const filteredItems = useMemo(() => {
@@ -117,6 +120,24 @@ export default function ContinueReadingPage() {
                             {[...Array(8)].map((_, i) => (
                                 <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
                             ))}
+                        </div>
+                    ) : isError && allItems.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
+                            <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
+                                <AlertCircle className="size-10 text-muted-foreground" />
+                            </div>
+                            <h2 className="text-xl font-semibold text-foreground mb-2">
+                                We couldn&apos;t load your progress
+                            </h2>
+                            <p className="text-muted-foreground mb-8 max-w-sm">
+                                Your in-progress items are still saved. Try again in a moment.
+                            </p>
+                            <button
+                                onClick={() => { void refetch(); }}
+                                className="inline-flex items-center h-11 px-6 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                            >
+                                Retry
+                            </button>
                         </div>
                     ) : allItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">

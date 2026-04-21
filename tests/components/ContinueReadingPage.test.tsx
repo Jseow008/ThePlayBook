@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ContinueReadingPage from "@/app/(public)/library/reading/page";
 import type { ContentItem } from "@/types/database";
@@ -75,7 +75,10 @@ describe("ContinueReadingPage", () => {
         });
         mockUseBatchContentItems.mockReturnValue({
             data: [item],
+            isError: false,
             isLoading: false,
+            isSuccess: true,
+            refetch: vi.fn(),
         });
     });
 
@@ -104,11 +107,65 @@ describe("ContinueReadingPage", () => {
         });
         mockUseBatchContentItems.mockReturnValue({
             data: [item],
+            isError: false,
             isLoading: false,
+            isSuccess: true,
+            refetch: vi.fn(),
         });
 
         render(<ContinueReadingPage />);
 
         expect(removeFromProgress).toHaveBeenCalledWith("missing-item");
+    });
+
+    it("does not remove progress ids when the batch request is in an error state", () => {
+        const removeFromProgress = vi.fn();
+
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [item.id, "missing-item"],
+            isLoaded: true,
+            refresh: vi.fn(),
+            removeFromProgress,
+            storageScope: "guest",
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [item],
+            isError: true,
+            isLoading: false,
+            isSuccess: false,
+            refetch: vi.fn(),
+        });
+
+        render(<ContinueReadingPage />);
+
+        expect(removeFromProgress).not.toHaveBeenCalled();
+        expect(screen.getByText("resume:app-compact:Deep Work")).toBeInTheDocument();
+    });
+
+    it("shows a retry state when loading progress fails before any cards are available", () => {
+        const refetch = vi.fn();
+
+        mockUseReadingProgress.mockReturnValue({
+            inProgressIds: [item.id],
+            isLoaded: true,
+            refresh: vi.fn(),
+            removeFromProgress: vi.fn(),
+            storageScope: "guest",
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [],
+            isError: true,
+            isLoading: false,
+            isSuccess: false,
+            refetch,
+        });
+
+        render(<ContinueReadingPage />);
+
+        expect(screen.getByText("We couldn't load your progress")).toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+
+        expect(refetch).toHaveBeenCalled();
     });
 });

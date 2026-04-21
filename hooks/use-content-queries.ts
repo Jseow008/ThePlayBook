@@ -11,6 +11,8 @@ import {
     recordRecentRecommendations,
 } from "@/lib/recommendation-memory";
 
+const CONTENT_BATCH_CHUNK_SIZE = 50;
+
 function sortByInputOrder(items: ContentItem[], ids: string[]) {
     return [...items].sort((a, b) => ids.indexOf(a.id) - ids.indexOf(b.id));
 }
@@ -26,26 +28,48 @@ function filterExcludedItems(items: ContentItem[] | null | undefined, excludeIds
     return filteredItems.length > 0 ? filteredItems : null;
 }
 
+function chunkIds(ids: string[]) {
+    const chunks: string[][] = [];
+
+    for (let startIndex = 0; startIndex < ids.length; startIndex += CONTENT_BATCH_CHUNK_SIZE) {
+        chunks.push(ids.slice(startIndex, startIndex + CONTENT_BATCH_CHUNK_SIZE));
+    }
+
+    return chunks;
+}
+
 export function useBatchContentItems(ids: string[], options?: { enabled?: boolean }) {
     return useQuery({
         queryKey: ["content-batch", ids],
         enabled: (options?.enabled ?? true) && ids.length > 0,
         queryFn: async () => {
-            const response = await fetch("/api/content/batch", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ids }),
-            });
+            const responses = await Promise.all(
+                chunkIds(ids).map(async (chunk) => {
+                    const response = await fetch("/api/content/batch", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ ids: chunk }),
+                    });
 
-            if (!response.ok) {
-                throw new Error("Failed to fetch content batch");
-            }
+                    if (!response.ok) {
+                        throw new Error("Failed to fetch content batch");
+                    }
 
-            const data = (await response.json()) as ContentItem[];
-            return sortByInputOrder(data, ids);
+                    return (await response.json()) as ContentItem[];
+                }),
+            );
+
+            const mergedItems = Array.from(
+                new Map(
+                    responses
+                        .flat()
+                        .map((item) => [item.id, item] as const),
+                ).values(),
+            );
+
+            return sortByInputOrder(mergedItems, ids);
         },
         staleTime: 60 * 1000,
-        placeholderData: (previousData) => previousData,
     });
 }
 
