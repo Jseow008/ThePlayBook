@@ -215,6 +215,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prevent iOS Safari from zooming the viewport when focusing small form controls. */
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 767px) {
+    input,
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
+  }
+}
+
 /* --------------------------------------------------------------------------
    4. TYPOGRAPHY - @tailwindcss/typography overrides
    -------------------------------------------------------------------------- */
