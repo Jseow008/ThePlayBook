@@ -107,18 +107,15 @@ export function MobileNoteComposer({
             >
                 <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border/80" />
 
-                <div className="flex items-start justify-between gap-4 px-4 pb-4 pt-4">
+                <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-3.5">
                     <div className="min-w-0">
-                        <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground/78">
-                            {isExistingNote ? "Edit note" : "Add note"}
-                        </p>
                         <h2
                             id="reader-mobile-note-composer-title"
-                            className="mt-1 line-clamp-1 text-lg font-semibold text-foreground"
+                            className="line-clamp-1 text-lg font-semibold text-foreground"
                         >
                             {context.title || "Saved passage"}
                         </h2>
-                        <p className="mt-1 text-sm text-muted-foreground">
+                        <p className="mt-0.5 text-sm text-muted-foreground/78">
                             {sectionTitle}
                         </p>
                     </div>
@@ -126,63 +123,55 @@ export function MobileNoteComposer({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="rounded-full p-2 text-muted-foreground/72 transition-colors hover:bg-secondary/70 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Close note composer"
                     >
                         <X className="size-4" />
                     </button>
                 </div>
 
-                <div className="max-h-[78vh] overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                    <div className={cn("rounded-2xl border bg-background/70 p-4", colorClasses.border)}>
-                        <p className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/74">
-                            Highlight
-                        </p>
-                        <p className="mt-2 text-[0.98rem] leading-7 text-foreground/92 italic">
+                <div className="max-h-[74vh] overflow-y-auto px-4 pb-[max(0.9rem,env(safe-area-inset-bottom))]">
+                    <div className={cn("rounded-2xl border bg-background/60 px-4 py-3.5", colorClasses.border)}>
+                        <p className="text-[0.98rem] leading-7 text-foreground/94 italic">
                             &ldquo;{context.highlightedText}&rdquo;
                         </p>
                     </div>
 
-                    <div className="mt-5">
-                        <div className="flex items-center justify-between gap-3">
-                            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                    <div className="mt-4">
+                        <div className="flex items-center gap-3">
+                            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/64">
                                 Highlight color
                             </p>
-                            <span className="text-xs text-muted-foreground">
-                                Saved passage stays linked
-                            </span>
                         </div>
 
-                        <div className="mt-3 flex flex-wrap gap-2">
+                        <div className="mt-2.5 flex items-center justify-start gap-2.5">
                             {NOTE_EDITOR_COLORS.map((color) => (
                                 <button
                                     key={color}
                                     type="button"
                                     onClick={() => onColorChange(color)}
                                     className={cn(
-                                        "flex items-center gap-2 rounded-full border px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring",
+                                        "flex size-7 shrink-0 items-center justify-center rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-ring",
+                                        HIGHLIGHT_COLOR_CLASSES[color].swatch,
                                         colorValue === color
-                                            ? "border-white/15 bg-secondary text-foreground"
-                                            : "border-border bg-background text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
+                                            ? "border-white/25 shadow-[0_6px_18px_rgba(0,0,0,0.12)] ring-2 ring-foreground/20 ring-offset-2 ring-offset-background"
+                                            : "border-black/5 hover:scale-[1.03]"
                                     )}
                                     aria-label={`Set highlight color to ${color}`}
                                     aria-pressed={colorValue === color}
+                                    title={color[0].toUpperCase() + color.slice(1)}
                                 >
-                                    <span
-                                        aria-hidden="true"
-                                        className={cn("size-2.5 rounded-full", HIGHLIGHT_COLOR_CLASSES[color].swatch)}
-                                    />
-                                    <span className="capitalize">{color}</span>
+                                    <span className="sr-only capitalize">{color}</span>
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    <div className="mt-5">
+                    <div className="mt-4">
                         <div className="flex items-center justify-between gap-3">
                             <label
                                 htmlFor="reader-mobile-note-composer-textarea"
-                                className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80"
+                                className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/64"
                             >
                                 Your note
                             </label>
@@ -190,7 +179,7 @@ export function MobileNoteComposer({
                                 type="button"
                                 onClick={onClear}
                                 disabled={noteValue.length === 0}
-                                className="text-xs text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+                                className="inline-flex min-h-8 items-center justify-center rounded-full border border-border/75 bg-background/80 px-2.5 py-1 text-[0.72rem] font-medium text-foreground/92 transition-colors hover:bg-secondary/70 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
                             >
                                 Clear
                             </button>
@@ -202,15 +191,15 @@ export function MobileNoteComposer({
                             value={noteValue}
                             onChange={(event) => onNoteChange(event.target.value)}
                             placeholder="Capture why this passage matters."
-                            className="mt-3 min-h-36 w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm leading-6 text-foreground placeholder:text-muted-foreground/65 focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                            className="mt-2.5 min-h-36 w-full resize-none rounded-2xl border border-border/75 bg-background/88 px-4 py-3 text-sm leading-6 text-foreground shadow-inner placeholder:text-muted-foreground/60 focus:border-primary/25 focus:outline-none focus:ring-2 focus:ring-primary/35"
                         />
                     </div>
 
-                    <div className="mt-5 flex items-center justify-between gap-3 border-t border-border/60 bg-card/95 py-4">
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/35 bg-card/95 pb-2 pt-3">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="inline-flex min-h-11 items-center justify-center rounded-full border border-border px-4 py-2 text-sm font-medium text-foreground/84 transition-colors hover:bg-secondary hover:text-foreground"
+                            className="inline-flex min-h-10 items-center justify-center rounded-full border border-border/85 px-4 py-2 text-sm font-medium text-foreground/78 transition-colors hover:bg-secondary/70 hover:text-foreground"
                         >
                             Cancel
                         </button>
@@ -219,7 +208,12 @@ export function MobileNoteComposer({
                             type="button"
                             onClick={onSave}
                             disabled={isSaving || !canSave}
-                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+                            className={cn(
+                                "inline-flex min-h-10 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
+                                canSave && !isSaving
+                                    ? "border border-primary bg-primary text-primary-foreground shadow-[0_10px_24px_rgba(0,0,0,0.16)] hover:bg-primary/92"
+                                    : "border border-border/70 bg-secondary/60 text-muted-foreground/72 disabled:cursor-not-allowed"
+                            )}
                         >
                             {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
                             {isExistingNote ? "Save changes" : "Save note"}
