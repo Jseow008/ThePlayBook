@@ -187,7 +187,6 @@ export function MobileNoteComposer({
 
                         <textarea
                             id="reader-mobile-note-composer-textarea"
-                            autoFocus
                             value={noteValue}
                             onChange={(event) => onNoteChange(event.target.value)}
                             placeholder="Capture why this passage matters."
