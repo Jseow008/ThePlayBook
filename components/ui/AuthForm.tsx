@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Chrome, Mail, Apple, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DEFAULT_LOGIN_REDIRECT_PATH } from "@/lib/auth-redirect";
 
 interface AuthFormProps {
     nextUrl?: string;
 }
 
-export function AuthForm({ nextUrl = "/" }: AuthFormProps) {
+export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProps) {
     const supabase = createClient();
     const [isLoading, setIsLoading] = useState<"google" | "apple" | "email" | null>(null);
     const [email, setEmail] = useState("");

@@ -8,6 +8,7 @@ import { signOutAction } from "@/lib/actions/auth";
 
 import { AVATAR_ICONS } from "@/lib/avatars";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { SignInLink } from "@/components/ui/SignInLink";
 
 export function UserNav() {
     const user = useAuthUser();
@@ -66,12 +67,11 @@ export function UserNav() {
 
     if (!user) {
         return (
-            <Link
-                href="/login"
+            <SignInLink
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
                 Sign In
-            </Link>
+            </SignInLink>
         );
     }
 

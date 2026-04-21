@@ -23,6 +23,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { APP_NAME } from "@/lib/brand";
 import { AVATAR_ICONS } from "@/lib/avatars";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { SignInLink } from "@/components/ui/SignInLink";
 
 const navItems = [
     { icon: Search, label: "Search", href: "/search" },
@@ -420,15 +421,14 @@ export function NetflixSidebar() {
                 </div>
             ) : !user ? (
                 <div className="p-4">
-                    <Link
-                        href="/login"
+                    <SignInLink
                         className={cn(
                             "flex items-center h-10 rounded-md bg-primary text-primary-foreground font-medium transition-colors hover:bg-primary/90",
                             isExpanded ? "justify-center px-4" : "justify-center w-10 mx-auto"
                         )}
                     >
                         {isExpanded ? "Sign In" : "→"}
-                    </Link>
+                    </SignInLink>
                 </div>
             ) : (
                 <div className="p-4">

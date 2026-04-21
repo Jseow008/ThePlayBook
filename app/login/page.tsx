@@ -1,7 +1,7 @@
 import { AuthForm } from "@/components/ui/AuthForm";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
-import { normalizeNextPath } from "@/lib/auth-redirect";
+import { normalizeLoginNextPath } from "@/lib/auth-redirect";
 
 export default async function LoginPage({
     searchParams,
@@ -10,16 +10,16 @@ export default async function LoginPage({
 }) {
     const params = await searchParams;
     const error = typeof params.error === "string" ? params.error : undefined;
-    const next = normalizeNextPath(typeof params.next === "string" ? params.next : undefined);
+    const next = normalizeLoginNextPath(typeof params.next === "string" ? params.next : undefined);
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
             <Link
-                href="/browse"
+                href={next}
                 className="absolute top-8 left-8 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
-                Back to Home
+                Back
             </Link>
 
             <div className="w-full max-w-sm space-y-8">
