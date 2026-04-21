@@ -87,9 +87,12 @@ function buildSearchHref({ query, category, type }: { query?: string; category?:
 }
 
 function escapePostgrestLikeValue(value: string) {
-    const escaped = `%${value}%`
+    const escapedValue = value
         .replace(/\\/g, "\\\\")
+        .replace(/%/g, "\\%")
+        .replace(/_/g, "\\_")
         .replace(/"/g, '\\"');
+    const escaped = `%${escapedValue}%`;
 
     if (/[,.:()]/.test(value)) {
         return `"${escaped}"`;
@@ -201,7 +204,7 @@ async function SearchResults({
                     </div>
                     <h3 className="text-xl font-semibold text-foreground mb-2">No results found</h3>
                     <p className="text-muted-foreground max-w-sm mx-auto mb-6">
-                        We couldn&apos;t find anything matching your search. Try different keywords or filters.
+                        We couldn&apos;t find anything matching that title, author, category, or filter.
                     </p>
                     <Link
                         href="/search"
@@ -294,7 +297,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         initialQuery={query || ""}
                         category={selectedTopicLabel}
                         type={selectedTypeParam}
-                        placeholder={selectedTopicLabel ? `Search in ${selectedTopicLabel}...` : "Search by title, author, or keyword..."}
+                        placeholder={selectedTopicLabel ? `Search in ${selectedTopicLabel}...` : "Search by title, author, or category..."}
                     />
                 </div>
 

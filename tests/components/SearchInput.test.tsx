@@ -25,7 +25,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search by title, author, or keyword...");
+        const input = screen.getByPlaceholderText("Search by title, author, or category...");
         fireEvent.focus(input);
 
         await waitFor(() => {
@@ -41,7 +41,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search by title, author, or keyword...");
+        const input = screen.getByPlaceholderText("Search by title, author, or category...");
         fireEvent.focus(input);
 
         const recentSearchButton = await screen.findByRole("button", { name: /^deep work$/i });
@@ -69,7 +69,7 @@ describe("SearchInput", () => {
 
         render(<SearchInput />);
 
-        const input = screen.getByPlaceholderText("Search by title, author, or keyword...");
+        const input = screen.getByPlaceholderText("Search by title, author, or category...");
         fireEvent.focus(input);
 
         await screen.findByText("Recent Searches");
@@ -134,5 +134,26 @@ describe("SearchInput", () => {
         });
 
         expect(routerReplaceMock).toHaveBeenCalledWith("/search?type=book");
+    });
+
+    it("ignores malformed recent-search storage without breaking the dropdown", async () => {
+        vi.mocked(window.localStorage.getItem).mockReturnValue(JSON.stringify({ recent: ["Deep Work"] }));
+
+        render(<SearchInput />);
+
+        const input = screen.getByPlaceholderText("Search by title, author, or category...");
+        fireEvent.focus(input);
+
+        await waitFor(() => {
+            expect(screen.queryByText("Recent Searches")).not.toBeInTheDocument();
+        });
+
+        fireEvent.change(input, {
+            target: { value: "Focus" },
+        });
+
+        fireEvent.submit(input.closest("form")!);
+
+        expect(routerPushMock).toHaveBeenCalledWith("/search?q=Focus");
     });
 });

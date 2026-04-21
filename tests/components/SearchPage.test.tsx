@@ -340,6 +340,19 @@ describe("SearchPage", () => {
         expect(queryBuilder?.or).toHaveBeenCalledWith('title.ilike."%focus, deep%",author.ilike."%focus, deep%",category.ilike."%focus, deep%"');
     });
 
+    it("escapes SQL wildcard characters before building the PostgREST search filter", async () => {
+        await renderSearchPage({ q: "100%_focus" });
+
+        await waitFor(() => {
+            expect(fromMock).toHaveBeenCalledWith("content_item");
+        });
+
+        const queryBuilder = getLatestQueryBuilder();
+        expect(queryBuilder?.or).toHaveBeenCalledWith(
+            "title.ilike.%100\\%\\_focus%,author.ilike.%100\\%\\_focus%,category.ilike.%100\\%\\_focus%"
+        );
+    });
+
     it("keeps the search input stack layer above the filter row", async () => {
         await renderSearchPage({});
 

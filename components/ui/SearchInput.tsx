@@ -8,6 +8,28 @@ import { cn } from "@/lib/utils";
 const RECENT_SEARCHES_KEY = "flux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
 
+function parseRecentSearches(rawValue: string | null) {
+    if (!rawValue) {
+        return [];
+    }
+
+    try {
+        const parsed = JSON.parse(rawValue);
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed
+            .filter((item): item is string => typeof item === "string")
+            .map((item) => item.trim())
+            .filter(Boolean)
+            .filter((item, index, items) => items.findIndex((candidate) => candidate.toLowerCase() === item.toLowerCase()) === index)
+            .slice(0, MAX_RECENT_SEARCHES);
+    } catch {
+        return [];
+    }
+}
+
 interface SearchInputProps {
     initialQuery?: string;
     category?: string;
@@ -20,7 +42,7 @@ export function SearchInput({
     initialQuery = "",
     category,
     type,
-    placeholder = "Search by title, author, or keyword...",
+    placeholder = "Search by title, author, or category...",
     autoFocus = false
 }: SearchInputProps) {
     const router = useRouter();
@@ -33,12 +55,7 @@ export function SearchInput({
 
     // Load recent searches from localStorage
     useEffect(() => {
-        try {
-            const saved = localStorage.getItem(RECENT_SEARCHES_KEY);
-            if (saved) {
-                setRecentSearches(JSON.parse(saved));
-            }
-        } catch { }
+        setRecentSearches(parseRecentSearches(localStorage.getItem(RECENT_SEARCHES_KEY)));
     }, []);
 
     // Save search to recent history
