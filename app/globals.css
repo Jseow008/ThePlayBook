@@ -850,7 +850,8 @@ mark[data-highlight-spotlight="true"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-in {
+  .animate-fade-in,
+  .landing-mobile-hero-preview {
     animation: none;
     opacity: 1;
   }

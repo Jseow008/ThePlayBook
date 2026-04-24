@@ -18,6 +18,7 @@ import {
   Microscope,
   Scale,
   Smile,
+  Sparkles,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -284,9 +285,9 @@ function HeroSection() {
             </div>
           </div>
 
-          <div className="landing-mobile-hero-preview relative mx-auto mt-12 w-[min(72vw,210px)] lg:hidden">
-            <div className="pointer-events-none absolute inset-x-4 top-8 h-28 bg-gradient-to-b from-white/[0.08] to-transparent blur-3xl" />
-            <div className="landing-mobile-phone-frame relative aspect-[1206/2306] overflow-hidden rounded-[1.65rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_22px_60px_-22px_rgba(0,0,0,0.88),0_0_28px_rgba(255,255,255,0.055)]">
+          <div className="landing-mobile-hero-preview relative mx-auto mt-9 w-[min(58vw,176px)] sm:w-[190px] lg:hidden">
+            <div className="pointer-events-none absolute inset-x-3 top-8 h-24 bg-gradient-to-b from-white/[0.075] to-transparent blur-3xl" />
+            <div className="landing-mobile-phone-frame relative aspect-[1206/2306] overflow-hidden rounded-[1.45rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_20px_54px_-22px_rgba(0,0,0,0.88),0_0_24px_rgba(255,255,255,0.05)]">
               <Image
                 src="/images/mobile-reader-view.png"
                 alt="Flux mobile reader experience"
@@ -294,8 +295,8 @@ function HeroSection() {
                 sizes="(max-width: 1024px) 210px, 0px"
                 className="object-contain"
               />
-              <div className="absolute left-1/2 top-0 z-20 h-3.5 w-16 -translate-x-1/2 rounded-b-xl bg-[#1c1c1e]" />
-              <div className="pointer-events-none absolute inset-0 rounded-[1.35rem] ring-1 ring-inset ring-white/10" />
+              <div className="absolute left-1/2 top-0 z-20 h-3 w-14 -translate-x-1/2 rounded-b-xl bg-[#1c1c1e]" />
+              <div className="pointer-events-none absolute inset-0 rounded-[1.15rem] ring-1 ring-inset ring-white/10" />
             </div>
           </div>
         </div>
