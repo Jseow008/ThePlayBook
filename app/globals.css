@@ -699,26 +699,6 @@ mark[data-highlight-spotlight="true"] {
   filter: blur(0);
 }
 
-.landing-mobile-hero-preview {
-  animation: landingMobilePreviewIn 700ms cubic-bezier(0.22, 1, 0.36, 1) 180ms both;
-}
-
-.landing-mobile-phone-frame {
-  transform: rotate(-2deg);
-}
-
-@keyframes landingMobilePreviewIn {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.98);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 @keyframes highlightSpotlight {
   0% {
     box-shadow: 0 0 0 0 hsl(var(--ring) / 0);
@@ -850,15 +830,13 @@ mark[data-highlight-spotlight="true"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-fade-in,
-  .landing-mobile-hero-preview {
+  .animate-fade-in {
     animation: none;
     opacity: 1;
   }
 
   .landing-reveal,
   .landing-reveal.is-visible,
-  .landing-mobile-hero-preview,
   .landing-device-card,
   .landing-device-stage:hover .landing-device-card,
   .landing-device-phone,
@@ -876,10 +854,6 @@ mark[data-highlight-spotlight="true"] {
   }
 
   .landing-reveal {
-    opacity: 1;
-  }
-
-  .landing-mobile-hero-preview {
     opacity: 1;
   }
 }
