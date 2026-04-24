@@ -134,6 +134,14 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
                         props.onSegmentOpen?.('seg-2', 1);
                     }}
                 />
+                <button
+                    data-testid="manual-complete-seg-1"
+                    onClick={() => props.onSegmentComplete?.('seg-1', 0)}
+                />
+                <button
+                    data-testid="manual-complete-seg-2"
+                    onClick={() => props.onSegmentComplete?.('seg-2', 1)}
+                />
             </div>
         );
     }
@@ -303,7 +311,7 @@ describe('ReaderView', () => {
             expect(screen.getByTestId('mock-author-chat')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+        fireEvent.click(screen.getByTestId('manual-complete-seg-1'));
 
         await waitFor(() => {
             expect(screen.queryByTestId('mock-author-chat')).not.toBeInTheDocument();
@@ -319,10 +327,21 @@ describe('ReaderView', () => {
         }));
     });
 
-    it('marks a segment as completed when the user opens it manually', async () => {
+    it('does not mark a segment as completed when the user opens it manually', async () => {
         render(<ReaderView content={mockContent} />);
 
         fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.completedSegments.has('seg-1')).toBe(false);
+        });
+    });
+
+    it('marks a segment as completed when the user explicitly completes it', async () => {
+        render(<ReaderView content={mockContent} />);
+
+        fireEvent.click(screen.getByTestId('manual-complete-seg-1'));
 
         await waitFor(() => {
             const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
@@ -343,7 +362,7 @@ describe('ReaderView', () => {
             const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
             const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
 
-            expect(latestHeroProps?.segmentsRead).toBe(1);
+            expect(latestHeroProps?.segmentsCompleted).toBe(1);
             expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
             expect(latestAccordionProps?.completedSegments.has('seg-missing')).toBe(false);
         });
@@ -809,7 +828,7 @@ describe('ReaderView', () => {
             const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
             const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
 
-            expect(latestHeroProps?.segmentsRead).toBe(1);
+            expect(latestHeroProps?.segmentsCompleted).toBe(1);
             expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
             expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(false);
         });
@@ -820,7 +839,7 @@ describe('ReaderView', () => {
             const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
             const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
 
-            expect(latestHeroProps?.segmentsRead).toBe(2);
+            expect(latestHeroProps?.segmentsCompleted).toBe(2);
             expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(true);
             expect(latestAccordionProps?.completedSegments.has('seg-3')).toBe(false);
         });
@@ -984,7 +1003,7 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
-            expect(latestHeroProps?.segmentsRead).toBe(2);
+            expect(latestHeroProps?.segmentsCompleted).toBe(2);
         });
 
         fireEvent.click(screen.getByTestId('resume-audio-follow'));
@@ -1167,8 +1186,8 @@ describe('ReaderView', () => {
             expect(saveReadingProgressMock).toHaveBeenCalledWith(
                 'test-item-1',
                 expect.objectContaining({
-                    completed: ['seg-1'],
-                    isCompleted: true,
+                    completed: [],
+                    isCompleted: false,
                     maxSegmentIndex: 0,
                 })
             );
@@ -1300,7 +1319,7 @@ describe('ReaderView', () => {
             const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
             const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
 
-            expect(latestHeroProps?.segmentsRead).toBe(3);
+            expect(latestHeroProps?.segmentsCompleted).toBe(3);
             expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
             expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(true);
             expect(latestAccordionProps?.completedSegments.has('seg-3')).toBe(true);

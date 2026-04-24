@@ -77,6 +77,12 @@ describe('SegmentAccordion', () => {
         expect(defaultProps.onSegmentOpen).toHaveBeenCalledWith('seg-1', 0);
     });
 
+    it('labels the continue action as completing the current section', () => {
+        render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
+
+        expect(screen.getByRole('button', { name: 'Mark complete and continue' })).toBeInTheDocument();
+    });
+
     it('supports externally controlled expanded segments', () => {
         const { container } = render(
             <SegmentAccordion

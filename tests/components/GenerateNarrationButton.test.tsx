@@ -103,6 +103,15 @@ describe("GenerateNarrationButton", () => {
             <GenerateNarrationButton
                 contentId="11111111-1111-1111-1111-111111111111"
                 audioUrl="https://example.com/existing.mp3"
+                estimate={{
+                    model: "gpt-4o-mini-tts",
+                    speed: 1,
+                    scriptCharacters: 180,
+                    scriptWords: 32,
+                    chunkCount: 1,
+                    estimatedDurationSeconds: 13,
+                    estimatedCostUsd: 0.01,
+                }}
                 initialStatus="ready"
                 initialError={null}
                 onGenerated={vi.fn()}
@@ -113,6 +122,7 @@ describe("GenerateNarrationButton", () => {
         expect(screen.getByRole("button", { name: /regenerate narration/i })).toBeInTheDocument();
         expect(screen.getByText(/^ready$/i)).toBeInTheDocument();
         expect(screen.getByText(/narration is ready\./i)).toBeInTheDocument();
+        expect(screen.getByText(/approx \$0\.01 for 13s api audio\./i)).toBeInTheDocument();
     });
 
     it("renders ready timestamps with a deterministic format", () => {

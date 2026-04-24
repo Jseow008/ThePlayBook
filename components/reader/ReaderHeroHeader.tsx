@@ -23,7 +23,7 @@ interface ReaderHeroHeaderProps {
     audioUrl: string | null;
     durationSeconds: number | null;
     segmentsTotal: number;
-    segmentsRead: number;
+    segmentsCompleted: number;
     formattedReadingTime: string;
     showResumeAudioFollow?: boolean;
     onResumeAudioFollow?: () => void;
@@ -40,7 +40,7 @@ export function ReaderHeroHeader({
     audioUrl,
     durationSeconds,
     segmentsTotal,
-    segmentsRead,
+    segmentsCompleted,
     formattedReadingTime,
     showResumeAudioFollow = false,
     onResumeAudioFollow,
@@ -48,10 +48,13 @@ export function ReaderHeroHeader({
     onAudioTimeChange,
     onAudioPlaybackStateChange,
 }: ReaderHeroHeaderProps) {
+    const boundedSegmentsCompleted = Math.min(segmentsTotal, Math.max(0, segmentsCompleted));
     const progressPercent =
         segmentsTotal > 0
-            ? Math.min(100, Math.max(0, Math.round((segmentsRead / segmentsTotal) * 100)))
+            ? Math.min(100, Math.max(0, Math.round((boundedSegmentsCompleted / segmentsTotal) * 100)))
             : 0;
+    const sectionLabel = segmentsTotal === 1 ? "section" : "sections";
+    const progressText = `${boundedSegmentsCompleted} of ${segmentsTotal} ${sectionLabel} completed`;
 
     // Update Tab Title with Progress
     useEffect(() => {
@@ -175,11 +178,19 @@ export function ReaderHeroHeader({
 
             {/* Progress Bar */}
             <div className="mt-6">
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-                    <span>Reading Progress</span>
-                    <span>{progressPercent}%</span>
+                <div className="mb-1.5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>Sections completed</span>
+                    <span className="text-right">{progressText}</span>
                 </div>
-                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div
+                    className="h-1.5 bg-secondary rounded-full overflow-hidden"
+                    role="progressbar"
+                    aria-label="Reading progress"
+                    aria-valuemin={0}
+                    aria-valuemax={segmentsTotal}
+                    aria-valuenow={boundedSegmentsCompleted}
+                    aria-valuetext={progressText}
+                >
                     <div
                         className="h-full bg-primary rounded-full transition-all duration-500"
                         style={{ width: `${progressPercent}%` }}

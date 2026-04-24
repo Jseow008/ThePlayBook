@@ -45,6 +45,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { AdminSeriesOption } from "@/lib/server/admin-series";
+import type { NarrationCostEstimate } from "@/lib/narration-cost";
 import type { NarrationJobStatus } from "@/lib/narration-job";
 import { normalizeAdminReturnTo, withNarrationWarning } from "@/lib/admin-return-to";
 
@@ -107,6 +108,7 @@ interface ContentFormProps {
             total_segments: number;
         };
     } | null;
+    narrationEstimate?: NarrationCostEstimate | null;
     returnTo?: string;
 }
 
@@ -284,6 +286,7 @@ export function ContentForm({
     isEditing = false,
     seriesOptions = [],
     aiReadiness = null,
+    narrationEstimate = null,
     returnTo,
 }: ContentFormProps) {
     const router = useRouter();
@@ -1095,6 +1098,7 @@ export function ContentForm({
                                             <GenerateNarrationButton
                                                 contentId={formData.id}
                                                 audioUrl={formData.audio_url}
+                                                estimate={narrationEstimate}
                                                 initialStatus={formData.narration_status}
                                                 initialError={formData.narration_error}
                                                 initialRequestedAt={formData.narration_requested_at}
@@ -1120,7 +1124,7 @@ export function ContentForm({
                                             />
                                             {formData.narration_status === "stale" && formData.audio_url && (
                                                 <p className="text-xs text-amber-600">
-                                                    The current narration is out of date. Regenerate it to match the latest deep-mode content.
+                                                    The current voice is out of date. Regenerate it to match the latest deep-mode content.
                                                 </p>
                                             )}
                                             {formData.status !== "verified" && (

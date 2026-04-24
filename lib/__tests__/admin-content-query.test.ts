@@ -15,6 +15,7 @@ describe("admin content query helpers", () => {
         expect(normalizeAdminContentType("podcast")).toBe("podcast");
         expect(normalizeAdminContentAiFilter("stale")).toBe("stale");
         expect(normalizeAdminContentVoiceFilter("missing")).toBe("missing");
+        expect(normalizeAdminContentVoiceFilter("stale")).toBe("stale");
         expect(normalizeAdminContentPageSize("25")).toBe(25);
     });
 
@@ -33,7 +34,7 @@ describe("admin content query helpers", () => {
             featured: "true",
             sort: "updated_desc",
             ai: "stale",
-            voice: "missing",
+            voice: "stale",
             page_size: "50",
         })).toEqual({
             status: "draft",
@@ -41,7 +42,7 @@ describe("admin content query helpers", () => {
             featured: true,
             sort: "updated_desc",
             ai: "stale",
-            voice: "missing",
+            voice: "stale",
             pageSize: 50,
         });
     });

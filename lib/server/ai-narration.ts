@@ -4,6 +4,7 @@ import { existsSync, chmodSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 import ffmpegStaticPath from "ffmpeg-static";
+import type { NarrationCostEstimate } from "@/lib/narration-cost";
 
 const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
 const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE || "alloy";
@@ -11,6 +12,9 @@ const OPENAI_WAV_FORMAT = "wav";
 const FINAL_AUDIO_FORMAT = "mp3";
 const FINAL_AUDIO_CONTENT_TYPE = "audio/mpeg";
 const MAX_CHARS_PER_CHUNK = 3_500;
+const DEFAULT_NARRATION_SPEED = 1;
+const ESTIMATED_NARRATION_WORDS_PER_MINUTE = 150;
+const ESTIMATED_GPT_4O_MINI_TTS_COST_PER_MINUTE_USD = 0.015;
 const TTS_CONCURRENCY = 3;
 const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 const OPENAI_MAX_ATTEMPTS = 3;
@@ -257,6 +261,47 @@ export function splitNarrationIntoChunks(script: string, maxChars: number = MAX_
 
     pushChunk();
     return chunks;
+}
+
+function countWords(value: string) {
+    const matches = value.match(/\b[\p{L}\p{N}'’-]+\b/gu);
+    return matches?.length ?? 0;
+}
+
+function normalizeNarrationSpeed(speed?: number) {
+    if (!Number.isFinite(speed) || !speed || speed <= 0) {
+        return DEFAULT_NARRATION_SPEED;
+    }
+
+    return Math.min(Math.max(speed, 0.25), 4);
+}
+
+export function estimateNarrationCost(
+    content: NarrationContentSource,
+    options?: { speed?: number }
+): NarrationCostEstimate {
+    const script = buildNarrationScript(content);
+    const scriptCharacters = script.length;
+    const scriptWords = countWords(script);
+    const chunkCount = splitNarrationIntoChunks(script).length;
+    const speed = normalizeNarrationSpeed(options?.speed);
+    const estimatedDurationSeconds = Math.max(
+        1,
+        Math.round((scriptWords / ESTIMATED_NARRATION_WORDS_PER_MINUTE) * 60 / speed)
+    );
+    const estimatedCostUsd = Number(
+        ((estimatedDurationSeconds / 60) * ESTIMATED_GPT_4O_MINI_TTS_COST_PER_MINUTE_USD).toFixed(4)
+    );
+
+    return {
+        model: OPENAI_TTS_MODEL,
+        speed,
+        scriptCharacters,
+        scriptWords,
+        chunkCount,
+        estimatedDurationSeconds,
+        estimatedCostUsd,
+    };
 }
 
 function findChunk(buffer: Buffer, chunkId: string, startOffset: number) {

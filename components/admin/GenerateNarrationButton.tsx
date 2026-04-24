@@ -1,6 +1,8 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { formatNarrationCostEstimate } from "@/lib/narration-cost-format";
+import type { NarrationCostEstimate } from "@/lib/narration-cost";
 import { type NarrationJobStatus } from "@/lib/narration-job";
 import { STALE_NARRATION_MESSAGE, useNarrationGeneration } from "./useNarrationGeneration";
 import { getNarrationStatusPresentation } from "./narration-status";
@@ -8,6 +10,7 @@ import { getNarrationStatusPresentation } from "./narration-status";
 interface GenerateNarrationButtonProps {
     contentId: string;
     audioUrl: string;
+    estimate?: NarrationCostEstimate | null;
     initialStatus?: NarrationJobStatus;
     initialError?: string | null;
     initialRequestedAt?: string | null;
@@ -22,6 +25,7 @@ interface GenerateNarrationButtonProps {
 export function GenerateNarrationButton({
     contentId,
     audioUrl,
+    estimate = null,
     initialStatus = "idle",
     initialError = null,
     initialRequestedAt = null,
@@ -105,6 +109,12 @@ export function GenerateNarrationButton({
             {shouldShowStatusText && (
                 <p className={`mt-3 text-xs font-medium ${statusText === STALE_NARRATION_MESSAGE || statusText.toLowerCase().includes("temporarily") ? "text-amber-600" : statusText.startsWith("Error:") ? "text-red-600" : "text-emerald-600"}`}>
                     {statusText}
+                </p>
+            )}
+
+            {estimate && (
+                <p className="mt-3 text-xs text-zinc-500">
+                    {formatNarrationCostEstimate(estimate)}
                 </p>
             )}
         </div>

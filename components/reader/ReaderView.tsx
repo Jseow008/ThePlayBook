@@ -357,18 +357,8 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
     }, [activeHighlightId, highlights, popoverHighlight, popoverHighlightId]);
 
-    // Handle manual segment open — treat it as completion for lightweight progress tracking.
+    // Handle manual segment open
     const handleSegmentOpen = (segmentId: string, index: number) => {
-        setCompletedSegments((prev) => {
-            if (prev.has(segmentId)) {
-                return prev;
-            }
-
-            const next = new Set(prev);
-            next.add(segmentId);
-            return next;
-        });
-
         // Update max opened index
         setMaxSegmentIndex((prev) => Math.max(prev, index));
         setHasPendingProgressSave(true);
@@ -672,7 +662,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     audioUrl={content.audio_url}
                     durationSeconds={content.duration_seconds}
                     segmentsTotal={content.segments.length}
-                    segmentsRead={completedSegments.size}
+                    segmentsCompleted={completedSegments.size}
                     formattedReadingTime={formattedTime}
                     showResumeAudioFollow={hasSyncedAudioPosition && !isAudioFollowEnabled && Boolean(activeNarrationSegmentId)}
                     onResumeAudioFollow={resumeAudioFollow}

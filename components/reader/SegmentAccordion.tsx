@@ -497,7 +497,7 @@ export function SegmentAccordion({
                                         >
                                             {index < segments.length - 1 ? (
                                                 <>
-                                                    <span>Next section</span>
+                                                    <span>Mark complete and continue</span>
                                                 </>
                                             ) : isCompleted ? (
                                                 <>

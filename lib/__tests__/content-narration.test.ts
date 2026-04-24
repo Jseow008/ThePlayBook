@@ -3,6 +3,7 @@ import {
     buildNarrationScript,
     buildNarrationSegmentScript,
     concatenateWavBuffers,
+    estimateNarrationCost,
     generateNarrationAudio,
     getWavDurationSeconds,
     mapWithConcurrency,
@@ -120,6 +121,30 @@ describe("AI narration helpers", () => {
 
         expect(chunks.length).toBeGreaterThan(1);
         expect(chunks.every((chunk) => chunk.length <= 80)).toBe(true);
+    });
+
+    it("estimates narration duration and API cost from the saved script", () => {
+        const estimate = estimateNarrationCost({
+            title: "Deep Work",
+            author: "Cal Newport",
+            segments: [
+                {
+                    title: "Why focus matters",
+                    markdown_body: "Deep work compounds over time. Protect long blocks for focus.",
+                },
+                {
+                    title: "How to start",
+                    markdown_body: "Remove distractions, define the task, and stay with one thing until the block ends.",
+                },
+            ],
+        });
+
+        expect(estimate.model).toBe("gpt-4o-mini-tts");
+        expect(estimate.scriptCharacters).toBeGreaterThan(40);
+        expect(estimate.scriptWords).toBeGreaterThan(10);
+        expect(estimate.chunkCount).toBe(1);
+        expect(estimate.estimatedDurationSeconds).toBeGreaterThan(1);
+        expect(estimate.estimatedCostUsd).toBeGreaterThan(0);
     });
 
     it("concatenates WAV chunks into a single valid WAV file", () => {

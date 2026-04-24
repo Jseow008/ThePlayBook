@@ -272,6 +272,8 @@ export async function GET(request: NextRequest) {
 
         if (voice === "missing") {
             query = query.is("audio_url", null);
+        } else if (voice === "stale") {
+            query = query.eq("narration_status", "stale");
         }
 
         if (q) {

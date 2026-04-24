@@ -1,7 +1,8 @@
 # DESIGN.md: Flux Design Notes
 
 > **Status:** Active  
-> **Constraint:** The shipped source of truth is the current app implementation, especially `app/globals.css` and existing components.
+> **Brand Identity:** For overarching, platform-agnostic branding rules (Mobile, Social Media), see [BRAND_GUIDELINES.md](./BRAND_GUIDELINES.md).
+> **Constraint:** The shipped source of truth for the **Web App** is the current app implementation, especially `app/globals.css` and existing components.
 
 ## 1. Design System Baseline
 

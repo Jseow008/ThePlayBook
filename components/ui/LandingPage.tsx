@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -18,7 +18,6 @@ import {
   Microscope,
   Scale,
   Smile,
-  Sparkles,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -108,13 +107,6 @@ function getNormalizedScrollLeft(scrollLeft: number, loopWidth: number) {
   return middleStart + offsetWithinLoop;
 }
 
-function fadeInStyle(delayMs = 0) {
-  return {
-    animationDelay: `${delayMs}ms`,
-    animationFillMode: "both" as const,
-  };
-}
-
 function FadeIn({
   children,
   className,
@@ -124,8 +116,41 @@ function FadeIn({
   className?: string;
   delayMs?: number;
 }) {
+  const revealRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const element = revealRef.current;
+    if (!element) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setIsVisible(true);
+        observer.unobserve(entry.target);
+      },
+      {
+        rootMargin: "0px 0px -10% 0px",
+        threshold: 0.16,
+      }
+    );
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className={cn("animate-fade-in", className)} style={fadeInStyle(delayMs)}>
+    <div
+      ref={revealRef}
+      className={cn("landing-reveal", isVisible && "is-visible", className)}
+      style={{ "--reveal-delay": `${delayMs}ms` } as React.CSSProperties}
+    >
       {children}
     </div>
   );
@@ -171,10 +196,9 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
     <>
       <LandingHeader />
 
-      <main className="relative min-h-screen overflow-x-hidden bg-background text-foreground">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(221,197,160,0.08),transparent_24%),radial-gradient(circle_at_82%_18%,rgba(91,109,140,0.10),transparent_24%)]" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-white/[0.03] via-transparent to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+      <main className="landing-page-shell relative min-h-screen overflow-x-hidden text-foreground">
+        <div className="landing-page-wash pointer-events-none absolute inset-0" />
+        <div className="landing-page-grain pointer-events-none absolute inset-0" />
 
         <HeroSection />
         <CorePlatformFeaturesSection />
@@ -218,12 +242,8 @@ function LandingHeader() {
 
 function HeroSection() {
   return (
-    <section className="relative flex min-h-[90vh] flex-col justify-center overflow-hidden pb-24 pt-20 sm:pt-24">
-      <div className="pointer-events-none absolute inset-0 z-0 opacity-60">
-        <div className="landing-hero-flow-1 absolute left-1/4 top-1/4 h-[320px] w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/10 blur-[80px]" />
-        <div className="landing-hero-flow-2 absolute bottom-1/4 right-1/4 h-[400px] w-[400px] translate-x-1/4 translate-y-1/4 rounded-full bg-emerald-500/5 blur-[80px]" />
-        <div className="landing-hero-flow-3 absolute left-[58%] top-[18%] h-[220px] w-[220px] rounded-full bg-white/[0.04] blur-[72px]" />
-      </div>
+    <section className="landing-hero-section relative flex min-h-[90vh] flex-col justify-center overflow-hidden pb-24 pt-20 sm:pt-24">
+      <div className="landing-hero-atmosphere pointer-events-none absolute inset-0 z-0" />
 
       <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-6 lg:px-8 lg:grid-cols-[1fr_1fr] lg:items-center">
         <div className="max-w-2xl">
@@ -263,12 +283,27 @@ function HeroSection() {
               </Link>
             </div>
           </div>
+
+          <div className="landing-mobile-hero-preview relative mx-auto mt-12 w-[min(72vw,210px)] lg:hidden">
+            <div className="pointer-events-none absolute inset-x-4 top-8 h-28 bg-gradient-to-b from-white/[0.08] to-transparent blur-3xl" />
+            <div className="landing-mobile-phone-frame relative aspect-[1206/2306] overflow-hidden rounded-[1.65rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_22px_60px_-22px_rgba(0,0,0,0.88),0_0_28px_rgba(255,255,255,0.055)]">
+              <Image
+                src="/images/mobile-reader-view.png"
+                alt="Flux mobile reader experience"
+                fill
+                sizes="(max-width: 1024px) 210px, 0px"
+                className="object-contain"
+              />
+              <div className="absolute left-1/2 top-0 z-20 h-3.5 w-16 -translate-x-1/2 rounded-b-xl bg-[#1c1c1e]" />
+              <div className="pointer-events-none absolute inset-0 rounded-[1.35rem] ring-1 ring-inset ring-white/10" />
+            </div>
+          </div>
         </div>
 
         <div className="relative hidden lg:block">
-          <div className="pointer-events-none absolute inset-x-8 -top-6 h-20 rounded-full bg-white/[0.04] blur-3xl" />
-          <div className="relative z-20 w-full">
-            <div className="relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
+          <div className="pointer-events-none absolute inset-x-8 -top-6 h-20 bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl" />
+          <div className="landing-device-stage relative z-20 w-full">
+            <div className="landing-device-card relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
               <Image
                 src="/images/hero-section.png"
                 alt="Flux dashboard desktop experience"
@@ -281,15 +316,15 @@ function HeroSection() {
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
             </div>
 
-            <div className="absolute -bottom-8 -left-6 z-30 aspect-[1206/2306] w-[140px] overflow-hidden rounded-[1.25rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.4)]">
+            <div className="landing-device-phone absolute -bottom-8 -left-6 z-30 aspect-[1206/2306] w-[140px] overflow-hidden rounded-[1.25rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.4)]">
               <Image
                 src="/images/mobile-reader-view.png"
                 alt="Flux mobile reader experience"
                 fill
                 sizes="140px"
-                className="object-cover"
+                className="object-contain"
               />
-              <div className="absolute top-0 left-1/2 h-3 w-14 -translate-x-1/2 rounded-b-lg bg-[#1c1c1e]" />
+              <div className="absolute left-1/2 top-0 z-20 h-3 w-14 -translate-x-1/2 rounded-b-lg bg-[#1c1c1e]" />
             </div>
           </div>
         </div>
@@ -517,14 +552,21 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
   return (
     <section
       id="featured-reads"
-      className="scroll-mt-20 overflow-hidden bg-[linear-gradient(180deg,rgba(0,0,0,0.24),rgba(0,0,0,0.4),rgba(0,0,0,0.24))] py-24 sm:py-32"
+      className="landing-featured-band scroll-mt-20 overflow-hidden py-24 sm:py-32"
     >
-      <FadeIn className="mx-auto mb-16 max-w-7xl px-6">
+      <FadeIn className="mx-auto mb-16 flex max-w-7xl flex-col gap-8 px-6 md:flex-row md:items-end md:justify-between">
         <SectionIntro
           label="Start here"
           title="Start with something worth your time."
           body="A living library of high-signal ideas across books, podcasts, and articles."
         />
+        <Link
+          href="/browse"
+          className="focus-ring group inline-flex w-fit items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
+        >
+          Browse all
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+        </Link>
       </FadeIn>
 
       <FadeIn delayMs={100}>
@@ -540,8 +582,8 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
             event.stopPropagation();
           }}
         >
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-background via-background/70 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-background via-background/70 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#090807] via-[#090807]/72 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#090807] via-[#090807]/72 to-transparent" />
           <div
             ref={scrollRef}
             aria-label="Featured reads"
@@ -628,11 +670,12 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
 
 function CorePlatformFeaturesSection() {
   return (
-    <section className="relative bg-black py-20 sm:py-24">
+    <section className="landing-feature-band relative py-20 sm:py-24">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
       <FadeIn className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/5 via-white/[0.03] to-white/[0.01] p-8 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.85)] sm:p-10 lg:p-12">
-          <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-white/[0.04] blur-3xl" />
+        <div className="landing-feature-shell relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/5 via-white/[0.03] to-white/[0.01] p-8 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.85)] sm:p-10 lg:p-12">
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/[0.035] to-transparent blur-2xl" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
           <div className="relative z-10 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <div className="max-w-md">
               <SectionIntro
@@ -644,7 +687,7 @@ function CorePlatformFeaturesSection() {
 
             <div className="grid gap-4 sm:grid-cols-2 lg:items-center">
               <FadeIn delayMs={100}>
-                <div className="group flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.85)]">
+                <div className="group landing-feature-card flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.85)]">
                   <div className="relative aspect-[1996/1794] w-full shrink-0 overflow-hidden border-b border-white/5 bg-zinc-950">
                     <Image
                       src={CORE_ANCHOR_FEATURE.image}
@@ -657,6 +700,9 @@ function CorePlatformFeaturesSection() {
                   </div>
 
                   <div className="flex flex-1 flex-col p-6 pt-5">
+                    <span className="mb-4 w-fit rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                      Core view
+                    </span>
                     <h3 className="text-2xl font-semibold tracking-tight text-white">
                       {CORE_ANCHOR_FEATURE.title}
                     </h3>
@@ -670,7 +716,7 @@ function CorePlatformFeaturesSection() {
               <div className="flex flex-col gap-4">
                 {CORE_SUPPORT_FEATURES.map((feature, index) => (
                   <FadeIn key={feature.title} delayMs={150 + index * 80}>
-                    <div className="group relative flex flex-row items-center gap-4 overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/80 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_20px_40px_-28px_rgba(255,255,255,0.2)]">
+                    <div className="group landing-feature-row relative flex flex-row items-center gap-4 overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/80 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_20px_40px_-28px_rgba(255,255,255,0.2)]">
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.15rem] border border-white/5 bg-zinc-950">
                         <Image
                           src={feature.image}
@@ -683,6 +729,9 @@ function CorePlatformFeaturesSection() {
                       </div>
 
                       <div className="flex flex-1 flex-col py-1 pr-3">
+                        <span className="mb-2 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                          {index === 0 ? "Preview" : index === 1 ? "Capture" : "Ask"}
+                        </span>
                         <h3 className="text-base font-semibold leading-snug tracking-[-0.01em] text-white">
                           {feature.title}
                         </h3>
@@ -704,8 +753,7 @@ function CorePlatformFeaturesSection() {
 
 function TopicMapSection({ categories }: { categories: { category: string; count: number }[] }) {
   return (
-    <section className="relative py-24 sm:py-32">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.03),transparent_32%)]" />
+    <section className="landing-topic-band relative py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <FadeIn>
           <SectionIntro
@@ -724,15 +772,20 @@ function TopicMapSection({ categories }: { categories: { category: string; count
               <FadeIn key={item.category} delayMs={index * 50}>
                 <Link
                   href={`/search?category=${encodeURIComponent(item.category)}`}
-                  className="group relative flex h-full flex-col items-center justify-center gap-4 overflow-hidden rounded-[2rem] border border-white/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-8 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[0_24px_50px_-28px_rgba(255,255,255,0.24)]"
+                  className="landing-topic-card group relative flex h-full min-h-44 flex-col items-center justify-center gap-4 overflow-hidden rounded-[2rem] border border-white/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[0_24px_50px_-28px_rgba(255,255,255,0.24)] sm:p-8"
                 >
                   <div className="pointer-events-none absolute inset-x-8 top-0 h-20 bg-gradient-to-b from-white/[0.08] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                   <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-4 shadow-inner transition-colors group-hover:bg-black/60">
                     <Icon className="size-6 text-zinc-400 transition-colors group-hover:text-white" />
                   </div>
-                  <span className="text-[0.95rem] font-semibold tracking-[0.01em] text-zinc-300 transition-colors group-hover:text-white">
-                    {item.category}
-                  </span>
+                  <div>
+                    <span className="text-[0.95rem] font-semibold tracking-[0.01em] text-zinc-300 transition-colors group-hover:text-white">
+                      {item.category}
+                    </span>
+                    <span className="mt-2 block text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-zinc-500 transition-colors group-hover:text-zinc-300">
+                      {item.count} {item.count === 1 ? "read" : "reads"}
+                    </span>
+                  </div>
                 </Link>
               </FadeIn>
             );
@@ -745,16 +798,13 @@ function TopicMapSection({ categories }: { categories: { category: string; count
 
 function FinalCTASection() {
   return (
-    <section className="relative overflow-hidden py-32 sm:py-40">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <div className="h-[300px] w-[600px] rounded-full bg-blue-500/[0.08] blur-[80px]" />
-        <div className="landing-hero-flow-3 absolute h-[220px] w-[420px] rounded-full bg-white/[0.03] blur-[90px]" />
-      </div>
+    <section className="landing-cta-band relative overflow-hidden py-32 sm:py-40">
+      <div className="landing-cta-wash pointer-events-none absolute inset-0" />
 
       <FadeIn>
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center lg:px-8">
           <div className="relative px-6 py-14 sm:px-10">
-            <div className="pointer-events-none absolute inset-x-10 top-1/2 h-32 -translate-y-1/2 rounded-full bg-white/[0.025] blur-3xl" />
+            <div className="pointer-events-none absolute inset-x-0 top-1/2 h-32 -translate-y-1/2 bg-gradient-to-r from-transparent via-white/[0.035] to-transparent blur-3xl" />
 
             <div className="relative">
               <h2 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl md:text-[5.5rem]">

@@ -72,8 +72,14 @@ export function ContentQuickFilters({
             onClick: () => toggleParam("voice", currentVoice === "missing" ? null : "missing"),
         },
         {
+            key: "voice-stale",
+            label: "Voice Out of Date",
+            active: currentVoice === "stale",
+            onClick: () => toggleParam("voice", currentVoice === "stale" ? null : "stale"),
+        },
+        {
             key: "ai",
-            label: "Needs Sync",
+            label: "AI Needs Sync",
             active: currentAi === "stale",
             onClick: () => toggleParam("ai", currentAi === "stale" ? null : "stale"),
         },

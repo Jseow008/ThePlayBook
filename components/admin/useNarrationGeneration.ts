@@ -30,7 +30,7 @@ export const FALLBACK_GENERATION_ERROR = "AI narration could not be completed ri
 export const FALLBACK_NETWORK_ERROR = "Could not reach the narration service. Please try again.";
 export const STATUS_RATE_LIMIT_MESSAGE = "AI narration is still generating. Status checks are temporarily rate limited; retrying shortly.";
 export const STATUS_FETCH_RETRY_MESSAGE = "AI narration is still generating. Status checks are temporarily unavailable; retrying shortly.";
-export const STALE_NARRATION_MESSAGE = "AI narration is out of date. Regenerate it to match the latest deep-mode content.";
+export const STALE_NARRATION_MESSAGE = "Voice is out of date. Regenerate it to match the latest deep-mode content.";
 const DEFAULT_POLL_INTERVAL_MS = 5_000;
 
 async function parseNarrationResponse(response: Response): Promise<NarrationRouteResponse | null> {

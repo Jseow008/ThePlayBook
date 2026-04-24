@@ -24,6 +24,7 @@ export type AdminContentAiFilter = (typeof ADMIN_CONTENT_AI_FILTER_OPTIONS)[numb
 export const ADMIN_CONTENT_VOICE_FILTER_OPTIONS = [
     "all",
     "missing",
+    "stale",
 ] as const;
 
 export type AdminContentVoiceFilter = (typeof ADMIN_CONTENT_VOICE_FILTER_OPTIONS)[number];

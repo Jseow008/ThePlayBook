@@ -30,7 +30,7 @@ import { NarrationRowAction } from "@/components/admin/NarrationRowAction";
 import { PaginationControls } from "@/components/admin/PaginationControls";
 import type { AdminContentViewState } from "@/lib/admin-content-query";
 import type { AdminAiReadiness } from "@/lib/server/admin-ai-readiness";
-import type { AdminContentWorkbenchItem } from "@/lib/server/admin-content-workbench";
+import type { AdminContentWorkbenchItem, AdminNarrationEstimateById } from "@/lib/server/admin-content-workbench";
 import { getNarrationJobState } from "@/lib/narration-job";
 import { APP_NAME } from "@/lib/brand";
 
@@ -71,6 +71,7 @@ function formatAdminDate(value: string | null | undefined) {
 export function ContentWorkbenchClient({
     items,
     aiReadinessById,
+    narrationEstimatesById,
     narrationWarning,
     totalItems,
     totalPages,
@@ -83,6 +84,7 @@ export function ContentWorkbenchClient({
 }: {
     items: AdminContentWorkbenchItem[];
     aiReadinessById: Record<string, AdminAiReadiness>;
+    narrationEstimatesById: AdminNarrationEstimateById;
     narrationWarning: string;
     totalItems: number;
     totalPages: number;
@@ -368,6 +370,7 @@ export function ContentWorkbenchClient({
                                                 initialRequestedAt={narrationJob.requested_at}
                                                 initialStartedAt={narrationJob.started_at}
                                                 initialCompletedAt={narrationJob.completed_at}
+                                                estimate={narrationEstimatesById[item.id] ?? null}
                                             />
                                         </div>
 
@@ -477,6 +480,7 @@ export function ContentWorkbenchClient({
                                                         initialRequestedAt={narrationJob.requested_at}
                                                         initialStartedAt={narrationJob.started_at}
                                                         initialCompletedAt={narrationJob.completed_at}
+                                                        estimate={narrationEstimatesById[item.id] ?? null}
                                                     />
                                                 </div>
                                             </div>

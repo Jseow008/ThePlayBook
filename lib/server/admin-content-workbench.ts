@@ -5,7 +5,9 @@ import {
     getAdminContentViewStateFromSearchParams,
 } from "@/lib/admin-content-query";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import type { NarrationCostEstimate } from "@/lib/narration-cost";
 import type { NarrationJobStatus } from "@/lib/narration-job";
+import { getNarrationEstimatesByContentId } from "@/lib/server/narration-estimate";
 
 type AdminSupabaseClient = {
     from: (table: string) => {
@@ -31,6 +33,8 @@ export type AdminContentWorkbenchItem = {
     updated_at: string | null;
     deleted_at: string | null;
 };
+
+export type AdminNarrationEstimateById = Record<string, NarrationCostEstimate | null>;
 
 type SearchParamsInput = {
     page?: string;
@@ -135,6 +139,8 @@ export async function getAdminContentWorkbenchData(
 
     if (viewState.voice === "missing") {
         baseQuery = baseQuery.is("audio_url", null);
+    } else if (viewState.voice === "stale") {
+        baseQuery = baseQuery.eq("narration_status", "stale");
     }
 
     if (searchQuery) {
@@ -184,10 +190,15 @@ export async function getAdminContentWorkbenchData(
                 embedding: item.embedding,
             }))
         );
+        const narrationEstimatesById = await getNarrationEstimatesByContentId(
+            supabase as any,
+            items.map((item) => item.id)
+        );
 
         return {
             items,
             aiReadinessById,
+            narrationEstimatesById,
             narrationWarning,
             totalItems,
             totalPages,
@@ -223,10 +234,15 @@ export async function getAdminContentWorkbenchData(
     const currentPage = Math.min(requestedPage, totalPages);
     const from = (currentPage - 1) * viewState.pageSize;
     const items = filteredItems.slice(from, from + viewState.pageSize);
+    const narrationEstimatesById = await getNarrationEstimatesByContentId(
+        supabase as any,
+        items.map((item) => item.id)
+    );
 
     return {
         items,
         aiReadinessById,
+        narrationEstimatesById,
         narrationWarning,
         totalItems,
         totalPages,

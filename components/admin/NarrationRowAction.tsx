@@ -1,5 +1,7 @@
 "use client";
 
+import { formatNarrationCostEstimate } from "@/lib/narration-cost-format";
+import type { NarrationCostEstimate } from "@/lib/narration-cost";
 import { type NarrationJobStatus } from "@/lib/narration-job";
 import { useNarrationGeneration } from "./useNarrationGeneration";
 import { getNarrationStatusPresentation } from "./narration-status";
@@ -8,6 +10,7 @@ interface NarrationRowActionProps {
     contentId: string;
     contentStatus: "draft" | "verified";
     audioUrl: string;
+    estimate?: NarrationCostEstimate | null;
     initialStatus?: NarrationJobStatus;
     initialError?: string | null;
     initialRequestedAt?: string | null;
@@ -19,6 +22,7 @@ export function NarrationRowAction({
     contentId,
     contentStatus,
     audioUrl,
+    estimate = null,
     initialStatus = "idle",
     initialError = null,
     initialRequestedAt = null,
@@ -96,6 +100,11 @@ export function NarrationRowAction({
                     {buttonLabel}
                 </button>
             </div>
+            {estimate && (
+                <p className="mt-2 text-[11px] text-zinc-500">
+                    {formatNarrationCostEstimate(estimate)}
+                </p>
+            )}
         </div>
     );
 }

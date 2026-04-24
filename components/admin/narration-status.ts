@@ -124,7 +124,7 @@ export function getNarrationStatusPresentation({
 
     if (status === "stale" && audioUrl) {
         return {
-            badgeLabel: "Out of date",
+            badgeLabel: "Voice Out of Date",
             badgeClassName: "border-amber-200 bg-amber-50 text-amber-700",
             detail: formattedCompletedAt
                 ? `Last generated ${formattedCompletedAt}.`

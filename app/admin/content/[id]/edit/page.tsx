@@ -9,6 +9,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { getAdminSeriesOptions } from "@/lib/server/admin-series";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import { getNarrationEstimateByContentId } from "@/lib/server/narration-estimate";
 import { Segment } from "@/types/database";
 import { getNarrationJobState } from "@/lib/narration-job";
 
@@ -53,6 +54,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
         status: contentItem.status,
         embedding: contentItem.embedding,
     }]);
+    const narrationEstimate = await getNarrationEstimateByContentId(supabase as any, contentItem.id);
 
     // Transform data for the form
     const formData = {
@@ -110,6 +112,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
                 isEditing
                 seriesOptions={seriesOptions}
                 aiReadiness={aiReadinessById[contentItem.id]}
+                narrationEstimate={narrationEstimate}
                 returnTo={resolvedSearchParams?.returnTo}
             />
         </div>
