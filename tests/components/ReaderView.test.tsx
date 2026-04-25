@@ -9,6 +9,7 @@ const {
     notesDrawerSpy,
     progressState,
     readerHeroHeaderSpy,
+    removeFromProgressMock,
     routerReplaceMock,
     saveReadingProgressMock,
     searchParamsState,
@@ -16,6 +17,7 @@ const {
     storageScopeState,
     highlightsState,
     syncFromCloudMock,
+    toastSuccessMock,
 } = vi.hoisted(() => ({
     localStorageState: new Map<string, string>(),
     notesDrawerSpy: vi.fn(),
@@ -23,6 +25,7 @@ const {
         value: null as { completed?: string[]; maxSegmentIndex?: number; lastSegmentIndex?: number } | null,
     },
     readerHeroHeaderSpy: vi.fn(),
+    removeFromProgressMock: vi.fn(),
     routerReplaceMock: vi.fn(),
     saveReadingProgressMock: vi.fn(),
     searchParamsState: { value: '' },
@@ -46,6 +49,7 @@ const {
         }>,
     },
     syncFromCloudMock: vi.fn(),
+    toastSuccessMock: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -60,6 +64,12 @@ vi.mock('next/link', () => ({
             {children}
         </a>
     ),
+}));
+
+vi.mock('sonner', () => ({
+    toast: {
+        success: toastSuccessMock,
+    },
 }));
 
 // Mock child components to isolate ReaderView testing
@@ -142,6 +152,10 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
                     data-testid="manual-complete-seg-2"
                     onClick={() => props.onSegmentComplete?.('seg-2', 1)}
                 />
+                <button
+                    data-testid="finish-reading"
+                    onClick={() => props.onFinishReading?.()}
+                />
             </div>
         );
     }
@@ -179,6 +193,7 @@ vi.mock('@/components/reader/AuthorChat', () => ({
 vi.mock('@/hooks/useReadingProgress', () => ({
     useReadingProgress: () => ({
         saveReadingProgress: saveReadingProgressMock,
+        removeFromProgress: removeFromProgressMock,
         getProgress: vi.fn(() => progressState.value),
         isLoaded: true,
         storageScope: storageScopeState.value,
@@ -252,6 +267,7 @@ describe('ReaderView', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         notesDrawerSpy.mockClear();
+        removeFromProgressMock.mockClear();
         progressState.value = null;
         readerHeroHeaderSpy.mockClear();
         routerReplaceMock.mockClear();
@@ -260,6 +276,7 @@ describe('ReaderView', () => {
         storageScopeState.value = 'guest';
         highlightsState.value = [];
         saveReadingProgressMock.mockClear();
+        toastSuccessMock.mockClear();
         window.scrollTo = vi.fn();
         localStorageState.clear();
         vi.mocked(window.localStorage.getItem).mockImplementation((key: string) => localStorageState.get(key) ?? null);
@@ -347,6 +364,98 @@ describe('ReaderView', () => {
             const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
             expect(latestProps?.completedSegments.has('seg-1')).toBe(true);
         });
+    });
+
+    it('finishes all segments and lets undo restore the prior reading state', async () => {
+        progressState.value = {
+            completed: ['seg-1'],
+            maxSegmentIndex: 0,
+            lastSegmentIndex: 0,
+        };
+
+        const multiSegmentContent = {
+            ...mockContent,
+            segments: [
+                ...mockContent.segments,
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: null,
+                    end_time_sec: null,
+                },
+                {
+                    id: 'seg-3',
+                    item_id: 'item-1',
+                    order_index: 2,
+                    title: 'Segment 3',
+                    markdown_body: 'Body 3',
+                    start_time_sec: null,
+                    end_time_sec: null,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={multiSegmentContent} />);
+
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.completedSegments.has('seg-1')).toBe(true);
+            expect(latestProps?.completedSegments.has('seg-2')).toBe(false);
+            expect(latestProps?.completedSegments.has('seg-3')).toBe(false);
+        });
+
+        fireEvent.click(screen.getByTestId('finish-reading'));
+
+        await waitFor(() => {
+            const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+
+            expect(latestHeroProps?.segmentsCompleted).toBe(3);
+            expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-3')).toBe(true);
+            expect(screen.getByTestId('mock-completion-card')).toBeInTheDocument();
+        });
+
+        expect(saveReadingProgressMock).toHaveBeenLastCalledWith(
+            'test-item-1',
+            expect.objectContaining({
+                completed: ['seg-1', 'seg-2', 'seg-3'],
+                isCompleted: true,
+                maxSegmentIndex: 2,
+            })
+        );
+
+        const undoAction = toastSuccessMock.mock.calls[0]?.[1]?.action;
+        expect(undoAction).toEqual(expect.objectContaining({ label: 'Undo' }));
+
+        act(() => {
+            undoAction.onClick();
+        });
+
+        await waitFor(() => {
+            const latestHeroProps = readerHeroHeaderSpy.mock.lastCall?.[0];
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+
+            expect(latestHeroProps?.segmentsCompleted).toBe(1);
+            expect(latestAccordionProps?.completedSegments.has('seg-1')).toBe(true);
+            expect(latestAccordionProps?.completedSegments.has('seg-2')).toBe(false);
+            expect(latestAccordionProps?.completedSegments.has('seg-3')).toBe(false);
+            expect(screen.queryByTestId('mock-completion-card')).not.toBeInTheDocument();
+        });
+
+        expect(saveReadingProgressMock).toHaveBeenLastCalledWith(
+            'test-item-1',
+            expect.objectContaining({
+                completed: ['seg-1'],
+                isCompleted: false,
+                maxSegmentIndex: 0,
+            })
+        );
+        expect(removeFromProgressMock).not.toHaveBeenCalled();
     });
 
     it('filters stale saved completed segments against the current deep-mode segments', async () => {

@@ -83,6 +83,24 @@ describe('SegmentAccordion', () => {
         expect(screen.getByRole('button', { name: 'Mark complete and continue' })).toBeInTheDocument();
     });
 
+    it('uses Finish Reading on the final section until every section is complete', () => {
+        const onFinishReading = vi.fn();
+
+        render(
+            <SegmentAccordion
+                {...defaultProps}
+                completedSegments={new Set(['seg-2'])}
+                expandedSegmentId="seg-2"
+                onFinishReading={onFinishReading}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Finish Reading' }));
+
+        expect(onFinishReading).toHaveBeenCalledTimes(1);
+        expect(defaultProps.onSegmentComplete).not.toHaveBeenCalled();
+    });
+
     it('supports externally controlled expanded segments', () => {
         const { container } = render(
             <SegmentAccordion

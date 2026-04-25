@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, BotMessageSquare, List } from "lucide-react";
+import { toast } from "sonner";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
 import type { ContentItemWithSegments, QuickMode } from "@/types/domain";
@@ -69,7 +70,13 @@ export function ReaderView({ content }: ReaderViewProps) {
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
     const pendingProgressSaveRef = useRef(false);
     const progressSnapshotRef = useRef<ReadingProgressData | null>(null);
-    const { saveReadingProgress, getProgress, isLoaded: readingProgressLoaded, storageScope } = useReadingProgress();
+    const {
+        saveReadingProgress,
+        removeFromProgress,
+        getProgress,
+        isLoaded: readingProgressLoaded,
+        storageScope,
+    } = useReadingProgress();
     const previousStorageScopeRef = useRef(storageScope);
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
@@ -178,24 +185,32 @@ export function ReaderView({ content }: ReaderViewProps) {
     const { formattedTime } = useReadingTimer(content.id);
 
     const savedProgress = getProgress(content.id);
-    const progressSnapshot = useMemo<ReadingProgressData | null>(() => {
-        const hasMeaningfulProgress = completedSegments.size > 0 || maxSegmentIndex >= 0;
+    const buildProgressSnapshot = useCallback((
+        completedSegmentIds: Set<string>,
+        lastSegmentIndex: number,
+    ): ReadingProgressData | null => {
+        const hasMeaningfulProgress = completedSegmentIds.size > 0 || lastSegmentIndex >= 0;
         if (!hasMeaningfulProgress) {
             return null;
         }
 
-        const isCompleted = content.segments.length > 0 && completedSegments.size >= content.segments.length;
+        const isCompleted = content.segments.length > 0
+            && content.segments.every((segment) => completedSegmentIds.has(segment.id));
 
         return {
-            completed: Array.from(completedSegments),
-            lastSegmentIndex: maxSegmentIndex,
-            maxSegmentIndex,
+            completed: Array.from(completedSegmentIds),
+            lastSegmentIndex,
+            maxSegmentIndex: lastSegmentIndex,
             lastReadAt: new Date().toISOString(),
             isCompleted,
             itemId: content.id,
             totalSegments: content.segments.length,
         };
-    }, [completedSegments, content.id, content.segments.length, maxSegmentIndex]);
+    }, [content.id, content.segments]);
+    const progressSnapshot = useMemo<ReadingProgressData | null>(
+        () => buildProgressSnapshot(completedSegments, maxSegmentIndex),
+        [buildProgressSnapshot, completedSegments, maxSegmentIndex]
+    );
     const persistReadingProgress = useCallback((progressData: ReadingProgressData | null = progressSnapshotRef.current) => {
         if (!readingProgressLoaded || !progressData) {
             return false;
@@ -378,8 +393,67 @@ export function ReaderView({ content }: ReaderViewProps) {
         setHasPendingProgressSave(true);
     };
 
+    const handleFinishReading = useCallback(() => {
+        if (content.segments.length === 0) {
+            return;
+        }
+
+        const previousCompletedSegments = new Set(completedSegments);
+        const previousMaxSegmentIndex = maxSegmentIndex;
+        const previousProgress = buildProgressSnapshot(previousCompletedSegments, previousMaxSegmentIndex);
+        const finalCompletedSegments = new Set(content.segments.map((segment) => segment.id));
+        const finalMaxSegmentIndex = content.segments.length - 1;
+        const finalProgress = buildProgressSnapshot(finalCompletedSegments, finalMaxSegmentIndex);
+
+        setCompletedSegments(finalCompletedSegments);
+        setMaxSegmentIndex(finalMaxSegmentIndex);
+        setExpandedSegmentId(null);
+        progressSnapshotRef.current = finalProgress;
+
+        if (finalProgress && readingProgressLoaded) {
+            saveReadingProgress(content.id, finalProgress);
+            setHasPendingProgressSave(false);
+        } else {
+            setHasPendingProgressSave(true);
+        }
+
+        toast.success("Marked as finished", {
+            action: {
+                label: "Undo",
+                onClick: () => {
+                    setCompletedSegments(new Set(previousCompletedSegments));
+                    setMaxSegmentIndex(previousMaxSegmentIndex);
+                    progressSnapshotRef.current = previousProgress;
+
+                    if (!readingProgressLoaded) {
+                        setHasPendingProgressSave(Boolean(previousProgress));
+                        return;
+                    }
+
+                    if (previousProgress) {
+                        saveReadingProgress(content.id, previousProgress);
+                    } else {
+                        removeFromProgress(content.id);
+                    }
+
+                    setHasPendingProgressSave(false);
+                    toast.success("Reading progress restored");
+                },
+            },
+        });
+    }, [
+        buildProgressSnapshot,
+        completedSegments,
+        content.id,
+        content.segments,
+        maxSegmentIndex,
+        readingProgressLoaded,
+        removeFromProgress,
+        saveReadingProgress,
+    ]);
+
     // Derive book completion state
-    const isBookCompleted = content.segments.length > 0 && completedSegments.size >= content.segments.length;
+    const isBookCompleted = content.segments.length > 0 && content.segments.every((segment) => completedSegments.has(segment.id));
 
     useEffect(() => {
         setShowAuthorChat(false);
@@ -753,6 +827,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     completedSegments={completedSegments}
                     onSegmentOpen={handleSegmentOpen}
                     onSegmentComplete={handleSegmentComplete}
+                    onFinishReading={handleFinishReading}
                     highlights={highlights}
                     expandedSegmentId={expandedSegmentId}
                     onExpandedSegmentChange={handleExpandedSegmentChange}

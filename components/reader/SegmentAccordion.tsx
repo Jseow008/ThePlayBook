@@ -232,6 +232,7 @@ interface SegmentAccordionProps {
     completedSegments: Set<string>;
     onSegmentOpen: (segmentId: string, index: number) => void;
     onSegmentComplete?: (segmentId: string, index: number) => void;
+    onFinishReading?: () => void;
     highlights?: HighlightWithContent[];
     onHighlightActivate?: (highlightId: string, position: HighlightPosition) => void;
     expandedSegmentId?: string | null;
@@ -244,6 +245,7 @@ export function SegmentAccordion({
     completedSegments,
     onSegmentOpen,
     onSegmentComplete,
+    onFinishReading,
     highlights = [],
     onHighlightActivate,
     expandedSegmentId,
@@ -255,6 +257,7 @@ export function SegmentAccordion({
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
     const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
+    const isContentCompleted = segments.length > 0 && segments.every((segment) => completedSegments.has(segment.id));
 
     const setExpandedId = useCallback((nextSegmentId: string | null) => {
         onExpandedSegmentChange?.(nextSegmentId);
@@ -353,6 +356,7 @@ export function SegmentAccordion({
             {segments.map((segment, index) => {
                 const isExpanded = currentExpandedId === segment.id;
                 const isCompleted = completedSegments.has(segment.id);
+                const isLastSegment = index === segments.length - 1;
                 const isAudioActive = activeNarratedSegmentId === segment.id;
                 const segmentHighlights = highlights.filter((highlight) => highlight.segment_id === segment.id);
                 const remarkPlugins: any[] = [remarkGfm, remarkBreaks];
@@ -474,32 +478,36 @@ export function SegmentAccordion({
                                     <div className="mt-8 flex justify-center">
                                         <button
                                             onClick={() => {
+                                                if (isLastSegment) {
+                                                    if (!isContentCompleted) {
+                                                        onFinishReading?.();
+                                                    }
+
+                                                    setExpandedId(null);
+                                                    return;
+                                                }
+
                                                 if (onSegmentComplete) {
                                                     onSegmentComplete(segment.id, index);
                                                 }
 
-                                                if (index < segments.length - 1) {
-                                                    const nextSegment = segments[index + 1];
-                                                    handleToggle(nextSegment, index + 1);
-                                                    return;
-                                                }
-
-                                                setExpandedId(null);
+                                                const nextSegment = segments[index + 1];
+                                                handleToggle(nextSegment, index + 1);
                                             }}
                                             className={cn(
                                                 "focus-ring inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
-                                                index < segments.length - 1
+                                                !isLastSegment
                                                     ? "border-border/70 bg-background/60 text-foreground/90 hover:border-primary/30 hover:bg-accent/35 hover:text-foreground"
-                                                    : isCompleted
+                                                    : isContentCompleted
                                                     ? "border-border/65 bg-background/55 text-muted-foreground hover:border-border hover:bg-accent/25 hover:text-foreground"
                                                     : "border-border/70 bg-background/60 text-foreground/90 hover:border-primary/30 hover:bg-accent/35 hover:text-foreground"
                                             )}
                                         >
-                                            {index < segments.length - 1 ? (
+                                            {!isLastSegment ? (
                                                 <>
                                                     <span>Mark complete and continue</span>
                                                 </>
-                                            ) : isCompleted ? (
+                                            ) : isContentCompleted ? (
                                                 <>
                                                     <span>Close section</span>
                                                 </>
