@@ -14,7 +14,7 @@ export function LibraryNav() {
     const pathname = usePathname();
 
     return (
-        <div className="lg:hidden sticky top-0 z-30 bg-background/90 backdrop-blur-md border-b border-border/70 overflow-x-auto scrollbar-hide">
+        <div className="lg:hidden sticky top-0 z-40 bg-background border-b border-border/70 overflow-x-auto scrollbar-hide">
             <div className="flex items-center px-4 h-12 gap-2 min-w-max">
                 {libraryNavItems.map((item) => {
                     const isActive = pathname === item.href;
