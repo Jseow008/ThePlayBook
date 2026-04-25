@@ -10,6 +10,7 @@ const {
     toastSuccessMock,
     toastErrorMock,
     infiniteHighlightsState,
+    searchParamsState,
 } = vi.hoisted(() => ({
     deleteHighlightMock: vi.fn(),
     updateHighlightMock: vi.fn(),
@@ -30,6 +31,9 @@ const {
             isLoading: false,
             isError: false,
         },
+    },
+    searchParamsState: {
+        value: "",
     },
 }));
 
@@ -69,7 +73,7 @@ vi.mock("next/navigation", () => ({
         push: routerPushMock,
     }),
     usePathname: () => "/notes",
-    useSearchParams: () => new URLSearchParams(""),
+    useSearchParams: () => new URLSearchParams(searchParamsState.value),
 }));
 
 describe("BrainClientPage", () => {
@@ -153,6 +157,7 @@ describe("BrainClientPage", () => {
         notesAskPanelMock.mockClear();
         routerReplaceMock.mockClear();
         routerPushMock.mockClear();
+        searchParamsState.value = "";
         document.body.style.overflow = "";
         Object.defineProperty(window, "innerWidth", {
             configurable: true,
@@ -270,6 +275,22 @@ describe("BrainClientPage", () => {
                 .getAllByRole("button", { name: /close notes ai/i })
                 .find((button) => button.getAttribute("aria-pressed") === "true")
         ).toBeTruthy();
+    });
+
+    it("does not re-add the ask query when navigation changes from ask-open notes to plain notes", async () => {
+        searchParamsState.value = "ask=1";
+        const { rerender } = render(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+
+        expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
+        routerReplaceMock.mockClear();
+
+        searchParamsState.value = "";
+        rerender(<BrainClientPage initialPage={initialPage} initialAskOpen />);
+
+        await waitFor(() => {
+            expect(screen.queryByTestId("notes-ask-panel")).not.toBeInTheDocument();
+        });
+        expect(routerReplaceMock).not.toHaveBeenCalledWith("/notes?ask=1", expect.anything());
     });
 
     it("routes mobile ask entry to the full-screen notes ask page", () => {

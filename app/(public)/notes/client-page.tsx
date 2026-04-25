@@ -716,12 +716,6 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             params.delete("sort");
         }
 
-        if (isAskOpen) {
-            params.set("ask", "1");
-        } else {
-            params.delete("ask");
-        }
-
         const nextQuery = params.toString();
         const currentQuery = searchParams.toString();
 
@@ -730,7 +724,6 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         }
     }, [
         debouncedSearchQuery,
-        isAskOpen,
         pathname,
         router,
         searchParams,
@@ -1049,7 +1042,18 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             return;
         }
 
-        setIsAskOpen((current) => !current);
+        const nextAskOpen = !isAskOpen;
+        const params = new URLSearchParams(searchParams.toString());
+
+        if (nextAskOpen) {
+            params.set("ask", "1");
+        } else {
+            params.delete("ask");
+        }
+
+        const nextQuery = params.toString();
+        router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+        setIsAskOpen(nextAskOpen);
     };
 
     const clearAllControls = () => {

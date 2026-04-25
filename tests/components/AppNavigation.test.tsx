@@ -6,8 +6,9 @@ import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { UserNav } from "@/components/ui/UserNav";
 
-const { pathnameState, readingProgressState, authUserState } = vi.hoisted(() => ({
+const { pathnameState, searchParamsState, readingProgressState, authUserState } = vi.hoisted(() => ({
     pathnameState: { value: "/browse" },
+    searchParamsState: { value: "" },
     readingProgressState: {
         value: {
             totalLibraryItems: 6,
@@ -29,6 +30,7 @@ const { pathnameState, readingProgressState, authUserState } = vi.hoisted(() => 
 
 vi.mock("next/navigation", () => ({
     usePathname: () => pathnameState.value,
+    useSearchParams: () => new URLSearchParams(searchParamsState.value),
 }));
 
 vi.mock("next/link", () => ({
@@ -67,6 +69,7 @@ vi.mock("@/hooks/useAuthUser", () => ({
 describe("app navigation", () => {
     beforeEach(() => {
         pathnameState.value = "/browse";
+        searchParamsState.value = "";
         readingProgressState.value = {
             totalLibraryItems: 6,
             inProgressCount: 2,
@@ -198,6 +201,47 @@ describe("app navigation", () => {
         expect(notesLink).toHaveAttribute("href", "/notes");
         expect(notesLink).toHaveClass("border-l-4");
         expect(screen.getByRole("button", { name: /ask/i })).not.toHaveClass("border-l-4");
+
+        vi.useRealTimers();
+    });
+
+    it("highlights Ask These Notes instead of Notes for the notes ask query", async () => {
+        pathnameState.value = "/notes";
+        searchParamsState.value = "ask=1";
+        vi.useFakeTimers();
+
+        render(<NetflixSidebar />);
+
+        const sidebar = screen.getByRole("complementary");
+        fireEvent.mouseEnter(sidebar);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(300);
+        });
+
+        expect(screen.getByRole("link", { name: /^notes$/i })).not.toHaveClass("border-l-4");
+        expect(screen.getByRole("button", { name: /ask/i })).toHaveClass("border-l-4");
+        expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveClass("bg-accent");
+        expect(screen.getByRole("link", { name: "Ask My Library" })).not.toHaveClass("bg-accent");
+
+        vi.useRealTimers();
+    });
+
+    it("highlights Ask These Notes on the full-screen notes ask route", async () => {
+        pathnameState.value = "/ask";
+        searchParamsState.value = "scope=notes";
+        vi.useFakeTimers();
+
+        render(<NetflixSidebar />);
+
+        const sidebar = screen.getByRole("complementary");
+        fireEvent.mouseEnter(sidebar);
+        await act(async () => {
+            await vi.advanceTimersByTimeAsync(300);
+        });
+
+        expect(screen.getByRole("button", { name: /ask/i })).toHaveClass("border-l-4");
+        expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveClass("bg-accent");
+        expect(screen.getByRole("link", { name: "Ask My Library" })).not.toHaveClass("bg-accent");
 
         vi.useRealTimers();
     });

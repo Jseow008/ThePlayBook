@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
     BookmarkSimpleIcon,
     BooksIcon,
@@ -37,6 +37,7 @@ const notesItem = { icon: NotebookIcon, label: "Notes", href: "/notes" };
 
 export function NetflixSidebar() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isLibraryOpen, setIsLibraryOpen] = useState(false);
     const [isAskOpen, setIsAskOpen] = useState(false);
@@ -102,8 +103,12 @@ export function NetflixSidebar() {
 
     const totalLibraryItems = inProgressCount + completedCount + myListCount;
     const isLibrarySectionActive = pathname.startsWith("/library");
-    const isNotesSectionActive = pathname === notesItem.href;
-    const isAskSectionActive = pathname === "/ask";
+    const isFullPageNotesAskActive = pathname === "/ask" && searchParams.get("scope") === "notes";
+    const isInlineNotesAskActive = pathname === notesItem.href && searchParams.get("ask") === "1";
+    const isAskTheseNotesActive = isInlineNotesAskActive || isFullPageNotesAskActive;
+    const isAskMyLibraryActive = pathname === "/ask" && !isFullPageNotesAskActive;
+    const isNotesSectionActive = pathname === notesItem.href && !isInlineNotesAskActive;
+    const isAskSectionActive = isAskMyLibraryActive || isAskTheseNotesActive;
     const isAuthLoading = user === undefined;
 
     // Keep the current section expanded when it owns the active route.
@@ -383,7 +388,7 @@ export function NetflixSidebar() {
                                 href="/ask"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
-                                    pathname === "/ask"
+                                    isAskMyLibraryActive
                                         ? "text-foreground bg-accent"
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
@@ -396,7 +401,7 @@ export function NetflixSidebar() {
                                 href="/notes?ask=1"
                                 className={cn(
                                     "flex items-center h-10 px-4 transition-colors rounded-md",
-                                    pathname === "/notes"
+                                    isAskTheseNotesActive
                                         ? "text-foreground bg-accent"
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
