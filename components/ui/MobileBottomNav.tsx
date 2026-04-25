@@ -3,11 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Home,
-    Search,
-    Library,
-    Crosshair,
-} from "lucide-react";
+    BooksIcon,
+    FrameCornersIcon,
+    HouseIcon,
+    MagnifyingGlassIcon,
+} from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 
@@ -19,10 +19,10 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
  */
 
 const navItems = [
-    { icon: Home, label: "Home", href: "/browse" },
-    { icon: Search, label: "Search", href: "/search" },
-    { icon: Crosshair, label: "Focus", href: "/focus" },
-    { icon: Library, label: "My Library", href: "/library/my-list" },
+    { icon: HouseIcon, label: "Home", href: "/browse" },
+    { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
+    { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
+    { icon: BooksIcon, label: "My Library", href: "/library/my-list" },
 ];
 
 export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
@@ -60,7 +60,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                 <item.icon className={cn(
                                     compact ? "size-[18px]" : "size-5",
                                     isActive && "text-primary"
-                                )} />
+                                )} weight="duotone" />
                                 {/* Badge for library items */}
                                 {isLibrary && isLoaded && totalLibraryItems > 0 && (
                                     <span className="absolute -top-1 -right-2 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">

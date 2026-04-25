@@ -562,7 +562,7 @@ export function NotesAskPanel({
                                     </span>
                                 )}
                             </div>
-                            <span className="text-[0.65rem] text-muted-foreground/75">
+                            <span className="hidden text-[0.65rem] text-muted-foreground/75 sm:inline">
                                 Enter to send · Shift+Enter for newline
                             </span>
                         </div>

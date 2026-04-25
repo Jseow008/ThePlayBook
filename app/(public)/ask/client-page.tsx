@@ -3,7 +3,8 @@
 import { useMemo, useRef, useEffect, useState, type FormEvent } from "react";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
-import { Bot, User, Send, BotMessageSquare, Loader2, ArrowLeft } from "lucide-react";
+import { Bot, User, Send, Loader2, ArrowLeft } from "lucide-react";
+import { BooksIcon, NotebookIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
@@ -257,6 +258,7 @@ export function AskClientPage({
     const pageSubtitle = isLibraryScope
         ? "Answers grounded in your library, reading history, and saved book content"
         : "Answers grounded in the notes currently in scope";
+    const ScopeIcon = isLibraryScope ? BooksIcon : NotebookIcon;
     const libraryComposerLabel = initialLibrarySnapshot
         ? `${initialLibrarySnapshot.totalItems} in library`
         : "Ask My Library";
@@ -277,7 +279,7 @@ export function AskClientPage({
                             <ArrowLeft className="size-4 text-muted-foreground" />
                         </Link>
                         <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-                            <BotMessageSquare className="size-4 text-primary" />
+                            <ScopeIcon className="size-4 text-primary" weight="duotone" />
                         </div>
                         <div className="min-w-0">
                             <h1 className="truncate text-[0.95rem] font-bold leading-tight text-foreground sm:text-base">{pageTitle}</h1>
@@ -466,7 +468,7 @@ export function AskClientPage({
                                                 {libraryComposerLabel}
                                             </span>
                                         </div>
-                                        <span className="text-[0.65rem] text-muted-foreground/75">
+                                        <span className="hidden text-[0.65rem] text-muted-foreground/75 sm:inline">
                                             Enter to send · Shift+Enter for newline
                                         </span>
                                     </div>

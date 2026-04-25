@@ -5,18 +5,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-    Search,
-    Home,
-    Crosshair,
-    BookOpen,
-    Library,
-    BookMarked,
-    CheckCircle2,
+    BookmarkSimpleIcon,
+    BooksIcon,
+    BookOpenIcon,
+    BookOpenTextIcon,
+    ChatCircleDotsIcon,
+    ChatCircleTextIcon,
+    CheckCircleIcon,
+    FrameCornersIcon,
+    HouseIcon,
+    MagnifyingGlassIcon,
+    NotebookIcon,
+} from "@phosphor-icons/react";
+import {
     ChevronDown,
-    Plus,
-    StickyNote,
-    Sparkles,
-    MessageSquareText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -26,12 +28,12 @@ import { useAuthUser } from "@/hooks/useAuthUser";
 import { SignInLink } from "@/components/ui/SignInLink";
 
 const navItems = [
-    { icon: Search, label: "Search", href: "/search" },
-    { icon: Home, label: "Home", href: "/browse" },
-    { icon: Crosshair, label: "Focus", href: "/focus" },
+    { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
+    { icon: HouseIcon, label: "Home", href: "/browse" },
+    { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
 ];
 
-const notesItem = { icon: StickyNote, label: "Notes", href: "/notes" };
+const notesItem = { icon: NotebookIcon, label: "Notes", href: "/notes" };
 
 export function NetflixSidebar() {
     const pathname = usePathname();
@@ -152,7 +154,7 @@ export function NetflixSidebar() {
                         />
                     </div>
                 ) : (
-                    <BookOpen className="size-6 text-primary flex-shrink-0" />
+                    <BookOpenIcon className="size-6 text-primary flex-shrink-0" weight="duotone" />
                 )}
             </Link>
 
@@ -179,6 +181,7 @@ export function NetflixSidebar() {
                                             "size-5 flex-shrink-0",
                                             isActive && "text-primary"
                                         )}
+                                        weight="duotone"
                                     />
                                     <span
                                         className={cn(
@@ -211,7 +214,7 @@ export function NetflixSidebar() {
                             )}
                         >
                             <div className="relative flex-shrink-0">
-                                <Library className="size-5" />
+                                <BooksIcon className="size-5" weight="duotone" />
                             </div>
                             <span
                                 className={cn(
@@ -237,7 +240,7 @@ export function NetflixSidebar() {
                             )}
                         >
                             <div className="relative flex-shrink-0">
-                                <Library className="size-5" />
+                                <BooksIcon className="size-5" weight="duotone" />
                                 {/* Badge for total items when collapsed */}
                                 {isLoaded && totalLibraryItems > 0 && (
                                     <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
@@ -261,7 +264,7 @@ export function NetflixSidebar() {
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <Plus className="size-4 mr-3 flex-shrink-0" />
+                                <BookmarkSimpleIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
                                 <span className="text-sm whitespace-nowrap flex-1">My List</span>
                                 {myListCount > 0 && (
                                     <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-medium">
@@ -280,7 +283,7 @@ export function NetflixSidebar() {
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <BookMarked className="size-4 mr-3 flex-shrink-0" />
+                                <BookOpenTextIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
                                 <span className="text-sm whitespace-nowrap flex-1">Continue Reading</span>
                                 {inProgressCount > 0 && (
                                     <span className="text-xs bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded-full font-medium">
@@ -299,7 +302,7 @@ export function NetflixSidebar() {
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <CheckCircle2 className="size-4 mr-3 flex-shrink-0" />
+                                <CheckCircleIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
                                 <span className="text-sm whitespace-nowrap flex-1">Completed</span>
                                 {completedCount > 0 && (
                                     <span className="text-xs bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-medium">
@@ -326,6 +329,7 @@ export function NetflixSidebar() {
                                 "size-5 flex-shrink-0",
                                 isNotesSectionActive && "text-primary"
                             )}
+                            weight="duotone"
                         />
                         <span
                             className={cn(
@@ -349,7 +353,7 @@ export function NetflixSidebar() {
                                 isAskSectionActive && "text-foreground bg-accent border-l-4 border-primary"
                             )}
                         >
-                            <Sparkles className={cn("size-5 flex-shrink-0", isAskSectionActive && "text-primary")} />
+                            <ChatCircleDotsIcon className={cn("size-5 flex-shrink-0", isAskSectionActive && "text-primary")} weight="duotone" />
                             <span className="text-sm font-medium whitespace-nowrap flex-1 text-left">
                                 Ask
                             </span>
@@ -369,7 +373,7 @@ export function NetflixSidebar() {
                                 isAskSectionActive && "text-foreground bg-accent border-l-4 border-primary"
                             )}
                         >
-                            <Sparkles className={cn("size-5 flex-shrink-0", isAskSectionActive && "text-primary")} />
+                            <ChatCircleDotsIcon className={cn("size-5 flex-shrink-0", isAskSectionActive && "text-primary")} weight="duotone" />
                         </Link>
                     )}
 
@@ -384,7 +388,7 @@ export function NetflixSidebar() {
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <Sparkles className="size-4 mr-3 flex-shrink-0" />
+                                <ChatCircleDotsIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
                                 <span className="text-sm whitespace-nowrap flex-1">Ask My Library</span>
                             </Link>
 
@@ -397,7 +401,7 @@ export function NetflixSidebar() {
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <MessageSquareText className="size-4 mr-3 flex-shrink-0" />
+                                <ChatCircleTextIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
                                 <span className="text-sm whitespace-nowrap flex-1">Ask These Notes</span>
                             </Link>
                         </div>
