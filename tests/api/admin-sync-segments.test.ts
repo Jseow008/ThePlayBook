@@ -159,4 +159,19 @@ describe("Admin segment embedding sync API", () => {
         expect(migration).toContain("s.deleted_at IS NULL");
         expect(migration).toContain("NULLIF(BTRIM(s.markdown_body), '') IS NOT NULL");
     });
+
+    it("preserves Gemini segment embeddings when admin saves unchanged segment bodies", () => {
+        const migration = readFileSync(
+            join(process.cwd(), "supabase/migrations/20260425090000_preserve_gemini_segment_embeddings_on_admin_save.sql"),
+            "utf8"
+        );
+
+        expect(migration).toContain("CREATE TEMP TABLE preserved_gemini_segment_embeddings");
+        expect(migration).toContain("FROM public.segment_embedding_gemini seg");
+        expect(migration).toContain("DELETE FROM public.segment WHERE item_id = p_content_id");
+        expect(migration).toContain("INSERT INTO public.segment_embedding_gemini");
+        expect(migration).toContain("ci.status = 'verified'");
+        expect(migration).toContain("BTRIM(s.markdown_body) IS NOT DISTINCT FROM preserved.markdown_body");
+        expect(migration).toContain("ON CONFLICT (segment_id) DO UPDATE");
+    });
 });
