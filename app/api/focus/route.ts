@@ -9,11 +9,78 @@ const QUERY_SCHEMA = z.object({
     limit: z.coerce.number().int().min(1).max(12).default(6),
     excludeIds: z.array(z.string().uuid()).default([]),
     cursor: z.string().uuid().optional(),
+    seed: z.string().trim().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).default("default"),
 });
 
 const FOCUS_SELECT =
     "id, title, type, author, category, cover_image_url, duration_seconds, quick_mode_json";
 const PAGE_SIZE = 48;
+const CANDIDATE_WINDOW_MULTIPLIER = 4;
+
+function hashString(value: string) {
+    let hash = 2166136261;
+
+    for (let index = 0; index < value.length; index += 1) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+    }
+
+    return hash >>> 0;
+}
+
+function seededRank(seed: string, value: string) {
+    return hashString(`${seed}:${value}`);
+}
+
+function normalizeDiversityValue(value: string | null | undefined, fallback: string) {
+    const normalized = value?.trim().toLowerCase();
+    return normalized || fallback;
+}
+
+function selectDiversifiedItems(
+    candidates: FocusFeedItem[],
+    limit: number,
+    seed: string
+) {
+    const selected: FocusFeedItem[] = [];
+    const remaining = [...candidates].sort((first, second) => (
+        seededRank(seed, first.id) - seededRank(seed, second.id)
+    ));
+    const categoryCounts = new Map<string, number>();
+    const typeCounts = new Map<string, number>();
+
+    while (selected.length < limit && remaining.length > 0) {
+        let bestIndex = 0;
+        let bestScore = Number.POSITIVE_INFINITY;
+
+        remaining.forEach((item, index) => {
+            const category = normalizeDiversityValue(item.category, "uncategorized");
+            const type = normalizeDiversityValue(item.type, "unknown");
+            const categoryPenalty = categoryCounts.get(category) ?? 0;
+            const typePenalty = typeCounts.get(type) ?? 0;
+            const rankPenalty = seededRank(seed, item.id) / 0xffffffff;
+            const score = categoryPenalty * 3 + typePenalty * 2 + rankPenalty;
+
+            if (score < bestScore) {
+                bestScore = score;
+                bestIndex = index;
+            }
+        });
+
+        const [nextItem] = remaining.splice(bestIndex, 1);
+        if (!nextItem) {
+            break;
+        }
+
+        const category = normalizeDiversityValue(nextItem.category, "uncategorized");
+        const type = normalizeDiversityValue(nextItem.type, "unknown");
+        categoryCounts.set(category, (categoryCounts.get(category) ?? 0) + 1);
+        typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
+        selected.push(nextItem);
+    }
+
+    return selected.sort((first, second) => first.id.localeCompare(second.id));
+}
 
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
@@ -44,13 +111,14 @@ export async function GET(request: NextRequest) {
             .map((value) => value.trim())
             .filter(Boolean),
         cursor: request.nextUrl.searchParams.get("cursor") ?? undefined,
+        seed: request.nextUrl.searchParams.get("seed") ?? undefined,
     });
 
     if (!parsedQuery.success) {
         return apiError("VALIDATION_ERROR", "Invalid focus feed query.", 400, requestId);
     }
 
-    const { limit, excludeIds } = parsedQuery.data;
+    const { limit, excludeIds, seed } = parsedQuery.data;
     const supabase = createPublicServerClient();
     const excluded = new Set(excludeIds);
     let invalidRowCount = 0;
@@ -59,7 +127,9 @@ export async function GET(request: NextRequest) {
     let cursor = parsedQuery.data.cursor ?? null;
     let hasMore = false;
 
-    while (candidateItems.length <= limit) {
+    const candidateWindowSize = Math.max(limit + 1, limit * CANDIDATE_WINDOW_MULTIPLIER);
+
+    while (candidateItems.length < candidateWindowSize) {
         let query = supabase
             .from("content_item")
             .select(FOCUS_SELECT)
@@ -107,11 +177,6 @@ export async function GET(request: NextRequest) {
             candidateItems.push(item);
         });
 
-        if (candidateItems.length > limit) {
-            hasMore = true;
-            break;
-        }
-
         if (pageItems.length < PAGE_SIZE) {
             break;
         }
@@ -128,7 +193,9 @@ export async function GET(request: NextRequest) {
         });
     }
 
-    const items = candidateItems.slice(0, limit);
+    hasMore = candidateItems.length > limit;
+
+    const items = selectDiversifiedItems(candidateItems, limit, seed);
     const nextCursor = hasMore ? items[items.length - 1]?.id ?? null : null;
 
     return NextResponse.json({

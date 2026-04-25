@@ -43,11 +43,13 @@ const WHEEL_QUIET_PERIOD_MS = 180;
 const DESKTOP_SCROLL_CUE_DELAY_MS = 5000;
 const MOBILE_SCROLL_HINT_DELAY_MS = 2400;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
+const FOCUS_FEED_SEED_STORAGE_KEY = "focus-feed-seed-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 const RESTORE_STATE_WRITE_DELAY_MS = 250;
 const FocusItemIdSchema = z.string().uuid();
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
 const MOBILE_MIN_READABLE_HOOK_HEIGHT_PX = 72;
+const DESKTOP_VISIBLE_TAKEAWAY_COUNT = 3;
 const DESKTOP_DEFAULT_COVER_WIDTH = 132;
 const DESKTOP_MEDIUM_COVER_WIDTH = 116;
 const DESKTOP_COMPACT_COVER_WIDTH = 104;
@@ -172,29 +174,16 @@ export function getDesktopCoverWidth({
 }
 
 export function getDesktopVisibleTakeawayCount({
-    availableContentHeight,
     totalTakeaways,
 }: {
-    availableContentHeight: number;
+    availableContentHeight?: number;
     totalTakeaways: number;
 }) {
     if (totalTakeaways <= 0) {
         return 0;
     }
 
-    if (availableContentHeight >= 700) {
-        return totalTakeaways;
-    }
-
-    if (availableContentHeight >= 680) {
-        return Math.min(totalTakeaways, 4);
-    }
-
-    if (availableContentHeight >= 600) {
-        return Math.min(totalTakeaways, 3);
-    }
-
-    return Math.min(totalTakeaways, 2);
+    return Math.min(totalTakeaways, DESKTOP_VISIBLE_TAKEAWAY_COUNT);
 }
 
 function buildExcludeParam(ids: string[]) {
@@ -205,6 +194,25 @@ function buildExcludeParam(ids: string[]) {
                 .filter((id) => FocusItemIdSchema.safeParse(id).success)
         )
     ).join(",");
+}
+
+function createFocusSeed() {
+    return Math.random().toString(36).slice(2, 12) || "focus";
+}
+
+function readOrCreateFocusSeed() {
+    if (typeof window === "undefined") {
+        return "focus";
+    }
+
+    const existingSeed = window.sessionStorage.getItem(FOCUS_FEED_SEED_STORAGE_KEY);
+    if (existingSeed && /^[a-zA-Z0-9_-]{1,64}$/.test(existingSeed)) {
+        return existingSeed;
+    }
+
+    const nextSeed = createFocusSeed();
+    window.sessionStorage.setItem(FOCUS_FEED_SEED_STORAGE_KEY, nextSeed);
+    return nextSeed;
 }
 
 function readFocusRestoreState(): FocusRestoreState | null {
@@ -319,17 +327,19 @@ export function FocusFeed() {
     const hasScheduledMobileScrollHintRef = useRef(false);
     const mobileScrollHintAnchorIndexRef = useRef<number | null>(null);
     const restoreStateWriteTimeoutRef = useRef<number | null>(null);
-    const pendingRestoreSnapshotRef = useRef<Omit<FocusRestoreState, "seenIds"> | null>(null);
+    const pendingRestoreSnapshotRef = useRef<FocusRestoreState | null>(null);
+    const focusSeedRef = useRef<string | null>(null);
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
     const myListIdSet = useMemo(() => new Set(myListIds), [myListIds]);
     const isTakeawaysSheetOpen = !isDesktop && takeawaysSheetCard !== null;
 
-    const buildRestoreSnapshot = useCallback((): Omit<FocusRestoreState, "seenIds"> => ({
+    const buildRestoreSnapshot = useCallback((): FocusRestoreState => ({
         items: itemsRef.current,
         activeCardIndex: activeCardIndexRef.current,
         hasMore: hasMoreRef.current,
         nextCursor: nextCursorRef.current,
+        seenIds: Array.from(seenIdsRef.current),
     }), []);
 
     const unlockGestures = useCallback(() => {
@@ -440,7 +450,7 @@ export function FocusFeed() {
         writeFocusRestoreState(snapshot);
     }, [buildRestoreSnapshot]);
 
-    const scheduleRestoreStateWrite = useCallback((snapshot?: Omit<FocusRestoreState, "seenIds">) => {
+    const scheduleRestoreStateWrite = useCallback((snapshot?: FocusRestoreState) => {
         const nextSnapshot = snapshot ?? buildRestoreSnapshot();
         pendingRestoreSnapshotRef.current = nextSnapshot;
 
@@ -573,10 +583,16 @@ export function FocusFeed() {
 
         try {
             const includeCompletedIds = options?.includeCompletedIds ?? isLoaded;
-            const excludeIds = buildExcludeParam(includeCompletedIds ? completedIds : []);
+            const excludedIds = [
+                ...Array.from(seenIdsRef.current),
+                ...(includeCompletedIds ? completedIds : []),
+            ];
+            const excludeIds = buildExcludeParam(excludedIds);
+            focusSeedRef.current = focusSeedRef.current ?? readOrCreateFocusSeed();
 
             const params = new URLSearchParams({
                 limit: String(BATCH_SIZE),
+                seed: focusSeedRef.current,
             });
 
             if (excludeIds) {
@@ -1491,7 +1507,7 @@ const FocusCardView = memo(function FocusCardView({
                         </div>
 
                         <section className="relative shrink-0 rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-2 pl-5 pr-4">
-                            <p className="line-clamp-6 text-[0.9rem] leading-[1.55] text-foreground/92">
+                            <p className="line-clamp-6 text-[1.05rem] leading-[1.58] text-foreground/92">
                                 {card.hook}
                             </p>
                         </section>
@@ -1516,7 +1532,7 @@ const FocusCardView = memo(function FocusCardView({
                                                 <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
                                                     {index + 1}
                                                 </span>
-                                                <span className="text-[0.9rem] leading-[1.55] text-foreground/90">
+                                                <span className="text-[1rem] leading-[1.58] text-foreground/90">
                                                     {takeaway}
                                                 </span>
                                             </div>
@@ -1524,7 +1540,7 @@ const FocusCardView = memo(function FocusCardView({
                                     </div>
                                 </div>
                             ) : (
-                                <p className="px-1 text-[0.9rem] leading-[1.6] text-muted-foreground">
+                                <p className="px-1 text-[1rem] leading-[1.6] text-muted-foreground">
                                     Open the full summary for the complete breakdown.
                                 </p>
                             )}
@@ -1533,7 +1549,7 @@ const FocusCardView = memo(function FocusCardView({
                         <div className="flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5">
                             {isDesktopTakeawaysTruncated ? (
                                 <Link
-                                    href={`/preview/${card.id}`}
+                                    href={`/preview/${card.id}?takeaways=all`}
                                     className="focus-ring inline-flex items-center justify-center gap-2 rounded-full border border-border/70 bg-card/50 px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50"
                                     aria-label={`Preview ${card.title}`}
                                 >

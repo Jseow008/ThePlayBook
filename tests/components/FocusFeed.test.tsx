@@ -10,6 +10,7 @@ import {
 } from "@/components/focus/FocusFeed";
 
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
+const FOCUS_FEED_SEED_STORAGE_KEY = "focus-feed-seed-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 
 const { readingProgressState, mediaQueryState, toggleMyListMock, toastSuccessMock } = vi.hoisted(() => ({
@@ -242,8 +243,14 @@ describe("FocusFeed", () => {
         render(<FocusFeed />);
 
         await waitFor(() => {
-            expect(fetchMock).toHaveBeenCalledWith("/api/focus?limit=6");
+            expect(fetchMock).toHaveBeenCalledTimes(1);
         });
+
+        const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0] ?? ""), "http://localhost");
+        expect(requestUrl.pathname).toBe("/api/focus");
+        expect(requestUrl.searchParams.get("limit")).toBe("6");
+        expect(requestUrl.searchParams.get("seed")).toBe("zzzybj7u3b");
+        expect(window.sessionStorage.getItem(FOCUS_FEED_SEED_STORAGE_KEY)).toBe("zzzybj7u3b");
 
         expect(screen.queryByText("Focus Mode")).not.toBeInTheDocument();
         expect(screen.getByTestId("focus-feed-list").closest("section")).toHaveClass("pt-5");
@@ -339,26 +346,12 @@ describe("FocusFeed", () => {
                 availableContentHeight: 718,
                 totalTakeaways: 8,
             })
-        ).toBe(8);
-
-        expect(
-            getDesktopVisibleTakeawayCount({
-                availableContentHeight: 650,
-                totalTakeaways: 8,
-            })
-        ).toBe(3);
-
-        expect(
-            getDesktopVisibleTakeawayCount({
-                availableContentHeight: 610,
-                totalTakeaways: 8,
-            })
         ).toBe(3);
 
         expect(
             getDesktopVisibleTakeawayCount({
                 availableContentHeight: 578,
-                totalTakeaways: 8,
+                totalTakeaways: 2,
             })
         ).toBe(2);
     });
@@ -538,7 +531,11 @@ describe("FocusFeed", () => {
                 ]),
             })
         );
-        expect(savedState.seenIds).toBeUndefined();
+        expect(savedState.seenIds).toEqual([
+            focusItems[0]!.id,
+            focusItems[1]!.id,
+            focusItems[2]!.id,
+        ]);
     });
 
     it("restores the exact focus batch and card from sessionStorage immediately", async () => {
@@ -943,7 +940,7 @@ describe("FocusFeed", () => {
         });
     });
 
-    it("restores the full takeaway list on desktop while keeping the read CTA", async () => {
+    it("shows three desktop takeaways with preview and read CTAs", async () => {
         mediaQueryState.value = {
             isDesktop: true,
             prefersReducedMotion: false,
@@ -953,18 +950,27 @@ describe("FocusFeed", () => {
 
         const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
 
-        expect(within(firstCard).getByText("Key Takeaways")).toBeInTheDocument();
+        expect(within(firstCard).getByText("Key Takeaways (3 of 8)")).toBeInTheDocument();
         expect(within(firstCard).queryByText("Key Takeaways (2 of 8)")).not.toBeInTheDocument();
         expect(within(firstCard).queryByText("Key Takeaways (4 of 8)")).not.toBeInTheDocument();
-        expect(within(firstCard).getAllByText(/^[1-8]$/)).toHaveLength(8);
+        expect(within(firstCard).getAllByText(/^[1-3]$/)).toHaveLength(3);
         expect(within(firstCard).queryByText("8 key takeaways")).not.toBeInTheDocument();
         expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toBeInTheDocument();
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border-l-[3px]");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/25");
-        expect(within(firstCard).getByText("Treat rest as strategic capacity")).toBeInTheDocument();
+        expect(within(firstCard).getByText("Do less, but better.")).toHaveClass("text-[1.05rem]");
+        expect(within(firstCard).getByText("Do less, but better.")).toHaveClass("leading-[1.58]");
+        expect(within(firstCard).getByText("Trade busyness for clarity")).toBeInTheDocument();
+        expect(within(firstCard).getByText("Say no more often")).toHaveClass("text-[1rem]");
+        expect(within(firstCard).getByText("Say no more often")).toHaveClass("leading-[1.58]");
+        expect(within(firstCard).queryByText("Audit every commitment")).not.toBeInTheDocument();
+        expect(within(firstCard).queryByText("Treat rest as strategic capacity")).not.toBeInTheDocument();
         expect(within(firstCard).getByTestId("focus-desktop-takeaways-list")).toHaveClass("overflow-hidden");
         expect(within(firstCard).queryByRole("button", { name: "Preview Essentialism" })).not.toBeInTheDocument();
-        expect(within(firstCard).queryByRole("link", { name: "Preview Essentialism" })).not.toBeInTheDocument();
+        expect(within(firstCard).getByRole("link", { name: "Preview Essentialism" })).toHaveAttribute(
+            "href",
+            `/preview/${focusItems[0]!.id}?takeaways=all`
+        );
         expect(within(firstCard).queryByRole("button", { name: "Save Essentialism to My List" })).not.toBeInTheDocument();
         expect(within(firstCard).queryByRole("button", { name: "Not interested in Essentialism" })).not.toBeInTheDocument();
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
@@ -972,7 +978,7 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("truncates desktop takeaways and shows preview on shorter desktop heights", async () => {
+    it("keeps three desktop takeaways and shows preview on shorter desktop heights", async () => {
         mediaQueryState.value = {
             isDesktop: true,
             prefersReducedMotion: false,
@@ -994,13 +1000,17 @@ describe("FocusFeed", () => {
             const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
 
             await waitFor(() => {
-                expect(within(firstCard).getByText("Key Takeaways (2 of 8)")).toBeInTheDocument();
+                expect(within(firstCard).getByText("Key Takeaways (3 of 8)")).toBeInTheDocument();
             });
 
-            expect(within(firstCard).getByRole("link", { name: "Preview Essentialism" })).toBeInTheDocument();
+            expect(within(firstCard).getByRole("link", { name: "Preview Essentialism" })).toHaveAttribute(
+                "href",
+                `/preview/${focusItems[0]!.id}?takeaways=all`
+            );
             expect(within(firstCard).getByText("Say no more often")).toBeInTheDocument();
             expect(within(firstCard).getByText("Protect white space")).toBeInTheDocument();
-            expect(within(firstCard).queryByText("Trade busyness for clarity")).not.toBeInTheDocument();
+            expect(within(firstCard).getByText("Trade busyness for clarity")).toBeInTheDocument();
+            expect(within(firstCard).queryByText("Audit every commitment")).not.toBeInTheDocument();
         } finally {
             rectSpy.mockRestore();
         }

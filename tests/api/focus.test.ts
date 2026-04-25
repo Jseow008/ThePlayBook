@@ -207,7 +207,7 @@ describe("Focus API", () => {
         });
     });
 
-    it("uses the last delivered item as the next cursor so full pages do not skip valid items", async () => {
+    it("uses a deterministic diversified selection and advances from the last delivered item", async () => {
         const fullPage = Array.from({ length: 48 }, (_, index) => ({
             id: `123e4567-e89b-12d3-a456-42661417${String(5000 + index).padStart(4, "0")}`,
             title: `Item ${index + 1}`,
@@ -246,7 +246,7 @@ describe("Focus API", () => {
                 error: null,
             })
             .mockResolvedValueOnce({
-                data: fullPage.slice(6).concat(trailingPage),
+                data: fullPage.slice(20).concat(trailingPage),
                 error: null,
             });
 
@@ -255,20 +255,35 @@ describe("Focus API", () => {
 
         expect(firstResponse.status).toBe(200);
         expect(firstJson.items).toHaveLength(6);
+        expect(firstJson.items.map((item: { id: string }) => item.id)).toEqual([
+            "123e4567-e89b-12d3-a456-426614175008",
+            "123e4567-e89b-12d3-a456-426614175009",
+            "123e4567-e89b-12d3-a456-426614175012",
+            "123e4567-e89b-12d3-a456-426614175013",
+            "123e4567-e89b-12d3-a456-426614175018",
+            "123e4567-e89b-12d3-a456-426614175019",
+        ]);
         expect(firstJson.pageInfo).toEqual({
             hasMore: true,
-            nextCursor: fullPage[5]!.id,
+            nextCursor: "123e4567-e89b-12d3-a456-426614175019",
         });
 
         const secondResponse = await GET(
-            new NextRequest(new URL(`http://localhost/api/focus?limit=6&cursor=${fullPage[5]!.id}`))
+            new NextRequest(new URL(`http://localhost/api/focus?limit=6&cursor=${firstJson.pageInfo.nextCursor}`))
         );
         const secondJson = await secondResponse.json();
 
         expect(secondResponse.status).toBe(200);
-        expect(mockGt).toHaveBeenCalledWith("id", fullPage[5]!.id);
+        expect(mockGt).toHaveBeenCalledWith("id", firstJson.pageInfo.nextCursor);
         expect(secondJson.items.map((item: { id: string }) => item.id)).toEqual(
-            fullPage.slice(6, 12).map((item) => item.id)
+            [
+                "123e4567-e89b-12d3-a456-426614175034",
+                "123e4567-e89b-12d3-a456-426614175040",
+                "123e4567-e89b-12d3-a456-426614175041",
+                "123e4567-e89b-12d3-a456-426614175042",
+                "123e4567-e89b-12d3-a456-426614175043",
+                "123e4567-e89b-12d3-a456-426614176000",
+            ]
         );
     });
 
@@ -328,6 +343,70 @@ describe("Focus API", () => {
             hasMore: false,
             nextCursor: null,
         });
+    });
+
+    it("balances category and type from a larger candidate window", async () => {
+        mockLimit.mockResolvedValue({
+            data: [
+                ...Array.from({ length: 6 }, (_, index) => ({
+                    id: `123e4567-e89b-12d3-a456-42661417410${index}`,
+                    title: `Productivity Book ${index + 1}`,
+                    type: "book",
+                    author: "Author A",
+                    category: "Productivity",
+                    cover_image_url: null,
+                    duration_seconds: 180,
+                    quick_mode_json: {
+                        hook: "A",
+                        big_idea: "B",
+                        key_takeaways: ["C"],
+                    },
+                })),
+                {
+                    id: "123e4567-e89b-12d3-a456-426614174200",
+                    title: "History Podcast",
+                    type: "podcast",
+                    author: "Author B",
+                    category: "History",
+                    cover_image_url: null,
+                    duration_seconds: 180,
+                    quick_mode_json: {
+                        hook: "A",
+                        big_idea: "B",
+                        key_takeaways: ["C"],
+                    },
+                },
+                {
+                    id: "123e4567-e89b-12d3-a456-426614174201",
+                    title: "Science Article",
+                    type: "article",
+                    author: "Author C",
+                    category: "Science",
+                    cover_image_url: null,
+                    duration_seconds: 180,
+                    quick_mode_json: {
+                        hook: "A",
+                        big_idea: "B",
+                        key_takeaways: ["C"],
+                    },
+                },
+            ],
+            error: null,
+        });
+
+        const response = await GET(
+            new NextRequest(new URL("http://localhost/api/focus?limit=3&seed=steady"))
+        );
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(json.items).toHaveLength(3);
+        expect(new Set(json.items.map((item: { category: string }) => item.category))).toEqual(
+            new Set(["Productivity", "History", "Science"])
+        );
+        expect(new Set(json.items.map((item: { type: string }) => item.type))).toEqual(
+            new Set(["book", "podcast", "article"])
+        );
     });
 
     it("keeps serving focus items when rate limiting degrades safely", async () => {

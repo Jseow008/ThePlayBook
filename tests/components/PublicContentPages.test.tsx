@@ -34,10 +34,19 @@ describe("public content routes", () => {
         }));
 
         vi.doMock("@/components/ui/ContentPreview", () => ({
-            ContentPreview: ({ item, segmentCount }: { item: { title: string }; segmentCount: number }) => (
+            ContentPreview: ({
+                item,
+                segmentCount,
+                initialShowAllTakeaways,
+            }: {
+                item: { title: string };
+                segmentCount: number;
+                initialShowAllTakeaways?: boolean;
+            }) => (
                 <div>
                     <span>{item.title}</span>
                     <span>{segmentCount} sections</span>
+                    <span>{initialShowAllTakeaways ? "all takeaways" : "partial takeaways"}</span>
                 </div>
             ),
         }));
@@ -50,11 +59,13 @@ describe("public content routes", () => {
 
         render(await previewModule.default({
             params: Promise.resolve({ id: "preview-1" }),
+            searchParams: Promise.resolve({ takeaways: "all" }),
         }));
 
         expect(metadata.title).toBe("Preview Title — Flux");
         expect(screen.getByText("Preview Title")).toBeInTheDocument();
         expect(screen.getByText("4 sections")).toBeInTheDocument();
+        expect(screen.getByText("all takeaways")).toBeInTheDocument();
         expect(getPreviewPageDataMock).toHaveBeenCalledTimes(2);
         expect(getPreviewPageDataMock).toHaveBeenNthCalledWith(1, "preview-1");
         expect(getPreviewPageDataMock).toHaveBeenNthCalledWith(2, "preview-1");

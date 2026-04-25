@@ -7,6 +7,9 @@ export const revalidate = 300;
 
 interface PageProps {
     params: Promise<{ id: string }>;
+    searchParams?: Promise<{
+        takeaways?: string | string[];
+    }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -18,8 +21,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 
-export default async function PreviewPage({ params }: PageProps) {
+function hasTakeawaysAllParam(searchParams?: { takeaways?: string | string[] }) {
+    const value = searchParams?.takeaways;
+    return Array.isArray(value) ? value.includes("all") : value === "all";
+}
+
+export default async function PreviewPage({ params, searchParams }: PageProps) {
     const { id } = await params;
+    const resolvedSearchParams = await searchParams;
     const preview = await getPreviewPageData(id);
 
     if (!preview) {
@@ -31,6 +40,7 @@ export default async function PreviewPage({ params }: PageProps) {
             item={preview.item}
             segmentCount={preview.segmentCount}
             seriesContext={preview.seriesContext}
+            initialShowAllTakeaways={hasTakeawaysAllParam(resolvedSearchParams)}
         />
     );
 }

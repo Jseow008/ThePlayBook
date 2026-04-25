@@ -85,6 +85,32 @@ describe('ContentPreview', () => {
         expect(screen.getByText('Takeaway 2')).toBeInTheDocument();
     });
 
+    it('can initially show all takeaways when opened from Focus', () => {
+        render(
+            <ContentPreview
+                {...defaultProps}
+                initialShowAllTakeaways
+                item={{
+                    ...mockItem,
+                    quick_mode_json: {
+                        ...mockItem.quick_mode_json,
+                        key_takeaways: [
+                            'Takeaway 1',
+                            'Takeaway 2',
+                            'Takeaway 3',
+                            'Takeaway 4',
+                            'Takeaway 5',
+                        ],
+                    },
+                } as ContentItem}
+            />
+        );
+
+        expect(screen.getByText('Takeaway 4')).toBeInTheDocument();
+        expect(screen.getByText('Takeaway 5')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Show less/i })).toBeInTheDocument();
+    });
+
     it('handles the "Spin Again" interaction', () => {
         render(<ContentPreview {...defaultProps} />);
 

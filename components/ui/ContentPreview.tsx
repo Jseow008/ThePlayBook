@@ -21,6 +21,7 @@ interface ContentPreviewProps {
     onSpinAgain?: () => void;
     isSpinning?: boolean;
     ctaIcon?: React.ElementType;
+    initialShowAllTakeaways?: boolean;
 }
 
 export function ContentPreview({
@@ -30,11 +31,12 @@ export function ContentPreview({
     onSpinAgain,
     isSpinning = false,
     ctaIcon: CtaIcon = Sparkles,
+    initialShowAllTakeaways = false,
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
     const hookRef = useRef<HTMLDivElement>(null);
     const [isTruncated, setIsTruncated] = useState(false);
-    const [showAllTakeaways, setShowAllTakeaways] = useState(false);
+    const [showAllTakeaways, setShowAllTakeaways] = useState(initialShowAllTakeaways);
     const [showFullHook, setShowFullHook] = useState(false);
 
     // logic for "Save to My List"
