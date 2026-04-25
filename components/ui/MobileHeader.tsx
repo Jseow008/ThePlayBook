@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { ChatCircleDotsIcon } from "@phosphor-icons/react";
 import { UserNav } from "@/components/ui/UserNav";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
@@ -64,7 +65,18 @@ export function MobileHeader({
             <Link href="/browse">
                 <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} />
             </Link>
-            <UserNav />
+            <div className="flex items-center gap-3">
+                <Link
+                    href="/ask"
+                    aria-label="Ask AI"
+                    title="Ask AI"
+                    className="flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-full border border-border bg-primary/10 px-2.5 text-xs font-semibold text-primary transition-colors hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                    <ChatCircleDotsIcon className="size-4" weight="duotone" aria-hidden="true" />
+                    <span>Ask AI</span>
+                </Link>
+                <UserNav />
+            </div>
         </header>
     );
 }
