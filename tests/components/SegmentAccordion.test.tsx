@@ -61,6 +61,25 @@ describe('SegmentAccordion', () => {
         expect(screen.getByText('Chapter 1')).toBeInTheDocument();
     });
 
+    it('ignores keyboard navigation when there are no segments', () => {
+        const onSegmentOpen = vi.fn();
+
+        render(
+            <SegmentAccordion
+                {...defaultProps}
+                segments={[]}
+                completedSegments={new Set()}
+                onSegmentOpen={onSegmentOpen}
+            />
+        );
+
+        expect(() => {
+            fireEvent.keyDown(window, { key: 'ArrowRight' });
+            fireEvent.keyDown(window, { key: 'ArrowLeft' });
+        }).not.toThrow();
+        expect(onSegmentOpen).not.toHaveBeenCalled();
+    });
+
     it('marks completed segments', () => {
         render(<SegmentAccordion {...defaultProps} />);
 

@@ -17,6 +17,7 @@ export type HighlightWithContent = UserHighlight & {
 
 interface UseHighlightsOptions {
     initialData?: HighlightWithContent[];
+    limit?: number;
 }
 
 export interface HighlightsPage {
@@ -34,10 +35,21 @@ interface UseInfiniteHighlightsOptions {
 // ----------------------------------------------------------------------------
 export function useHighlights(contentItemId?: string, options?: UseHighlightsOptions) {
     return useQuery({
-        queryKey: ["highlights", contentItemId],
+        queryKey: ["highlights", contentItemId, options?.limit ?? null],
         queryFn: async (): Promise<HighlightWithContent[]> => {
-            const url = contentItemId
-                ? `/api/library/highlights?content_item_id=${contentItemId}`
+            const params = new URLSearchParams();
+
+            if (contentItemId) {
+                params.set("content_item_id", contentItemId);
+            }
+
+            if (options?.limit) {
+                params.set("limit", String(options.limit));
+            }
+
+            const queryString = params.toString();
+            const url = queryString
+                ? `/api/library/highlights?${queryString}`
                 : "/api/library/highlights";
 
             const res = await fetch(url);

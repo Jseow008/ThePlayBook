@@ -78,7 +78,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         storageScope,
     } = useReadingProgress();
     const previousStorageScopeRef = useRef(storageScope);
-    const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id);
+    const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id, { limit: 50 });
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
     const router = useRouter();

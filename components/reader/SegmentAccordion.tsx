@@ -299,6 +299,10 @@ export function SegmentAccordion({
                 return;
             }
 
+            if (segments.length === 0) {
+                return;
+            }
+
             if (e.key === "ArrowRight") {
                 e.preventDefault();
                 if (!currentExpandedId) {

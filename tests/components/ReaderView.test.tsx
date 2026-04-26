@@ -16,6 +16,7 @@ const {
     segmentAccordionSpy,
     storageScopeState,
     highlightsState,
+    useHighlightsSpy,
     syncFromCloudMock,
     toastSuccessMock,
 } = vi.hoisted(() => ({
@@ -48,6 +49,7 @@ const {
             segment: null;
         }>,
     },
+    useHighlightsSpy: vi.fn(),
     syncFromCloudMock: vi.fn(),
     toastSuccessMock: vi.fn(),
 }));
@@ -207,11 +209,14 @@ vi.mock('@/hooks/useReadingTimer', () => ({
 }));
 
 vi.mock('@/hooks/useHighlights', () => ({
-    useHighlights: () => ({
-        data: highlightsState.value,
-        isLoading: false,
-        error: null,
-    }),
+    useHighlights: (...args: unknown[]) => {
+        useHighlightsSpy(...args);
+        return {
+            data: highlightsState.value,
+            isLoading: false,
+            error: null,
+        };
+    },
 }));
 
 vi.mock('@/hooks/useReaderSettings', () => ({
@@ -275,6 +280,7 @@ describe('ReaderView', () => {
         segmentAccordionSpy.mockClear();
         storageScopeState.value = 'guest';
         highlightsState.value = [];
+        useHighlightsSpy.mockClear();
         saveReadingProgressMock.mockClear();
         toastSuccessMock.mockClear();
         window.scrollTo = vi.fn();
@@ -305,6 +311,12 @@ describe('ReaderView', () => {
 
         // Before completion, displays feedback form
         expect(screen.getByTestId('mock-content-feedback')).toBeInTheDocument();
+    });
+
+    it('requests the full per-item highlight cap for the reader', () => {
+        render(<ReaderView content={mockContent} />);
+
+        expect(useHighlightsSpy).toHaveBeenCalledWith('test-item-1', { limit: 50 });
     });
 
     it('lets readers open Ask Author before full completion', async () => {
