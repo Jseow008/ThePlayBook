@@ -36,16 +36,24 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
             </Suspense>
 
             {/* Netflix-style Sidebar (hidden on mobile) */}
-            <NetflixSidebar />
+            <Suspense fallback={null}>
+                <NetflixSidebar />
+            </Suspense>
 
             {/* Desktop Top Right Auth (hidden on mobile) */}
             <div className="hidden lg:flex fixed top-4 right-8 z-50">
-                <UserNav />
+                <Suspense fallback={null}>
+                    <UserNav />
+                </Suspense>
             </div>
 
 
             {/* Mobile Header */}
-            {!isFocusPage && !isAskPage && <MobileHeader compact={isBrowsePage} />}
+            {!isFocusPage && !isAskPage && (
+                <Suspense fallback={null}>
+                    <MobileHeader compact={isBrowsePage} />
+                </Suspense>
+            )}
 
             {/* Main Content */}
             <main
