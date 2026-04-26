@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BrainClientPage } from "./client-page";
 import type { HighlightsPage } from "@/hooks/useHighlights";
+import { buildLoginHref } from "@/lib/auth-redirect";
 
 export const metadata = {
     title: "Notes",
@@ -20,7 +21,11 @@ export default async function BrainPage({ searchParams }: BrainPageProps) {
     const resolvedSearchParams = await searchParams;
 
     if (!user) {
-        redirect("/login?next=/notes");
+        const loginTarget = resolvedSearchParams?.ask === "1"
+            ? "/notes?ask=1"
+            : "/notes";
+
+        redirect(buildLoginHref(loginTarget));
     }
 
     // Pre-fetch global highlights

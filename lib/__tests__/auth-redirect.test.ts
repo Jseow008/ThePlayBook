@@ -44,6 +44,13 @@ describe("buildLoginHref", () => {
         expect(buildLoginHref("/preview/123?tab=summary")).toBe("/login?next=%2Fpreview%2F123%3Ftab%3Dsummary");
     });
 
+    it("preserves Ask and Notes query state in the login href", () => {
+        expect(buildLoginHref("/notes?ask=1")).toBe("/login?next=%2Fnotes%3Fask%3D1");
+        expect(buildLoginHref("/ask?scope=notes&notesScope=selected")).toBe(
+            "/login?next=%2Fask%3Fscope%3Dnotes%26notesScope%3Dselected"
+        );
+    });
+
     it("falls back to browse for disallowed targets", () => {
         expect(buildLoginHref("/")).toBe("/login?next=%2Fbrowse");
         expect(buildLoginHref("/login")).toBe("/login?next=%2Fbrowse");

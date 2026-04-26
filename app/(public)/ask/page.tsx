@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AskClientPage } from "./client-page";
 import type { HighlightsPage } from "@/hooks/useHighlights";
+import { buildLoginHref } from "@/lib/auth-redirect";
 import { buildLibrarySnapshot, type LibraryItemRow, type LibrarySnapshot } from "@/lib/server/library-snapshot";
 import { parseNotesChatScope } from "@/lib/notes-chat-scope";
 
@@ -27,7 +28,25 @@ export default async function AskPage({ searchParams }: AskPageProps) {
     const initialNotesScope = parseNotesChatScope(resolvedSearchParams?.notesScope);
 
     if (!user) {
-        redirect("/login?next=/ask");
+        const loginTargetParams = new URLSearchParams();
+
+        if (scope === "notes") {
+            loginTargetParams.set("scope", "notes");
+        }
+
+        if (resolvedSearchParams?.notesScope) {
+            loginTargetParams.set("notesScope", resolvedSearchParams.notesScope);
+        }
+
+        if (returnTo) {
+            loginTargetParams.set("returnTo", returnTo);
+        }
+
+        const loginTarget = loginTargetParams.size > 0
+            ? `/ask?${loginTargetParams.toString()}`
+            : "/ask";
+
+        redirect(buildLoginHref(loginTarget));
     }
 
     let initialNotesPage: HighlightsPage | undefined;

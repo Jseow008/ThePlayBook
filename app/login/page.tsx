@@ -1,7 +1,7 @@
 import { AuthForm } from "@/components/ui/AuthForm";
 import Link from "next/link";
 import { ArrowLeft, BookOpen } from "lucide-react";
-import { normalizeLoginNextPath } from "@/lib/auth-redirect";
+import { DEFAULT_LOGIN_REDIRECT_PATH, normalizeLoginNextPath } from "@/lib/auth-redirect";
 
 export default async function LoginPage({
     searchParams,
@@ -15,7 +15,7 @@ export default async function LoginPage({
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">
             <Link
-                href={next}
+                href={DEFAULT_LOGIN_REDIRECT_PATH}
                 className="absolute top-8 left-8 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
                 <ArrowLeft className="w-4 h-4" />
