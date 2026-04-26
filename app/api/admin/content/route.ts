@@ -24,6 +24,7 @@ import {
     ADMIN_CONTENT_VOICE_FILTER_OPTIONS,
 } from "@/lib/admin-content-query";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
@@ -277,7 +278,8 @@ export async function GET(request: NextRequest) {
         }
 
         if (q) {
-            query = query.or(`title.ilike.%${q}%,author.ilike.%${q}%`);
+            const searchTerm = escapePostgrestLikeValue(q);
+            query = query.or(`title.ilike.${searchTerm},author.ilike.${searchTerm}`);
         }
 
         if (ai === "stale") {

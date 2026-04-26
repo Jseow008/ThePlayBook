@@ -14,6 +14,7 @@ import Link from "next/link";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Suspense } from "react";
 import { SearchTopicSelect } from "@/components/ui/SearchTopicSelect";
+import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
 
 interface SearchPageProps {
     searchParams: Promise<{ q?: string; category?: string; type?: string }>;
@@ -84,21 +85,6 @@ function buildSearchHref({ query, category, type }: { query?: string; category?:
 
     const search = params.toString();
     return search ? `/search?${search}` : "/search";
-}
-
-function escapePostgrestLikeValue(value: string) {
-    const escapedValue = value
-        .replace(/\\/g, "\\\\")
-        .replace(/%/g, "\\%")
-        .replace(/_/g, "\\_")
-        .replace(/"/g, '\\"');
-    const escaped = `%${escapedValue}%`;
-
-    if (/[,.:()]/.test(value)) {
-        return `"${escaped}"`;
-    }
-
-    return escaped;
 }
 
 function buildNormalizedTopics(categoryStats: CategoryStat[]) {

@@ -8,6 +8,7 @@ import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import type { NarrationCostEstimate } from "@/lib/narration-cost";
 import type { NarrationJobStatus } from "@/lib/narration-job";
 import { getNarrationEstimatesByContentId } from "@/lib/server/narration-estimate";
+import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
 
 type AdminSupabaseClient = {
     from: (table: string) => {
@@ -144,7 +145,8 @@ export async function getAdminContentWorkbenchData(
     }
 
     if (searchQuery) {
-        baseQuery = baseQuery.or(`title.ilike.%${searchQuery}%,author.ilike.%${searchQuery}%`);
+        const searchTerm = escapePostgrestLikeValue(searchQuery);
+        baseQuery = baseQuery.or(`title.ilike.${searchTerm},author.ilike.${searchTerm}`);
     }
 
     if (viewState.ai !== "stale") {
