@@ -12,6 +12,7 @@ import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useInfiniteHighlights, type HighlightsPage } from "@/hooks/useHighlights";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
+import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 
 const chatTransport = new TextStreamChatTransport({ api: "/api/chat" });
 
@@ -218,6 +219,10 @@ export function AskClientPage({
         () => notesData?.pages.flatMap((page) => page.data) ?? initialNotesPage?.data ?? [],
         [initialNotesPage?.data, notesData]
     );
+    const hasMoreDefaultNotes = useMemo(
+        () => Boolean(notesData?.pages.some((page) => page.nextCursor) ?? initialNotesPage?.nextCursor),
+        [initialNotesPage?.nextCursor, notesData]
+    );
 
     const notesChatScope = useMemo<NotesChatScope>(() => {
         if (initialNotesScope) {
@@ -225,32 +230,45 @@ export function AskClientPage({
         }
 
         const scopedHighlights = noteHighlights.slice(0, 40);
+        const scopeSummary = hasMoreDefaultNotes ? "Most recent notes" : "All content";
+        const totalMatches = hasMoreDefaultNotes
+            ? Math.max(noteHighlights.length + 1, scopedHighlights.length + 1)
+            : noteHighlights.length;
 
         return {
             highlightIds: scopedHighlights.map((item) => item.id),
             noteCount: scopedHighlights.length,
-            totalMatches: noteHighlights.length,
-            summary: "All content",
+            totalMatches,
+            summary: scopeSummary,
             signature: JSON.stringify({
                 ids: scopedHighlights.map((item) => item.id),
-                totalMatches: noteHighlights.length,
-                scope: "notes",
+                hasMore: hasMoreDefaultNotes,
+                totalMatches,
+                scope: hasMoreDefaultNotes ? "notes:recent" : "notes",
             }),
         };
-    }, [initialNotesScope, noteHighlights]);
+    }, [hasMoreDefaultNotes, initialNotesScope, noteHighlights]);
+
+    const shouldPreserveNotesScope = Boolean(initialNotesScope) || resolvedScope === "notes";
+    const serializedNotesScope = useMemo(
+        () => shouldPreserveNotesScope ? serializeNotesChatScope(notesChatScope) : null,
+        [notesChatScope, shouldPreserveNotesScope]
+    );
 
     const mobileLibraryHref = useMemo(() => {
         const params = new URLSearchParams();
         if (returnTo) params.set("returnTo", returnTo);
+        if (serializedNotesScope) params.set("notesScope", serializedNotesScope);
         return params.size > 0 ? `/ask?${params.toString()}` : "/ask";
-    }, [returnTo]);
+    }, [returnTo, serializedNotesScope]);
 
     const mobileNotesHref = useMemo(() => {
         const params = new URLSearchParams();
         params.set("scope", "notes");
         if (returnTo) params.set("returnTo", returnTo);
+        if (serializedNotesScope) params.set("notesScope", serializedNotesScope);
         return `/ask?${params.toString()}`;
-    }, [returnTo]);
+    }, [returnTo, serializedNotesScope]);
 
     const showMobileAskNav = !isDesktop;
     const isLibraryScope = resolvedScope === "library";

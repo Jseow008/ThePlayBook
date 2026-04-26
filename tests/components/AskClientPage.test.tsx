@@ -3,6 +3,7 @@ import { AskClientPage } from "@/app/(public)/ask/client-page";
 import { useChat } from "@ai-sdk/react";
 import { vi } from "vitest";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
+import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 
 const {
     scrollIntoViewMock,
@@ -169,8 +170,17 @@ describe("AskClientPage", () => {
 
         render(<AskClientPage scope="notes" />);
 
-        expect(screen.getByRole("link", { name: "Ask My Library" })).toHaveAttribute("href", "/ask");
-        expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveAttribute("href", "/ask?scope=notes");
+        const libraryHref = screen.getByRole("link", { name: "Ask My Library" }).getAttribute("href") ?? "";
+        const notesHref = screen.getByRole("link", { name: "Ask These Notes" }).getAttribute("href") ?? "";
+        const libraryUrl = new URL(libraryHref, "http://localhost");
+        const notesUrl = new URL(notesHref, "http://localhost");
+
+        expect(libraryUrl.pathname).toBe("/ask");
+        expect(libraryUrl.searchParams.get("scope")).toBeNull();
+        expect(libraryUrl.searchParams.get("notesScope")).toBeTruthy();
+        expect(notesUrl.pathname).toBe("/ask");
+        expect(notesUrl.searchParams.get("scope")).toBe("notes");
+        expect(notesUrl.searchParams.get("notesScope")).toBeTruthy();
         expect(screen.getByTestId("notes-page-panel")).toBeInTheDocument();
         expect(notesAskPanelMock).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -178,6 +188,40 @@ describe("AskClientPage", () => {
                     noteCount: 1,
                     totalMatches: 1,
                     summary: "All content",
+                }),
+                variant: "page",
+            })
+        );
+    });
+
+    it("labels the default notes scope as most recent when more notes exist", () => {
+        const initialNotesPage = {
+            data: Array.from({ length: 30 }, (_, index) => ({
+                id: `highlight-${index + 1}`,
+                user_id: "user-1",
+                content_item_id: "content-1",
+                segment_id: "seg-1",
+                highlighted_text: `Saved note ${index + 1}`,
+                note_body: "note",
+                color: "blue",
+                anchor_start: 0,
+                anchor_end: 10,
+                created_at: `2026-03-11T12:${String(index).padStart(2, "0")}:00.000Z`,
+                updated_at: null,
+                content_item: null,
+                segment: null,
+            })),
+            nextCursor: "2026-03-11T12:00:00.000Z",
+        };
+
+        render(<AskClientPage scope="notes" initialNotesPage={initialNotesPage as any} />);
+
+        expect(notesAskPanelMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                currentScope: expect.objectContaining({
+                    noteCount: 30,
+                    totalMatches: 31,
+                    summary: "Most recent notes",
                 }),
                 variant: "page",
             })
@@ -216,16 +260,18 @@ describe("AskClientPage", () => {
     });
 
     it("passes a provided notes scope through to the full-screen notes panel", () => {
+        const initialNotesScope = {
+            highlightIds: ["highlight-7", "highlight-8"],
+            noteCount: 2,
+            totalMatches: 6,
+            summary: 'search: "discipline"',
+            signature: "scope-discipline",
+        };
+
         render(
             <AskClientPage
                 scope="notes"
-                initialNotesScope={{
-                    highlightIds: ["highlight-7", "highlight-8"],
-                    noteCount: 2,
-                    totalMatches: 6,
-                    summary: 'search: "discipline"',
-                    signature: "scope-discipline",
-                }}
+                initialNotesScope={initialNotesScope}
             />
         );
 
@@ -241,6 +287,17 @@ describe("AskClientPage", () => {
                 variant: "page",
             })
         );
+
+        const expectedSerializedScope = serializeNotesChatScope(initialNotesScope);
+        const libraryHref = screen.getByRole("link", { name: "Ask My Library" }).getAttribute("href") ?? "";
+        const notesHref = screen.getByRole("link", { name: "Ask These Notes" }).getAttribute("href") ?? "";
+        const libraryUrl = new URL(libraryHref, "http://localhost");
+        const notesUrl = new URL(notesHref, "http://localhost");
+
+        expect(libraryUrl.searchParams.get("scope")).toBeNull();
+        expect(libraryUrl.searchParams.get("notesScope")).toBe(expectedSerializedScope);
+        expect(notesUrl.searchParams.get("scope")).toBe("notes");
+        expect(notesUrl.searchParams.get("notesScope")).toBe(expectedSerializedScope);
     });
 
     it("sends the selected starter prompt", () => {
