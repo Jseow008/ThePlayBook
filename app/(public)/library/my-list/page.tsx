@@ -186,6 +186,7 @@ export default function MyListPage() {
                                         key={item.id}
                                         item={item}
                                         titleDensity="app-compact"
+                                        removeLabel="Remove from My List"
                                         onRemove={(id) => removeFromMyList(id)}
                                     />
                                 ))}

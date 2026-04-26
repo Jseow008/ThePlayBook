@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import {
@@ -39,6 +39,8 @@ function chunkIds(ids: string[]) {
 }
 
 export function useBatchContentItems(ids: string[], options?: { enabled?: boolean }) {
+    const idSet = new Set(ids);
+
     return useQuery({
         queryKey: ["content-batch", ids],
         enabled: (options?.enabled ?? true) && ids.length > 0,
@@ -69,6 +71,8 @@ export function useBatchContentItems(ids: string[], options?: { enabled?: boolea
 
             return sortByInputOrder(mergedItems, ids);
         },
+        placeholderData: keepPreviousData,
+        select: (items) => sortByInputOrder(items.filter((item) => idSet.has(item.id)), ids),
         staleTime: 60 * 1000,
     });
 }

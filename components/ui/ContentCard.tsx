@@ -9,6 +9,7 @@ import {
     Trash2,
     Bookmark,
     Video,
+    Archive,
 } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -20,6 +21,8 @@ interface ContentCardProps {
     item: ContentItem;
     showCompletedBadge?: boolean;
     onRemove?: (id: string) => void;
+    removeLabel?: string;
+    removeIcon?: "archive" | "trash";
     hideProgressBar?: boolean;
     hideBookmark?: boolean;
     enableUserState?: boolean;
@@ -110,6 +113,8 @@ function BaseContentCard({
     item,
     showCompletedBadge = false,
     onRemove,
+    removeLabel = "Remove from list",
+    removeIcon = "trash",
     hideBookmark = false,
     isBookmarked = false,
     progressPercentage = 0,
@@ -125,6 +130,7 @@ function BaseContentCard({
         video: Video,
     };
     const Icon = typeIcon[item.type] || BookOpen;
+    const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
 
     const createdAt = item.created_at ? new Date(item.created_at) : null;
     const isNew = createdAt ? createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false;
@@ -257,11 +263,14 @@ function BaseContentCard({
                         event.stopPropagation();
                         onRemove(item.id);
                     }}
-                    className="focus-ring absolute left-2 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 hover:bg-red-500/80 lg:opacity-0 lg:group-hover:opacity-100"
-                    title="Remove from progress"
-                    aria-label="Remove from progress"
+                    className={cn(
+                        "focus-ring absolute left-2 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 lg:opacity-0 lg:group-hover:opacity-100",
+                        removeIcon === "archive" ? "hover:bg-white/20" : "hover:bg-red-500/80",
+                    )}
+                    title={removeLabel}
+                    aria-label={removeLabel}
                 >
-                    <Trash2 className="size-4 text-white" />
+                    <RemoveIcon className="size-4 text-white" />
                 </button>
             ) : null}
 

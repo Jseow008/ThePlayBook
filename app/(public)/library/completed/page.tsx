@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, Trophy } from "lucide-react";
+import { toast } from "sonner";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -14,7 +15,7 @@ import { useBatchContentItems } from "@/hooks/use-content-queries";
  * Shows all items the user has finished reading with search, filter, and sort capabilities.
  */
 export default function CompletedPage() {
-    const { completedIds, isLoaded, removeFromProgress } = useReadingProgress();
+    const { archiveFromProgressList, completedIds, isLoaded, removeFromProgress, restoreProgressListArchive } = useReadingProgress();
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
@@ -187,8 +188,16 @@ export default function CompletedPage() {
                                         item={item}
                                         titleDensity="app-compact"
                                         showCompletedBadge
+                                        removeIcon="archive"
+                                        removeLabel="Archive from List"
                                         onRemove={(id) => {
-                                            removeFromProgress(id);
+                                            archiveFromProgressList(id, "completed");
+                                            toast.success("Archived from List", {
+                                                action: {
+                                                    label: "Undo",
+                                                    onClick: () => restoreProgressListArchive(id, "completed"),
+                                                },
+                                            });
                                         }}
                                     />
                                 ))}

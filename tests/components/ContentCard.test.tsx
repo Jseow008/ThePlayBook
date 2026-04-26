@@ -117,12 +117,19 @@ describe("ContentCard", () => {
         );
     });
 
-    it("keeps the remove action working on the card", () => {
+    it("keeps the remove action working on the card with a configurable label", () => {
         const onRemove = vi.fn();
 
-        render(<ContentCard item={item} onRemove={onRemove} navigationMode="resume" />);
+        render(
+            <ContentCard
+                item={item}
+                onRemove={onRemove}
+                navigationMode="resume"
+                removeLabel="Archive from List"
+            />
+        );
 
-        fireEvent.click(screen.getByRole("button", { name: "Remove from progress" }));
+        fireEvent.click(screen.getByRole("button", { name: "Archive from List" }));
 
         expect(onRemove).toHaveBeenCalledWith(item.id);
     });

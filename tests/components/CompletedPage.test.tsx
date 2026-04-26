@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import ContinueReadingPage from "@/app/(public)/library/reading/page";
+import CompletedPage from "@/app/(public)/library/completed/page";
 import type { ContentItem } from "@/types/database";
 
 const mockUseReadingProgress = vi.fn();
@@ -9,20 +9,20 @@ const mockToastSuccess = vi.fn();
 const mockContentCard = vi.fn(
     ({
         item,
-        navigationMode,
-        titleDensity,
         removeLabel,
         onRemove,
+        showCompletedBadge,
+        titleDensity,
     }: {
         item: ContentItem;
-        navigationMode?: "preview" | "resume";
-        titleDensity?: "default" | "app-compact";
         removeIcon?: "archive" | "trash";
         removeLabel?: string;
         onRemove?: (id: string) => void;
+        showCompletedBadge?: boolean;
+        titleDensity?: "default" | "app-compact";
     }) => (
         <div>
-            <span>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${item.title}`}</span>
+            <span>{`${showCompletedBadge ? "completed" : "plain"}:${titleDensity ?? "default"}:${item.title}`}</span>
             {onRemove ? (
                 <button onClick={() => onRemove(item.id)}>
                     {removeLabel ?? "Remove"}
@@ -51,11 +51,11 @@ vi.mock("@/hooks/use-content-queries", () => ({
 vi.mock("@/components/ui/ContentCard", () => ({
     ContentCard: (props: {
         item: ContentItem;
-        navigationMode?: "preview" | "resume";
-        titleDensity?: "default" | "app-compact";
         removeIcon?: "archive" | "trash";
         removeLabel?: string;
         onRemove?: (id: string) => void;
+        showCompletedBadge?: boolean;
+        titleDensity?: "default" | "app-compact";
     }) => mockContentCard(props),
 }));
 
@@ -65,15 +65,15 @@ vi.mock("sonner", () => ({
     },
 }));
 
-describe("ContinueReadingPage", () => {
+describe("CompletedPage", () => {
     const item: ContentItem = {
-        id: "11111111-1111-1111-1111-111111111111",
-        title: "Deep Work",
+        id: "22222222-2222-2222-2222-222222222222",
+        title: "Atomic Habits",
         type: "book",
         status: "verified",
         quick_mode_json: null,
         duration_seconds: 1800,
-        author: "Cal Newport",
+        author: "James Clear",
         cover_image_url: null,
         hero_image_url: null,
         category: "Productivity",
@@ -91,7 +91,7 @@ describe("ContinueReadingPage", () => {
         mockToastSuccess.mockClear();
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
-            inProgressIds: [item.id],
+            completedIds: [item.id],
             isLoaded: true,
             refresh: vi.fn(),
             removeFromProgress: vi.fn(),
@@ -107,29 +107,29 @@ describe("ContinueReadingPage", () => {
         });
     });
 
-    it("renders in-progress cards with resume navigation and compact title density", () => {
-        render(<ContinueReadingPage />);
+    it("renders completed cards with the archive action label", () => {
+        render(<CompletedPage />);
 
-        expect(screen.getByText("resume:app-compact:Deep Work")).toBeInTheDocument();
+        expect(screen.getByText("completed:app-compact:Atomic Habits")).toBeInTheDocument();
         expect(mockContentCard).toHaveBeenCalledWith(
             expect.objectContaining({
                 item,
-                navigationMode: "resume",
                 removeIcon: "archive",
                 removeLabel: "Archive from List",
+                showCompletedBadge: true,
                 titleDensity: "app-compact",
             })
         );
     });
 
-    it("archives cards from Continue Reading without deleting progress", () => {
+    it("archives cards from Completed without deleting progress", () => {
         const archiveFromProgressList = vi.fn();
         const removeFromProgress = vi.fn();
         const restoreProgressListArchive = vi.fn();
 
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList,
-            inProgressIds: [item.id],
+            completedIds: [item.id],
             isLoaded: true,
             refresh: vi.fn(),
             removeFromProgress,
@@ -137,11 +137,11 @@ describe("ContinueReadingPage", () => {
             storageScope: "guest",
         });
 
-        render(<ContinueReadingPage />);
+        render(<CompletedPage />);
 
         fireEvent.click(screen.getByRole("button", { name: "Archive from List" }));
 
-        expect(archiveFromProgressList).toHaveBeenCalledWith(item.id, "reading");
+        expect(archiveFromProgressList).toHaveBeenCalledWith(item.id, "completed");
         expect(removeFromProgress).not.toHaveBeenCalled();
         expect(mockToastSuccess).toHaveBeenCalledWith("Archived from List", {
             action: {
@@ -153,86 +153,6 @@ describe("ContinueReadingPage", () => {
         const toastOptions = mockToastSuccess.mock.calls[0][1] as { action: { onClick: () => void } };
         toastOptions.action.onClick();
 
-        expect(restoreProgressListArchive).toHaveBeenCalledWith(item.id, "reading");
-    });
-
-    it("removes invalid progress ids through the hook instead of manual localStorage cleanup", () => {
-        const removeFromProgress = vi.fn();
-
-        mockUseReadingProgress.mockReturnValue({
-            archiveFromProgressList: vi.fn(),
-            inProgressIds: [item.id, "missing-item"],
-            isLoaded: true,
-            refresh: vi.fn(),
-            removeFromProgress,
-            restoreProgressListArchive: vi.fn(),
-            storageScope: "guest",
-        });
-        mockUseBatchContentItems.mockReturnValue({
-            data: [item],
-            isError: false,
-            isLoading: false,
-            isSuccess: true,
-            refetch: vi.fn(),
-        });
-
-        render(<ContinueReadingPage />);
-
-        expect(removeFromProgress).toHaveBeenCalledWith("missing-item");
-    });
-
-    it("does not remove progress ids when the batch request is in an error state", () => {
-        const removeFromProgress = vi.fn();
-
-        mockUseReadingProgress.mockReturnValue({
-            archiveFromProgressList: vi.fn(),
-            inProgressIds: [item.id, "missing-item"],
-            isLoaded: true,
-            refresh: vi.fn(),
-            removeFromProgress,
-            restoreProgressListArchive: vi.fn(),
-            storageScope: "guest",
-        });
-        mockUseBatchContentItems.mockReturnValue({
-            data: [item],
-            isError: true,
-            isLoading: false,
-            isSuccess: false,
-            refetch: vi.fn(),
-        });
-
-        render(<ContinueReadingPage />);
-
-        expect(removeFromProgress).not.toHaveBeenCalled();
-        expect(screen.getByText("resume:app-compact:Deep Work")).toBeInTheDocument();
-    });
-
-    it("shows a retry state when loading progress fails before any cards are available", () => {
-        const refetch = vi.fn();
-
-        mockUseReadingProgress.mockReturnValue({
-            archiveFromProgressList: vi.fn(),
-            inProgressIds: [item.id],
-            isLoaded: true,
-            refresh: vi.fn(),
-            removeFromProgress: vi.fn(),
-            restoreProgressListArchive: vi.fn(),
-            storageScope: "guest",
-        });
-        mockUseBatchContentItems.mockReturnValue({
-            data: [],
-            isError: true,
-            isLoading: false,
-            isSuccess: false,
-            refetch,
-        });
-
-        render(<ContinueReadingPage />);
-
-        expect(screen.getByText("We couldn't load your progress")).toBeInTheDocument();
-
-        fireEvent.click(screen.getByRole("button", { name: "Retry" }));
-
-        expect(refetch).toHaveBeenCalled();
+        expect(restoreProgressListArchive).toHaveBeenCalledWith(item.id, "completed");
     });
 });

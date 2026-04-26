@@ -254,4 +254,40 @@ describe("useBatchContentItems", () => {
         expect(fetchMock.mock.calls.map(([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? "{}")).ids.length)).toEqual([50, 5]);
         expect(result.current.data?.map((item) => item.id)).toEqual(ids);
     });
+
+    it("keeps previous batch data filtered to the latest ids while a new batch loads", async () => {
+        const { useBatchContentItems } = await loadUseRecommendations();
+        const wrapper = createWrapper();
+        const firstIds = ["item-1", "item-2"];
+        const nextIds = ["item-2"];
+
+        fetchMock.mockImplementation(async (_input: RequestInfo | URL, init?: RequestInit) => {
+            const body = JSON.parse(String(init?.body ?? "{}")) as { ids?: string[] };
+            const chunkIds = body.ids ?? [];
+
+            return {
+                ok: true,
+                json: vi.fn().mockResolvedValue(
+                    chunkIds.map((id) => createRecommendationItem(id, `Item ${id}`)),
+                ),
+            };
+        });
+
+        const { result, rerender } = renderHook(
+            ({ ids }) => useBatchContentItems(ids, { enabled: true }),
+            {
+                initialProps: { ids: firstIds },
+                wrapper,
+            },
+        );
+
+        await waitFor(() => expect(result.current.data?.map((item) => item.id)).toEqual(firstIds));
+
+        rerender({ ids: nextIds });
+
+        expect(result.current.data?.map((item) => item.id)).toEqual(nextIds);
+        expect(result.current.isLoading).toBe(false);
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+    });
 });

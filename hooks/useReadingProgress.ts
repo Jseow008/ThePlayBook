@@ -33,6 +33,8 @@ import {
 /**
  * Reading progress data stored in localStorage
  */
+export type ProgressLibraryList = "reading" | "completed";
+
 export interface ReadingProgressData {
     itemId: string;
     completed: string[];
@@ -41,6 +43,7 @@ export interface ReadingProgressData {
     isCompleted: boolean;
     totalSegments?: number;
     maxSegmentIndex?: number;
+    archivedFromLists?: Partial<Record<ProgressLibraryList, boolean>>;
 }
 
 interface UserLibraryRow {
@@ -48,6 +51,36 @@ interface UserLibraryRow {
     is_bookmarked: boolean;
     progress: ReadingProgressData | null;
     last_interacted_at: string;
+}
+
+function getProgressLibraryList(data: ReadingProgressData): ProgressLibraryList {
+    return data.isCompleted ? "completed" : "reading";
+}
+
+function isArchivedFromList(data: ReadingProgressData, list: ProgressLibraryList) {
+    return data.archivedFromLists?.[list] === true;
+}
+
+function clearArchiveForCurrentList(data: ReadingProgressData): ReadingProgressData {
+    const currentList = getProgressLibraryList(data);
+    return clearArchiveForList(data, currentList);
+}
+
+function clearArchiveForList(data: ReadingProgressData, list: ProgressLibraryList): ReadingProgressData {
+    const archivedFromLists = { ...(data.archivedFromLists ?? {}) };
+
+    if (!archivedFromLists[list]) {
+        return data;
+    }
+
+    delete archivedFromLists[list];
+
+    return {
+        ...data,
+        archivedFromLists: Object.keys(archivedFromLists).length > 0
+            ? archivedFromLists
+            : undefined,
+    };
 }
 
 function normalizeCloudSyncError(error: unknown) {
@@ -153,8 +186,16 @@ function useReadingProgressController(initialUser?: User | null) {
                 newProgressMap[itemId] = data;
 
                 if (data.isCompleted) {
+                    if (isArchivedFromList(data, "completed")) {
+                        return;
+                    }
+
                     completed.push(entry);
                 } else {
+                    if (isArchivedFromList(data, "reading")) {
+                        return;
+                    }
+
                     inProgress.push(entry);
                 }
             } catch {
@@ -476,6 +517,58 @@ function useReadingProgressController(initialUser?: User | null) {
         window.dispatchEvent(new Event("flux_progress_updated"));
     }, [syncItemToCloud]);
 
+    const archiveFromProgressList = useCallback((itemId: string, list: ProgressLibraryList) => {
+        if (typeof window === "undefined") return;
+
+        const scope = scopeRef.current;
+        const currentProgress = readProgressFromScope(scope, itemId);
+        if (!currentProgress) return;
+
+        const nextProgress: ReadingProgressData = {
+            ...currentProgress,
+            archivedFromLists: {
+                ...(currentProgress.archivedFromLists ?? {}),
+                [list]: true,
+            },
+        };
+
+        localStorage.setItem(progressKey(scope, itemId), JSON.stringify(nextProgress));
+        setProgressMap((prev) => ({ ...prev, [itemId]: nextProgress }));
+
+        if (list === "completed") {
+            setCompletedIds((prev) => prev.filter((id) => id !== itemId));
+        } else {
+            setInProgressIds((prev) => prev.filter((id) => id !== itemId));
+        }
+
+        syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
+        window.dispatchEvent(new Event("flux_progress_updated"));
+    }, [readProgressFromScope, syncItemToCloud]);
+
+    const restoreProgressListArchive = useCallback((itemId: string, list: ProgressLibraryList) => {
+        if (typeof window === "undefined") return;
+
+        const scope = scopeRef.current;
+        const currentProgress = readProgressFromScope(scope, itemId);
+        if (!currentProgress) return;
+
+        const nextProgress = clearArchiveForList(currentProgress, list);
+        localStorage.setItem(progressKey(scope, itemId), JSON.stringify(nextProgress));
+        setProgressMap((prev) => ({ ...prev, [itemId]: nextProgress }));
+
+        const currentList = getProgressLibraryList(nextProgress);
+        if (currentList === "completed") {
+            setCompletedIds((prev) => insertOrMoveToFront(prev, itemId));
+            setInProgressIds((prev) => prev.filter((id) => id !== itemId));
+        } else {
+            setInProgressIds((prev) => insertOrMoveToFront(prev, itemId));
+            setCompletedIds((prev) => prev.filter((id) => id !== itemId));
+        }
+
+        syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
+        window.dispatchEvent(new Event("flux_progress_updated"));
+    }, [insertOrMoveToFront, readProgressFromScope, syncItemToCloud]);
+
     const addToMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
 
@@ -518,11 +611,12 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
-        localStorage.setItem(progressKey(scope, itemId), JSON.stringify(data));
+        const nextData = clearArchiveForCurrentList(data);
+        localStorage.setItem(progressKey(scope, itemId), JSON.stringify(nextData));
 
-        setProgressMap((prev) => ({ ...prev, [itemId]: data }));
+        setProgressMap((prev) => ({ ...prev, [itemId]: nextData }));
 
-        if (data.isCompleted) {
+        if (nextData.isCompleted) {
             setCompletedIds((prev) => insertOrMoveToFront(prev, itemId));
             setInProgressIds((prev) => prev.filter((id) => id !== itemId));
         } else {
@@ -530,7 +624,7 @@ function useReadingProgressController(initialUser?: User | null) {
             setCompletedIds((prev) => prev.filter((id) => id !== itemId));
         }
 
-        syncItemToCloud(userRef.current, scope, itemId, undefined, data);
+        syncItemToCloud(userRef.current, scope, itemId, undefined, nextData);
         window.dispatchEvent(new Event("flux_progress_updated"));
     }, [insertOrMoveToFront, syncItemToCloud]);
 
@@ -545,6 +639,8 @@ function useReadingProgressController(initialUser?: User | null) {
         completedCount: completedIds.length,
         isLoaded,
         refresh: () => loadProgress(scopeRef.current),
+        archiveFromProgressList,
+        restoreProgressListArchive,
         removeFromProgress,
         saveReadingProgress,
         getProgress,

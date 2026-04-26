@@ -163,6 +163,104 @@ describe("useReadingProgress", () => {
         expect(JSON.parse(localData!).completed).toContain("seg-x");
     });
 
+    it("archives an in-progress item without deleting its progress", async () => {
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        act(() => {
+            result.current.saveReadingProgress("item-archive", {
+                itemId: "item-archive",
+                completed: ["seg-1"],
+                lastSegmentIndex: 0,
+                lastReadAt: "2026-03-10T00:00:00.000Z",
+                isCompleted: false,
+                totalSegments: 3,
+            });
+        });
+
+        expect(result.current.inProgressIds).toContain("item-archive");
+
+        act(() => {
+            result.current.archiveFromProgressList("item-archive", "reading");
+        });
+
+        expect(result.current.inProgressIds).not.toContain("item-archive");
+        expect(result.current.getProgress("item-archive")).toEqual(
+            expect.objectContaining({
+                completed: ["seg-1"],
+                archivedFromLists: { reading: true },
+            })
+        );
+        expect(localStorage.getItem(progressKey(GUEST_STORAGE_SCOPE, "item-archive"))).not.toBeNull();
+    });
+
+    it("clears the archive flag when progress is saved again for the current list", async () => {
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        act(() => {
+            result.current.saveReadingProgress("item-reopen", {
+                itemId: "item-reopen",
+                completed: ["seg-1"],
+                lastSegmentIndex: 0,
+                lastReadAt: "2026-03-10T00:00:00.000Z",
+                isCompleted: false,
+                totalSegments: 3,
+            });
+            result.current.archiveFromProgressList("item-reopen", "reading");
+        });
+
+        expect(result.current.inProgressIds).not.toContain("item-reopen");
+
+        act(() => {
+            result.current.saveReadingProgress("item-reopen", {
+                itemId: "item-reopen",
+                completed: ["seg-1", "seg-2"],
+                lastSegmentIndex: 1,
+                lastReadAt: "2026-03-11T00:00:00.000Z",
+                isCompleted: false,
+                totalSegments: 3,
+            });
+        });
+
+        expect(result.current.inProgressIds).toContain("item-reopen");
+        expect(result.current.getProgress("item-reopen")?.archivedFromLists).toBeUndefined();
+    });
+
+    it("restores an archived progress item back to its current library list", async () => {
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        act(() => {
+            result.current.saveReadingProgress("item-restore", {
+                itemId: "item-restore",
+                completed: ["seg-1"],
+                lastSegmentIndex: 0,
+                lastReadAt: "2026-03-10T00:00:00.000Z",
+                isCompleted: false,
+                totalSegments: 3,
+            });
+            result.current.archiveFromProgressList("item-restore", "reading");
+        });
+
+        expect(result.current.inProgressIds).not.toContain("item-restore");
+
+        act(() => {
+            result.current.restoreProgressListArchive("item-restore", "reading");
+        });
+
+        expect(result.current.inProgressIds).toContain("item-restore");
+        expect(result.current.getProgress("item-restore")).toEqual(
+            expect.objectContaining({
+                completed: ["seg-1"],
+            })
+        );
+        expect(result.current.getProgress("item-restore")?.archivedFromLists).toBeUndefined();
+    });
+
     it("treats missing-session bootstrap as a guest flow without logging an error", async () => {
         const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         currentAuthError = {
