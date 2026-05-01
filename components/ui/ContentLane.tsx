@@ -16,6 +16,7 @@ interface ContentLaneProps {
     enableCardUserState?: boolean;
 }
 
+const LANE_CARD_SELECTOR = "[data-content-lane-card]";
 
 export function ContentLane({
     title,
@@ -30,10 +31,37 @@ export function ContentLane({
     const [showRightArrow, setShowRightArrow] = useState(false);
 
     const scroll = (direction: "left" | "right") => {
-        if (!scrollRef.current) return;
-        const scrollAmount = scrollRef.current.clientWidth * 0.8;
-        scrollRef.current.scrollBy({
-            left: direction === "left" ? -scrollAmount : scrollAmount,
+        const container = scrollRef.current;
+        if (!container) return;
+
+        const cards = Array.from(container.querySelectorAll<HTMLElement>(LANE_CARD_SELECTOR));
+        if (cards.length === 0) return;
+
+        const containerStyle = window.getComputedStyle(container);
+        const containerPaddingLeft = parseFloat(containerStyle.paddingLeft) || 0;
+        const maxScrollLeft = container.scrollWidth - container.clientWidth;
+        const getCardScrollLeft = (card: HTMLElement) => card.offsetLeft - containerPaddingLeft;
+        const currentIndex = cards.reduce((closestIndex, card, index) => {
+            const closestDistance = Math.abs(getCardScrollLeft(cards[closestIndex]) - container.scrollLeft);
+            const cardDistance = Math.abs(getCardScrollLeft(card) - container.scrollLeft);
+            return cardDistance < closestDistance ? index : closestIndex;
+        }, 0);
+        const cardStride = cards[1]
+            ? cards[1].offsetLeft - cards[0].offsetLeft
+            : cards[0].offsetWidth;
+        const visibleCardCount = Math.max(1, Math.floor((container.clientWidth - containerPaddingLeft) / cardStride));
+        const scrollStep = Math.max(1, visibleCardCount - 1);
+        const targetIndex = Math.max(
+            0,
+            Math.min(
+                cards.length - 1,
+                direction === "left" ? currentIndex - scrollStep : currentIndex + scrollStep,
+            ),
+        );
+        const targetScrollLeft = Math.max(0, Math.min(getCardScrollLeft(cards[targetIndex]), maxScrollLeft));
+
+        container.scrollTo({
+            left: targetScrollLeft,
             behavior: "smooth",
         });
     };
@@ -75,7 +103,7 @@ export function ContentLane({
                     {viewAllHref && (
                         <Link
                             href={viewAllHref}
-                            className="focus-ring rounded-sm text-sm font-normal text-muted-foreground hover:text-primary transition-all opacity-0 group-hover/lane:opacity-100 hover:translate-x-1"
+                            className="focus-ring rounded-sm text-sm font-normal text-muted-foreground transition-all hover:translate-x-1 hover:text-primary md:opacity-0 md:group-hover/lane:opacity-100 md:focus-visible:opacity-100"
                         >
                             <span className="flex items-center gap-1">
                                 Explore All <ChevronRight className="size-4" />
@@ -107,10 +135,14 @@ export function ContentLane({
                 <div className="relative w-full overflow-hidden">
                     <div
                         ref={scrollRef}
-                        className="scrollbar-hide flex gap-3 overflow-x-auto px-4 pb-3 pt-3 scroll-smooth md:gap-4 md:px-6 md:pb-4 md:pt-4 lg:px-16"
+                        className="scrollbar-hide flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-3 pt-3 scroll-smooth md:scroll-px-6 md:gap-4 md:px-6 md:pb-4 md:pt-4 lg:scroll-px-16 lg:px-16"
                     >
                         {items.map((item) => (
-                            <div key={item.id} className="w-[168px] min-w-[168px] md:w-[240px] md:min-w-[240px]">
+                            <div
+                                key={item.id}
+                                data-content-lane-card
+                                className="w-[168px] min-w-[168px] snap-start md:w-[240px] md:min-w-[240px]"
+                            >
                                 <ContentCard
                                     item={item}
                                     enableUserState={enableCardUserState}
@@ -138,8 +170,18 @@ export function ContentLane({
                 </button>
 
                 {/* Fade edges */}
-                <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent pointer-events-none" />
-                <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent pointer-events-none" />
+                <div
+                    className={cn(
+                        "absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent pointer-events-none transition-opacity duration-200",
+                        showLeftArrow ? "opacity-100" : "opacity-0"
+                    )}
+                />
+                <div
+                    className={cn(
+                        "absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent pointer-events-none transition-opacity duration-200",
+                        showRightArrow ? "opacity-100" : "opacity-0"
+                    )}
+                />
             </div>
         </section>
     );
