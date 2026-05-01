@@ -45,6 +45,7 @@ export function NetflixSidebar() {
     const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isPointerInsideRef = useRef(false);
     const user = useAuthUser();
+    const [hasMounted, setHasMounted] = useState(false);
 
     const clearHoverTimeout = () => {
         if (hoverTimeoutRef.current) {
@@ -93,6 +94,10 @@ export function NetflixSidebar() {
             : user?.user_metadata?.avatar_url;
     const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
 
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
+
     // Close accordion sections when the sidebar collapses.
     useEffect(() => {
         if (!isExpanded) {
@@ -109,7 +114,7 @@ export function NetflixSidebar() {
     const isAskMyLibraryActive = pathname === "/ask" && !isFullPageNotesAskActive;
     const isNotesSectionActive = pathname === notesItem.href && !isInlineNotesAskActive;
     const isAskSectionActive = isAskMyLibraryActive || isAskTheseNotesActive;
-    const isAuthLoading = user === undefined;
+    const isAuthLoading = !hasMounted || user === undefined;
 
     // Keep the current section expanded when it owns the active route.
     useEffect(() => {

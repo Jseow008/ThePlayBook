@@ -89,7 +89,20 @@ export function RecommendationsRow({
     if (!isLoaded || (!mostRecentId && clusterIds.length === 0)) return null;
     if (!isLoading && !hasItems) return null;
 
-    if (isLoading && !hasItems) return null;
+    if (isLoading && !hasItems) {
+        return (
+            <section className="py-4" aria-label="Loading recommendations">
+                <div className="flex gap-4 overflow-hidden">
+                    {[0, 1, 2, 3].map((item) => (
+                        <div
+                            key={item}
+                            className="aspect-[2/3] w-[150px] flex-none rounded-md bg-card/50 animate-pulse md:w-[180px]"
+                        />
+                    ))}
+                </div>
+            </section>
+        );
+    }
 
     return (
         <>

@@ -65,6 +65,11 @@ const nextConfig: NextConfig = {
       "./node_modules/ffmpeg-static/ffmpeg.exe",
       "./node_modules/ffmpeg-static/package.json",
     ],
+    "/api/admin/content/bulk": [
+      "./node_modules/ffmpeg-static/ffmpeg",
+      "./node_modules/ffmpeg-static/ffmpeg.exe",
+      "./node_modules/ffmpeg-static/package.json",
+    ],
     "/api/admin/content/[id]/narration": [
       "./node_modules/ffmpeg-static/ffmpeg",
       "./node_modules/ffmpeg-static/ffmpeg.exe",

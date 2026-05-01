@@ -13,8 +13,13 @@ import { SignInLink } from "@/components/ui/SignInLink";
 export function UserNav() {
     const user = useAuthUser();
     const [isOpen, setIsOpen] = useState(false);
+    const [hasMounted, setHasMounted] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -56,7 +61,7 @@ export function UserNav() {
             : user?.user_metadata?.avatar_url;
     const avatarIsDicebear = typeof avatarSrc === "string" && avatarSrc.includes("api.dicebear.com");
 
-    if (user === undefined) {
+    if (!hasMounted || user === undefined) {
         return (
             <div
                 aria-hidden="true"

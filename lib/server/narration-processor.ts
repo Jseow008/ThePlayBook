@@ -1,10 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { getAdminClient } from "@/lib/supabase/admin";
-import {
-    type GeneratedNarrationSegmentTiming,
-    isNarrationError,
-    generateNarrationAudio,
-} from "@/lib/server/ai-narration";
+import type { GeneratedNarrationSegmentTiming } from "@/lib/server/narration-script";
 import { logApiError } from "@/lib/server/api";
 
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
@@ -46,8 +42,20 @@ interface NarrationProcessingJobRow {
     narration_started_at: string | null;
 }
 
+function isPersistableNarrationError(error: unknown): error is {
+    userMessage: string;
+    status: number;
+} {
+    return (
+        error instanceof Error
+        && error.name === "NarrationError"
+        && typeof (error as { userMessage?: unknown }).userMessage === "string"
+        && typeof (error as { status?: unknown }).status === "number"
+    );
+}
+
 function getPersistedNarrationError(error: unknown) {
-    if (isNarrationError(error)) {
+    if (isPersistableNarrationError(error)) {
         return error.userMessage;
     }
 
@@ -404,7 +412,7 @@ async function releaseNarrationClaim(
 }
 
 export function buildProcessErrorResponseMessage(error: unknown) {
-    if (isNarrationError(error)) {
+    if (isPersistableNarrationError(error)) {
         return {
             message: error.userMessage,
             status: error.status,
@@ -500,6 +508,7 @@ export async function processNextNarrationJob(requestId: string) {
             deleted_at?: string | null;
         }>).filter((segment) => !segment.deleted_at);
 
+        const { generateNarrationAudio } = await import("@/lib/server/ai-narration");
         const { audioBuffer, extension, contentType, segmentTimings } = await generateNarrationAudio({
             title: contentItem.title,
             author: contentItem.author,

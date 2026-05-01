@@ -16,6 +16,7 @@ export function AuthUserProvider({
     initialUser?: User | null | undefined;
 }) {
     const [user, setUser] = useState<User | null | undefined>(initialUser);
+    const [hasHydrated, setHasHydrated] = useState(false);
 
     useEffect(() => {
         setUser(initialUser);
@@ -40,6 +41,8 @@ export function AuthUserProvider({
             });
         }
 
+        setHasHydrated(true);
+
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
             setUser(session?.user ?? null);
@@ -51,7 +54,9 @@ export function AuthUserProvider({
         };
     }, [initialUser]);
 
-    return createElement(AuthUserContext.Provider, { value: user }, children);
+    const contextUser = hasHydrated ? user : initialUser;
+
+    return createElement(AuthUserContext.Provider, { value: contextUser }, children);
 }
 
 export function useAuthUser() {

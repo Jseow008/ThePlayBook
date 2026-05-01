@@ -28,6 +28,7 @@ interface ContentCardProps {
     enableUserState?: boolean;
     navigationMode?: "preview" | "resume";
     titleDensity?: "default" | "app-compact";
+    priority?: boolean;
 }
 
 interface BaseContentCardProps extends ContentCardProps {
@@ -122,6 +123,7 @@ function BaseContentCard({
     onToggleBookmark,
     href = `/preview/${item.id}`,
     titleDensity = "default",
+    priority = false,
 }: BaseContentCardProps) {
     const typeIcon: Record<ContentItem["type"], React.ComponentType<{ className?: string }>> = {
         podcast: Headphones,
@@ -152,6 +154,7 @@ function BaseContentCard({
                         surface="content-card"
                         className="object-cover transition-transform duration-300 group-hover:scale-110"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                        priority={priority}
                         fallback={
                             <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
                                 <Icon className="size-16 text-muted-foreground" />

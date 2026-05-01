@@ -63,7 +63,7 @@ export function MobileHeader({
             )}
         >
             <Link href="/browse">
-                <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} />
+                <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} priority />
             </Link>
             <div className="flex items-center gap-3">
                 <Link

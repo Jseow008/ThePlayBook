@@ -1,5 +1,5 @@
 import type { NarrationCostEstimate } from "@/lib/narration-cost";
-import { NarrationError, estimateNarrationCost } from "@/lib/server/ai-narration";
+import { NarrationError, estimateNarrationCost } from "@/lib/server/narration-script";
 
 type SegmentRow = {
     id: string;
