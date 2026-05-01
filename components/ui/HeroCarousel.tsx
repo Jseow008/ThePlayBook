@@ -23,14 +23,13 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const [incomingVisible, setIncomingVisible] = useState(true);
     const [outgoingVisible, setOutgoingVisible] = useState(false);
     const [contentVisible, setContentVisible] = useState(true);
-    const [isPointerPaused, setIsPointerPaused] = useState(false);
     const [isFocusPaused, setIsFocusPaused] = useState(false);
     const autoRotateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const contentRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const incomingFrameRef = useRef<number | null>(null);
     const contentRevealFrameRef = useRef<number | null>(null);
-    const isPaused = isPointerPaused || isFocusPaused;
+    const isPaused = isFocusPaused;
 
     const clearAutoRotate = useCallback(() => {
         if (!autoRotateTimeoutRef.current) return;
@@ -111,15 +110,6 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             return nextIndex;
         });
     }, [clearAutoRotate, clearContentReveal, clearContentRevealFrame, clearIncomingFrame, clearTransition]);
-
-    const handleMouseEnter = useCallback(() => {
-        setIsPointerPaused(true);
-        clearAutoRotate();
-    }, [clearAutoRotate]);
-
-    const handleMouseLeave = useCallback(() => {
-        setIsPointerPaused(false);
-    }, []);
 
     const handleFocus = useCallback(() => {
         setIsFocusPaused(true);
@@ -251,8 +241,6 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     return (
         <div
             className="relative browse-hero-shell w-full overflow-hidden bg-background"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
             onFocusCapture={handleFocus}
             onBlurCapture={handleBlur}
         >
@@ -369,12 +357,13 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             queueTransition(() => index);
                         }}
                         className={cn(
-                            "h-1.5 rounded-full transition-all duration-500 ease-in-out cursor-pointer",
+                            "h-1.5 rounded-full transition-all duration-500 ease-in-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-background",
                             index === activeIndex
                                 ? "w-16 bg-white opacity-100 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
                                 : "w-8 bg-white/40 opacity-50 hover:bg-white/70 hover:w-10 hover:opacity-100"
                         )}
                         aria-label={`Go to item ${index + 1}`}
+                        aria-current={index === activeIndex ? "true" : undefined}
                     />
                 ))}
             </div>

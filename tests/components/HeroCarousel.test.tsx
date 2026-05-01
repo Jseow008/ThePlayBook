@@ -110,6 +110,46 @@ describe("HeroCarousel", () => {
         expect(screen.getByRole("heading", { name: "Third Feature" })).toBeInTheDocument();
     });
 
+    it("continues autoplay while the pointer is hovering over the hero", () => {
+        render(<HeroCarousel items={items} />);
+
+        fireEvent.mouseEnter(screen.getByTestId("hero-carousel-content"));
+
+        act(() => {
+            vi.advanceTimersByTime(5900);
+        });
+
+        expect(screen.getByRole("heading", { name: "Second Feature" })).toBeInTheDocument();
+    });
+
+    it("pauses autoplay while keyboard focus is inside the hero", () => {
+        render(<HeroCarousel items={items} />);
+
+        const readLink = screen.getByRole("link", { name: "Read" });
+
+        act(() => {
+            fireEvent.focusIn(readLink);
+        });
+
+        act(() => {
+            vi.advanceTimersByTime(7000);
+        });
+
+        expect(screen.getByRole("heading", { name: "First Feature" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Go to item 1" })).toHaveAttribute("aria-current", "true");
+    });
+
+    it("exposes focused and current states on manual indicators", () => {
+        render(<HeroCarousel items={items} />);
+
+        const firstIndicator = screen.getByRole("button", { name: "Go to item 1" });
+        const secondIndicator = screen.getByRole("button", { name: "Go to item 2" });
+
+        expect(firstIndicator).toHaveAttribute("aria-current", "true");
+        expect(firstIndicator).toHaveClass("focus-visible:ring-2", "focus-visible:ring-white");
+        expect(secondIndicator).not.toHaveAttribute("aria-current");
+    });
+
     it("keeps the hero content visible if the artwork fails twice", () => {
         render(<HeroCarousel items={items} />);
 
