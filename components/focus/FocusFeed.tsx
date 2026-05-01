@@ -24,28 +24,21 @@ import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
 const BATCH_SIZE = 6;
-const MOBILE_FOCUS_TOP_FRAME_OFFSET = "3rem";
-const MOBILE_FOCUS_BOTTOM_NAV_HEIGHT = "4rem";
-const MOBILE_FOCUS_BOTTOM_SAFE_AREA = "env(safe-area-inset-bottom)";
-const MOBILE_FOCUS_VIEWPORT_HEIGHT = `calc(100dvh-${MOBILE_FOCUS_TOP_FRAME_OFFSET}-${MOBILE_FOCUS_BOTTOM_NAV_HEIGHT}-${MOBILE_FOCUS_BOTTOM_SAFE_AREA})`;
 const FEED_LIST_VIEWPORT_CLASS =
-    `h-[${MOBILE_FOCUS_VIEWPORT_HEIGHT}] md:h-[calc(100dvh-7.5rem)]`;
+    "h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-7.5rem)]";
 const FEED_CARD_HEIGHT_CLASS =
-    `min-h-[${MOBILE_FOCUS_VIEWPORT_HEIGHT}] md:min-h-[calc(100dvh-7.5rem)]`;
+    "min-h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))] md:min-h-[calc(100dvh-7.5rem)]";
 const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 240;
 const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 210;
 const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 200;
 const TAKEAWAYS_SHEET_ENTER_DELAY_MS = 16;
-const WHEEL_TRIGGER = 40;
-const TOUCH_TRIGGER = 40;
-const GESTURE_UNLOCK_TIMEOUT_MS = 200;
-const WHEEL_QUIET_PERIOD_MS = 180;
 const DESKTOP_SCROLL_CUE_DELAY_MS = 5000;
 const MOBILE_SCROLL_HINT_DELAY_MS = 2400;
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const FOCUS_FEED_SEED_STORAGE_KEY = "focus-feed-seed-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 const RESTORE_STATE_WRITE_DELAY_MS = 250;
+const FOCUS_FEED_FETCH_TIMEOUT_MS = 10_000;
 const FocusItemIdSchema = z.string().uuid();
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
 const MOBILE_MIN_READABLE_HOOK_HEIGHT_PX = 72;
@@ -53,6 +46,9 @@ const DESKTOP_VISIBLE_TAKEAWAY_COUNT = 3;
 const DESKTOP_DEFAULT_COVER_WIDTH = 132;
 const DESKTOP_MEDIUM_COVER_WIDTH = 116;
 const DESKTOP_COMPACT_COVER_WIDTH = 104;
+const TAKEAWAYS_SHEET_CLOSE_DRAG_THRESHOLD_PX = 80;
+const TAKEAWAYS_SHEET_CLOSE_FLICK_DISTANCE_PX = 24;
+const TAKEAWAYS_SHEET_CLOSE_VELOCITY_PX_PER_MS = 0.45;
 
 type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 
@@ -103,6 +99,44 @@ const FocusRestoreStateSchema = z
     });
 
 type FocusRestoreState = z.infer<typeof FocusRestoreStateSchema>;
+type SheetTouchPoint = { y: number; time: number };
+
+function readSessionStorageItem(key: string) {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    try {
+        return window.sessionStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
+function writeSessionStorageItem(key: string, value: string) {
+    if (typeof window === "undefined") {
+        return false;
+    }
+
+    try {
+        window.sessionStorage.setItem(key, value);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function removeSessionStorageItem(key: string) {
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    try {
+        window.sessionStorage.removeItem(key);
+    } catch {
+        // Storage can be unavailable in private or restricted browser contexts.
+    }
+}
 
 function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
     if (!container) {
@@ -205,13 +239,13 @@ function readOrCreateFocusSeed() {
         return "focus";
     }
 
-    const existingSeed = window.sessionStorage.getItem(FOCUS_FEED_SEED_STORAGE_KEY);
+    const existingSeed = readSessionStorageItem(FOCUS_FEED_SEED_STORAGE_KEY);
     if (existingSeed && /^[a-zA-Z0-9_-]{1,64}$/.test(existingSeed)) {
         return existingSeed;
     }
 
     const nextSeed = createFocusSeed();
-    window.sessionStorage.setItem(FOCUS_FEED_SEED_STORAGE_KEY, nextSeed);
+    writeSessionStorageItem(FOCUS_FEED_SEED_STORAGE_KEY, nextSeed);
     return nextSeed;
 }
 
@@ -220,7 +254,7 @@ function readFocusRestoreState(): FocusRestoreState | null {
         return null;
     }
 
-    const raw = window.sessionStorage.getItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
+    const raw = readSessionStorageItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
     if (!raw) {
         return null;
     }
@@ -228,13 +262,13 @@ function readFocusRestoreState(): FocusRestoreState | null {
     try {
         const parsed = FocusRestoreStateSchema.safeParse(JSON.parse(raw));
         if (!parsed.success) {
-            window.sessionStorage.removeItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
+            removeSessionStorageItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
             return null;
         }
 
         return parsed.data;
     } catch {
-        window.sessionStorage.removeItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
+        removeSessionStorageItem(FOCUS_FEED_RESTORE_STORAGE_KEY);
         return null;
     }
 }
@@ -244,7 +278,7 @@ function writeFocusRestoreState(snapshot: FocusRestoreState) {
         return;
     }
 
-    window.sessionStorage.setItem(
+    writeSessionStorageItem(
         FOCUS_FEED_RESTORE_STORAGE_KEY,
         JSON.stringify(snapshot)
     );
@@ -255,15 +289,11 @@ function readMobileScrollHintDismissed() {
         return false;
     }
 
-    return window.sessionStorage.getItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY) === "true";
+    return readSessionStorageItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY) === "true";
 }
 
 function writeMobileScrollHintDismissed() {
-    if (typeof window === "undefined") {
-        return;
-    }
-
-    window.sessionStorage.setItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY, "true");
+    writeSessionStorageItem(MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY, "true");
 }
 
 function buildRestoreCursorFromSnapshot(snapshot: FocusRestoreState) {
@@ -276,6 +306,41 @@ function buildRestoreCursorFromSnapshot(snapshot: FocusRestoreState) {
     }
 
     return null;
+}
+
+function getFocusCardIndex(element: HTMLElement | null) {
+    const index = Number(element?.dataset.focusCardIndex ?? 0);
+    return Number.isNaN(index) ? 0 : index;
+}
+
+function getClosestVisibleFocusCardIndex(
+    list: HTMLElement,
+    visibleElements: Iterable<HTMLElement>,
+    fallbackElement: HTMLElement | null
+) {
+    const candidates = Array.from(visibleElements).filter((element) => element.isConnected);
+
+    if (candidates.length === 0) {
+        return fallbackElement ? getFocusCardIndex(fallbackElement) : null;
+    }
+
+    const listRect = list.getBoundingClientRect();
+    const viewportCenter = listRect.top + listRect.height / 2;
+    let closestElement: HTMLElement | null = null;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    candidates.forEach((element) => {
+        const rect = element.getBoundingClientRect();
+        const cardCenter = rect.top + rect.height / 2;
+        const distance = Math.abs(cardCenter - viewportCenter);
+
+        if (distance < closestDistance) {
+            closestDistance = distance;
+            closestElement = element;
+        }
+    });
+
+    return getFocusCardIndex(closestElement);
 }
 
 export function FocusFeed() {
@@ -305,16 +370,11 @@ export function FocusFeed() {
     const itemsRef = useRef<FocusFeedItem[]>([]);
     const myListIdSetRef = useRef<Set<string>>(new Set());
     const nextCursorRef = useRef<string | null>(null);
-    const isGestureLockedRef = useRef(false);
-    const pendingCardIndexRef = useRef<number | null>(null);
     const isRestoringSnapshotRef = useRef(false);
     const restorePrefetchArmedRef = useRef(false);
-    const unlockTimeoutRef = useRef<number | null>(null);
-    const accumulatedWheelDeltaRef = useRef(0);
-    const isWheelMomentumLockedRef = useRef(false);
-    const wheelQuietTimeoutRef = useRef<number | null>(null);
-    const touchStartRef = useRef<{ x: number; y: number } | null>(null);
     const sheetTouchStartYRef = useRef<number | null>(null);
+    const sheetTouchLastPointRef = useRef<SheetTouchPoint | null>(null);
+    const sheetTouchVelocityRef = useRef(0);
     const sheetCloseTimeoutRef = useRef<number | null>(null);
     const sheetEnterTimeoutRef = useRef<number | null>(null);
     const takeawaysSheetDialogRef = useRef<HTMLDivElement | null>(null);
@@ -329,6 +389,7 @@ export function FocusFeed() {
     const restoreStateWriteTimeoutRef = useRef<number | null>(null);
     const pendingRestoreSnapshotRef = useRef<FocusRestoreState | null>(null);
     const focusSeedRef = useRef<string | null>(null);
+    const visibleCardElementsRef = useRef<Set<HTMLElement>>(new Set());
 
     const cards = useMemo(() => buildFocusCards(items), [items]);
     const myListIdSet = useMemo(() => new Set(myListIds), [myListIds]);
@@ -341,23 +402,6 @@ export function FocusFeed() {
         nextCursor: nextCursorRef.current,
         seenIds: Array.from(seenIdsRef.current),
     }), []);
-
-    const unlockGestures = useCallback(() => {
-        isGestureLockedRef.current = false;
-        pendingCardIndexRef.current = null;
-
-        if (unlockTimeoutRef.current !== null) {
-            window.clearTimeout(unlockTimeoutRef.current);
-            unlockTimeoutRef.current = null;
-        }
-    }, []);
-
-    const clearWheelQuietTimeout = useCallback(() => {
-        if (wheelQuietTimeoutRef.current !== null) {
-            window.clearTimeout(wheelQuietTimeoutRef.current);
-            wheelQuietTimeoutRef.current = null;
-        }
-    }, []);
 
     const clearDesktopScrollCueTimeout = useCallback(() => {
         if (desktopScrollCueTimeoutRef.current !== null) {
@@ -417,16 +461,6 @@ export function FocusFeed() {
         }, MOBILE_SCROLL_HINT_DELAY_MS);
     }, [cards.length, clearMobileScrollHintTimeouts, isDesktop]);
 
-    const refreshWheelQuietPeriod = useCallback(() => {
-        isWheelMomentumLockedRef.current = true;
-        clearWheelQuietTimeout();
-        wheelQuietTimeoutRef.current = window.setTimeout(() => {
-            isWheelMomentumLockedRef.current = false;
-            accumulatedWheelDeltaRef.current = 0;
-            wheelQuietTimeoutRef.current = null;
-        }, WHEEL_QUIET_PERIOD_MS);
-    }, [clearWheelQuietTimeout]);
-
     const clearSheetAnimationTimeouts = useCallback(() => {
         if (sheetCloseTimeoutRef.current !== null) {
             window.clearTimeout(sheetCloseTimeoutRef.current);
@@ -477,6 +511,8 @@ export function FocusFeed() {
         clearSheetAnimationTimeouts();
         setSheetDragOffset(0);
         sheetTouchStartYRef.current = null;
+        sheetTouchLastPointRef.current = null;
+        sheetTouchVelocityRef.current = 0;
         if (prefersReducedMotion) {
             setTakeawaysSheetPhase("closed");
             setTakeawaysSheetCard(null);
@@ -499,67 +535,10 @@ export function FocusFeed() {
         setTakeawaysSheetCard(card);
         setSheetDragOffset(0);
         sheetTouchStartYRef.current = null;
+        sheetTouchLastPointRef.current = null;
+        sheetTouchVelocityRef.current = 0;
         setTakeawaysSheetPhase(prefersReducedMotion ? "entered" : "entering");
     }, [clearSheetAnimationTimeouts, prefersReducedMotion]);
-
-    const moveToCard = useCallback(
-        (nextIndex: number) => {
-            const list = listRef.current;
-            if (!list) {
-                return false;
-            }
-
-            const cardElements = Array.from(
-                list.querySelectorAll<HTMLElement>("[data-focus-card-index]")
-            );
-
-            if (cardElements.length === 0) {
-                return false;
-            }
-
-            const boundedIndex = Math.max(0, Math.min(nextIndex, cardElements.length - 1));
-            if (boundedIndex === activeCardIndexRef.current) {
-                return false;
-            }
-
-            const targetCard = cardElements[boundedIndex];
-            if (!targetCard) {
-                return false;
-            }
-
-            isGestureLockedRef.current = true;
-            pendingCardIndexRef.current = boundedIndex;
-            accumulatedWheelDeltaRef.current = 0;
-
-            if (unlockTimeoutRef.current !== null) {
-                window.clearTimeout(unlockTimeoutRef.current);
-            }
-
-            unlockTimeoutRef.current = window.setTimeout(() => {
-                unlockGestures();
-            }, GESTURE_UNLOCK_TIMEOUT_MS);
-
-            targetCard.scrollIntoView({ behavior: "smooth", block: "start" });
-            return true;
-        },
-        [unlockGestures]
-    );
-
-    const moveByDirection = useCallback(
-        (direction: -1 | 1) => {
-            if (
-                isGestureLockedRef.current ||
-                isWheelMomentumLockedRef.current ||
-                isTakeawaysSheetOpen ||
-                cards.length === 0
-            ) {
-                return false;
-            }
-
-            return moveToCard(activeCardIndexRef.current + direction);
-        },
-        [cards.length, isTakeawaysSheetOpen, moveToCard]
-    );
 
     const handleToggleSave = useCallback((card: FocusCard) => {
         const wasSaved = myListIdSetRef.current.has(card.id);
@@ -572,14 +551,28 @@ export function FocusFeed() {
         toast.success(wasSaved ? "Removed from My List" : "Added to My List");
     }, [toggleMyList]);
 
-    const fetchBatch = useCallback(async (options?: { includeCompletedIds?: boolean }) => {
-        if (isFetchingRef.current || !hasMore) {
+    const fetchBatch = useCallback(async (options?: {
+        ignoreHasMore?: boolean;
+        includeCompletedIds?: boolean;
+        resetCursor?: boolean;
+    }) => {
+        if (isFetchingRef.current || (!options?.ignoreHasMore && !hasMoreRef.current)) {
             return;
         }
 
         isFetchingRef.current = true;
         setLoading(true);
         setError(null);
+
+        if (options?.resetCursor) {
+            nextCursorRef.current = null;
+            setNextCursor(null);
+        }
+
+        const controller = new AbortController();
+        let timeoutId: number | null = window.setTimeout(() => {
+            controller.abort();
+        }, FOCUS_FEED_FETCH_TIMEOUT_MS);
 
         try {
             const includeCompletedIds = options?.includeCompletedIds ?? isLoaded;
@@ -599,11 +592,14 @@ export function FocusFeed() {
                 params.set("excludeIds", excludeIds);
             }
 
-            if (nextCursorRef.current) {
-                params.set("cursor", nextCursorRef.current);
+            const cursor = options?.resetCursor ? null : nextCursorRef.current;
+            if (cursor) {
+                params.set("cursor", cursor);
             }
 
-            const response = await fetch(`/api/focus?${params.toString()}`);
+            const response = await fetch(`/api/focus?${params.toString()}`, {
+                signal: controller.signal,
+            });
             if (!response.ok) {
                 throw new Error("Failed to load focus feed.");
             }
@@ -626,13 +622,44 @@ export function FocusFeed() {
             nextCursorRef.current = resolvedNextCursor;
             setNextCursor(resolvedNextCursor);
         } catch (err) {
-            console.error(err);
-            setError("Focus mode is unavailable right now.");
+            const isAbortError = err instanceof DOMException && err.name === "AbortError";
+            if (!isAbortError) {
+                console.error(err);
+            }
+            setError(
+                isAbortError
+                    ? "Focus mode is taking too long to load."
+                    : "Focus mode is unavailable right now."
+            );
         } finally {
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+                timeoutId = null;
+            }
             isFetchingRef.current = false;
             setLoading(false);
         }
-    }, [completedIds, hasMore, isLoaded]);
+    }, [completedIds, isLoaded]);
+
+    const retryFocusFeed = useCallback(() => {
+        setError(null);
+        hasMoreRef.current = true;
+        setHasMore(true);
+        nextCursorRef.current = null;
+        setNextCursor(null);
+
+        if (itemsRef.current.length === 0) {
+            seenIdsRef.current = new Set();
+            activeCardIndexRef.current = 0;
+            setActiveCardIndex(0);
+        }
+
+        void fetchBatch({
+            ignoreHasMore: true,
+            includeCompletedIds: isLoaded,
+            resetCursor: true,
+        });
+    }, [fetchBatch, isLoaded]);
 
     useEffect(() => {
         setMounted(true);
@@ -694,14 +721,13 @@ export function FocusFeed() {
             const restoredNextCursor = buildRestoreCursorFromSnapshot(restoredState);
             restorePrefetchArmedRef.current =
                 restoredState.hasMore
-                && restoredNextCursor !== null
                 && restoredState.items.length > 0
                 && restoredState.items.length - restoredState.activeCardIndex <= 3;
             pendingRestoreCardIndexRef.current =
                 restoredState.items.length > 0 ? restoredState.activeCardIndex : null;
             itemsRef.current = restoredState.items;
-            hasMoreRef.current = restoredState.hasMore && restoredNextCursor !== null;
-            setHasMore(restoredState.hasMore && restoredNextCursor !== null);
+            hasMoreRef.current = restoredState.hasMore;
+            setHasMore(restoredState.hasMore);
             nextCursorRef.current = restoredNextCursor;
             setNextCursor(restoredNextCursor);
             setItems(restoredState.items);
@@ -790,6 +816,19 @@ export function FocusFeed() {
         itemsRef.current = filteredItems;
         setItems(filteredItems);
 
+        if (filteredItems.length === 0) {
+            nextCursorRef.current = null;
+            setNextCursor(null);
+            hasMoreRef.current = true;
+            setHasMore(true);
+            void fetchBatch({
+                ignoreHasMore: true,
+                includeCompletedIds: true,
+                resetCursor: true,
+            });
+            return;
+        }
+
         if (hasMore && filteredItems.length - nextActiveIndex <= 3) {
             void fetchBatch({ includeCompletedIds: true });
         }
@@ -809,44 +848,50 @@ export function FocusFeed() {
             return;
         }
 
+        const visibleCardElements = visibleCardElementsRef.current;
+        visibleCardElements.clear();
+
         const observer = new IntersectionObserver(
             (entries) => {
-                const visibleEntry = entries
-                    .filter((entry) => entry.isIntersecting)
-                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+                entries.forEach((entry) => {
+                    const target = entry.target as HTMLElement | null;
+                    if (!target) {
+                        return;
+                    }
 
-                if (!visibleEntry) {
-                    return;
-                }
+                    if (entry.isIntersecting) {
+                        visibleCardElements.add(target);
+                    } else {
+                        visibleCardElements.delete(target);
+                    }
+                });
 
-                const target = visibleEntry.target as HTMLElement | null;
-                if (!target) {
-                    return;
-                }
-
-                const nextIndex = Number(
-                    target.dataset.focusCardIndex ?? 0
+                const fallbackTarget = (entries.find((entry) => entry.isIntersecting)?.target as HTMLElement | undefined) ?? null;
+                const normalizedIndex = getClosestVisibleFocusCardIndex(
+                    list,
+                    visibleCardElements,
+                    fallbackTarget
                 );
-                const normalizedIndex = Number.isNaN(nextIndex) ? 0 : nextIndex;
+
+                if (normalizedIndex === null) {
+                    return;
+                }
+
                 activeCardIndexRef.current = normalizedIndex;
                 setActiveCardIndex(normalizedIndex);
-
-                if (
-                    isGestureLockedRef.current &&
-                    pendingCardIndexRef.current === normalizedIndex
-                ) {
-                    unlockGestures();
-                }
             },
             {
                 root: list,
-                threshold: [0.55, 0.85],
+                threshold: [0, 0.25, 0.5, 0.75, 1],
             }
         );
 
         cardElements.forEach((element) => observer.observe(element));
-        return () => observer.disconnect();
-    }, [cards.length, unlockGestures]);
+        return () => {
+            visibleCardElements.clear();
+            observer.disconnect();
+        };
+    }, [cards.length]);
 
     useEffect(() => {
         activeCardIndexRef.current = activeCardIndex;
@@ -878,101 +923,18 @@ export function FocusFeed() {
             return;
         }
 
-        const handleWheel = (event: WheelEvent) => {
+        const handleScroll = () => {
             resetDesktopScrollCueTimer();
 
-            if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
-                return;
-            }
-
-            event.preventDefault();
-
-            if (isGestureLockedRef.current) {
-                refreshWheelQuietPeriod();
-                return;
-            }
-
-            if (isWheelMomentumLockedRef.current) {
-                refreshWheelQuietPeriod();
-                return;
-            }
-
-            accumulatedWheelDeltaRef.current += event.deltaY;
-            if (Math.abs(accumulatedWheelDeltaRef.current) < WHEEL_TRIGGER) {
-                return;
-            }
-
-            const direction = accumulatedWheelDeltaRef.current > 0 ? 1 : -1;
-            accumulatedWheelDeltaRef.current = 0;
-            if (moveByDirection(direction)) {
-                refreshWheelQuietPeriod();
-            }
-        };
-
-        const handleTouchStart = (event: TouchEvent) => {
-            resetDesktopScrollCueTimer();
-
-            if (event.touches.length !== 1) {
-                touchStartRef.current = null;
-                return;
-            }
-
-            const touch = event.touches[0];
-            touchStartRef.current = {
-                x: touch.clientX,
-                y: touch.clientY,
-            };
-        };
-
-        const handleTouchMove = (event: TouchEvent) => {
-            if (!touchStartRef.current || event.touches.length !== 1) {
-                return;
-            }
-
-            const touch = event.touches[0];
-            const deltaX = touch.clientX - touchStartRef.current.x;
-            const deltaY = touch.clientY - touchStartRef.current.y;
-
-            if (Math.abs(deltaY) <= Math.abs(deltaX)) {
-                return;
-            }
-
-            event.preventDefault();
-
-            if (isGestureLockedRef.current || Math.abs(deltaY) < TOUCH_TRIGGER) {
-                return;
-            }
-
-            touchStartRef.current = null;
-            if (moveByDirection(deltaY < 0 ? 1 : -1) && !isDesktop) {
+            if (!isDesktop) {
                 dismissMobileScrollHint();
             }
         };
 
-        const resetTouchTracking = () => {
-            touchStartRef.current = null;
-        };
+        list.addEventListener("scroll", handleScroll, { passive: true });
 
-        if (isDesktop) {
-            list.addEventListener("wheel", handleWheel, { passive: false });
-
-            return () => {
-                list.removeEventListener("wheel", handleWheel);
-            };
-        }
-
-        list.addEventListener("touchstart", handleTouchStart, { passive: true });
-        list.addEventListener("touchmove", handleTouchMove, { passive: false });
-        list.addEventListener("touchend", resetTouchTracking);
-        list.addEventListener("touchcancel", resetTouchTracking);
-
-        return () => {
-            list.removeEventListener("touchstart", handleTouchStart);
-            list.removeEventListener("touchmove", handleTouchMove);
-            list.removeEventListener("touchend", resetTouchTracking);
-            list.removeEventListener("touchcancel", resetTouchTracking);
-        };
-    }, [cards.length, dismissMobileScrollHint, isDesktop, moveByDirection, refreshWheelQuietPeriod, resetDesktopScrollCueTimer]);
+        return () => list.removeEventListener("scroll", handleScroll);
+    }, [cards.length, dismissMobileScrollHint, isDesktop, resetDesktopScrollCueTimer]);
 
     useEffect(() => {
         resetDesktopScrollCueTimer();
@@ -1034,8 +996,6 @@ export function FocusFeed() {
 
     useEffect(() => {
         return () => {
-            unlockGestures();
-            clearWheelQuietTimeout();
             clearDesktopScrollCueTimeout();
             clearMobileScrollHintTimeouts();
             clearSheetAnimationTimeouts();
@@ -1045,9 +1005,7 @@ export function FocusFeed() {
         clearDesktopScrollCueTimeout,
         clearMobileScrollHintTimeouts,
         clearSheetAnimationTimeouts,
-        clearWheelQuietTimeout,
         flushRestoreStateWrite,
-        unlockGestures,
     ]);
 
     useEffect(() => {
@@ -1060,6 +1018,8 @@ export function FocusFeed() {
         setTakeawaysSheetPhase("closed");
         setSheetDragOffset(0);
         sheetTouchStartYRef.current = null;
+        sheetTouchLastPointRef.current = null;
+        sheetTouchVelocityRef.current = 0;
         restoreTakeawaysSheetFocus();
     }, [clearSheetAnimationTimeouts, isDesktop, restoreTakeawaysSheetFocus, takeawaysSheetCard]);
 
@@ -1199,7 +1159,7 @@ export function FocusFeed() {
                 {!mounted || !hasInitialized || (loading && cards.length === 0) ? (
                     <LoadingState />
                 ) : !loading && cards.length === 0 ? (
-                    <EmptyState error={error} />
+                    <EmptyState error={error} onRetry={retryFocusFeed} />
                 ) : (
                     <div className="relative">
                         <div
@@ -1255,6 +1215,8 @@ export function FocusFeed() {
                         onClose={closeTakeawaysSheet}
                         onDragOffsetChange={setSheetDragOffset}
                         touchStartYRef={sheetTouchStartYRef}
+                        touchLastPointRef={sheetTouchLastPointRef}
+                        touchVelocityRef={sheetTouchVelocityRef}
                         dialogRef={takeawaysSheetDialogRef}
                         closeButtonRef={takeawaysSheetCloseButtonRef}
                     />,
@@ -1276,7 +1238,13 @@ function LoadingState() {
     );
 }
 
-function EmptyState({ error }: { error: string | null }) {
+function EmptyState({
+    error,
+    onRetry,
+}: {
+    error: string | null;
+    onRetry: () => void;
+}) {
     return (
         <div className={`flex items-center justify-center rounded-3xl border border-border/60 bg-card/40 px-6 ${FEED_LIST_VIEWPORT_CLASS}`}>
             <div className="max-w-md rounded-[2rem] border border-border/60 bg-card/70 p-8 text-center shadow-sm">
@@ -1287,6 +1255,15 @@ function EmptyState({ error }: { error: string | null }) {
                     Focus mode needs verified quick-mode content to build the feed.
                 </p>
                 {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+                {error && (
+                    <button
+                        type="button"
+                        onClick={onRetry}
+                        className="focus-ring mt-5 inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                        Retry
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -1703,6 +1680,8 @@ function FocusTakeawaysSheet({
     onClose,
     onDragOffsetChange,
     touchStartYRef,
+    touchLastPointRef,
+    touchVelocityRef,
     dialogRef,
     closeButtonRef,
 }: {
@@ -1713,16 +1692,24 @@ function FocusTakeawaysSheet({
     onClose: () => void;
     onDragOffsetChange: (offset: number) => void;
     touchStartYRef: MutableRefObject<number | null>;
+    touchLastPointRef: MutableRefObject<SheetTouchPoint | null>;
+    touchVelocityRef: MutableRefObject<number>;
     dialogRef: MutableRefObject<HTMLDivElement | null>;
     closeButtonRef: MutableRefObject<HTMLButtonElement | null>;
 }) {
     const handleTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
         if (event.touches.length !== 1) {
             touchStartYRef.current = null;
+            touchLastPointRef.current = null;
+            touchVelocityRef.current = 0;
             return;
         }
 
-        touchStartYRef.current = event.touches[0]?.clientY ?? null;
+        const startY = event.touches[0]?.clientY ?? null;
+        const now = performance.now();
+        touchStartYRef.current = startY;
+        touchLastPointRef.current = startY === null ? null : { y: startY, time: now };
+        touchVelocityRef.current = 0;
     };
 
     const handleTouchMove = (event: ReactTouchEvent<HTMLDivElement>) => {
@@ -1732,16 +1719,30 @@ function FocusTakeawaysSheet({
 
         const currentY = event.touches[0]?.clientY ?? touchStartYRef.current;
         const nextOffset = Math.max(0, currentY - touchStartYRef.current);
+        const now = performance.now();
+        const lastPoint = touchLastPointRef.current;
+        if (lastPoint) {
+            const elapsed = Math.max(now - lastPoint.time, 1);
+            touchVelocityRef.current = (currentY - lastPoint.y) / elapsed;
+        }
+        touchLastPointRef.current = { y: currentY, time: now };
         onDragOffsetChange(Math.min(nextOffset, 160));
     };
 
     const handleTouchEnd = () => {
-        if (dragOffset > 80) {
+        const shouldCloseByDrag = dragOffset > TAKEAWAYS_SHEET_CLOSE_DRAG_THRESHOLD_PX;
+        const shouldCloseByFlick =
+            dragOffset > TAKEAWAYS_SHEET_CLOSE_FLICK_DISTANCE_PX
+            && touchVelocityRef.current > TAKEAWAYS_SHEET_CLOSE_VELOCITY_PX_PER_MS;
+
+        if (shouldCloseByDrag || shouldCloseByFlick) {
             onClose();
             return;
         }
 
         touchStartYRef.current = null;
+        touchLastPointRef.current = null;
+        touchVelocityRef.current = 0;
         onDragOffsetChange(0);
     };
 

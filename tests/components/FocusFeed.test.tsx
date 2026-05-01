@@ -622,6 +622,52 @@ describe("FocusFeed", () => {
         expect(await screen.findByText("Essentialism")).toBeInTheDocument();
     });
 
+    it("keeps loading when browser storage is unavailable", async () => {
+        const getItemSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+            throw new Error("Storage unavailable");
+        });
+        const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+            throw new Error("Storage unavailable");
+        });
+
+        try {
+            render(<FocusFeed />);
+
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalledTimes(1);
+            });
+            expect(await screen.findByText("Essentialism")).toBeInTheDocument();
+        } finally {
+            getItemSpy.mockRestore();
+            setItemSpy.mockRestore();
+        }
+    });
+
+    it("surfaces a retry path when the initial focus request times out", async () => {
+        vi.useFakeTimers();
+        fetchMock.mockImplementation((_url, init?: RequestInit) => (
+            new Promise((_resolve, reject) => {
+                const signal = init?.signal;
+                signal?.addEventListener("abort", () => {
+                    reject(new DOMException("Aborted", "AbortError"));
+                });
+            })
+        ));
+
+        try {
+            render(<FocusFeed />);
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(10_000);
+            });
+
+            expect(screen.getByText("Focus mode is taking too long to load.")).toBeInTheDocument();
+            expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it("continues prefetching normally after restoring near the end of a saved batch", async () => {
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,
@@ -645,6 +691,53 @@ describe("FocusFeed", () => {
         const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
         expect(requestUrl).toContain(readingProgressState.value.completedIds[0]!);
         expect(requestUrl).toContain(`cursor=${focusItems[2]!.id}`);
+    });
+
+    it("fetches a fresh batch when restored cards are all pruned as completed", async () => {
+        readingProgressState.value = {
+            completedIds: focusItems.map((item) => item.id),
+            isLoaded: true,
+            myListIds: [],
+        };
+        const replacementItem = {
+            id: "123e4567-e89b-12d3-a456-426614174555",
+            title: "The One Thing",
+            type: "book",
+            author: "Gary Keller",
+            category: "Productivity",
+            cover_image_url: "https://example.com/the-one-thing.jpg",
+            duration_seconds: 720,
+            quick_mode_json: {
+                hook: "A narrower focus makes everything else easier.",
+                big_idea: "Prioritize the one thing that creates the biggest downstream effect.",
+                key_takeaways: [
+                    "Find the highest-leverage task",
+                    "Protect time for the main priority",
+                ],
+            },
+        };
+
+        window.sessionStorage.setItem(
+            FOCUS_FEED_RESTORE_STORAGE_KEY,
+            JSON.stringify({
+                items: focusItems,
+                activeCardIndex: 1,
+                hasMore: false,
+                nextCursor: null,
+                seenIds: focusItems.map((item) => item.id),
+            })
+        );
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => [replacementItem],
+        });
+
+        render(<FocusFeed />);
+
+        expect(await screen.findByText("The One Thing")).toBeInTheDocument();
+        const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
+        expect(requestUrl).not.toContain("cursor=");
+        expect(requestUrl).toContain(focusItems[0]!.id);
     });
 
     it("flushes the latest active card immediately on pagehide", async () => {
@@ -741,7 +834,7 @@ describe("FocusFeed", () => {
     it("clamps long mobile hooks at render time while keeping preview visible", async () => {
         const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLDivElement.prototype, "scrollHeight");
         const originalGetComputedStyle = window.getComputedStyle;
-        const rectSpy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function () {
+        const rectSpy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
             const testId = (this as HTMLElement).getAttribute("data-testid");
 
             if (testId === "focus-feed-list" || testId === "focus-feed-card") {
@@ -871,7 +964,36 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-takeaways-sheet-backdrop")).not.toHaveClass("transition-opacity");
     });
 
-    it("ignores trailing desktop wheel momentum until the quiet period ends", async () => {
+    it("closes the mobile sheet on a short downward flick", async () => {
+        mediaQueryState.value = {
+            isDesktop: false,
+            prefersReducedMotion: true,
+        };
+
+        render(<FocusFeed />);
+
+        await screen.findByText("Essentialism");
+        fireEvent.click(
+            screen.getByRole("button", { name: "Preview Essentialism" })
+        );
+
+        const sheet = await screen.findByTestId("focus-takeaways-sheet");
+        const dragHandle = sheet.firstElementChild as HTMLElement;
+
+        fireEvent.touchStart(dragHandle, {
+            touches: [{ clientY: 100 }],
+        });
+        fireEvent.touchMove(dragHandle, {
+            touches: [{ clientY: 130 }],
+        });
+        fireEvent.touchEnd(dragHandle);
+
+        await waitFor(() => {
+            expect(screen.queryByTestId("focus-takeaways-sheet")).not.toBeInTheDocument();
+        });
+    });
+
+    it("lets desktop wheel input use native scrolling instead of forcing scrollIntoView", async () => {
         mediaQueryState.value = {
             isDesktop: true,
             prefersReducedMotion: false,
@@ -881,44 +1003,23 @@ describe("FocusFeed", () => {
 
         await screen.findByText("Deep Work");
 
-        vi.useFakeTimers();
+        const list = screen.getByTestId("focus-feed-list");
+        const cards = screen.getAllByTestId("focus-feed-card");
+        const observer = observerInstances[0]!;
 
-        try {
-            const list = screen.getByTestId("focus-feed-list");
-            const cards = screen.getAllByTestId("focus-feed-card");
-            const observer = observerInstances[0]!;
+        fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
+        fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
 
-            fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
-            fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
+        expect(scrollIntoViewMock).not.toHaveBeenCalled();
 
-            expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
-            expect(scrollIntoViewMock).toHaveBeenCalledWith({
-                behavior: "smooth",
-                block: "start",
-            });
+        await act(async () => {
+            observer.trigger(cards[1]!);
+        });
 
-            await act(async () => {
-                observer.trigger(cards[1]!);
-            });
-
-            fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
-            fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
-
-            expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
-
-            await act(async () => {
-                await vi.advanceTimersByTimeAsync(181);
-            });
-
-            fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
-
-            expect(scrollIntoViewMock).toHaveBeenCalledTimes(2);
-        } finally {
-            vi.useRealTimers();
-        }
+        expect(screen.getByRole("heading", { name: "Deep Work" })).toBeInTheDocument();
     });
 
-    it("limits touch swipes to one card", async () => {
+    it("lets mobile touch input use native scrolling instead of forcing scrollIntoView", async () => {
         render(<FocusFeed />);
 
         await screen.findByText("Deep Work");
@@ -933,11 +1034,7 @@ describe("FocusFeed", () => {
             touches: [{ clientX: 36, clientY: 180 }],
         });
 
-        expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
-        expect(scrollIntoViewMock).toHaveBeenCalledWith({
-            behavior: "smooth",
-            block: "start",
-        });
+        expect(scrollIntoViewMock).not.toHaveBeenCalled();
     });
 
     it("shows three desktop takeaways with preview and read CTAs", async () => {
@@ -984,7 +1081,7 @@ describe("FocusFeed", () => {
             prefersReducedMotion: false,
         };
 
-        const rectSpy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
+        const rectSpy = vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function (this: HTMLElement) {
             const testId = (this as HTMLElement).getAttribute("data-testid");
 
             if (testId === "focus-feed-list") {
@@ -1079,7 +1176,7 @@ describe("FocusFeed", () => {
         }
     });
 
-    it("dismisses the mobile navigation hint after the user advances past the anchored card", async () => {
+    it("dismisses the mobile navigation hint after the user scrolls the native feed", async () => {
         window.sessionStorage.setItem(
             FOCUS_FEED_RESTORE_STORAGE_KEY,
             JSON.stringify({
@@ -1106,12 +1203,7 @@ describe("FocusFeed", () => {
             expect(screen.getByTestId("focus-navigation-cue")).toHaveTextContent("Swipe up for next");
 
             await act(async () => {
-                fireEvent.touchStart(list, {
-                    touches: [{ clientX: 32, clientY: 260 }],
-                });
-                fireEvent.touchMove(list, {
-                    touches: [{ clientX: 36, clientY: 180 }],
-                });
+                fireEvent.scroll(list);
             });
 
             expect(screen.queryByTestId("focus-navigation-cue")).not.toBeInTheDocument();
