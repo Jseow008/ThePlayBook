@@ -25,48 +25,50 @@ export function HomeFeed({
 
 }: HomeFeedProps) {
     return (
-        <div className="min-h-screen bg-background">
-            {/* Hero Carousel */}
-            <HeroCarousel items={featuredItems} />
+        <div className="flex min-h-screen flex-col bg-background">
+            <div className="flex-1">
+                {/* Hero Carousel */}
+                <HeroCarousel items={featuredItems} />
 
-            <div className={cn(
-                "relative z-10 pb-3 md:pb-4 lg:pb-8 space-y-3 md:space-y-8 transition-all duration-500",
-                featuredItems.length > 0 ? "-mt-5 md:-mt-8 pt-0" : "pt-16 md:pt-24"
-            )}>
-                {/* Standard Feed View */}
-                <div className="space-y-8 md:space-y-10 lg:space-y-14 animate-in fade-in duration-500">
-                    {/* New / Latest Additions */}
-                    <ContentLane
-                        title={
-                            <div className="flex items-center gap-2">
-                                New on <Logo width={100} height={30} className="inline-flex" />
-                            </div>
-                        }
-                        enableCardUserState={false}
-                        items={items.slice(0, 10)}
-                        cardTitleDensity="app-compact"
-                    />
+                <div className={cn(
+                    "relative z-10 pb-3 md:pb-4 lg:pb-8 space-y-3 md:space-y-8 transition-all duration-500",
+                    featuredItems.length > 0 ? "-mt-5 md:-mt-8 pt-0" : "pt-16 md:pt-24"
+                )}>
+                    {/* Standard Feed View */}
+                    <div className="space-y-8 md:space-y-10 lg:space-y-14 animate-in fade-in duration-500">
+                        {/* New / Latest Additions */}
+                        <ContentLane
+                            title={
+                                <div className="flex items-center gap-2">
+                                    New on <Logo width={100} height={30} className="inline-flex" />
+                                </div>
+                            }
+                            enableCardUserState={false}
+                            items={items.slice(0, 10)}
+                            cardTitleDensity="app-compact"
+                        />
 
 
 
-                    {/* Personalized Recommendations */}
-                    <RecommendationsRow cardTitleDensity="app-compact" />
+                        {/* Personalized Recommendations */}
+                        <RecommendationsRow cardTitleDensity="app-compact" />
 
-                    {/* Dynamic Sections from Admin */}
-                    {(sections || []).map((section) => {
-                        const sectionContent = sectionItems[section.id] || [];
-                        if (sectionContent.length === 0) return null;
+                        {/* Dynamic Sections from Admin */}
+                        {(sections || []).map((section) => {
+                            const sectionContent = sectionItems[section.id] || [];
+                            if (sectionContent.length === 0) return null;
 
-                        return (
-                            <ContentLane
-                                key={section.id}
-                                enableCardUserState={false}
-                                title={section.title}
-                                items={sectionContent}
-                                cardTitleDensity="app-compact"
-                            />
-                        );
-                    })}
+                            return (
+                                <ContentLane
+                                    key={section.id}
+                                    enableCardUserState={false}
+                                    title={section.title}
+                                    items={sectionContent}
+                                    cardTitleDensity="app-compact"
+                                />
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
