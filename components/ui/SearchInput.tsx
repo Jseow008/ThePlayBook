@@ -8,6 +8,10 @@ import { cn } from "@/lib/utils";
 const RECENT_SEARCHES_KEY = "flux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
 
+function normalizeQuery(value: string) {
+    return value.trim();
+}
+
 function parseRecentSearches(rawValue: string | null) {
     if (!rawValue) {
         return [];
@@ -52,6 +56,9 @@ export function SearchInput({
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
+    const latestQueryRef = useRef(initialQuery);
+    const isFocusedRef = useRef(false);
+    const pendingSearchQueryRef = useRef<string | null>(null);
 
     // Load recent searches from localStorage
     useEffect(() => {
@@ -71,6 +78,28 @@ export function SearchInput({
     }, []);
 
     useEffect(() => {
+        const normalizedInitialQuery = normalizeQuery(initialQuery);
+        const normalizedCurrentQuery = normalizeQuery(latestQueryRef.current);
+        const pendingSearchQuery = pendingSearchQueryRef.current;
+
+        if (pendingSearchQuery !== null) {
+            if (normalizedInitialQuery === pendingSearchQuery) {
+                pendingSearchQueryRef.current = null;
+                latestQueryRef.current = initialQuery;
+                setQuery(initialQuery);
+                return;
+            }
+
+            if (normalizedCurrentQuery === pendingSearchQuery) {
+                return;
+            }
+        }
+
+        if (isFocusedRef.current && normalizedInitialQuery !== normalizedCurrentQuery) {
+            return;
+        }
+
+        latestQueryRef.current = initialQuery;
         setQuery(initialQuery);
     }, [initialQuery]);
 
@@ -90,8 +119,13 @@ export function SearchInput({
         searchQuery: string,
         { saveHistory = true, replace = false }: { saveHistory?: boolean; replace?: boolean } = {}
     ) => {
-        if (saveHistory && searchQuery.trim()) {
-            saveToRecent(searchQuery.trim());
+        const normalizedSearchQuery = normalizeQuery(searchQuery);
+        pendingSearchQueryRef.current = normalizedSearchQuery === normalizeQuery(initialQuery)
+            ? null
+            : normalizedSearchQuery;
+
+        if (saveHistory && normalizedSearchQuery) {
+            saveToRecent(normalizedSearchQuery);
         }
 
         const href = buildSearchHref(searchQuery);
@@ -101,7 +135,7 @@ export function SearchInput({
         }
 
         router.push(href);
-    }, [buildSearchHref, router, saveToRecent]);
+    }, [buildSearchHref, initialQuery, router, saveToRecent]);
 
     // Debounced search on input change
     useEffect(() => {
@@ -134,13 +168,16 @@ export function SearchInput({
 
     // Handle recent search click
     const handleRecentClick = (term: string) => {
+        latestQueryRef.current = term;
         setQuery(term);
         performSearch(term, { saveHistory: true });
+        isFocusedRef.current = false;
         setIsFocused(false);
     };
 
     // Clear search
     const handleClear = () => {
+        latestQueryRef.current = "";
         setQuery("");
         inputRef.current?.focus();
         performSearch("", { saveHistory: false, replace: true });
@@ -167,9 +204,18 @@ export function SearchInput({
                         ref={inputRef}
                         type="search"
                         value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        onFocus={() => setIsFocused(true)}
-                        onBlur={() => setTimeout(() => setIsFocused(false), 200)}
+                        onChange={(e) => {
+                            latestQueryRef.current = e.target.value;
+                            setQuery(e.target.value);
+                        }}
+                        onFocus={() => {
+                            isFocusedRef.current = true;
+                            setIsFocused(true);
+                        }}
+                        onBlur={() => {
+                            isFocusedRef.current = false;
+                            setTimeout(() => setIsFocused(false), 200);
+                        }}
                         placeholder={placeholder}
                         autoFocus={autoFocus}
                         aria-label={category ? `Search in ${category}` : "Search content"}

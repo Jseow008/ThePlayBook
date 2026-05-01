@@ -103,6 +103,47 @@ describe("SearchInput", () => {
         expect(input).toHaveValue("Atomic Habits");
     });
 
+    it("keeps the focused draft when an older route query arrives", () => {
+        const view = render(<SearchInput initialQuery="fo" />);
+        const input = screen.getByRole("searchbox");
+
+        fireEvent.focus(input);
+        fireEvent.change(input, {
+            target: { value: "focus" },
+        });
+
+        view.rerender(<SearchInput initialQuery="foc" />);
+
+        expect(input).toHaveValue("focus");
+    });
+
+    it("keeps the latest requested query when a stale route update arrives after blur", async () => {
+        vi.useFakeTimers();
+
+        const view = render(<SearchInput />);
+        const input = screen.getByRole("searchbox");
+
+        fireEvent.focus(input);
+        fireEvent.change(input, {
+            target: { value: "focus" },
+        });
+
+        await act(async () => {
+            vi.advanceTimersByTime(500);
+        });
+
+        expect(routerReplaceMock).toHaveBeenCalledWith("/search?q=focus");
+
+        fireEvent.blur(input);
+        view.rerender(<SearchInput initialQuery="fo" />);
+
+        expect(input).toHaveValue("focus");
+
+        view.rerender(<SearchInput initialQuery="focus" />);
+
+        expect(input).toHaveValue("focus");
+    });
+
     it("uses replace for debounced query changes so typing does not spam browser history", async () => {
         vi.useFakeTimers();
 
