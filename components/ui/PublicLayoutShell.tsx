@@ -22,6 +22,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
     const isBrowsePage = pathname === "/browse";
     const isFocusPage = pathname === "/focus";
     const isReadPage = pathname.startsWith("/read");
+    const isPreviewPage = pathname.startsWith("/preview");
     const isAskPage = pathname === "/ask";
 
     // Landing page: standalone layout (no sidebar, no bottom nav)
@@ -62,6 +63,8 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
                         ? "h-full overflow-hidden lg:pl-16"
                         : isReadPage
                         ? "lg:pl-16"
+                        : isPreviewPage
+                        ? "lg:pl-16"
                         : isAskPage
                         ? "lg:pl-16"
                         : isBrowsePage
@@ -77,7 +80,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
             </main>
 
             {/* Mobile Bottom Navigation */}
-            {!isReadPage && !isAskPage && <MobileBottomNav compact={isBrowsePage} />}
+            {!isReadPage && !isPreviewPage && !isAskPage && <MobileBottomNav compact={isBrowsePage} />}
         </div>
     );
 }

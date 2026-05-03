@@ -40,34 +40,56 @@ export function ContentPreview({
     const [showFullHook, setShowFullHook] = useState(false);
 
     // logic for "Save to My List"
-    const { isInMyList, toggleMyList } = useReadingProgress();
-    const isSaved = isInMyList(item.id);
+    const { isInMyList, toggleMyList, isLoaded: isReadingProgressLoaded } = useReadingProgress();
+    const isSaved = isReadingProgressLoaded && isInMyList(item.id);
 
     useEffect(() => {
+        setShowFullHook(false);
+        setIsTruncated(false);
+        setShowAllTakeaways(initialShowAllTakeaways);
+    }, [initialShowAllTakeaways, item.id]);
+
+    useEffect(() => {
+        const element = hookRef.current;
+        if (!element || showFullHook) return;
+        let isActive = true;
+
         const checkTruncation = () => {
-            if (hookRef.current) {
-                const { scrollHeight, clientHeight } = hookRef.current;
-                setIsTruncated(scrollHeight > clientHeight);
-            }
+            if (!isActive) return;
+            setIsTruncated(element.scrollHeight > element.clientHeight + 1);
         };
 
         checkTruncation();
-        window.addEventListener("resize", checkTruncation);
-        return () => window.removeEventListener("resize", checkTruncation);
-    }, [quickMode?.hook]);
+        if (typeof ResizeObserver === "undefined") {
+            window.addEventListener("resize", checkTruncation);
+            return () => {
+                isActive = false;
+                window.removeEventListener("resize", checkTruncation);
+            };
+        }
+
+        const observer = new ResizeObserver(checkTruncation);
+        observer.observe(element);
+        document.fonts?.ready.then(checkTruncation).catch(() => {});
+
+        return () => {
+            isActive = false;
+            observer.disconnect();
+        };
+    }, [quickMode?.hook, showFullHook]);
 
     // Filter out empty takeaways
     const activeTakeaways =
         quickMode?.key_takeaways.filter((t) => t && t.trim().length > 0) || [];
 
-    const VISIBLE_COUNT = 3;
+    const collapsedTakeawayCount = activeTakeaways.length === 4 ? 4 : 3;
     const visibleTakeaways = showAllTakeaways
         ? activeTakeaways
-        : activeTakeaways.slice(0, VISIBLE_COUNT);
-    const hasHidden = activeTakeaways.length > VISIBLE_COUNT;
+        : activeTakeaways.slice(0, collapsedTakeawayCount);
+    const hasHidden = activeTakeaways.length > collapsedTakeawayCount;
 
     return (
-        <div className="min-h-screen bg-background text-foreground pb-10 lg:pb-8">
+        <div className="min-h-screen bg-background text-foreground pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-10 lg:pb-8">
             {/* Container */}
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
 
@@ -127,7 +149,7 @@ export function ContentPreview({
                                     </span>
                                 )}
                             <ShareButton
-                                url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
+                                path={`/preview/${item.id}`}
                                 title={item.title}
                                 text={`Check out "${item.title}" on ${APP_NAME}`}
                                 variant="icon"
@@ -158,9 +180,12 @@ export function ContentPreview({
                                     {seriesContext.nextItem ? (
                                         <span className="text-muted-foreground">
                                             Next:{" "}
-                                            <span className="font-medium text-foreground">
+                                            <Link
+                                                href={`/preview/${seriesContext.nextItem.id}`}
+                                                className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
+                                            >
                                                 {seriesContext.nextItem.title}
-                                            </span>
+                                            </Link>
                                         </span>
                                     ) : (
                                         <span className="text-muted-foreground">
@@ -190,16 +215,25 @@ export function ContentPreview({
 
                             {/* Save to My List Button */}
                             <button
+                                type="button"
+                                disabled={!isReadingProgressLoaded}
                                 onClick={() => {
                                     toggleMyList(item.id);
                                     toast.success(isSaved ? "Removed from My List" : "Added to My List");
                                 }}
-                                className={`inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border font-bold text-base transition-all hover:scale-[1.02] active:scale-95 ${isSaved
+                                className={`inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border font-bold text-base transition-all disabled:cursor-wait disabled:hover:scale-100 disabled:active:scale-100 ${!isReadingProgressLoaded
+                                    ? "bg-background border-border/60 text-muted-foreground/70"
+                                    : isSaved
                                     ? "bg-secondary/50 border-primary/50 text-foreground hover:bg-secondary/70"
                                     : "bg-background border-border hover:bg-secondary/30 text-muted-foreground hover:text-foreground"
                                     }`}
                             >
-                                {isSaved ? (
+                                {!isReadingProgressLoaded ? (
+                                    <>
+                                        <Bookmark className="size-5" />
+                                        <span>My List</span>
+                                    </>
+                                ) : isSaved ? (
                                     <>
                                         <Check className="size-5 text-primary" />
                                         <span>Saved to My List</span>
@@ -214,6 +248,7 @@ export function ContentPreview({
 
                             {onSpinAgain && (
                                 <button
+                                    type="button"
                                     onClick={onSpinAgain}
                                     disabled={isSpinning}
                                     className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-secondary/60 text-foreground hover:bg-secondary hover:text-white transition-all border border-border/50 font-medium text-sm"
@@ -248,12 +283,13 @@ export function ContentPreview({
                                         {quickMode.hook}
                                     </ReactMarkdown>
                                 </div>
-                                {(isTruncated || showFullHook) && !showFullHook && (
+                                {(isTruncated || showFullHook) && (
                                     <button
-                                        onClick={() => setShowFullHook(true)}
+                                        type="button"
+                                        onClick={() => setShowFullHook((value) => !value)}
                                         className="font-medium text-primary hover:underline text-sm mt-2"
                                     >
-                                        Read more
+                                        {showFullHook ? "Read less" : "Read more"}
                                     </button>
                                 )}
                             </div>
@@ -274,12 +310,12 @@ export function ContentPreview({
                                             <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold mt-0.5">
                                                 {index + 1}
                                             </span>
-                                            <div className="reading-copy reading-copy-prose reading-copy-strong max-w-none text-base prose prose-sm prose-p:my-0">
+                                            <div className="reading-copy reading-copy-prose reading-copy-strong max-w-none text-base prose prose-sm">
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm]}
                                                     rehypePlugins={[rehypeSanitize]}
                                                     components={{
-                                                        p: ({ children }) => <p className="m-0">{children}</p>
+                                                        p: ({ children }) => <p className="my-2 first:mt-0 last:mb-0">{children}</p>
                                                     }}
                                                 >
                                                     {takeaway}
@@ -292,6 +328,7 @@ export function ContentPreview({
                                 {/* Show All / Show Less Toggle */}
                                 {hasHidden && (
                                     <button
+                                        type="button"
                                         onClick={() =>
                                             setShowAllTakeaways(!showAllTakeaways)
                                         }
@@ -321,7 +358,7 @@ export function ContentPreview({
             </div>
 
             {/* ── Sticky Mobile CTA ── */}
-            <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 p-3 flex gap-3 safe-area-bottom">
+            <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 p-3 flex gap-3 safe-area-pb">
                 <Link
                     href={`/read/${item.id}`}
                     className="flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-secondary-foreground font-semibold text-base border border-border/50 hover:bg-secondary/80 transition-all active:scale-95 shadow-sm"
@@ -331,21 +368,30 @@ export function ContentPreview({
                 </Link>
 
                 <button
+                    type="button"
+                    disabled={!isReadingProgressLoaded}
                     onClick={() => {
                         toggleMyList(item.id);
                         toast.success(isSaved ? "Removed from My List" : "Added to My List");
                     }}
-                    className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all active:scale-95 ${isSaved
+                    className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all active:scale-95 disabled:cursor-wait disabled:active:scale-100 ${!isReadingProgressLoaded
+                        ? "bg-secondary/30 border-border/40 text-muted-foreground/60"
+                        : isSaved
                         ? "bg-secondary/60 border-primary/50 text-primary"
                         : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground"
                         }`}
+                    aria-label={isReadingProgressLoaded
+                        ? isSaved
+                            ? `Remove ${item.title} from My List`
+                            : `Save ${item.title} to My List`
+                        : "Loading My List state"}
                 >
                     {isSaved ? <Check className="size-5" /> : <Bookmark className="size-5" />}
                 </button>
 
                 {/* Mobile Share */}
                 <ShareButton
-                    url={typeof window !== "undefined" ? `${window.location.origin}/preview/${item.id}` : ""}
+                    path={`/preview/${item.id}`}
                     title={item.title}
                     text={`Check out "${item.title}" on ${APP_NAME}`}
                     variant="icon"
@@ -354,6 +400,7 @@ export function ContentPreview({
 
                 {onSpinAgain && (
                     <button
+                        type="button"
                         onClick={onSpinAgain}
                         disabled={isSpinning}
                         className="h-11 w-11 flex items-center justify-center rounded-xl bg-secondary/40 border border-border/50 text-foreground transition-all active:scale-95"

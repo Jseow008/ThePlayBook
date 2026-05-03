@@ -6,7 +6,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 interface ShareButtonProps {
-    url: string;
+    url?: string;
+    path?: string;
     title: string;
     text?: string;
     className?: string;
@@ -21,6 +22,7 @@ interface ShareButtonProps {
  */
 export function ShareButton({
     url,
+    path,
     title,
     text,
     className,
@@ -29,7 +31,12 @@ export function ShareButton({
     const [copied, setCopied] = useState(false);
 
     const handleShare = async () => {
-        const shareData = { title, text: text ?? title, url };
+        const resolvedUrl =
+            url ??
+            (path && typeof window !== "undefined"
+                ? new URL(path, window.location.origin).toString()
+                : path ?? "");
+        const shareData = { title, text: text ?? title, url: resolvedUrl };
 
         // Try native Web Share API first (mobile-first)
         if (navigator.share && navigator.canShare?.(shareData)) {
@@ -44,7 +51,7 @@ export function ShareButton({
 
         // Fallback: copy to clipboard
         try {
-            await navigator.clipboard.writeText(url);
+            await navigator.clipboard.writeText(resolvedUrl);
             setCopied(true);
             toast.success("Link copied to clipboard");
             setTimeout(() => setCopied(false), 2000);

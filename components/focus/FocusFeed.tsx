@@ -1613,7 +1613,7 @@ const FocusCardView = memo(function FocusCardView({
                                         <Bookmark className="size-3.5" fill={isSaved ? "currentColor" : "none"} />
                                     </button>
                                     <ShareButton
-                                        url={typeof window !== "undefined" ? `${window.location.origin}/preview/${card.id}` : ""}
+                                        path={`/preview/${card.id}`}
                                         title={card.title}
                                         text={`Check out "${card.title}" on Flux`}
                                         variant="icon"

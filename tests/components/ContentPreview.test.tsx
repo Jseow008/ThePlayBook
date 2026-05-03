@@ -5,6 +5,7 @@ import type { ContentItem } from '@/types/database';
 
 vi.mock('@/hooks/useReadingProgress', () => ({
     useReadingProgress: () => ({
+        isLoaded: true,
         isInMyList: vi.fn(() => false),
         toggleMyList: vi.fn(),
     }),
@@ -111,6 +112,29 @@ describe('ContentPreview', () => {
         expect(screen.getByRole('button', { name: /Show less/i })).toBeInTheDocument();
     });
 
+    it('shows exactly four takeaways without a low-value reveal toggle', () => {
+        render(
+            <ContentPreview
+                {...defaultProps}
+                item={{
+                    ...mockItem,
+                    quick_mode_json: {
+                        ...mockItem.quick_mode_json,
+                        key_takeaways: [
+                            'Takeaway 1',
+                            'Takeaway 2',
+                            'Takeaway 3',
+                            'Takeaway 4',
+                        ],
+                    },
+                } as ContentItem}
+            />
+        );
+
+        expect(screen.getByText('Takeaway 4')).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Show all 4 takeaways/i })).not.toBeInTheDocument();
+    });
+
     it('handles the "Spin Again" interaction', () => {
         render(<ContentPreview {...defaultProps} />);
 
@@ -151,6 +175,7 @@ describe('ContentPreview', () => {
         expect(screen.getByText('View All Series')).toHaveAttribute('href', '/series/matthew');
         expect(screen.getByText('Next:')).toBeInTheDocument();
         expect(screen.getAllByText('Matthew 8-12').length).toBeGreaterThan(0);
+        expect(screen.getByRole('link', { name: 'Matthew 8-12' })).toHaveAttribute('href', '/preview/next-1');
         expect(screen.getByRole('link', { name: 'View all series' })).toHaveAttribute('href', '/series/matthew');
     });
 
