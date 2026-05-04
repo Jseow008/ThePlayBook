@@ -55,6 +55,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         height: number;
     } | null>(null);
     const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
+    const [isNotesDrawerOpen, setIsNotesDrawerOpen] = useState(false);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
     const [showAuthorChat, setShowAuthorChat] = useState(false);
@@ -88,7 +89,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
         : null;
     const spotlightTimeoutRef = useRef<number | null>(null);
-    const audioFollowScrollTimeoutRef = useRef<number | null>(null);
+    const audioFollowScrollCleanupRef = useRef<(() => void) | null>(null);
     const handledUrlHighlightRef = useRef<string | null>(null);
     const sectionMeta = useMemo(
         () =>
@@ -102,7 +103,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         () => findSegmentIdForPlaybackTime(content.segments, audioCurrentTimeSec),
         [audioCurrentTimeSec, content.segments]
     );
-    const activeNarratedSegmentId = isAudioFollowEnabled && isAudioPlaying
+    const activeNarratedSegmentId = isAudioPlaying
         ? activeNarrationSegmentId
         : null;
     const authorName = content.author || "the Author";
@@ -141,11 +142,22 @@ export function ReaderView({ content }: ReaderViewProps) {
             respectUserScroll = false,
         } = options || {};
 
-        if (audioFollowScrollTimeoutRef.current !== null) {
-            window.clearTimeout(audioFollowScrollTimeoutRef.current);
-        }
+        audioFollowScrollCleanupRef.current?.();
 
-        audioFollowScrollTimeoutRef.current = window.setTimeout(() => {
+        let didScroll = false;
+        let fallbackTimeoutId: number | null = null;
+        const frameIds: number[] = [];
+
+        const runScroll = () => {
+            if (didScroll) return;
+            didScroll = true;
+            if (fallbackTimeoutId !== null) {
+                window.clearTimeout(fallbackTimeoutId);
+                fallbackTimeoutId = null;
+            }
+            frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
+            audioFollowScrollCleanupRef.current = null;
+
             if (respectUserScroll && Math.abs(window.scrollY - initialScrollY) > 50) {
                 return;
             }
@@ -170,7 +182,20 @@ export function ReaderView({ content }: ReaderViewProps) {
 
             const y = rect.top + window.scrollY - topPadding;
             window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-        }, 310);
+        };
+
+        frameIds.push(window.requestAnimationFrame(() => {
+            frameIds.push(window.requestAnimationFrame(runScroll));
+        }));
+        fallbackTimeoutId = window.setTimeout(runScroll, 400);
+
+        audioFollowScrollCleanupRef.current = () => {
+            didScroll = true;
+            if (fallbackTimeoutId !== null) {
+                window.clearTimeout(fallbackTimeoutId);
+            }
+            frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
+        };
     }, []);
     const resumeAudioFollow = useCallback(() => {
         setIsAudioFollowEnabled(true);
@@ -556,9 +581,8 @@ export function ReaderView({ content }: ReaderViewProps) {
             if (spotlightTimeoutRef.current !== null) {
                 window.clearTimeout(spotlightTimeoutRef.current);
             }
-            if (audioFollowScrollTimeoutRef.current !== null) {
-                window.clearTimeout(audioFollowScrollTimeoutRef.current);
-            }
+            audioFollowScrollCleanupRef.current?.();
+            audioFollowScrollCleanupRef.current = null;
             document
                 .querySelectorAll<HTMLElement>('mark[data-highlight-spotlight="true"]')
                 .forEach((mark) => mark.removeAttribute("data-highlight-spotlight"));
@@ -834,8 +858,16 @@ export function ReaderView({ content }: ReaderViewProps) {
                     activeNarratedSegmentId={activeNarratedSegmentId}
                     onHighlightActivate={(highlightId, position) => {
                         setActiveHighlightId(highlightId);
-                        setPopoverHighlightId(highlightId);
-                        setActiveHighlightPosition(position);
+                        if (isDesktop) {
+                            setPopoverHighlightId(highlightId);
+                            setActiveHighlightPosition(position);
+                            return;
+                        }
+
+                        setPopoverHighlightId(null);
+                        setActiveHighlightPosition(null);
+                        setIsPopoverHovered(false);
+                        setIsNotesDrawerOpen(true);
                     }}
                 />
 
@@ -891,6 +923,8 @@ export function ReaderView({ content }: ReaderViewProps) {
                 />
             )}
             <NotesDrawer
+                isOpen={isNotesDrawerOpen}
+                onOpenChange={setIsNotesDrawerOpen}
                 highlights={highlights}
                 isLoading={highlightsLoading}
                 hasError={Boolean(highlightsError)}

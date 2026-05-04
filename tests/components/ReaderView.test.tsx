@@ -3,6 +3,7 @@ import { ReaderView } from '@/components/reader/ReaderView';
 import { vi } from 'vitest';
 import type { ContentItemWithSegments } from '@/types/domain';
 import { audioResumeKey } from '@/lib/local-user-storage';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 const {
     localStorageState,
@@ -155,6 +156,15 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
                     onClick={() => props.onSegmentComplete?.('seg-2', 1)}
                 />
                 <button
+                    data-testid="activate-highlight"
+                    onClick={() => props.onHighlightActivate?.('highlight-1', {
+                        top: 12,
+                        left: 34,
+                        width: 56,
+                        height: 18,
+                    })}
+                />
+                <button
                     data-testid="finish-reading"
                     onClick={() => props.onFinishReading?.()}
                 />
@@ -166,12 +176,16 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
 vi.mock('@/components/reader/NotesDrawer', () => ({
     NotesDrawer: (props: any) => {
         notesDrawerSpy(props);
-        return <div data-testid="mock-notes-drawer" />;
+        return <div data-testid="mock-notes-drawer">{props.isOpen ? 'open' : 'closed'}</div>;
     }
 }));
 
 vi.mock('@/components/reader/TextSelectionToolbar', () => ({
     TextSelectionToolbar: () => <div data-testid="mock-text-toolbar" />
+}));
+
+vi.mock('@/components/reader/MobileSelectionActions', () => ({
+    MobileSelectionActions: () => <div data-testid="mock-mobile-selection-actions" />
 }));
 
 vi.mock('@/components/ui/ContentFeedback', () => ({
@@ -281,6 +295,7 @@ describe('ReaderView', () => {
         storageScopeState.value = 'guest';
         highlightsState.value = [];
         useHighlightsSpy.mockClear();
+        vi.mocked(useMediaQuery).mockReturnValue(true);
         saveReadingProgressMock.mockClear();
         toastSuccessMock.mockClear();
         window.scrollTo = vi.fn();
@@ -601,6 +616,8 @@ describe('ReaderView', () => {
                     isLoading: false,
                     hasError: false,
                     activeHighlightId: null,
+                    isOpen: false,
+                    onOpenChange: expect.any(Function),
                     onHighlightJump: expect.any(Function),
                     sections: [
                         {
@@ -653,6 +670,41 @@ describe('ReaderView', () => {
         });
     });
 
+    it('opens the notes drawer to a tapped inline highlight on mobile', async () => {
+        vi.mocked(useMediaQuery).mockReturnValue(false);
+        highlightsState.value = [
+            {
+                id: 'highlight-1',
+                user_id: 'user-1',
+                content_item_id: 'test-item-1',
+                segment_id: 'seg-1',
+                highlighted_text: 'Body 1',
+                note_body: 'Mobile note',
+                color: 'yellow',
+                anchor_start: 0,
+                anchor_end: 6,
+                created_at: '2026-03-11T12:00:00.000Z',
+                updated_at: null,
+                content_item: null,
+                segment: null,
+            },
+        ];
+
+        render(<ReaderView content={mockContent} />);
+
+        fireEvent.click(screen.getByTestId('activate-highlight'));
+
+        await waitFor(() => {
+            expect(notesDrawerSpy).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    activeHighlightId: 'highlight-1',
+                    isOpen: true,
+                })
+            );
+            expect(screen.getByTestId('mock-notes-drawer')).toHaveTextContent('open');
+        });
+    });
+
     it('expands the matching deep-mode segment when playback time changes', async () => {
         const timedContent = {
             ...mockContent,
@@ -700,7 +752,7 @@ describe('ReaderView', () => {
         });
     });
 
-    it('only highlights the narrated segment while audio is actively playing and follow is enabled', async () => {
+    it('highlights the narrated segment while audio is actively playing', async () => {
         const timedContent = {
             ...mockContent,
             audio_url: 'https://example.com/audio.mp3',
@@ -1056,7 +1108,7 @@ describe('ReaderView', () => {
         });
     });
 
-    it('lets manual segment browsing pause audio follow until the user resumes it', async () => {
+    it('lets manual segment browsing pause audio follow without hiding the playing segment cue', async () => {
         const timedContent = {
             ...mockContent,
             audio_url: 'https://example.com/audio.mp3',
@@ -1108,7 +1160,7 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
-            expect(screen.getByTestId('mock-active-audio-segment')).toHaveTextContent('none');
+            expect(screen.getByTestId('mock-active-audio-segment')).toHaveTextContent('seg-2');
         });
 
         fireEvent.click(screen.getByTestId('sync-audio-seg-3'));

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, type TransitionEvent as ReactTransitionEvent } from "react";
 import { createPortal } from "react-dom";
 import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote, ArrowUpRight, Edit3 } from "lucide-react";
 import { useDeleteHighlight, useUpdateHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
@@ -11,6 +11,8 @@ import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor }
 import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNoteComposer";
 
 interface NotesDrawerProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
     highlights: HighlightWithContent[];
     isLoading: boolean;
     hasError: boolean;
@@ -23,6 +25,8 @@ interface NotesDrawerProps {
 }
 
 export function NotesDrawer({
+    isOpen,
+    onOpenChange,
     highlights,
     isLoading,
     hasError,
@@ -30,8 +34,9 @@ export function NotesDrawer({
     activeHighlightId = null,
     onHighlightJump,
 }: NotesDrawerProps) {
-    const [isOpen, setIsOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const drawerPanelRef = useRef<HTMLDivElement>(null);
+    const activeRowScrollTimeoutRef = useRef<number | null>(null);
     const deleteHighlight = useDeleteHighlight();
     const updateHighlight = useUpdateHighlight();
     const [isMobile, setIsMobile] = useState(false);
@@ -83,20 +88,66 @@ export function NotesDrawer({
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === "Escape" && isOpen) {
-                setIsOpen(false);
+                onOpenChange(false);
             }
         };
         if (isOpen) {
             document.addEventListener("keydown", handleKeyDown);
         }
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen]);
+    }, [isOpen, onOpenChange]);
 
     useEffect(() => {
         if (!isOpen) {
             setEditingHighlight(null);
         }
     }, [isOpen]);
+
+    const scrollActiveHighlightIntoView = useCallback(() => {
+        if (!activeHighlightId) {
+            return;
+        }
+
+        const row = drawerPanelRef.current?.querySelector<HTMLElement>(
+            `[data-highlight-id="${activeHighlightId}"]`
+        );
+        row?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    }, [activeHighlightId]);
+
+    useEffect(() => {
+        if (!isOpen || !activeHighlightId) {
+            return;
+        }
+
+        if (activeRowScrollTimeoutRef.current !== null) {
+            window.clearTimeout(activeRowScrollTimeoutRef.current);
+        }
+
+        activeRowScrollTimeoutRef.current = window.setTimeout(() => {
+            activeRowScrollTimeoutRef.current = null;
+            scrollActiveHighlightIntoView();
+        }, 550);
+
+        return () => {
+            if (activeRowScrollTimeoutRef.current !== null) {
+                window.clearTimeout(activeRowScrollTimeoutRef.current);
+                activeRowScrollTimeoutRef.current = null;
+            }
+        };
+    }, [activeHighlightId, isOpen, scrollActiveHighlightIntoView]);
+
+    const handlePanelTransitionEnd = (event: ReactTransitionEvent<HTMLDivElement>) => {
+        if (event.target !== event.currentTarget || !isOpen) {
+            return;
+        }
+
+        if (activeRowScrollTimeoutRef.current !== null) {
+            window.clearTimeout(activeRowScrollTimeoutRef.current);
+            activeRowScrollTimeoutRef.current = null;
+        }
+
+        scrollActiveHighlightIntoView();
+    };
 
     const handleDelete = async (id: string) => {
         try {
@@ -110,7 +161,7 @@ export function NotesDrawer({
     const handleJump = async (highlightId: string) => {
         await onHighlightJump(highlightId);
         if (isMobile) {
-            setIsOpen(false);
+            onOpenChange(false);
         }
     };
 
@@ -166,7 +217,7 @@ export function NotesDrawer({
                 className="fixed bottom-8 sm:bottom-6 right-4 sm:right-6 z-40 flex flex-col items-end gap-2"
             >
                 <button
-                    onClick={() => setIsOpen(true)}
+                    onClick={() => onOpenChange(true)}
                     aria-label="Open notes drawer"
                     className="relative flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
                 >
@@ -186,11 +237,13 @@ export function NotesDrawer({
                     "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
                     isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
-                onClick={() => setIsOpen(false)}
+                onClick={() => onOpenChange(false)}
             />
 
             {/* Slide-out Drawer */}
             <div
+                ref={drawerPanelRef}
+                onTransitionEnd={handlePanelTransitionEnd}
                 className={cn(
                     "fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm sm:max-w-md bg-background border-l border-border/40 shadow-2xl transition-transform duration-500 ease-spring flex flex-col",
                     isOpen ? "translate-x-0" : "translate-x-full"
@@ -203,7 +256,7 @@ export function NotesDrawer({
                         Highlights & Notes
                     </h2>
                     <button
-                        onClick={() => setIsOpen(false)}
+                        onClick={() => onOpenChange(false)}
                         className="p-2 -mr-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
                         aria-label="Close notes drawer"
                     >
@@ -252,6 +305,7 @@ export function NotesDrawer({
                                         )}
                                     >
                                         <button
+                                            data-highlight-id={item.id}
                                             data-highlight-row="true"
                                             data-active={isActive ? "true" : "false"}
                                             onClick={() => handleJump(item.id)}

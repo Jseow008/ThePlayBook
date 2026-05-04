@@ -52,6 +52,7 @@ vi.mock("sonner", () => ({
 
 describe("NotesDrawer", () => {
     const onHighlightJump = vi.fn();
+    const onOpenChange = vi.fn();
 
     const highlights: HighlightWithContent[] = [
         {
@@ -108,6 +109,8 @@ describe("NotesDrawer", () => {
     it("renders navigation-first cards with source context and note content", async () => {
         render(
             <NotesDrawer
+                isOpen
+                onOpenChange={onOpenChange}
                 highlights={highlights}
                 isLoading={false}
                 hasError={false}
@@ -146,6 +149,8 @@ describe("NotesDrawer", () => {
 
         render(
             <NotesDrawer
+                isOpen
+                onOpenChange={onOpenChange}
                 highlights={highlights}
                 isLoading={false}
                 hasError={false}
@@ -177,6 +182,8 @@ describe("NotesDrawer", () => {
     it("treats whitespace-only notes as plain highlights", async () => {
         render(
             <NotesDrawer
+                isOpen
+                onOpenChange={onOpenChange}
                 highlights={highlights}
                 isLoading={false}
                 hasError={false}

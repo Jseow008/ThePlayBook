@@ -254,6 +254,8 @@ export function SegmentAccordion({
 }: SegmentAccordionProps) {
     const [uncontrolledExpandedId, setUncontrolledExpandedId] = useState<string | null>(null);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const contentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const pendingScrollCleanupRef = useRef<(() => void) | null>(null);
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
     const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
@@ -267,6 +269,64 @@ export function SegmentAccordion({
         }
     }, [expandedSegmentId, onExpandedSegmentChange]);
 
+    const cancelPendingScroll = useCallback(() => {
+        pendingScrollCleanupRef.current?.();
+        pendingScrollCleanupRef.current = null;
+    }, []);
+
+    const scrollSegmentIntoView = useCallback((segmentId: string, initialScrollY: number) => {
+        if (Math.abs(window.scrollY - initialScrollY) > 50) return;
+
+        const el = itemRefs.current.get(segmentId);
+        if (!el) return;
+
+        const y = el.getBoundingClientRect().top + window.scrollY - 100;
+        window.scrollTo({ top: y, behavior: "smooth" });
+    }, []);
+
+    const scheduleScrollAfterExpansion = useCallback((segmentId: string, initialScrollY: number) => {
+        cancelPendingScroll();
+
+        const contentEl = contentRefs.current.get(segmentId);
+        if (!contentEl) {
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => scrollSegmentIntoView(segmentId, initialScrollY));
+            });
+            return;
+        }
+
+        let didScroll = false;
+        let fallbackTimeoutId: number | null = null;
+
+        function handleTransitionEnd(event: TransitionEvent) {
+            if (event.target !== event.currentTarget) return;
+            runScroll();
+        }
+
+        const runScroll = () => {
+            if (didScroll) return;
+            didScroll = true;
+            if (fallbackTimeoutId !== null) {
+                window.clearTimeout(fallbackTimeoutId);
+                fallbackTimeoutId = null;
+            }
+            contentEl.removeEventListener("transitionend", handleTransitionEnd);
+            pendingScrollCleanupRef.current = null;
+            scrollSegmentIntoView(segmentId, initialScrollY);
+        };
+
+        contentEl.addEventListener("transitionend", handleTransitionEnd);
+        fallbackTimeoutId = window.setTimeout(runScroll, 400);
+
+        pendingScrollCleanupRef.current = () => {
+            didScroll = true;
+            if (fallbackTimeoutId !== null) {
+                window.clearTimeout(fallbackTimeoutId);
+            }
+            contentEl.removeEventListener("transitionend", handleTransitionEnd);
+        };
+    }, [cancelPendingScroll, scrollSegmentIntoView]);
+
     const handleToggle = useCallback(
         (segment: SegmentFull, index: number) => {
             const isOpening = currentExpandedId !== segment.id;
@@ -276,22 +336,21 @@ export function SegmentAccordion({
                 onSegmentOpen(segment.id, index);
 
                 const initialScrollY = window.scrollY;
-                setTimeout(() => {
-                    if (Math.abs(window.scrollY - initialScrollY) > 50) return;
-
-                    const el = itemRefs.current.get(segment.id);
-                    if (!el) return;
-
-                    const y = el.getBoundingClientRect().top + window.scrollY - 100;
-                    window.scrollTo({ top: y, behavior: "smooth" });
-                }, 310);
+                scheduleScrollAfterExpansion(segment.id, initialScrollY);
                 return;
             }
 
+            cancelPendingScroll();
             setExpandedId(null);
         },
-        [currentExpandedId, onSegmentOpen, setExpandedId]
+        [cancelPendingScroll, currentExpandedId, onSegmentOpen, scheduleScrollAfterExpansion, setExpandedId]
     );
+
+    useEffect(() => {
+        return () => {
+            cancelPendingScroll();
+        };
+    }, [cancelPendingScroll]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -341,6 +400,11 @@ export function SegmentAccordion({
                 return;
             }
 
+            if (!isDesktop && event.type === "click") {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+
             const rect = target.getBoundingClientRect();
             onHighlightActivate(highlightId, {
                 top: rect.top,
@@ -349,7 +413,7 @@ export function SegmentAccordion({
                 height: rect.height,
             });
         },
-        [onHighlightActivate]
+        [isDesktop, onHighlightActivate]
     );
 
     return (
@@ -446,6 +510,13 @@ export function SegmentAccordion({
                         </button>
 
                         <div
+                            ref={(el) => {
+                                if (el) {
+                                    contentRefs.current.set(segment.id, el);
+                                } else {
+                                    contentRefs.current.delete(segment.id);
+                                }
+                            }}
                             className={cn(
                                 "grid transition-all duration-300 ease-in-out",
                                 isExpanded
@@ -458,7 +529,7 @@ export function SegmentAccordion({
                                         <div
                                             data-segment-id={segment.id}
                                             onMouseMove={isDesktop ? activateHighlight : undefined}
-                                            onClick={isDesktop ? activateHighlight : undefined}
+                                            onClick={activateHighlight}
                                             className={cn(
                                             "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative transition-all duration-300",
                                             `reader-size-${fontSize}`,
