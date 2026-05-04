@@ -79,12 +79,20 @@ export function ContentLane({
     useEffect(() => {
         const container = scrollRef.current;
         if (!container) return;
+        const resizeObserver = typeof ResizeObserver === "undefined"
+            ? null
+            : new ResizeObserver(updateArrowState);
 
         updateArrowState();
         container.addEventListener("scroll", updateArrowState, { passive: true });
         window.addEventListener("resize", updateArrowState);
+        resizeObserver?.observe(container);
+        container.querySelectorAll<HTMLElement>(LANE_CARD_SELECTOR).forEach((card) => {
+            resizeObserver?.observe(card);
+        });
 
         return () => {
+            resizeObserver?.disconnect();
             container.removeEventListener("scroll", updateArrowState);
             window.removeEventListener("resize", updateArrowState);
         };
@@ -121,7 +129,7 @@ export function ContentLane({
                     onClick={() => scroll("left")}
                     aria-label="Scroll left"
                     className={cn(
-                        "focus-ring absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background/70 backdrop-blur-md text-foreground border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all hover:bg-background/90 hover:scale-110 active:scale-95",
+                        "focus-ring absolute left-2 top-1/2 -translate-y-1/2 z-20 hidden w-11 h-11 rounded-full bg-background/70 backdrop-blur-md text-foreground border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] items-center justify-center transition-all hover:bg-background/90 hover:scale-110 active:scale-95 md:flex",
                         showLeftArrow
                             ? "opacity-40 group-hover/lane:opacity-100"
                             : "opacity-0 pointer-events-none"
@@ -160,7 +168,7 @@ export function ContentLane({
                     onClick={() => scroll("right")}
                     aria-label="Scroll right"
                     className={cn(
-                        "focus-ring absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-background/70 backdrop-blur-md text-foreground border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] flex items-center justify-center transition-all hover:bg-background/90 hover:scale-110 active:scale-95",
+                        "focus-ring absolute right-2 top-1/2 -translate-y-1/2 z-20 hidden w-11 h-11 rounded-full bg-background/70 backdrop-blur-md text-foreground border border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.5)] items-center justify-center transition-all hover:bg-background/90 hover:scale-110 active:scale-95 md:flex",
                         showRightArrow
                             ? "opacity-60 group-hover/lane:opacity-100"
                             : "opacity-0 pointer-events-none"
@@ -172,13 +180,13 @@ export function ContentLane({
                 {/* Fade edges */}
                 <div
                     className={cn(
-                        "absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent pointer-events-none transition-opacity duration-200",
+                        "absolute left-0 top-0 bottom-0 w-10 bg-gradient-to-r from-background to-transparent pointer-events-none transition-opacity duration-200 md:w-24",
                         showLeftArrow ? "opacity-100" : "opacity-0"
                     )}
                 />
                 <div
                     className={cn(
-                        "absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent pointer-events-none transition-opacity duration-200",
+                        "absolute right-0 top-0 bottom-0 w-10 bg-gradient-to-l from-background to-transparent pointer-events-none transition-opacity duration-200 md:w-24",
                         showRightArrow ? "opacity-100" : "opacity-0"
                     )}
                 />

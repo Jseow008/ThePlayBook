@@ -88,6 +88,7 @@ describe("ContentLane", () => {
 
         expect(rightArrow.className).not.toContain("pointer-events-none");
         expect(rightArrow.className).not.toContain("lg:-right-4");
+        expect(rightArrow).toHaveClass("hidden", "md:flex");
     });
 
     it("passes through the requested card navigation mode", () => {

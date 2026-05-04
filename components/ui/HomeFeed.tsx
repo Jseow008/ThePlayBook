@@ -48,11 +48,6 @@ export function HomeFeed({
                             cardTitleDensity="app-compact"
                         />
 
-
-
-                        {/* Personalized Recommendations */}
-                        <RecommendationsRow cardTitleDensity="app-compact" />
-
                         {/* Dynamic Sections from Admin */}
                         {(sections || []).map((section) => {
                             const sectionContent = sectionItems[section.id] || [];
@@ -68,6 +63,9 @@ export function HomeFeed({
                                 />
                             );
                         })}
+
+                        {/* Personalized Recommendations */}
+                        <RecommendationsRow cardTitleDensity="app-compact" />
                     </div>
                 </div>
             </div>

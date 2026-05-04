@@ -185,7 +185,7 @@ describe("RecommendationsRow", () => {
         );
     });
 
-    it("shows the loading skeleton only when no recommendation items are available yet", () => {
+    it("stays collapsed while recommendations are loading without available items", () => {
         useReadingProgressMock.mockReturnValue({
             completedIds: [recommendation.id],
             inProgressIds: [],
@@ -206,7 +206,8 @@ describe("RecommendationsRow", () => {
         const { container } = render(<RecommendationsRow />);
 
         expect(screen.queryByRole("heading")).not.toBeInTheDocument();
-        expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
+        expect(container.querySelector(".animate-pulse")).not.toBeInTheDocument();
+        expect(container).toBeEmptyDOMElement();
     });
 
     it("starts the general lane without waiting for the recent lane to settle", () => {
