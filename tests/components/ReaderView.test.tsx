@@ -575,8 +575,8 @@ describe('ReaderView', () => {
         expect(screen.queryByText('Guided reading sequence')).not.toBeInTheDocument();
         expect(screen.queryByText('You are reading item 2 in this sequence.')).not.toBeInTheDocument();
         expect(screen.getByRole('link', { name: 'View all parts' })).toHaveAttribute('href', '/series/matthew');
-        expect(screen.getByRole('link', { name: /Matthew 1-4/i })).toHaveAttribute('href', '/read/prev-1');
-        expect(screen.getByRole('link', { name: /Matthew 8-12/i })).toHaveAttribute('href', '/read/next-1');
+        expect(screen.getByRole('link', { name: /Matthew 1-4/i })).toHaveAttribute('href', '/read/prev-1/matthew-1-4');
+        expect(screen.getByRole('link', { name: /Matthew 8-12/i })).toHaveAttribute('href', '/read/next-1/matthew-8-12');
     });
 
     it('renders explicit first and last part states when adjacent items are missing', () => {

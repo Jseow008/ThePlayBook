@@ -802,7 +802,7 @@ describe("FocusFeed", () => {
         expect(within(sheet).getByText("Audit every commitment")).toBeInTheDocument();
         expect(within(sheet).getByText("Treat rest as strategic capacity")).toBeInTheDocument();
         const readLink = within(sheet).getByRole("link", { name: "Read Essentialism" });
-        expect(readLink).toHaveAttribute("href", "/read/123e4567-e89b-12d3-a456-426614174222");
+        expect(readLink).toHaveAttribute("href", "/read/123e4567-e89b-12d3-a456-426614174222/essentialism");
         expect(readLink).toBeInTheDocument();
         await waitFor(() => {
             expect(closeButton).toHaveFocus();

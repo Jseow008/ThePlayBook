@@ -28,6 +28,7 @@ import {
 } from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
@@ -79,7 +80,7 @@ function getHighlightHref(item: HighlightWithContent) {
         return null;
     }
 
-    return `/read/${item.content_item.id}?highlightId=${item.id}`;
+    return `${buildCanonicalReadPath(item.content_item.id, item.content_item.title)}?highlightId=${item.id}`;
 }
 
 function buildScopeSummary({

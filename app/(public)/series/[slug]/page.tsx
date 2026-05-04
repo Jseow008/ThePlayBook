@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, Clock3 } from "lucide-react";
 import { APP_NAME } from "@/lib/brand";
 import { getSeriesPageData } from "@/lib/server/public-content";
+import { buildReadPath } from "@/lib/content-paths";
 import type { ContentItem } from "@/types/database";
 import { SeriesSequenceList } from "@/components/ui/SeriesSequenceList";
 
@@ -139,7 +140,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
                     {firstItem ? (
                         <div className="mt-6 shrink-0 lg:mt-0">
                             <Link
-                                href={`/read/${firstItem.id}`}
+                                href={buildReadPath(firstItem)}
                                 className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                             >
                                 Start series

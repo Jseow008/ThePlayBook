@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { APP_NAME } from "@/lib/brand";
+import { buildReadPath } from "@/lib/content-paths";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import type { ContentItem, Json } from "@/types/database";
 import type {
@@ -193,6 +194,8 @@ export function buildPublicContentMetadata(
     const title = `${content.title} — ${APP_NAME}`;
     const description = buildDescription(content, route === "preview" ? "Preview" : "Reading");
     const ogImage = content.cover_image_url ?? `${siteUrl}/images/og-image.png`;
+    const path = route === "read" ? buildReadPath(content) : `/${route}/${content.id}`;
+    const url = `${siteUrl}${path}`;
 
     return {
         title,
@@ -200,7 +203,7 @@ export function buildPublicContentMetadata(
         openGraph: {
             title,
             description,
-            url: `${siteUrl}/${route}/${content.id}`,
+            url,
             siteName: APP_NAME,
             images: [{ url: ogImage, width: 1200, height: 630, alt: content.title }],
             type: "article",
@@ -213,7 +216,7 @@ export function buildPublicContentMetadata(
         },
         alternates: route === "read"
             ? {
-                canonical: `${siteUrl}/read/${content.id}`,
+                canonical: url,
             }
             : undefined,
     };

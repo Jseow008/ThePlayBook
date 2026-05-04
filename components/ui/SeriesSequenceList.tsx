@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { BookOpen, ChevronRight, Info } from "lucide-react";
 import type { ContentItem } from "@/types/database";
+import { buildReadPath } from "@/lib/content-paths";
 
 interface SeriesSequenceListProps {
     items: ContentItem[];
@@ -113,7 +114,7 @@ export function SeriesSequenceList({ items, showItemAuthors = false }: SeriesSeq
                                     ) : null}
                                     <div className="mt-4 flex flex-col items-stretch gap-2 md:flex-row md:items-center md:justify-start">
                                         <Link
-                                            href={`/read/${item.id}`}
+                                            href={buildReadPath(item)}
                                             aria-label={`Read ${item.title}`}
                                             className="focus-ring inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-bold text-black shadow-[0_0_16px_rgba(255,255,255,0.14)] transition-all hover:scale-[1.02] hover:bg-white/95 hover:shadow-[0_0_24px_rgba(255,255,255,0.22)] active:scale-95 md:h-10 md:w-fit md:flex-none md:self-start md:px-5 md:hover:scale-105"
                                         >

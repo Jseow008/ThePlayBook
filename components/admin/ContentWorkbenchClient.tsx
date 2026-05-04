@@ -33,6 +33,7 @@ import type { AdminAiReadiness } from "@/lib/server/admin-ai-readiness";
 import type { AdminContentWorkbenchItem, AdminNarrationEstimateById } from "@/lib/server/admin-content-workbench";
 import { getNarrationJobState } from "@/lib/narration-job";
 import { APP_NAME } from "@/lib/brand";
+import { buildReadPath } from "@/lib/content-paths";
 
 type BulkAction = "publish" | "draft" | "feature" | "unfeature" | "delete" | "queue_narration";
 
@@ -382,7 +383,7 @@ export function ContentWorkbenchClient({
                                                     title={item.title}
                                                 />
                                                 <Link
-                                                    href={`/read/${item.id}`}
+                                                    href={buildReadPath(item)}
                                                     target="_blank"
                                                     className="focus-ring rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                                     title="Preview"
@@ -514,7 +515,7 @@ export function ContentWorkbenchClient({
 
                                             <div className="flex items-center justify-end gap-1">
                                                 <Link
-                                                    href={`/read/${item.id}`}
+                                                    href={buildReadPath(item)}
                                                     target="_blank"
                                                     className="focus-ring rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                                                     title="Preview"

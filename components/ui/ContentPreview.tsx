@@ -12,6 +12,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { toast } from "sonner";
 import { APP_NAME } from "@/lib/brand";
+import { buildReadPath } from "@/lib/content-paths";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 
 interface ContentPreviewProps {
@@ -206,7 +207,7 @@ export function ContentPreview({
                         {/* CTA Buttons */}
                         <div className="order-3 hidden sm:flex flex-col gap-3 sm:order-2">
                             <Link
-                                href={`/read/${item.id}`}
+                                href={buildReadPath(item)}
                                 className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
                             >
                                 <BookOpen className="size-5" />
@@ -360,7 +361,7 @@ export function ContentPreview({
             {/* ── Sticky Mobile CTA ── */}
             <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 p-3 flex gap-3 safe-area-pb">
                 <Link
-                    href={`/read/${item.id}`}
+                    href={buildReadPath(item)}
                     className="flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-secondary-foreground font-semibold text-base border border-border/50 hover:bg-secondary/80 transition-all active:scale-95 shadow-sm"
                 >
                     <BookOpen className="size-4" />

@@ -14,6 +14,7 @@ import {
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { cn } from "@/lib/utils";
+import { buildReadPath } from "@/lib/content-paths";
 import { toast } from "sonner";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 
@@ -52,12 +53,12 @@ function hasUsableProgress(progress: ReturnType<typeof useReadingProgress>["getP
     );
 }
 
-function getContentCardHref(itemId: string, navigationMode: "preview" | "resume", hasProgress: boolean) {
+function getContentCardHref(item: ContentItem, navigationMode: "preview" | "resume", hasProgress: boolean) {
     if (navigationMode === "resume" && hasProgress) {
-        return `/read/${itemId}`;
+        return buildReadPath(item);
     }
 
-    return `/preview/${itemId}`;
+    return `/preview/${item.id}`;
 }
 
 function getContentCardLabel(href: string, title: string) {
@@ -80,7 +81,7 @@ function InteractiveContentCard(props: ContentCardProps) {
     const { isInMyList, toggleMyList, getProgress } = useReadingProgress();
     const isBookmarked = isInMyList(item.id);
     const progress = getProgress(item.id);
-    const href = getContentCardHref(item.id, navigationMode, hasUsableProgress(progress));
+    const href = getContentCardHref(item, navigationMode, hasUsableProgress(progress));
 
     const percentage =
         progress && progress.totalSegments

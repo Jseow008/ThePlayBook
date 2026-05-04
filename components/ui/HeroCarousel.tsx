@@ -5,6 +5,7 @@ import type { FocusEvent } from "react";
 import Link from "next/link";
 import { Info, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { buildReadPath } from "@/lib/content-paths";
 import type { ContentItem } from "@/types/database";
 import { APP_NAME } from "@/lib/brand";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -328,7 +329,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             )}
                         >
                             <Link
-                                href={`/read/${contentItem.id}`}
+                                href={buildReadPath(contentItem)}
                                 className="focus-ring flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
                             >
                                 <BookOpen className="h-4 w-4 fill-black md:h-6 md:w-6 lg:h-7 lg:w-7" />

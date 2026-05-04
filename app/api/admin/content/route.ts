@@ -25,6 +25,7 @@ import {
 } from "@/lib/admin-content-query";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
+import { buildCanonicalReadPath } from "@/lib/content-paths";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
@@ -531,6 +532,7 @@ export async function POST(request: NextRequest) {
         revalidatePath("/admin/content");
         revalidatePath(`/preview/${contentItem.id}`);
         revalidatePath(`/read/${contentItem.id}`);
+        revalidatePath(buildCanonicalReadPath(contentItem.id, contentData.title));
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [contentItem.series_id]);
         seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
 

@@ -8,6 +8,7 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
+import { buildCanonicalReadPath } from "@/lib/content-paths";
 
 const BulkActionSchema = z.object({
     ids: z.array(z.string().uuid()).min(1).max(100),
@@ -68,17 +69,18 @@ async function getSeriesSlugsByIds(
     return Array.from(new Set(data.map((entry) => entry.slug).filter(Boolean)));
 }
 
-function revalidateContentPaths(ids: string[], seriesSlugs: string[]) {
+function revalidateContentPaths(items: Array<{ id: string; title: string }>, seriesSlugs: string[]) {
     revalidatePath("/");
     revalidatePath("/browse");
     revalidatePath("/search");
     revalidatePath("/admin");
     revalidatePath("/admin/content");
 
-    ids.forEach((id) => {
-        revalidatePath(`/preview/${id}`);
-        revalidatePath(`/read/${id}`);
-        revalidatePath(`/admin/content/${id}/edit`);
+    items.forEach((item) => {
+        revalidatePath(`/preview/${item.id}`);
+        revalidatePath(`/read/${item.id}`);
+        revalidatePath(buildCanonicalReadPath(item.id, item.title));
+        revalidatePath(`/admin/content/${item.id}/edit`);
     });
 
     seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
@@ -401,7 +403,11 @@ export async function POST(request: NextRequest) {
         }
 
         const seriesSlugs = await getSeriesSlugsByIds(supabase, Array.from(touchedSeriesIds));
-        revalidateContentPaths(updatedIds, seriesSlugs);
+        const updatedIdSet = new Set(updatedIds);
+        revalidateContentPaths(
+            availableItems.filter((item) => updatedIdSet.has(item.id)),
+            seriesSlugs
+        );
 
         return NextResponse.json({
             success: true,

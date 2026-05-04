@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
+import { buildReadPath } from "@/lib/content-paths";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
 
@@ -9,7 +10,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Fetch all verified content items
     const { data: contentItems } = await supabase
         .from("content_item")
-        .select("id, updated_at, created_at")
+        .select("id, title, updated_at, created_at")
         .eq("status", "verified")
         .is("deleted_at", null)
         .order("created_at", { ascending: false });
@@ -48,7 +49,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
 
     const contentRoutes: MetadataRoute.Sitemap = (contentItems ?? []).map((item) => ({
-        url: `${siteUrl}/read/${item.id}`,
+        url: `${siteUrl}${buildReadPath(item)}`,
         lastModified: new Date(item.updated_at ?? item.created_at),
         changeFrequency: "weekly",
         priority: 0.9,

@@ -104,7 +104,7 @@ describe("ContentCard", () => {
 
         expect(screen.getByRole("link", { name: "Read Deep Work" })).toHaveAttribute(
             "href",
-            "/read/11111111-1111-1111-1111-111111111111"
+            "/read/11111111-1111-1111-1111-111111111111/deep-work"
         );
     });
 

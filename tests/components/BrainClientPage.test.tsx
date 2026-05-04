@@ -183,7 +183,7 @@ describe("BrainClientPage", () => {
 
         expect(screen.getByRole("link", { name: /note from introduction/i })).toHaveAttribute(
             "href",
-            "/read/content-1?highlightId=highlight-1"
+            "/read/content-1/can-t-hurt-me?highlightId=highlight-1"
         );
         expect(screen.getByText("?")).toBeInTheDocument();
         expect(screen.getByText("Introduction")).toBeInTheDocument();

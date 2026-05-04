@@ -129,7 +129,7 @@ describe("SeriesSequenceList", () => {
         fireEvent.click(toggle);
 
         expect(screen.getByText("A guided introduction to the opening movement of Matthew.")).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Read Matthew 1-4" })).toHaveAttribute("href", "/read/item-1");
+        expect(screen.getByRole("link", { name: "Read Matthew 1-4" })).toHaveAttribute("href", "/read/item-1/matthew-1-4");
         expect(screen.getByRole("link", { name: "Preview Matthew 1-4" })).toHaveAttribute("href", "/preview/item-1");
         expect(toggle).toHaveAttribute("aria-expanded", "true");
 
@@ -185,7 +185,7 @@ describe("SeriesSequenceList", () => {
         const toggle = screen.getByRole("button", { name: /Matthew 1-4/i });
         fireEvent.click(toggle);
 
-        expect(screen.getByRole("link", { name: "Read Matthew 1-4" })).toHaveAttribute("href", "/read/item-1");
+        expect(screen.getByRole("link", { name: "Read Matthew 1-4" })).toHaveAttribute("href", "/read/item-1/matthew-1-4");
         expect(screen.getByRole("link", { name: "Preview Matthew 1-4" })).toHaveAttribute("href", "/preview/item-1");
     });
 });

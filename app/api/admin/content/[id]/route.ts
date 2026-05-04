@@ -27,6 +27,7 @@ import {
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
+import { buildCanonicalReadPath } from "@/lib/content-paths";
 
 type QuickModeValue = {
     hook?: string | null;
@@ -594,6 +595,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         revalidatePath("/admin/content");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
+        revalidatePath(buildCanonicalReadPath(id, existingContent?.title ?? contentData.title ?? id));
+        if (contentData.title && contentData.title !== existingContent?.title) {
+            revalidatePath(buildCanonicalReadPath(id, contentData.title));
+        }
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [
             existingContent?.series_id,
             contentData.series_id,
@@ -690,7 +695,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         const supabase = getAdminClient();
         const { data: existingContent, error: existingContentError } = await supabase
             .from("content_item")
-            .select("series_id")
+            .select("series_id, title")
             .eq("id", id)
             .single();
 
@@ -719,6 +724,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         revalidatePath("/admin/content");
         revalidatePath(`/preview/${id}`);
         revalidatePath(`/read/${id}`);
+        if (existingContent?.title) {
+            revalidatePath(buildCanonicalReadPath(id, existingContent.title));
+        }
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [existingContent?.series_id]);
         seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
 

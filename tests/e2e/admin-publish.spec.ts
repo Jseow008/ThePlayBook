@@ -145,7 +145,7 @@ test.describe("Admin publish flow", () => {
         await expect(page.getByText(author, { exact: true })).toBeVisible();
 
         await page.getByRole("link", { name: "Read" }).click();
-        await page.waitForURL(new RegExp(`/read/${escapeRegExp(contentId)}$`), {
+        await page.waitForURL(new RegExp(`/read/${escapeRegExp(contentId)}(?:/|$)`), {
             timeout: 20_000,
         });
         await expect(page.locator("main").first()).toBeVisible();

@@ -18,6 +18,7 @@ import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
 import { findCompletedSegmentIdsForPlaybackTime, findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
@@ -790,7 +791,10 @@ export function ReaderView({ content }: ReaderViewProps) {
                         <div className="grid gap-2 sm:grid-cols-2">
                             {content.seriesContext.previousItem ? (
                                 <Link
-                                    href={`/read/${content.seriesContext.previousItem.id}`}
+                                    href={buildCanonicalReadPath(
+                                        content.seriesContext.previousItem.id,
+                                        content.seriesContext.previousItem.title
+                                    )}
                                     className="flex min-h-12 w-full min-w-0 items-center justify-between overflow-hidden rounded-2xl border border-border/50 bg-background/55 px-3 py-2 transition-colors hover:border-primary/35 hover:bg-accent/25"
                                 >
                                     <div className="min-w-0 flex-1 pr-3">
@@ -811,7 +815,10 @@ export function ReaderView({ content }: ReaderViewProps) {
 
                             {content.seriesContext.nextItem ? (
                                 <Link
-                                    href={`/read/${content.seriesContext.nextItem.id}`}
+                                    href={buildCanonicalReadPath(
+                                        content.seriesContext.nextItem.id,
+                                        content.seriesContext.nextItem.title
+                                    )}
                                     className="flex min-h-12 w-full min-w-0 items-center justify-between overflow-hidden rounded-2xl border border-primary/15 bg-primary/[0.07] px-3 py-2 transition-colors hover:border-primary/30 hover:bg-primary/[0.1]"
                                 >
                                     <div className="min-w-0 flex-1 pr-3">

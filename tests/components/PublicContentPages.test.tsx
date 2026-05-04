@@ -117,14 +117,14 @@ describe("public content routes", () => {
             ),
         }));
 
-        const readModule = await import("@/app/(public)/read/[id]/page");
+        const readModule = await import("@/app/(public)/read/[id]/[[...slug]]/page");
 
         const metadata = await readModule.generateMetadata({
-            params: Promise.resolve({ id: "read-1" }),
+            params: Promise.resolve({ id: "read-1", slug: ["read-title"] }),
         });
 
         render(await readModule.default({
-            params: Promise.resolve({ id: "read-1" }),
+            params: Promise.resolve({ id: "read-1", slug: ["read-title"] }),
         }));
 
         expect(metadata.title).toBe("Read Title — Flux");
@@ -133,6 +133,94 @@ describe("public content routes", () => {
         expect(getReadPageDataMock).toHaveBeenCalledTimes(2);
         expect(getReadPageDataMock).toHaveBeenNthCalledWith(1, "read-1");
         expect(getReadPageDataMock).toHaveBeenNthCalledWith(2, "read-1");
+    });
+
+    it("redirects legacy read URLs to the canonical title slug", async () => {
+        const permanentRedirectMock = vi.fn((target: string) => {
+            throw new Error(`permanentRedirect:${target}`);
+        });
+        const getReadPageDataMock = vi.fn().mockResolvedValue({
+            id: "read-1",
+            type: "book",
+            title: "Read Title",
+            source_url: null,
+            status: "verified",
+            quick_mode_json: null,
+            duration_seconds: 900,
+            author: "Reader Author",
+            cover_image_url: null,
+            category: "Mindset",
+            audio_url: null,
+            segments: [],
+            artifacts: [],
+        });
+
+        vi.doMock("next/navigation", () => ({
+            notFound: vi.fn(),
+            permanentRedirect: permanentRedirectMock,
+        }));
+
+        vi.doMock("@/lib/server/public-content", () => ({
+            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Flux" })),
+            getReadPageData: getReadPageDataMock,
+        }));
+
+        vi.doMock("@/components/reader/ReaderView", () => ({
+            ReaderView: () => <div>Reader</div>,
+        }));
+
+        const readModule = await import("@/app/(public)/read/[id]/[[...slug]]/page");
+
+        await expect(readModule.default({
+            params: Promise.resolve({ id: "read-1" }),
+            searchParams: Promise.resolve({ highlightId: "highlight-1" }),
+        })).rejects.toThrow("permanentRedirect:/read/read-1/read-title?highlightId=highlight-1");
+
+        expect(permanentRedirectMock).toHaveBeenCalledWith("/read/read-1/read-title?highlightId=highlight-1");
+    });
+
+    it("permanently redirects legacy read URLs before metadata renders", async () => {
+        const permanentRedirectMock = vi.fn((target: string) => {
+            throw new Error(`permanentRedirect:${target}`);
+        });
+        const getReadPageDataMock = vi.fn().mockResolvedValue({
+            id: "read-1",
+            type: "book",
+            title: "Read Title",
+            source_url: null,
+            status: "verified",
+            quick_mode_json: null,
+            duration_seconds: 900,
+            author: "Reader Author",
+            cover_image_url: null,
+            category: "Mindset",
+            audio_url: null,
+            segments: [],
+            artifacts: [],
+        });
+
+        vi.doMock("next/navigation", () => ({
+            notFound: vi.fn(),
+            permanentRedirect: permanentRedirectMock,
+        }));
+
+        vi.doMock("@/lib/server/public-content", () => ({
+            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Flux" })),
+            getReadPageData: getReadPageDataMock,
+        }));
+
+        vi.doMock("@/components/reader/ReaderView", () => ({
+            ReaderView: () => <div>Reader</div>,
+        }));
+
+        const readModule = await import("@/app/(public)/read/[id]/[[...slug]]/page");
+
+        await expect(readModule.generateMetadata({
+            params: Promise.resolve({ id: "read-1" }),
+            searchParams: Promise.resolve({ highlightId: "highlight-1" }),
+        })).rejects.toThrow("permanentRedirect:/read/read-1/read-title?highlightId=highlight-1");
+
+        expect(permanentRedirectMock).toHaveBeenCalledWith("/read/read-1/read-title?highlightId=highlight-1");
     });
 
     it("renders the series page with ordered items", async () => {
@@ -179,14 +267,14 @@ describe("public content routes", () => {
         expect(screen.getByText("Matthew")).toBeInTheDocument();
         expect(screen.getByText("by Matthew Henry")).toBeInTheDocument();
         expect(screen.getByText("Matthew series description")).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Start series" })).toHaveAttribute("href", "/read/item-1");
+        expect(screen.getByRole("link", { name: "Start series" })).toHaveAttribute("href", "/read/item-1/matthew-1-4");
         expect(screen.getByText("Parts")).toBeInTheDocument();
         expect(screen.getByText("Matthew 1-4")).toBeInTheDocument();
         expect(screen.getByText("Matthew 5-7")).toBeInTheDocument();
         expect(screen.queryByText(/^Matthew Henry$/)).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: "Preview Matthew 1-4" })).not.toBeInTheDocument();
         fireEvent.click(screen.getByRole("button", { name: /Matthew 1-4/i }));
-        expect(screen.getByRole("link", { name: "Read Matthew 1-4" })).toHaveAttribute("href", "/read/item-1");
+        expect(screen.getByRole("link", { name: "Read Matthew 1-4" })).toHaveAttribute("href", "/read/item-1/matthew-1-4");
         expect(screen.getByRole("link", { name: "Preview Matthew 1-4" })).toHaveAttribute("href", "/preview/item-1");
         expect(screen.queryByRole("link", { name: /Browse all content/i })).not.toBeInTheDocument();
         expect(screen.queryByText("Each part opens on its preview page first")).not.toBeInTheDocument();

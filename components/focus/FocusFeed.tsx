@@ -20,6 +20,7 @@ import { ResilientImage } from "@/components/ui/ResilientImage";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { buildReadPath } from "@/lib/content-paths";
 import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { buildFocusCards, mergeUniqueFocusItems, type FocusCard } from "@/components/focus/focus-feed-utils";
 
@@ -1535,7 +1536,7 @@ const FocusCardView = memo(function FocusCardView({
                                 </Link>
                             ) : null}
                             <Link
-                                href={`/read/${card.id}`}
+                                href={buildReadPath(card)}
                                 className="focus-ring inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                                 aria-label={`Read ${card.title}`}
                             >
@@ -1846,7 +1847,7 @@ function FocusTakeawaysSheet({
 
                     <div className="border-t border-border/40 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
                         <Link
-                            href={`/read/${card.id}`}
+                            href={buildReadPath(card)}
                             className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                             aria-label={`Read ${card.title}`}
                         >

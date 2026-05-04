@@ -1,11 +1,60 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/database";
+import { buildCanonicalReadPath, getLegacyReadIdFromPathname } from "@/lib/content-paths";
+
+async function getLegacyReadRedirect(request: NextRequest) {
+    const contentId = getLegacyReadIdFromPathname(request.nextUrl.pathname);
+    if (!contentId) {
+        return null;
+    }
+
+    const supabase = createClient<Database>(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            auth: {
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false,
+            },
+        }
+    );
+
+    const { data, error } = await supabase
+        .from("content_item")
+        .select("id, title")
+        .eq("id", contentId)
+        .eq("status", "verified")
+        .is("deleted_at", null)
+        .maybeSingle();
+
+    if (error || !data) {
+        return null;
+    }
+
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = buildCanonicalReadPath(data.id, data.title);
+
+    return NextResponse.redirect(redirectUrl, 308);
+}
 
 export async function proxy(request: NextRequest) {
-    const supabaseResponse = await updateSession(request);
     const pathname = request.nextUrl.pathname;
     const isAdminApiRoute = pathname.startsWith("/api/admin");
+
+    const legacyReadRedirect = await getLegacyReadRedirect(request);
+    if (legacyReadRedirect) {
+        return legacyReadRedirect;
+    }
+
+    if (pathname.startsWith("/read")) {
+        return NextResponse.next({ request });
+    }
+
+    const supabaseResponse = await updateSession(request);
 
     if (pathname.startsWith("/admin") || isAdminApiRoute) {
         const supabase = createServerClient(
@@ -54,6 +103,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
     matcher: [
+        "/read/:path*",
         "/notes",
         "/ask",
         "/admin/:path*",

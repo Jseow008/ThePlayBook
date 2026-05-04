@@ -9,6 +9,7 @@ import Link from "next/link";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useRecommendations } from "@/hooks/use-content-queries";
+import { buildReadPath } from "@/lib/content-paths";
 
 interface CompletionCardProps {
     contentId: string;
@@ -91,7 +92,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                         </div>
                     ) : recommendation ? (
                         <Link
-                            href={`/read/${recommendation.id}`}
+                            href={buildReadPath(recommendation)}
                             className={cn(
                                 "group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-6",
                                 "hover:border-primary/40 hover:bg-primary/5 transition-all duration-300",
