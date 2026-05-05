@@ -291,3 +291,86 @@ describe("useBatchContentItems", () => {
         await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     });
 });
+
+describe("useBrowseRecommendations", () => {
+    const fetchMock = vi.fn();
+    const localStorageMock = createLocalStorageMock();
+
+    beforeEach(() => {
+        Object.defineProperty(window, "localStorage", {
+            value: localStorageMock,
+            configurable: true,
+        });
+        window.localStorage.clear();
+        useReadingProgressMock.mockClear();
+        fetchMock.mockReset();
+        vi.stubGlobal("fetch", fetchMock);
+    });
+
+    it("posts one browse-specific request without recommendation memory side effects", async () => {
+        const { useBrowseRecommendations } = await loadUseRecommendations();
+        const wrapper = createWrapper();
+        const recentItem = createRecommendationItem("rec-1", "Recent recommendation");
+        const libraryItem = createRecommendationItem("lib-1", "Library recommendation");
+
+        fetchMock.mockResolvedValueOnce({
+            ok: true,
+            json: vi.fn().mockResolvedValue({
+                recentItems: [recentItem],
+                libraryItems: [libraryItem],
+            }),
+        });
+
+        const { result } = renderHook(
+            () => useBrowseRecommendations({
+                recentSeedId: "seed-recent",
+                librarySeedIds: ["seed-library", "seed-library"],
+                excludeIds: ["known-1", "known-1"],
+                enabled: true,
+                targetCount: 10,
+            }),
+            { wrapper },
+        );
+
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith("/api/recommendations/browse", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                recentSeedId: "seed-recent",
+                librarySeedIds: ["seed-library"],
+                excludeIds: ["known-1"],
+                targetCount: 10,
+            }),
+        });
+        expect(result.current.data).toEqual({
+            recentItems: [recentItem],
+            libraryItems: [libraryItem],
+        });
+        expect(window.localStorage.getItem).not.toHaveBeenCalledWith(
+            expect.stringContaining("recent_recommendations"),
+        );
+        expect(window.localStorage.setItem).not.toHaveBeenCalled();
+        expect(useReadingProgressMock).not.toHaveBeenCalled();
+    });
+
+    it("stays disabled until a recent or library seed is available", async () => {
+        const { useBrowseRecommendations } = await loadUseRecommendations();
+        const wrapper = createWrapper();
+
+        const { result } = renderHook(
+            () => useBrowseRecommendations({
+                recentSeedId: null,
+                librarySeedIds: [],
+                excludeIds: [],
+                enabled: true,
+            }),
+            { wrapper },
+        );
+
+        expect(result.current.fetchStatus).toBe("idle");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});

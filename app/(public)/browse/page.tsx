@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { HomeFeed } from "@/components/ui/HomeFeed";
+import { getRequestId, logApiError } from "@/lib/server/api";
 import type { ContentItem, Database, HomepageSection } from "@/types/database";
 
 /**
@@ -47,6 +48,7 @@ function HomeFeedSkeleton() {
 
 async function HomeFeedServer() {
     const supabase = createPublicServerClient();
+    const requestId = getRequestId();
 
     const [featuredResult, latestResult, sectionsResult] = await Promise.all([
         supabase
@@ -66,6 +68,33 @@ async function HomeFeedServer() {
             .limit(10),
         supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 }),
     ]);
+
+    if (featuredResult.error) {
+        logApiError({
+            requestId,
+            route: "/browse",
+            message: "Failed to fetch browse featured items",
+            error: featuredResult.error,
+        });
+    }
+
+    if (latestResult.error) {
+        logApiError({
+            requestId,
+            route: "/browse",
+            message: "Failed to fetch browse latest items",
+            error: latestResult.error,
+        });
+    }
+
+    if (sectionsResult.error) {
+        logApiError({
+            requestId,
+            route: "/browse",
+            message: "Failed to fetch browse homepage sections",
+            error: sectionsResult.error,
+        });
+    }
 
     const items = (latestResult.data || []) as ContentItem[];
     const featuredItems = ((featuredResult.data && featuredResult.data.length > 0)

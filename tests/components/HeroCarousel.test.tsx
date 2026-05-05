@@ -18,6 +18,22 @@ vi.mock("next/image", () => ({
     },
 }));
 
+function mockMatchMedia(prefersReducedMotion = false) {
+    Object.defineProperty(window, "matchMedia", {
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+            matches: query === "(prefers-reduced-motion: reduce)" ? prefersReducedMotion : false,
+            media: query,
+            onchange: null,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        })),
+    });
+}
+
 describe("HeroCarousel", () => {
     const items: ContentItem[] = [
         {
@@ -81,6 +97,7 @@ describe("HeroCarousel", () => {
 
     beforeEach(() => {
         vi.useFakeTimers();
+        mockMatchMedia(false);
     });
 
     afterEach(() => {
@@ -130,6 +147,19 @@ describe("HeroCarousel", () => {
         act(() => {
             fireEvent.focusIn(readLink);
         });
+
+        act(() => {
+            vi.advanceTimersByTime(7000);
+        });
+
+        expect(screen.getByRole("heading", { name: "First Feature" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Go to item 1" })).toHaveAttribute("aria-current", "true");
+    });
+
+    it("does not autoplay when reduced motion is requested", () => {
+        mockMatchMedia(true);
+
+        render(<HeroCarousel items={items} />);
 
         act(() => {
             vi.advanceTimersByTime(7000);

@@ -189,3 +189,50 @@ export function useRecommendations(
 
     return recommendationQuery;
 }
+
+export function useBrowseRecommendations(options: {
+    recentSeedId: string | null;
+    librarySeedIds: string[];
+    excludeIds: string[];
+    enabled?: boolean;
+    targetCount?: number;
+}) {
+    const uniqueLibrarySeedIds = Array.from(new Set(options.librarySeedIds));
+    const uniqueExcludeIds = Array.from(new Set(options.excludeIds));
+    const targetCount = options.targetCount ?? 10;
+    const queryKey = useMemo(() => JSON.stringify({
+        recentSeedId: options.recentSeedId,
+        librarySeedIds: [...uniqueLibrarySeedIds].sort(),
+        excludeIds: [...uniqueExcludeIds].sort(),
+        targetCount,
+    }), [options.recentSeedId, targetCount, uniqueExcludeIds, uniqueLibrarySeedIds]);
+
+    return useQuery({
+        queryKey: ["browse-recommendations", queryKey],
+        enabled: (options.enabled ?? true)
+            && Boolean(options.recentSeedId || uniqueLibrarySeedIds.length > 0),
+        queryFn: async () => {
+            const response = await fetch("/api/recommendations/browse", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    recentSeedId: options.recentSeedId,
+                    librarySeedIds: uniqueLibrarySeedIds,
+                    excludeIds: uniqueExcludeIds,
+                    targetCount,
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch browse recommendations");
+            }
+
+            return (await response.json()) as {
+                recentItems: ContentItem[];
+                libraryItems: ContentItem[];
+            };
+        },
+        placeholderData: keepPreviousData,
+        staleTime: 2 * 60 * 1000,
+    });
+}

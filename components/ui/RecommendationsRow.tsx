@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentLane } from "@/components/ui/ContentLane";
-import { useRecommendations } from "@/hooks/use-content-queries";
+import { useBrowseRecommendations } from "@/hooks/use-content-queries";
 
 export function RecommendationsRow({
     cardTitleDensity = "default",
@@ -11,8 +11,6 @@ export function RecommendationsRow({
     cardTitleDensity?: "default" | "app-compact";
 }) {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
-    const shouldLoadRecommendations = isLoaded;
-
     const mostRecentId = completedIds[0] || inProgressIds[0] || null;
     const clusterIds = useMemo(
         () => Array.from(new Set([...completedIds, ...myListIds])),
@@ -24,68 +22,24 @@ export function RecommendationsRow({
     );
 
     const isWorthFetchingGeneral = clusterIds.length >= 5;
-
-    const { data: recentItems = [], isLoading: recentLoading } = useRecommendations(
-        mostRecentId ? [mostRecentId] : [],
-        {
-            enabled: isLoaded && shouldLoadRecommendations && !!mostRecentId,
-            excludeIds: knownRecommendationIds,
-        }
-    );
-    const shouldFetchGeneral = (
-        isLoaded
-        && shouldLoadRecommendations
-        && isWorthFetchingGeneral
+    const hasFetchableRecommendationSeeds = Boolean(
+        mostRecentId || (isWorthFetchingGeneral && clusterIds.length > 0),
     );
 
-    const { data: generalItems = [], isLoading: generalLoading } = useRecommendations(
-        clusterIds,
-        {
-            enabled: shouldFetchGeneral,
-            excludeIds: knownRecommendationIds,
-        }
-    );
-    const recentItemIds = useMemo(
-        () => new Set(recentItems.map((item) => item.id)),
-        [recentItems],
-    );
-    const dedupedGeneralItems = useMemo(
-        () => generalItems.filter((item) => !recentItemIds.has(item.id)),
-        [generalItems, recentItemIds],
-    );
-    const shouldRefillGeneral = (
-        shouldFetchGeneral
-        && recentItems.length > 0
-        && !recentLoading
-        && !generalLoading
-        && generalItems.length > 0
-        && dedupedGeneralItems.length < Math.min(4, generalItems.length)
-    );
-    const generalRefillExcludeIds = useMemo(
-        () => Array.from(new Set([
-            ...knownRecommendationIds,
-            ...recentItems.map((item) => item.id),
-        ])),
-        [knownRecommendationIds, recentItems],
-    );
-    const { data: refilledGeneralItems = [] } = useRecommendations(
-        clusterIds,
-        {
-            enabled: shouldRefillGeneral,
-            excludeIds: generalRefillExcludeIds,
-        }
-    );
-    const dedupedRefilledGeneralItems = useMemo(
-        () => refilledGeneralItems.filter((item) => !recentItemIds.has(item.id)),
-        [refilledGeneralItems, recentItemIds],
-    );
-    const finalGeneralItems = dedupedRefilledGeneralItems.length > dedupedGeneralItems.length
-        ? dedupedRefilledGeneralItems
-        : dedupedGeneralItems;
+    const { data } = useBrowseRecommendations({
+        recentSeedId: mostRecentId,
+        librarySeedIds: isWorthFetchingGeneral ? clusterIds : [],
+        excludeIds: knownRecommendationIds,
+        enabled: isLoaded && hasFetchableRecommendationSeeds,
+        targetCount: 10,
+    });
 
-    const hasItems = recentItems.length > 0 || finalGeneralItems.length > 0;
+    if (!isLoaded || !hasFetchableRecommendationSeeds) return null;
 
-    if (!isLoaded || (!mostRecentId && clusterIds.length === 0)) return null;
+    const recentItems = data?.recentItems ?? [];
+    const libraryItems = data?.libraryItems ?? [];
+    const hasItems = recentItems.length > 0 || libraryItems.length > 0;
+
     if (!hasItems) return null;
 
     return (
@@ -100,10 +54,10 @@ export function RecommendationsRow({
             )}
 
             {/* Lane 2: General Taste */}
-            {isWorthFetchingGeneral && finalGeneralItems.length > 0 && (
+            {isWorthFetchingGeneral && libraryItems.length > 0 && (
                 <ContentLane
                     title="Based on your library"
-                    items={finalGeneralItems}
+                    items={libraryItems}
                     cardTitleDensity={cardTitleDensity}
                 />
             )}

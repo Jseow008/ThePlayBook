@@ -5,14 +5,14 @@ import type { ContentItem } from "@/types/database";
 import { RecommendationsRow } from "@/components/ui/RecommendationsRow";
 
 const useReadingProgressMock = vi.fn();
-const useRecommendationsMock = vi.fn();
+const useBrowseRecommendationsMock = vi.fn();
 
 vi.mock("@/hooks/useReadingProgress", () => ({
     useReadingProgress: () => useReadingProgressMock(),
 }));
 
 vi.mock("@/hooks/use-content-queries", () => ({
-    useRecommendations: (...args: unknown[]) => useRecommendationsMock(...args),
+    useBrowseRecommendations: (...args: unknown[]) => useBrowseRecommendationsMock(...args),
 }));
 
 vi.mock("@/components/ui/ContentLane", () => ({
@@ -53,7 +53,7 @@ describe("RecommendationsRow", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        useRecommendationsMock.mockReturnValue({ data: [], isLoading: false });
+        useBrowseRecommendationsMock.mockReturnValue({ data: undefined, isLoading: false });
     });
 
     it("keeps rendering recommendation lanes when supporting title data is still loading", () => {
@@ -70,9 +70,10 @@ describe("RecommendationsRow", () => {
             isLoaded: true,
         });
 
-        useRecommendationsMock
-            .mockReturnValueOnce({ data: [recommendation], isLoading: false })
-            .mockReturnValueOnce({ data: [], isLoading: false });
+        useBrowseRecommendationsMock.mockReturnValueOnce({
+            data: { recentItems: [recommendation], libraryItems: [] },
+            isLoading: false,
+        });
 
         const { container } = render(<RecommendationsRow />);
 
@@ -81,7 +82,7 @@ describe("RecommendationsRow", () => {
         expect(container.querySelector(".animate-pulse")).not.toBeInTheDocument();
     });
 
-    it("passes known user items as exclusions to both recommendation queries", () => {
+    it("passes known user items to the browse recommendations query", () => {
         useReadingProgressMock.mockReturnValue({
             completedIds: [recommendation.id],
             inProgressIds: ["66666666-6666-6666-6666-666666666666"],
@@ -95,16 +96,24 @@ describe("RecommendationsRow", () => {
             isLoaded: true,
         });
 
-        useRecommendationsMock
-            .mockReturnValueOnce({ data: [recommendation], isLoading: false })
-            .mockReturnValueOnce({ data: [], isLoading: false });
+        useBrowseRecommendationsMock.mockReturnValueOnce({
+            data: { recentItems: [recommendation], libraryItems: [] },
+            isLoading: false,
+        });
 
         render(<RecommendationsRow />);
 
-        expect(useRecommendationsMock).toHaveBeenNthCalledWith(
-            1,
-            [recommendation.id],
+        expect(useBrowseRecommendationsMock).toHaveBeenCalledTimes(1);
+        expect(useBrowseRecommendationsMock).toHaveBeenCalledWith(
             expect.objectContaining({
+                recentSeedId: recommendation.id,
+                librarySeedIds: [
+                    recommendation.id,
+                    "22222222-2222-2222-2222-222222222222",
+                    "33333333-3333-3333-3333-333333333333",
+                    "44444444-4444-4444-4444-444444444444",
+                    "55555555-5555-5555-5555-555555555555",
+                ],
                 excludeIds: [
                     recommendation.id,
                     "66666666-6666-6666-6666-666666666666",
@@ -113,31 +122,13 @@ describe("RecommendationsRow", () => {
                     "44444444-4444-4444-4444-444444444444",
                     "55555555-5555-5555-5555-555555555555",
                 ],
-            }),
-        );
-        expect(useRecommendationsMock).toHaveBeenNthCalledWith(
-            2,
-            [
-                recommendation.id,
-                "22222222-2222-2222-2222-222222222222",
-                "33333333-3333-3333-3333-333333333333",
-                "44444444-4444-4444-4444-444444444444",
-                "55555555-5555-5555-5555-555555555555",
-            ],
-            expect.objectContaining({
-                excludeIds: [
-                    recommendation.id,
-                    "66666666-6666-6666-6666-666666666666",
-                    "22222222-2222-2222-2222-222222222222",
-                    "33333333-3333-3333-3333-333333333333",
-                    "44444444-4444-4444-4444-444444444444",
-                    "55555555-5555-5555-5555-555555555555",
-                ],
+                enabled: true,
+                targetCount: 10,
             }),
         );
     });
 
-    it("filters duplicate titles from the general lane when the recent lane already shows them", () => {
+    it("renders the server-deduped library lane", () => {
         const additionalRecommendation: ContentItem = {
             ...recommendation,
             id: "22222222-2222-2222-2222-222222222222",
@@ -158,10 +149,13 @@ describe("RecommendationsRow", () => {
             isLoaded: true,
         });
 
-        useRecommendationsMock
-            .mockReturnValueOnce({ data: [recommendation], isLoading: false })
-            .mockReturnValueOnce({ data: [recommendation, additionalRecommendation], isLoading: false })
-            .mockReturnValueOnce({ data: [additionalRecommendation], isLoading: false });
+        useBrowseRecommendationsMock.mockReturnValueOnce({
+            data: {
+                recentItems: [recommendation],
+                libraryItems: [additionalRecommendation],
+            },
+            isLoading: false,
+        });
 
         render(<RecommendationsRow />);
 
@@ -169,20 +163,6 @@ describe("RecommendationsRow", () => {
         expect(generalLane).not.toBeNull();
         expect(within(generalLane!).getByText("Atomic Habits")).toBeInTheDocument();
         expect(within(generalLane!).queryByText(/The Comfort Crisis/)).not.toBeInTheDocument();
-        expect(useRecommendationsMock).toHaveBeenNthCalledWith(
-            3,
-            [
-                recommendation.id,
-                additionalRecommendation.id,
-                "33333333-3333-3333-3333-333333333333",
-                "44444444-4444-4444-4444-444444444444",
-                "55555555-5555-5555-5555-555555555555",
-            ],
-            expect.objectContaining({
-                enabled: true,
-                excludeIds: expect.arrayContaining([recommendation.id]),
-            }),
-        );
     });
 
     it("stays collapsed while recommendations are loading without available items", () => {
@@ -199,9 +179,7 @@ describe("RecommendationsRow", () => {
             isLoaded: true,
         });
 
-        useRecommendationsMock
-            .mockReturnValueOnce({ data: [], isLoading: true })
-            .mockReturnValueOnce({ data: [], isLoading: false });
+        useBrowseRecommendationsMock.mockReturnValueOnce({ data: undefined, isLoading: true });
 
         const { container } = render(<RecommendationsRow />);
 
@@ -210,7 +188,7 @@ describe("RecommendationsRow", () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it("starts the general lane without waiting for the recent lane to settle", () => {
+    it("uses one stable browse recommendations query", () => {
         useReadingProgressMock.mockReturnValue({
             completedIds: [recommendation.id],
             inProgressIds: [],
@@ -224,18 +202,11 @@ describe("RecommendationsRow", () => {
             isLoaded: true,
         });
 
-        useRecommendationsMock
-            .mockReturnValueOnce({ data: [], isLoading: true })
-            .mockReturnValueOnce({ data: [], isLoading: false });
+        useBrowseRecommendationsMock.mockReturnValueOnce({ data: undefined, isLoading: true });
 
         render(<RecommendationsRow />);
 
-        expect(useRecommendationsMock).toHaveBeenNthCalledWith(
-            2,
-            expect.any(Array),
-            expect.objectContaining({
-                enabled: true,
-            }),
-        );
+        expect(useBrowseRecommendationsMock).toHaveBeenCalledTimes(1);
+        expect(useBrowseRecommendationsMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
     });
 });
