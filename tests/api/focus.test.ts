@@ -28,12 +28,27 @@ describe("Focus API", () => {
     const mockNot = vi.fn(() => ({ order: mockOrder, gt: mockGt }));
     const mockIs = vi.fn(() => ({ not: mockNot }));
     const mockEq = vi.fn(() => ({ is: mockIs }));
-    const mockSelect = vi.fn(() => ({ eq: mockEq }));
+    let carryRequestedIds: string[] = [];
+    let carryRows: any[] = [];
+    const mockCarryNot = vi.fn(() => Promise.resolve({
+        data: carryRows.filter((item) => carryRequestedIds.includes(item.id)),
+        error: null,
+    }));
+    const mockCarryIs = vi.fn(() => ({ not: mockCarryNot }));
+    const mockCarryEq = vi.fn(() => ({ is: mockCarryIs }));
+    const mockIn = vi.fn((_column: string, ids: string[]) => {
+        carryRequestedIds = ids;
+        return { eq: mockCarryEq };
+    });
+    const mockSelect = vi.fn(() => ({ eq: mockEq, in: mockIn }));
     const mockFrom = vi.fn(() => ({ select: mockSelect }));
 
     beforeEach(() => {
         vi.clearAllMocks();
         mockLimit.mockReset();
+        mockCarryNot.mockClear();
+        carryRequestedIds = [];
+        carryRows = [];
         (createPublicServerClient as any).mockReturnValue({
             from: mockFrom,
         });
@@ -207,7 +222,7 @@ describe("Focus API", () => {
         });
     });
 
-    it("uses a deterministic diversified selection and advances from the last delivered item", async () => {
+    it("uses a deterministic diversified selection and carries undisplayed scanned items forward", async () => {
         const fullPage = Array.from({ length: 48 }, (_, index) => ({
             id: `123e4567-e89b-12d3-a456-42661417${String(5000 + index).padStart(4, "0")}`,
             title: `Item ${index + 1}`,
@@ -249,6 +264,7 @@ describe("Focus API", () => {
                 data: fullPage.slice(20).concat(trailingPage),
                 error: null,
             });
+        carryRows = fullPage;
 
         const firstResponse = await GET(new NextRequest(new URL("http://localhost/api/focus?limit=6")));
         const firstJson = await firstResponse.json();
@@ -265,7 +281,7 @@ describe("Focus API", () => {
         ]);
         expect(firstJson.pageInfo).toEqual({
             hasMore: true,
-            nextCursor: "123e4567-e89b-12d3-a456-426614175019",
+            nextCursor: expect.stringMatching(/^v1_/),
         });
 
         const secondResponse = await GET(
@@ -274,17 +290,18 @@ describe("Focus API", () => {
         const secondJson = await secondResponse.json();
 
         expect(secondResponse.status).toBe(200);
-        expect(mockGt).toHaveBeenCalledWith("id", firstJson.pageInfo.nextCursor);
-        expect(secondJson.items.map((item: { id: string }) => item.id)).toEqual(
-            [
-                "123e4567-e89b-12d3-a456-426614175034",
-                "123e4567-e89b-12d3-a456-426614175040",
-                "123e4567-e89b-12d3-a456-426614175041",
-                "123e4567-e89b-12d3-a456-426614175042",
-                "123e4567-e89b-12d3-a456-426614175043",
-                "123e4567-e89b-12d3-a456-426614176000",
-            ]
+        expect(mockIn).toHaveBeenCalledWith("id", expect.arrayContaining([
+            "123e4567-e89b-12d3-a456-426614175000",
+            "123e4567-e89b-12d3-a456-426614175047",
+        ]));
+        expect(secondJson.items).toHaveLength(6);
+        expect(secondJson.items.map((item: { id: string }) => item.id)).not.toContain(
+            "123e4567-e89b-12d3-a456-426614176000"
         );
+        expect(new Set([
+            ...firstJson.items.map((item: { id: string }) => item.id),
+            ...secondJson.items.map((item: { id: string }) => item.id),
+        ])).toHaveProperty("size", 12);
     });
 
     it("drops rows with invalid quick mode payloads without failing the request", async () => {

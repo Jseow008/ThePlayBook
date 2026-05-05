@@ -77,7 +77,7 @@ const FocusRestoreStateSchema = z
         items: z.array(FocusRestoreItemSchema),
         activeCardIndex: z.number().int().min(0),
         hasMore: z.boolean(),
-        nextCursor: z.string().uuid().nullable().optional(),
+        nextCursor: z.string().trim().min(1).max(4096).nullable().optional(),
         seenIds: z.array(z.string()).optional(),
     })
     .superRefine((value, ctx) => {

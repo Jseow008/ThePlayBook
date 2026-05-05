@@ -8,7 +8,7 @@ import { bestEffortRateLimit } from "@/lib/server/rate-limit";
 const QUERY_SCHEMA = z.object({
     limit: z.coerce.number().int().min(1).max(12).default(6),
     excludeIds: z.array(z.string().uuid()).default([]),
-    cursor: z.string().uuid().optional(),
+    cursor: z.string().trim().min(1).max(4096).optional(),
     seed: z.string().trim().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).default("default"),
 });
 
@@ -16,6 +16,15 @@ const FOCUS_SELECT =
     "id, title, type, author, category, cover_image_url, duration_seconds, quick_mode_json";
 const PAGE_SIZE = 48;
 const CANDIDATE_WINDOW_MULTIPLIER = 4;
+const FOCUS_CURSOR_PREFIX = "v1_";
+
+const FocusCursorPayloadSchema = z.object({
+    v: z.literal(1),
+    scanCursor: z.string().uuid().nullable(),
+    carryIds: z.array(z.string().uuid()).max(PAGE_SIZE),
+});
+
+type FocusCursorPayload = z.infer<typeof FocusCursorPayloadSchema>;
 
 function hashString(value: string) {
     let hash = 2166136261;
@@ -35,6 +44,55 @@ function seededRank(seed: string, value: string) {
 function normalizeDiversityValue(value: string | null | undefined, fallback: string) {
     const normalized = value?.trim().toLowerCase();
     return normalized || fallback;
+}
+
+function encodeFocusCursor(payload: FocusCursorPayload) {
+    return `${FOCUS_CURSOR_PREFIX}${Buffer.from(JSON.stringify(payload)).toString("base64url")}`;
+}
+
+function decodeFocusCursor(value: string | undefined) {
+    if (!value) {
+        return {
+            success: true as const,
+            cursor: {
+                scanCursor: null,
+                carryIds: [],
+            },
+        };
+    }
+
+    const legacyUuid = z.string().uuid().safeParse(value);
+    if (legacyUuid.success) {
+        return {
+            success: true as const,
+            cursor: {
+                scanCursor: legacyUuid.data,
+                carryIds: [],
+            },
+        };
+    }
+
+    if (!value.startsWith(FOCUS_CURSOR_PREFIX)) {
+        return { success: false as const };
+    }
+
+    try {
+        const raw = Buffer.from(value.slice(FOCUS_CURSOR_PREFIX.length), "base64url").toString("utf8");
+        const parsed = FocusCursorPayloadSchema.safeParse(JSON.parse(raw));
+        if (!parsed.success) {
+            return { success: false as const };
+        }
+
+        return {
+            success: true as const,
+            cursor: {
+                scanCursor: parsed.data.scanCursor,
+                carryIds: parsed.data.carryIds,
+            },
+        };
+    } catch {
+        return { success: false as const };
+    }
 }
 
 function selectDiversifiedItems(
@@ -82,6 +140,65 @@ function selectDiversifiedItems(
     return selected.sort((first, second) => first.id.localeCompare(second.id));
 }
 
+function parseFocusItem(item: FocusFeedItem) {
+    const parsedQuickMode = QuickModeSchema.safeParse(item.quick_mode_json);
+    if (!parsedQuickMode.success) {
+        return null;
+    }
+
+    item.quick_mode_json = parsedQuickMode.data;
+    return item;
+}
+
+async function loadCarryItems(params: {
+    supabase: ReturnType<typeof createPublicServerClient>;
+    carryIds: string[];
+}) {
+    if (params.carryIds.length === 0) {
+        return {
+            data: [] as FocusFeedItem[],
+            invalidRowCount: 0,
+            error: null,
+        };
+    }
+
+    const { data, error } = await params.supabase
+        .from("content_item")
+        .select(FOCUS_SELECT)
+        .in("id", params.carryIds)
+        .eq("status", "verified")
+        .is("deleted_at", null)
+        .not("quick_mode_json", "is", null);
+
+    if (error) {
+        return {
+            data: [] as FocusFeedItem[],
+            invalidRowCount: 0,
+            error,
+        };
+    }
+
+    let invalidRowCount = 0;
+    const itemsById = new Map<string, FocusFeedItem>();
+    ((data ?? []) as FocusFeedItem[]).forEach((item) => {
+        const parsedItem = parseFocusItem(item);
+        if (!parsedItem) {
+            invalidRowCount += 1;
+            return;
+        }
+
+        itemsById.set(parsedItem.id, parsedItem);
+    });
+
+    return {
+        data: params.carryIds
+            .map((id) => itemsById.get(id))
+            .filter((item): item is FocusFeedItem => Boolean(item)),
+        invalidRowCount,
+        error: null,
+    };
+}
+
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
 
@@ -119,15 +236,45 @@ export async function GET(request: NextRequest) {
     }
 
     const { limit, excludeIds, seed } = parsedQuery.data;
+    const decodedCursor = decodeFocusCursor(parsedQuery.data.cursor);
+    if (!decodedCursor.success) {
+        return apiError("VALIDATION_ERROR", "Invalid focus feed cursor.", 400, requestId);
+    }
+
     const supabase = createPublicServerClient();
     const excluded = new Set(excludeIds);
     let invalidRowCount = 0;
     const collectedIds = new Set<string>();
     const candidateItems: FocusFeedItem[] = [];
-    let cursor = parsedQuery.data.cursor ?? null;
-    let hasMore = false;
+    let scanCursor = decodedCursor.cursor.scanCursor;
+    let lastScannedCursor = scanCursor;
+    let reachedEnd = false;
 
     const candidateWindowSize = Math.max(limit + 1, limit * CANDIDATE_WINDOW_MULTIPLIER);
+    const carryResult = await loadCarryItems({
+        supabase,
+        carryIds: decodedCursor.cursor.carryIds,
+    });
+
+    if (carryResult.error) {
+        logApiError({
+            requestId,
+            route: "/api/focus",
+            message: "Failed to fetch carried focus feed content",
+            error: carryResult.error,
+        });
+        return apiError("INTERNAL_ERROR", "Failed to fetch focus feed.", 500, requestId);
+    }
+
+    invalidRowCount += carryResult.invalidRowCount;
+    carryResult.data.forEach((item) => {
+        if (excluded.has(item.id) || collectedIds.has(item.id)) {
+            return;
+        }
+
+        collectedIds.add(item.id);
+        candidateItems.push(item);
+    });
 
     while (candidateItems.length < candidateWindowSize) {
         let query = supabase
@@ -137,8 +284,8 @@ export async function GET(request: NextRequest) {
             .is("deleted_at", null)
             .not("quick_mode_json", "is", null);
 
-        if (cursor) {
-            query = query.gt("id", cursor);
+        if (scanCursor) {
+            query = query.gt("id", scanCursor);
         }
 
         const { data, error } = await query
@@ -158,30 +305,33 @@ export async function GET(request: NextRequest) {
         const pageItems = (data ?? []) as FocusFeedItem[];
 
         if (pageItems.length === 0) {
+            reachedEnd = true;
             break;
         }
 
         pageItems.forEach((item) => {
-            const parsedQuickMode = QuickModeSchema.safeParse(item.quick_mode_json);
-            if (!parsedQuickMode.success) {
+            const parsedItem = parseFocusItem(item);
+            if (!parsedItem) {
                 invalidRowCount += 1;
                 return;
             }
 
-            if (excluded.has(item.id) || collectedIds.has(item.id)) {
+            if (excluded.has(parsedItem.id) || collectedIds.has(parsedItem.id)) {
                 return;
             }
 
-            item.quick_mode_json = parsedQuickMode.data;
-            collectedIds.add(item.id);
-            candidateItems.push(item);
+            collectedIds.add(parsedItem.id);
+            candidateItems.push(parsedItem);
         });
 
+        const pageCursor = pageItems[pageItems.length - 1]?.id ?? null;
+        lastScannedCursor = pageCursor ?? lastScannedCursor;
+        scanCursor = pageCursor ?? scanCursor;
+
         if (pageItems.length < PAGE_SIZE) {
+            reachedEnd = true;
             break;
         }
-
-        cursor = pageItems[pageItems.length - 1]?.id ?? null;
     }
 
     if (invalidRowCount > 0) {
@@ -193,10 +343,20 @@ export async function GET(request: NextRequest) {
         });
     }
 
-    hasMore = candidateItems.length > limit;
-
     const items = selectDiversifiedItems(candidateItems, limit, seed);
-    const nextCursor = hasMore ? items[items.length - 1]?.id ?? null : null;
+    const selectedIds = new Set(items.map((item) => item.id));
+    const remainingCarryIds = candidateItems
+        .map((item) => item.id)
+        .filter((id) => !selectedIds.has(id))
+        .slice(0, PAGE_SIZE);
+    const hasMore = remainingCarryIds.length > 0 || !reachedEnd;
+    const nextCursor = hasMore
+        ? encodeFocusCursor({
+            v: 1,
+            scanCursor: lastScannedCursor,
+            carryIds: remainingCarryIds,
+        })
+        : null;
 
     return NextResponse.json({
         items,
