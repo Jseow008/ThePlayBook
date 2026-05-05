@@ -5,6 +5,8 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentLane } from "@/components/ui/ContentLane";
 import { useBrowseRecommendations } from "@/hooks/use-content-queries";
 
+const BROWSE_LIBRARY_SEED_LIMIT = 20;
+
 export function RecommendationsRow({
     cardTitleDensity = "default",
 }: {
@@ -15,6 +17,10 @@ export function RecommendationsRow({
     const clusterIds = useMemo(
         () => Array.from(new Set([...completedIds, ...myListIds])),
         [completedIds, myListIds]
+    );
+    const librarySeedIds = useMemo(
+        () => clusterIds.slice(0, BROWSE_LIBRARY_SEED_LIMIT),
+        [clusterIds],
     );
     const knownRecommendationIds = useMemo(
         () => Array.from(new Set([...completedIds, ...inProgressIds, ...myListIds])),
@@ -28,7 +34,7 @@ export function RecommendationsRow({
 
     const { data } = useBrowseRecommendations({
         recentSeedId: mostRecentId,
-        librarySeedIds: isWorthFetchingGeneral ? clusterIds : [],
+        librarySeedIds: isWorthFetchingGeneral ? librarySeedIds : [],
         excludeIds: knownRecommendationIds,
         enabled: isLoaded && hasFetchableRecommendationSeeds,
         targetCount: 10,

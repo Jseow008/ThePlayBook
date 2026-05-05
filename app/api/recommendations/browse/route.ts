@@ -17,6 +17,16 @@ const BROWSE_RECOMMENDATION_SELECT =
 
 type RecommendationItem = Database["public"]["Functions"]["match_recommendations"]["Returns"][number];
 
+async function timeAsync<T>(operation: () => Promise<T>) {
+    const startedAt = Date.now();
+    const result = await operation();
+
+    return {
+        result,
+        durationMs: Date.now() - startedAt,
+    };
+}
+
 function dedupeIds(ids: Array<string | null | undefined>) {
     return Array.from(new Set(ids.filter((id): id is string => Boolean(id))));
 }
@@ -152,6 +162,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
+        const requestStartedAt = Date.now();
         const parsed = BrowseRecommendationsRequestSchema.safeParse(await request.json());
         if (!parsed.success) {
             return apiError("VALIDATION_ERROR", "Invalid request payload", 400, requestId);
@@ -167,20 +178,22 @@ export async function POST(request: NextRequest) {
             recentSeedId,
         ]);
 
-        const [recentResult, libraryResult] = await Promise.all([
-            loadSemanticRecommendations({
+        const [timedRecentResult, timedLibraryResult] = await Promise.all([
+            timeAsync(() => loadSemanticRecommendations({
                 supabase,
                 seedIds: recentSeedId ? [recentSeedId] : [],
                 excludeIds: baseExcludeIds,
                 targetCount,
-            }),
-            loadSemanticRecommendations({
+            })),
+            timeAsync(() => loadSemanticRecommendations({
                 supabase,
                 seedIds: librarySeedIds,
                 excludeIds: baseExcludeIds,
                 targetCount: targetCount * 2,
-            }),
+            })),
         ]);
+        const recentResult = timedRecentResult.result;
+        const libraryResult = timedLibraryResult.result;
 
         if (recentResult.error) {
             logApiError({
@@ -210,13 +223,17 @@ export async function POST(request: NextRequest) {
             ...recentItems.map((item) => item.id),
             ...semanticLibraryItems.map((item) => item.id),
         ]);
-        const fillResult = librarySeedIds.length > 0
-            ? await loadLatestFill({
+        const timedFillResult = librarySeedIds.length > 0
+            ? await timeAsync(() => loadLatestFill({
                 supabase,
                 excludeIds: fillExcludeIds,
                 limit: targetCount - semanticLibraryItems.length,
-            })
-            : { data: [] as RecommendationItem[], error: null };
+            }))
+            : {
+                result: { data: [] as RecommendationItem[], error: null },
+                durationMs: 0,
+            };
+        const fillResult = timedFillResult.result;
 
         if (fillResult.error) {
             logApiError({
@@ -231,12 +248,28 @@ export async function POST(request: NextRequest) {
             ...semanticLibraryItems,
             ...fillResult.data,
         ]).slice(0, targetCount);
+        const totalDurationMs = Date.now() - requestStartedAt;
+        if (totalDurationMs > 1200) {
+            console.info("Slow browse recommendations request", {
+                request_id: requestId,
+                recent_ms: timedRecentResult.durationMs,
+                library_ms: timedLibraryResult.durationMs,
+                fill_ms: timedFillResult.durationMs,
+                total_ms: totalDurationMs,
+            });
+        }
 
         return NextResponse.json(
             { recentItems, libraryItems },
             {
                 headers: {
                     "Cache-Control": "private, no-store",
+                    "Server-Timing": [
+                        `recent;dur=${timedRecentResult.durationMs}`,
+                        `library;dur=${timedLibraryResult.durationMs}`,
+                        `fill;dur=${timedFillResult.durationMs}`,
+                        `total;dur=${totalDurationMs}`,
+                    ].join(", "),
                 },
             },
         );

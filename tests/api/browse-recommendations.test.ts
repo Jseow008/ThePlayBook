@@ -106,6 +106,7 @@ describe("Browse recommendations API", () => {
         }));
 
         expect(response.status).toBe(200);
+        expect(response.headers.get("Server-Timing")).toContain("total;dur=");
         expect(mockRpc).toHaveBeenCalledTimes(2);
         expect(mockRpc).toHaveBeenNthCalledWith(1, "match_recommendations", {
             seed_ids: [RECENT_SEED_ID],

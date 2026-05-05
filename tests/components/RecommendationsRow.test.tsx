@@ -209,4 +209,32 @@ describe("RecommendationsRow", () => {
         expect(useBrowseRecommendationsMock).toHaveBeenCalledTimes(1);
         expect(useBrowseRecommendationsMock).toHaveBeenCalledWith(expect.objectContaining({ enabled: true }));
     });
+
+    it("caps library recommendation seeds while preserving full exclusions", () => {
+        const completedIds = [recommendation.id];
+        const myListIds = Array.from({ length: 25 }, (_, index) =>
+            `77777777-7777-7777-7777-${String(index).padStart(12, "0")}`
+        );
+
+        useReadingProgressMock.mockReturnValue({
+            completedIds,
+            inProgressIds: [],
+            myListIds,
+            isLoaded: true,
+        });
+
+        useBrowseRecommendationsMock.mockReturnValueOnce({
+            data: { recentItems: [recommendation], libraryItems: [] },
+            isLoading: false,
+        });
+
+        render(<RecommendationsRow />);
+
+        expect(useBrowseRecommendationsMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                librarySeedIds: [recommendation.id, ...myListIds].slice(0, 20),
+                excludeIds: [recommendation.id, ...myListIds],
+            }),
+        );
+    });
 });

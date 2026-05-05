@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContentItem } from "@/types/database";
 import {
+    recordCachedBrowseRecommendations,
+} from "@/lib/browse-recommendation-cache";
+import {
     readCachedRecommendations,
     recordCachedRecommendations,
     recordRecentRecommendations,
@@ -292,6 +295,15 @@ describe("useBatchContentItems", () => {
     });
 });
 
+function createDeferred<T>() {
+    let resolve!: (value: T) => void;
+    const promise = new Promise<T>((nextResolve) => {
+        resolve = nextResolve;
+    });
+
+    return { promise, resolve };
+}
+
 describe("useBrowseRecommendations", () => {
     const fetchMock = vi.fn();
     const localStorageMock = createLocalStorageMock();
@@ -352,8 +364,15 @@ describe("useBrowseRecommendations", () => {
         expect(window.localStorage.getItem).not.toHaveBeenCalledWith(
             expect.stringContaining("recent_recommendations"),
         );
-        expect(window.localStorage.setItem).not.toHaveBeenCalled();
-        expect(useReadingProgressMock).not.toHaveBeenCalled();
+        expect(window.localStorage.setItem).not.toHaveBeenCalledWith(
+            expect.stringContaining("flux_recommendation_cache_"),
+            expect.any(String),
+        );
+        expect(window.localStorage.setItem).toHaveBeenCalledWith(
+            "flux_browse_recommendation_cache_guest",
+            expect.any(String),
+        );
+        expect(useReadingProgressMock).toHaveBeenCalled();
     });
 
     it("stays disabled until a recent or library seed is available", async () => {
@@ -372,5 +391,70 @@ describe("useBrowseRecommendations", () => {
 
         expect(result.current.fetchStatus).toBe("idle");
         expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("shows cached browse recommendations immediately while refreshing in the background", async () => {
+        const { useBrowseRecommendations } = await loadUseRecommendations();
+        const wrapper = createWrapper();
+        const cachedRecentItem = createRecommendationItem("cached-rec", "Cached recent recommendation");
+        const cachedLibraryItem = createRecommendationItem("cached-lib", "Cached library recommendation");
+        const freshRecentItem = createRecommendationItem("fresh-rec", "Fresh recent recommendation");
+        const freshLibraryItem = createRecommendationItem("fresh-lib", "Fresh library recommendation");
+        const deferredResponse = createDeferred<{
+            ok: boolean;
+            json: () => Promise<{
+                recentItems: ContentItem[];
+                libraryItems: ContentItem[];
+            }>;
+        }>();
+        const cacheKey = JSON.stringify({
+            recentSeedId: "seed-recent",
+            librarySeedIds: ["seed-library"],
+            excludeIds: ["known-1"],
+            targetCount: 10,
+            storageScope: "guest",
+        });
+
+        recordCachedBrowseRecommendations(
+            window.localStorage,
+            "guest",
+            cacheKey,
+            {
+                recentItems: [cachedRecentItem],
+                libraryItems: [cachedLibraryItem],
+            },
+        );
+        fetchMock.mockReturnValueOnce(deferredResponse.promise);
+
+        const { result } = renderHook(
+            () => useBrowseRecommendations({
+                recentSeedId: "seed-recent",
+                librarySeedIds: ["seed-library"],
+                excludeIds: ["known-1"],
+                enabled: true,
+                targetCount: 10,
+            }),
+            { wrapper },
+        );
+
+        expect(result.current.data).toEqual({
+            recentItems: [cachedRecentItem],
+            libraryItems: [cachedLibraryItem],
+        });
+        expect(result.current.isFetching).toBe(true);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+
+        deferredResponse.resolve({
+            ok: true,
+            json: vi.fn().mockResolvedValue({
+                recentItems: [freshRecentItem],
+                libraryItems: [freshLibraryItem],
+            }),
+        });
+
+        await waitFor(() => expect(result.current.data).toEqual({
+            recentItems: [freshRecentItem],
+            libraryItems: [freshLibraryItem],
+        }));
     });
 });

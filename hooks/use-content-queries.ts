@@ -5,6 +5,10 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import {
+    readCachedBrowseRecommendations,
+    recordCachedBrowseRecommendations,
+} from "@/lib/browse-recommendation-cache";
+import {
     readCachedRecommendations,
     readRecentRecommendationIds,
     recordCachedRecommendations,
@@ -197,6 +201,7 @@ export function useBrowseRecommendations(options: {
     enabled?: boolean;
     targetCount?: number;
 }) {
+    const { storageScope } = useReadingProgress();
     const uniqueLibrarySeedIds = Array.from(new Set(options.librarySeedIds));
     const uniqueExcludeIds = Array.from(new Set(options.excludeIds));
     const targetCount = options.targetCount ?? 10;
@@ -205,12 +210,22 @@ export function useBrowseRecommendations(options: {
         librarySeedIds: [...uniqueLibrarySeedIds].sort(),
         excludeIds: [...uniqueExcludeIds].sort(),
         targetCount,
-    }), [options.recentSeedId, targetCount, uniqueExcludeIds, uniqueLibrarySeedIds]);
+        storageScope,
+    }), [options.recentSeedId, targetCount, uniqueExcludeIds, uniqueLibrarySeedIds, storageScope]);
+    const cachedBrowseRecommendations = useMemo(() => {
+        if (typeof window === "undefined") {
+            return null;
+        }
 
-    return useQuery({
+        return readCachedBrowseRecommendations(localStorage, storageScope, queryKey);
+    }, [queryKey, storageScope]);
+
+    const browseRecommendationsQuery = useQuery({
         queryKey: ["browse-recommendations", queryKey],
         enabled: (options.enabled ?? true)
             && Boolean(options.recentSeedId || uniqueLibrarySeedIds.length > 0),
+        initialData: cachedBrowseRecommendations?.data,
+        initialDataUpdatedAt: cachedBrowseRecommendations ? 0 : undefined,
         queryFn: async () => {
             const response = await fetch("/api/recommendations/browse", {
                 method: "POST",
@@ -235,4 +250,19 @@ export function useBrowseRecommendations(options: {
         placeholderData: keepPreviousData,
         staleTime: 2 * 60 * 1000,
     });
+
+    useEffect(() => {
+        if (typeof window === "undefined" || !browseRecommendationsQuery.data) {
+            return;
+        }
+
+        recordCachedBrowseRecommendations(
+            localStorage,
+            storageScope,
+            queryKey,
+            browseRecommendationsQuery.data,
+        );
+    }, [browseRecommendationsQuery.data, queryKey, storageScope]);
+
+    return browseRecommendationsQuery;
 }
