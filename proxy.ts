@@ -106,6 +106,7 @@ export const config = {
         "/read/:path*",
         "/notes",
         "/ask",
+        "/admin-login",
         "/admin/:path*",
         "/api/admin/:path*",
         "/profile",
