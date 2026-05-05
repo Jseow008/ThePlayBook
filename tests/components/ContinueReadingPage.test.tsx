@@ -235,4 +235,28 @@ describe("ContinueReadingPage", () => {
 
         expect(refetch).toHaveBeenCalled();
     });
+
+    it("keeps loading chrome stable before progress hydrates", () => {
+        mockUseReadingProgress.mockReturnValue({
+            archiveFromProgressList: vi.fn(),
+            inProgressIds: [],
+            isLoaded: false,
+            refresh: vi.fn(),
+            removeFromProgress: vi.fn(),
+            restoreProgressListArchive: vi.fn(),
+            storageScope: "guest",
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [],
+            isError: false,
+            isLoading: false,
+            isSuccess: false,
+            refetch: vi.fn(),
+        });
+
+        const { container } = render(<ContinueReadingPage />);
+
+        expect(screen.queryByText("No reading in progress")).not.toBeInTheDocument();
+        expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    });
 });

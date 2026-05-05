@@ -8,6 +8,18 @@ import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
+import {
+    LIBRARY_CARD_GRID_CLASS,
+    LibraryGridSkeleton,
+    LibraryStatBadge,
+    LibraryToolbarSkeleton,
+} from "@/components/ui/LibraryLoadingStates";
+
+function parseCompletedTime(value: string | null | undefined) {
+    if (!value) return 0;
+    const timestamp = Date.parse(value);
+    return Number.isFinite(timestamp) ? timestamp : 0;
+}
 
 /**
  * Completed Page
@@ -15,7 +27,7 @@ import { useBatchContentItems } from "@/hooks/use-content-queries";
  * Shows all items the user has finished reading with search, filter, and sort capabilities.
  */
 export default function CompletedPage() {
-    const { archiveFromProgressList, completedIds, isLoaded, removeFromProgress, restoreProgressListArchive } = useReadingProgress();
+    const { archiveFromProgressList, completedIds, getProgress, isLoaded, removeFromProgress, restoreProgressListArchive } = useReadingProgress();
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
@@ -29,6 +41,8 @@ export default function CompletedPage() {
         isSuccess,
         refetch,
     } = useBatchContentItems(completedIds, { enabled: isLoaded });
+    const isPageLoading = !isLoaded || isLoading;
+    const shouldShowLibraryControls = isPageLoading || allItems.length > 0;
 
     useEffect(() => {
         if (!isLoaded || !isSuccess || isLoading || completedIds.length === 0) return;
@@ -64,9 +78,15 @@ export default function CompletedPage() {
             if (activeSort === "title") {
                 return a.title.localeCompare(b.title);
             }
-            // For newest/oldest, we rely on the original 'completedIds' order which is by completion time (recency)
-            // But 'allItems' from API doesn't guarantee order. We should ideally store completion timestamps.
-            // Since `useReadingProgress` sorts by `lastReadAt`, we can use the index in `completedIds` as a proxy for recency.
+            const completedAtA = getProgress(a.id)?.completedAt;
+            const completedAtB = getProgress(b.id)?.completedAt;
+            if (completedAtA || completedAtB) {
+                const timeA = parseCompletedTime(completedAtA);
+                const timeB = parseCompletedTime(completedAtB);
+                if (activeSort === "newest") return timeB - timeA;
+                if (activeSort === "oldest") return timeA - timeB;
+            }
+
             const indexA = completedIds.indexOf(a.id);
             const indexB = completedIds.indexOf(b.id);
 
@@ -77,7 +97,7 @@ export default function CompletedPage() {
         });
 
         return items;
-    }, [allItems, activeFilter, searchQuery, activeSort, completedIds]);
+    }, [allItems, activeFilter, searchQuery, activeSort, completedIds, getProgress]);
 
     return (
         <div className="min-h-screen bg-background pb-20">
@@ -92,11 +112,12 @@ export default function CompletedPage() {
                         </div>
 
                         {/* Stats Summary */}
-                        {!isLoading && allItems.length > 0 && (
-                            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 px-3 py-1 rounded-full border border-border/50">
-                                <span className="font-bold text-foreground">{allItems.length}</span>
-                                <span className="text-xs uppercase tracking-wider">Total Items</span>
-                            </div>
+                        {shouldShowLibraryControls && (
+                            <LibraryStatBadge
+                                count={allItems.length}
+                                label="Total Items"
+                                isLoading={isPageLoading}
+                            />
                         )}
                     </div>
                     <p className="text-muted-foreground">
@@ -105,28 +126,28 @@ export default function CompletedPage() {
                 </div>
 
                 {/* Controls Toolbar */}
-                {!isLoading && allItems.length > 0 && (
+                {shouldShowLibraryControls && (
                     <div className="mb-8">
-                        <LibraryToolbar
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                            activeFilter={activeFilter}
-                            onFilterChange={setActiveFilter}
-                            activeSort={activeSort}
-                            onSortChange={setActiveSort}
-                            className="w-full"
-                        />
+                        {isPageLoading ? (
+                            <LibraryToolbarSkeleton className="w-full" />
+                        ) : (
+                            <LibraryToolbar
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                activeFilter={activeFilter}
+                                onFilterChange={setActiveFilter}
+                                activeSort={activeSort}
+                                onSortChange={setActiveSort}
+                                className="w-full"
+                            />
+                        )}
                     </div>
                 )}
 
                 {/* Content */}
                 <div>
-                    {isLoading ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                            {[...Array(8)].map((_, i) => (
-                                <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
-                            ))}
-                        </div>
+                    {isPageLoading ? (
+                        <LibraryGridSkeleton />
                     ) : isError && allItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
                             <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
@@ -181,7 +202,7 @@ export default function CompletedPage() {
                                 </p>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
+                            <div className={LIBRARY_CARD_GRID_CLASS}>
                                 {filteredItems.map((item) => (
                                     <ContentCard
                                         key={item.id}

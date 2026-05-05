@@ -163,6 +163,51 @@ describe("useReadingProgress", () => {
         expect(JSON.parse(localData!).completed).toContain("seg-x");
     });
 
+    it("records a stable completion timestamp for completed progress", async () => {
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        act(() => {
+            result.current.saveReadingProgress("item-complete", {
+                itemId: "item-complete",
+                completed: ["seg-1", "seg-2"],
+                lastSegmentIndex: 1,
+                lastReadAt: "2026-03-10T00:00:00.000Z",
+                isCompleted: true,
+                totalSegments: 2,
+            });
+        });
+
+        expect(result.current.getProgress("item-complete")?.completedAt).toBe("2026-03-10T00:00:00.000Z");
+
+        act(() => {
+            result.current.saveReadingProgress("item-complete", {
+                itemId: "item-complete",
+                completed: ["seg-1", "seg-2"],
+                lastSegmentIndex: 1,
+                lastReadAt: "2026-03-12T00:00:00.000Z",
+                isCompleted: true,
+                totalSegments: 2,
+            });
+        });
+
+        expect(result.current.getProgress("item-complete")?.completedAt).toBe("2026-03-10T00:00:00.000Z");
+
+        act(() => {
+            result.current.saveReadingProgress("item-complete", {
+                itemId: "item-complete",
+                completed: ["seg-1"],
+                lastSegmentIndex: 0,
+                lastReadAt: "2026-03-13T00:00:00.000Z",
+                isCompleted: false,
+                totalSegments: 2,
+            });
+        });
+
+        expect(result.current.getProgress("item-complete")?.completedAt).toBeUndefined();
+    });
+
     it("archives an in-progress item without deleting its progress", async () => {
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
 

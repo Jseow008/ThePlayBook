@@ -7,6 +7,12 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
+import {
+    LIBRARY_CARD_GRID_CLASS,
+    LibraryGridSkeleton,
+    LibraryStatBadge,
+    LibraryToolbarSkeleton,
+} from "@/components/ui/LibraryLoadingStates";
 
 /**
  * My List Page
@@ -28,6 +34,8 @@ export default function MyListPage() {
         isSuccess,
         refetch,
     } = useBatchContentItems(myListIds, { enabled: isLoaded });
+    const isPageLoading = !isLoaded || isLoading;
+    const shouldShowLibraryControls = isPageLoading || allItems.length > 0;
 
     useEffect(() => {
         if (!isLoaded || !isSuccess || isLoading || myListIds.length === 0) return;
@@ -92,11 +100,12 @@ export default function MyListPage() {
                         </div>
 
                         {/* Stats Summary - Desktop only for now to save space on mobile */}
-                        {!isLoading && allItems.length > 0 && (
-                            <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-secondary/30 px-3 py-1 rounded-full border border-border/50">
-                                <span className="font-bold text-foreground">{allItems.length}</span>
-                                <span className="text-xs uppercase tracking-wider">Saved Items</span>
-                            </div>
+                        {shouldShowLibraryControls && (
+                            <LibraryStatBadge
+                                count={allItems.length}
+                                label="Saved Items"
+                                isLoading={isPageLoading}
+                            />
                         )}
                     </div>
                     <p className="text-muted-foreground">
@@ -105,28 +114,28 @@ export default function MyListPage() {
                 </div>
 
                 {/* Toolbar */}
-                {!isLoading && allItems.length > 0 && (
+                {shouldShowLibraryControls && (
                     <div className="mb-8">
-                        <LibraryToolbar
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                            activeFilter={activeFilter}
-                            onFilterChange={setActiveFilter}
-                            activeSort={activeSort}
-                            onSortChange={setActiveSort}
-                            className="w-full"
-                        />
+                        {isPageLoading ? (
+                            <LibraryToolbarSkeleton className="w-full" />
+                        ) : (
+                            <LibraryToolbar
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                activeFilter={activeFilter}
+                                onFilterChange={setActiveFilter}
+                                activeSort={activeSort}
+                                onSortChange={setActiveSort}
+                                className="w-full"
+                            />
+                        )}
                     </div>
                 )}
 
                 {/* Content */}
                 <div>
-                    {isLoading ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                            {[...Array(8)].map((_, i) => (
-                                <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
-                            ))}
-                        </div>
+                    {isPageLoading ? (
+                        <LibraryGridSkeleton />
                     ) : isError && allItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-border/50 rounded-2xl bg-secondary/5">
                             <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border/70">
@@ -180,7 +189,7 @@ export default function MyListPage() {
                                     Showing {filteredItems.length} {filteredItems.length === 1 ? 'item' : 'items'}
                                 </p>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
+                            <div className={LIBRARY_CARD_GRID_CLASS}>
                                 {filteredItems.map((item) => (
                                     <ContentCard
                                         key={item.id}

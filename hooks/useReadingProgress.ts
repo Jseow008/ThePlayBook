@@ -40,6 +40,7 @@ export interface ReadingProgressData {
     completed: string[];
     lastSegmentIndex: number;
     lastReadAt: string;
+    completedAt?: string;
     isCompleted: boolean;
     totalSegments?: number;
     maxSegmentIndex?: number;
@@ -134,6 +135,11 @@ function isLocalProgressNewer(localData: ReadingProgressData | null, cloudTimest
     return new Date(localData.lastReadAt).getTime() > new Date(cloudTimestamp).getTime();
 }
 
+function parseProgressTimestamp(value: string) {
+    const timestamp = Date.parse(value);
+    return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
+}
+
 function useReadingProgressController(initialUser?: User | null) {
     const [inProgressIds, setInProgressIds] = useState<string[]>([]);
     const [completedIds, setCompletedIds] = useState<string[]>([]);
@@ -171,8 +177,8 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return;
 
         const progressKeys = getScopedProgressKeys(localStorage, scope);
-        const inProgress: { id: string; lastReadAt: string }[] = [];
-        const completed: { id: string; lastReadAt: string }[] = [];
+        const inProgress: { id: string; sortTimestamp: string }[] = [];
+        const completed: { id: string; sortTimestamp: string }[] = [];
         const newProgressMap: Record<string, ReadingProgressData> = {};
 
         progressKeys.forEach((key) => {
@@ -181,7 +187,12 @@ function useReadingProgressController(initialUser?: User | null) {
 
             try {
                 const data = JSON.parse(localStorage.getItem(key) || "{}") as ReadingProgressData;
-                const entry = { id: itemId, lastReadAt: data.lastReadAt || "" };
+                const entry = {
+                    id: itemId,
+                    sortTimestamp: data.isCompleted
+                        ? data.completedAt || data.lastReadAt || ""
+                        : data.lastReadAt || "",
+                };
 
                 newProgressMap[itemId] = data;
 
@@ -203,10 +214,10 @@ function useReadingProgressController(initialUser?: User | null) {
             }
         });
 
-        const sortByRecent = (a: { lastReadAt: string }, b: { lastReadAt: string }) => {
-            if (!a.lastReadAt) return 1;
-            if (!b.lastReadAt) return -1;
-            return new Date(b.lastReadAt).getTime() - new Date(a.lastReadAt).getTime();
+        const sortByRecent = (a: { sortTimestamp: string }, b: { sortTimestamp: string }) => {
+            if (!a.sortTimestamp) return 1;
+            if (!b.sortTimestamp) return -1;
+            return parseProgressTimestamp(b.sortTimestamp) - parseProgressTimestamp(a.sortTimestamp);
         };
 
         setStorageScope(scope);
@@ -611,7 +622,20 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
-        const nextData = clearArchiveForCurrentList(data);
+        const currentProgress = readProgressFromScope(scope, itemId);
+        const nextProgressData: ReadingProgressData = data.isCompleted
+            ? {
+                ...data,
+                completedAt: currentProgress?.isCompleted && currentProgress.completedAt
+                    ? currentProgress.completedAt
+                    : data.completedAt || data.lastReadAt || new Date().toISOString(),
+            }
+            : (() => {
+                const inProgressData = { ...data };
+                delete inProgressData.completedAt;
+                return inProgressData;
+            })();
+        const nextData = clearArchiveForCurrentList(nextProgressData);
         localStorage.setItem(progressKey(scope, itemId), JSON.stringify(nextData));
 
         setProgressMap((prev) => ({ ...prev, [itemId]: nextData }));
@@ -626,7 +650,7 @@ function useReadingProgressController(initialUser?: User | null) {
 
         syncItemToCloud(userRef.current, scope, itemId, undefined, nextData);
         window.dispatchEvent(new Event("flux_progress_updated"));
-    }, [insertOrMoveToFront, syncItemToCloud]);
+    }, [insertOrMoveToFront, readProgressFromScope, syncItemToCloud]);
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
     const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);

@@ -92,6 +92,7 @@ describe("CompletedPage", () => {
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
             completedIds: [item.id],
+            getProgress: vi.fn(() => null),
             isLoaded: true,
             refresh: vi.fn(),
             removeFromProgress: vi.fn(),
@@ -130,6 +131,7 @@ describe("CompletedPage", () => {
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList,
             completedIds: [item.id],
+            getProgress: vi.fn(() => null),
             isLoaded: true,
             refresh: vi.fn(),
             removeFromProgress,
@@ -154,5 +156,30 @@ describe("CompletedPage", () => {
         toastOptions.action.onClick();
 
         expect(restoreProgressListArchive).toHaveBeenCalledWith(item.id, "completed");
+    });
+
+    it("keeps loading chrome stable before completed items hydrate", () => {
+        mockUseReadingProgress.mockReturnValue({
+            archiveFromProgressList: vi.fn(),
+            completedIds: [],
+            getProgress: vi.fn(() => null),
+            isLoaded: false,
+            refresh: vi.fn(),
+            removeFromProgress: vi.fn(),
+            restoreProgressListArchive: vi.fn(),
+            storageScope: "guest",
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [],
+            isError: false,
+            isLoading: false,
+            isSuccess: false,
+            refetch: vi.fn(),
+        });
+
+        const { container } = render(<CompletedPage />);
+
+        expect(screen.queryByText("No completed content yet")).not.toBeInTheDocument();
+        expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
     });
 });
