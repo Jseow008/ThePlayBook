@@ -12,6 +12,7 @@ import { APP_NAME } from "@/lib/brand";
 import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/onboarding";
 import { clearScopedReadingHistory } from "@/lib/local-user-storage";
 import { clearCachedRecommendations, clearRecentRecommendations } from "@/lib/recommendation-memory";
+import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
 
 export default function SettingsPage() {
     const supabase = createClient();
@@ -141,6 +142,7 @@ export default function SettingsPage() {
             clearScopedReadingHistory(localStorage, storageScope);
             clearRecentRecommendations(localStorage, storageScope);
             clearCachedRecommendations(localStorage, storageScope);
+            clearCachedBrowseRecommendations(localStorage, storageScope);
             refresh();
             setConfirmClear(false);
             toast.success("Reading history cleared");

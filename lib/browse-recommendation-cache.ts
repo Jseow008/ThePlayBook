@@ -115,6 +115,17 @@ export function readCachedBrowseRecommendations(
     }
 }
 
+export function clearCachedBrowseRecommendations(
+    storage: Storage,
+    scope: StorageScope,
+) {
+    try {
+        storage.removeItem(browseRecommendationCacheKey(scope));
+    } catch {
+        // Ignore storage cleanup failures and degrade gracefully.
+    }
+}
+
 export function recordCachedBrowseRecommendations(
     storage: Storage,
     scope: StorageScope,

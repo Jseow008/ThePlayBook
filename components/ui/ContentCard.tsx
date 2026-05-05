@@ -139,6 +139,9 @@ function BaseContentCard({
     const isNew = createdAt ? createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false;
     const renderNewBadge = isNew && !showCompletedBadge;
     const linkLabel = getContentCardLabel(href, item.title);
+    const bookmarkLabel = isBookmarked
+        ? `Remove ${item.title} from My List`
+        : `Add ${item.title} to My List`;
 
     return (
         <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10 hover:scale-105">
@@ -192,7 +195,7 @@ function BaseContentCard({
                             : "bg-black/40 text-white opacity-100 hover:bg-black/70 lg:opacity-0 lg:group-hover:opacity-100"
                     )}
                     title={isBookmarked ? "Remove from My List" : "Add to My List"}
-                    aria-label={isBookmarked ? "Remove from My List" : "Add to My List"}
+                    aria-label={bookmarkLabel}
                 >
                     {isBookmarked ? (
                         <Bookmark className="size-5" fill="currentColor" />

@@ -89,6 +89,12 @@ describe("ContentCard", () => {
         );
     });
 
+    it("uses item-specific bookmark labels", () => {
+        render(<ContentCard item={item} />);
+
+        expect(screen.getByRole("button", { name: "Add Deep Work to My List" })).toBeInTheDocument();
+    });
+
     it("opens the reader when resume mode has usable progress", () => {
         mockGetProgress.mockReturnValue({
             itemId: item.id,

@@ -16,6 +16,7 @@ const fromMock = vi.fn((table: string) => ({
 }));
 const refreshMock = vi.fn();
 const clearCachedRecommendationsMock = vi.fn();
+const clearCachedBrowseRecommendationsMock = vi.fn();
 const clearRecentRecommendationsMock = vi.fn();
 const toastErrorMock = vi.fn();
 const toastSuccessMock = vi.fn();
@@ -59,6 +60,10 @@ vi.mock("@/lib/local-user-storage", () => ({
 vi.mock("@/lib/recommendation-memory", () => ({
     clearCachedRecommendations: (...args: unknown[]) => clearCachedRecommendationsMock(...args),
     clearRecentRecommendations: (...args: unknown[]) => clearRecentRecommendationsMock(...args),
+}));
+
+vi.mock("@/lib/browse-recommendation-cache", () => ({
+    clearCachedBrowseRecommendations: (...args: unknown[]) => clearCachedBrowseRecommendationsMock(...args),
 }));
 
 vi.mock("sonner", () => ({
@@ -107,6 +112,7 @@ describe("SettingsPage", () => {
 
         expect(clearScopedReadingHistoryMock).toHaveBeenCalledWith(localStorage, "user:test-user");
         expect(clearCachedRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
+        expect(clearCachedBrowseRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
         expect(clearRecentRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
         expect(refreshMock).toHaveBeenCalled();
         expect(fromMock).not.toHaveBeenCalled();
@@ -138,6 +144,7 @@ describe("SettingsPage", () => {
         expect(fromMock).toHaveBeenCalledWith("user_library");
         expect(deleteEqMock).toHaveBeenCalledWith("user_id", "user-123");
         expect(clearScopedReadingHistoryMock).toHaveBeenCalledWith(localStorage, "user:test-user");
+        expect(clearCachedBrowseRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
         expect(refreshMock).toHaveBeenCalled();
         expect(toastSuccessMock).toHaveBeenCalledWith("Reading history cleared");
         vi.useRealTimers();
