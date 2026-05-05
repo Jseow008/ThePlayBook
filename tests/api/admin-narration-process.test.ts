@@ -40,6 +40,13 @@ vi.mock("@/lib/server/narration-processor", async () => {
     const actual = await vi.importActual<typeof import("@/lib/server/narration-processor")>("@/lib/server/narration-processor");
     return {
         ...actual,
+    };
+});
+
+vi.mock("@/lib/server/narration-processing-state", async () => {
+    const actual = await vi.importActual<typeof import("@/lib/server/narration-processing-state")>("@/lib/server/narration-processing-state");
+    return {
+        ...actual,
         expireStaleNarrationProcessingJobs: expireStaleNarrationProcessingJobsMock,
         getNarrationQueueSummary: getNarrationQueueSummaryMock,
     };

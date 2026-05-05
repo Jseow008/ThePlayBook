@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/admin/narration/reset/route";
 import { verifyAdminSession } from "@/lib/admin/auth";
-import { resetStaleNarrationProcessingJobs } from "@/lib/server/narration-processor";
+import { resetStaleNarrationProcessingJobs } from "@/lib/server/narration-processing-state";
 import { rateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/admin/auth", () => ({
@@ -13,7 +13,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
 }));
 
-vi.mock("@/lib/server/narration-processor", () => ({
+vi.mock("@/lib/server/narration-processing-state", () => ({
     resetStaleNarrationProcessingJobs: vi.fn(),
 }));
 

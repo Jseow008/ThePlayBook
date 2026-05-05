@@ -3,7 +3,7 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { resetStaleNarrationProcessingJobs } from "@/lib/server/narration-processor";
+import { resetStaleNarrationProcessingJobs } from "@/lib/server/narration-processing-state";
 
 export const runtime = "nodejs";
 

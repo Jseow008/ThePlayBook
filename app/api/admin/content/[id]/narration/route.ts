@@ -5,7 +5,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, isSupabaseNotFoundError, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getNarrationJobState } from "@/lib/narration-job";
-import { expireStaleNarrationProcessingJobs } from "@/lib/server/narration-processor";
+import { expireStaleNarrationProcessingJobs } from "@/lib/server/narration-processing-state";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 

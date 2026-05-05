@@ -1,8 +1,5 @@
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
-import { existsSync, chmodSync } from "node:fs";
-import { createRequire } from "node:module";
-import path from "node:path";
 import {
     OPENAI_TTS_MODEL,
     OPENAI_TTS_VOICE,
@@ -35,7 +32,6 @@ const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 const OPENAI_MAX_ATTEMPTS = 3;
 const FFMPEG_TRANSCODE_TIMEOUT_MS = 60_000;
 const RETRYABLE_OPENAI_STATUSES = new Set([408, 409, 429, 500, 502, 503, 504]);
-const require = createRequire(import.meta.url);
 
 function shouldPreferWavOutput() {
     const requestedFormat = process.env.NARRATION_OUTPUT_FORMAT?.trim().toLowerCase();
@@ -44,35 +40,6 @@ function shouldPreferWavOutput() {
 
 function shouldAllowWavFallback() {
     return process.env.NARRATION_ALLOW_WAV_FALLBACK?.trim().toLowerCase() === "true";
-}
-
-function resolveFfmpegBinaryPath() {
-    const explicitPath = process.env.FFMPEG_BIN?.trim();
-    if (explicitPath) {
-        return explicitPath;
-    }
-
-    const executableName = process.platform === "win32" ? "ffmpeg.exe" : "ffmpeg";
-    const candidates = new Set<string>();
-
-    try {
-        const packageJsonPath = require.resolve("ffmpeg-static/package.json");
-        const packageDir = path.dirname(packageJsonPath);
-        candidates.add(path.join(packageDir, executableName));
-    } catch {
-        // Continue to traced fallbacks below.
-    }
-
-    candidates.add(path.join(".next", "server", "node_modules", "ffmpeg-static", executableName));
-    candidates.add(path.join("node_modules", "ffmpeg-static", executableName));
-
-    for (const candidate of candidates) {
-        if (candidate && existsSync(candidate)) {
-            return candidate;
-        }
-    }
-
-    return null;
 }
 
 interface WavChunk {
@@ -206,48 +173,38 @@ export function getWavDurationSeconds(wavBuffer: Buffer) {
 }
 
 export async function transcodeWavToMp3(wavBuffer: Buffer) {
-    const ffmpegBinaryPath = resolveFfmpegBinaryPath();
-    if (!ffmpegBinaryPath) {
-        throw new NarrationError({
-            code: "FFMPEG_NOT_AVAILABLE",
-            status: 500,
-            userMessage: "AI narration is not configured correctly right now.",
-            message: "ffmpeg-static did not provide a usable binary path.",
-        });
-    }
-
-    if (process.platform !== "win32") {
-        try {
-            chmodSync(ffmpegBinaryPath, 0o755);
-        } catch {
-            // Ignore chmod failures and let spawn surface the real execution error if needed.
-        }
-    }
-
     return await new Promise<Buffer>((resolve, reject) => {
-        const child = spawn(ffmpegBinaryPath, [
-            "-hide_banner",
-            "-loglevel",
-            "error",
-            "-f",
-            "wav",
-            "-i",
-            "pipe:0",
-            "-vn",
-            "-codec:a",
-            "libmp3lame",
-            "-b:a",
-            "64k",
-            "-ac",
-            "1",
-            "-ar",
-            "24000",
-            "-f",
-            "mp3",
-            "pipe:1",
-        ], {
-            stdio: ["pipe", "pipe", "pipe"],
-        });
+        const child = spawn(
+            process.env.NODE_ENV !== "production" && process.env.FFMPEG_BIN?.trim()
+                ? process.env.FFMPEG_BIN.trim()
+                : process.platform === "win32"
+                    ? "node_modules/ffmpeg-static/ffmpeg.exe"
+                    : "node_modules/ffmpeg-static/ffmpeg",
+            [
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-f",
+                "wav",
+                "-i",
+                "pipe:0",
+                "-vn",
+                "-codec:a",
+                "libmp3lame",
+                "-b:a",
+                "64k",
+                "-ac",
+                "1",
+                "-ar",
+                "24000",
+                "-f",
+                "mp3",
+                "pipe:1",
+            ],
+            {
+                stdio: ["pipe", "pipe", "pipe"],
+            }
+        );
 
         const stdoutChunks: Buffer[] = [];
         const stderrChunks: Buffer[] = [];

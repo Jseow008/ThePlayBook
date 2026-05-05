@@ -3,10 +3,12 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import {
-    buildProcessErrorResponseMessage,
     expireStaleNarrationProcessingJobs,
     getNarrationQueueSummary,
     NARRATION_PROCESS_BATCH_SIZE,
+} from "@/lib/server/narration-processing-state";
+import {
+    buildProcessErrorResponseMessage,
     processNarrationJobs,
 } from "@/lib/server/narration-processor";
 

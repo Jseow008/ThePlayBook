@@ -24,6 +24,12 @@ const appOrigin =
   process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
   "http://localhost:3000";
+const ffmpegTraceIncludes = [
+  process.platform === "win32"
+    ? "./node_modules/ffmpeg-static/ffmpeg.exe"
+    : "./node_modules/ffmpeg-static/ffmpeg",
+  "./node_modules/ffmpeg-static/package.json",
+];
 
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
@@ -59,31 +65,11 @@ const corsHeaders = [
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
-    "/api/admin/content": [
-      "./node_modules/ffmpeg-static/ffmpeg",
-      "./node_modules/ffmpeg-static/ffmpeg.exe",
-      "./node_modules/ffmpeg-static/package.json",
-    ],
-    "/api/admin/content/[id]": [
-      "./node_modules/ffmpeg-static/ffmpeg",
-      "./node_modules/ffmpeg-static/ffmpeg.exe",
-      "./node_modules/ffmpeg-static/package.json",
-    ],
-    "/api/admin/content/bulk": [
-      "./node_modules/ffmpeg-static/ffmpeg",
-      "./node_modules/ffmpeg-static/ffmpeg.exe",
-      "./node_modules/ffmpeg-static/package.json",
-    ],
-    "/api/admin/content/[id]/narration": [
-      "./node_modules/ffmpeg-static/ffmpeg",
-      "./node_modules/ffmpeg-static/ffmpeg.exe",
-      "./node_modules/ffmpeg-static/package.json",
-    ],
-    "/api/admin/narration/process": [
-      "./node_modules/ffmpeg-static/ffmpeg",
-      "./node_modules/ffmpeg-static/ffmpeg.exe",
-      "./node_modules/ffmpeg-static/package.json",
-    ],
+    "/api/admin/content": ffmpegTraceIncludes,
+    "/api/admin/content/[id]": ffmpegTraceIncludes,
+    "/api/admin/content/bulk": ffmpegTraceIncludes,
+    "/api/admin/content/[id]/narration": ffmpegTraceIncludes,
+    "/api/admin/narration/process": ffmpegTraceIncludes,
   },
   images: {
     deviceSizes: [640, 768, 1024, 1280],

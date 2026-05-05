@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { getNarrationQueueStatus, NARRATION_PROCESS_BATCH_SIZE } from "@/lib/server/narration-processor";
+import { getNarrationQueueStatus, NARRATION_PROCESS_BATCH_SIZE } from "@/lib/server/narration-processing-state";
 
 export const runtime = "nodejs";
 
