@@ -359,7 +359,7 @@ export function ContentPreview({
             </div>
 
             {/* ── Sticky Mobile CTA ── */}
-            <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 p-3 flex gap-3 safe-area-pb">
+            <div className="sm:hidden fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 p-3 flex gap-3 safe-area-pb">
                 <Link
                     href={buildReadPath(item)}
                     className="flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-secondary-foreground font-semibold text-base border border-border/50 hover:bg-secondary/80 transition-all active:scale-95 shadow-sm"
