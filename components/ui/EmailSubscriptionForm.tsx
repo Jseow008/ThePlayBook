@@ -106,7 +106,7 @@ export function EmailSubscriptionForm({
           onChange={(event) => setEmail(event.target.value)}
           placeholder="you@example.com"
           disabled={isSubmitting || isSuccess}
-          className="focus-ring min-h-12 w-full rounded-full border border-white/10 bg-black/35 px-5 text-base text-white outline-none transition-[border-color,background-color,box-shadow] duration-300 placeholder:text-zinc-500 hover:border-white/18 focus:border-white/35 disabled:cursor-not-allowed disabled:opacity-70 sm:max-w-xs"
+          className="focus-ring min-h-12 w-full rounded-full border border-white/10 bg-[rgb(var(--landing-surface-rgb)_/_0.5)] px-5 text-base text-white outline-none transition-[border-color,background-color,box-shadow] duration-300 placeholder:text-zinc-500 hover:border-white/18 focus:border-white/35 disabled:cursor-not-allowed disabled:opacity-70 sm:max-w-xs"
         />
         <button
           type="submit"
