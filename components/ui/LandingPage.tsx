@@ -217,7 +217,7 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
 
 function LandingHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-background/95 backdrop-blur-xl">
+    <header className="landing-header sticky top-0 z-50 border-b border-white/[0.08] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-sm">
           <Logo width={88} height={24} />
@@ -291,7 +291,7 @@ function HeroSection() {
         <div className="relative hidden lg:block">
           <div className="pointer-events-none absolute inset-x-8 -top-6 h-20 bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl" />
           <div className="landing-device-stage relative z-20 w-full">
-            <div className="landing-device-card relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
+            <div className="landing-device-card relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-[rgb(var(--landing-surface-rgb))] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
               <Image
                 src="/images/hero-section.png"
                 alt="Flux dashboard desktop experience"
@@ -304,7 +304,7 @@ function HeroSection() {
               <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
             </div>
 
-            <div className="landing-device-phone absolute -bottom-8 -left-6 z-30 aspect-[1206/2306] w-[140px] overflow-hidden rounded-[1.25rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.4)]">
+            <div className="landing-device-phone absolute -bottom-8 -left-6 z-30 aspect-[1206/2306] w-[140px] overflow-hidden rounded-[1.25rem] border-[4px] border-white/10 bg-[rgb(var(--landing-surface-rgb))] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.4)]">
               <Image
                 src="/images/mobile-reader-view.png"
                 alt="Flux mobile reader experience"
@@ -312,7 +312,7 @@ function HeroSection() {
                 sizes="140px"
                 className="object-contain"
               />
-              <div className="absolute left-1/2 top-0 z-20 h-3 w-14 -translate-x-1/2 rounded-b-lg bg-[#1c1c1e]" />
+              <div className="absolute left-1/2 top-0 z-20 h-3 w-14 -translate-x-1/2 rounded-b-lg bg-[rgb(var(--landing-surface-raised-rgb))]" />
             </div>
           </div>
         </div>
@@ -570,8 +570,8 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
             event.stopPropagation();
           }}
         >
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#090807] via-[#090807]/72 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#090807] via-[#090807]/72 to-transparent" />
+          <div className="landing-carousel-fade-left pointer-events-none absolute inset-y-0 left-0 z-10 w-16" />
+          <div className="landing-carousel-fade-right pointer-events-none absolute inset-y-0 right-0 z-10 w-16" />
           <div
             ref={scrollRef}
             aria-label="Featured reads"
@@ -675,8 +675,8 @@ function CorePlatformFeaturesSection() {
 
             <div className="grid gap-4 sm:grid-cols-2 lg:items-center">
               <FadeIn delayMs={100}>
-                <div className="group landing-feature-card flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.85)]">
-                  <div className="relative aspect-[1996/1794] w-full shrink-0 overflow-hidden border-b border-white/5 bg-zinc-950">
+                <div className="group landing-feature-card flex flex-col overflow-hidden rounded-[2rem] border border-white/10 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.85)]">
+                  <div className="relative aspect-[1996/1794] w-full shrink-0 overflow-hidden border-b border-white/5 bg-[rgb(var(--landing-bg-deep-rgb))]">
                     <Image
                       src={CORE_ANCHOR_FEATURE.image}
                       alt={`Screenshot illustrating ${CORE_ANCHOR_FEATURE.title}`}
@@ -704,8 +704,8 @@ function CorePlatformFeaturesSection() {
               <div className="flex flex-col gap-4">
                 {CORE_SUPPORT_FEATURES.map((feature, index) => (
                   <FadeIn key={feature.title} delayMs={150 + index * 80}>
-                    <div className="group landing-feature-row relative flex flex-row items-center gap-4 overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/80 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_20px_40px_-28px_rgba(255,255,255,0.2)]">
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.15rem] border border-white/5 bg-zinc-950">
+                    <div className="group landing-feature-row relative flex flex-row items-center gap-4 overflow-hidden rounded-[1.75rem] border border-white/10 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:shadow-[0_20px_40px_-28px_rgba(255,255,255,0.2)]">
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.15rem] border border-white/5 bg-[rgb(var(--landing-bg-deep-rgb))]">
                         <Image
                           src={feature.image}
                           alt={`Screenshot illustrating ${feature.title}`}
@@ -760,10 +760,10 @@ function TopicMapSection({ categories }: { categories: { category: string; count
               <FadeIn key={item.category} delayMs={index * 50}>
                 <Link
                   href={`/search?category=${encodeURIComponent(item.category)}`}
-                  className="landing-topic-card group relative flex h-full min-h-44 flex-col items-center justify-center gap-4 overflow-hidden rounded-[2rem] border border-white/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[0_24px_50px_-28px_rgba(255,255,255,0.24)] sm:p-8"
+                  className="landing-topic-card group relative flex h-full min-h-44 flex-col items-center justify-center gap-4 overflow-hidden rounded-[2rem] border border-white/5 p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:shadow-[0_24px_50px_-28px_rgba(255,255,255,0.24)] sm:p-8"
                 >
                   <div className="pointer-events-none absolute inset-x-8 top-0 h-20 bg-gradient-to-b from-white/[0.08] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="rounded-2xl border border-white/[0.08] bg-black/40 p-4 shadow-inner transition-colors group-hover:bg-black/60">
+                  <div className="rounded-2xl border border-white/[0.08] bg-[rgb(var(--landing-surface-rgb)_/_0.56)] p-4 shadow-inner transition-colors group-hover:bg-[rgb(var(--landing-surface-raised-rgb)_/_0.72)]">
                     <Icon className="size-6 text-zinc-400 transition-colors group-hover:text-white" />
                   </div>
                   <div>
