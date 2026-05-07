@@ -7,6 +7,7 @@ Flux is a Next.js knowledge platform for publishing curated summaries of books, 
 ## What Ships Today
 
 - Public landing page, browse feed, search, focus mode, preview pages, reader pages, and public series pages
+- Explicit weekly email subscription flow with subscription status and unsubscribe-token support
 - Authenticated library features: saved items, continue reading, completed history, notes, ask, profile, and settings
 - Reader features: quick mode, accordion-based deep reading, highlights, notes drawer, feedback, and scoped reader themes
 - AI surfaces: Ask My Library, Ask These Notes, and author-style chat on content pages
@@ -22,6 +23,18 @@ Flux is a Next.js knowledge platform for publishing curated summaries of books, 
 - Vercel Analytics / Speed Insights
 - AI SDK with Anthropic/OpenAI generation and Gemini embeddings
 - Upstash Redis for production rate limiting
+
+## Email Subscriptions
+
+The landing-page newsletter form writes to `email_subscription`, not Supabase Auth. Newsletter consent is separate from user login: signing in does not automatically subscribe a user, and subscribing does not create an account.
+
+Future weekly email delivery must embed the unsubscribe link for each recipient:
+
+```text
+/api/email-subscriptions/unsubscribe?token=<unsubscribe_token>
+```
+
+Treat `status = 'subscribed'` as the sendable audience and exclude `unsubscribed` rows from all email jobs.
 
 ## Local Development
 

@@ -117,6 +117,8 @@ Use this checklist after the validation sequence above:
 - `GET /preview/[id]` renders title, CTA, and metadata
 - `GET /read/[id]` renders segments and reader controls
 - `/login` signs in and `/auth/callback` redirects back to the requested page
+- Landing-page newsletter subscription returns success and creates or reactivates an `email_subscription` row
+- Newsletter unsubscribe links using `/api/email-subscriptions/unsubscribe?token=<unsubscribe_token>` mark the row `unsubscribed`
 - `/admin-login` reaches an admin session
 - Admin-only routes reject non-admins with `401` or `403`
 - Create a content item, upload a cover image, save, and publish
@@ -125,6 +127,30 @@ Use this checklist after the validation sequence above:
 - Check Gemini segment coverage for verified items before using Ask My Library
 
 If any of the above fails, stop the launch and fix the underlying route or environment issue before retrying.
+
+### 2.2 Email Subscription Operations
+
+Newsletter subscription is not the same as login. Do not automatically subscribe users when they sign in.
+
+Sendable audience:
+
+```sql
+select *
+from public.email_subscription
+where status = 'subscribed';
+```
+
+Future weekly email jobs must:
+
+- include only `status = 'subscribed'` rows
+- embed the per-recipient unsubscribe URL:
+
+```text
+/api/email-subscriptions/unsubscribe?token=<unsubscribe_token>
+```
+
+- stop sending to a recipient immediately after their row becomes `unsubscribed`
+- preserve consent metadata (`consent_text`, `consent_version`, `subscribed_at`) for auditability
 
 ## 3. Admin Operations
 

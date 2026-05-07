@@ -309,6 +309,61 @@ export type Database = {
         }
         Relationships: []
       }
+      email_subscription: {
+        Row: {
+          consent_text: string
+          consent_version: string
+          created_at: string
+          email: string
+          email_normalized: string
+          id: string
+          metadata: Json
+          page_path: string | null
+          referrer: string | null
+          source: string
+          status: Database["public"]["Enums"]["email_subscription_status"]
+          subscribed_at: string
+          unsubscribed_at: string | null
+          unsubscribe_token: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          consent_text: string
+          consent_version: string
+          created_at?: string
+          email: string
+          id?: string
+          metadata?: Json
+          page_path?: string | null
+          referrer?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["email_subscription_status"]
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+          unsubscribe_token?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          consent_text?: string
+          consent_version?: string
+          created_at?: string
+          email?: string
+          id?: string
+          metadata?: Json
+          page_path?: string | null
+          referrer?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["email_subscription_status"]
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+          unsubscribe_token?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -688,6 +743,7 @@ export type Database = {
       artifact_type: "checklist" | "plan" | "script"
       content_status: "draft" | "verified"
       content_type: "podcast" | "book" | "article" | "video"
+      email_subscription_status: "subscribed" | "unsubscribed"
       user_role: "user" | "admin"
     }
     CompositeTypes: {
@@ -819,6 +875,7 @@ export const Constants = {
       artifact_type: ["checklist", "plan", "script"],
       content_status: ["draft", "verified"],
       content_type: ["podcast", "book", "article", "video"],
+      email_subscription_status: ["subscribed", "unsubscribed"],
       user_role: ["user", "admin"],
     },
   },
@@ -827,6 +884,7 @@ export const Constants = {
 export type ContentType = Database["public"]["Enums"]["content_type"];
 export type ArtifactType = Database["public"]["Enums"]["artifact_type"];
 export type ContentStatus = Database["public"]["Enums"]["content_status"];
+export type EmailSubscriptionStatus = Database["public"]["Enums"]["email_subscription_status"];
 export type UserRole = Database["public"]["Enums"]["user_role"];
 
 // Convenience types for table rows

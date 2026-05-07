@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default function PrivacyPage() {
-    const lastUpdated = "February 2026";
+    const lastUpdated = "May 2026";
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -36,7 +36,7 @@ export default function PrivacyPage() {
                                 {APP_NAME} (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard information when you visit our website.
                             </p>
                             <p>
-                                We believe in transparency and minimalism when it comes to data collection. We only collect what&apos;s necessary to improve your experience.
+                            We believe in transparency and minimalism when it comes to data collection. We collect only what is necessary to run the product, improve the experience, and send emails you explicitly subscribe to receive.
                             </p>
                         </div>
                     </section>
@@ -69,10 +69,23 @@ export default function PrivacyPage() {
                             </a>.
                         </p>
 
+                        <h3 className="text-base font-medium mb-2 mt-8 text-foreground/90">Email Subscriptions</h3>
+                        <p className="text-muted-foreground leading-relaxed mb-3">
+                            If you subscribe to weekly emails, we collect your email address and basic subscription metadata, including the page where you subscribed, referrer, browser user agent, subscription status, consent version, and subscribe/unsubscribe timestamps.
+                        </p>
+                        <p className="text-muted-foreground leading-relaxed mb-4">
+                            We use this information to send the emails you requested, manage unsubscribe requests, prevent duplicate subscriptions, and understand which launch surfaces are working.
+                        </p>
+
+                        <h3 className="text-base font-medium mb-2 mt-8 text-foreground/90">Account Information</h3>
+                        <p className="text-muted-foreground leading-relaxed mb-4">
+                            If you sign in, we collect account information needed to authenticate you and operate personal features, such as your email address, profile record, saved library activity, highlights, notes, settings, and reading progress.
+                        </p>
+
                         <h3 className="text-base font-medium mb-2 mt-8 text-foreground/90">What We Don&apos;t Collect</h3>
                         <ul className="space-y-2 text-muted-foreground">
-                            <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Personal information (name, email, address)</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Payment or financial information</span></li>
+                            <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Postal address</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Tracking cookies or advertising identifiers</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Social media profiles</span></li>
                         </ul>
@@ -83,12 +96,14 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">How We Use Information</h2>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                            The analytics data we collect is used solely to:
+                            The information we collect is used solely to:
                         </p>
                         <ul className="space-y-2 text-muted-foreground">
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Understand which content is most valuable to readers</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Improve site performance and user experience</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Identify and fix technical issues</span></li>
+                            <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Send weekly emails to people who explicitly subscribe</span></li>
+                            <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Process unsubscribe requests and maintain subscription status</span></li>
                         </ul>
                     </section>
 
@@ -116,7 +131,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Your Rights</h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            Since we don&apos;t collect personal data, there&apos;s nothing to request, modify, or delete. You can browse {APP_NAME} completely anonymously.
+                            You can request access, correction, or deletion of personal information associated with your account or email subscription. You can unsubscribe from weekly emails using the unsubscribe link included in those emails once email sending is active.
                         </p>
                     </section>
 

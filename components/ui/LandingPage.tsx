@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ContentCard } from "@/components/ui/ContentCard";
+import { EmailSubscriptionForm } from "@/components/ui/EmailSubscriptionForm";
 import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
@@ -250,19 +251,19 @@ function HeroSection() {
         <div className="max-w-2xl">
           <div>
             <p className="mb-8 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              Curated knowledge platform
+              For serious non-fiction readers
             </p>
           </div>
 
           <div>
             <h1 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-7xl lg:text-[5.15rem]">
-              Read the best ideas without losing what matters.
+              Remember more from every non-fiction book you read.
             </h1>
           </div>
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              {APP_NAME} creates structured summaries designed for understanding, recall, and application.
+              {APP_NAME} turns summaries, highlights, and saved ideas into a knowledge system you can return to when it matters.
             </p>
           </div>
 
@@ -284,6 +285,7 @@ function HeroSection() {
               </Link>
             </div>
           </div>
+
         </div>
 
         <div className="relative hidden lg:block">
@@ -798,25 +800,16 @@ function FinalCTASection() {
               </h2>
 
               <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-                Start reading, save what matters, and turn insight into something durable.
+                Join the weekly note for readers who want useful ideas to stick.
               </p>
 
-              <div className="mt-12 flex flex-col items-center justify-center gap-5 sm:flex-row">
-                <Link
-                  href="/login"
-                  className={PRIMARY_CTA_CLASS}
-                >
-                  <span className="relative z-10">Start Reading</span>
-                  <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
-                  <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-100 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                </Link>
-                <Link
-                  href="/browse"
-                  className={SECONDARY_CTA_CLASS}
-                >
-                  Browse the Library
-                </Link>
-              </div>
+              <EmailSubscriptionForm
+                source="landing_final_cta"
+                align="center"
+                className="mt-10"
+                title="Get the best ideas from non-fiction, weekly."
+                description="No noise. Just useful ideas worth remembering and revisiting."
+              />
 
               <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">
                 Read less noise. Keep more signal.

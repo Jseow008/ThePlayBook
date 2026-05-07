@@ -8,6 +8,8 @@
 
 Flux is a public-first reading product for curated knowledge. Visitors can discover and read content without logging in. Authenticated users add cross-device state on top: saved items, reading progress, highlights, notes, reading history, and AI chat. Admin users manage publishing, series, homepage sections, media uploads, and embedding operations.
 
+Email newsletter subscription is a separate consent surface from login. A visitor can subscribe to weekly emails without creating an account, and a logged-in user is not automatically subscribed.
+
 ## 2. Route Zones
 
 ### 2.1 Public Discovery
@@ -22,6 +24,8 @@ Flux is a public-first reading product for curated knowledge. Visitors can disco
 - `/about`, `/privacy`, `/terms`
 
 These routes prefer the cookie-free public Supabase client so they remain cache-friendly.
+
+The landing page may write newsletter subscriptions through `/api/email-subscriptions`; that write path uses a server route and service-role Supabase client rather than exposing table access to the browser.
 
 ### 2.2 Authenticated Workspace
 
@@ -84,6 +88,20 @@ This split is important: public SEO pages avoid `cookies()` whenever possible, w
 That avoids drift between `/preview/[id]`, `/read/[id]`, and metadata generation.
 
 ## 4. Data Model Overview
+
+### 4.0 Email Subscriptions
+
+- `email_subscription`
+  - stores explicit consent to receive weekly Flux emails
+  - tracks `status`, `subscribed_at`, `unsubscribed_at`, `consent_text`, `consent_version`, and `unsubscribe_token`
+  - is distinct from `auth.users` and `profiles`
+  - send jobs must target only `status = 'subscribed'`
+
+Any future newsletter/email template must include an unsubscribe link using:
+
+```text
+/api/email-subscriptions/unsubscribe?token=<unsubscribe_token>
+```
 
 ### 4.1 Core Content
 

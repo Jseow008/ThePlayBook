@@ -247,7 +247,58 @@ Returns shuffled focus-feed items whose `quick_mode_json` passes validation.
 
 Returns the reranked result of the `match_recommendations` RPC.
 
-## 5. Admin APIs
+## 5. Email Subscription APIs
+
+Newsletter subscription is separate from authentication. Subscribing does not create a Flux account, and signing in does not automatically subscribe a user.
+
+### 5.1 `/api/email-subscriptions`
+
+`POST` creates or reactivates an explicit weekly email subscription.
+
+Request:
+
+```json
+{
+  "email": "reader@example.com",
+  "source": "landing_final_cta",
+  "page_path": "/",
+  "referrer": "https://example.com"
+}
+```
+
+Behavior:
+
+- validates email and source at runtime
+- stores consent text/version with the subscription row
+- creates `status = "subscribed"` rows for new emails
+- re-subscribes existing emails by clearing `unsubscribed_at` and updating `subscribed_at`
+- rate-limited through the shared production rate limiter
+
+### 5.2 `/api/email-subscriptions/unsubscribe`
+
+`GET` supports direct unsubscribe links for future email templates:
+
+```text
+/api/email-subscriptions/unsubscribe?token=<unsubscribe_token>
+```
+
+`POST` supports programmatic unsubscribe:
+
+```json
+{
+  "token": "unsubscribe-token"
+}
+```
+
+Behavior:
+
+- sets `status = "unsubscribed"`
+- sets `unsubscribed_at`
+- returns success without requiring a user session
+
+Required email-template rule: every future weekly email must embed the `GET` unsubscribe URL for that recipient. Email sending jobs must exclude rows where `status != "subscribed"`.
+
+## 6. Admin APIs
 
 All admin routes are protected by session + role checks.
 
@@ -268,7 +319,7 @@ All admin routes are protected by session + role checks.
 | `/api/admin/embeddings/sync-segments` | `GET` | Return segment coverage, AI readiness, and local sync commands. |
 | `/api/admin/embeddings/sync-segments` | `POST` | Disabled, responds `405` with local-command guidance |
 
-### 5.1 Content Create / Update
+### 6.1 Content Create / Update
 
 Key fields used by both create and update payloads:
 
@@ -320,7 +371,7 @@ Implementation notes:
 - update uses the `admin_update_content_graph` RPC for the content/segment/artifact graph
 - admin content list/detail responses include `ai_readiness` for verified items so the dashboard can show publish vs. AI-stale state
 
-### 5.2 Homepage Sections
+### 6.2 Homepage Sections
 
 Section create/update fields:
 
@@ -341,7 +392,7 @@ Allowed `filter_type` values:
 - `title`
 - `featured`
 
-### 5.3 Series
+### 6.3 Series
 
 Create/update fields:
 
@@ -357,7 +408,7 @@ Delete safeguard:
 
 - a series cannot be deleted while non-deleted content items still point at it
 
-### 5.4 Uploads
+### 6.4 Uploads
 
 `POST /api/admin/upload`
 
@@ -371,7 +422,7 @@ Delete safeguard:
 - accepts `mp3`, `wav`, `m4a`
 - writes to the `audio` bucket
 
-### 5.5 Launch Readiness Surfaces
+### 6.5 Launch Readiness Surfaces
 
 The admin UI consumes the readiness endpoints above in:
 
