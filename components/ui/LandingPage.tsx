@@ -272,7 +272,7 @@ function HeroSection() {
                 href="/login"
                 className={PRIMARY_CTA_CLASS}
               >
-                <span className="relative z-10">Start Reading</span>
+                <span className="relative z-10">Start Your Library</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
                 <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-100 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
