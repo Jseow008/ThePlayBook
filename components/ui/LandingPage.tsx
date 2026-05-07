@@ -251,19 +251,19 @@ function HeroSection() {
         <div className="max-w-2xl">
           <div>
             <p className="mb-8 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              For serious non-fiction readers
+              A reader lives a thousand lives before he dies
             </p>
           </div>
 
           <div>
             <h1 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-7xl lg:text-[5.15rem]">
-              Remember more from every non-fiction book you read.
+              Remember more from every idea you read, hear, and save.
             </h1>
           </div>
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              {APP_NAME} turns summaries, highlights, and saved ideas into a knowledge system you can return to when it matters.
+              Turn books, podcasts, articles, and videos into a personalised knowledge system you can return to when it matters.
             </p>
           </div>
 
@@ -542,11 +542,11 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       id="featured-reads"
       className="landing-featured-band scroll-mt-20 overflow-hidden py-24 sm:py-32"
     >
-      <FadeIn className="mx-auto mb-16 flex max-w-7xl flex-col gap-8 px-6 md:flex-row md:items-end md:justify-between">
+      <FadeIn className="mx-auto mb-8 flex max-w-7xl flex-col gap-8 px-6 md:mb-10 md:flex-row md:items-end md:justify-between">
         <SectionIntro
-          label="Start here"
-          title="Start with something worth your time."
-          body="A living library of high-signal ideas across books, podcasts, and articles."
+          label="Explore the library"
+          title="Ideas worth remembering."
+          body="Browse high-signal insights from books, podcasts, articles, and videos."
         />
         <Link
           href="/browse"
@@ -746,8 +746,8 @@ function TopicMapSection({ categories }: { categories: { category: string; count
         <FadeIn>
           <SectionIntro
             label="Explore by domain"
-            title="Browse by what you want to get better at."
-            body="Explore ideas across mindset, health, business, productivity, philosophy, and more."
+            title="Based on your interests."
+            body="A curated library of ideas across mindset, business, health, philosophy, technology, and more."
             centered
           />
         </FadeIn>
@@ -796,23 +796,23 @@ function FinalCTASection() {
 
             <div className="relative">
               <h2 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl md:text-[5.5rem]">
-                Build a personal library of ideas you&apos;ll actually return to.
+                Build a library you&apos;ll actually return to.
               </h2>
 
               <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-                Join the weekly note for readers who want useful ideas to stick.
+                Get in-depth insights from books, podcasts, articles, and videos each week.
               </p>
 
               <EmailSubscriptionForm
                 source="landing_final_cta"
                 align="center"
                 className="mt-10"
-                title="Get the best ideas from non-fiction, weekly."
-                description="No noise. Just useful ideas worth remembering and revisiting."
+                title="Subscribe to the weekly note."
+                description="High-signal ideas, curated for remembering and revisiting."
               />
 
               <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">
-                Read less noise. Keep more signal.
+                Save the idea. Revisit what matters.
               </p>
             </div>
           </div>
