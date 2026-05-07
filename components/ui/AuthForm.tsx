@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Chrome, Mail, Apple, ArrowRight } from "lucide-react";
+import { Chrome, Mail, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DEFAULT_LOGIN_REDIRECT_PATH } from "@/lib/auth-redirect";
@@ -14,7 +14,7 @@ interface AuthFormProps {
 
 export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProps) {
     const supabase = createClient();
-    const [isLoading, setIsLoading] = useState<"google" | "apple" | "email" | null>(null);
+    const [isLoading, setIsLoading] = useState<"google" | "email" | null>(null);
     const [email, setEmail] = useState("");
     const [emailSent, setEmailSent] = useState(false);
 
@@ -24,7 +24,7 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
         return callbackUrl.toString();
     };
 
-    const handleOAuthLogin = async (provider: "google" | "apple") => {
+    const handleOAuthLogin = async (provider: "google") => {
         setIsLoading(provider);
         try {
             const { error } = await supabase.auth.signInWithOAuth({
@@ -36,7 +36,7 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
 
             if (error) {
                 console.error(`${provider} login failed:`, error);
-                toast.error(`Could not sign in with ${provider === 'google' ? 'Google' : 'Apple'}`);
+                toast.error("Could not sign in with Google");
                 setIsLoading(null);
             }
         } catch (err) {
@@ -49,7 +49,9 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
     const handleMagicLinkLogin = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!email || !email.includes("@")) {
+        const normalizedEmail = email.trim();
+
+        if (!normalizedEmail || !normalizedEmail.includes("@")) {
             toast.error("Please enter a valid email address");
             return;
         }
@@ -58,9 +60,10 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
 
         try {
             const { error } = await supabase.auth.signInWithOtp({
-                email,
+                email: normalizedEmail,
                 options: {
                     emailRedirectTo: buildCallbackUrl(),
+                    shouldCreateUser: false,
                 },
             });
 
@@ -69,6 +72,7 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
                 toast.error(error.message || "Failed to send magic link");
             } else {
                 setEmailSent(true);
+                setEmail(normalizedEmail);
                 toast.success("Magic link sent! Check your email.");
             }
         } catch (err) {
@@ -167,22 +171,6 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
                     ) : null}
                     <Chrome className={cn("mr-2 h-4 w-4", isLoading !== null && "opacity-50")} />
                     <span className={cn(isLoading !== null && "opacity-50")}>Sign in with Google</span>
-                </Button>
-
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full h-11 relative bg-background hover:bg-secondary/50 border-input transition-colors"
-                    onClick={() => handleOAuthLogin("apple")}
-                    disabled={isLoading !== null}
-                >
-                    {isLoading === "apple" ? (
-                        <div className="absolute inset-0 flex items-center justify-center bg-background/50 rounded-md">
-                            <div className="h-4 w-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        </div>
-                    ) : null}
-                    <Apple className={cn("mr-2 h-5 w-5", isLoading !== null && "opacity-50")} />
-                    <span className={cn(isLoading !== null && "opacity-50")}>Sign in with Apple</span>
                 </Button>
             </div>
 

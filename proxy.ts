@@ -82,7 +82,16 @@ function isAdminPath(pathname: string): boolean {
     return (
         pathname === "/admin-login" ||
         pathname.startsWith("/admin-login/") ||
-        pathname.startsWith("/admin") ||
+        pathname === "/admin" ||
+        pathname.startsWith("/admin/") ||
+        pathname.startsWith("/api/admin")
+    );
+}
+
+function isProtectedAdminPath(pathname: string): boolean {
+    return (
+        pathname === "/admin" ||
+        pathname.startsWith("/admin/") ||
         pathname.startsWith("/api/admin")
     );
 }
@@ -117,7 +126,7 @@ export async function proxy(request: NextRequest) {
 
     const supabaseResponse = await updateSession(request);
 
-    if (pathname.startsWith("/admin") || isAdminApiRoute) {
+    if (isProtectedAdminPath(pathname)) {
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL!,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -139,7 +148,7 @@ export async function proxy(request: NextRequest) {
                     { status: 401 }
                 );
             }
-            return NextResponse.redirect(new URL("/login?next=" + request.nextUrl.pathname, request.url));
+            return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(request.nextUrl.pathname)}`, request.url));
         }
 
         const { data: profile } = await supabase
