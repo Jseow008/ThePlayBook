@@ -237,6 +237,11 @@ interface SegmentAccordionProps {
     onHighlightActivate?: (highlightId: string, position: HighlightPosition) => void;
     expandedSegmentId?: string | null;
     onExpandedSegmentChange?: (segmentId: string | null) => void;
+    scrollRequest?: {
+        segmentId: string;
+        initialScrollY: number;
+        requestId: number;
+    } | null;
     activeNarratedSegmentId?: string | null;
 }
 
@@ -250,6 +255,7 @@ export function SegmentAccordion({
     onHighlightActivate,
     expandedSegmentId,
     onExpandedSegmentChange,
+    scrollRequest = null,
     activeNarratedSegmentId = null,
 }: SegmentAccordionProps) {
     const [uncontrolledExpandedId, setUncontrolledExpandedId] = useState<string | null>(null);
@@ -260,6 +266,9 @@ export function SegmentAccordion({
     const isDesktop = useMediaQuery("(min-width: 640px)");
     const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
     const isContentCompleted = segments.length > 0 && segments.every((segment) => completedSegments.has(segment.id));
+    const scrollRequestSegmentId = scrollRequest?.segmentId;
+    const scrollRequestInitialY = scrollRequest?.initialScrollY;
+    const scrollRequestId = scrollRequest?.requestId;
 
     const setExpandedId = useCallback((nextSegmentId: string | null) => {
         onExpandedSegmentChange?.(nextSegmentId);
@@ -345,6 +354,20 @@ export function SegmentAccordion({
         },
         [cancelPendingScroll, currentExpandedId, onSegmentOpen, scheduleScrollAfterExpansion, setExpandedId]
     );
+
+    useEffect(() => {
+        if (!scrollRequestSegmentId || currentExpandedId !== scrollRequestSegmentId) {
+            return;
+        }
+
+        scheduleScrollAfterExpansion(scrollRequestSegmentId, scrollRequestInitialY ?? 0);
+    }, [
+        currentExpandedId,
+        scheduleScrollAfterExpansion,
+        scrollRequestId,
+        scrollRequestInitialY,
+        scrollRequestSegmentId,
+    ]);
 
     useEffect(() => {
         return () => {

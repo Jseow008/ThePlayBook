@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { SegmentAccordion } from '@/components/reader/SegmentAccordion';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { vi } from 'vitest';
@@ -132,6 +132,56 @@ describe('SegmentAccordion', () => {
         expect(screen.getByText('Introduction').closest('button')).toHaveAttribute('aria-expanded', 'false');
         expect(container.querySelector('.reading-copy.reading-copy-prose.reading-copy-strong')).not.toBeNull();
         expect(container.querySelector('.dark\\:prose-invert')).toBeNull();
+    });
+
+    it('uses the accordion transition scheduler for external scroll requests', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const scrollToSpy = vi.fn();
+            window.scrollTo = scrollToSpy;
+
+            const { container } = render(
+                <SegmentAccordion
+                    {...defaultProps}
+                    expandedSegmentId="seg-2"
+                    scrollRequest={{
+                        segmentId: 'seg-2',
+                        initialScrollY: 0,
+                        requestId: 1,
+                    }}
+                />
+            );
+
+            const segmentNode = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-2"]');
+            expect(segmentNode).not.toBeNull();
+            if (!segmentNode) {
+                return;
+            }
+
+            segmentNode.getBoundingClientRect = vi.fn(() => ({
+                x: 0,
+                y: 240,
+                top: 240,
+                bottom: 440,
+                left: 0,
+                right: 200,
+                width: 200,
+                height: 200,
+                toJSON: () => ({}),
+            } as DOMRect));
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(450);
+            });
+
+            expect(scrollToSpy).toHaveBeenCalledWith({
+                top: 140,
+                behavior: 'smooth',
+            });
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('renders anchored highlights against the correct repeated text occurrence', () => {

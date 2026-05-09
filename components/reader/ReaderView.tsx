@@ -68,6 +68,11 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [hasCompletedAudioPlayback, setHasCompletedAudioPlayback] = useState(false);
     const [hasPendingProgressSave, setHasPendingProgressSave] = useState(false);
+    const [segmentScrollRequest, setSegmentScrollRequest] = useState<{
+        segmentId: string;
+        initialScrollY: number;
+        requestId: number;
+    } | null>(null);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
     const pendingProgressSaveRef = useRef(false);
@@ -90,7 +95,6 @@ export function ReaderView({ content }: ReaderViewProps) {
         ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
         : null;
     const spotlightTimeoutRef = useRef<number | null>(null);
-    const audioFollowScrollCleanupRef = useRef<(() => void) | null>(null);
     const handledUrlHighlightRef = useRef<string | null>(null);
     const sectionMeta = useMemo(
         () =>
@@ -133,79 +137,21 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         setIsAudioFollowEnabled(false);
     }, [activeNarrationSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
-    const scrollNarratedSegmentIntoView = useCallback((
-        segmentId: string,
-        options?: { force?: boolean; initialScrollY?: number; respectUserScroll?: boolean }
-    ) => {
-        const {
-            force = false,
-            initialScrollY = window.scrollY,
-            respectUserScroll = false,
-        } = options || {};
-
-        audioFollowScrollCleanupRef.current?.();
-
-        let didScroll = false;
-        let fallbackTimeoutId: number | null = null;
-        const frameIds: number[] = [];
-
-        const runScroll = () => {
-            if (didScroll) return;
-            didScroll = true;
-            if (fallbackTimeoutId !== null) {
-                window.clearTimeout(fallbackTimeoutId);
-                fallbackTimeoutId = null;
-            }
-            frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
-            audioFollowScrollCleanupRef.current = null;
-
-            if (respectUserScroll && Math.abs(window.scrollY - initialScrollY) > 50) {
-                return;
-            }
-
-            const targetElement = document.querySelector<HTMLElement>(
-                `[data-reader-segment-id="${segmentId}"]`
-            );
-            if (!targetElement) {
-                return;
-            }
-
-            const rect = targetElement.getBoundingClientRect();
-            const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-            const topPadding = 110;
-            const bottomPadding = 180;
-            const isAboveViewportComfortZone = rect.top < topPadding;
-            const isBelowViewportComfortZone = rect.bottom > viewportHeight - bottomPadding;
-
-            if (!force && !isAboveViewportComfortZone && !isBelowViewportComfortZone) {
-                return;
-            }
-
-            const y = rect.top + window.scrollY - topPadding;
-            window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-        };
-
-        frameIds.push(window.requestAnimationFrame(() => {
-            frameIds.push(window.requestAnimationFrame(runScroll));
+    const requestSegmentScroll = useCallback((segmentId: string, initialScrollY = window.scrollY) => {
+        setSegmentScrollRequest((previous) => ({
+            segmentId,
+            initialScrollY,
+            requestId: (previous?.requestId ?? 0) + 1,
         }));
-        fallbackTimeoutId = window.setTimeout(runScroll, 400);
-
-        audioFollowScrollCleanupRef.current = () => {
-            didScroll = true;
-            if (fallbackTimeoutId !== null) {
-                window.clearTimeout(fallbackTimeoutId);
-            }
-            frameIds.forEach((frameId) => window.cancelAnimationFrame(frameId));
-        };
     }, []);
     const resumeAudioFollow = useCallback(() => {
         setIsAudioFollowEnabled(true);
 
         if (activeNarrationSegmentId) {
             setExpandedSegmentId(activeNarrationSegmentId);
-            scrollNarratedSegmentIntoView(activeNarrationSegmentId, { force: true });
+            requestSegmentScroll(activeNarrationSegmentId);
         }
-    }, [activeNarrationSegmentId, scrollNarratedSegmentIntoView]);
+    }, [activeNarrationSegmentId, requestSegmentScroll]);
 
     // Track reading time once at the reader level and pass display text down.
     const { formattedTime } = useReadingTimer(content.id);
@@ -325,6 +271,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         previousStorageScopeRef.current = storageScope;
         latestAudioStateRef.current = { timeSec: 0, durationSec: 0 };
         setExpandedSegmentId(null);
+        setSegmentScrollRequest(null);
         setHasPendingProgressSave(false);
     }, [content.audio_url, content.id, storageScope]);
 
@@ -582,8 +529,6 @@ export function ReaderView({ content }: ReaderViewProps) {
             if (spotlightTimeoutRef.current !== null) {
                 window.clearTimeout(spotlightTimeoutRef.current);
             }
-            audioFollowScrollCleanupRef.current?.();
-            audioFollowScrollCleanupRef.current = null;
             document
                 .querySelectorAll<HTMLElement>('mark[data-highlight-spotlight="true"]')
                 .forEach((mark) => mark.removeAttribute("data-highlight-spotlight"));
@@ -694,12 +639,8 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         const initialScrollY = window.scrollY;
         setExpandedSegmentId(activeNarrationSegmentId);
-        scrollNarratedSegmentIntoView(activeNarrationSegmentId, {
-            force: true,
-            initialScrollY,
-            respectUserScroll: true,
-        });
-    }, [activeNarrationSegmentId, expandedSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled, scrollNarratedSegmentIntoView]);
+        requestSegmentScroll(activeNarrationSegmentId, initialScrollY);
+    }, [activeNarrationSegmentId, expandedSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled, requestSegmentScroll]);
 
     useEffect(() => {
         if (!hasSyncedAudioPosition) {
@@ -863,6 +804,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     highlights={highlights}
                     expandedSegmentId={expandedSegmentId}
                     onExpandedSegmentChange={handleExpandedSegmentChange}
+                    scrollRequest={segmentScrollRequest}
                     activeNarratedSegmentId={activeNarratedSegmentId}
                     onHighlightActivate={(highlightId, position) => {
                         setActiveHighlightId(highlightId);

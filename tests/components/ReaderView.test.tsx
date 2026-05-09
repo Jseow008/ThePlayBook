@@ -795,73 +795,45 @@ describe('ReaderView', () => {
         });
     });
 
-    it('force-aligns the active segment while follow audio is enabled', async () => {
-        vi.useFakeTimers();
+    it('requests accordion-managed scroll while follow audio is enabled', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+            ],
+        } as ContentItemWithSegments;
 
-        try {
-            const timedContent = {
-                ...mockContent,
-                audio_url: 'https://example.com/audio.mp3',
-                segments: [
-                    {
-                        id: 'seg-1',
-                        item_id: 'item-1',
-                        order_index: 0,
-                        title: 'Segment 1',
-                        markdown_body: 'Body 1',
-                        start_time_sec: 0,
-                        end_time_sec: 30,
-                    },
-                    {
-                        id: 'seg-2',
-                        item_id: 'item-1',
-                        order_index: 1,
-                        title: 'Segment 2',
-                        markdown_body: 'Body 2',
-                        start_time_sec: 30,
-                        end_time_sec: 60,
-                    },
-                ],
-            } as ContentItemWithSegments;
+        render(<ReaderView content={timedContent} />);
 
-            render(<ReaderView content={timedContent} />);
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
 
-            const segmentNode = document.querySelector('[data-reader-segment-id="seg-2"]');
-            expect(segmentNode).not.toBeNull();
-            if (!segmentNode) {
-                return;
-            }
-
-            Object.defineProperty(window, 'innerHeight', {
-                configurable: true,
-                value: 800,
-            });
-
-            vi.spyOn(segmentNode, 'getBoundingClientRect').mockReturnValue({
-                x: 0,
-                y: 200,
-                top: 200,
-                bottom: 400,
-                left: 0,
-                right: 200,
-                width: 200,
-                height: 200,
-                toJSON: () => ({}),
-            } as DOMRect);
-
-            fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
-
-            await act(async () => {
-                await vi.advanceTimersByTimeAsync(320);
-            });
-
-            expect(window.scrollTo).toHaveBeenCalledWith({
-                top: 90,
-                behavior: 'smooth',
-            });
-        } finally {
-            vi.useRealTimers();
-        }
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.expandedSegmentId).toBe('seg-2');
+            expect(latestProps?.scrollRequest).toEqual(expect.objectContaining({
+                segmentId: 'seg-2',
+                initialScrollY: expect.any(Number),
+                requestId: 1,
+            }));
+        });
     });
 
     it('restores the saved local audio position and expands the matching segment on return', async () => {
@@ -1187,94 +1159,63 @@ describe('ReaderView', () => {
         });
     });
 
-    it('scrolls directly to the current narrated segment when follow audio is resumed explicitly', async () => {
-        vi.useFakeTimers();
+    it('requests accordion-managed scroll when follow audio is resumed explicitly', async () => {
+        const timedContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+                {
+                    id: 'seg-3',
+                    item_id: 'item-1',
+                    order_index: 2,
+                    title: 'Segment 3',
+                    markdown_body: 'Body 3',
+                    start_time_sec: 60,
+                    end_time_sec: 90,
+                },
+            ],
+        } as ContentItemWithSegments;
 
-        try {
-            const timedContent = {
-                ...mockContent,
-                audio_url: 'https://example.com/audio.mp3',
-                segments: [
-                    {
-                        id: 'seg-1',
-                        item_id: 'item-1',
-                        order_index: 0,
-                        title: 'Segment 1',
-                        markdown_body: 'Body 1',
-                        start_time_sec: 0,
-                        end_time_sec: 30,
-                    },
-                    {
-                        id: 'seg-2',
-                        item_id: 'item-1',
-                        order_index: 1,
-                        title: 'Segment 2',
-                        markdown_body: 'Body 2',
-                        start_time_sec: 30,
-                        end_time_sec: 60,
-                    },
-                    {
-                        id: 'seg-3',
-                        item_id: 'item-1',
-                        order_index: 2,
-                        title: 'Segment 3',
-                        markdown_body: 'Body 3',
-                        start_time_sec: 60,
-                        end_time_sec: 90,
-                    },
-                ],
-            } as ContentItemWithSegments;
+        render(<ReaderView content={timedContent} />);
 
-            render(<ReaderView content={timedContent} />);
+        fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
+        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
 
-            const segmentNode = document.querySelector('[data-reader-segment-id="seg-3"]');
-            expect(segmentNode).not.toBeNull();
-            if (!segmentNode) {
-                return;
-            }
+        fireEvent.click(screen.getByTestId('manual-open-seg-1'));
+        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
 
-            Object.defineProperty(window, 'innerHeight', {
-                configurable: true,
-                value: 800,
-            });
+        fireEvent.click(screen.getByTestId('sync-audio-seg-3'));
+        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
 
-            vi.spyOn(segmentNode, 'getBoundingClientRect').mockReturnValue({
-                x: 0,
-                y: 720,
-                top: 720,
-                bottom: 920,
-                left: 0,
-                right: 200,
-                width: 200,
-                height: 200,
-                toJSON: () => ({}),
-            } as DOMRect);
+        fireEvent.click(screen.getByTestId('resume-audio-follow'));
 
-            fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-2');
-
-            fireEvent.click(screen.getByTestId('manual-open-seg-1'));
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
-
-            fireEvent.click(screen.getByTestId('sync-audio-seg-3'));
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
-
-            vi.mocked(window.scrollTo).mockClear();
-
-            fireEvent.click(screen.getByTestId('resume-audio-follow'));
-
-            await act(async () => {
-                await vi.advanceTimersByTimeAsync(320);
-            });
-
-            expect(window.scrollTo).toHaveBeenCalledWith({
-                top: 610,
-                behavior: 'smooth',
-            });
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-3');
-        } finally {
-            vi.useRealTimers();
-        }
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.expandedSegmentId).toBe('seg-3');
+            expect(latestProps?.scrollRequest).toEqual(expect.objectContaining({
+                segmentId: 'seg-3',
+                initialScrollY: expect.any(Number),
+                requestId: 2,
+            }));
+        });
     });
 
     it('does not auto-expand a segment when narration timings are unavailable', async () => {
