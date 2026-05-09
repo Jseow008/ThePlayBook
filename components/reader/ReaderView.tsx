@@ -695,6 +695,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         const initialScrollY = window.scrollY;
         setExpandedSegmentId(activeNarrationSegmentId);
         scrollNarratedSegmentIntoView(activeNarrationSegmentId, {
+            force: true,
             initialScrollY,
             respectUserScroll: true,
         });

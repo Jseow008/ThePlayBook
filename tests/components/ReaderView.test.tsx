@@ -795,7 +795,7 @@ describe('ReaderView', () => {
         });
     });
 
-    it('smooth-scrolls the active segment into view while follow audio is enabled', async () => {
+    it('force-aligns the active segment while follow audio is enabled', async () => {
         vi.useFakeTimers();
 
         try {
@@ -839,9 +839,9 @@ describe('ReaderView', () => {
 
             vi.spyOn(segmentNode, 'getBoundingClientRect').mockReturnValue({
                 x: 0,
-                y: 720,
-                top: 720,
-                bottom: 920,
+                y: 200,
+                top: 200,
+                bottom: 400,
                 left: 0,
                 right: 200,
                 width: 200,
@@ -856,7 +856,7 @@ describe('ReaderView', () => {
             });
 
             expect(window.scrollTo).toHaveBeenCalledWith({
-                top: 610,
+                top: 90,
                 behavior: 'smooth',
             });
         } finally {
