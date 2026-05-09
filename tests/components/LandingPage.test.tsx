@@ -134,19 +134,12 @@ function setupRequestAnimationFrame() {
   });
 }
 
-function renderLandingPage() {
-  render(
-    <LandingPage
-      featuredItems={featuredItems}
-      categories={[]}
-      totalContentCount={featuredItems.length}
-    />
-  );
+function configureCarouselLoop(testIdSuffix = "") {
+  const carousel = screen.getByTestId(`featured-reads-carousel${testIdSuffix}`) as HTMLDivElement;
+  const firstLoop = screen.getByTestId(`featured-reads-group-a${testIdSuffix}`) as HTMLDivElement;
+  const middleLoop = screen.getByTestId(`featured-reads-group-b${testIdSuffix}`) as HTMLDivElement;
+  const lastLoop = screen.getByTestId(`featured-reads-group-c${testIdSuffix}`) as HTMLDivElement;
 
-  const carousel = screen.getByTestId("featured-reads-carousel") as HTMLDivElement;
-  const firstLoop = screen.getByTestId("featured-reads-group-a") as HTMLDivElement;
-  const middleLoop = screen.getByTestId("featured-reads-group-b") as HTMLDivElement;
-  const lastLoop = screen.getByTestId("featured-reads-group-c") as HTMLDivElement;
   Object.defineProperty(carousel, "clientWidth", { configurable: true, value: 400 });
   Object.defineProperty(carousel, "scrollWidth", { configurable: true, value: 2800 });
   Object.defineProperty(firstLoop, "offsetLeft", { configurable: true, value: 0 });
@@ -160,6 +153,21 @@ function renderLandingPage() {
       scrollLeftValue = Math.max(0, Math.min(2400, Math.trunc(value)));
     },
   });
+
+  return carousel;
+}
+
+function renderLandingPage() {
+  render(
+    <LandingPage
+      featuredItems={featuredItems}
+      categories={[]}
+      totalContentCount={featuredItems.length}
+    />
+  );
+
+  const carousel = configureCarouselLoop();
+  configureCarouselLoop("-2");
 
   act(() => {
     window.dispatchEvent(new Event("resize"));
@@ -205,12 +213,28 @@ describe("LandingPage featured reads carousel", () => {
     expect(carousel).toHaveClass("pt-3", "pb-3", "md:pt-4", "md:pb-4");
   });
 
-  it("renders three identical carousel groups to keep rebasing away from hard edges", () => {
+  it("renders two carousel rows with three loop groups each", () => {
     renderLandingPage();
 
     expect(screen.getByTestId("featured-reads-group-a")).toBeInTheDocument();
     expect(screen.getByTestId("featured-reads-group-b")).toBeInTheDocument();
     expect(screen.getByTestId("featured-reads-group-c")).toBeInTheDocument();
+    expect(screen.getByTestId("featured-reads-group-a-2")).toBeInTheDocument();
+    expect(screen.getByTestId("featured-reads-group-b-2")).toBeInTheDocument();
+    expect(screen.getByTestId("featured-reads-group-c-2")).toBeInTheDocument();
+  });
+
+  it("moves the second row in the opposite direction", () => {
+    renderLandingPage();
+
+    const secondaryCarousel = screen.getByTestId("featured-reads-carousel-2") as HTMLDivElement;
+    const initialScrollLeft = secondaryCarousel.scrollLeft;
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(secondaryCarousel.scrollLeft).toBeLessThan(initialScrollLeft);
   });
 
   it("pauses on hover and focus, then resumes after the idle delay", () => {

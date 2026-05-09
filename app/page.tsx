@@ -6,7 +6,7 @@ import type { ContentItem } from "@/types/database";
 export const revalidate = 3600;
 
 const LANDING_SELECT =
-  "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, created_at";
+  "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, created_at, is_featured";
 
 export default async function LandingPageRoute() {
   const landingContent = await LandingPageData();
@@ -22,15 +22,16 @@ export default async function LandingPageRoute() {
 async function LandingPageData() {
   const publicSupabase = createPublicServerClient();
 
-  const [{ data: latestItems }, { data: categoryStats }, { count: totalContent }] =
+  const [{ data: popularItems }, { data: categoryStats }, { count: totalContent }] =
     await Promise.all([
       publicSupabase
         .from("content_item")
         .select(LANDING_SELECT)
         .eq("status", "verified")
         .is("deleted_at", null)
+        .order("is_featured", { ascending: false })
         .order("created_at", { ascending: false })
-        .limit(10),
+        .limit(16),
       publicSupabase.rpc("get_category_stats"),
       publicSupabase
         .from("content_item")
@@ -41,7 +42,7 @@ async function LandingPageData() {
 
   return (
     <LandingPage
-      featuredItems={(latestItems || []) as ContentItem[]}
+      featuredItems={(popularItems || []) as ContentItem[]}
       categories={(categoryStats as { category: string; count: number }[] | null) || []}
       totalContentCount={totalContent || 0}
       totalCategoryCount={categoryStats?.length || 0}

@@ -328,7 +328,7 @@ Key fields used by both create and update payloads:
   "title": "Title",
   "author": "Author",
   "type": "book",
-  "category": "Mindset",
+  "category": "Personal Development",
   "source_url": "https://example.com",
   "cover_image_url": "https://...",
   "hero_image_url": "https://...",

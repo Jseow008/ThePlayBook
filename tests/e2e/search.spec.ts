@@ -38,12 +38,12 @@ test.describe('/search', () => {
     test('preserves category when switching type filters', async ({ page }) => {
         await page.goto('/search?category=Finance');
 
-        await expect(page.getByRole('heading', { name: 'Finance Content' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Money & Investments Content' })).toBeVisible();
 
         await page.getByRole('link', { name: 'Podcast' }).click();
-        await page.waitForURL(/\/search\?category=Finance&type=podcast$/);
+        await page.waitForURL(/\/search\?category=Money(?:\+|%20)%26(?:\+|%20)Investments&type=podcast$/);
 
-        await expect(page.getByRole('heading', { name: 'Finance Content' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: 'Money & Investments Content' })).toBeVisible();
     });
 
     test('falls back to All when an invalid type parameter is provided', async ({ page }) => {

@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock } = vi.hoisted(() => {
+const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock } = vi.hoisted(() => {
     let latestQueryBuilder: Record<string, ReturnType<typeof vi.fn>> | null = null;
 
     const createQueryBuilder = () => {
@@ -23,7 +23,7 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
         builder.order.mockReturnValue(builder);
         builder.limit.mockReturnValue(builder);
         builder.or.mockReturnValue(builder);
-        builder.then.mockImplementation((resolve: (value: { data: Array<{ title: string }> }) => unknown) =>
+        builder.then.mockImplementation((resolve: (value: { data: Array<Record<string, unknown>> }) => unknown) =>
             Promise.resolve(resolve({ data: [{ id: "matched-result", title: "Matched Result" }] }))
         );
 
@@ -39,10 +39,14 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
             latestQueryBuilder = null;
         },
         routerPushMock: vi.fn(),
+        redirectMock: vi.fn((url: string) => {
+            throw new Error(`NEXT_REDIRECT:${url}`);
+        }),
     };
 });
 
 vi.mock("next/navigation", () => ({
+    redirect: redirectMock,
     useRouter: () => ({
         push: routerPushMock,
     }),
@@ -111,6 +115,7 @@ describe("SearchPage", () => {
         vi.clearAllMocks();
         resetSupabaseMocks();
         routerPushMock.mockReset();
+        redirectMock.mockClear();
         rpcMock.mockImplementation((fn: string, args?: Record<string, unknown>) => {
             if (fn === "get_category_stats") {
                 return Promise.resolve({
@@ -175,10 +180,11 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "All topics" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Business" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Productivity" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Pregnancy" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Parenthood" })).toBeInTheDocument();
-        expect(screen.queryByRole("link", { name: "Psychology" })).not.toBeInTheDocument();
-        expect(screen.getByRole("combobox", { name: "More topics" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Parenting" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Psychology" })).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Pregnancy" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Parenthood" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("combobox", { name: "More topics" })).not.toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();
     });
 
@@ -210,7 +216,7 @@ describe("SearchPage", () => {
             p_type: "book",
         });
         expect(screen.getByText("Trending Books")).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Mindset" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Personal Development" })).toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();
     });
 
@@ -274,6 +280,15 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "Business" })).toHaveClass("bg-primary");
     });
 
+    it("redirects old category aliases to canonical search URLs", async () => {
+        await expect(renderSearchPage({ category: "Mindset", type: "book" })).rejects.toThrow(
+            "NEXT_REDIRECT:/search?category=Personal+Development&type=book"
+        );
+
+        expect(redirectMock).toHaveBeenCalledWith("/search?category=Personal+Development&type=book");
+        expect(fromMock).not.toHaveBeenCalled();
+    });
+
     it("preserves query and type when selecting a category chip", async () => {
         await renderSearchPage({ q: "focus", type: "podcast" });
 
@@ -299,23 +314,23 @@ describe("SearchPage", () => {
         const select = screen.getByRole("combobox", { name: "More topics" });
         const optionLabels = Array.from(select.querySelectorAll("option")).map((option) => option.textContent);
 
-        expect(optionLabels).toEqual(["More topics", "Christian", "Psychology"]);
+        expect(optionLabels).toEqual(["More topics", "Religion & Spirituality"]);
     });
 
     it("reflects a selected non-curated topic in the dropdown", async () => {
-        await renderSearchPage({ category: "Psychology" });
+        await renderSearchPage({ category: "Religion & Spirituality" });
 
-        expect(screen.getByRole("combobox", { name: "More topics" })).toHaveValue("Psychology");
+        expect(screen.getByRole("combobox", { name: "More topics" })).toHaveValue("Religion & Spirituality");
     });
 
     it("preserves query and type when selecting a dropdown topic", async () => {
         await renderSearchPage({ q: "focus", type: "podcast" });
 
         fireEvent.change(screen.getByRole("combobox", { name: "More topics" }), {
-            target: { value: "Psychology" },
+            target: { value: "Religion & Spirituality" },
         });
 
-        expect(routerPushMock).toHaveBeenCalledWith("/search?q=focus&category=Psychology&type=podcast");
+        expect(routerPushMock).toHaveBeenCalledWith("/search?q=focus&category=Religion+%26+Spirituality&type=podcast");
     });
 
     it("treats invalid type params as the default All state", async () => {

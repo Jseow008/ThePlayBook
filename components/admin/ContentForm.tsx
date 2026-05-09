@@ -48,6 +48,7 @@ import type { AdminSeriesOption } from "@/lib/server/admin-series";
 import type { NarrationCostEstimate } from "@/lib/narration-cost";
 import type { NarrationJobStatus } from "@/lib/narration-job";
 import { normalizeAdminReturnTo, withNarrationWarning } from "@/lib/admin-return-to";
+import { CANONICAL_CONTENT_CATEGORIES } from "@/lib/content-categories";
 
 interface Segment {
     id?: string;
@@ -117,25 +118,6 @@ const defaultQuickMode: QuickModeJson = {
     big_idea: "",
     key_takeaways: ["", "", ""],
 };
-
-const CATEGORIES = [
-    "Health",
-    "Fitness",
-    "Pregnancy",
-    "Parenthood",
-    "Wealth",
-    "Finance",
-    "Productivity",
-    "Mindset",
-    "Relationships",
-    "Science",
-    "Business",
-    "Philosophy",
-    "Technology",
-    "Lifestyle",
-    "Christian",
-    "Politics",
-];
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -881,7 +863,7 @@ export function ContentForm({
                                     className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
                                 >
                                     <option value="">Select a category</option>
-                                    {CATEGORIES.map((cat) => (
+                                    {CANONICAL_CONTENT_CATEGORIES.map((cat) => (
                                         <option key={cat} value={cat}>
                                             {cat}
                                         </option>

@@ -128,6 +128,8 @@ Use this checklist after the validation sequence above:
 
 If any of the above fails, stop the launch and fix the underlying route or environment issue before retrying.
 
+Category taxonomy note: Phase 1 keeps temporary aliases for old public search links. Before removing them, confirm old category URLs have no meaningful traffic, then follow the Phase 2 checklist in `docs/CATEGORY_TAXONOMY.md`.
+
 ### 2.2 Email Subscription Operations
 
 Newsletter subscription is not the same as login. Do not automatically subscribe users when they sign in.

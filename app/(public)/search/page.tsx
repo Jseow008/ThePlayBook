@@ -11,10 +11,18 @@ import { Search, TrendingUp } from "lucide-react";
 import { getCategoryStats } from "@/lib/server/public-content";
 import type { ContentItem, ContentType } from "@/types/database";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Suspense } from "react";
 import { SearchTopicSelect } from "@/components/ui/SearchTopicSelect";
 import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
+import {
+    buildCanonicalCategoryStats,
+    CURATED_SEARCH_TOPICS,
+    getCanonicalContentCategory,
+    normalizeContentCategoryLabel,
+    resolveContentCategoryAlias,
+} from "@/lib/content-categories";
 
 interface SearchPageProps {
     searchParams: Promise<{ q?: string; category?: string; type?: string }>;
@@ -34,7 +42,6 @@ interface NormalizedTopic {
 const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url, duration_seconds, created_at, quick_mode_json";
 const TRENDING_LIMIT = 10;
 const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
-const CURATED_TOPICS = ["Business", "Finance", "Mindset", "Productivity", "Health", "Pregnancy", "Parenthood"] as const;
 
 function normalizeType(type?: string): ContentType | undefined {
     if (!type || type.toLowerCase() === "all") {
@@ -57,17 +64,6 @@ function formatTrendingLabel(type?: ContentType) {
     return `Trending ${formatTypeLabel(type)}s`;
 }
 
-function normalizeCategoryLabel(category?: string | null) {
-    const trimmed = category?.trim() ?? "";
-    if (!trimmed) return "";
-
-    if (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length > 1) {
-        return trimmed.slice(1, -1).trim();
-    }
-
-    return trimmed;
-}
-
 function buildSearchHref({ query, category, type }: { query?: string; category?: string; type?: string }) {
     const params = new URLSearchParams();
 
@@ -88,29 +84,11 @@ function buildSearchHref({ query, category, type }: { query?: string; category?:
 }
 
 function buildNormalizedTopics(categoryStats: CategoryStat[]) {
-    const topicMap = new Map<string, { count: number; rawValues: Set<string> }>();
-
-    for (const item of categoryStats) {
-        const normalizedLabel = normalizeCategoryLabel(item.category);
-        const rawLabel = item.category?.trim();
-
-        if (!normalizedLabel || !rawLabel) continue;
-
-        const existing = topicMap.get(normalizedLabel) ?? {
-            count: 0,
-            rawValues: new Set<string>(),
-        };
-
-        existing.count += item.count;
-        existing.rawValues.add(rawLabel);
-        topicMap.set(normalizedLabel, existing);
-    }
-
-    return Array.from(topicMap.entries())
-        .map(([label, value]) => ({
-            label,
-            count: value.count,
-            rawValues: Array.from(value.rawValues).sort((a, b) => a.localeCompare(b)),
+    return buildCanonicalCategoryStats(categoryStats)
+        .map((item) => ({
+            label: item.category,
+            count: item.count,
+            rawValues: item.rawValues,
         }))
         .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
@@ -224,7 +202,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const { q: query, category, type } = await searchParams;
     const selectedType = normalizeType(type);
     const selectedTypeParam = selectedType ?? undefined;
-    const normalizedCategory = normalizeCategoryLabel(category);
+    const normalizedCategory = normalizeContentCategoryLabel(category);
+    const aliasCategory = resolveContentCategoryAlias(normalizedCategory);
+    const canonicalCategory = aliasCategory ?? getCanonicalContentCategory(normalizedCategory);
+
+    if (aliasCategory) {
+        redirect(buildSearchHref({ query, category: aliasCategory, type: selectedTypeParam }));
+    }
+
     const hasContentSearch = (query?.trim().length ?? 0) > 0 || Boolean(normalizedCategory);
 
     const categoryStatsPromise = getCategoryStats();
@@ -250,22 +235,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const contentTypes = ["All", "Book", "Podcast", "Article"];
     const normalizedTopics = buildNormalizedTopics(categoryStats);
     const topicsByLabel = new Map(normalizedTopics.map((topic) => [topic.label, topic]));
-    const selectedTopic = normalizedCategory
-        ? topicsByLabel.get(normalizedCategory) ?? {
-            label: normalizedCategory,
+    const selectedTopic = canonicalCategory
+        ? topicsByLabel.get(canonicalCategory) ?? {
+            label: canonicalCategory,
             count: 0,
-            rawValues: category ? [category.trim()] : [],
+            rawValues: canonicalCategory ? [canonicalCategory] : [],
         }
         : null;
-    const curatedTopicItems = CURATED_TOPICS.map((label) => topicsByLabel.get(label)).filter(
+    const curatedTopicItems = CURATED_SEARCH_TOPICS.map((label) => topicsByLabel.get(label)).filter(
         (item): item is NormalizedTopic => Boolean(item)
     );
     const dropdownLabels = normalizedTopics
         .map((item) => item.label)
-        .filter((label) => !CURATED_TOPICS.includes(label as typeof CURATED_TOPICS[number]));
+        .filter((label) => !CURATED_SEARCH_TOPICS.includes(label as typeof CURATED_SEARCH_TOPICS[number]));
     const dropdownOptions = Array.from(new Set([
         ...dropdownLabels,
-        ...(selectedTopic && !CURATED_TOPICS.includes(selectedTopic.label as typeof CURATED_TOPICS[number])
+        ...(selectedTopic && !CURATED_SEARCH_TOPICS.includes(selectedTopic.label as typeof CURATED_SEARCH_TOPICS[number])
             ? [selectedTopic.label]
             : []),
     ])).sort((a, b) => a.localeCompare(b));
@@ -366,7 +351,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             <SearchTopicSelect
                                 query={query}
                                 type={selectedTypeParam}
-                                value={selectedTopicLabel && !CURATED_TOPICS.includes(selectedTopicLabel as typeof CURATED_TOPICS[number])
+                                value={selectedTopicLabel && !CURATED_SEARCH_TOPICS.includes(selectedTopicLabel as typeof CURATED_SEARCH_TOPICS[number])
                                     ? selectedTopicLabel
                                     : ""}
                                 options={dropdownOptions}

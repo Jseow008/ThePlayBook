@@ -10,20 +10,26 @@ import {
   Briefcase,
   CircleDollarSign,
   Dumbbell,
+  GraduationCap,
   Globe,
   Heart,
   Laptop,
   Lightbulb,
   Landmark,
+  Leaf,
+  Megaphone,
   Microscope,
-  Scale,
+  Palette,
   Smile,
   Sparkles,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { EmailSubscriptionForm } from "@/components/ui/EmailSubscriptionForm";
 import { APP_NAME } from "@/lib/brand";
+import { buildCanonicalCategoryStats, CURATED_LANDING_CATEGORY_ORDER } from "@/lib/content-categories";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
 
@@ -35,39 +41,36 @@ interface LandingPageProps {
 }
 
 const CATEGORY_ICONS = {
-  Mindset: Brain,
-  Health: Activity,
-  Pregnancy: Heart,
-  Parenthood: Heart,
-  Wealth: CircleDollarSign,
-  Business: Briefcase,
-  Philosophy: Lightbulb,
+  "Career & Success": Briefcase,
+  "Communication Skills": Megaphone,
+  "Corporate Culture": Users,
+  Creativity: Palette,
+  Economics: TrendingUp,
+  Education: GraduationCap,
+  Entrepreneurship: Lightbulb,
   Fitness: Dumbbell,
-  Finance: Scale,
-  Productivity: Briefcase,
-  Relationships: Heart,
-  Science: Microscope,
-  Technology: Laptop,
+  "Health & Nutrition": Activity,
+  History: Landmark,
   Lifestyle: Smile,
-  Travel: Globe,
+  "Management & Leadership": Users,
+  "Marketing & Sales": Megaphone,
+  "Mindfulness & Happiness": Smile,
+  "Money & Investments": CircleDollarSign,
+  "Motivation & Inspiration": Sparkles,
+  "Nature & the Environment": Leaf,
+  Parenting: Heart,
+  "Personal Development": Brain,
+  Philosophy: Lightbulb,
   Politics: Landmark,
+  Productivity: Briefcase,
+  Psychology: Brain,
+  Relationships: Heart,
+  "Religion & Spirituality": Sparkles,
+  Science: Microscope,
+  "Society & Culture": Globe,
+  "Technology & the Future": Laptop,
+  Business: Briefcase,
 } as const;
-
-const CURATED_CATEGORY_ORDER = [
-  "Mindset",
-  "Health",
-  "Pregnancy",
-  "Parenthood",
-  "Wealth",
-  "Productivity",
-  "Philosophy",
-  "Business",
-  "Science",
-  "Relationships",
-  "Technology",
-  "Lifestyle",
-  "Politics",
-] as const;
 
 const CORE_ANCHOR_FEATURE = {
   title: "Reading view",
@@ -98,10 +101,13 @@ const FEATURED_READS_MIN_LOOP_ITEMS = 8;
 const FEATURED_READS_AUTOPLAY_INTERVAL_MS = 50;
 const FEATURED_READS_AUTOPLAY_STEP_PX = 2;
 const FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS = 2000;
+const FEATURED_READS_ROW_COUNT = 2;
 const PRIMARY_CTA_CLASS =
   "focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-16px_rgba(255,255,255,0.45)]";
 const SECONDARY_CTA_CLASS =
   "focus-ring inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.02] px-8 py-4 text-base font-medium text-white/75 transition-[border-color,background-color,color,transform] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.06] hover:text-white";
+
+type FeaturedReadsMarqueeDirection = "left" | "right";
 
 function getNormalizedScrollLeft(scrollLeft: number, loopWidth: number) {
   const middleStart = loopWidth;
@@ -185,10 +191,23 @@ function SectionIntro({
 }
 
 function getCuratedCategories(categories: { category: string; count: number }[]) {
-  const categoryMap = new Map(categories.map((item) => [item.category, item]));
-  return CURATED_CATEGORY_ORDER.map((name) => categoryMap.get(name)).filter(
-    (item): item is { category: string; count: number } => Boolean(item)
+  const canonicalCategories = buildCanonicalCategoryStats(categories);
+  const categoryMap = new Map(canonicalCategories.map((item) => [item.category, item]));
+  return CURATED_LANDING_CATEGORY_ORDER.map((name) => categoryMap.get(name)).filter(
+    (item): item is { category: string; count: number; rawValues: string[] } => Boolean(item)
   );
+}
+
+function getFeaturedReadRows(items: ContentItem[]) {
+  if (items.length < FEATURED_READS_ROW_COUNT * 2) {
+    return Array.from({ length: FEATURED_READS_ROW_COUNT }, () => items);
+  }
+
+  const rows = Array.from({ length: FEATURED_READS_ROW_COUNT }, (_, rowIndex) =>
+    items.filter((_, itemIndex) => itemIndex % FEATURED_READS_ROW_COUNT === rowIndex)
+  );
+
+  return rows.map((rowItems) => (rowItems.length > 0 ? rowItems : items));
 }
 
 export function LandingPage({ featuredItems, categories }: LandingPageProps) {
@@ -317,6 +336,57 @@ function HeroSection() {
 }
 
 function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
+  const rows = getFeaturedReadRows(items);
+
+  if (items.length === 0) return null;
+
+  return (
+    <section
+      id="featured-reads"
+      className="landing-featured-band scroll-mt-20 overflow-hidden py-24 sm:py-32"
+    >
+      <FadeIn className="mx-auto mb-8 flex max-w-7xl flex-col gap-8 px-6 md:mb-10 md:flex-row md:items-end md:justify-between">
+        <SectionIntro
+          label="Explore the library"
+          title="Ideas worth remembering."
+          body="Popular ideas from books, podcasts, articles, and videos."
+        />
+        <Link
+          href="/browse"
+          className="focus-ring group inline-flex w-fit items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
+        >
+          Browse all
+          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+        </Link>
+      </FadeIn>
+
+      <FadeIn delayMs={100}>
+        <div className="relative mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-hidden pb-8 pt-4 md:gap-6">
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#090807] via-[#090807]/72 to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#090807] via-[#090807]/72 to-transparent" />
+          {rows.map((rowItems, index) => (
+            <FeaturedReadsMarqueeRow
+              key={`featured-reads-row-${index}`}
+              items={rowItems}
+              direction={index % 2 === 0 ? "left" : "right"}
+              rowIndex={index}
+            />
+          ))}
+        </div>
+      </FadeIn>
+    </section>
+  );
+}
+
+function FeaturedReadsMarqueeRow({
+  items,
+  direction,
+  rowIndex,
+}: {
+  items: ContentItem[];
+  direction: FeaturedReadsMarqueeDirection;
+  rowIndex: number;
+}) {
   const baseMultiplier = Math.max(
     1,
     Math.ceil(FEATURED_READS_MIN_LOOP_ITEMS / Math.max(1, items.length))
@@ -356,7 +426,9 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       const normalizedScrollLeft = getNormalizedScrollLeft(scrollElement.scrollLeft, loopWidth);
 
       if (!hasInitializedLoopRef.current || scrollElement.scrollLeft !== normalizedScrollLeft) {
-        scrollElement.scrollLeft = hasInitializedLoopRef.current ? normalizedScrollLeft : loopWidth;
+        scrollElement.scrollLeft = hasInitializedLoopRef.current
+          ? normalizedScrollLeft
+          : loopWidth + (rowIndex % 2 === 0 ? 0 : Math.min(loopWidth * 0.18, 240));
         hasInitializedLoopRef.current = true;
       }
     };
@@ -377,7 +449,7 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       resizeObserver?.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [items.length]);
+  }, [items.length, rowIndex]);
 
   function normalizeScrollPosition(element: HTMLDivElement) {
     const loopWidth = loopWidthRef.current;
@@ -420,10 +492,12 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
       if (!element) return;
 
       normalizeScrollPosition(element);
-      element.scrollLeft += FEATURED_READS_AUTOPLAY_STEP_PX;
+      element.scrollLeft += direction === "left"
+        ? FEATURED_READS_AUTOPLAY_STEP_PX
+        : -FEATURED_READS_AUTOPLAY_STEP_PX;
       normalizeScrollPosition(element);
     }, FEATURED_READS_AUTOPLAY_INTERVAL_MS);
-  }, [clearAutoplayInterval, items.length]);
+  }, [clearAutoplayInterval, direction, items.length]);
 
   const pauseAutoplay = useCallback(() => {
     isAutoplayPausedRef.current = true;
@@ -530,126 +604,112 @@ function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
     normalizeScrollPosition(element);
   }
 
-  if (items.length === 0) return null;
+  const isPrimaryRow = rowIndex === 0;
+  const rowSuffix = isPrimaryRow ? "" : `-${rowIndex + 1}`;
 
   return (
-    <section
-      id="featured-reads"
-      className="landing-featured-band scroll-mt-20 overflow-hidden py-24 sm:py-32"
+    <div
+      className="relative flex w-full overflow-hidden"
+      onClickCapture={(event) => {
+        if (!suppressClickRef.current) {
+          return;
+        }
+
+        suppressClickRef.current = false;
+        event.preventDefault();
+        event.stopPropagation();
+      }}
     >
-      <FadeIn className="mx-auto mb-8 flex max-w-7xl flex-col gap-8 px-6 md:mb-10 md:flex-row md:items-end md:justify-between">
-        <SectionIntro
-          label="Explore the library"
-          title="Ideas worth remembering."
-          body="Browse high-signal insights from books, podcasts, articles, and videos."
-        />
-        <Link
-          href="/browse"
-          className="focus-ring group inline-flex w-fit items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
-        >
-          Browse all
-          <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
-        </Link>
-      </FadeIn>
-
-      <FadeIn delayMs={100}>
-        <div
-          className="relative mx-auto flex w-full max-w-7xl overflow-hidden pb-8 pt-4"
-          onClickCapture={(event) => {
-            if (!suppressClickRef.current) {
-              return;
-            }
-
-            suppressClickRef.current = false;
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-        >
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#090807] via-[#090807]/72 to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#090807] via-[#090807]/72 to-transparent" />
+      <div
+        ref={scrollRef}
+        aria-label={isPrimaryRow ? "Popular reads" : "More popular reads"}
+        data-testid={
+          isPrimaryRow ? "featured-reads-carousel" : `featured-reads-carousel${rowSuffix}`
+        }
+        className={cn(
+          "scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-x] cursor-grab",
+          !isPrimaryRow && "opacity-90"
+        )}
+        onMouseEnter={pauseAutoplay}
+        onMouseLeave={resumeAutoplayLater}
+        onFocus={pauseAutoplay}
+        onBlur={resumeAutoplayLater}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onScroll={handleScroll}
+      >
+        <div className="flex w-max items-center gap-4 sm:gap-6">
           <div
-            ref={scrollRef}
-            aria-label="Featured reads"
-            data-testid="featured-reads-carousel"
-            className="scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-x] cursor-grab"
-            onMouseEnter={pauseAutoplay}
-            onMouseLeave={resumeAutoplayLater}
-            onFocus={pauseAutoplay}
-            onBlur={resumeAutoplayLater}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerCancel}
-            onScroll={handleScroll}
+            ref={firstLoopRef}
+            data-testid={
+              isPrimaryRow ? "featured-reads-group-a" : `featured-reads-group-a${rowSuffix}`
+            }
+            className="flex items-center gap-4 sm:gap-6"
           >
-            <div className="flex w-max items-center gap-4 sm:gap-6">
+            {loopItems.map((item, index) => (
               <div
-                ref={firstLoopRef}
-                data-testid="featured-reads-group-a"
-                className="flex items-center gap-4 sm:gap-6"
+                key={`${item.id}-a-${index}`}
+                className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                {loopItems.map((item, index) => (
-                  <div
-                    key={`${item.id}-a-${index}`}
-                    className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
-                  >
-                    <ContentCard
-                      item={item}
-                      enableUserState={false}
-                      hideBookmark
-                      hideProgressBar
-                    />
-                  </div>
-                ))}
+                <ContentCard
+                  item={item}
+                  enableUserState={false}
+                  hideBookmark
+                  hideProgressBar
+                />
               </div>
+            ))}
+          </div>
+          <div
+            ref={middleLoopRef}
+            data-testid={
+              isPrimaryRow ? "featured-reads-group-b" : `featured-reads-group-b${rowSuffix}`
+            }
+            className="flex items-center gap-4 sm:gap-6"
+          >
+            {loopItems.map((item, index) => (
               <div
-                ref={middleLoopRef}
-                data-testid="featured-reads-group-b"
-                className="flex items-center gap-4 sm:gap-6"
+                key={`${item.id}-b-${index}`}
+                className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                {loopItems.map((item, index) => (
-                  <div
-                    key={`${item.id}-b-${index}`}
-                    className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
-                  >
-                    <ContentCard
-                      item={item}
-                      enableUserState={false}
-                      hideBookmark
-                      hideProgressBar
-                    />
-                  </div>
-                ))}
+                <ContentCard
+                  item={item}
+                  enableUserState={false}
+                  hideBookmark
+                  hideProgressBar
+                />
               </div>
+            ))}
+          </div>
+          <div
+            ref={lastLoopRef}
+            data-testid={
+              isPrimaryRow ? "featured-reads-group-c" : `featured-reads-group-c${rowSuffix}`
+            }
+            aria-hidden="true"
+            className="flex items-center gap-4 sm:gap-6"
+          >
+            {loopItems.map((item, index) => (
               <div
-                ref={lastLoopRef}
-                data-testid="featured-reads-group-c"
-                aria-hidden="true"
-                className="flex items-center gap-4 sm:gap-6"
+                key={`${item.id}-c-${index}`}
+                className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                {loopItems.map((item, index) => (
-                  <div
-                    key={`${item.id}-c-${index}`}
-                    className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
-                  >
-                    <ContentCard
-                      item={item}
-                      enableUserState={false}
-                      hideBookmark
-                      hideProgressBar
-                    />
-                  </div>
-                ))}
+                <ContentCard
+                  item={item}
+                  enableUserState={false}
+                  hideBookmark
+                  hideProgressBar
+                />
               </div>
-            </div>
+            ))}
           </div>
         </div>
-      </FadeIn>
-    </section>
+      </div>
+    </div>
   );
 }
-
-
 
 function CorePlatformFeaturesSection() {
   return (
