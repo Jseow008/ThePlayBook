@@ -95,6 +95,13 @@ describe("ContentCard", () => {
         expect(screen.getByRole("button", { name: "Add Deep Work to My List" })).toBeInTheDocument();
     });
 
+    it("does not render an inert bookmark button when user state is disabled", () => {
+        render(<ContentCard item={item} enableUserState={false} />);
+
+        expect(screen.queryByRole("button", { name: "Add Deep Work to My List" })).not.toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Preview Deep Work" })).toBeInTheDocument();
+    });
+
     it("opens the reader when resume mode has usable progress", () => {
         mockGetProgress.mockReturnValue({
             itemId: item.id,

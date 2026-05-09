@@ -142,6 +142,7 @@ function BaseContentCard({
     const bookmarkLabel = isBookmarked
         ? `Remove ${item.title} from My List`
         : `Add ${item.title} to My List`;
+    const showBookmarkButton = !hideBookmark && Boolean(onToggleBookmark);
 
     return (
         <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10 hover:scale-105">
@@ -184,7 +185,7 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            {!hideBookmark ? (
+            {showBookmarkButton ? (
                 <button
                     onClick={onToggleBookmark}
                     className={cn(
