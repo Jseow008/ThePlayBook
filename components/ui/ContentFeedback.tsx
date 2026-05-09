@@ -178,12 +178,13 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                     onClick={() => handleVote('up')}
                     disabled={isSubmitting}
                     className={cn(
-                        "p-3 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary/50",
+                        "p-3 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-primary/50",
                         voteStatus === 'up'
-                            ? "bg-primary/20 text-primary hover:bg-primary/30"
-                            : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            ? "border-highlight-green bg-highlight-green text-highlight-green hover:bg-highlight-green-hover"
+                            : "border-transparent bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                     aria-label="Thumbs Up"
+                    aria-pressed={voteStatus === 'up'}
                 >
                     <ThumbsUp className="w-6 h-6" fill={voteStatus === 'up' ? "currentColor" : "none"} strokeWidth={2} />
                 </button>
@@ -191,12 +192,13 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
                     onClick={() => handleVote('down')}
                     disabled={isSubmitting}
                     className={cn(
-                        "p-3 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-primary/50",
+                        "p-3 rounded-full border transition-all focus:outline-none focus:ring-2 focus:ring-primary/50",
                         voteStatus === 'down'
-                            ? "bg-destructive/20 text-destructive hover:bg-destructive/30"
-                            : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            ? "border-highlight-red bg-highlight-red text-highlight-red hover:bg-highlight-red-hover"
+                            : "border-transparent bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                     )}
                     aria-label="Thumbs Down"
+                    aria-pressed={voteStatus === 'down'}
                 >
                     <ThumbsDown className="w-6 h-6" fill={voteStatus === 'down' ? "currentColor" : "none"} strokeWidth={2} />
                 </button>

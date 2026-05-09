@@ -59,7 +59,7 @@ describe("ContentFeedback", () => {
         });
 
         expect(toastSuccessMock).not.toHaveBeenCalled();
-        expect(upvoteButton).not.toHaveClass("bg-primary/20");
+        expect(upvoteButton).not.toHaveClass("bg-highlight-green");
     });
 
     it("rolls back a failed delete and keeps the existing vote selected", async () => {
@@ -90,7 +90,7 @@ describe("ContentFeedback", () => {
 
         const upvoteButton = await screen.findByRole("button", { name: "Thumbs Up" });
         await waitFor(() => {
-            expect(upvoteButton).toHaveClass("bg-primary/20");
+            expect(upvoteButton).toHaveClass("bg-highlight-green");
         });
 
         fireEvent.click(upvoteButton);
@@ -99,8 +99,40 @@ describe("ContentFeedback", () => {
             expect(toastErrorMock).toHaveBeenCalledWith("Could not update feedback right now.");
         });
 
-        expect(upvoteButton).toHaveClass("bg-primary/20");
+        expect(upvoteButton).toHaveClass("bg-highlight-green");
         expect(toastSuccessMock).not.toHaveBeenCalled();
+    });
+
+    it("marks a saved upvote with the green selected state", async () => {
+        fetchMock
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ data: { status: null } }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ data: { status: null } }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true }),
+            });
+
+        render(<ContentFeedback contentId="123e4567-e89b-12d3-a456-426614174111" />);
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalled();
+        });
+
+        const upvoteButton = screen.getByRole("button", { name: "Thumbs Up" });
+        fireEvent.click(upvoteButton);
+
+        await waitFor(() => {
+            expect(toastSuccessMock).toHaveBeenCalledWith("Thanks for the feedback! 👍");
+        });
+
+        expect(upvoteButton).toHaveClass("bg-highlight-green");
+        expect(upvoteButton).toHaveAttribute("aria-pressed", "true");
     });
 
     it("only marks a downvote as saved after the server confirms it", async () => {
@@ -128,7 +160,7 @@ describe("ContentFeedback", () => {
         fireEvent.click(downvoteButton);
 
         expect(await screen.findByRole("dialog")).toBeInTheDocument();
-        expect(downvoteButton).not.toHaveClass("bg-destructive/20");
+        expect(downvoteButton).not.toHaveClass("bg-highlight-red");
 
         fireEvent.click(screen.getByRole("button", { name: "Skip" }));
 
@@ -136,7 +168,8 @@ describe("ContentFeedback", () => {
             expect(toastSuccessMock).toHaveBeenCalledWith("Feedback received. We'll use it to improve!");
         });
 
-        expect(downvoteButton).toHaveClass("bg-destructive/20");
+        expect(downvoteButton).toHaveClass("bg-highlight-red");
+        expect(downvoteButton).toHaveAttribute("aria-pressed", "true");
         expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
 });
