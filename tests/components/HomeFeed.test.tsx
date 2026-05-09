@@ -1,0 +1,84 @@
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { HomeFeed } from "@/components/ui/HomeFeed";
+import type { ContentItem, HomepageSection } from "@/types/database";
+
+vi.mock("@/components/ui/HeroCarousel", () => ({
+    HeroCarousel: () => <div data-testid="hero-carousel" />,
+}));
+
+vi.mock("@/components/ui/RecommendationsRow", () => ({
+    RecommendationsRow: () => <div data-testid="recommendations-row" />,
+}));
+
+vi.mock("@/components/ui/Logo", () => ({
+    Logo: () => <span>Flux</span>,
+}));
+
+vi.mock("@/components/ui/ContentLane", () => ({
+    ContentLane: ({
+        title,
+        enableCardUserState,
+    }: {
+        title: React.ReactNode;
+        enableCardUserState?: boolean;
+    }) => (
+        <div
+            data-testid="content-lane"
+            data-enable-card-user-state={String(enableCardUserState)}
+        >
+            {title}
+        </div>
+    ),
+}));
+
+describe("HomeFeed", () => {
+    const item: ContentItem = {
+        id: "11111111-1111-1111-1111-111111111111",
+        title: "Deep Work",
+        type: "book",
+        status: "verified",
+        quick_mode_json: null,
+        duration_seconds: 1800,
+        author: "Cal Newport",
+        cover_image_url: null,
+        hero_image_url: null,
+        category: "Productivity",
+        is_featured: false,
+        embedding: null,
+        audio_url: null,
+        source_url: null,
+        created_at: "2026-03-01T00:00:00Z",
+        updated_at: "2026-03-01T00:00:00Z",
+        deleted_at: null,
+    };
+
+    const section: HomepageSection = {
+        id: "section-1",
+        title: "Featured Section",
+        filter_type: "category",
+        filter_value: "Productivity",
+        order_index: 1,
+        is_active: true,
+        created_at: "2026-03-01T00:00:00Z",
+        updated_at: "2026-03-01T00:00:00Z",
+    };
+
+    it("leaves browse feed cards interactive so bookmark buttons can save to My List", () => {
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[section]}
+                sectionItems={{ [section.id]: [item] }}
+            />
+        );
+
+        expect(screen.getByText("New on")).toBeInTheDocument();
+        expect(screen.getByText("Featured Section")).toBeInTheDocument();
+
+        for (const lane of screen.getAllByTestId("content-lane")) {
+            expect(lane).toHaveAttribute("data-enable-card-user-state", "undefined");
+        }
+    });
+});
