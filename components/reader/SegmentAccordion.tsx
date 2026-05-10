@@ -262,6 +262,7 @@ export function SegmentAccordion({
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const contentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const pendingScrollCleanupRef = useRef<(() => void) | null>(null);
+    const lastProcessedScrollRequestRef = useRef<string | null>(null);
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
     const isDesktop = useMediaQuery("(min-width: 640px)");
     const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
@@ -360,6 +361,12 @@ export function SegmentAccordion({
             return;
         }
 
+        const requestKey = `${scrollRequestSegmentId}:${scrollRequestId}`;
+        if (requestKey === lastProcessedScrollRequestRef.current) {
+            return;
+        }
+
+        lastProcessedScrollRequestRef.current = requestKey;
         scheduleScrollAfterExpansion(scrollRequestSegmentId, scrollRequestInitialY ?? 0);
     }, [
         currentExpandedId,
