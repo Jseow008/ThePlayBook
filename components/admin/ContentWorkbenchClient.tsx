@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -82,6 +82,7 @@ export function ContentWorkbenchClient({
     searchQuery,
     viewState,
     basePath = "/admin/content",
+    permanentFiltersEnabled = false,
 }: {
     items: AdminContentWorkbenchItem[];
     aiReadinessById: Record<string, AdminAiReadiness>;
@@ -95,10 +96,12 @@ export function ContentWorkbenchClient({
     searchQuery: string;
     viewState: AdminContentViewState;
     basePath?: string;
+    permanentFiltersEnabled?: boolean;
 }) {
     const router = useRouter();
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [pendingAction, setPendingAction] = useState<BulkAction | null>(null);
+    const [isRefreshPending, startRefreshTransition] = useTransition();
     const desktopSelectAllRef = useRef<HTMLInputElement | null>(null);
     const mobileSelectAllRef = useRef<HTMLInputElement | null>(null);
     const itemSignature = useMemo(() => items.map((item) => item.id).join(","), [items]);
@@ -181,7 +184,9 @@ export function ContentWorkbenchClient({
 
             toast.success(data.data?.message || "Bulk action completed.", description ? { description } : undefined);
             setSelectedIds([]);
-            router.refresh();
+            startRefreshTransition(() => {
+                router.refresh();
+            });
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Bulk action failed.");
         } finally {
@@ -207,7 +212,10 @@ export function ContentWorkbenchClient({
 
                 <div className="flex w-full flex-col items-stretch gap-3 xl:w-auto xl:min-w-[420px] xl:items-end">
                     <AdminSearch basePath={basePath} />
-                    <ContentFilters basePath={basePath} />
+                    <ContentFilters
+                        basePath={basePath}
+                        initialPermanent={permanentFiltersEnabled}
+                    />
                     <Link
                         href="/admin/content/new"
                         className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 whitespace-nowrap sm:w-auto"
@@ -257,7 +265,7 @@ export function ContentWorkbenchClient({
                                     key={action}
                                     type="button"
                                     onClick={() => runBulkAction(action)}
-                                    disabled={pendingAction !== null}
+                                    disabled={pendingAction !== null || isRefreshPending}
                                     className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${isDelete
                                         ? "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
                                         : "border-border bg-card text-foreground hover:bg-muted"
@@ -271,7 +279,7 @@ export function ContentWorkbenchClient({
                         <button
                             type="button"
                             onClick={() => setSelectedIds([])}
-                            disabled={pendingAction !== null}
+                            disabled={pendingAction !== null || isRefreshPending}
                             className="ml-auto rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             Clear selection

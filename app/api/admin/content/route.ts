@@ -23,7 +23,10 @@ import {
     ADMIN_CONTENT_AI_FILTER_OPTIONS,
     ADMIN_CONTENT_VOICE_FILTER_OPTIONS,
 } from "@/lib/admin-content-query";
-import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import {
+    getAdminAiReadinessFromCounts,
+    getAdminAiReadinessMap,
+} from "@/lib/server/admin-ai-readiness";
 import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
 
@@ -39,32 +42,8 @@ const AdminContentListQuerySchema = z.object({
     offset: z.coerce.number().int().min(0).default(0),
 });
 
-function toTimestamp(value: string | null | undefined) {
-    return value ? new Date(value).getTime() : 0;
-}
-
-function sortAdminContentItems<T extends {
-    id: string;
-    created_at: string | null;
-    updated_at: string | null;
-}>(items: T[], sort: z.infer<typeof AdminContentListQuerySchema>["sort"]) {
-    const normalizedSort = normalizeAdminContentSort(sort);
-    const { column, ascending } = getAdminContentSortOrder(normalizedSort);
-
-    return [...items].sort((left, right) => {
-        const primaryDifference = toTimestamp(left[column]) - toTimestamp(right[column]);
-        if (primaryDifference !== 0) {
-            return ascending ? primaryDifference : -primaryDifference;
-        }
-
-        const createdDifference = toTimestamp(left.created_at) - toTimestamp(right.created_at);
-        if (createdDifference !== 0) {
-            return -createdDifference;
-        }
-
-        return left.id.localeCompare(right.id);
-    });
-}
+const ADMIN_CONTENT_API_SELECT = "id, title, type, author, category, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at";
+const ADMIN_CONTENT_API_READINESS_SELECT = "id, title, type, author, category, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at, has_content_embedding, total_segments, embedded_segments";
 
 function validateSeriesAssignment(
     value: { series_id?: string | null; series_order?: number | null },
@@ -253,7 +232,7 @@ export async function GET(request: NextRequest) {
         const supabase = getAdminClient();
         let query = supabase
             .from("content_item")
-            .select("id, title, type, author, category, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at", { count: "exact" });
+            .select(ADMIN_CONTENT_API_SELECT, { count: "exact" });
 
         if (status === "deleted") {
             query = query.not("deleted_at", "is", null);
@@ -284,53 +263,67 @@ export async function GET(request: NextRequest) {
         }
 
         if (ai === "stale") {
-            const { data: allItems, error } = await query;
+            let staleQuery = supabase
+                .from("admin_content_workbench_readiness" as any)
+                .select(ADMIN_CONTENT_API_READINESS_SELECT, { count: "exact" })
+                .eq("ai_status", "stale");
+
+            if (status === "deleted") {
+                staleQuery = staleQuery.not("deleted_at", "is", null);
+            } else {
+                staleQuery = staleQuery.is("deleted_at", null);
+                if (status) {
+                    staleQuery = staleQuery.eq("status", status);
+                }
+            }
+
+            if (type) {
+                staleQuery = staleQuery.eq("type", type);
+            }
+
+            if (featured !== undefined) {
+                staleQuery = staleQuery.eq("is_featured", featured);
+            }
+
+            if (voice === "missing") {
+                staleQuery = staleQuery.is("audio_url", null);
+            } else if (voice === "stale") {
+                staleQuery = staleQuery.eq("narration_status", "stale");
+            }
+
+            if (q) {
+                const searchTerm = escapePostgrestLikeValue(q);
+                staleQuery = staleQuery.or(`title.ilike.${searchTerm},author.ilike.${searchTerm}`);
+            }
+
+            const sortOrder = getAdminContentSortOrder(normalizeAdminContentSort(sort));
+            let orderedStaleQuery = staleQuery.order(sortOrder.column, { ascending: sortOrder.ascending });
+
+            if (sortOrder.column !== "created_at") {
+                orderedStaleQuery = orderedStaleQuery.order("created_at", { ascending: false });
+            }
+
+            const { data: pagedItems, error, count } = await orderedStaleQuery
+                .order("id", { ascending: true })
+                .range(offset, offset + limit - 1);
 
             if (error) {
                 throw error;
             }
 
-            const items = (allItems ?? []) as Array<{
-                id: string;
-                title: string;
-                type: string;
-                author: string | null;
-                category: string | null;
-                status: string;
-                is_featured: boolean;
-                embedding: unknown;
-                audio_url: string | null;
-                narration_status: string | null;
-                narration_error: string | null;
-                narration_requested_at: string | null;
-                narration_started_at: string | null;
-                narration_completed_at: string | null;
-                created_at: string | null;
-                updated_at: string | null;
-                deleted_at: string | null;
-            }>;
-            const aiReadinessById = await getAdminAiReadinessMap(
-                supabase as any,
-                items.map((item) => ({
-                    id: item.id,
-                    status: item.status,
-                    embedding: item.embedding,
-                }))
-            );
-            const filteredItems = sortAdminContentItems(
-                items.filter((item) => aiReadinessById[item.id]?.status === "stale"),
-                sort
-            );
-            const pagedItems = filteredItems.slice(offset, offset + limit);
-
             return NextResponse.json({
                 success: true,
-                data: pagedItems.map((item) => ({
+                data: (pagedItems ?? []).map((item: any) => ({
                     ...item,
-                    ai_readiness: aiReadinessById[item.id],
+                    ai_readiness: getAdminAiReadinessFromCounts({
+                        status: item.status,
+                        hasContentEmbedding: Boolean(item.has_content_embedding),
+                        totalSegments: Number(item.total_segments ?? 0),
+                        embeddedSegments: Number(item.embedded_segments ?? 0),
+                    }),
                 })),
                 pagination: {
-                    total: filteredItems.length,
+                    total: count ?? (pagedItems ?? []).length,
                     limit,
                     offset,
                 },

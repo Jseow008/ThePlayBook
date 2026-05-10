@@ -4,7 +4,11 @@ import {
     DEFAULT_ADMIN_CONTENT_VIEW_STATE,
     getAdminContentViewStateFromSearchParams,
 } from "@/lib/admin-content-query";
-import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import {
+    getAdminAiReadinessFromCounts,
+    getAdminAiReadinessMap,
+    type AdminAiReadiness,
+} from "@/lib/server/admin-ai-readiness";
 import type { NarrationCostEstimate } from "@/lib/narration-cost";
 import type { NarrationJobStatus } from "@/lib/narration-job";
 import { getNarrationEstimatesByContentId } from "@/lib/server/narration-estimate";
@@ -23,7 +27,7 @@ export type AdminContentWorkbenchItem = {
     author: string | null;
     status: "draft" | "verified";
     is_featured: boolean;
-    embedding: unknown;
+    embedding?: unknown;
     audio_url: string | null;
     narration_status: NarrationJobStatus | null;
     narration_error: string | null;
@@ -50,26 +54,25 @@ type SearchParamsInput = {
     narration_warning?: string;
 };
 
-function toTimestamp(value: string | null | undefined) {
-    return value ? new Date(value).getTime() : 0;
-}
+type AdminContentWorkbenchReadinessRow = AdminContentWorkbenchItem & {
+    has_content_embedding: boolean | null;
+    total_segments: number | null;
+    embedded_segments: number | null;
+};
 
-function sortItems(items: AdminContentWorkbenchItem[], sort: ReturnType<typeof getAdminContentViewStateFromSearchParams>["sort"]) {
-    const { column, ascending } = getAdminContentSortOrder(sort);
+const ADMIN_CONTENT_WORKBENCH_SELECT = "id, title, type, author, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at";
+const ADMIN_CONTENT_WORKBENCH_READINESS_SELECT = "id, title, type, author, status, is_featured, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at, has_content_embedding, total_segments, embedded_segments";
 
-    return [...items].sort((left, right) => {
-        const primaryDifference = toTimestamp(left[column]) - toTimestamp(right[column]);
-        if (primaryDifference !== 0) {
-            return ascending ? primaryDifference : -primaryDifference;
-        }
-
-        const createdDifference = toTimestamp(left.created_at) - toTimestamp(right.created_at);
-        if (createdDifference !== 0) {
-            return -createdDifference;
-        }
-
-        return left.id.localeCompare(right.id);
-    });
+function toAiReadinessByIdFromRows(rows: AdminContentWorkbenchReadinessRow[]) {
+    return rows.reduce<Record<string, AdminAiReadiness>>((accumulator, row) => {
+        accumulator[row.id] = getAdminAiReadinessFromCounts({
+            status: row.status,
+            hasContentEmbedding: Boolean(row.has_content_embedding),
+            totalSegments: Number(row.total_segments ?? 0),
+            embeddedSegments: Number(row.embedded_segments ?? 0),
+        });
+        return accumulator;
+    }, {});
 }
 
 export async function getAdminContentWorkbenchData(
@@ -123,7 +126,7 @@ export async function getAdminContentWorkbenchData(
 
     let baseQuery = (supabase
         .from("content_item") as any)
-        .select("id, title, type, author, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at", { count: "exact" })
+        .select(ADMIN_CONTENT_WORKBENCH_SELECT, { count: "exact" })
         .is("deleted_at", null);
 
     if (viewState.status !== "all") {
@@ -184,18 +187,20 @@ export async function getAdminContentWorkbenchData(
             items = (fallbackResult.data ?? []) as AdminContentWorkbenchItem[];
         }
 
-        const aiReadinessById = await getAdminAiReadinessMap(
-            supabase as any,
-            items.map((item) => ({
-                id: item.id,
-                status: item.status,
-                embedding: item.embedding,
-            }))
-        );
-        const narrationEstimatesById = await getNarrationEstimatesByContentId(
-            supabase as any,
-            items.map((item) => item.id)
-        );
+        const [aiReadinessById, narrationEstimatesById] = await Promise.all([
+            getAdminAiReadinessMap(
+                supabase as any,
+                items.map((item) => ({
+                    id: item.id,
+                    status: item.status,
+                    embedding: item.embedding,
+                }))
+            ),
+            getNarrationEstimatesByContentId(
+                supabase as any,
+                items.map((item) => item.id)
+            ),
+        ]);
 
         return {
             items,
@@ -212,30 +217,71 @@ export async function getAdminContentWorkbenchData(
         };
     }
 
-    const { data: allData, error } = await baseQuery;
+    let staleQuery = (supabase
+        .from("admin_content_workbench_readiness") as any)
+        .select(ADMIN_CONTENT_WORKBENCH_READINESS_SELECT, { count: "exact" })
+        .is("deleted_at", null)
+        .eq("ai_status", "stale");
+
+    if (viewState.status !== "all") {
+        staleQuery = staleQuery.eq("status", viewState.status);
+    }
+
+    if (viewState.type !== "all") {
+        staleQuery = staleQuery.eq("type", viewState.type);
+    }
+
+    if (viewState.featured) {
+        staleQuery = staleQuery.eq("is_featured", true);
+    }
+
+    if (viewState.voice === "missing") {
+        staleQuery = staleQuery.is("audio_url", null);
+    } else if (viewState.voice === "stale") {
+        staleQuery = staleQuery.eq("narration_status", "stale");
+    }
+
+    if (searchQuery) {
+        const searchTerm = escapePostgrestLikeValue(searchQuery);
+        staleQuery = staleQuery.or(`title.ilike.${searchTerm},author.ilike.${searchTerm}`);
+    }
+
+    const { column, ascending } = getAdminContentSortOrder(viewState.sort);
+    const buildOrderedStaleQuery = () => {
+        let orderedQuery = staleQuery.order(column, { ascending });
+
+        if (column !== "created_at") {
+            orderedQuery = orderedQuery.order("created_at", { ascending: false });
+        }
+
+        return orderedQuery.order("id", { ascending: true });
+    };
+
+    const { data, count, error } = await buildOrderedStaleQuery()
+        .range((requestedPage - 1) * viewState.pageSize, requestedPage * viewState.pageSize - 1);
 
     if (error) {
         throw error;
     }
 
-    const allItems = (allData ?? []) as AdminContentWorkbenchItem[];
-    const aiReadinessById = await getAdminAiReadinessMap(
-        supabase as any,
-        allItems.map((item) => ({
-            id: item.id,
-            status: item.status,
-            embedding: item.embedding,
-        }))
-    );
-    const filteredItems = sortItems(
-        allItems.filter((item) => aiReadinessById[item.id]?.status === "stale"),
-        viewState.sort
-    );
-    const totalItems = filteredItems.length;
+    const totalItems = count ?? (data ?? []).length;
     const totalPages = Math.max(1, Math.ceil(totalItems / viewState.pageSize));
     const currentPage = Math.min(requestedPage, totalPages);
-    const from = (currentPage - 1) * viewState.pageSize;
-    const items = filteredItems.slice(from, from + viewState.pageSize);
+    let rows = (data ?? []) as AdminContentWorkbenchReadinessRow[];
+
+    if (currentPage !== requestedPage) {
+        const fallbackResult = await buildOrderedStaleQuery()
+            .range((currentPage - 1) * viewState.pageSize, currentPage * viewState.pageSize - 1);
+
+        if (fallbackResult.error) {
+            throw fallbackResult.error;
+        }
+
+        rows = (fallbackResult.data ?? []) as AdminContentWorkbenchReadinessRow[];
+    }
+
+    const items = rows as AdminContentWorkbenchItem[];
+    const aiReadinessById = toAiReadinessByIdFromRows(rows);
     const narrationEstimatesById = await getNarrationEstimatesByContentId(
         supabase as any,
         items.map((item) => item.id)

@@ -6,6 +6,29 @@ import { ContentStatusBadge } from "@/components/admin/ContentStatusBadge";
 import { MaintenancePanel } from "@/components/admin/MaintenancePanel";
 import { APP_NAME } from "@/lib/brand";
 
+async function countContentItems(
+    supabase: ReturnType<typeof getAdminClient>,
+    status?: "verified" | "draft"
+) {
+    let query = (supabase
+        .from("content_item") as any)
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null);
+
+    if (status) {
+        query = query.eq("status", status);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+        console.error("Error fetching admin content count:", error);
+        return 0;
+    }
+
+    return count ?? 0;
+}
+
 export default async function AdminDashboardPage({
     searchParams,
 }: {
@@ -15,26 +38,28 @@ export default async function AdminDashboardPage({
     const narrationWarning = resolvedSearchParams?.narration_warning || "";
     const supabase = getAdminClient();
 
-    const { data: allStatsData } = await (supabase
-        .from("content_item") as any)
-        .select("status, deleted_at")
-        .is("deleted_at", null);
+    const [
+        totalItems,
+        publishedItems,
+        draftItems,
+        recentContentResult,
+    ] = await Promise.all([
+        countContentItems(supabase),
+        countContentItems(supabase, "verified"),
+        countContentItems(supabase, "draft"),
+        (supabase
+            .from("content_item") as any)
+            .select("id, title, author, status, created_at, updated_at, deleted_at")
+            .is("deleted_at", null)
+            .order("created_at", { ascending: false })
+            .limit(5),
+    ]);
 
-    const { data: recentContent, error: recentContentError } = await (supabase
-        .from("content_item") as any)
-        .select("id, title, author, status, created_at, updated_at, deleted_at")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: false })
-        .limit(5);
+    const { data: recentContent, error: recentContentError } = recentContentResult;
 
     if (recentContentError) {
         console.error("Error fetching recent admin content:", recentContentError);
     }
-
-    const statsItems = allStatsData || [];
-    const totalItems = statsItems.length;
-    const publishedItems = statsItems.filter((item: any) => item.status === "verified").length;
-    const draftItems = statsItems.filter((item: any) => item.status === "draft").length;
 
     const summaryCards = [
         {

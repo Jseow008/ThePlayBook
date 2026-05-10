@@ -102,6 +102,39 @@ describe("AdminSearch", () => {
         expect(input).toHaveValue("focus");
     });
 
+    it("does not accept an older completed search after a newer draft starts", async () => {
+        vi.useFakeTimers();
+
+        const view = render(<AdminSearch />);
+        const input = screen.getByPlaceholderText("Search content...");
+
+        fireEvent.focus(input);
+        fireEvent.change(input, {
+            target: { value: "focus" },
+        });
+
+        await act(async () => {
+            vi.advanceTimersByTime(300);
+        });
+
+        expect(routerReplaceMock).toHaveBeenCalledWith("/admin/content?page=1&q=focus");
+
+        fireEvent.change(input, {
+            target: { value: "focused" },
+        });
+
+        searchParamsState.value = "q=focus";
+        view.rerender(<AdminSearch />);
+
+        expect(input).toHaveValue("focused");
+
+        await act(async () => {
+            vi.advanceTimersByTime(300);
+        });
+
+        expect(routerReplaceMock).toHaveBeenLastCalledWith("/admin/content?page=1&q=focused");
+    });
+
     it("clears the query from the URL without dropping other filters", async () => {
         vi.useFakeTimers();
         searchParamsState.value = "q=Focus&status=verified&page=3";

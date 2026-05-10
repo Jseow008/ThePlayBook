@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
@@ -23,6 +23,7 @@ export function PaginationControls({
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [jumpPage, setJumpPage] = useState<string>("");
+    const [isPending, startTransition] = useTransition();
 
     // Helper to build links keeping current filters
     const getPageLink = (newPage: number) => {
@@ -35,7 +36,9 @@ export function PaginationControls({
         e.preventDefault();
         const pageNum = parseInt(jumpPage);
         if (pageNum >= 1 && pageNum <= totalPages) {
-            router.push(getPageLink(pageNum));
+            startTransition(() => {
+                router.push(getPageLink(pageNum));
+            });
             setJumpPage("");
         }
     };
@@ -48,13 +51,15 @@ export function PaginationControls({
         } else {
             params.set("page_size", nextPageSize);
         }
-        router.push(`${pathname}?${params.toString()}`);
+        startTransition(() => {
+            router.push(`${pathname}?${params.toString()}`);
+        });
     };
 
     if (totalPages <= 1 && !pageSize) return null;
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-border bg-muted/40">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-border bg-muted/40" aria-busy={isPending}>
             {/* Mobile: Simple Prev/Next */}
             <div className="flex sm:hidden w-full flex-col gap-3">
                 {pageSize ? (
@@ -63,6 +68,7 @@ export function PaginationControls({
                         <select
                             value={String(pageSize)}
                             onChange={(event) => handlePageSizeChange(event.target.value)}
+                            disabled={isPending}
                             className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             {ADMIN_CONTENT_PAGE_SIZE_OPTIONS.map((size) => (
@@ -107,6 +113,7 @@ export function PaginationControls({
                         <select
                             value={String(pageSize)}
                             onChange={(event) => handlePageSizeChange(event.target.value)}
+                            disabled={isPending}
                             className="h-8 rounded-md border border-input bg-background px-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                             {ADMIN_CONTENT_PAGE_SIZE_OPTIONS.map((size) => (
@@ -199,12 +206,13 @@ export function PaginationControls({
                                 max={totalPages}
                                 value={jumpPage}
                                 onChange={(e) => setJumpPage(e.target.value)}
+                                disabled={isPending}
                                 className="w-16 h-8 px-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                                 placeholder="#"
                             />
                             <button
                                 type="submit"
-                                disabled={!jumpPage}
+                                disabled={!jumpPage || isPending}
                                 className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 Go

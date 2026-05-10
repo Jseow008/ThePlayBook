@@ -45,6 +45,13 @@ export type AdminAiReadinessSummary = {
     items_without_published_segments: number;
 };
 
+export type AdminAiReadinessCounts = {
+    status: ContentStatus;
+    hasContentEmbedding: boolean;
+    totalSegments: number;
+    embeddedSegments: number;
+};
+
 type ContentStatus = "draft" | "verified" | "deleted" | string | null | undefined;
 
 type ReadinessItem = {
@@ -150,6 +157,15 @@ export function getAdminAiReadiness(params: {
     };
 }
 
+export function getAdminAiReadinessFromCounts(params: AdminAiReadinessCounts) {
+    return getAdminAiReadiness({
+        status: params.status,
+        hasContentEmbedding: params.hasContentEmbedding,
+        totalSegments: params.totalSegments,
+        embeddedSegments: params.embeddedSegments,
+    });
+}
+
 function toSegmentRows(data: unknown[] | null | undefined) {
     if (!Array.isArray(data)) {
         return [];
@@ -189,47 +205,10 @@ export async function getAdminAiReadinessMap(
     }
 
     const itemIds = items.map((item) => item.id);
-    const segmentRows: SegmentRow[] = [];
-    const embeddingRows: SegmentEmbeddingRow[] = [];
-
-    for (let offset = 0; ; offset += READINESS_QUERY_PAGE_SIZE) {
-        const segmentResult = await supabase
-            .from("segment")
-            .select("id, item_id, markdown_body")
-            .is("deleted_at", null)
-            .in("item_id", itemIds)
-            .range(offset, offset + READINESS_QUERY_PAGE_SIZE - 1);
-
-        if (segmentResult.error) {
-            throw segmentResult.error;
-        }
-
-        const page = toSegmentRows(segmentResult.data);
-        segmentRows.push(...page);
-
-        if (page.length < READINESS_QUERY_PAGE_SIZE) {
-            break;
-        }
-    }
-
-    for (let offset = 0; ; offset += READINESS_QUERY_PAGE_SIZE) {
-        const embeddingResult = await supabase
-            .from("segment_embedding_gemini")
-            .select("content_item_id, segment_id")
-            .in("content_item_id", itemIds)
-            .range(offset, offset + READINESS_QUERY_PAGE_SIZE - 1);
-
-        if (embeddingResult.error) {
-            throw embeddingResult.error;
-        }
-
-        const page = toSegmentEmbeddingRows(embeddingResult.data);
-        embeddingRows.push(...page);
-
-        if (page.length < READINESS_QUERY_PAGE_SIZE) {
-            break;
-        }
-    }
+    const [segmentRows, embeddingRows] = await Promise.all([
+        loadSegmentRows(supabase, itemIds),
+        loadSegmentEmbeddingRows(supabase, itemIds),
+    ]);
     const segmentIdsByItem = new Map<string, Set<string>>();
     const totalSegmentsByItem = new Map<string, number>();
 
@@ -268,6 +247,57 @@ export async function getAdminAiReadinessMap(
             embeddedSegments: embeddedSegmentsByItem.get(item.id) ?? 0,
         }),
     ]));
+}
+
+async function loadSegmentRows(supabase: AdminAiReadinessSupabaseClient, itemIds: string[]) {
+    const segmentRows: SegmentRow[] = [];
+
+    for (let offset = 0; ; offset += READINESS_QUERY_PAGE_SIZE) {
+        const segmentResult = await supabase
+            .from("segment")
+            .select("id, item_id, markdown_body")
+            .is("deleted_at", null)
+            .in("item_id", itemIds)
+            .range(offset, offset + READINESS_QUERY_PAGE_SIZE - 1);
+
+        if (segmentResult.error) {
+            throw segmentResult.error;
+        }
+
+        const page = toSegmentRows(segmentResult.data);
+        segmentRows.push(...page);
+
+        if (page.length < READINESS_QUERY_PAGE_SIZE) {
+            break;
+        }
+    }
+
+    return segmentRows;
+}
+
+async function loadSegmentEmbeddingRows(supabase: AdminAiReadinessSupabaseClient, itemIds: string[]) {
+    const embeddingRows: SegmentEmbeddingRow[] = [];
+
+    for (let offset = 0; ; offset += READINESS_QUERY_PAGE_SIZE) {
+        const embeddingResult = await supabase
+            .from("segment_embedding_gemini")
+            .select("content_item_id, segment_id")
+            .in("content_item_id", itemIds)
+            .range(offset, offset + READINESS_QUERY_PAGE_SIZE - 1);
+
+        if (embeddingResult.error) {
+            throw embeddingResult.error;
+        }
+
+        const page = toSegmentEmbeddingRows(embeddingResult.data);
+        embeddingRows.push(...page);
+
+        if (page.length < READINESS_QUERY_PAGE_SIZE) {
+            break;
+        }
+    }
+
+    return embeddingRows;
 }
 
 export function summarizeAdminAiReadiness(readinessList: AdminAiReadiness[]): AdminAiReadinessSummary {

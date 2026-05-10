@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 import {
     normalizeAdminContentAiFilter,
     normalizeAdminContentStatus,
@@ -16,6 +17,7 @@ export function ContentQuickFilters({
 }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [isPending, startTransition] = useTransition();
     const currentStatus = normalizeAdminContentStatus(searchParams.get("status"));
     const currentAi = normalizeAdminContentAiFilter(searchParams.get("ai"));
     const currentVoice = normalizeAdminContentVoiceFilter(searchParams.get("voice"));
@@ -31,7 +33,9 @@ export function ContentQuickFilters({
             params.set(key, nextValue);
         }
 
-        router.push(`${basePath}?${params.toString()}`);
+        startTransition(() => {
+            router.push(`${basePath}?${params.toString()}`);
+        });
     };
 
     const clearQuickFilters = () => {
@@ -41,7 +45,9 @@ export function ContentQuickFilters({
         params.delete("featured");
         params.delete("ai");
         params.delete("voice");
-        router.push(`${basePath}?${params.toString()}`);
+        startTransition(() => {
+            router.push(`${basePath}?${params.toString()}`);
+        });
     };
 
     const hasQuickFilters = currentStatus !== "all" || isFeatured || currentAi !== "all" || currentVoice !== "all";
@@ -86,17 +92,18 @@ export function ContentQuickFilters({
     ];
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2" aria-busy={isPending}>
             {chips.map((chip) => (
                 <button
                     key={chip.key}
                     type="button"
                     onClick={chip.onClick}
+                    disabled={isPending}
                     className={`${CHIP_CLASS_NAME} ${
                         chip.active
                             ? "border-primary bg-primary text-primary-foreground"
                             : "border-transparent bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                    }`}
+                    } disabled:cursor-not-allowed disabled:opacity-70`}
                 >
                     {chip.label}
                 </button>
@@ -106,7 +113,8 @@ export function ContentQuickFilters({
                 <button
                     type="button"
                     onClick={clearQuickFilters}
-                    className="rounded-full border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    disabled={isPending}
+                    className="rounded-full border border-border px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-70"
                 >
                     Clear quick filters
                 </button>

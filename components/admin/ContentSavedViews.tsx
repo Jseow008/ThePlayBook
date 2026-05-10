@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookmarkPlus, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
     type AdminContentViewState,
-    DEFAULT_ADMIN_CONTENT_VIEW_STATE,
     getAdminContentViewStateFromSearchParams,
 } from "@/lib/admin-content-query";
+import { applyAdminContentViewStateToParams } from "@/lib/admin-content-permanent-filters";
 
 const STORAGE_KEY = "admin_content_saved_views_v1";
 
@@ -57,40 +57,6 @@ function isSameViewState(left: AdminContentViewState, right: AdminContentViewSta
     return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function applyViewStateToParams(params: URLSearchParams, state: AdminContentViewState) {
-    params.delete("page");
-    params.delete("q");
-    params.delete("status");
-    params.delete("type");
-    params.delete("featured");
-    params.delete("sort");
-    params.delete("ai");
-    params.delete("voice");
-    params.delete("page_size");
-
-    if (state.status !== DEFAULT_ADMIN_CONTENT_VIEW_STATE.status) {
-        params.set("status", state.status);
-    }
-    if (state.type !== DEFAULT_ADMIN_CONTENT_VIEW_STATE.type) {
-        params.set("type", state.type);
-    }
-    if (state.featured) {
-        params.set("featured", "true");
-    }
-    if (state.sort !== DEFAULT_ADMIN_CONTENT_VIEW_STATE.sort) {
-        params.set("sort", state.sort);
-    }
-    if (state.ai !== DEFAULT_ADMIN_CONTENT_VIEW_STATE.ai) {
-        params.set("ai", state.ai);
-    }
-    if (state.voice !== DEFAULT_ADMIN_CONTENT_VIEW_STATE.voice) {
-        params.set("voice", state.voice);
-    }
-    if (state.pageSize !== DEFAULT_ADMIN_CONTENT_VIEW_STATE.pageSize) {
-        params.set("page_size", String(state.pageSize));
-    }
-}
-
 export function ContentSavedViews({
     basePath = "/admin/content",
 }: {
@@ -101,6 +67,7 @@ export function ContentSavedViews({
     const [savedViews, setSavedViews] = useState<SavedView[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [draftName, setDraftName] = useState("");
+    const [isPending, startTransition] = useTransition();
 
     useEffect(() => {
         setSavedViews(readSavedViews());
@@ -125,8 +92,11 @@ export function ContentSavedViews({
         }
 
         const params = new URLSearchParams(searchParams.toString());
-        applyViewStateToParams(params, selectedView.state);
-        router.push(`${basePath}?${params.toString()}`);
+        params.delete("q");
+        applyAdminContentViewStateToParams(params, selectedView.state);
+        startTransition(() => {
+            router.push(`${basePath}?${params.toString()}`);
+        });
     };
 
     const saveCurrentView = () => {
@@ -165,7 +135,7 @@ export function ContentSavedViews({
     };
 
     return (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2" aria-busy={isPending}>
             <span className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 Saved Views
             </span>
@@ -174,6 +144,7 @@ export function ContentSavedViews({
                 <select
                     value={selectedViewId}
                     onChange={(event) => applySavedView(event.target.value)}
+                    disabled={isPending}
                     className="rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                     <option value="">Open saved view...</option>
@@ -199,6 +170,7 @@ export function ContentSavedViews({
                     <button
                         type="button"
                         onClick={saveCurrentView}
+                        disabled={isPending}
                         className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                     >
                         <Save className="size-4" />
@@ -210,6 +182,7 @@ export function ContentSavedViews({
                             setDraftName("");
                             setIsCreating(false);
                         }}
+                        disabled={isPending}
                         className="rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                         Cancel
@@ -219,6 +192,7 @@ export function ContentSavedViews({
                 <button
                     type="button"
                     onClick={() => setIsCreating(true)}
+                    disabled={isPending}
                     className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                 >
                     <BookmarkPlus className="size-4" />
@@ -230,6 +204,7 @@ export function ContentSavedViews({
                 <button
                     type="button"
                     onClick={deleteSelectedView}
+                    disabled={isPending}
                     className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                     <Trash2 className="size-4" />

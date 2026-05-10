@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 
 function normalizeQuery(value: string) {
     return value.trim();
@@ -16,29 +16,36 @@ export function AdminSearch({
     const router = useRouter();
     const searchParams = useSearchParams();
     const queryParam = searchParams.get("q") || "";
+    const [, startTransition] = useTransition();
 
     // Local state for immediate feedback
     const [query, setQuery] = useState(queryParam);
     const debounceRef = useRef<NodeJS.Timeout | null>(null);
     const latestQueryRef = useRef(queryParam);
     const isFocusedRef = useRef(false);
-    const pendingSearchQueryRef = useRef<string | null>(null);
+    const editRevisionRef = useRef(0);
+    const pendingSearchRef = useRef<{ query: string; revision: number } | null>(null);
 
     // Sync local state with URL param if it changes externally
     useEffect(() => {
         const normalizedQueryParam = normalizeQuery(queryParam);
         const normalizedCurrentQuery = normalizeQuery(latestQueryRef.current);
-        const pendingSearchQuery = pendingSearchQueryRef.current;
+        const pendingSearch = pendingSearchRef.current;
 
-        if (pendingSearchQuery !== null) {
-            if (normalizedQueryParam === pendingSearchQuery) {
-                pendingSearchQueryRef.current = null;
+        if (pendingSearch !== null) {
+            if (pendingSearch.revision < editRevisionRef.current) {
+                pendingSearchRef.current = null;
+                if (normalizedQueryParam !== normalizedCurrentQuery) {
+                    return;
+                }
+            } else if (normalizedQueryParam === pendingSearch.query) {
+                pendingSearchRef.current = null;
                 latestQueryRef.current = queryParam;
                 setQuery(queryParam);
                 return;
             }
 
-            if (normalizedCurrentQuery === pendingSearchQuery) {
+            if (normalizedCurrentQuery === pendingSearch.query) {
                 return;
             }
         }
@@ -61,6 +68,8 @@ export function AdminSearch({
 
     const handleSearch = (term: string) => {
         const normalizedTerm = normalizeQuery(term);
+        const revision = editRevisionRef.current + 1;
+        editRevisionRef.current = revision;
         latestQueryRef.current = term;
         setQuery(term);
 
@@ -69,9 +78,9 @@ export function AdminSearch({
         }
 
         debounceRef.current = setTimeout(() => {
-            pendingSearchQueryRef.current = normalizedTerm === normalizeQuery(queryParam)
+            pendingSearchRef.current = normalizedTerm === normalizeQuery(queryParam)
                 ? null
-                : normalizedTerm;
+                : { query: normalizedTerm, revision };
             const params = new URLSearchParams(searchParams.toString());
 
             // Reset page when searching
@@ -83,7 +92,9 @@ export function AdminSearch({
                 params.delete("q");
             }
 
-            router.replace(`${basePath}?${params.toString()}`);
+            startTransition(() => {
+                router.replace(`${basePath}?${params.toString()}`);
+            });
             debounceRef.current = null;
         }, 300);
     };
