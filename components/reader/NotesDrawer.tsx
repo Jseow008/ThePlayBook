@@ -21,6 +21,7 @@ interface NotesDrawerProps {
         title: string;
     }>;
     activeHighlightId?: string | null;
+    isAudioMiniPlayerVisible?: boolean;
     onHighlightJump: (highlightId: string) => void | Promise<void>;
 }
 
@@ -32,6 +33,7 @@ export function NotesDrawer({
     hasError,
     sections,
     activeHighlightId = null,
+    isAudioMiniPlayerVisible = false,
     onHighlightJump,
 }: NotesDrawerProps) {
     const [mounted, setMounted] = useState(false);
@@ -213,8 +215,13 @@ export function NotesDrawer({
         <>
             {/* Floating Toggle Button */}
             <div
-                style={{ marginBottom: 'env(safe-area-inset-bottom)', touchAction: 'none' }}
-                className="fixed bottom-8 sm:bottom-6 right-4 sm:right-6 z-40 flex flex-col items-end gap-2"
+                style={{ touchAction: 'none' }}
+                className={cn(
+                    "fixed right-4 z-40 flex flex-col items-end gap-2 transition-[bottom] duration-300 sm:right-6",
+                    isAudioMiniPlayerVisible
+                        ? "bottom-[calc(5.25rem+env(safe-area-inset-bottom))] sm:bottom-24"
+                        : "bottom-[calc(2rem+env(safe-area-inset-bottom))] sm:bottom-6"
+                )}
             >
                 <button
                     onClick={() => onOpenChange(true)}

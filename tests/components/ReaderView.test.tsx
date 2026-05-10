@@ -628,6 +628,24 @@ describe('ReaderView', () => {
                 })
             );
         });
+
+        expect(readerHeroHeaderSpy.mock.lastCall?.[0]?.isNotesDrawerOpen).toBe(false);
+
+        act(() => {
+            notesDrawerSpy.mock.lastCall?.[0]?.onOpenChange(true);
+        });
+
+        await waitFor(() => {
+            expect(readerHeroHeaderSpy.mock.lastCall?.[0]?.isNotesDrawerOpen).toBe(true);
+        });
+
+        act(() => {
+            readerHeroHeaderSpy.mock.lastCall?.[0]?.onMiniPlayerVisibilityChange(true);
+        });
+
+        await waitFor(() => {
+            expect(notesDrawerSpy.mock.lastCall?.[0]?.isAudioMiniPlayerVisible).toBe(true);
+        });
     });
 
     it('consumes a highlightId URL param and clears it after jumping', async () => {

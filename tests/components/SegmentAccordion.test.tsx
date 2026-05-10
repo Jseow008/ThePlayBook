@@ -184,6 +184,54 @@ describe('SegmentAccordion', () => {
         }
     });
 
+    it('focuses the segment header when an external scroll request asks for focus', async () => {
+        vi.useFakeTimers();
+
+        try {
+            const scrollToSpy = vi.fn();
+            window.scrollTo = scrollToSpy;
+
+            const { container } = render(
+                <SegmentAccordion
+                    {...defaultProps}
+                    expandedSegmentId="seg-2"
+                    scrollRequest={{
+                        segmentId: 'seg-2',
+                        initialScrollY: 0,
+                        requestId: 2,
+                        focusAfterScroll: true,
+                    }}
+                />
+            );
+
+            const segmentNode = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-2"]');
+            expect(segmentNode).not.toBeNull();
+            if (!segmentNode) {
+                return;
+            }
+
+            segmentNode.getBoundingClientRect = vi.fn(() => ({
+                x: 0,
+                y: 240,
+                top: 240,
+                bottom: 440,
+                left: 0,
+                right: 200,
+                width: 200,
+                height: 200,
+                toJSON: () => ({}),
+            } as DOMRect));
+
+            await act(async () => {
+                await vi.advanceTimersByTimeAsync(450);
+            });
+
+            expect(document.activeElement).toBe(screen.getByText('Chapter 1').closest('button'));
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it('renders anchored highlights against the correct repeated text occurrence', () => {
         const { container } = render(
             <SegmentAccordion

@@ -1,8 +1,36 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { AudioPlayer } from "@/components/reader/AudioPlayer";
 import { vi } from "vitest";
 
 describe("AudioPlayer", () => {
+    let intersectionCallback: IntersectionObserverCallback | null = null;
+
+    const mockIntersectionObserver = () => {
+        intersectionCallback = null;
+        const observe = vi.fn();
+        const disconnect = vi.fn();
+
+        vi.stubGlobal(
+            "IntersectionObserver",
+            vi.fn(function (this: IntersectionObserver, callback: IntersectionObserverCallback) {
+                intersectionCallback = callback;
+                return {
+                    observe,
+                    disconnect,
+                    unobserve: vi.fn(),
+                    takeRecords: vi.fn(() => []),
+                    root: null,
+                    rootMargin: "",
+                    thresholds: [],
+                };
+            })
+        );
+    };
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     it("restores the provided initial playback time after metadata loads", async () => {
         const onTimeChange = vi.fn();
         const { container } = render(
@@ -103,5 +131,206 @@ describe("AudioPlayer", () => {
             expect(onPlaybackStateChange).toHaveBeenCalledWith(true);
             expect(onPlaybackStateChange).toHaveBeenCalledWith(false);
         });
+    });
+
+    it("shows a compact mini-player after the hero player leaves view", async () => {
+        mockIntersectionObserver();
+        const onMiniPlayerVisibilityChange = vi.fn();
+
+        const { container } = render(
+            <AudioPlayer
+                src="https://example.com/audio.mp3"
+                title="Listen to this summary"
+                mediaTitle="Competence Versus Power Dynamics"
+                mediaAuthor="Jordan Peterson"
+                readerTheme="sepia"
+                onMiniPlayerVisibilityChange={onMiniPlayerVisibilityChange}
+            />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        Object.defineProperty(audio, "duration", {
+            configurable: true,
+            value: 120,
+        });
+        Object.defineProperty(audio, "currentTime", {
+            configurable: true,
+            writable: true,
+            value: 24,
+        });
+
+        fireEvent(audio, new Event("loadedmetadata"));
+        fireEvent(audio, new Event("timeupdate"));
+        fireEvent(audio, new Event("play"));
+
+        await act(async () => {
+            intersectionCallback?.(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+        });
+
+        expect(screen.getByRole("region", { name: "Audio mini player" })).toBeInTheDocument();
+        expect(screen.getByRole("region", { name: "Audio mini player" })).toHaveClass("reader-sepia");
+        expect(screen.getByText("Competence Versus Power Dynamics by Jordan Peterson")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Pause mini player" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Rewind 10 seconds" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Forward 10 seconds" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Change mini player playback speed" })).toHaveTextContent("1x");
+        expect(onMiniPlayerVisibilityChange).toHaveBeenLastCalledWith(true);
+    });
+
+    it("supports compact mini-player transport controls", async () => {
+        mockIntersectionObserver();
+        const onTimeChange = vi.fn();
+
+        const { container } = render(
+            <AudioPlayer
+                src="https://example.com/audio.mp3"
+                mediaTitle="Short title"
+                onTimeChange={onTimeChange}
+            />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        Object.defineProperty(audio, "duration", {
+            configurable: true,
+            value: 120,
+        });
+        Object.defineProperty(audio, "currentTime", {
+            configurable: true,
+            writable: true,
+            value: 24,
+        });
+        Object.defineProperty(audio, "playbackRate", {
+            configurable: true,
+            writable: true,
+            value: 1,
+        });
+
+        fireEvent(audio, new Event("loadedmetadata"));
+        fireEvent(audio, new Event("timeupdate"));
+        fireEvent(audio, new Event("play"));
+
+        await act(async () => {
+            intersectionCallback?.(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: "Rewind 10 seconds" }));
+        expect(onTimeChange).toHaveBeenLastCalledWith(14, {
+            durationSec: 120,
+            isEnded: false,
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: "Forward 10 seconds" }));
+        expect(onTimeChange).toHaveBeenLastCalledWith(24, {
+            durationSec: 120,
+            isEnded: false,
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: "Change mini player playback speed" }));
+        expect(screen.getByRole("button", { name: "Change mini player playback speed" })).toHaveTextContent("1.25x");
+        expect(audio.playbackRate).toBe(1.25);
+    });
+
+    it("hides the mini-player while the notes drawer is open", async () => {
+        mockIntersectionObserver();
+
+        const { container } = render(
+            <AudioPlayer
+                src="https://example.com/audio.mp3"
+                title="Listen to this summary"
+                isNotesDrawerOpen
+            />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        Object.defineProperty(audio, "duration", {
+            configurable: true,
+            value: 120,
+        });
+        Object.defineProperty(audio, "currentTime", {
+            configurable: true,
+            writable: true,
+            value: 24,
+        });
+
+        fireEvent(audio, new Event("loadedmetadata"));
+        fireEvent(audio, new Event("timeupdate"));
+        fireEvent(audio, new Event("play"));
+
+        await act(async () => {
+            intersectionCallback?.(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+        });
+
+        expect(screen.queryByRole("region", { name: "Audio mini player" })).not.toBeInTheDocument();
+    });
+
+    it("pauses audio and hides the mini-player when dismissed", async () => {
+        mockIntersectionObserver();
+        const onPlaybackStateChange = vi.fn();
+
+        const { container } = render(
+            <AudioPlayer
+                src="https://example.com/audio.mp3"
+                title="Listen to this summary"
+                onPlaybackStateChange={onPlaybackStateChange}
+            />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        const pauseSpy = vi.spyOn(audio, "pause").mockImplementation(() => undefined);
+        Object.defineProperty(audio, "duration", {
+            configurable: true,
+            value: 120,
+        });
+        Object.defineProperty(audio, "currentTime", {
+            configurable: true,
+            writable: true,
+            value: 24,
+        });
+
+        fireEvent(audio, new Event("loadedmetadata"));
+        fireEvent(audio, new Event("timeupdate"));
+        fireEvent(audio, new Event("play"));
+
+        await act(async () => {
+            intersectionCallback?.(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: "Close audio mini player" }));
+
+        expect(pauseSpy).toHaveBeenCalled();
+        expect(onPlaybackStateChange).toHaveBeenCalledWith(false);
+        expect(screen.queryByRole("region", { name: "Audio mini player" })).not.toBeInTheDocument();
     });
 });

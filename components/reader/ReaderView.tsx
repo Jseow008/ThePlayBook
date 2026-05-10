@@ -22,6 +22,7 @@ import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
 import { findCompletedSegmentIdsForPlaybackTime, findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
+import { cn } from "@/lib/utils";
 import {
     clearScopedAudioResume,
     getStorageScope,
@@ -66,12 +67,14 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [hasSyncedAudioPosition, setHasSyncedAudioPosition] = useState(false);
     const [isAudioFollowEnabled, setIsAudioFollowEnabled] = useState(true);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+    const [isAudioMiniPlayerVisible, setIsAudioMiniPlayerVisible] = useState(false);
     const [hasCompletedAudioPlayback, setHasCompletedAudioPlayback] = useState(false);
     const [hasPendingProgressSave, setHasPendingProgressSave] = useState(false);
     const [segmentScrollRequest, setSegmentScrollRequest] = useState<{
         segmentId: string;
         initialScrollY: number;
         requestId: number;
+        focusAfterScroll?: boolean;
     } | null>(null);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
@@ -137,10 +140,11 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         setIsAudioFollowEnabled(false);
     }, [activeNarrationSegmentId, hasSyncedAudioPosition, isAudioFollowEnabled]);
-    const requestSegmentScroll = useCallback((segmentId: string, initialScrollY = window.scrollY) => {
+    const requestSegmentScroll = useCallback((segmentId: string, initialScrollY = window.scrollY, options?: { focusAfterScroll?: boolean }) => {
         setSegmentScrollRequest((previous) => ({
             segmentId,
             initialScrollY,
+            focusAfterScroll: options?.focusAfterScroll,
             requestId: (previous?.requestId ?? 0) + 1,
         }));
     }, []);
@@ -149,7 +153,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         if (activeNarrationSegmentId) {
             setExpandedSegmentId(activeNarrationSegmentId);
-            requestSegmentScroll(activeNarrationSegmentId);
+            requestSegmentScroll(activeNarrationSegmentId, window.scrollY, { focusAfterScroll: true });
         }
     }, [activeNarrationSegmentId, requestSegmentScroll]);
 
@@ -693,7 +697,14 @@ export function ReaderView({ content }: ReaderViewProps) {
     return (
         <div className={`min-h-screen bg-background font-sans text-foreground transition-colors duration-300 reader-${readerTheme} reader-font-${fontFamily} reader-spacing-${lineHeight}`}>
             <div ref={setPopoverPortalEl} aria-hidden="true" />
-            <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-8 sm:pt-12 lg:pb-24">
+            <div
+                className={cn(
+                    "max-w-3xl mx-auto px-5 sm:px-6 pt-8 transition-[padding-bottom] duration-300 sm:pt-12",
+                    isAudioMiniPlayerVisible
+                        ? "pb-32 sm:pb-36 lg:pb-36"
+                        : "pb-8 sm:pb-8 lg:pb-24"
+                )}
+            >
                 {/* Hero Header */}
                 <ReaderHeroHeader
                     title={content.title}
@@ -705,7 +716,10 @@ export function ReaderView({ content }: ReaderViewProps) {
                     segmentsTotal={content.segments.length}
                     segmentsCompleted={completedSegments.size}
                     formattedReadingTime={formattedTime}
+                    readerTheme={readerTheme}
                     showResumeAudioFollow={hasSyncedAudioPosition && !isAudioFollowEnabled && Boolean(activeNarrationSegmentId)}
+                    isNotesDrawerOpen={isNotesDrawerOpen}
+                    onMiniPlayerVisibilityChange={setIsAudioMiniPlayerVisible}
                     onResumeAudioFollow={resumeAudioFollow}
                     initialAudioTimeSec={initialAudioTimeSec}
                     onAudioTimeChange={handleAudioTimeChange}
@@ -880,6 +894,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 hasError={Boolean(highlightsError)}
                 sections={sectionMeta}
                 activeHighlightId={activeHighlightId}
+                isAudioMiniPlayerVisible={isAudioMiniPlayerVisible}
                 onHighlightJump={handleHighlightJump}
             />
             {isDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (

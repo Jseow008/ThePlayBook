@@ -25,7 +25,10 @@ interface ReaderHeroHeaderProps {
     segmentsTotal: number;
     segmentsCompleted: number;
     formattedReadingTime: string;
+    readerTheme?: string;
     showResumeAudioFollow?: boolean;
+    isNotesDrawerOpen?: boolean;
+    onMiniPlayerVisibilityChange?: (isVisible: boolean) => void;
     onResumeAudioFollow?: () => void;
     initialAudioTimeSec?: number;
     onAudioTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
@@ -42,7 +45,10 @@ export function ReaderHeroHeader({
     segmentsTotal,
     segmentsCompleted,
     formattedReadingTime,
+    readerTheme = "dark",
     showResumeAudioFollow = false,
+    isNotesDrawerOpen = false,
+    onMiniPlayerVisibilityChange,
     onResumeAudioFollow,
     initialAudioTimeSec = 0,
     onAudioTimeChange,
@@ -155,7 +161,14 @@ export function ReaderHeroHeader({
                     <AudioPlayer
                         src={audioUrl}
                         title="Listen to this summary"
+                        mediaTitle={title}
+                        mediaAuthor={author}
                         initialTimeSec={initialAudioTimeSec}
+                        readerTheme={readerTheme}
+                        showResumeAudioFollow={showResumeAudioFollow}
+                        isNotesDrawerOpen={isNotesDrawerOpen}
+                        onMiniPlayerVisibilityChange={onMiniPlayerVisibilityChange}
+                        onResumeAudioFollow={onResumeAudioFollow}
                         onTimeChange={onAudioTimeChange}
                         onPlaybackStateChange={onAudioPlaybackStateChange}
                     />

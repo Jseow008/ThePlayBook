@@ -241,6 +241,7 @@ interface SegmentAccordionProps {
         segmentId: string;
         initialScrollY: number;
         requestId: number;
+        focusAfterScroll?: boolean;
     } | null;
     activeNarratedSegmentId?: string | null;
 }
@@ -270,6 +271,7 @@ export function SegmentAccordion({
     const scrollRequestSegmentId = scrollRequest?.segmentId;
     const scrollRequestInitialY = scrollRequest?.initialScrollY;
     const scrollRequestId = scrollRequest?.requestId;
+    const scrollRequestFocusAfterScroll = scrollRequest?.focusAfterScroll;
 
     const setExpandedId = useCallback((nextSegmentId: string | null) => {
         onExpandedSegmentChange?.(nextSegmentId);
@@ -285,22 +287,28 @@ export function SegmentAccordion({
     }, []);
 
     const scrollSegmentIntoView = useCallback((segmentId: string, initialScrollY: number) => {
-        if (Math.abs(window.scrollY - initialScrollY) > 50) return;
+        if (Math.abs(window.scrollY - initialScrollY) > 50) return false;
 
         const el = itemRefs.current.get(segmentId);
-        if (!el) return;
+        if (!el) return false;
 
         const y = el.getBoundingClientRect().top + window.scrollY - 100;
         window.scrollTo({ top: y, behavior: "smooth" });
+        return true;
     }, []);
 
-    const scheduleScrollAfterExpansion = useCallback((segmentId: string, initialScrollY: number) => {
+    const scheduleScrollAfterExpansion = useCallback((segmentId: string, initialScrollY: number, options?: { focusAfterScroll?: boolean }) => {
         cancelPendingScroll();
 
         const contentEl = contentRefs.current.get(segmentId);
         if (!contentEl) {
             requestAnimationFrame(() => {
-                requestAnimationFrame(() => scrollSegmentIntoView(segmentId, initialScrollY));
+                requestAnimationFrame(() => {
+                    const didScroll = scrollSegmentIntoView(segmentId, initialScrollY);
+                    if (didScroll && options?.focusAfterScroll) {
+                        itemRefs.current.get(segmentId)?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+                    }
+                });
             });
             return;
         }
@@ -322,7 +330,10 @@ export function SegmentAccordion({
             }
             contentEl.removeEventListener("transitionend", handleTransitionEnd);
             pendingScrollCleanupRef.current = null;
-            scrollSegmentIntoView(segmentId, initialScrollY);
+            const didScrollIntoView = scrollSegmentIntoView(segmentId, initialScrollY);
+            if (didScrollIntoView && options?.focusAfterScroll) {
+                itemRefs.current.get(segmentId)?.querySelector<HTMLButtonElement>("button")?.focus({ preventScroll: true });
+            }
         };
 
         contentEl.addEventListener("transitionend", handleTransitionEnd);
@@ -367,10 +378,13 @@ export function SegmentAccordion({
         }
 
         lastProcessedScrollRequestRef.current = requestKey;
-        scheduleScrollAfterExpansion(scrollRequestSegmentId, scrollRequestInitialY ?? 0);
+        scheduleScrollAfterExpansion(scrollRequestSegmentId, scrollRequestInitialY ?? 0, {
+            focusAfterScroll: scrollRequestFocusAfterScroll,
+        });
     }, [
         currentExpandedId,
         scheduleScrollAfterExpansion,
+        scrollRequestFocusAfterScroll,
         scrollRequestId,
         scrollRequestInitialY,
         scrollRequestSegmentId,

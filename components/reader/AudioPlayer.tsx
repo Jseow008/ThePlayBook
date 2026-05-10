@@ -8,31 +8,56 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Headphones } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Headphones, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface AudioPlayerProps {
     src: string;
     title?: string;
+    mediaTitle?: string;
+    mediaAuthor?: string | null;
     initialTimeSec?: number;
+    readerTheme?: string;
+    showResumeAudioFollow?: boolean;
+    isNotesDrawerOpen?: boolean;
+    onMiniPlayerVisibilityChange?: (isVisible: boolean) => void;
     onTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
     onPlaybackStateChange?: (isPlaying: boolean) => void;
+    onResumeAudioFollow?: () => void;
 }
 
 export function AudioPlayer({
     src,
     title,
+    mediaTitle,
+    mediaAuthor,
     initialTimeSec = 0,
+    readerTheme = "dark",
+    showResumeAudioFollow = false,
+    isNotesDrawerOpen = false,
+    onMiniPlayerVisibilityChange,
     onTimeChange,
     onPlaybackStateChange,
+    onResumeAudioFollow,
 }: AudioPlayerProps) {
+    const playerContainerRef = useRef<HTMLDivElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const hasAppliedInitialTimeRef = useRef(false);
+    const [mounted, setMounted] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [isMuted, setIsMuted] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
     const [playbackError, setPlaybackError] = useState("");
+    const [isHeroPlayerVisible, setIsHeroPlayerVisible] = useState(true);
+    const [isMiniPlayerDismissed, setIsMiniPlayerDismissed] = useState(false);
+    const [hasEnded, setHasEnded] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         hasAppliedInitialTimeRef.current = false;
@@ -40,8 +65,30 @@ export function AudioPlayer({
         setCurrentTime(0);
         setDuration(0);
         setPlaybackError("");
+        setIsHeroPlayerVisible(true);
+        setIsMiniPlayerDismissed(false);
+        setHasEnded(false);
         onPlaybackStateChange?.(false);
     }, [onPlaybackStateChange, src]);
+
+    useEffect(() => {
+        const playerContainer = playerContainerRef.current;
+        if (!playerContainer || typeof IntersectionObserver === "undefined") {
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsHeroPlayerVisible(Boolean(entry?.isIntersecting));
+            },
+            {
+                threshold: 0.2,
+            }
+        );
+
+        observer.observe(playerContainer);
+        return () => observer.disconnect();
+    }, []);
 
     useEffect(() => {
         const audio = audioRef.current;
@@ -49,6 +96,9 @@ export function AudioPlayer({
 
         const handleTimeUpdate = () => {
             setCurrentTime(audio.currentTime);
+            if (audio.currentTime < audio.duration) {
+                setHasEnded(false);
+            }
             onTimeChange?.(audio.currentTime, {
                 durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
                 isEnded: false,
@@ -59,6 +109,7 @@ export function AudioPlayer({
         };
         const handleEnded = () => {
             setIsPlaying(false);
+            setHasEnded(true);
             onPlaybackStateChange?.(false);
             onTimeChange?.(audio.currentTime, {
                 durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
@@ -67,6 +118,8 @@ export function AudioPlayer({
         };
         const handlePlay = () => {
             setIsPlaying(true);
+            setIsMiniPlayerDismissed(false);
+            setHasEnded(false);
             onPlaybackStateChange?.(true);
         };
         const handlePause = () => {
@@ -157,6 +210,8 @@ export function AudioPlayer({
 
         try {
             setPlaybackError("");
+            setIsMiniPlayerDismissed(false);
+            setHasEnded(false);
             await audio.play();
             setIsPlaying(true);
         } catch (error) {
@@ -183,10 +238,34 @@ export function AudioPlayer({
         const newTime = parseFloat(e.target.value);
         audio.currentTime = newTime;
         setCurrentTime(newTime);
+        setHasEnded(false);
         onTimeChange?.(newTime, {
             durationSec: Number.isFinite(audio.duration) ? audio.duration : 0,
             isEnded: false,
         });
+    };
+
+    const skipBy = (deltaSeconds: number) => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const maxTime = Number.isFinite(audio.duration) ? audio.duration : duration;
+        const nextTime = Math.min(Math.max(0, audio.currentTime + deltaSeconds), Math.max(0, maxTime || 0));
+        audio.currentTime = nextTime;
+        setCurrentTime(nextTime);
+        setHasEnded(false);
+        onTimeChange?.(nextTime, {
+            durationSec: Number.isFinite(audio.duration) ? audio.duration : duration,
+            isEnded: false,
+        });
+    };
+
+    const dismissMiniPlayer = () => {
+        const audio = audioRef.current;
+        audio?.pause();
+        setIsPlaying(false);
+        setIsMiniPlayerDismissed(true);
+        onPlaybackStateChange?.(false);
     };
 
     const cyclePlaybackRate = () => {
@@ -208,9 +287,24 @@ export function AudioPlayer({
     };
 
     const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const miniPlayerTitle = mediaTitle?.trim() || title || "Audio";
+    const miniPlayerLabel = mediaAuthor?.trim()
+        ? `${miniPlayerTitle} by ${mediaAuthor.trim()}`
+        : miniPlayerTitle;
+    const hasResumableProgress = currentTime > 0 && duration > 0 && currentTime < duration;
+    const canShowMiniPlayer = mounted
+        && !isHeroPlayerVisible
+        && !isNotesDrawerOpen
+        && !isMiniPlayerDismissed
+        && !hasEnded
+        && (isPlaying || hasResumableProgress);
+
+    useEffect(() => {
+        onMiniPlayerVisibilityChange?.(canShowMiniPlayer);
+    }, [canShowMiniPlayer, onMiniPlayerVisibilityChange]);
 
     return (
-        <div className="relative overflow-hidden rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-xl">
+        <div ref={playerContainerRef} className="relative overflow-hidden rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-xl">
             <audio ref={audioRef} src={src} preload="metadata" />
 
             {/* Header with label */}
@@ -299,6 +393,110 @@ export function AudioPlayer({
                 <div className="border-t border-border bg-destructive/5 px-5 py-3 text-xs font-medium text-destructive">
                     {playbackError}
                 </div>
+            )}
+
+            {canShowMiniPlayer && createPortal(
+                <div
+                    className={cn(
+                        `reader-${readerTheme}`,
+                        "fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(44rem,calc(100vw-2rem))] sm:-translate-x-1/2",
+                        "animate-in fade-in slide-in-from-bottom-3 duration-300 motion-reduce:animate-none"
+                    )}
+                    role="region"
+                    aria-label="Audio mini player"
+                >
+                    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_12px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                        <div className="h-0.5 bg-secondary">
+                            <div
+                                className="h-full bg-primary transition-[width] duration-150"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
+                            <button
+                                type="button"
+                                onClick={togglePlay}
+                                className="focus-ring flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+                                aria-label={isPlaying ? "Pause mini player" : "Play mini player"}
+                            >
+                                {isPlaying ? <Pause className="size-4" /> : <Play className="ml-0.5 size-4" />}
+                            </button>
+
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-xs font-semibold text-foreground" title={miniPlayerLabel}>
+                                    {miniPlayerLabel}
+                                </p>
+                                <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                                    <span className="w-9 flex-shrink-0 font-mono text-[11px] text-muted-foreground">
+                                        {formatTime(currentTime)}
+                                    </span>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max={duration || 0}
+                                        value={currentTime}
+                                        onChange={handleSeek}
+                                        className="h-1.5 min-w-16 flex-1 cursor-pointer accent-primary"
+                                        aria-label="Seek mini player timeline"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-shrink-0 items-center gap-1 self-end">
+                                <button
+                                    type="button"
+                                    onClick={() => skipBy(-10)}
+                                    className="focus-ring inline-flex size-7 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    aria-label="Rewind 10 seconds"
+                                >
+                                    <span className="relative inline-flex size-5 items-center justify-center">
+                                        <RotateCcw className="absolute inset-0 size-5" strokeWidth={2.2} />
+                                        <span className="text-[9px] font-bold leading-none">10</span>
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => skipBy(10)}
+                                    className="focus-ring inline-flex size-7 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    aria-label="Forward 10 seconds"
+                                >
+                                    <span className="relative inline-flex size-5 items-center justify-center">
+                                        <RotateCw className="absolute inset-0 size-5" strokeWidth={2.2} />
+                                        <span className="text-[9px] font-bold leading-none">10</span>
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={cyclePlaybackRate}
+                                    className="focus-ring min-w-9 flex-shrink-0 rounded-md bg-secondary/70 px-1.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    aria-label="Change mini player playback speed"
+                                    title="Change playback speed"
+                                >
+                                    {playbackRate}x
+                                </button>
+                                {showResumeAudioFollow && onResumeAudioFollow && (
+                                    <button
+                                        type="button"
+                                        onClick={onResumeAudioFollow}
+                                        className="focus-ring rounded-full border border-border/70 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45"
+                                    >
+                                        Follow
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={dismissMiniPlayer}
+                                    className="focus-ring rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    aria-label="Close audio mini player"
+                                >
+                                    <X className="size-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );
