@@ -399,7 +399,7 @@ export function AudioPlayer({
                 <div
                     className={cn(
                         `reader-${readerTheme}`,
-                        "fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(44rem,calc(100vw-2rem))] sm:-translate-x-1/2",
+                        "fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]",
                         "animate-in fade-in slide-in-from-bottom-3 duration-300 motion-reduce:animate-none"
                     )}
                     role="region"
@@ -413,7 +413,7 @@ export function AudioPlayer({
                             />
                         </div>
 
-                        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:gap-3 sm:px-4">
+                        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:gap-4 sm:px-5 lg:px-6">
                             <button
                                 type="button"
                                 onClick={togglePlay}
@@ -481,7 +481,7 @@ export function AudioPlayer({
                                         onClick={onResumeAudioFollow}
                                         className="focus-ring rounded-full border border-border/70 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45"
                                     >
-                                        Follow
+                                        Follow audio
                                     </button>
                                 )}
                                 <button
