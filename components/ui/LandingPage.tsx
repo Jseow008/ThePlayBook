@@ -8,6 +8,8 @@ import {
   ArrowRight,
   Brain,
   Briefcase,
+  ChevronLeft,
+  ChevronRight,
   CircleDollarSign,
   Dumbbell,
   GraduationCap,
@@ -17,12 +19,14 @@ import {
   Lightbulb,
   Landmark,
   Leaf,
+  Maximize2,
   Megaphone,
   Microscope,
   Smile,
   Sparkles,
   TrendingUp,
   Users,
+  X,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { ContentCard } from "@/components/ui/ContentCard";
@@ -69,27 +73,21 @@ const CATEGORY_ICONS = {
   Business: Briefcase,
 } as const;
 
-const CORE_ANCHOR_FEATURE = {
-  title: "Reading view",
-  description: "Read in clear, structured sections designed for focus.",
-  image: "/images/reading-experience-reader-view.png",
-} as const;
-
-const CORE_SUPPORT_FEATURES = [
+const STORYBOARD_SLIDES = [
   {
-    title: "Preview the thesis",
-    description: "See the main idea and understand the thesis before you dive in.",
-    image: "/images/reading-experience-info-view.png",
+    label: "Distill",
+    title: "Distill before committing time",
+    image: "/images/flux-storyboard-distill.webp",
   },
   {
-    title: "Highlight and annotate",
-    description: "Capture the passages worth remembering while you read.",
-    image: "/images/highlighting-and-annotation.png",
+    label: "Library",
+    title: "Build your personal library",
+    image: "/images/flux-storyboard-library.webp",
   },
   {
-    title: "Ask follow-up questions",
-    description: "Ask the author(s) questions about what you just read.",
-    image: "/images/ai-chat.png",
+    label: "Ask",
+    title: "Think with your notes",
+    image: "/images/flux-storyboard-ai.webp",
   },
 ] as const;
 
@@ -99,6 +97,7 @@ const FEATURED_READS_AUTOPLAY_INTERVAL_MS = 50;
 const FEATURED_READS_AUTOPLAY_STEP_PX = 2;
 const FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS = 2000;
 const FEATURED_READS_ROW_COUNT = 2;
+const STORYBOARD_SWIPE_THRESHOLD_PX = 44;
 const PRIMARY_CTA_CLASS =
   "focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-16px_rgba(255,255,255,0.45)]";
 const SECONDARY_CTA_CLASS =
@@ -709,6 +708,86 @@ function FeaturedReadsMarqueeRow({
 }
 
 function CorePlatformFeaturesSection() {
+  const [activeStoryboardSlide, setActiveStoryboardSlide] = useState(0);
+  const [isStoryboardLightboxOpen, setIsStoryboardLightboxOpen] = useState(false);
+  const storyboardLightboxTouchStartXRef = useRef<number | null>(null);
+
+  const goToPreviousStoryboardSlide = useCallback(() => {
+    setActiveStoryboardSlide((current) =>
+      current === 0 ? STORYBOARD_SLIDES.length - 1 : current - 1
+    );
+  }, []);
+
+  const goToNextStoryboardSlide = useCallback(() => {
+    setActiveStoryboardSlide((current) =>
+      current === STORYBOARD_SLIDES.length - 1 ? 0 : current + 1
+    );
+  }, []);
+
+  const closeStoryboardLightbox = useCallback(() => {
+    setIsStoryboardLightboxOpen(false);
+    storyboardLightboxTouchStartXRef.current = null;
+  }, []);
+
+  const handleStoryboardLightboxTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    storyboardLightboxTouchStartXRef.current = event.touches[0]?.clientX ?? null;
+  }, []);
+
+  const handleStoryboardLightboxTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
+    const startX = storyboardLightboxTouchStartXRef.current;
+    storyboardLightboxTouchStartXRef.current = null;
+
+    if (startX === null) return;
+
+    const endX = event.changedTouches[0]?.clientX;
+    if (typeof endX !== "number") return;
+
+    const deltaX = endX - startX;
+    if (Math.abs(deltaX) < STORYBOARD_SWIPE_THRESHOLD_PX) return;
+
+    if (deltaX < 0) {
+      goToNextStoryboardSlide();
+      return;
+    }
+
+    goToPreviousStoryboardSlide();
+  }, [goToNextStoryboardSlide, goToPreviousStoryboardSlide]);
+
+  useEffect(() => {
+    if (!isStoryboardLightboxOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeStoryboardLightbox();
+        return;
+      }
+
+      if (event.key === "ArrowLeft") {
+        goToPreviousStoryboardSlide();
+        return;
+      }
+
+      if (event.key === "ArrowRight") {
+        goToNextStoryboardSlide();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    closeStoryboardLightbox,
+    goToNextStoryboardSlide,
+    goToPreviousStoryboardSlide,
+    isStoryboardLightboxOpen,
+  ]);
+
   return (
     <section className="landing-feature-band relative py-20 sm:py-24">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
@@ -716,77 +795,228 @@ function CorePlatformFeaturesSection() {
         <div className="landing-feature-shell relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/5 via-white/[0.03] to-white/[0.01] p-8 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.85)] sm:p-10 lg:p-12">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/[0.035] to-transparent blur-2xl" />
           <div className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
-          <div className="relative z-10 grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div className="relative z-10 grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <div className="max-w-md">
               <SectionIntro
                 label="How Flux works"
                 title="From insight to lasting reference."
-                body="Preview the key ideas, read detailed summaries in clean sections, highlight what matters, and come back when the idea becomes useful."
+                body="Skim the thesis, read the structured breakdown, highlight passages worth keeping, and ask follow-up questions — all in one place."
               />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 lg:items-center">
-              <FadeIn delayMs={100}>
-                <div className="group landing-feature-card flex flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.85)]">
-                  <div className="relative aspect-[1996/1794] w-full shrink-0 overflow-hidden border-b border-white/5 bg-zinc-950">
-                    <Image
-                      src={CORE_ANCHOR_FEATURE.image}
-                      alt={`Screenshot illustrating ${CORE_ANCHOR_FEATURE.title}`}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      className="object-cover object-top opacity-90 transition-transform duration-300 group-hover:scale-105 group-hover:opacity-100"
-                    />
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+            <FadeIn delayMs={100}>
+              <div className="landing-feature-card relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 p-2 shadow-[0_24px_70px_-34px_rgba(0,0,0,0.95)] sm:p-3">
+                <button
+                  type="button"
+                  onClick={() => setIsStoryboardLightboxOpen(true)}
+                  className="focus-ring group/storyboard relative block w-full overflow-hidden rounded-[1.45rem] border border-white/10 bg-zinc-950 text-left"
+                  aria-label={`Enlarge ${STORYBOARD_SLIDES[activeStoryboardSlide].label} storyboard`}
+                >
+                  <div
+                    className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    style={{ transform: `translateX(-${activeStoryboardSlide * 100}%)` }}
+                  >
+                    {STORYBOARD_SLIDES.map((slide) => (
+                      <div key={slide.title} className="relative aspect-[1672/941] w-full shrink-0">
+                        <Image
+                          src={slide.image}
+                          alt={`Flux storyboard: ${slide.title}`}
+                          fill
+                          sizes="(max-width: 1024px) 100vw, 760px"
+                          className="object-cover"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="pointer-events-none absolute inset-0 rounded-[1.45rem] ring-1 ring-inset ring-white/10" />
+                  <div className="pointer-events-none absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 opacity-100 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-300 group-hover/storyboard:border-white/25 group-hover/storyboard:bg-black/70 group-hover/storyboard:text-white sm:opacity-0 sm:group-hover/storyboard:opacity-100 sm:group-focus-visible/storyboard:opacity-100">
+                    <Maximize2 className="size-4" />
+                  </div>
+                </button>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+                  <div className="hidden sm:block" />
+
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {STORYBOARD_SLIDES.map((slide, index) => {
+                      const isActive = index === activeStoryboardSlide;
+
+                      return (
+                        <button
+                          key={slide.title}
+                          type="button"
+                          onClick={() => setActiveStoryboardSlide(index)}
+                          className={cn(
+                            "focus-ring inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[0.64rem] font-semibold uppercase tracking-[0.16em] transition-all duration-300",
+                            isActive
+                              ? "border-white/30 bg-white/[0.1] text-white"
+                              : "border-white/10 bg-white/[0.025] text-zinc-500 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                          )}
+                          aria-label={`Show ${slide.label} storyboard`}
+                          aria-pressed={isActive}
+                        >
+                          {slide.label}
+                        </button>
+                      );
+                    })}
                   </div>
 
-                  <div className="flex flex-1 flex-col p-6 pt-5">
-                    <span className="mb-4 w-fit rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-zinc-400">
-                      Core view
-                    </span>
-                    <h3 className="text-2xl font-semibold tracking-tight text-white">
-                      {CORE_ANCHOR_FEATURE.title}
-                    </h3>
-                    <p className="mt-3 text-base leading-7 text-zinc-300">
-                      {CORE_ANCHOR_FEATURE.description}
-                    </p>
+                  <div className="flex shrink-0 items-center justify-center gap-2 sm:justify-self-end">
+                    <button
+                      type="button"
+                      onClick={goToPreviousStoryboardSlide}
+                      className="focus-ring inline-flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
+                      aria-label="Show previous Flux workflow slide"
+                    >
+                      <ChevronLeft className="size-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={goToNextStoryboardSlide}
+                      className="focus-ring inline-flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
+                      aria-label="Show next Flux workflow slide"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
                   </div>
                 </div>
-              </FadeIn>
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </FadeIn>
 
-              <div className="flex flex-col gap-4">
-                {CORE_SUPPORT_FEATURES.map((feature, index) => (
-                  <FadeIn key={feature.title} delayMs={150 + index * 80}>
-                    <div className="group landing-feature-row relative flex flex-row items-center gap-4 overflow-hidden rounded-[1.75rem] border border-white/10 bg-black/80 p-3 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/90 hover:shadow-[0_20px_40px_-28px_rgba(255,255,255,0.2)]">
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-[1.15rem] border border-white/5 bg-zinc-950">
-                        <Image
-                          src={feature.image}
-                          alt={`Screenshot illustrating ${feature.title}`}
-                          fill
-                          sizes="80px"
-                          className="object-cover object-top opacity-80 transition-transform duration-300 group-hover:scale-[1.05] group-hover:opacity-100"
-                        />
-                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      </div>
+      {isStoryboardLightboxOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Flux storyboard image viewer"
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/88 p-4 backdrop-blur-xl sm:p-6"
+        >
+          <button
+            type="button"
+            onClick={closeStoryboardLightbox}
+            className="absolute inset-0 cursor-default"
+            aria-label="Close Flux storyboard viewer"
+          />
 
-                      <div className="flex flex-1 flex-col py-1 pr-3">
-                        <span className="mb-2 text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-zinc-500">
-                          {index === 0 ? "Preview" : index === 1 ? "Capture" : "Ask"}
-                        </span>
-                        <h3 className="text-base font-semibold leading-snug tracking-[-0.01em] text-white">
-                          {feature.title}
-                        </h3>
-                        <p className="mt-1 text-sm leading-6 text-zinc-300">
-                          {feature.description}
-                        </p>
-                      </div>
+          <div
+            className="relative z-10 flex h-full w-full max-w-7xl flex-col justify-center gap-4"
+            onTouchStart={handleStoryboardLightboxTouchStart}
+            onTouchEnd={handleStoryboardLightboxTouchEnd}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[0.64rem] font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  {STORYBOARD_SLIDES[activeStoryboardSlide].label}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-white sm:text-base">
+                  {STORYBOARD_SLIDES[activeStoryboardSlide].title}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={closeStoryboardLightbox}
+                className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition-all duration-300 hover:border-white/25 hover:bg-white/[0.09] hover:text-white"
+                aria-label="Close Flux storyboard viewer"
+              >
+                <X className="size-5" />
+              </button>
+            </div>
+
+            <div className="relative min-h-0 flex-1">
+              <div className="absolute inset-y-0 left-0 z-20 hidden items-center sm:flex">
+                <button
+                  type="button"
+                  onClick={goToPreviousStoryboardSlide}
+                  className="focus-ring inline-flex size-12 items-center justify-center rounded-full border border-white/10 bg-black/50 text-white/75 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.9)] backdrop-blur-md transition-all duration-300 hover:border-white/25 hover:bg-black/70 hover:text-white"
+                  aria-label="Show previous Flux storyboard"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+              </div>
+
+              <div className="absolute inset-y-0 right-0 z-20 hidden items-center sm:flex">
+                <button
+                  type="button"
+                  onClick={goToNextStoryboardSlide}
+                  className="focus-ring inline-flex size-12 items-center justify-center rounded-full border border-white/10 bg-black/50 text-white/75 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.9)] backdrop-blur-md transition-all duration-300 hover:border-white/25 hover:bg-black/70 hover:text-white"
+                  aria-label="Show next Flux storyboard"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              </div>
+
+              <div className="relative mx-auto h-full max-h-[82vh] max-w-[min(94vw,1280px)] overflow-hidden rounded-[1.5rem] border border-white/10 bg-black shadow-[0_34px_110px_-45px_rgba(0,0,0,0.95)]">
+                <div
+                  className="flex h-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                  style={{ transform: `translateX(-${activeStoryboardSlide * 100}%)` }}
+                >
+                  {STORYBOARD_SLIDES.map((slide) => (
+                    <div key={`lightbox-${slide.title}`} className="relative h-full w-full shrink-0">
+                      <Image
+                        src={slide.image}
+                        alt={`Expanded Flux storyboard: ${slide.title}`}
+                        fill
+                        sizes="94vw"
+                        className="object-contain"
+                        priority
+                      />
                     </div>
-                  </FadeIn>
-                ))}
+                  ))}
+                </div>
+                <div className="pointer-events-none absolute inset-0 rounded-[1.5rem] ring-1 ring-inset ring-white/10" />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <div className="flex items-center justify-center gap-2 sm:hidden">
+                <button
+                  type="button"
+                  onClick={goToPreviousStoryboardSlide}
+                  className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition-all duration-300 hover:border-white/25 hover:bg-white/[0.09] hover:text-white"
+                  aria-label="Show previous Flux storyboard"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={goToNextStoryboardSlide}
+                  className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition-all duration-300 hover:border-white/25 hover:bg-white/[0.09] hover:text-white"
+                  aria-label="Show next Flux storyboard"
+                >
+                  <ChevronRight className="size-5" />
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {STORYBOARD_SLIDES.map((slide, index) => {
+                  const isActive = index === activeStoryboardSlide;
+
+                  return (
+                    <button
+                      key={`lightbox-control-${slide.title}`}
+                      type="button"
+                      onClick={() => setActiveStoryboardSlide(index)}
+                      className={cn(
+                        "focus-ring inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[0.64rem] font-semibold uppercase tracking-[0.16em] transition-all duration-300",
+                        isActive
+                          ? "border-white/30 bg-white/[0.12] text-white"
+                          : "border-white/10 bg-white/[0.035] text-zinc-500 hover:border-white/20 hover:bg-white/[0.08] hover:text-white"
+                      )}
+                      aria-label={`Show ${slide.label} storyboard`}
+                      aria-pressed={isActive}
+                    >
+                      {slide.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
-      </FadeIn>
+      ) : null}
     </section>
   );
 }
