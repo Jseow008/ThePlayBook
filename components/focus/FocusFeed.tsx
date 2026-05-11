@@ -209,16 +209,25 @@ export function getDesktopCoverWidth({
 }
 
 export function getDesktopVisibleTakeawayCount({
+    availableContentHeight,
     totalTakeaways,
 }: {
-    availableContentHeight?: number;
+    availableContentHeight: number;
     totalTakeaways: number;
 }) {
     if (totalTakeaways <= 0) {
         return 0;
     }
 
-    return Math.min(totalTakeaways, DESKTOP_VISIBLE_TAKEAWAY_COUNT);
+    if (availableContentHeight >= 700) {
+        return Math.min(totalTakeaways, DESKTOP_VISIBLE_TAKEAWAY_COUNT);
+    }
+
+    if (availableContentHeight >= 620) {
+        return Math.min(totalTakeaways, 2);
+    }
+
+    return Math.min(totalTakeaways, 1);
 }
 
 function buildExcludeParam(ids: string[]) {
@@ -1296,6 +1305,7 @@ const FocusCardView = memo(function FocusCardView({
     const cardRef = useRef<HTMLElement | null>(null);
     const cardContentRef = useRef<HTMLDivElement | null>(null);
     const hookBodyRef = useRef<HTMLDivElement | null>(null);
+    const mobileHookFitKeyRef = useRef<string | null>(null);
     const [cardWidth, setCardWidth] = useState(0);
     const desktopAvailableContentHeight = mobileCardTargetHeight === null || mobileCardTargetHeight <= 0
         ? 720
@@ -1361,12 +1371,22 @@ const FocusCardView = memo(function FocusCardView({
 
     useLayoutEffect(() => {
         if (isDesktop || mobileCardTargetHeight === null) {
+            mobileHookFitKeyRef.current = null;
             return;
         }
 
         const cardElement = cardRef.current;
         const cardContentElement = cardContentRef.current;
         if (!cardElement || !cardContentElement) {
+            return;
+        }
+
+        const fitKey = `${card.id}:${cardWidth}:${mobileCardTargetHeight}`;
+        const didFitInputsChange = mobileHookFitKeyRef.current !== fitKey;
+        mobileHookFitKeyRef.current = fitKey;
+
+        if (didFitInputsChange && mobileHookMaxHeight !== null) {
+            setMobileHookMaxHeight(null);
             return;
         }
 
@@ -1381,9 +1401,6 @@ const FocusCardView = memo(function FocusCardView({
         const cardFits = requiredContentHeight <= availableContentHeight;
 
         if (cardFits) {
-            if (mobileHookMaxHeight !== null) {
-                setMobileHookMaxHeight(null);
-            }
             return;
         }
 
@@ -1405,6 +1422,7 @@ const FocusCardView = memo(function FocusCardView({
 
         setMobileHookMaxHeight(nextHookMaxHeight);
     }, [
+        card.id,
         cardWidth,
         isDesktop,
         mobileCardTargetHeight,
@@ -1510,7 +1528,7 @@ const FocusCardView = memo(function FocusCardView({
                                                 <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
                                                     {index + 1}
                                                 </span>
-                                                <span className="text-[1rem] leading-[1.58] text-foreground/90">
+                                                <span className="min-w-0 line-clamp-3 text-[1rem] leading-[1.58] text-foreground/90">
                                                     {takeaway}
                                                 </span>
                                             </div>
