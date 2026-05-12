@@ -77,17 +77,17 @@ const STORYBOARD_SLIDES = [
   {
     label: "Distill",
     title: "Distill before committing time",
-    image: "/images/flux-storyboard-distill.webp",
+    image: "/images/flux-storyboard-distill.svg",
   },
   {
     label: "Library",
     title: "Build your personal library",
-    image: "/images/flux-storyboard-library.webp",
+    image: "/images/flux-storyboard-library.svg",
   },
   {
     label: "Ask",
     title: "Think with your notes",
-    image: "/images/flux-storyboard-ai.webp",
+    image: "/images/flux-storyboard-ai.svg",
   },
 ] as const;
 
@@ -261,19 +261,19 @@ function HeroSection() {
         <div className="max-w-2xl">
           <div>
             <p className="mb-8 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              A reader lives a thousand lives before he dies
+              A knowledge system for non-fiction readers
             </p>
           </div>
 
           <div>
             <h1 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-7xl lg:text-[5.15rem]">
-              Remember more from every idea you read, hear, and save.
+              Read once. Remember everything.
             </h1>
           </div>
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Turn books, podcasts, articles, and videos into a personalised knowledge system you can return to when it matters.
+              Structured summaries, persistent highlights, and an AI that knows what you&apos;ve read. The non-fiction knowledge system that makes every book count.
             </p>
           </div>
 
@@ -283,7 +283,7 @@ function HeroSection() {
                 href="/login"
                 className={PRIMARY_CTA_CLASS}
               >
-                <span className="relative z-10">Start Your Library</span>
+                <span className="relative z-10">Start Reading Free</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
                 <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-100 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
@@ -1028,8 +1028,8 @@ function TopicMapSection({ categories }: { categories: { category: string; count
         <FadeIn>
           <SectionIntro
             label="Explore by domain"
-            title="Based on your interests."
-            body="A curated library of ideas across mindset, business, health, philosophy, technology, and more."
+            title="Deep in every domain."
+            body="Non-fiction knowledge organized by topic. Go deep on what matters to you."
             centered
           />
         </FadeIn>
@@ -1076,11 +1076,11 @@ function FinalCTASection() {
 
             <div className="relative">
               <h2 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl md:text-[5.5rem]">
-                Build a library you&apos;ll actually return to.
+                Stop forgetting what you read.
               </h2>
 
               <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-                Get in-depth insights from books, podcasts, articles, and videos each week.
+                Join readers who use Flux to retain and revisit the best ideas from non-fiction.
               </p>
 
               <EmailSubscriptionForm
@@ -1107,7 +1107,7 @@ function LandingFooter() {
     <footer className="border-t border-white/[0.04] py-12">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row lg:px-8">
         <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
-          <span>{APP_NAME} - Curated knowledge platform</span>
+          <span>{APP_NAME} - The non-fiction knowledge system</span>
         </div>
 
         <div className="flex items-center gap-6 text-sm text-muted-foreground/60">
