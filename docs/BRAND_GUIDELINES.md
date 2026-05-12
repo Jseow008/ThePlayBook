@@ -1,14 +1,16 @@
-# Netflux Brand Guidelines
+# Flux Brand Guidelines
 
-This document serves as the absolute, platform-agnostic source of truth for the **Netflux** brand identity. Whether you are developing the Web App, building Mobile Applications (iOS/Android), designing Social Media posts (Canva/Figma), or creating presentation decks, **these rules must be strictly followed to ensure a consistent, premium user experience.**
+This document serves as the absolute, platform-agnostic source of truth for the **Flux** brand identity. Whether you are developing the Web App, building Mobile Applications (iOS/Android), designing Social Media posts (Canva/Figma), or creating presentation decks, **these rules must be strictly followed to ensure a consistent, premium user experience.**
 
-For Web-specific React and Next.js Tailwind implementations, refer to [DESIGN.md](./DESIGN.md).
+For Web-specific React and Next.js Tailwind implementations, refer to [DESIGN.md](./DESIGN.md).  
+For messaging, audience, and positioning strategy, refer to [POSITIONING.md](./POSITIONING.md).
 
 ---
 
 ## 1. Brand Concept & Voice
 
-- **Identity:** The world's best ideas, distilled into structured, actionable knowledge you can retain and use.
+- **Identity:** A knowledge system for non-fiction readers. Read once, remember everything.
+- **Tagline:** Read once. Remember everything.
 - **Voice:** Authoritative, clear, minimal, and actionable. We don't speak in buzzwords; we provide pure signal.
 - **Aesthetic Vibe:** "Cinematic Dark Mode", Premium, Uncluttered, Focused.
 
@@ -16,7 +18,7 @@ For Web-specific React and Next.js Tailwind implementations, refer to [DESIGN.md
 
 ## 2. Core Colors (Cross-Platform)
 
-Netflux relies on an ultra-minimal, high-contrast dark palette. We do this to reduce eye strain and focus the user's attention purely on the content being consumed.
+Flux relies on an ultra-minimal, high-contrast dark palette. We do this to reduce eye strain and focus the user's attention purely on the content being consumed.
 
 | Role | Color Name | Hex Code | HSL Approx | Usage |
 | :--- | :--- | :--- | :--- | :--- |
@@ -49,7 +51,7 @@ While the app remains largely monochrome to let the content shine, **Solar Gold*
 
 ## 3. Typography
 
-Netflux utilizes three highly specific typefaces to establish its premium brand identity. 
+Flux utilizes three highly specific typefaces to establish its premium brand identity. 
 *(All fonts are available freely via Google Fonts).*
 
 ### A. Brand Logo & Display: `Outfit`
@@ -97,7 +99,7 @@ When translating the design to native mobile apps or other platforms:
 
 - **Icon Family:** Consistently use outline-style icons. (e.g., `Lucide Outline`).
 - **Stroke Weight:** Mandate a strict **1.5px stroke width** across the entire digital ecosystem (web apps, mobile apps, marketing). Mixing icon weights destroys the premium execution of minimal design. 
-- **Imagery Art Direction:** Because Netflux operates on an ultra-dark canvas, raw photography or bright graphics can look harsh. All major images (like book covers or hero banners) should be treated with a subtle dark vignette or a linear gradient fade at the bottom. This ensures images sit smoothly within the void background rather than looking like cut-and-paste stickers.
+- **Imagery Art Direction:** Because Flux operates on an ultra-dark canvas, raw photography or bright graphics can look harsh. All major images (like book covers or hero banners) should be treated with a subtle dark vignette or a linear gradient fade at the bottom. This ensures images sit smoothly within the void background rather than looking like cut-and-paste stickers.
 
 ---
 

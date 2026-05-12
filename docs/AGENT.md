@@ -1,7 +1,8 @@
 # AGENT.md: Implementation Status
 
 > **Status:** Active  
-> **Role:** Working snapshot of what is implemented today, not the original MVP pitch.
+> **Role:** Working snapshot of what is implemented today, not the original MVP pitch.  
+> **Positioning:** Flux is a knowledge system for non-fiction readers. See [POSITIONING.md](./POSITIONING.md) for messaging and audience strategy.
 
 ## 1. Shipped Product Areas
 

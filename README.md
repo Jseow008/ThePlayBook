@@ -1,8 +1,8 @@
 # Flux
 
-> Distilled ideas. Applied better.
+> Read once. Remember everything.
 
-Flux is a Next.js knowledge platform for publishing curated summaries of books, podcasts, articles, and videos. The product is public-first for discovery, then layers in authenticated reading progress, highlights, notes, AI chat, and an admin workflow for publishing and embeddings.
+Flux is a knowledge system for non-fiction readers. It turns books, podcasts, articles, and videos into structured summaries you can read in minutes, highlight for keeps, and query with AI when the idea becomes useful again. Built with Next.js, Supabase, and AI retrieval — public-first for discovery, then layered with authenticated reading progress, highlights, notes, and Ask My Library.
 
 ## What Ships Today
 
@@ -110,10 +110,12 @@ docs/                 Architecture, ops, API, design, and implementation notes
 
 ## Documentation
 
+- [docs/POSITIONING.md](./docs/POSITIONING.md)
 - [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 - [docs/API_SPECS.md](./docs/API_SPECS.md)
 - [docs/OPS.md](./docs/OPS.md)
 - [docs/DESIGN.md](./docs/DESIGN.md)
+- [docs/BRAND_GUIDELINES.md](./docs/BRAND_GUIDELINES.md)
 - [docs/AGENT.md](./docs/AGENT.md)
 
 ## Design-System Note
