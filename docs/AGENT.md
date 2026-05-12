@@ -44,7 +44,7 @@
 - Tailwind CSS v4
 - Supabase Auth / Postgres / Storage
 - AI SDK for streaming
-- Anthropic default generation
+- Anthropic generation with Haiku by default and Sonnet reserved for synthesis/hybrid Ask My Library requests
 - OpenAI fallback generation where supported
 - Gemini embeddings for retrieval
 - Upstash-backed production rate limiting

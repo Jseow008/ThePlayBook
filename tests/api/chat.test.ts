@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/server/rate-limit';
 import { streamText } from 'ai';
 
+const { anthropicMock } = vi.hoisted(() => ({
+    anthropicMock: vi.fn().mockReturnValue('mock-anthropic-model'),
+}));
+
 vi.mock('@/lib/supabase/server', () => ({
     createClient: vi.fn(),
 }));
@@ -22,7 +26,7 @@ vi.mock('ai', () => ({
 }));
 
 vi.mock('@ai-sdk/anthropic', () => ({
-    anthropic: vi.fn().mockReturnValue('mock-anthropic-model'),
+    anthropic: anthropicMock,
 }));
 
 const embedContentMock = vi.fn();
@@ -73,6 +77,8 @@ describe('Chat API', () => {
         process.env.GEMINI_API_KEY = 'gemini-test-key';
         process.env.ANTHROPIC_API_KEY = 'anthropic-test-key';
         delete process.env.AI_PROVIDER;
+        delete process.env.AI_MODEL;
+        delete process.env.AI_COMPLEX_MODEL;
         delete process.env.OPENAI_API_KEY;
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
@@ -263,9 +269,11 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 250,
         }));
+        expect(anthropicMock).toHaveBeenCalledWith('claude-haiku-4-5-20251001');
     });
 
     it('uses hybrid context for book ranking questions', async () => {
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
         mockRpc.mockResolvedValueOnce({
             data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.82 }],
             error: null,
@@ -302,6 +310,7 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 450,
         }));
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-20250514');
     });
 
     it('degrades to metadata-only context when retrieval is not initialized and the library is empty', async () => {

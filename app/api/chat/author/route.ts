@@ -10,6 +10,7 @@ export const maxDuration = 60;
 
 const AUTHENTICATED_LIMIT = { limit: 10, windowMs: 60_000 } as const;
 const GUEST_LIMIT = { limit: 3, windowMs: 60_000 } as const;
+const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -199,12 +200,12 @@ Rules:
         const provider = process.env.AI_PROVIDER || "anthropic";
 
         if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
-            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
+            aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
         } else if (process.env.OPENAI_API_KEY) {
             const { openai } = await import("@ai-sdk/openai");
             aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
         } else {
-            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
+            aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
         }
 
         // --- Stream ---

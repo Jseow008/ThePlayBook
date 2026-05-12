@@ -24,6 +24,7 @@ const MAX_TOTAL_MESSAGE_CHARS = 12_000;
 const MAX_CONTEXT_CHARS = 9_000;
 const NOTES_DEFAULT_MAX_OUTPUT_TOKENS = 350;
 const NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS = 450;
+const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 
 type HighlightContextRow = {
     id: string;
@@ -212,13 +213,13 @@ Rules:
 
         if (provider === "anthropic" && hasAnthropic) {
             const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
+            aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
         } else if (hasOpenAI) {
             const { openai } = await import("@ai-sdk/openai");
             aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
         } else {
             const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
+            aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
         }
 
         const result = streamText({

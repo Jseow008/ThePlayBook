@@ -28,6 +28,8 @@ const MAX_OUTPUT_TOKENS = {
     content_synthesis: 450,
     hybrid: 500,
 } as const;
+const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
+const DEFAULT_COMPLEX_ASK_MODEL = "claude-sonnet-4-20250514";
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
 const PRIMARY_MATCH_THRESHOLD = 0.65;
@@ -42,6 +44,18 @@ type AskIntent = "library_metadata" | "content_synthesis" | "hybrid";
 
 function getOutputTokenCap(intent: AskIntent): number {
     return MAX_OUTPUT_TOKENS[intent];
+}
+
+function shouldUseComplexAskModel(intent: AskIntent) {
+    return intent === "content_synthesis" || intent === "hybrid";
+}
+
+function getAnthropicModelName(intent: AskIntent) {
+    if (shouldUseComplexAskModel(intent)) {
+        return process.env.AI_COMPLEX_MODEL || DEFAULT_COMPLEX_ASK_MODEL;
+    }
+
+    return process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
 }
 
 function getMessageText(message: Record<string, unknown>): string {
@@ -367,13 +381,13 @@ Rules:
 
         if (provider === "anthropic" && hasAnthropic) {
             const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
+            aiModel = anthropic(getAnthropicModelName(intent));
         } else if (hasOpenAI) {
             const { openai } = await import("@ai-sdk/openai");
             aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
         } else {
             const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(process.env.AI_MODEL || "claude-sonnet-4-20250514");
+            aiModel = anthropic(getAnthropicModelName(intent));
         }
 
         const result = streamText({

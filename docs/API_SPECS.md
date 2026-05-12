@@ -49,7 +49,7 @@ Notes:
 
 - last message must be a user message
 - authenticated only
-- uses Gemini embeddings for retrieval and Anthropic by default for generation
+- uses Gemini embeddings for retrieval, Haiku by default for generation, and Sonnet for synthesis/hybrid Ask My Library requests when `AI_COMPLEX_MODEL` is configured
 
 ### 2.2 `/api/chat/notes`
 

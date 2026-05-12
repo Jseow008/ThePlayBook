@@ -30,7 +30,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_KEY=...
 NEXT_PUBLIC_SITE_URL=...
 AI_PROVIDER=anthropic
-AI_MODEL=claude-sonnet-4-20250514
+AI_MODEL=claude-haiku-4-5-20251001
+AI_COMPLEX_MODEL=claude-sonnet-4-20250514
 ANTHROPIC_API_KEY=...
 GEMINI_API_KEY=...
 ```
@@ -305,7 +306,7 @@ Before a production deploy, verify:
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set
 - `SUPABASE_SERVICE_KEY` is set
 - `NEXT_PUBLIC_SITE_URL` is a valid production URL
-- `AI_PROVIDER` and `AI_MODEL` match the intended generation setup
+- `AI_PROVIDER`, `AI_MODEL`, and `AI_COMPLEX_MODEL` match the intended generation setup
 - at least one of `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is present
 - `GEMINI_API_KEY` is present for retrieval and embedding sync
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present in production
