@@ -472,7 +472,7 @@ describe("AskClientPage", () => {
 
         render(<AskClientPage />);
 
-        expect(screen.queryByRole("button", { name: "Which book says this?" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Which source says this?" })).not.toBeInTheDocument();
         expect(screen.getByText("Reading your library...")).toBeInTheDocument();
     });
 

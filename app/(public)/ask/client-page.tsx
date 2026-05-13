@@ -36,7 +36,7 @@ const FOLLOW_UP_ACTIONS = [
     },
     {
         label: "Show me another perspective",
-        prompt: "Show me a contrasting perspective from another saved book, if one exists.",
+        prompt: "Show me a contrasting perspective from another saved source, if one exists.",
     },
 ] as const;
 

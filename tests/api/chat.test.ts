@@ -294,7 +294,7 @@ describe('Chat API', () => {
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
             body: JSON.stringify({
-                messages: [{ role: 'user', content: 'Which saved book is most relevant to discipline, and why?' }],
+                messages: [{ role: 'user', content: 'Which saved item is most relevant to discipline, and why?' }],
             }),
         });
 

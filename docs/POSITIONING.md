@@ -77,10 +77,10 @@ This is the scenario we reference everywhere — launch posts, demos, pitches, l
 All public-facing copy should pull from this bank. Don't improvise new positioning — adapt these.
 
 ### Tagline
-> Read once. Remember everything.
+> Learn once. Remember everything.
 
 ### Hero headline (landing page)
-> Read once. Remember everything.
+> Learn once. Remember everything.
 
 ### Hero subtitle (landing page)
 > Netflux turns books, podcasts, articles, and videos into readable knowledge: structured summaries, persistent highlights, and an AI that knows what you've saved.

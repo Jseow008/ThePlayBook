@@ -1,6 +1,6 @@
 # Netflux
 
-> Read once. Remember everything.
+> Learn once. Remember everything.
 
 Netflux is a knowledge system for non-fiction ideas across books, podcasts, articles, and videos. It turns every format into readable knowledge you can scan in minutes, highlight for keeps, and query with AI when the idea becomes useful again. Built with Next.js, Supabase, and AI retrieval — public-first for discovery, then layered with authenticated reading progress, highlights, notes, and Ask My Library.
 
@@ -120,7 +120,7 @@ docs/                 Architecture, ops, API, design, and implementation notes
 
 ## Design-System Note
 
-`design-system/flux/*` is reference material for assistants and design exploration. The shipped source of truth is the app itself, especially `app/globals.css`, `components/ui/*`, and `docs/DESIGN.md`.
+`design-system/netflux/*` is reference material for assistants and design exploration. The shipped source of truth is the app itself, especially `app/globals.css`, `components/ui/*`, and `docs/DESIGN.md`.
 
 ## Verification
 

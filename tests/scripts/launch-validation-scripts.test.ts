@@ -87,7 +87,7 @@ describe("launch validation scripts", () => {
     });
 
     it("passes env validation when all required values are supplied via an explicit env file", async () => {
-        const tempDir = mkdtempSync(path.join(os.tmpdir(), "flux-launch-env-"));
+        const tempDir = mkdtempSync(path.join(os.tmpdir(), "netflux-launch-env-"));
         tempDirs.push(tempDir);
 
         const envFile = path.join(tempDir, "launch.env");
@@ -95,8 +95,8 @@ describe("launch validation scripts", () => {
             "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co",
             "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key",
             "SUPABASE_SERVICE_KEY=test-service-key",
-            "NEXT_PUBLIC_SITE_URL=https://flux.example",
-            "NEXT_PUBLIC_APP_URL=https://app.flux.example",
+            "NEXT_PUBLIC_SITE_URL=https://netflux.example",
+            "NEXT_PUBLIC_APP_URL=https://app.netflux.example",
             "AI_PROVIDER=anthropic",
             "AI_MODEL=test-model",
             "ANTHROPIC_API_KEY=test-anthropic",

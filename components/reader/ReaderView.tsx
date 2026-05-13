@@ -918,7 +918,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 <AuthorChat
                     contentId={content.id}
                     authorName={authorName}
-                    bookTitle={content.title}
+                    contentTitle={content.title}
                     hasCompletedReading={isBookCompleted}
                     onClose={() => setShowAuthorChat(false)}
                 />

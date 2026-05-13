@@ -365,11 +365,11 @@ describe("useBrowseRecommendations", () => {
             expect.stringContaining("recent_recommendations"),
         );
         expect(window.localStorage.setItem).not.toHaveBeenCalledWith(
-            expect.stringContaining("flux_recommendation_cache_"),
+            expect.stringContaining("netflux_recommendation_cache_"),
             expect.any(String),
         );
         expect(window.localStorage.setItem).toHaveBeenCalledWith(
-            "flux_browse_recommendation_cache_guest",
+            "netflux_browse_recommendation_cache_guest",
             expect.any(String),
         );
         expect(useReadingProgressMock).toHaveBeenCalled();

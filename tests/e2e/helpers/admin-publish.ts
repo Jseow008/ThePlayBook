@@ -45,7 +45,7 @@ export function getAdminPublishE2EConfig(): AdminPublishE2EConfig {
 }
 
 export async function createImageUploadFixture() {
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "flux-admin-publish-"));
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "netflux-admin-publish-"));
     const filePath = path.join(tmpDir, "cover.png");
 
     await fs.writeFile(filePath, Buffer.from(PNG_FIXTURE_BASE64, "base64"));

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const VISITOR_ID_STORAGE_KEY = "flux_reader_visitor_id";
+const VISITOR_ID_STORAGE_KEY = "netflux_reader_visitor_id";
 const HEARTBEAT_BATCH_SECONDS = 60;
 
 function getOrCreateVisitorId() {

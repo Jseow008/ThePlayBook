@@ -179,7 +179,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                 <AuthorChat
                     contentId={contentId}
                     authorName={authorName}
-                    bookTitle={title}
+                    contentTitle={title}
                     onClose={() => setShowChat(false)}
                 />
             )}

@@ -73,12 +73,14 @@ Request body:
 {
   "contentId": "uuid",
   "authorName": "Author Name",
-  "bookTitle": "Book Title",
+  "contentTitle": "Content Title",
   "messages": [
     { "role": "user", "content": "What do you mean by discipline?" }
   ]
 }
 ```
+
+Legacy clients may still send `bookTitle`, but new clients should send `contentTitle`.
 
 ## 3. Authenticated User APIs
 

@@ -38,8 +38,8 @@ Each install includes:
 
 ## Current Project Artifacts
 
-- Master design system: `design-system/flux/MASTER.md`
-- Landing page override: `design-system/flux/pages/landing.md`
+- Master design system: `design-system/netflux/MASTER.md`
+- Landing page override: `design-system/netflux/pages/landing.md`
 
 These files are intended as assistant reference material during future UI work.
 
@@ -50,7 +50,7 @@ These files are intended as assistant reference material during future UI work.
 3. Read the existing page component before running any UI UX Pro Max command.
 4. Prefer domain lookups over design-system generation.
 5. Keep changes localized and polish-only unless the user explicitly asks for a redesign.
-6. Treat `design-system/flux/MASTER.md` and page overrides as historical reference artifacts, not as source of truth.
+6. Treat `design-system/netflux/MASTER.md` and page overrides as historical reference artifacts, not as source of truth.
 
 ## Safe Command Patterns
 

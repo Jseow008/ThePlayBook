@@ -77,17 +77,17 @@ const STORYBOARD_SLIDES = [
   {
     label: "Distill",
     title: "Distill before committing time",
-    image: "/images/flux-storyboard-distill.svg",
+    image: "/images/netflux-storyboard-distill.svg",
   },
   {
     label: "Library",
     title: "Build your personal library",
-    image: "/images/flux-storyboard-library.svg",
+    image: "/images/netflux-storyboard-library.svg",
   },
   {
     label: "Ask",
     title: "Think with your notes",
-    image: "/images/flux-storyboard-ai.svg",
+    image: "/images/netflux-storyboard-ai.svg",
   },
 ] as const;
 

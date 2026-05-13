@@ -10,7 +10,7 @@ For messaging, audience, and positioning strategy, refer to [POSITIONING.md](./P
 ## 1. Brand Concept & Voice
 
 - **Identity:** A knowledge system for non-fiction ideas across books, podcasts, articles, and videos.
-- **Tagline:** Read once. Remember everything.
+- **Tagline:** Learn once. Remember everything.
 - **Voice:** Authoritative, clear, minimal, and actionable. We don't speak in buzzwords; we provide pure signal.
 - **Aesthetic Vibe:** "Cinematic Dark Mode", Premium, Uncluttered, Focused.
 

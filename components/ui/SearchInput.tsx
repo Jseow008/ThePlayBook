@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, X, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const RECENT_SEARCHES_KEY = "flux_recent_searches";
+const RECENT_SEARCHES_KEY = "netflux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
 
 function normalizeQuery(value: string) {

@@ -138,7 +138,7 @@ export async function rateLimit(req: NextRequest, options: RateLimitOptions): Pr
                 redis,
                 limiter: Ratelimit.slidingWindow(limit, `${windowMs} ms`),
                 analytics: true,
-                prefix: "flux-ratelimit",
+                prefix: "netflux-ratelimit",
             });
             ratelimits.set(bucketKey, limiter);
         }

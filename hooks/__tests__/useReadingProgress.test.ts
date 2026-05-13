@@ -115,8 +115,8 @@ describe("useReadingProgress", () => {
     });
 
     it("migrates legacy guest storage into scoped guest keys", async () => {
-        const legacyProgressKey = "flux_progress_item-1";
-        const legacyMyListKey = "flux_mylist";
+        const legacyProgressKey = "netflux_progress_item-1";
+        const legacyMyListKey = "netflux_mylist";
 
         localStorage.setItem(legacyProgressKey, JSON.stringify({
             itemId: "item-1",

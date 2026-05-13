@@ -30,7 +30,7 @@ describe("error reporting", () => {
             userId: "user-123",
             digest: "digest-123",
             pathname: "/admin",
-            url: "https://flux.example/admin",
+            url: "https://netflux.example/admin",
             context: {
                 feature: "uploads",
             },
@@ -38,7 +38,7 @@ describe("error reporting", () => {
         });
 
         expect(payload).toMatchObject({
-            app: "flux",
+            app: "netflux",
             source: "api",
             message: "Admin upload failed",
             request_id: "req-123",
@@ -46,7 +46,7 @@ describe("error reporting", () => {
             user_id: "user-123",
             digest: "digest-123",
             pathname: "/admin",
-            url: "https://flux.example/admin",
+            url: "https://netflux.example/admin",
             context: {
                 feature: "uploads",
             },

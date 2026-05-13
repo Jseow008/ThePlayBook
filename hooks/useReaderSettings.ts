@@ -307,7 +307,7 @@ const useReaderSettingsStore = create<ReaderSettingsState>()(
             },
         }),
         {
-            name: "flux_reader_settings",
+            name: "netflux_reader_settings",
             storage: createJSONStorage(getReaderSettingsStateStorage),
             partialize: (state) => ({
                 fontSize: state.fontSize,

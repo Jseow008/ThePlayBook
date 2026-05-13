@@ -19,12 +19,16 @@ const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 const AuthorChatBodySchema = z.object({
     contentId: z.string().uuid(),
     authorName: z.string().trim().min(1).max(200),
-    bookTitle: z.string().trim().min(1).max(500),
+    contentTitle: z.string().trim().min(1).max(500).optional(),
+    bookTitle: z.string().trim().min(1).max(500).optional(),
     messages: z.array(z.object({
         role: z.enum(["user", "assistant"]),
         content: z.string().optional(),
         parts: z.array(z.any()).optional() // Since @ai-sdk/react uses parts or content
     })).min(1).max(30),
+}).refine((body) => body.contentTitle || body.bookTitle, {
+    message: "contentTitle is required",
+    path: ["contentTitle"],
 });
 
 // ---------------------------------------------------------------------------
@@ -34,7 +38,7 @@ const AuthorChatBodySchema = z.object({
 /** Only send the last N messages as conversation history (sliding window). */
 const MAX_HISTORY_MESSAGES = 4;
 
-/** Max chars of book content injected into the system prompt. */
+/** Max chars of source material injected into the system prompt. */
 const MAX_CONTEXT_CHARS = 12_000;
 
 /** Max output tokens the model is allowed to generate per response. */
@@ -130,7 +134,8 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Invalid chat payload", 400, requestId);
         }
 
-        const { contentId, authorName, bookTitle, messages: rawMessages } = parsed.data;
+        const { contentId, authorName, messages: rawMessages } = parsed.data;
+        const contentTitle = parsed.data.contentTitle ?? parsed.data.bookTitle ?? "this source";
 
         // --- Normalize messages from UI format to simple {role, content} ---
         const allMessages = normalizeMessages(rawMessages);
@@ -154,7 +159,7 @@ export async function POST(req: NextRequest) {
         // --- Sliding Context Window: only keep last N messages ---
         const messages = allMessages.slice(-MAX_HISTORY_MESSAGES);
 
-        // --- Fetch Book Segments for Context ---
+        // --- Fetch Content Segments for Context ---
         const { data: segments, error: segError } = await supabase
             .from("segment")
             .select("title, markdown_body, order_index")
@@ -163,7 +168,7 @@ export async function POST(req: NextRequest) {
 
         if (segError) {
             logApiError({ requestId, route: "/api/chat/author", message: "Failed to fetch segments", error: segError });
-            return apiError("INTERNAL_ERROR", "Failed to load book content.", 500, requestId);
+            return apiError("INTERNAL_ERROR", "Failed to load source material.", 500, requestId);
         }
 
         let contextText = "";
@@ -182,15 +187,15 @@ export async function POST(req: NextRequest) {
         }
 
         // --- System Prompt (optimized for persona + cost control) ---
-        const systemPrompt = `You are ${authorName}, the author of "${bookTitle}".
-Stay in character and answer from the book content below.
+        const systemPrompt = `You are ${authorName}, speaking about "${contentTitle}".
+Stay in character and answer from the source material below.
 
-Book content:
+Source material:
 ${contextText}
 
 Rules:
 - Speak in first person as ${authorName}. Never mention being an AI.
-- Stay on the ideas in the book. Decline unrelated tasks briefly.
+- Stay on the ideas in this source. Decline unrelated tasks briefly.
 - Be specific about concepts from the work.
 - Keep replies short: 2-3 compact paragraphs max.
 - Match ${authorName}'s tone and challenge weak thinking when appropriate.`;

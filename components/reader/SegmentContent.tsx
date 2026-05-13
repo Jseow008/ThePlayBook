@@ -95,7 +95,7 @@ export function SegmentContent({
                     </button>
                 ) : (
                     <div className="p-6 rounded-xl bg-secondary/20 border border-dashed border-border text-center">
-                        <p className="text-sm text-muted-foreground font-medium">You have reached the end of this book.</p>
+                        <p className="text-sm text-muted-foreground font-medium">You have reached the end of this source.</p>
                     </div>
                 )}
 

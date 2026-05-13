@@ -21,7 +21,7 @@ interface ErrorReportInput {
 }
 
 interface ErrorReportPayload {
-    app: "flux";
+    app: "netflux";
     environment: string;
     timestamp: string;
     source: ErrorReportSource;
@@ -128,7 +128,7 @@ function getWebhookHost(url: string): string {
 
 export function buildErrorReportPayload(input: ErrorReportInput): ErrorReportPayload {
     return {
-        app: "flux",
+        app: "netflux",
         environment: getEnvironmentLabel(),
         timestamp: new Date().toISOString(),
         source: input.source,

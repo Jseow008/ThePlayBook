@@ -49,7 +49,7 @@ describe('Author Chat API', () => {
     const validBody = {
         contentId: '123e4567-e89b-12d3-a456-426614174000',
         authorName: 'Test Author',
-        bookTitle: 'Test Book',
+        contentTitle: 'Test Source',
         messages: [{ role: 'user', content: 'Hello there' }],
     };
 
@@ -84,6 +84,20 @@ describe('Author Chat API', () => {
             windowMs: 60_000,
             key: 'author-chat:guest',
         });
+    });
+
+    it('accepts legacy bookTitle payloads', async () => {
+        const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
+            method: 'POST',
+            body: JSON.stringify({
+                ...validBody,
+                contentTitle: undefined,
+                bookTitle: 'Legacy Book',
+            }),
+        });
+
+        const res = await POST(req);
+        expect(res.status).toBe(200);
     });
 
     it('allows valid signed-in requests with user-scoped throttling', async () => {

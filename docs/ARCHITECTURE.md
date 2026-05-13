@@ -213,5 +213,5 @@ Reader themes are scoped separately from the browse UI:
 ## 9. Current Architectural Notes
 
 - The shipped product brand is `Netflux`
-- `design-system/flux/*` is not a runtime source of truth
+- `design-system/netflux/*` is not a runtime source of truth
 - some older docs and generated artifacts may still describe the pre-refactor homepage or reader; defer to `app/`, `components/`, and this file when they disagree

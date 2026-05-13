@@ -1125,7 +1125,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                         <input
                                             type="text"
-                                            placeholder="Search notes, highlights, books, sections"
+                                            placeholder="Search notes, highlights, sources, sections"
                                             value={searchQuery}
                                             onChange={(event) => setSearchQuery(event.target.value)}
                                             className="h-10 w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -1298,7 +1298,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                     <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <input
                                         type="text"
-                                        placeholder="Search notes, highlights, books, sections"
+                                        placeholder="Search notes, highlights, sources, sections"
                                         value={searchQuery}
                                         onChange={(event) => setSearchQuery(event.target.value)}
                                         className={cn(

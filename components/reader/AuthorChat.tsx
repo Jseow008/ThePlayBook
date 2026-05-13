@@ -12,7 +12,7 @@ import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 interface AuthorChatProps {
     contentId: string;
     authorName: string;
-    bookTitle: string;
+    contentTitle: string;
     hasCompletedReading?: boolean;
     onClose: () => void;
 }
@@ -23,7 +23,7 @@ const STARTER_PROMPTS = [
     "What's the core argument I should walk away with?",
     "What would a skeptic say about this?",
     "How would you apply this in real life?",
-    "Which idea in this book matters most?",
+    "Which idea in this source matters most?",
 ] as const;
 
 const FOLLOW_UP_ACTIONS = [
@@ -68,14 +68,14 @@ function getDisplayErrorMessage(error: unknown): string {
     return FALLBACK_CHAT_ERROR;
 }
 
-export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReading = true, onClose }: AuthorChatProps) {
+export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedReading = true, onClose }: AuthorChatProps) {
     const transport = useMemo(
         () =>
             new TextStreamChatTransport({
                 api: "/api/chat/author",
-                body: { contentId, authorName, bookTitle },
+                body: { contentId, authorName, contentTitle },
             }),
-        [contentId, authorName, bookTitle]
+        [contentId, authorName, contentTitle]
     );
 
     const [mounted, setMounted] = useState(false);
@@ -179,7 +179,7 @@ export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReadi
                         </div>
                         <div className="min-w-0">
                             <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">{authorName}</h2>
-                            <p className="truncate text-xs text-foreground/80">{bookTitle}</p>
+                            <p className="truncate text-xs text-foreground/80">{contentTitle}</p>
                             <p className="mt-0.5 truncate text-[0.65rem] leading-none text-muted-foreground">Author Persona &middot; AI</p>
                         </div>
                     </div>
@@ -214,11 +214,11 @@ export function AuthorChat({ contentId, authorName, bookTitle, hasCompletedReadi
                                                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
                                                     {hasCompletedReading ? (
                                                         <>
-                                                            You&apos;ve finished reading <span className="font-medium text-foreground">{bookTitle}</span>. Use this space to test the ideas, pressure the arguments, or pull out the point that matters most.
+                                                            You&apos;ve completed <span className="font-medium text-foreground">{contentTitle}</span>. Use this space to test the ideas, pressure the arguments, or pull out the point that matters most.
                                                         </>
                                                     ) : (
                                                         <>
-                                                            You&apos;re partway through <span className="font-medium text-foreground">{bookTitle}</span>. Use this space to clarify an idea, challenge an argument, or go deeper before you finish.
+                                                            You&apos;re partway through <span className="font-medium text-foreground">{contentTitle}</span>. Use this space to clarify an idea, challenge an argument, or go deeper before you finish.
                                                         </>
                                                     )}
                                                 </p>

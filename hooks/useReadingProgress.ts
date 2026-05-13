@@ -499,11 +499,11 @@ function useReadingProgressController(initialUser?: User | null) {
         };
 
         window.addEventListener("storage", handleStorage);
-        window.addEventListener("flux_progress_updated", handleCustomUpdate);
+        window.addEventListener("netflux_progress_updated", handleCustomUpdate);
 
         return () => {
             window.removeEventListener("storage", handleStorage);
-            window.removeEventListener("flux_progress_updated", handleCustomUpdate);
+            window.removeEventListener("netflux_progress_updated", handleCustomUpdate);
         };
     }, [loadProgress]);
 
@@ -525,7 +525,7 @@ function useReadingProgressController(initialUser?: User | null) {
             syncItemToCloud(userRef.current, scope, itemId, undefined, null);
         }
 
-        window.dispatchEvent(new Event("flux_progress_updated"));
+        window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [syncItemToCloud]);
 
     const archiveFromProgressList = useCallback((itemId: string, list: ProgressLibraryList) => {
@@ -553,7 +553,7 @@ function useReadingProgressController(initialUser?: User | null) {
         }
 
         syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
-        window.dispatchEvent(new Event("flux_progress_updated"));
+        window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [readProgressFromScope, syncItemToCloud]);
 
     const restoreProgressListArchive = useCallback((itemId: string, list: ProgressLibraryList) => {
@@ -577,7 +577,7 @@ function useReadingProgressController(initialUser?: User | null) {
         }
 
         syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
-        window.dispatchEvent(new Event("flux_progress_updated"));
+        window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [insertOrMoveToFront, readProgressFromScope, syncItemToCloud]);
 
     const addToMyList = useCallback((itemId: string) => {
@@ -592,7 +592,7 @@ function useReadingProgressController(initialUser?: User | null) {
         setMyListIds(newList);
 
         syncItemToCloud(userRef.current, scope, itemId, true, undefined);
-        window.dispatchEvent(new Event("flux_progress_updated"));
+        window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [syncItemToCloud]);
 
     const removeFromMyList = useCallback((itemId: string) => {
@@ -606,7 +606,7 @@ function useReadingProgressController(initialUser?: User | null) {
         setMyListIds(newList);
 
         syncItemToCloud(userRef.current, scope, itemId, false, undefined);
-        window.dispatchEvent(new Event("flux_progress_updated"));
+        window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [syncItemToCloud]);
 
     const toggleMyList = useCallback((itemId: string) => {
@@ -649,7 +649,7 @@ function useReadingProgressController(initialUser?: User | null) {
         }
 
         syncItemToCloud(userRef.current, scope, itemId, undefined, nextData);
-        window.dispatchEvent(new Event("flux_progress_updated"));
+        window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [insertOrMoveToFront, readProgressFromScope, syncItemToCloud]);
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);

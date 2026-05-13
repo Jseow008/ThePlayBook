@@ -147,4 +147,4 @@ When docs and artifacts disagree, prefer:
 2. active components in `components/ui`, `components/reader`, and `components/notes`
 3. this file
 
-`design-system/flux/*` should be treated as reference-only material for assistants and design exploration, not as the live product design authority.
+`design-system/netflux/*` should be treated as reference-only material for assistants and design exploration, not as the live product design authority.

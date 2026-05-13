@@ -3,7 +3,7 @@
 import type { ContentItem } from "@/types/database";
 import type { StorageScope } from "@/lib/local-user-storage";
 
-const BROWSE_RECOMMENDATION_CACHE_KEY_PREFIX = "flux_browse_recommendation_cache_";
+const BROWSE_RECOMMENDATION_CACHE_KEY_PREFIX = "netflux_browse_recommendation_cache_";
 const BROWSE_RECOMMENDATION_CACHE_MAX_ENTRIES = 6;
 const BROWSE_RECOMMENDATION_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 

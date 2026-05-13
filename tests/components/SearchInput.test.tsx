@@ -49,7 +49,7 @@ describe("SearchInput", () => {
 
         expect(routerPushMock).toHaveBeenCalledWith("/search?q=Deep+Work");
         expect(window.localStorage.setItem).toHaveBeenCalledWith(
-            "flux_recent_searches",
+            "netflux_recent_searches",
             JSON.stringify(["Deep Work"])
         );
     });
@@ -87,7 +87,7 @@ describe("SearchInput", () => {
         expect(screen.getByText("Essentialism")).toBeInTheDocument();
         expect(routerPushMock).not.toHaveBeenCalled();
         expect(window.localStorage.setItem).toHaveBeenCalledWith(
-            "flux_recent_searches",
+            "netflux_recent_searches",
             JSON.stringify(["Deep Work", "Outlive", "The Almanack", "Essentialism"])
         );
     });

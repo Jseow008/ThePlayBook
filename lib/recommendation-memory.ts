@@ -3,10 +3,10 @@
 import type { ContentItem } from "@/types/database";
 import type { StorageScope } from "@/lib/local-user-storage";
 
-const RECENT_RECOMMENDATIONS_KEY_PREFIX = "flux_recent_recommendations_";
+const RECENT_RECOMMENDATIONS_KEY_PREFIX = "netflux_recent_recommendations_";
 const RECENT_RECOMMENDATIONS_MAX_ENTRIES = 24;
 const RECENT_RECOMMENDATION_TTL_MS = 1000 * 60 * 60 * 24 * 3;
-const RECOMMENDATION_CACHE_KEY_PREFIX = "flux_recommendation_cache_";
+const RECOMMENDATION_CACHE_KEY_PREFIX = "netflux_recommendation_cache_";
 const RECOMMENDATION_CACHE_MAX_ENTRIES = 8;
 const RECOMMENDATION_CACHE_TTL_MS = 1000 * 60 * 5;
 

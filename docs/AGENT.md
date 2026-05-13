@@ -61,7 +61,7 @@
 ## 4. Current Constraints
 
 - the shipped product brand is `Netflux`
-- `design-system/flux/*` is reference-only
+- `design-system/netflux/*` is reference-only
 - some historical docs may still describe the older landing page or reader layout; prefer the live code and current docs set
 
 ## 5. Likely Next Review Areas

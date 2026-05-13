@@ -4,12 +4,12 @@ export const GUEST_STORAGE_SCOPE = "guest" as const;
 
 export type StorageScope = typeof GUEST_STORAGE_SCOPE | `user:${string}`;
 
-export const LEGACY_MY_LIST_KEY = "flux_mylist";
-export const LEGACY_READER_SETTINGS_KEY = "flux_reader_settings";
-export const PROGRESS_KEY_PREFIX = "flux_progress_";
-export const MY_LIST_KEY_PREFIX = "flux_mylist_";
-export const READER_SETTINGS_KEY_PREFIX = "flux_reader_settings_";
-export const AUDIO_RESUME_KEY_PREFIX = "flux_audio_resume_";
+export const LEGACY_MY_LIST_KEY = "netflux_mylist";
+export const LEGACY_READER_SETTINGS_KEY = "netflux_reader_settings";
+export const PROGRESS_KEY_PREFIX = "netflux_progress_";
+export const MY_LIST_KEY_PREFIX = "netflux_mylist_";
+export const READER_SETTINGS_KEY_PREFIX = "netflux_reader_settings_";
+export const AUDIO_RESUME_KEY_PREFIX = "netflux_audio_resume_";
 
 export interface AudioResumeData {
     currentTimeSec: number;

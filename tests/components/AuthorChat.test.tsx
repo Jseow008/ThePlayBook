@@ -13,7 +13,7 @@ describe("AuthorChat", () => {
     const defaultProps = {
         contentId: "123",
         authorName: "Test Author",
-        bookTitle: "Test Book",
+        contentTitle: "Test Source",
         onClose: mockOnClose,
     };
 
@@ -38,13 +38,13 @@ describe("AuthorChat", () => {
         render(<AuthorChat {...defaultProps} />);
 
         expect(screen.getByText("Test Author")).toBeInTheDocument();
-        expect(screen.getAllByText("Test Book").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("Test Source").length).toBeGreaterThan(0);
         expect(screen.getByText("Keep the conversation going")).toBeInTheDocument();
         expect(screen.getByText("Good places to start")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "What's the core argument I should walk away with?" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "What would a skeptic say about this?" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "How would you apply this in real life?" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Which idea in this book matters most?" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Which idea in this source matters most?" })).toBeInTheDocument();
     });
 
     it("calls onClose when close button is clicked", () => {

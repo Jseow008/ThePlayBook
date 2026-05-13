@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('/search', () => {
     test('does not auto-open recent searches on load, but shows them on focus', async ({ page }) => {
         await page.addInitScript(() => {
-            window.localStorage.setItem('flux_recent_searches', JSON.stringify(['Deep Work', 'Atomic Habits']));
+            window.localStorage.setItem('netflux_recent_searches', JSON.stringify(['Deep Work', 'Atomic Habits']));
         });
 
         await page.goto('/search');

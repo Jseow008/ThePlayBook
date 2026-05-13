@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { UIMessage } from "ai";
 import type { NotesChatScopePayload } from "@/lib/notes-chat-scope";
 
-const NOTES_CHAT_SESSION_STORAGE_PREFIX = "flux_notes_chat_session:v1:";
+const NOTES_CHAT_SESSION_STORAGE_PREFIX = "netflux_notes_chat_session:v1:";
 
 const NotesChatScopeSchema = z.object({
     highlightIds: z.array(z.string()),

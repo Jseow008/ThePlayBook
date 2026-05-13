@@ -106,13 +106,13 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 anchor_end: selectionInfo.anchorEnd,
             });
 
-            if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {
+            if (localStorage.getItem('netflux_notes_fab_dismissed') === 'true') {
                 toast.success("Highlight saved", {
                     action: {
                         label: "Show Notes Button",
                         onClick: () => {
-                            localStorage.removeItem('flux_notes_fab_dismissed');
-                            window.dispatchEvent(new Event('flux_notes_fab_unhide'));
+                            localStorage.removeItem('netflux_notes_fab_dismissed');
+                            window.dispatchEvent(new Event('netflux_notes_fab_unhide'));
                         }
                     }
                 });
@@ -140,13 +140,13 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 anchor_end: selectionInfo.anchorEnd,
             });
 
-            if (localStorage.getItem('flux_notes_fab_dismissed') === 'true') {
+            if (localStorage.getItem('netflux_notes_fab_dismissed') === 'true') {
                 toast.success("Highlight & Note saved", {
                     action: {
                         label: "Show Notes Button",
                         onClick: () => {
-                            localStorage.removeItem('flux_notes_fab_dismissed');
-                            window.dispatchEvent(new Event('flux_notes_fab_unhide'));
+                            localStorage.removeItem('netflux_notes_fab_dismissed');
+                            window.dispatchEvent(new Event('netflux_notes_fab_unhide'));
                         }
                     }
                 });
