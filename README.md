@@ -91,6 +91,7 @@ If you are targeting a hosted project, apply migrations through the linked proje
 ```bash
 npm run dev
 npm run lint
+npm run typecheck
 npm test
 npm run build
 npm run embeddings:sync-segments
@@ -127,9 +128,7 @@ docs/                 Architecture, ops, API, design, and implementation notes
 Current baseline:
 
 ```bash
-npm test
-npm run lint
-npm run build
+npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 ## License

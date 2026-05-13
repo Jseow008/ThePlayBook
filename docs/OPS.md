@@ -81,7 +81,7 @@ Rule: keep schema changes in `supabase/migrations/`. Do not rely on dashboard-on
 Use the launch-validation sequence below before a production push or after a preview deploy:
 
 1. Validate production env values against `.env.example`.
-2. Run `npm run lint`, `npm test`, and `npm run build`.
+2. Run `npm run lint && npm run typecheck && npm test && npm run build`.
 3. Check `GET /api/health` and confirm the response is `ok`.
 4. Open `/admin` and confirm the launch-readiness panel plus the AI readiness badges and sync actions render.
 5. Verify content and segment embedding coverage before treating Ask My Library as launch-ready.
@@ -90,6 +90,7 @@ Primary project scripts:
 
 ```bash
 npm run lint
+npm run typecheck
 npm test
 npm run build
 npm run validate:launch-env
@@ -99,6 +100,7 @@ npm run check:deployment-health -- --url https://<your-production-domain>
 CI runs:
 
 - lint
+- TypeScript typecheck
 - Vitest
 - Next.js build
 - Playwright
