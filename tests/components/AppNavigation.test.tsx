@@ -2,7 +2,7 @@ import { act } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ImgHTMLAttributes } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
+import { NetfluxSidebar } from "@/components/ui/NetfluxSidebar";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { UserNav } from "@/components/ui/UserNav";
 
@@ -105,7 +105,7 @@ describe("app navigation", () => {
         pathnameState.value = "/ask";
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -123,7 +123,7 @@ describe("app navigation", () => {
     it("opens the Library submenu from the expanded desktop sidebar", async () => {
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -145,7 +145,7 @@ describe("app navigation", () => {
     });
 
     it("expands the desktop sidebar on keyboard focus so submenu destinations are reachable", () => {
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         fireEvent.focus(screen.getByRole("link", { name: /search/i }));
 
@@ -164,7 +164,7 @@ describe("app navigation", () => {
         };
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -189,7 +189,7 @@ describe("app navigation", () => {
         pathnameState.value = "/notes";
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -210,7 +210,7 @@ describe("app navigation", () => {
         searchParamsState.value = "ask=1";
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -231,7 +231,7 @@ describe("app navigation", () => {
         searchParamsState.value = "scope=notes";
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -248,7 +248,7 @@ describe("app navigation", () => {
 
     it("keeps a collapsed Ask shortcut in the desktop sidebar", () => {
         pathnameState.value = "/ask";
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         expect(screen.getByTitle("Ask")).toHaveAttribute("href", "/ask");
     });
@@ -256,7 +256,7 @@ describe("app navigation", () => {
     it("renames Surprise Me to Focus in the desktop sidebar", async () => {
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);
@@ -273,7 +273,7 @@ describe("app navigation", () => {
     it("removes Browse Categories from the desktop sidebar", async () => {
         vi.useFakeTimers();
 
-        render(<NetflixSidebar />);
+        render(<NetfluxSidebar />);
 
         const sidebar = screen.getByRole("complementary");
         fireEvent.mouseEnter(sidebar);

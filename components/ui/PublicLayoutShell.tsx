@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { usePathname } from "next/navigation";
-import { NetflixSidebar } from "@/components/ui/NetflixSidebar";
+import { NetfluxSidebar } from "@/components/ui/NetfluxSidebar";
 import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { MobileHeader } from "@/components/ui/MobileHeader";
@@ -38,7 +38,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
 
             {/* Desktop sidebar (hidden on mobile) */}
             <Suspense fallback={null}>
-                <NetflixSidebar />
+                <NetfluxSidebar />
             </Suspense>
 
             {/* Desktop Top Right Auth (hidden on mobile) */}

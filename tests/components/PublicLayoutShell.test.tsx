@@ -10,8 +10,8 @@ vi.mock("next/navigation", () => ({
     usePathname: () => pathnameState.value,
 }));
 
-vi.mock("@/components/ui/NetflixSidebar", () => ({
-    NetflixSidebar: () => <aside data-testid="sidebar" />,
+vi.mock("@/components/ui/NetfluxSidebar", () => ({
+    NetfluxSidebar: () => <aside data-testid="sidebar" />,
 }));
 
 vi.mock("@/components/ui/UserNav", () => ({

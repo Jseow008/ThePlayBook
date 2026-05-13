@@ -35,7 +35,7 @@ const navItems = [
 
 const notesItem = { icon: NotebookIcon, label: "Notes", href: "/notes" };
 
-export function NetflixSidebar() {
+export function NetfluxSidebar() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isExpanded, setIsExpanded] = useState(false);
