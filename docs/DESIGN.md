@@ -1,4 +1,4 @@
-# DESIGN.md: Flux Design Notes
+# DESIGN.md: Netflux Design Notes
 
 > **Status:** Active  
 > **Brand Identity:** For overarching, platform-agnostic branding rules (Mobile, Social Media), see [BRAND_GUIDELINES.md](./BRAND_GUIDELINES.md).
@@ -6,7 +6,7 @@
 
 ## 1. Design System Baseline
 
-Flux is dark-first at the product-shell level, with reader-specific theme overrides inside the reading experience.
+Netflux is dark-first at the product-shell level, with reader-specific theme overrides inside the reading experience.
 
 Core tokens live in `app/globals.css` and are exposed through semantic CSS variables:
 

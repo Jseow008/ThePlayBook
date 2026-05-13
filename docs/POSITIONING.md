@@ -1,4 +1,4 @@
-# POSITIONING.md: Flux Messaging & Audience Strategy
+# POSITIONING.md: Netflux Messaging & Audience Strategy
 
 > **Status:** Active  
 > **Role:** North star for all messaging, copy, and audience decisions. Every public surface — landing page, launch posts, social bios, email capture, pitch decks — should derive from this document.  
@@ -8,12 +8,12 @@
 
 ## 1. One-Liner
 
-> Flux is a knowledge system for people who read non-fiction but forget everything.
+> Netflux is a knowledge system for people who read non-fiction but forget everything.
 
-Completing the sentence: **"Flux is ______ for people who ______."**
+Completing the sentence: **"Netflux is ______ for people who ______."**
 
-- ✅ "Flux is a knowledge system for people who read non-fiction but forget everything."
-- ❌ "Flux is a knowledge system for serious readers, but also a deep-dive resource for expectant parents, and also covers business, philosophy, health..."
+- ✅ "Netflux is a knowledge system for people who read non-fiction but forget everything."
+- ❌ "Netflux is a knowledge system for serious readers, but also a deep-dive resource for expectant parents, and also covers business, philosophy, health..."
 
 The product can serve many audiences. The **message** speaks to one.
 
@@ -37,13 +37,13 @@ Non-fiction readers don't have a reading problem. They have a **retention and re
 | **Handwritten notes** | Best for in-session learning | Worst for retrieval — unsearchable, unstructured |
 | **Blinkist / Shortform** | Fast consumption of key ideas | Optimized for throughput, not retention — read and forget faster |
 
-The gap they all share: **they help you capture, but not comprehend or retrieve.** Flux closes the loop.
+The gap they all share: **they help you capture, but not comprehend or retrieve.** Netflux closes the loop.
 
 ---
 
 ## 3. Product Thesis: Read → Capture → Retrieve
 
-Flux is not a summary app. It's a **knowledge system** with three connected stages:
+Netflux is not a summary app. It's a **knowledge system** with three connected stages:
 
 ### Read
 Structured summaries designed for retention, not speed. Each summary is organized by thesis, argument, and evidence — not just shortened. You read in 15 minutes and understand the architecture of the idea, not just the headline.
@@ -62,7 +62,7 @@ Each stage feeds the next. That's what makes it a *system*, not a feature list.
 
 This is the scenario we reference everywhere — launch posts, demos, pitches, landing page:
 
-> "I read *Thinking Fast and Slow* 2 years ago. Today I asked Flux *'what did Kahneman say about loss aversion?'* and got the exact passage I highlighted."
+> "I read *Thinking Fast and Slow* 2 years ago. Today I asked Netflux *'what did Kahneman say about loss aversion?'* and got the exact passage I highlighted."
 
 **Why this works:**
 - The **time gap** (2 years ago) proves retention, not just consumption
@@ -86,7 +86,7 @@ All public-facing copy should pull from this bank. Don't improvise new positioni
 > Structured summaries, persistent highlights, and an AI that knows what you've read. The non-fiction knowledge system that makes every book count.
 
 ### Elevator pitch (30 seconds, spoken)
-> "I built Flux because I was reading 30 books a year and remembering almost nothing. Flux gives you structured summaries you can read in 15 minutes, highlights that actually persist, and an AI you can ask about anything you've ever read. It's a knowledge system — you read once, and the ideas stay with you."
+> "I built Netflux because I was reading 30 books a year and remembering almost nothing. Netflux gives you structured summaries you can read in 15 minutes, highlights that actually persist, and an AI you can ask about anything you've ever read. It's a knowledge system — you read once, and the ideas stay with you."
 
 ### Launch post hook (first line for Reddit / HN / Twitter)
 > "I read 30+ non-fiction books a year. I remember maybe 3. So I built a system to fix that."
@@ -96,10 +96,10 @@ All public-facing copy should pull from this bank. Don't improvise new positioni
 > A short email with useful ideas to remember, revisit, and apply.
 
 ### Social bio (Twitter / LinkedIn)
-> Building Flux — a knowledge system for non-fiction readers. Read once, remember everything.
+> Building Netflux — a knowledge system for non-fiction readers. Read once, remember everything.
 
 ### Footer tagline
-> Flux — The non-fiction knowledge system.
+> Netflux — The non-fiction knowledge system.
 
 ---
 
@@ -120,7 +120,7 @@ Profile:
 - Students and lifelong learners — attracted by structured summaries
 - Podcast listeners who want the ideas without the 3-hour listen
 
-### Who Flux is NOT for right now
+### Who Netflux is NOT for right now
 - Fiction readers
 - People who want 15-second TikTok-style takeaways
 - People looking for audiobook replacements
@@ -130,7 +130,7 @@ Profile:
 
 ## 7. Competitive Positioning
 
-### Where Flux sits
+### Where Netflux sits
 
 ```
                     Speed of consumption →
@@ -139,7 +139,7 @@ Profile:
     (fast,           (deeper,
      forgettable)     still linear)
     
-                         Flux ◆
+                         Netflux ◆
                          (structured for retention,
                           highlights persist,
                           AI retrieval)
@@ -149,7 +149,7 @@ Profile:
      own notes)       no structure)
 ```
 
-**Flux's unique position:** It's the only product that combines structured reading with persistent capture and cross-library retrieval. Blinkist and Shortform optimize for consumption speed. Readwise and Kindle optimize for capture. Flux optimizes for **the moment you need the idea again.**
+**Netflux's unique position:** It's the only product that combines structured reading with persistent capture and cross-library retrieval. Blinkist and Shortform optimize for consumption speed. Readwise and Kindle optimize for capture. Netflux optimizes for **the moment you need the idea again.**
 
 ---
 
@@ -168,7 +168,7 @@ Profile:
 This demonstrates **retention**, not consumption. That's the wedge.
 
 ### Key metric
-- **Return visits within 7 days.** This validates the "system" positioning. If people come back, it's working. If they read one summary and leave, they're using Flux as Blinkist — the message isn't landing.
+- **Return visits within 7 days.** This validates the "system" positioning. If people come back, it's working. If they read one summary and leave, they're using Netflux as Blinkist — the message isn't landing.
 
 ---
 
@@ -177,7 +177,7 @@ This demonstrates **retention**, not consumption. That's the wedge.
 | Document | Role | References |
 |---|---|---|
 | **This file** (`POSITIONING.md`) | Messaging north star — who, what, why, and what to say | — |
-| `BRAND_GUIDELINES.md` | Visual execution — how Flux looks and sounds | References this file for identity |
+| `BRAND_GUIDELINES.md` | Visual execution — how Netflux looks and sounds | References this file for identity |
 | `DESIGN.md` | Web-specific design tokens and layout specs | References brand guidelines |
 | `brand.ts` | Runtime tagline constant | Derives from this file |
 | `layout.tsx` | SEO metadata | Derives from this file |

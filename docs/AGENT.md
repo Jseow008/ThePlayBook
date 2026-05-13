@@ -2,7 +2,7 @@
 
 > **Status:** Active  
 > **Role:** Working snapshot of what is implemented today, not the original MVP pitch.  
-> **Positioning:** Flux is a knowledge system for non-fiction readers. See [POSITIONING.md](./POSITIONING.md) for messaging and audience strategy.
+> **Positioning:** Netflux is a knowledge system for non-fiction readers. See [POSITIONING.md](./POSITIONING.md) for messaging and audience strategy.
 
 ## 1. Shipped Product Areas
 
@@ -60,7 +60,7 @@
 
 ## 4. Current Constraints
 
-- the shipped product brand is still `Flux`
+- the shipped product brand is `Netflux`
 - `design-system/flux/*` is reference-only
 - some historical docs may still describe the older landing page or reader layout; prefer the live code and current docs set
 

@@ -1,7 +1,7 @@
 # OPS.md: Operational Workflows
 
 > **Status:** Active  
-> **Purpose:** Development, deployment, admin operations, and troubleshooting for the current Flux implementation.
+> **Purpose:** Development, deployment, admin operations, and troubleshooting for the current Netflux implementation.
 
 ## 1. Local Development
 

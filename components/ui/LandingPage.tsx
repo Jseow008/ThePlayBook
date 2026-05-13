@@ -98,6 +98,8 @@ const FEATURED_READS_AUTOPLAY_STEP_PX = 2;
 const FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS = 2000;
 const FEATURED_READS_ROW_COUNT = 2;
 const STORYBOARD_SWIPE_THRESHOLD_PX = 44;
+const HERO_ROTATING_WORDS = ["remembered", "searchable", "connected", "actionable"] as const;
+const HERO_ROTATION_INTERVAL_MS = 3000;
 const PRIMARY_CTA_CLASS =
   "focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-16px_rgba(255,255,255,0.45)]";
 const SECONDARY_CTA_CLASS =
@@ -267,7 +269,11 @@ function HeroSection() {
 
           <div>
             <h1 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-7xl lg:text-[5.15rem]">
-              Read once. Remember everything.
+              <span className="sr-only">Every book, remembered.</span>
+              <span aria-hidden="true" className="block">Every book,</span>
+              <span aria-hidden="true" className="landing-rotating-word-shell mt-2 block text-transparent sm:mt-3">
+                <RotatingHeroWord />
+              </span>
             </h1>
           </div>
 
@@ -328,6 +334,57 @@ function HeroSection() {
         </div>
       </div>
     </section>
+  );
+}
+
+function RotatingHeroWord() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let intervalId: number | null = null;
+
+    const stopRotation = () => {
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+        intervalId = null;
+      }
+
+      setActiveIndex(0);
+    };
+
+    const startRotation = () => {
+      if (motionQuery.matches || intervalId !== null) return;
+
+      intervalId = window.setInterval(() => {
+        setActiveIndex((currentIndex) => (currentIndex + 1) % HERO_ROTATING_WORDS.length);
+      }, HERO_ROTATION_INTERVAL_MS);
+    };
+
+    const handleMotionPreferenceChange = () => {
+      if (motionQuery.matches) {
+        stopRotation();
+        return;
+      }
+
+      startRotation();
+    };
+
+    handleMotionPreferenceChange();
+    motionQuery.addEventListener("change", handleMotionPreferenceChange);
+
+    return () => {
+      motionQuery.removeEventListener("change", handleMotionPreferenceChange);
+      stopRotation();
+    };
+  }, []);
+
+  return (
+    <span key={HERO_ROTATING_WORDS[activeIndex]} className="landing-rotating-word inline-block">
+      {HERO_ROTATING_WORDS[activeIndex]}
+    </span>
   );
 }
 

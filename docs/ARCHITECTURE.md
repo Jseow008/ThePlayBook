@@ -1,4 +1,4 @@
-# ARCHITECTURE.md: Flux
+# ARCHITECTURE.md: Netflux
 
 > **Status:** Active  
 > **Last Updated:** March 2026  
@@ -6,7 +6,7 @@
 
 ## 1. Product Shape
 
-Flux is a knowledge system for non-fiction readers. Visitors can discover and read structured summaries without logging in. Authenticated users layer on cross-device state: saved items, reading progress, highlights, notes, reading history, and AI-powered retrieval across their library. Admin users manage publishing, series, homepage sections, media uploads, and embedding operations.
+Netflux is a knowledge system for non-fiction readers. Visitors can discover and read structured summaries without logging in. Authenticated users layer on cross-device state: saved items, reading progress, highlights, notes, reading history, and AI-powered retrieval across their library. Admin users manage publishing, series, homepage sections, media uploads, and embedding operations.
 
 Email newsletter subscription is a separate consent surface from login. A visitor can subscribe to weekly emails without creating an account, and a logged-in user is not automatically subscribed.
 
@@ -92,7 +92,7 @@ That avoids drift between `/preview/[id]`, `/read/[id]`, and metadata generation
 ### 4.0 Email Subscriptions
 
 - `email_subscription`
-  - stores explicit consent to receive weekly Flux emails
+  - stores explicit consent to receive weekly Netflux emails
   - tracks `status`, `subscribed_at`, `unsubscribed_at`, `consent_text`, `consent_version`, and `unsubscribe_token`
   - is distinct from `auth.users` and `profiles`
   - send jobs must target only `status = 'subscribed'`
@@ -212,6 +212,6 @@ Reader themes are scoped separately from the browse UI:
 
 ## 9. Current Architectural Notes
 
-- The shipped product brand is `Flux`
+- The shipped product brand is `Netflux`
 - `design-system/flux/*` is not a runtime source of truth
 - some older docs and generated artifacts may still describe the pre-refactor homepage or reader; defer to `app/`, `components/`, and this file when they disagree

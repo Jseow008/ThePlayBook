@@ -1,4 +1,4 @@
-# API_SPECS.md: Flux API Surface
+# API_SPECS.md: Netflux API Surface
 
 > **Status:** Active  
 > **Purpose:** Describe the route handlers that currently exist under `app/api`.
@@ -249,7 +249,7 @@ Returns the reranked result of the `match_recommendations` RPC.
 
 ## 5. Email Subscription APIs
 
-Newsletter subscription is separate from authentication. Subscribing does not create a Flux account, and signing in does not automatically subscribe a user.
+Newsletter subscription is separate from authentication. Subscribing does not create a Netflux account, and signing in does not automatically subscribe a user.
 
 ### 5.1 `/api/email-subscriptions`
 

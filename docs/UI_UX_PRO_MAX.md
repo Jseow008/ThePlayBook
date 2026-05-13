@@ -2,9 +2,9 @@
 
 UI UX Pro Max is installed in this project as assistant-local tooling, not as an application dependency.
 
-## Flux Rule
+## Netflux Rule
 
-For Flux, UI UX Pro Max is a reference library, not the design authority.
+For Netflux, UI UX Pro Max is a reference library, not the design authority.
 
 The shipped source of truth is:
 - `docs/DESIGN.md`
@@ -43,7 +43,7 @@ Each install includes:
 
 These files are intended as assistant reference material during future UI work.
 
-## Recommended Workflow For Flux
+## Recommended Workflow For Netflux
 
 1. Treat `docs/DESIGN.md` and `app/globals.css` as the source of truth for the shipped product.
 2. Use UI UX Pro Max for ideation, design reviews, and narrow page-specific exploration only.
@@ -76,7 +76,7 @@ Use `--design-system` only when the user explicitly wants redesign exploration, 
 
 ## Regenerate Or Extend The Design System
 
-Avoid this for normal Flux UI work. Use only for explicit redesign exploration.
+Avoid this for normal Netflux UI work. Use only for explicit redesign exploration.
 
 From the project root:
 
@@ -86,7 +86,7 @@ python3 .codex/skills/ui-ux-pro-max/scripts/search.py \
   --design-system \
   --persist \
   -f markdown \
-  -p "Flux" \
+  -p "Netflux" \
   --page "landing" \
   -o "$(pwd)"
 ```
@@ -99,16 +99,16 @@ python3 .codex/skills/ui-ux-pro-max/scripts/search.py \
   --design-system \
   --persist \
   -f markdown \
-  -p "Flux" \
+  -p "Netflux" \
   --page "reader" \
   -o "$(pwd)"
 ```
 
 ## Caveat
 
-The upstream skill tends to generate opinionated alternate design systems and generic landing-page patterns. In Flux, that can degrade usability by replacing an already coherent product hierarchy with a template-driven style direction.
+The upstream skill tends to generate opinionated alternate design systems and generic landing-page patterns. In Netflux, that can degrade usability by replacing an already coherent product hierarchy with a template-driven style direction.
 
-For Flux, prefer:
+For Netflux, prefer:
 - `--domain react`
 - `--domain web`
 - `--domain ux`
