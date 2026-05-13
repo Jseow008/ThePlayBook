@@ -44,34 +44,6 @@ export async function verifyAdminSession(): Promise<boolean> {
 }
 
 /**
- * Get the current authenticated user
- */
-export async function getCurrentUser() {
-    const supabase = await createClient();
-    return supabase.auth.getUser();
-}
-
-/**
- * Get the current user's profile with role
- */
-export async function getCurrentUserProfile() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        return null;
-    }
-
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .single();
-
-    return profile;
-}
-
-/**
  * Sign out the current user
  */
 export async function signOut() {
