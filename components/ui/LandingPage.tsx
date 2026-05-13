@@ -269,8 +269,8 @@ function HeroSection() {
 
           <div>
             <h1 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-7xl lg:text-[5.15rem]">
-              <span className="sr-only">Every book, remembered.</span>
-              <span aria-hidden="true" className="block">Every book,</span>
+              <span className="sr-only">Every idea, remembered.</span>
+              <span aria-hidden="true" className="block">Every idea,</span>
               <span aria-hidden="true" className="landing-rotating-word-shell mt-2 block text-transparent sm:mt-3">
                 <RotatingHeroWord />
               </span>
@@ -279,7 +279,7 @@ function HeroSection() {
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Structured summaries, persistent highlights, and an AI that knows what you&apos;ve read. The non-fiction knowledge system that makes every book count.
+              Structured summaries, persistent highlights, and an AI that knows what you&apos;ve read. The non-fiction knowledge system that makes every idea count.
             </p>
           </div>
 
