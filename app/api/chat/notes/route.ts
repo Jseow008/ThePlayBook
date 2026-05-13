@@ -19,7 +19,7 @@ const NotesChatRequestSchema = z.object({
     scopeLabel: z.string().trim().max(300).optional(),
 });
 
-const MAX_HISTORY_MESSAGES = 6;
+const MAX_HISTORY_MESSAGES = 4;
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
 const MAX_CONTEXT_CHARS = 9_000;
 const NOTES_DEFAULT_MAX_OUTPUT_TOKENS = 350;

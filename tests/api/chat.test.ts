@@ -238,7 +238,9 @@ describe('Chat API', () => {
         expect(embedContentMock).toHaveBeenCalled();
 
         // Ensure vector search RPC was called
-        expect(mockRpc).toHaveBeenCalledWith('match_library_segments_gemini', expect.any(Object));
+        expect(mockRpc).toHaveBeenCalledWith('match_library_segments_gemini', expect.objectContaining({
+            match_count: 3,
+        }));
 
         // Stream text mock returned a 200 response
         expect(res.status).toBe(200);
@@ -342,7 +344,7 @@ describe('Chat API', () => {
         expect(res.status).toBe(200);
     });
 
-    it('keeps only the last 6 normalized messages', async () => {
+    it('keeps only the last 4 normalized messages', async () => {
         const messages = Array.from({ length: 7 }, (_, index) => ({
             role: index % 2 === 0 ? 'user' : 'assistant',
             content: `message-${index + 1}`,
@@ -357,7 +359,7 @@ describe('Chat API', () => {
 
         expect(res.status).toBe(200);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            messages: messages.slice(-6),
+            messages: messages.slice(-4),
         }));
     });
 

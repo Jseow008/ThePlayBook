@@ -19,7 +19,7 @@ const ChatRequestSchema = z.object({
     messages: z.array(ChatMessageSchema).min(1).max(20),
 });
 
-const MAX_HISTORY_MESSAGES = 6;
+const MAX_HISTORY_MESSAGES = 4;
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
 const MAX_CONTEXT_CHARS = 9_000;
 const MAX_LIBRARY_CONTEXT_CHARS = 4_000;
@@ -34,7 +34,7 @@ const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
 const PRIMARY_MATCH_THRESHOLD = 0.65;
 const FALLBACK_MATCH_THRESHOLD = 0.55;
-const MATCH_COUNT = 5;
+const MATCH_COUNT = 3;
 type SegmentWithTitle = {
     id: string;
     markdown_body: string;

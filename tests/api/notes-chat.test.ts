@@ -239,7 +239,7 @@ describe("Notes chat API", () => {
         }));
     });
 
-    it("keeps only the last 6 normalized note messages", async () => {
+    it("keeps only the last 4 normalized note messages", async () => {
         const messages = Array.from({ length: 7 }, (_, index) => ({
             role: index % 2 === 0 ? "user" : "assistant",
             content: `note-message-${index + 1}`,
@@ -256,7 +256,7 @@ describe("Notes chat API", () => {
         const res = await POST(req);
         expect(res.status).toBe(200);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            messages: messages.slice(-6),
+            messages: messages.slice(-4),
         }));
     });
 });

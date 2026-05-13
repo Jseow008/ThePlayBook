@@ -32,7 +32,7 @@ const AuthorChatBodySchema = z.object({
 // ---------------------------------------------------------------------------
 
 /** Only send the last N messages as conversation history (sliding window). */
-const MAX_HISTORY_MESSAGES = 6;
+const MAX_HISTORY_MESSAGES = 4;
 
 /** Max chars of book content injected into the system prompt. */
 const MAX_CONTEXT_CHARS = 12_000;

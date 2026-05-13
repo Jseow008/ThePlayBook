@@ -187,7 +187,7 @@ describe('Author Chat API', () => {
         expect(res.status).toBe(200);
     });
 
-    it('uses the lower author output cap and last 6 messages only', async () => {
+    it('uses the lower author output cap and last 4 messages only', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
             method: 'POST',
             body: JSON.stringify({
@@ -207,7 +207,7 @@ describe('Author Chat API', () => {
             messages: Array.from({ length: 7 }, (_, index) => ({
                 role: index % 2 === 0 ? 'user' : 'assistant',
                 content: `author-message-${index + 1}`,
-            })).slice(-6),
+            })).slice(-4),
         }));
     });
 });
