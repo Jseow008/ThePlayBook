@@ -5,7 +5,7 @@ export const APP_ONBOARDING_VERSION = "v1";
 export const APP_ONBOARDING_REPLAY_VALUE = "app-v1";
 export const APP_ONBOARDING_QUERY_PARAM = "tour";
 export const GUEST_ONBOARDING_VERSION = "v1";
-export const GUEST_ONBOARDING_STORAGE_KEY = `flux_guest_onboarding_${GUEST_ONBOARDING_VERSION}`;
+export const GUEST_ONBOARDING_STORAGE_KEY = `netflux_guest_onboarding_${GUEST_ONBOARDING_VERSION}`;
 
 export type OnboardingStatus = "dismissed" | "completed";
 
@@ -30,7 +30,7 @@ export const APP_ONBOARDING_SLIDES: OnboardingSlide[] = [
         title: "Find your next read.",
         body: "Scan the home feed, open something promising, and start with ideas that already feel worth your time.",
         imageSrc: "/images/hero-section.webp",
-        imageAlt: "Flux browse home feed",
+        imageAlt: "Netflux browse home feed",
     },
     {
         eyebrow: "Preview",

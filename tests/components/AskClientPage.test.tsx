@@ -114,15 +114,15 @@ describe("AskClientPage", () => {
         expect(screen.getAllByText("53 in library")).toHaveLength(2);
         expect(screen.getByText("0 saved but not started")).toBeInTheDocument();
         expect(screen.getByText("Enter to send · Shift+Enter for newline")).toBeInTheDocument();
-        expect(screen.getByPlaceholderText("Ask about the books in your library...")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Ask about the ideas in your library...")).toBeInTheDocument();
         expect(screen.queryByText("Library Assistant · AI Search")).not.toBeInTheDocument();
         expect(screen.getByText("Good places to start")).toBeInTheDocument();
         expect(scrollIntoViewMock).not.toHaveBeenCalled();
         expect(scrollToMock).not.toHaveBeenCalled();
         expect(screen.getByRole("button", { name: "What have I completed in my library?" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Which authors show up most in my saved books?" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Which saved book is most relevant to discipline, and why?" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "What themes show up across my saved books?" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Which authors show up most in my saved items?" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Which saved item is most relevant to discipline, and why?" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "What themes show up across my saved items?" })).toBeInTheDocument();
     });
 
     it("uses the default back link when no return context is provided", () => {
@@ -422,7 +422,7 @@ describe("AskClientPage", () => {
 
         render(<AskClientPage />);
 
-        expect(screen.getAllByRole("button", { name: "Which book says this?" })).toHaveLength(1);
+        expect(screen.getAllByRole("button", { name: "Which source says this?" })).toHaveLength(1);
         expect(screen.getAllByRole("button", { name: "Summarize the overlap" })).toHaveLength(1);
         expect(screen.getAllByRole("button", { name: "Show me another perspective" })).toHaveLength(1);
     });

@@ -227,7 +227,7 @@ describe('Chat API', () => {
                 messages: [
                     {
                         role: 'user',
-                        parts: [{ type: 'text', text: 'What themes show up across my saved books?' }],
+                        parts: [{ type: 'text', text: 'What themes show up across my saved items?' }],
                     },
                 ],
             })
@@ -263,7 +263,7 @@ describe('Chat API', () => {
         expect(embedContentMock).not.toHaveBeenCalled();
         expect(mockRpc).not.toHaveBeenCalled();
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Completed books: 1'),
+            system: expect.stringContaining('Completed items: 1'),
         }));
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('Saved but not started: 0'),
@@ -274,7 +274,7 @@ describe('Chat API', () => {
         expect(anthropicMock).toHaveBeenCalledWith('claude-haiku-4-5-20251001');
     });
 
-    it('uses hybrid context for book ranking questions', async () => {
+    it('uses hybrid context for source ranking questions', async () => {
         process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
         mockRpc.mockResolvedValueOnce({
             data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.82 }],
@@ -322,7 +322,7 @@ describe('Chat API', () => {
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
             body: JSON.stringify({
-                messages: [{ role: 'user', content: 'What themes show up across my saved books?' }],
+                messages: [{ role: 'user', content: 'What themes show up across my saved items?' }],
             }),
         });
 

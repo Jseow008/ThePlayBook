@@ -263,7 +263,7 @@ function HeroSection() {
         <div className="max-w-2xl">
           <div>
             <p className="mb-8 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              A knowledge system for non-fiction readers
+              A knowledge system for non-fiction ideas
             </p>
           </div>
 
@@ -279,7 +279,7 @@ function HeroSection() {
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Structured summaries, persistent highlights, and an AI that knows what you&apos;ve read. The non-fiction knowledge system that makes every idea count.
+              Netflux turns books, podcasts, articles, and videos into readable knowledge: structured summaries, persistent highlights, and an AI that knows what you&apos;ve saved.
             </p>
           </div>
 
@@ -310,7 +310,7 @@ function HeroSection() {
             <div className="landing-device-card relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
               <Image
                 src="/images/hero-section.png"
-                alt="Flux dashboard desktop experience"
+                alt="Netflux dashboard desktop experience"
                 fill
                 priority
                 sizes="(max-width: 1024px) 0px, 700px"
@@ -323,7 +323,7 @@ function HeroSection() {
             <div className="landing-device-phone absolute -bottom-8 -left-6 z-30 aspect-[1206/2306] w-[140px] overflow-hidden rounded-[1.25rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.4)]">
               <Image
                 src="/images/mobile-reader-view.png"
-                alt="Flux mobile reader experience"
+                alt="Netflux mobile reader experience"
                 fill
                 sizes="140px"
                 className="object-contain"
@@ -855,7 +855,7 @@ function CorePlatformFeaturesSection() {
           <div className="relative z-10 grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-center">
             <div className="max-w-md">
               <SectionIntro
-                label="How Flux works"
+                label="How Netflux works"
                 title="From insight to lasting reference."
                 body="Skim the thesis, read the structured breakdown, highlight passages worth keeping, and ask follow-up questions — all in one place."
               />
@@ -877,7 +877,7 @@ function CorePlatformFeaturesSection() {
                       <div key={slide.title} className="relative aspect-[1672/941] w-full shrink-0">
                         <Image
                           src={slide.image}
-                          alt={`Flux storyboard: ${slide.title}`}
+                          alt={`Netflux storyboard: ${slide.title}`}
                           fill
                           sizes="(max-width: 1024px) 100vw, 760px"
                           className="object-cover"
@@ -923,7 +923,7 @@ function CorePlatformFeaturesSection() {
                       type="button"
                       onClick={goToPreviousStoryboardSlide}
                       className="focus-ring inline-flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
-                      aria-label="Show previous Flux workflow slide"
+                      aria-label="Show previous Netflux workflow slide"
                     >
                       <ChevronLeft className="size-4" />
                     </button>
@@ -931,7 +931,7 @@ function CorePlatformFeaturesSection() {
                       type="button"
                       onClick={goToNextStoryboardSlide}
                       className="focus-ring inline-flex size-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-white/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.08] hover:text-white"
-                      aria-label="Show next Flux workflow slide"
+                      aria-label="Show next Netflux workflow slide"
                     >
                       <ChevronRight className="size-4" />
                     </button>
@@ -947,14 +947,14 @@ function CorePlatformFeaturesSection() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Flux storyboard image viewer"
+          aria-label="Netflux storyboard image viewer"
           className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/88 p-4 backdrop-blur-xl sm:p-6"
         >
           <button
             type="button"
             onClick={closeStoryboardLightbox}
             className="absolute inset-0 cursor-default"
-            aria-label="Close Flux storyboard viewer"
+            aria-label="Close Netflux storyboard viewer"
           />
 
           <div
@@ -976,7 +976,7 @@ function CorePlatformFeaturesSection() {
                 type="button"
                 onClick={closeStoryboardLightbox}
                 className="focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition-all duration-300 hover:border-white/25 hover:bg-white/[0.09] hover:text-white"
-                aria-label="Close Flux storyboard viewer"
+                aria-label="Close Netflux storyboard viewer"
               >
                 <X className="size-5" />
               </button>
@@ -988,7 +988,7 @@ function CorePlatformFeaturesSection() {
                   type="button"
                   onClick={goToPreviousStoryboardSlide}
                   className="focus-ring inline-flex size-12 items-center justify-center rounded-full border border-white/10 bg-black/50 text-white/75 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.9)] backdrop-blur-md transition-all duration-300 hover:border-white/25 hover:bg-black/70 hover:text-white"
-                  aria-label="Show previous Flux storyboard"
+                  aria-label="Show previous Netflux storyboard"
                 >
                   <ChevronLeft className="size-5" />
                 </button>
@@ -999,7 +999,7 @@ function CorePlatformFeaturesSection() {
                   type="button"
                   onClick={goToNextStoryboardSlide}
                   className="focus-ring inline-flex size-12 items-center justify-center rounded-full border border-white/10 bg-black/50 text-white/75 shadow-[0_16px_40px_-20px_rgba(0,0,0,0.9)] backdrop-blur-md transition-all duration-300 hover:border-white/25 hover:bg-black/70 hover:text-white"
-                  aria-label="Show next Flux storyboard"
+                  aria-label="Show next Netflux storyboard"
                 >
                   <ChevronRight className="size-5" />
                 </button>
@@ -1014,7 +1014,7 @@ function CorePlatformFeaturesSection() {
                     <div key={`lightbox-${slide.title}`} className="relative h-full w-full shrink-0">
                       <Image
                         src={slide.image}
-                        alt={`Expanded Flux storyboard: ${slide.title}`}
+                        alt={`Expanded Netflux storyboard: ${slide.title}`}
                         fill
                         sizes="94vw"
                         className="object-contain"
@@ -1033,7 +1033,7 @@ function CorePlatformFeaturesSection() {
                   type="button"
                   onClick={goToPreviousStoryboardSlide}
                   className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition-all duration-300 hover:border-white/25 hover:bg-white/[0.09] hover:text-white"
-                  aria-label="Show previous Flux storyboard"
+                  aria-label="Show previous Netflux storyboard"
                 >
                   <ChevronLeft className="size-5" />
                 </button>
@@ -1041,7 +1041,7 @@ function CorePlatformFeaturesSection() {
                   type="button"
                   onClick={goToNextStoryboardSlide}
                   className="focus-ring inline-flex size-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white/75 transition-all duration-300 hover:border-white/25 hover:bg-white/[0.09] hover:text-white"
-                  aria-label="Show next Flux storyboard"
+                  aria-label="Show next Netflux storyboard"
                 >
                   <ChevronRight className="size-5" />
                 </button>
@@ -1133,11 +1133,11 @@ function FinalCTASection() {
 
             <div className="relative">
               <h2 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-6xl md:text-[5.5rem]">
-                Stop forgetting what you read.
+                Stop forgetting what you learn.
               </h2>
 
               <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-                Join readers who use Flux to retain and revisit the best ideas from non-fiction.
+                Join learners who use Netflux to retain and revisit the best ideas from non-fiction.
               </p>
 
               <EmailSubscriptionForm
@@ -1164,7 +1164,7 @@ function LandingFooter() {
     <footer className="border-t border-white/[0.04] py-12">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row lg:px-8">
         <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
-          <span>{APP_NAME} - The non-fiction knowledge system</span>
+          <span>{APP_NAME} - Knowledge without limits</span>
         </div>
 
         <div className="flex items-center gap-6 text-sm text-muted-foreground/60">

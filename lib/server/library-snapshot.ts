@@ -54,8 +54,8 @@ export function buildLibraryMetadataContext(rows: LibraryItemRow[], maxChars: nu
     const snapshot = buildLibrarySnapshot(rows);
     const summaryLines = [
         `Total library items: ${snapshot.totalItems}`,
-        `Completed books: ${snapshot.completedCount}`,
-        `In-progress books: ${snapshot.inProgressCount}`,
+        `Completed items: ${snapshot.completedCount}`,
+        `In-progress items: ${snapshot.inProgressCount}`,
         `Saved but not started: ${snapshot.savedButNotStartedCount}`,
         `Authors represented: ${snapshot.authorNames.length ? snapshot.authorNames.join(", ") : "Unknown"}`,
         "Library items:",

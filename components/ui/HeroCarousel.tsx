@@ -222,7 +222,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {APP_NAME}
                     </h1>
                     <p className="mx-auto max-w-2xl rounded-xl bg-black/40 p-4 text-lg text-muted-foreground backdrop-blur-sm md:text-xl">
-                        A curated stream of insights from books, podcasts, and articles. Check back soon for featured content.
+                        A curated stream of insights from books, podcasts, articles, and videos. Check back soon for featured content.
                     </p>
                 </div>
                 {/* Bottom Gradient to blend with content lanes */}

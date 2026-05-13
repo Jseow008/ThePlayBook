@@ -2,7 +2,7 @@
 
 Status: Phase 1 migration active.
 
-Netflux uses canonical category labels for content rows, admin publishing, search, and landing-page topic links. Categories are still stored as text in `content_item.category`; the app-level canonical source is `lib/content-categories.ts`.
+Netflux uses canonical category labels for content rows, admin publishing, search, and landing-page topic links. Categories are intentionally broad because the product promise is knowledge without limits or rigid domain boundaries. Categories are still stored as text in `content_item.category`; the app-level canonical source is `lib/content-categories.ts`.
 
 ## Canonical Renames
 

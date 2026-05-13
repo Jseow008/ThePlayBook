@@ -11,7 +11,7 @@ import { BookOpen, Headphones, Lightbulb } from "lucide-react";
 
 export const metadata = {
     title: `About | ${APP_NAME}`,
-    description: `Learn more about ${APP_NAME} - your curated knowledge stream for books, podcasts, and ideas.`,
+    description: `Learn more about ${APP_NAME} - your curated knowledge stream for books, podcasts, articles, videos, and ideas.`,
 };
 
 export default function AboutPage() {
@@ -27,7 +27,7 @@ export default function AboutPage() {
                         About {APP_NAME}
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                        A personal knowledge stream built to capture, distill, and revisit the best ideas from books, podcasts, and articles.
+                        A personal knowledge stream built to capture, distill, and revisit the best ideas from books, podcasts, articles, and videos.
                     </p>
                 </div>
 
@@ -36,7 +36,7 @@ export default function AboutPage() {
                     <h2 className="text-2xl font-bold mb-5 font-display">The Mission</h2>
                     <div className="space-y-4 text-muted-foreground leading-relaxed">
                         <p>
-                            We consume so much content—podcasts during commutes, books before bed, articles throughout the day—but how much do we actually retain? {APP_NAME} exists to solve that problem.
+                            We consume so much content—podcasts during commutes, books before bed, articles throughout the day, videos whenever we need to learn quickly—but how much do we actually retain? {APP_NAME} exists to solve that problem.
                         </p>
                         <p>
                             Every entry here is a personal reflection: a distillation of key insights, memorable quotes, and actionable takeaways. It&apos;s not just a summary—it&apos;s a collection of notes for ideas worth remembering.

@@ -10,7 +10,7 @@ type EmailSubscriptionUpdate = Database["public"]["Tables"]["email_subscription"
 
 const EMAIL_SUBSCRIPTION_CONSENT_VERSION = "weekly-ideas-v1";
 const EMAIL_SUBSCRIPTION_CONSENT_TEXT =
-    "Subscribe to receive weekly non-fiction ideas from Flux by email.";
+    "Subscribe to receive weekly non-fiction ideas from Netflux by email.";
 
 const SubscriptionSourceSchema = z.enum(["landing_final_cta"]);
 

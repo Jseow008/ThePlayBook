@@ -1634,7 +1634,7 @@ const FocusCardView = memo(function FocusCardView({
                                     <ShareButton
                                         path={`/preview/${card.id}`}
                                         title={card.title}
-                                        text={`Check out "${card.title}" on Flux`}
+                                        text={`Check out "${card.title}" on Netflux`}
                                         variant="icon"
                                         className="focus-ring h-8 w-8 rounded-full p-0 text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
                                     />

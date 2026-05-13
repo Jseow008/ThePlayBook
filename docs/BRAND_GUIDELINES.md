@@ -9,7 +9,7 @@ For messaging, audience, and positioning strategy, refer to [POSITIONING.md](./P
 
 ## 1. Brand Concept & Voice
 
-- **Identity:** A knowledge system for non-fiction readers. Read once, remember everything.
+- **Identity:** A knowledge system for non-fiction ideas across books, podcasts, articles, and videos.
 - **Tagline:** Read once. Remember everything.
 - **Voice:** Authoritative, clear, minimal, and actionable. We don't speak in buzzwords; we provide pure signal.
 - **Aesthetic Vibe:** "Cinematic Dark Mode", Premium, Uncluttered, Focused.
@@ -73,7 +73,7 @@ The premium serif font used during the true deep reading / content consumption e
 
 ## 4. Logo Usage
 
-- **Primary Asset:** Reference the primary brand files. (e.g. `flux-logo.png`, `N-logo.jpg`)
+- **Primary Asset:** Reference the primary Netflux brand files. Web usage should prefer `netflux-logo.png` for the wordmark and `netflux-icon-white.png` / `netflux-icon-black.png` for standalone icon usage.
 - **Minimum Clear Space:** Allow at least 1/2 of the logo's height of empty space around the logo on all sides to allow it to breathe.
 - **Contrast / Backdrop:** The logo should almost always sit on the `#09090B` background. Avoid placing the logo over busy images without a heavy dark gradient fade behind it.
 

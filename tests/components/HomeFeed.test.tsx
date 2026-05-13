@@ -12,7 +12,7 @@ vi.mock("@/components/ui/RecommendationsRow", () => ({
 }));
 
 vi.mock("@/components/ui/Logo", () => ({
-    Logo: () => <span>Flux</span>,
+    Logo: () => <span>Netflux</span>,
 }));
 
 vi.mock("@/components/ui/ContentLane", () => ({

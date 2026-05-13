@@ -6,7 +6,7 @@
 
 ## 1. Product Shape
 
-Netflux is a knowledge system for non-fiction readers. Visitors can discover and read structured summaries without logging in. Authenticated users layer on cross-device state: saved items, reading progress, highlights, notes, reading history, and AI-powered retrieval across their library. Admin users manage publishing, series, homepage sections, media uploads, and embedding operations.
+Netflux is a knowledge system for non-fiction ideas across books, podcasts, articles, and videos. Visitors can discover readable knowledge distilled from multiple formats without logging in. Authenticated users layer on cross-device state: saved items, reading progress, highlights, notes, reading history, and AI-powered retrieval across their library. Admin users manage publishing, series, homepage sections, media uploads, and embedding operations.
 
 Email newsletter subscription is a separate consent surface from login. A visitor can subscribe to weekly emails without creating an account, and a logged-in user is not automatically subscribed.
 

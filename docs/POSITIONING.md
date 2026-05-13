@@ -8,12 +8,12 @@
 
 ## 1. One-Liner
 
-> Netflux is a knowledge system for people who read non-fiction but forget everything.
+> Netflux is a knowledge system for people who want to remember the best non-fiction ideas from books, podcasts, articles, and videos.
 
 Completing the sentence: **"Netflux is ______ for people who ______."**
 
-- ✅ "Netflux is a knowledge system for people who read non-fiction but forget everything."
-- ❌ "Netflux is a knowledge system for serious readers, but also a deep-dive resource for expectant parents, and also covers business, philosophy, health..."
+- ✅ "Netflux is a knowledge system for people who want to remember the best non-fiction ideas from books, podcasts, articles, and videos."
+- ❌ "Netflux is a book summary app, but also a podcast app, and also an article reader, and also a video library..."
 
 The product can serve many audiences. The **message** speaks to one.
 
@@ -21,11 +21,11 @@ The product can serve many audiences. The **message** speaks to one.
 
 ## 2. The Problem
 
-**The reader's dilemma:** You read 30+ non-fiction books a year. You remember maybe 3.
+**The learner's dilemma:** You consume non-fiction constantly — books, podcasts, articles, videos. You remember maybe a fraction of it.
 
-The deeper pain isn't forgetting — it's **wasted investment.** You spent 8 hours reading Thinking Fast and Slow. Six months later, someone mentions cognitive bias in a meeting and you can't recall a single framework. The book shaped your thinking, but the specifics are gone.
+The deeper pain isn't forgetting — it's **wasted investment.** You spent 8 hours reading *Thinking Fast and Slow*, listened to three podcast episodes on decision-making, and saved a long article on cognitive bias. Six months later, someone mentions loss aversion in a meeting and you can't recall the framework. The ideas shaped your thinking, but the specifics are gone.
 
-Non-fiction readers don't have a reading problem. They have a **retention and retrieval problem.**
+Non-fiction learners don't have a consumption problem. They have a **retention and retrieval problem.**
 
 ### Why existing tools fall short
 
@@ -35,24 +35,24 @@ Non-fiction readers don't have a reading problem. They have a **retention and re
 | **Readwise** | Resurfaces random highlights | A decontextualized quote from Chapter 7 means nothing 6 months later |
 | **Notion / Obsidian** | Lets you build a custom system | Requires you to architect it yourself — most abandon it in 2 weeks |
 | **Handwritten notes** | Best for in-session learning | Worst for retrieval — unsearchable, unstructured |
-| **Blinkist / Shortform** | Fast consumption of key ideas | Optimized for throughput, not retention — read and forget faster |
+| **Blinkist / Shortform** | Fast consumption of key ideas | Optimized for throughput, not retention — consume and forget faster |
 
 The gap they all share: **they help you capture, but not comprehend or retrieve.** Netflux closes the loop.
 
 ---
 
-## 3. Product Thesis: Read → Capture → Retrieve
+## 3. Product Thesis: Distill → Capture → Retrieve
 
 Netflux is not a summary app. It's a **knowledge system** with three connected stages:
 
-### Read
-Structured summaries designed for retention, not speed. Each summary is organized by thesis, argument, and evidence — not just shortened. You read in 15 minutes and understand the architecture of the idea, not just the headline.
+### Distill
+Netflux turns books, podcasts, articles, and videos into readable knowledge. Each summary is organized by thesis, argument, and evidence — not just shortened — so you understand the architecture of the idea, not just the headline.
 
 ### Capture
-Highlight and annotate while you read. Highlights stay with the content — not in a separate app, not in a disconnected database. Your notes live where the ideas live.
+Highlight and annotate while you move through the distilled version. Highlights stay with the content — not in a separate app, not in a disconnected database. Your notes live where the ideas live.
 
 ### Retrieve
-**Ask My Library.** Ask a question across everything you've ever read. "What did Kahneman say about loss aversion?" — and get the exact passage you highlighted, with full context, from a book you read two years ago.
+**Ask My Library.** Ask a question across everything you've saved, read, watched, or listened to. "What did Kahneman say about loss aversion?" — and get the exact passage you highlighted, with full context, from something you encountered two years ago.
 
 Each stage feeds the next. That's what makes it a *system*, not a feature list.
 
@@ -60,15 +60,15 @@ Each stage feeds the next. That's what makes it a *system*, not a feature list.
 
 ## 4. The Demo Moment
 
-This is the scenario we reference everywhere — launch posts, demos, pitches, landing page:
+This is the scenario we reference everywhere — launch posts, demos, pitches, landing page. The example can use a book, podcast, article, or video, but the point is always the same: Netflux retrieves the idea when it becomes useful again.
 
-> "I read *Thinking Fast and Slow* 2 years ago. Today I asked Netflux *'what did Kahneman say about loss aversion?'* and got the exact passage I highlighted."
+> "I came across Kahneman's idea about loss aversion 2 years ago. Today I asked Netflux *'what did Kahneman say about loss aversion?'* and got the exact passage I highlighted."
 
 **Why this works:**
 - The **time gap** (2 years ago) proves retention, not just consumption
 - The **specificity** (exact passage, highlighted) proves the system works
 - The **naturalness** (asking a question in plain language) proves it's effortless
-- The **book** (Thinking Fast and Slow) is universally recognized by the target audience
+- The **idea** (loss aversion) is universally recognized by the target audience
 
 ---
 
@@ -83,47 +83,46 @@ All public-facing copy should pull from this bank. Don't improvise new positioni
 > Read once. Remember everything.
 
 ### Hero subtitle (landing page)
-> Structured summaries, persistent highlights, and an AI that knows what you've read. The non-fiction knowledge system that makes every book count.
+> Netflux turns books, podcasts, articles, and videos into readable knowledge: structured summaries, persistent highlights, and an AI that knows what you've saved.
 
 ### Elevator pitch (30 seconds, spoken)
-> "I built Netflux because I was reading 30 books a year and remembering almost nothing. Netflux gives you structured summaries you can read in 15 minutes, highlights that actually persist, and an AI you can ask about anything you've ever read. It's a knowledge system — you read once, and the ideas stay with you."
+> "I built Netflux because I was consuming non-fiction constantly — books, podcasts, articles, videos — and remembering almost nothing. Netflux turns every format into readable knowledge, gives you highlights that actually persist, and lets you ask an AI about anything you've saved. It's a knowledge system: the ideas stay with you."
 
 ### Launch post hook (first line for Reddit / HN / Twitter)
-> "I read 30+ non-fiction books a year. I remember maybe 3. So I built a system to fix that."
+> "I consume non-fiction every week. I remember maybe a fraction of it. So I built a system to fix that."
 
 ### Email subscription pitch
 > Get the best ideas from non-fiction, weekly.  
 > A short email with useful ideas to remember, revisit, and apply.
 
 ### Social bio (Twitter / LinkedIn)
-> Building Netflux — a knowledge system for non-fiction readers. Read once, remember everything.
+> Building Netflux — a knowledge system for non-fiction ideas across books, podcasts, articles, and videos.
 
 ### Footer tagline
-> Netflux — The non-fiction knowledge system.
+> Netflux — Knowledge without limits.
 
 ---
 
 ## 6. Audience
 
 ### Primary wedge (first 90 days)
-**Non-fiction readers who feel the pain of forgetting.**
+**Non-fiction learners who feel the pain of forgetting.**
 
 Profile:
-- Reads 10-50+ non-fiction books per year
-- Has tried Kindle highlights, Readwise, Notion, or handwritten notes
+- Consumes non-fiction across books, podcasts, articles, and videos
+- Has tried Kindle highlights, Readwise, Notion, saved podcast queues, bookmarks, or handwritten notes
 - Values deep understanding over speed
-- Likely interested in: productivity, psychology, business, philosophy, personal development
+- Likely interested in: productivity, psychology, business, philosophy, personal development, parenting, spirituality, health, science, technology, money, and any other serious idea domain
 - Found on: r/BettermentBookClub, r/nonfictionbooks, r/PKMS, Hacker News, Twitter/X book circles, LinkedIn thought leadership
 
 ### Adjacent audiences (organic discovery)
 - PKM / second-brain enthusiasts (Obsidian, Roam, Notion power users) — attracted by Ask My Library
-- Students and lifelong learners — attracted by structured summaries
-- Podcast listeners who want the ideas without the 3-hour listen
+- Students and lifelong learners — attracted by structured, searchable knowledge
+- Podcast listeners, article readers, and video learners who want ideas they can revisit
 
 ### Who Netflux is NOT for right now
 - Fiction readers
 - People who want 15-second TikTok-style takeaways
-- People looking for audiobook replacements
 - Casual browsers who don't have a retention problem
 
 ---
@@ -140,16 +139,16 @@ Profile:
      forgettable)     still linear)
     
                          Netflux ◆
-                         (structured for retention,
+                         (readable knowledge,
                           highlights persist,
                           AI retrieval)
     
     Kindle ─────── Readwise
-    (full book,      (resurfaces highlights,
+    (source content, (resurfaces highlights,
      own notes)       no structure)
 ```
 
-**Netflux's unique position:** It's the only product that combines structured reading with persistent capture and cross-library retrieval. Blinkist and Shortform optimize for consumption speed. Readwise and Kindle optimize for capture. Netflux optimizes for **the moment you need the idea again.**
+**Netflux's unique position:** It's the only product that combines readable knowledge from multiple formats with persistent capture and cross-library retrieval. Blinkist and Shortform optimize for consumption speed. Readwise and Kindle optimize for capture. Netflux optimizes for **the moment you need the idea again.**
 
 ---
 
@@ -162,8 +161,8 @@ Profile:
 4. **LinkedIn** — cross-post Twitter content with professional framing
 
 ### Content formula (Angle B: System Builder)
-- **Not:** "I read [book]. Here's the one idea I'll actually use." (that's a summary app)
-- **Instead:** "I read [book] 6 months ago. Here's what I still remember — because I used a system."
+- **Not:** "I read/listened to/watched [source]. Here's the one idea I'll actually use." (that's a summary app)
+- **Instead:** "I came across [idea] 6 months ago. Here's what I still remember — because I used a system."
 
 This demonstrates **retention**, not consumption. That's the wedge.
 

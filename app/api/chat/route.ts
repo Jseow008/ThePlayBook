@@ -98,6 +98,8 @@ function detectAskIntent(query: string): AskIntent {
         /\bwhat books?\b/,
         /\bmy library\b/,
         /\bmy saved books?\b/,
+        /\bmy saved items?\b/,
+        /\bsaved sources?\b/,
         /\bin progress\b/,
     ];
     const synthesisPatterns = [
@@ -373,7 +375,7 @@ Rules:
 - Use metadata for inventory, counts, titles, authors, and reading status.
 - Use retrieved passages for themes, comparisons, and content-based reasoning.
 - For hybrid questions, combine both. If passages are limited, answer from metadata first and say passage evidence is limited.
-- Never invent books, authors, progress, or themes.
+- Never invent sources, authors, progress, or themes.
 - If metadata is empty, say so plainly.
 - Keep answers short and structured. Use bullets for lists. Do not write a long essay unless asked.`;
 

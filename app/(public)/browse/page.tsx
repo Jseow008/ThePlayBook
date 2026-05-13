@@ -7,7 +7,7 @@ import type { ContentItem, Database, HomepageSection } from "@/types/database";
 /**
  * Browse Page (Content Dashboard)
  * 
- * Netflix-style dashboard with hero carousel and horizontal content lanes.
+ * Content dashboard with hero carousel and horizontal content lanes.
  * This is the main content browsing experience.
  * Uses ISR with 5 minute revalidation for optimal SEO and performance.
  */

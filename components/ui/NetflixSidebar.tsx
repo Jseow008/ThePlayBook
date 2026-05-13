@@ -154,7 +154,7 @@ export function NetflixSidebar() {
                     <div className="relative h-8 w-32 transition-opacity duration-300 opacity-100">
                         {/* Full Logo when expanded */}
                         <Image
-                            src="/images/flux-logo.png"
+                            src="/images/netflux-logo.png"
                             alt={APP_NAME}
                             fill
                             unoptimized

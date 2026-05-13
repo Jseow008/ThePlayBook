@@ -5,9 +5,9 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: `${APP_NAME} — Read Smarter`,
+        name: `${APP_NAME} — Readable Knowledge`,
         short_name: APP_NAME,
-        description: "Curated summaries of podcasts, books, and articles. Read distilled wisdom for free.",
+        description: "Readable knowledge from books, podcasts, articles, and videos.",
         start_url: "/",
         display: "standalone",
         background_color: "#09090b",
@@ -47,7 +47,7 @@ export default function manifest(): MetadataRoute.Manifest {
                 purpose: "maskable",
             },
         ],
-        categories: ["education", "books", "lifestyle"],
+        categories: ["education", "books", "productivity"],
         lang: "en",
         dir: "ltr",
         id: siteUrl,

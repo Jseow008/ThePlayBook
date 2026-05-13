@@ -11,7 +11,7 @@ import { AppOnboardingGate } from "@/components/ui/AppOnboardingGate";
 /**
  * Public Layout Shell
  * 
- * Conditionally renders the Netflix-style app chrome (sidebar, nav, header).
+ * Conditionally renders the app chrome (sidebar, nav, header).
  * The landing page (/) renders standalone without any chrome.
  * All other public pages get the full app experience.
  */
@@ -36,7 +36,7 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
                 <AppOnboardingGate />
             </Suspense>
 
-            {/* Netflix-style Sidebar (hidden on mobile) */}
+            {/* Desktop sidebar (hidden on mobile) */}
             <Suspense fallback={null}>
                 <NetflixSidebar />
             </Suspense>

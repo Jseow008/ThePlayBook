@@ -43,7 +43,7 @@ Do not revert documentation to the older “system serif / Georgia” descriptio
 
 ### 3.1 Landing Page
 
-The current landing page is not the older Netflix-style hero carousel page.
+The current landing page is not the older streaming-style hero carousel page.
 
 It now ships as a marketing/editorial composition with:
 
@@ -69,7 +69,7 @@ Primary source: `components/ui/PublicLayoutShell.tsx`
 
 ### 3.3 Browse Feed
 
-`/browse` is still the closest thing to the “Netflix-style” app experience:
+`/browse` is still the closest thing to the horizontal content-row app experience:
 
 - featured content
 - horizontally organized sections
@@ -117,7 +117,7 @@ The notes experience is broader than a simple saved-highlights list.
 
 Current `/notes` behavior includes:
 
-- search across notes, highlights, books, and sections
+- search across notes, highlights, content items, and sections
 - filter controls for content item, type, color, and sort
 - removable filter chips
 - scoped “Ask These Notes” assistant grounded only in the current note scope

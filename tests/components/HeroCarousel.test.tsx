@@ -198,7 +198,7 @@ describe("HeroCarousel", () => {
     it("shows the mobile description without hiding it on smaller screens", () => {
         render(<HeroCarousel items={items} />);
 
-        const description = screen.getByText("Experience this Flux content today.");
+        const description = screen.getByText("Experience this Netflux content today.");
 
         expect(description).toBeInTheDocument();
         expect(description).toHaveClass("text-sm", "md:text-lg", "lg:text-xl");
@@ -214,6 +214,6 @@ describe("HeroCarousel", () => {
     it("falls back to the default description when no hook or big idea exists", () => {
         render(<HeroCarousel items={items} />);
 
-        expect(screen.getByText("Experience this Flux content today.")).toBeInTheDocument();
+        expect(screen.getByText("Experience this Netflux content today.")).toBeInTheDocument();
     });
 });

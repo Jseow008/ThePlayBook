@@ -25,7 +25,7 @@ function unsubscribeSuccessHtml() {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Unsubscribed | Flux</title>
+  <title>Unsubscribed | Netflux</title>
   <style>
     body { margin: 0; background: #09090b; color: #f4f4f5; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
     main { min-height: 100svh; display: grid; place-items: center; padding: 24px; }
@@ -39,7 +39,7 @@ function unsubscribeSuccessHtml() {
   <main>
     <section>
       <h1>You're unsubscribed.</h1>
-      <p>You will no longer receive weekly Flux emails. You can resubscribe from the Flux homepage at any time.</p>
+      <p>You will no longer receive weekly Netflux emails. You can resubscribe from the Netflux homepage at any time.</p>
     </section>
   </main>
 </body>

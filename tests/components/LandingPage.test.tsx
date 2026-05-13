@@ -43,7 +43,7 @@ vi.mock("next/link", () => ({
 }));
 
 vi.mock("@/components/ui/Logo", () => ({
-  Logo: () => <div>Flux</div>,
+  Logo: () => <div>Netflux</div>,
 }));
 
 vi.mock("@/components/ui/ContentCard", () => ({

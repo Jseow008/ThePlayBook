@@ -163,7 +163,7 @@ export default function MyListPage() {
                                 Your list is empty
                             </h2>
                             <p className="text-muted-foreground mb-8 max-w-sm">
-                                Add books, podcasts, and articles to your list so you can easily find them later.
+                                Add books, podcasts, articles, and videos to your list so you can easily find them later.
                             </p>
                             <Link
                                 href="/browse"

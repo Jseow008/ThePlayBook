@@ -15,8 +15,8 @@ export function Logo({
   height = 40,
   priority = false,
 }: LogoProps) {
-  // Source crop ratio is 2518 / 716 roughly = 3.51
-  const aspectRatio = 2518 / 716;
+  // Cropped Netflux wordmark ratio is 938 / 281.
+  const aspectRatio = 938 / 281;
 
   // If height is provided (which it defaults to 40), calculate the intrinsic width
   const calculatedWidth = width || Math.round(height * aspectRatio);
@@ -28,7 +28,7 @@ export function Logo({
       aria-label={APP_NAME}
     >
       <Image
-        src="/images/flux-logo.png"
+        src="/images/netflux-logo.png"
         alt={`${APP_NAME} logo`}
         fill
         unoptimized

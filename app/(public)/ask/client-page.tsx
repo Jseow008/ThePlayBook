@@ -20,15 +20,15 @@ const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
 
 const STARTER_PROMPTS = [
     "What have I completed in my library?",
-    "Which authors show up most in my saved books?",
-    "Which saved book is most relevant to discipline, and why?",
-    "What themes show up across my saved books?",
+    "Which authors show up most in my saved items?",
+    "Which saved item is most relevant to discipline, and why?",
+    "What themes show up across my saved items?",
 ] as const;
 
 const FOLLOW_UP_ACTIONS = [
     {
-        label: "Which book says this?",
-        prompt: "Which saved book most strongly supports your last answer? Cite the specific source from my library.",
+        label: "Which source says this?",
+        prompt: "Which saved source most strongly supports your last answer? Cite the specific source from my library.",
     },
     {
         label: "Summarize the overlap",
@@ -274,15 +274,15 @@ export function AskClientPage({
     const isLibraryScope = resolvedScope === "library";
     const pageTitle = isLibraryScope ? "Ask My Library" : "Ask These Notes";
     const pageSubtitle = isLibraryScope
-        ? "Answers grounded in your library, reading history, and saved book content"
+        ? "Answers grounded in your library, reading history, and saved content"
         : "Answers grounded in the notes currently in scope";
     const ScopeIcon = isLibraryScope ? BooksIcon : NotebookIcon;
     const libraryComposerLabel = initialLibrarySnapshot
         ? `${initialLibrarySnapshot.totalItems} in library`
         : "Ask My Library";
     const libraryComposerPlaceholder = initialLibrarySnapshot?.totalItems === 1
-        ? "Ask about the book in your library..."
-        : "Ask about the books in your library...";
+        ? "Ask about the item in your library..."
+        : "Ask about the ideas in your library...";
 
     return (
         <div className="flex h-[100dvh] flex-col bg-background">
@@ -357,7 +357,7 @@ export function AskClientPage({
                                                             Ask across your reading life
                                                         </p>
                                                         <p className="mt-2 max-w-2xl text-[0.92rem] leading-[1.6] text-muted-foreground sm:text-[0.95rem]">
-                                                            Ask about completed books, saved titles, recurring authors, and the ideas inside the passages you&apos;ve kept. Ask My Library can answer both library-inventory questions and content-grounded synthesis questions.
+                                                            Ask about completed items, saved titles, recurring authors, and the ideas inside the passages you&apos;ve kept. Ask My Library can answer both library-inventory questions and content-grounded synthesis questions.
                                                         </p>
                                                         <div className="mt-5">
                                                             <p className="mb-2 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">

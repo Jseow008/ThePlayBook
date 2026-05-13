@@ -29,7 +29,7 @@ describe("public content routes", () => {
         });
 
         vi.doMock("@/lib/server/public-content", () => ({
-            buildPublicContentMetadata: vi.fn(() => ({ title: "Preview Title — Flux" })),
+            buildPublicContentMetadata: vi.fn(() => ({ title: "Preview Title — Netflux" })),
             getPreviewPageData: getPreviewPageDataMock,
         }));
 
@@ -62,7 +62,7 @@ describe("public content routes", () => {
             searchParams: Promise.resolve({ takeaways: "all" }),
         }));
 
-        expect(metadata.title).toBe("Preview Title — Flux");
+        expect(metadata.title).toBe("Preview Title — Netflux");
         expect(screen.getByText("Preview Title")).toBeInTheDocument();
         expect(screen.getByText("4 sections")).toBeInTheDocument();
         expect(screen.getByText("all takeaways")).toBeInTheDocument();
@@ -104,7 +104,7 @@ describe("public content routes", () => {
         });
 
         vi.doMock("@/lib/server/public-content", () => ({
-            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Flux" })),
+            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Netflux" })),
             getReadPageData: getReadPageDataMock,
         }));
 
@@ -127,7 +127,7 @@ describe("public content routes", () => {
             params: Promise.resolve({ id: "read-1", slug: ["read-title"] }),
         }));
 
-        expect(metadata.title).toBe("Read Title — Flux");
+        expect(metadata.title).toBe("Read Title — Netflux");
         expect(screen.getByText("Read Title")).toBeInTheDocument();
         expect(screen.getByText("1 segments")).toBeInTheDocument();
         expect(getReadPageDataMock).toHaveBeenCalledTimes(2);
@@ -161,7 +161,7 @@ describe("public content routes", () => {
         }));
 
         vi.doMock("@/lib/server/public-content", () => ({
-            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Flux" })),
+            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Netflux" })),
             getReadPageData: getReadPageDataMock,
         }));
 
@@ -205,7 +205,7 @@ describe("public content routes", () => {
         }));
 
         vi.doMock("@/lib/server/public-content", () => ({
-            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Flux" })),
+            buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Netflux" })),
             getReadPageData: getReadPageDataMock,
         }));
 
@@ -263,7 +263,7 @@ describe("public content routes", () => {
             params: Promise.resolve({ slug: "matthew" }),
         }));
 
-        expect(metadata.title).toBe("Matthew — Flux");
+        expect(metadata.title).toBe("Matthew — Netflux");
         expect(screen.getByText("Matthew")).toBeInTheDocument();
         expect(screen.getByText("by Matthew Henry")).toBeInTheDocument();
         expect(screen.getByText("Matthew series description")).toBeInTheDocument();

@@ -28,7 +28,7 @@ const playfair = Playfair_Display({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
 const description =
-  "A knowledge system for non-fiction readers. Read structured summaries, highlight what matters, and build a personal library you'll actually remember.";
+  "A knowledge system for non-fiction ideas across books, podcasts, articles, and videos. Turn every format into readable knowledge you can highlight, save, and retrieve.";
 const showVercelTelemetry = process.env.NODE_ENV === "production";
 
 export const metadata: Metadata = {
@@ -38,9 +38,12 @@ export const metadata: Metadata = {
   keywords: [
     "knowledge",
     "books",
+    "podcasts",
+    "articles",
+    "videos",
     "non-fiction",
-    "book summaries",
-    "remember what you read",
+    "structured summaries",
+    "remember what you learn",
     "learning",
     "highlights",
     "knowledge management",
