@@ -88,7 +88,7 @@ function createRecommendationItem(id: string, title: string): ContentItem {
         series_id: null,
         series_order: null,
         source_url: null,
-        status: "published",
+        status: "verified",
         type: "book",
         updated_at: "2026-04-01T00:00:00.000Z",
     } as ContentItem;

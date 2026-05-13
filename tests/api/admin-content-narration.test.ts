@@ -93,23 +93,15 @@ describe("Admin content narration API", () => {
                 }
 
                 const selectChain = {
-                    eq: vi.fn(function eq() {
-                        return this;
-                    }),
-                    is: vi.fn(function is() {
-                        return this;
-                    }),
+                    eq: vi.fn(() => selectChain),
+                    is: vi.fn(() => selectChain),
                     single: contentSelectSingleMock,
                     maybeSingle: contentSelectSingleMock,
                 };
 
                 const updateChain = {
-                    eq: vi.fn(function eq() {
-                        return this;
-                    }),
-                    is: vi.fn(function is() {
-                        return this;
-                    }),
+                    eq: vi.fn(() => updateChain),
+                    is: vi.fn(() => updateChain),
                     select: vi.fn().mockReturnValue({
                         single: updateSelectSingleMock,
                         maybeSingle: updateSelectSingleMock,

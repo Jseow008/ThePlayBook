@@ -4,13 +4,13 @@ import { GUEST_ONBOARDING_STORAGE_KEY, createGuestOnboardingEntry } from '@/lib/
 test.describe('Critical User Journey', () => {
     test('browse -> preview -> read', async ({ page }) => {
         await page.addInitScript(
-            ([storageKey, onboardingState]) => {
+            ({ storageKey, onboardingState }) => {
                 window.localStorage.setItem(storageKey, JSON.stringify(onboardingState));
             },
-            [
-                GUEST_ONBOARDING_STORAGE_KEY,
-                createGuestOnboardingEntry("completed"),
-            ]
+            {
+                storageKey: GUEST_ONBOARDING_STORAGE_KEY,
+                onboardingState: createGuestOnboardingEntry("completed"),
+            }
         );
 
         // Step 1: Browse

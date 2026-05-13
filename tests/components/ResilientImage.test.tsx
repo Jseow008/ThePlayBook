@@ -59,7 +59,7 @@ describe("ResilientImage", () => {
         expect(retried).toHaveAttribute("data-unoptimized", "true");
         expect(sendBeacon).toHaveBeenCalledTimes(1);
 
-        const [url, body] = sendBeacon.mock.calls[0] as [string, Blob];
+        const [url, body] = sendBeacon.mock.calls[0] as unknown as [string, Blob];
         expect(url).toBe("/api/monitor/image-fallback");
 
         const payload = JSON.parse(await body.text()) as Record<string, string | null>;
@@ -103,7 +103,7 @@ describe("ResilientImage", () => {
             expect(sendBeacon).toHaveBeenCalledTimes(2);
         });
 
-        const [, finalFailureBody] = sendBeacon.mock.calls[1] as [string, Blob];
+        const [, finalFailureBody] = sendBeacon.mock.calls[1] as unknown as [string, Blob];
         const payload = JSON.parse(await finalFailureBody.text()) as Record<string, string | null>;
 
         expect(payload).toMatchObject({

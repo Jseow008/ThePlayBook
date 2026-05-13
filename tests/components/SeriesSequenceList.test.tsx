@@ -31,6 +31,11 @@ function createItem(overrides: Partial<ContentItem>): ContentItem {
         hero_image_url: null,
         category: null,
         is_featured: false,
+        narration_completed_at: null,
+        narration_error: null,
+        narration_requested_at: null,
+        narration_started_at: null,
+        narration_status: "completed",
         embedding: null,
         audio_url: null,
         series_id: null,
@@ -40,7 +45,7 @@ function createItem(overrides: Partial<ContentItem>): ContentItem {
         updated_at: "2026-03-01T00:00:00.000Z",
         deleted_at: null,
         ...overrides,
-    };
+    } as ContentItem;
 }
 
 describe("SeriesSequenceList", () => {

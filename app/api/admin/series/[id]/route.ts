@@ -5,6 +5,7 @@ import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import type { TablesUpdate } from "@/types/database";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -80,7 +81,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         return apiError("VALIDATION_ERROR", "Invalid request payload", 400, requestId, parsed.error.issues);
     }
 
-    const updatePatch: Record<string, unknown> = {};
+    const updatePatch: TablesUpdate<"content_series"> = {};
     if (parsed.data.title !== undefined) updatePatch.title = parsed.data.title;
     if (parsed.data.slug !== undefined) updatePatch.slug = parsed.data.slug;
     if (parsed.data.description !== undefined) updatePatch.description = parsed.data.description || null;

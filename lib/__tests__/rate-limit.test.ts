@@ -12,7 +12,7 @@ describe("rateLimit", () => {
     const originalRedisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 
     function restoreEnv() {
-        process.env.NODE_ENV = originalNodeEnv;
+        vi.stubEnv("NODE_ENV", originalNodeEnv);
 
         if (originalRedisUrl === undefined) {
             delete process.env.UPSTASH_REDIS_REST_URL;
@@ -34,6 +34,7 @@ describe("rateLimit", () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllEnvs();
         restoreEnv();
     });
 
@@ -129,7 +130,7 @@ describe("rateLimit", () => {
     });
 
     it("throws in production when shared Redis rate limiting is not configured", async () => {
-        process.env.NODE_ENV = "production";
+        vi.stubEnv("NODE_ENV", "production");
         delete process.env.UPSTASH_REDIS_REST_URL;
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
@@ -141,7 +142,7 @@ describe("rateLimit", () => {
     });
 
     it("allows low-risk routes to degrade safely when the shared limiter is unavailable", async () => {
-        process.env.NODE_ENV = "production";
+        vi.stubEnv("NODE_ENV", "production");
         delete process.env.UPSTASH_REDIS_REST_URL;
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
 

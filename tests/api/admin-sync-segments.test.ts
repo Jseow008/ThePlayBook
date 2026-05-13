@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { NextRequest } from "next/server";
 import { vi } from "vitest";
 import { GET, POST } from "@/app/api/admin/embeddings/sync-segments/route";
 import { verifyAdminSession } from "@/lib/admin/auth";
@@ -127,20 +126,12 @@ describe("Admin segment embedding sync API", () => {
     it("requires admin access for POST", async () => {
         (verifyAdminSession as any).mockResolvedValueOnce(false);
 
-        const req = new NextRequest(new URL("http://localhost/api/admin/embeddings/sync-segments"), {
-            method: "POST",
-        });
-
-        const res = await POST(req);
+        const res = await POST();
         expect(res.status).toBe(401);
     });
 
     it("returns a local-run instruction on POST", async () => {
-        const req = new NextRequest(new URL("http://localhost/api/admin/embeddings/sync-segments"), {
-            method: "POST",
-        });
-
-        const res = await POST(req);
+        const res = await POST();
         expect(res.status).toBe(405);
         expect(res.headers.get("Allow")).toBe("GET");
 

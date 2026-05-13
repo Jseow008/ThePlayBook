@@ -94,7 +94,7 @@ describe('ContentPreview', () => {
                 item={{
                     ...mockItem,
                     quick_mode_json: {
-                        ...mockItem.quick_mode_json,
+                        ...(mockItem.quick_mode_json as Record<string, unknown>),
                         key_takeaways: [
                             'Takeaway 1',
                             'Takeaway 2',
@@ -119,7 +119,7 @@ describe('ContentPreview', () => {
                 item={{
                     ...mockItem,
                     quick_mode_json: {
-                        ...mockItem.quick_mode_json,
+                        ...(mockItem.quick_mode_json as Record<string, unknown>),
                         key_takeaways: [
                             'Takeaway 1',
                             'Takeaway 2',

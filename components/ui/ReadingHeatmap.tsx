@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { format, subDays, eachDayOfInterval, isSameDay, startOfYear, endOfYear, getDay } from "date-fns";
 import { Flame, Info, BookOpen } from "lucide-react";
@@ -25,32 +25,7 @@ export function ReadingHeatmap() {
         totalSessions: 0
     });
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                // Fetch enough history for the longest view (Year)
-                // In a real app we might optimize this query based on filter
-                const today = new Date();
-                const start = format(subDays(today, 365), 'yyyy-MM-dd');
-                const end = format(today, 'yyyy-MM-dd');
-
-                const res = await fetch(`/api/activity/history?start=${start}&end=${end}`);
-                if (res.ok) {
-                    const history: ActivityData[] = await res.json();
-                    setData(history);
-                    calculateStats(history);
-                }
-            } catch (error) {
-                console.error("Failed to load history", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchHistory();
-    }, []);
-
-    const calculateStats = (history: ActivityData[]) => {
+    const calculateStats = useCallback((history: ActivityData[]) => {
         // Sort history by date desc
         const sorted = [...history].sort((a, b) => new Date(b.activity_date).getTime() - new Date(a.activity_date).getTime());
 
@@ -115,7 +90,32 @@ export function ReadingHeatmap() {
             longestStreak: maxStreak,
             totalSessions
         });
-    };
+    }, []);
+
+    useEffect(() => {
+        const fetchHistory = async () => {
+            try {
+                // Fetch enough history for the longest view (Year)
+                // In a real app we might optimize this query based on filter
+                const today = new Date();
+                const start = format(subDays(today, 365), 'yyyy-MM-dd');
+                const end = format(today, 'yyyy-MM-dd');
+
+                const res = await fetch(`/api/activity/history?start=${start}&end=${end}`);
+                if (res.ok) {
+                    const history: ActivityData[] = await res.json();
+                    setData(history);
+                    calculateStats(history);
+                }
+            } catch (error) {
+                console.error("Failed to load history", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchHistory();
+    }, [calculateStats]);
 
     // Calculate Grid Config
     const chartConfig = useMemo(() => {

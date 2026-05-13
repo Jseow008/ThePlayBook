@@ -122,13 +122,13 @@ test.describe("Admin publish flow", () => {
         const contentId = contentIdMatch![1];
 
         await page.addInitScript(
-            ([storageKey, onboardingState]) => {
+            ({ storageKey, onboardingState }) => {
                 window.localStorage.setItem(storageKey, JSON.stringify(onboardingState));
             },
-            [
-                GUEST_ONBOARDING_STORAGE_KEY,
-                createGuestOnboardingEntry("completed"),
-            ]
+            {
+                storageKey: GUEST_ONBOARDING_STORAGE_KEY,
+                onboardingState: createGuestOnboardingEntry("completed"),
+            }
         );
 
         await page.goto("/browse");
