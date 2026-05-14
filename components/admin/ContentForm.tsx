@@ -12,7 +12,6 @@ import {
     Loader2,
     Plus,
     Trash2,
-    GripVertical,
     AlertCircle,
     BookOpen,
     Headphones,
@@ -23,7 +22,7 @@ import {
     Monitor,
     Music,
 } from "lucide-react";
-import { ArtifactEditor, Artifact } from "./ArtifactEditor";
+import { ArtifactEditor } from "./ArtifactEditor";
 import { GenerateNarrationButton } from "./GenerateNarrationButton";
 
 // DnD Kit Imports
@@ -41,57 +40,14 @@ import {
     SortableContext,
     sortableKeyboardCoordinates,
     verticalListSortingStrategy,
-    useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { AdminSeriesOption } from "@/lib/server/admin-series";
 import type { NarrationCostEstimate } from "@/lib/narration-cost";
-import type { NarrationJobStatus } from "@/lib/narration-job";
 import { normalizeAdminReturnTo, withNarrationWarning } from "@/lib/admin-return-to";
 import { CANONICAL_CONTENT_CATEGORIES } from "@/lib/content-categories";
-
-interface Segment {
-    id?: string;
-    client_id: string; // Used for DnD keys
-    order_index: number;
-    title: string;
-    markdown_body: string;
-    start_time_sec?: number;
-    end_time_sec?: number;
-}
-
-interface QuickModeJson {
-    hook: string;
-    big_idea: string;
-    key_takeaways: string[];
-}
-
-type UploadZone = "cover" | "hero" | "audio";
-
-interface ContentFormData {
-    id?: string;
-    title: string;
-    author: string;
-    type: "podcast" | "book" | "article" | "video";
-    category: string;
-    series_id: string;
-    series_order: number | null;
-    source_url: string;
-    cover_image_url: string;
-    hero_image_url: string;
-    audio_url: string;
-    narration_status: NarrationJobStatus;
-    narration_error: string | null;
-    narration_requested_at: string | null;
-    narration_started_at: string | null;
-    narration_completed_at: string | null;
-    duration_seconds: number | null;
-    status: "draft" | "verified";
-    is_featured: boolean;
-    quick_mode_json: QuickModeJson | null;
-    segments: Segment[];
-    artifacts: Artifact[];
-}
+import { QuickModeSection } from "@/components/admin/content-form/QuickModeSection";
+import { SortableSegmentItem } from "@/components/admin/content-form/SortableSegmentItem";
+import type { ContentFormData, QuickModeJson, Segment, UploadZone } from "@/components/admin/content-form/types";
 
 interface ContentFormProps {
     initialData?: Omit<ContentFormData, "segments" | "artifacts"> & {
@@ -157,110 +113,6 @@ function getManualNarrationStateForAudioUrl(audioUrl: string) {
         narration_status: "idle" as const,
         narration_error: null,
     };
-}
-
-// Sortable Segment Item Component
-function SortableSegmentItem({
-    segment,
-    index,
-    expanded,
-    onToggle,
-    onUpdate,
-    onRemove,
-}: {
-    segment: Segment;
-    index: number;
-    expanded: boolean;
-    onToggle: () => void;
-    onUpdate: (updates: Partial<Segment>) => void;
-    onRemove: () => void;
-}) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-    } = useSortable({ id: segment.client_id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
-
-    return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            className="border border-zinc-200 rounded-lg overflow-hidden bg-white mb-3"
-        >
-            {/* Segment Header */}
-            <div
-                className="flex items-center gap-3 px-4 py-3 bg-zinc-50 cursor-pointer"
-                onClick={onToggle}
-            >
-                {/* Drag Handle */}
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="cursor-grab hover:text-zinc-700 text-zinc-400 touch-none"
-                    onClick={(e) => e.stopPropagation()} // Prevent expansion when clicking handle
-                >
-                    <GripVertical className="w-5 h-5" />
-                </div>
-
-                <span className="w-6 h-6 flex items-center justify-center bg-zinc-200 rounded text-xs font-medium text-zinc-600">
-                    {index + 1}
-                </span>
-                <span className="flex-1 font-medium text-zinc-900 truncate">
-                    {segment.title || `Segment ${index + 1}`}
-                </span>
-
-                <div className="flex items-center gap-1">
-                    <button
-                        type="button"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onRemove();
-                        }}
-                        className="p-1 text-zinc-400 hover:text-red-600"
-                    >
-                        <Trash2 className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Segment Content (Expanded) */}
-            {expanded && (
-                <div className="p-4 space-y-4 border-t border-zinc-200 bg-white">
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Segment Title
-                        </label>
-                        <input
-                            type="text"
-                            value={segment.title}
-                            onChange={(e) => onUpdate({ title: e.target.value })}
-                            placeholder="Segment title"
-                            className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Content (Markdown)
-                        </label>
-                        <textarea
-                            value={segment.markdown_body}
-                            onChange={(e) => onUpdate({ markdown_body: e.target.value })}
-                            placeholder="Write segment content in Markdown..."
-                            rows={10}
-                            className="w-full px-4 py-2 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent font-mono text-sm resize-y"
-                        />
-                    </div>
-                </div>
-            )}
-        </div>
-    );
 }
 
 export function ContentForm({
@@ -1286,94 +1138,14 @@ export function ContentForm({
                 </div>
             </section>
 
-            {/* Quick Mode */}
-            <section className="bg-white rounded-xl border border-zinc-200 p-6 space-y-6">
-                <h2 className="text-lg font-semibold text-zinc-900">Quick Mode Content</h2>
-                <p className="text-sm text-zinc-500">
-                    This is the summary view that readers see first.
-                </p>
-                <p className="text-sm text-zinc-500">
-                    Longer entries use multiline fields so you can review the full copy while editing.
-                </p>
-
-                <div className="space-y-4">
-                    {/* Hook */}
-                    <div>
-                        <label htmlFor="quick-mode-hook" className="block text-sm font-medium text-zinc-700 mb-2">
-                            Hook
-                        </label>
-                        <textarea
-                            id="quick-mode-hook"
-                            value={formData.quick_mode_json?.hook || ""}
-                            onChange={(e) => updateQuickMode("hook", e.target.value)}
-                            placeholder="One attention-grabbing sentence"
-                            rows={3}
-                            className={`w-full px-4 py-3 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y ${fieldErrors['quick_mode_json.hook'] ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
-                        />
-                        {fieldErrors['quick_mode_json.hook'] && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors['quick_mode_json.hook']}</p>
-                        )}
-                    </div>
-
-                    {/* Big Idea */}
-                    <div>
-                        <label htmlFor="quick-mode-big-idea" className="block text-sm font-medium text-zinc-700 mb-2">
-                            Big Idea
-                        </label>
-                        <textarea
-                            id="quick-mode-big-idea"
-                            value={formData.quick_mode_json?.big_idea || ""}
-                            onChange={(e) => updateQuickMode("big_idea", e.target.value)}
-                            placeholder="The core thesis or main takeaway"
-                            rows={6}
-                            className={`w-full min-h-40 px-4 py-3 bg-white text-zinc-900 border rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y ${fieldErrors['quick_mode_json.big_idea'] ? 'border-red-500 bg-red-50' : 'border-zinc-300'}`}
-                        />
-                        {fieldErrors['quick_mode_json.big_idea'] && (
-                            <p className="mt-1 text-sm text-red-600">{fieldErrors['quick_mode_json.big_idea']}</p>
-                        )}
-                    </div>
-
-                    {/* Key Takeaways */}
-                    <div>
-                        <label className="block text-sm font-medium text-zinc-700 mb-2">
-                            Key Takeaways
-                        </label>
-                        <div className="space-y-2">
-                            {(formData.quick_mode_json?.key_takeaways || []).map(
-                                (takeaway, index) => (
-                                    <div key={index} className="flex flex-col gap-2 sm:flex-row sm:items-start">
-                                        <textarea
-                                            id={`quick-mode-takeaway-${index}`}
-                                            aria-label={`Key takeaway ${index + 1}`}
-                                            value={takeaway}
-                                            onChange={(e) => updateTakeaway(index, e.target.value)}
-                                            placeholder={`Takeaway ${index + 1}`}
-                                            rows={2}
-                                            className="flex-1 px-4 py-3 bg-white text-zinc-900 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:border-transparent resize-y"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeTakeaway(index)}
-                                            aria-label={`Remove takeaway ${index + 1}`}
-                                            className="self-end p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors sm:self-start sm:mt-1"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                )
-                            )}
-                            <button
-                                type="button"
-                                onClick={addTakeaway}
-                                className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900"
-                            >
-                                <Plus className="w-4 h-4" />
-                                Add takeaway
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
+            <QuickModeSection
+                quickMode={formData.quick_mode_json}
+                fieldErrors={fieldErrors}
+                onUpdateQuickMode={updateQuickMode}
+                onUpdateTakeaway={updateTakeaway}
+                onRemoveTakeaway={removeTakeaway}
+                onAddTakeaway={addTakeaway}
+            />
 
             {/* Segments (Deep Mode) */}
             <section className="bg-white rounded-xl border border-zinc-200 p-6 space-y-6">
