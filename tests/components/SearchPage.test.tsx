@@ -1,4 +1,6 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Children, act, cloneElement, isValidElement } from "react";
+import type { ElementType, ReactElement, ReactNode } from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock } = vi.hoisted(() => {
@@ -98,15 +100,87 @@ vi.mock("@/components/ui/ContentCard", () => ({
     ContentCard: ({ item }: { item: { title: string } }) => <div>{item.title}</div>,
 }));
 
-async function renderSearchPage(searchParams: { q?: string; category?: string; type?: string } = {}) {
-    const { default: SearchPage } = await import("@/app/(public)/search/page");
+type SearchParams = { q?: string; category?: string; type?: string };
+const suspenseType = Symbol.for("react.suspense") as unknown as ElementType;
+
+function replaceAsyncResultsWithFallback(node: ReactNode): ReactNode {
+    if (Array.isArray(node)) {
+        return Children.map(node, replaceAsyncResultsWithFallback);
+    }
+
+    if (!isValidElement(node)) {
+        return node;
+    }
+
+    const element = node as ReactElement<{ children?: ReactNode }>;
+
+    if (element.type === suspenseType) {
+        return (element.props as { fallback?: ReactNode }).fallback ?? null;
+    }
+
+    const children = element.props.children;
+
+    if (children === undefined) {
+        return element;
+    }
+
+    return cloneElement(element, undefined, replaceAsyncResultsWithFallback(children));
+}
+
+function findElementProps<TProps>(node: ReactNode, type: ElementType): TProps | null {
+    if (Array.isArray(node)) {
+        for (const child of node) {
+            const result = findElementProps<TProps>(child, type);
+
+            if (result) {
+                return result;
+            }
+        }
+
+        return null;
+    }
+
+    if (!isValidElement(node)) {
+        return null;
+    }
+
+    if (node.type === type) {
+        return node.props as TProps;
+    }
+
+    return findElementProps<TProps>((node as ReactElement<{ children?: ReactNode }>).props.children, type);
+}
+
+async function loadSearchPage(searchParams: SearchParams = {}) {
+    const searchPageModule = await import("@/app/(public)/search/page");
+    const page = await searchPageModule.default({ searchParams: Promise.resolve(searchParams) });
+
+    return { searchPageModule, page };
+}
+
+async function renderSearchPage(searchParams: SearchParams = {}) {
+    const { page } = await loadSearchPage(searchParams);
     let view: ReturnType<typeof render> | undefined;
 
     await act(async () => {
-        view = render(await SearchPage({ searchParams: Promise.resolve(searchParams) }));
+        view = render(replaceAsyncResultsWithFallback(page));
     });
 
     return view!;
+}
+
+async function runSearchResultsFromPage(searchParams: SearchParams = {}) {
+    const { searchPageModule, page } = await loadSearchPage(searchParams);
+    const searchResultsProps = findElementProps<Parameters<typeof searchPageModule.SearchResults>[0]>(
+        page,
+        searchPageModule.SearchResults
+    );
+
+    if (!searchResultsProps) {
+        throw new Error("SearchResults was not rendered for the supplied search params");
+    }
+
+    return searchPageModule.SearchResults(searchResultsProps);
 }
 
 describe("SearchPage", () => {
@@ -221,11 +295,7 @@ describe("SearchPage", () => {
     });
 
     it("uses the main results query for text search and applies the type filter", async () => {
-        await renderSearchPage({ q: "focus", type: "podcast" });
-
-        await waitFor(() => {
-            expect(fromMock).toHaveBeenCalledWith("content_item");
-        });
+        await runSearchResultsFromPage({ q: "focus", type: "podcast" });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
@@ -235,11 +305,7 @@ describe("SearchPage", () => {
     });
 
     it("uses the main results query for category pages and still applies the type filter", async () => {
-        await renderSearchPage({ category: "Productivity", type: "article" });
-
-        await waitFor(() => {
-            expect(fromMock).toHaveBeenCalledWith("content_item");
-        });
+        await runSearchResultsFromPage({ category: "Productivity", type: "article" });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
@@ -249,11 +315,7 @@ describe("SearchPage", () => {
     });
 
     it("queries across duplicate raw variants for normalized topics", async () => {
-        await renderSearchPage({ category: "Business" });
-
-        await waitFor(() => {
-            expect(fromMock).toHaveBeenCalledWith("content_item");
-        });
+        await runSearchResultsFromPage({ category: "Business" });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(queryBuilder?.in).toHaveBeenCalledWith("category", ["'Business'", "Business"]);
@@ -345,22 +407,14 @@ describe("SearchPage", () => {
     });
 
     it("quotes search values with reserved punctuation in the PostgREST or filter", async () => {
-        await renderSearchPage({ q: "focus, deep" });
-
-        await waitFor(() => {
-            expect(fromMock).toHaveBeenCalledWith("content_item");
-        });
+        await runSearchResultsFromPage({ q: "focus, deep" });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(queryBuilder?.or).toHaveBeenCalledWith('title.ilike."%focus, deep%",author.ilike."%focus, deep%",category.ilike."%focus, deep%"');
     });
 
     it("escapes SQL wildcard characters before building the PostgREST search filter", async () => {
-        await renderSearchPage({ q: "100%_focus" });
-
-        await waitFor(() => {
-            expect(fromMock).toHaveBeenCalledWith("content_item");
-        });
+        await runSearchResultsFromPage({ q: "100%_focus" });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(queryBuilder?.or).toHaveBeenCalledWith(

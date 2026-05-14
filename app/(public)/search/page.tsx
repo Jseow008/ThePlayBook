@@ -94,7 +94,7 @@ function buildNormalizedTopics(categoryStats: CategoryStat[]) {
 }
 
 // Separate component for results to enable Suspense
-async function SearchResults({
+export async function SearchResults({
     query,
     categoryLabel,
     categoryValues,
