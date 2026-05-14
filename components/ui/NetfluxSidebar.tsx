@@ -157,7 +157,6 @@ export function NetfluxSidebar() {
                             src="/images/netflux-logo.png"
                             alt={APP_NAME}
                             fill
-                            unoptimized
                             sizes="150px"
                             className="object-contain"
                             priority

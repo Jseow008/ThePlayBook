@@ -2,8 +2,6 @@
 
 import { startTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 
 export function LandingRedirectGuard() {
     const router = useRouter();
@@ -11,28 +9,43 @@ export function LandingRedirectGuard() {
 
     useEffect(() => {
         let isActive = true;
-        const supabase = createClient();
 
-        void supabase.auth.getUser().then((result) => {
-            if (!isActive || redirectedRef.current) {
-                return;
+        async function redirectAuthenticatedUser() {
+            try {
+                const [{ createClient }, { resolveAuthUserResult }] = await Promise.all([
+                    import("@/lib/supabase/client"),
+                    import("@/lib/supabase/auth-errors"),
+                ]);
+
+                const supabase = createClient();
+                const result = await supabase.auth.getUser();
+
+                if (!isActive || redirectedRef.current) {
+                    return;
+                }
+
+                const { user, error } = resolveAuthUserResult(result);
+                if (error) {
+                    console.error("Failed to resolve landing auth state", error);
+                    return;
+                }
+
+                if (!user) {
+                    return;
+                }
+
+                redirectedRef.current = true;
+                startTransition(() => {
+                    router.replace("/browse");
+                });
+            } catch (error) {
+                if (isActive) {
+                    console.error("Failed to resolve landing auth state", error);
+                }
             }
+        }
 
-            const { user, error } = resolveAuthUserResult(result);
-            if (error) {
-                console.error("Failed to resolve landing auth state", error);
-                return;
-            }
-
-            if (!user) {
-                return;
-            }
-
-            redirectedRef.current = true;
-            startTransition(() => {
-                router.replace("/browse");
-            });
-        });
+        void redirectAuthenticatedUser();
 
         return () => {
             isActive = false;

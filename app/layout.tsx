@@ -4,7 +4,7 @@ import "./globals.css";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { Toaster } from "sonner";
+import { AppToaster } from "@/components/providers/AppToaster";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -96,7 +96,7 @@ export default function RootLayout({
       >
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
-        <Toaster theme="dark" position="bottom-center" richColors closeButton />
+        <AppToaster />
         {showVercelTelemetry ? <Analytics /> : null}
         {showVercelTelemetry ? <SpeedInsights /> : null}
       </body>

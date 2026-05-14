@@ -1,11 +1,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { LandingPage } from "@/components/ui/LandingPage";
+import { LandingDeferredSections } from "@/components/ui/landing/LandingDeferredSections";
 import type { ContentItem } from "@/types/database";
-
-const { cardClickSpy } = vi.hoisted(() => ({
-  cardClickSpy: vi.fn(),
-}));
 
 vi.mock("next/image", () => ({
   default: (
@@ -44,14 +40,6 @@ vi.mock("next/link", () => ({
 
 vi.mock("@/components/ui/Logo", () => ({
   Logo: () => <div>Netflux</div>,
-}));
-
-vi.mock("@/components/ui/ContentCard", () => ({
-  ContentCard: ({ item }: { item: ContentItem }) => (
-    <a href={`/preview/${item.id}`} onClick={() => cardClickSpy(item.id)}>
-      {item.title}
-    </a>
-  ),
 }));
 
 const featuredItems: ContentItem[] = [
@@ -148,6 +136,60 @@ function setupRequestAnimationFrame() {
   });
 }
 
+function setupIntersectionObserver() {
+  const observers: Array<{
+    callback: IntersectionObserverCallback;
+    elements: Element[];
+  }> = [];
+
+  class MockIntersectionObserver implements IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = "";
+    readonly thresholds = [];
+    callback: IntersectionObserverCallback;
+    elements: Element[] = [];
+
+    constructor(callback: IntersectionObserverCallback) {
+      this.callback = callback;
+      observers.push(this);
+    }
+
+    observe(element: Element) {
+      this.elements.push(element);
+    }
+
+    unobserve(element: Element) {
+      this.elements = this.elements.filter((candidate) => candidate !== element);
+    }
+
+    disconnect() {
+      this.elements = [];
+    }
+
+    takeRecords() {
+      return [];
+    }
+  }
+
+  vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+
+  return {
+    setIntersecting(element: Element, isIntersecting: boolean) {
+      const observer = observers.find((candidate) => candidate.elements.includes(element));
+      if (!observer) {
+        throw new Error("No IntersectionObserver is observing the requested element");
+      }
+
+      act(() => {
+        observer.callback(
+          [{ target: element, isIntersecting } as IntersectionObserverEntry],
+          observer as unknown as IntersectionObserver
+        );
+      });
+    },
+  };
+}
+
 function configureCarouselLoop(testIdSuffix = "") {
   const carousel = screen.getByTestId(`featured-reads-carousel${testIdSuffix}`) as HTMLDivElement;
   const firstLoop = screen.getByTestId(`featured-reads-group-a${testIdSuffix}`) as HTMLDivElement;
@@ -173,10 +215,9 @@ function configureCarouselLoop(testIdSuffix = "") {
 
 function renderLandingPage() {
   render(
-    <LandingPage
+    <LandingDeferredSections
       featuredItems={featuredItems}
-      categories={[]}
-      totalContentCount={featuredItems.length}
+      curatedCategories={[]}
     />
   );
 
@@ -193,13 +234,19 @@ function renderLandingPage() {
 }
 
 function getFirstCarouselCardLink(carousel: HTMLDivElement) {
-  return within(carousel).getAllByText("First featured read")[0];
+  const title = within(carousel).getAllByText("First featured read")[0];
+  const link = title.closest("a");
+
+  if (!link) {
+    throw new Error("Expected featured read title to be rendered inside a link");
+  }
+
+  return link as HTMLAnchorElement;
 }
 
 describe("LandingPage featured reads carousel", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    cardClickSpy.mockReset();
     mockMatchMedia();
     setupRequestAnimationFrame();
   });
@@ -219,6 +266,34 @@ describe("LandingPage featured reads carousel", () => {
     });
 
     expect(carousel.scrollLeft).toBeGreaterThan(820);
+  });
+
+  it("only autoplays while the carousel is near the viewport", () => {
+    const visibility = setupIntersectionObserver();
+    const carousel = renderLandingPage();
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(carousel.scrollLeft).toBe(800);
+
+    visibility.setIntersecting(carousel, true);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(carousel.scrollLeft).toBeGreaterThan(820);
+
+    const beforeHidden = carousel.scrollLeft;
+    visibility.setIntersecting(carousel, false);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    expect(carousel.scrollLeft).toBe(beforeHidden);
   });
 
   it("matches browse lane vertical padding so hover scaling is not clipped", () => {
@@ -348,9 +423,7 @@ describe("LandingPage featured reads carousel", () => {
       pointerType: "mouse",
     });
 
-    fireEvent.click(cardLink);
-
-    expect(cardClickSpy).not.toHaveBeenCalled();
+    expect(fireEvent.click(cardLink)).toBe(false);
   });
 
   it("rebases seamlessly when scrolling past the forward seam", () => {

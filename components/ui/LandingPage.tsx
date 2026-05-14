@@ -1,16 +1,15 @@
-"use client";
-
+import dynamic from "next/dynamic";
 import type { ContentItem } from "@/types/database";
-import {
-  CorePlatformFeaturesSection,
-  FeaturedReadsSection,
-  FinalCTASection,
-  HeroSection,
-  LandingFooter,
-  LandingHeader,
-  TopicMapSection,
-  getCuratedCategories,
-} from "@/components/ui/landing/LandingPageSections";
+import { HeroSection, LandingHeader } from "@/components/ui/landing/LandingHeroSections";
+import { getCuratedCategories } from "@/components/ui/landing/landingCategories";
+
+const LandingDeferredSections = dynamic(
+  () =>
+    import("@/components/ui/landing/LandingDeferredSections").then(
+      (mod) => mod.LandingDeferredSections
+    ),
+  { loading: () => null }
+);
 
 interface LandingPageProps {
   featuredItems: ContentItem[];
@@ -28,13 +27,10 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
 
       <main className="landing-page-shell relative min-h-screen overflow-x-hidden text-foreground">
         <HeroSection />
-        <CorePlatformFeaturesSection />
-
-        {featuredItems.length > 0 ? <FeaturedReadsSection items={featuredItems} /> : null}
-        {curatedCategories.length > 0 ? <TopicMapSection categories={curatedCategories} /> : null}
-
-        <FinalCTASection />
-        <LandingFooter />
+        <LandingDeferredSections
+          featuredItems={featuredItems}
+          curatedCategories={curatedCategories}
+        />
       </main>
     </>
   );

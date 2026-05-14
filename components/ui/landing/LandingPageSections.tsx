@@ -28,11 +28,9 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { Logo } from "@/components/ui/Logo";
-import { ContentCard } from "@/components/ui/ContentCard";
 import { EmailSubscriptionForm } from "@/components/ui/EmailSubscriptionForm";
 import { APP_NAME } from "@/lib/brand";
-import { buildCanonicalCategoryStats, CURATED_LANDING_CATEGORY_ORDER } from "@/lib/content-categories";
+export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
 
@@ -70,33 +68,27 @@ const STORYBOARD_SLIDES = [
   {
     label: "Distill",
     title: "Distill before committing time",
-    image: "/images/netflux-storyboard-distill.svg",
+    image: "/images/netflux-storyboard-distill.webp",
   },
   {
     label: "Library",
     title: "Build your personal library",
-    image: "/images/netflux-storyboard-library.svg",
+    image: "/images/netflux-storyboard-library.webp",
   },
   {
     label: "Ask",
     title: "Think with your notes",
-    image: "/images/netflux-storyboard-ai.svg",
+    image: "/images/netflux-storyboard-ai.webp",
   },
 ] as const;
 
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
-const FEATURED_READS_AUTOPLAY_INTERVAL_MS = 50;
-const FEATURED_READS_AUTOPLAY_STEP_PX = 2;
+const FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND = 40;
+const FEATURED_READS_AUTOPLAY_MAX_FRAME_DELTA_MS = 100;
 const FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS = 2000;
 const FEATURED_READS_ROW_COUNT = 2;
 const STORYBOARD_SWIPE_THRESHOLD_PX = 44;
-const HERO_ROTATING_WORDS = ["remembered", "searchable", "connected", "actionable"] as const;
-const HERO_ROTATION_INTERVAL_MS = 3000;
-const PRIMARY_CTA_CLASS =
-  "focus-ring group relative inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-16px_rgba(255,255,255,0.45)]";
-const SECONDARY_CTA_CLASS =
-  "focus-ring inline-flex items-center justify-center rounded-full border border-white/10 bg-white/[0.02] px-8 py-4 text-base font-medium text-white/75 transition-[border-color,background-color,color,transform] duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.06] hover:text-white";
 
 type FeaturedReadsMarqueeDirection = "left" | "right";
 
@@ -104,6 +96,23 @@ function getNormalizedScrollLeft(scrollLeft: number, loopWidth: number) {
   const middleStart = loopWidth;
   const offsetWithinLoop = ((scrollLeft - middleStart) % loopWidth + loopWidth) % loopWidth;
   return middleStart + offsetWithinLoop;
+}
+
+function formatFeaturedReadDuration(durationSeconds: number | null) {
+  if (!durationSeconds) {
+    return null;
+  }
+
+  const minutes = Math.max(1, Math.round(durationSeconds / 60));
+
+  if (minutes < 60) {
+    return `${minutes} min`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+
+  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
 }
 
 function FadeIn({
@@ -181,14 +190,6 @@ function SectionIntro({
   );
 }
 
-export function getCuratedCategories(categories: { category: string; count: number }[]) {
-  const canonicalCategories = buildCanonicalCategoryStats(categories);
-  const categoryMap = new Map(canonicalCategories.map((item) => [item.category, item]));
-  return CURATED_LANDING_CATEGORY_ORDER.map((name) => categoryMap.get(name)).filter(
-    (item): item is { category: string; count: number; rawValues: string[] } => Boolean(item)
-  );
-}
-
 function getFeaturedReadRows(items: ContentItem[]) {
   if (items.length < FEATURED_READS_ROW_COUNT * 2) {
     return Array.from({ length: FEATURED_READS_ROW_COUNT }, () => items);
@@ -201,162 +202,67 @@ function getFeaturedReadRows(items: ContentItem[]) {
   return rows.map((rowItems) => (rowItems.length > 0 ? rowItems : items));
 }
 
-export function LandingHeader() {
+function FeaturedReadCard({ item }: { item: ContentItem }) {
+  const durationLabel = formatFeaturedReadDuration(item.duration_seconds);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-background/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-sm">
-          <Logo width={88} height={24} />
-        </Link>
-
-        <div className="flex items-center gap-3 sm:gap-4">
-          <Link
-            href="/browse"
-            className="focus-ring hidden rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
-          >
-            Browse
-          </Link>
-          <Link
-            href="/login"
-            className="focus-ring inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_10px_24px_-16px_rgba(255,255,255,0.5)] sm:px-4 sm:py-2 sm:text-sm"
-          >
-            Sign In
-          </Link>
+    <Link
+      href={`/preview/${item.id}`}
+      aria-label={`Preview ${item.title}`}
+      className="focus-ring group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10 hover:scale-105"
+    >
+      {item.cover_image_url ? (
+        <Image
+          src={item.cover_image_url}
+          alt={item.title}
+          fill
+          sizes="(max-width: 640px) 160px, (max-width: 768px) 200px, 240px"
+          className="object-cover transition-transform duration-300 group-hover:scale-110"
+        />
+      ) : (
+        <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
+          <Sparkles className="size-12 text-muted-foreground" />
         </div>
-      </div>
-    </header>
-  );
-}
+      )}
 
-export function HeroSection() {
-  return (
-    <section className="landing-hero-section relative flex min-h-[90vh] flex-col justify-center overflow-hidden pb-24 pt-20 sm:pt-24">
-      <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-6 lg:px-8 lg:grid-cols-[1fr_1fr] lg:items-center">
-        <div className="max-w-2xl">
-          <div>
-            <p className="mb-8 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              A summary-first knowledge system
-            </p>
-          </div>
-
-          <div>
-            <h1 className="font-serif text-5xl font-bold leading-[0.98] tracking-[-0.045em] text-white sm:text-7xl lg:text-[5.15rem]">
-              <span className="sr-only">Every idea, remembered.</span>
-              <span aria-hidden="true" className="block">Every idea,</span>
-              <span aria-hidden="true" className="landing-rotating-word-shell mt-2 block text-transparent sm:mt-3">
-                <RotatingHeroWord />
-              </span>
-            </h1>
-          </div>
-
-          <div>
-            <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
-            </p>
-          </div>
-
-          <div className="mt-10">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link
-                href="/login"
-                className={PRIMARY_CTA_CLASS}
-              >
-                <span className="relative z-10">Start Reading Free</span>
-                <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
-                <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-100 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-              </Link>
-              <Link
-                href="/browse"
-                className={SECONDARY_CTA_CLASS}
-              >
-                Browse Library
-              </Link>
-            </div>
-          </div>
-
+      {item.author ? (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
+          <p className="break-words text-center text-[9px] font-medium uppercase leading-relaxed tracking-[0.12em] text-white/90 drop-shadow-md md:text-[11px] md:tracking-[0.15em]">
+            {item.author}
+          </p>
         </div>
+      ) : null}
 
-        <div className="relative hidden lg:block">
-          <div className="pointer-events-none absolute inset-x-8 -top-6 h-20 bg-gradient-to-b from-white/[0.04] to-transparent blur-3xl" />
-          <div className="landing-device-stage relative z-20 w-full">
-            <div className="landing-device-card relative aspect-[2790/1792] w-full overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7),0_0_30px_rgba(255,255,255,0.04)]">
-              <Image
-                src="/images/hero-section.png"
-                alt="Netflux dashboard desktop experience"
-                fill
-                priority
-                sizes="(max-width: 1024px) 0px, 700px"
-                className="object-cover opacity-90"
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/[0.22] via-transparent to-white/[0.03]" />
-              <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
-            </div>
+      <div className="pointer-events-none absolute inset-0 rounded-md bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-            <div className="landing-device-phone absolute -bottom-8 -left-6 z-30 aspect-[1206/2306] w-[140px] overflow-hidden rounded-[1.25rem] border-[4px] border-[#1c1c1e] bg-black shadow-[0_20px_50px_-10px_rgba(0,0,0,0.8),0_0_20px_rgba(0,0,0,0.4)]">
-              <Image
-                src="/images/mobile-reader-view.png"
-                alt="Netflux mobile reader experience"
-                fill
-                sizes="140px"
-                className="object-contain"
-              />
-              <div className="absolute left-1/2 top-0 z-20 h-3 w-14 -translate-x-1/2 rounded-b-lg bg-[#1c1c1e]" />
-            </div>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/95 via-black/72 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
+        <div className="flex h-full flex-col justify-end gap-1">
+          <h3 className="line-clamp-3 font-serif text-[0.95rem] font-medium leading-[1.18] text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug">
+            {item.title}
+          </h3>
+
+          <div className="space-y-0.5">
+            {item.category ? (
+              <p className="line-clamp-1 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest">
+                {item.category}
+              </p>
+            ) : null}
+            <p className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest">
+              <span>{item.type}</span>
+              {durationLabel ? (
+                <span className="flex items-center gap-1.5 whitespace-nowrap">
+                  <span className="opacity-40">&middot;</span>
+                  <span>{durationLabel}</span>
+                </span>
+              ) : null}
+            </p>
           </div>
         </div>
       </div>
-    </section>
-  );
-}
 
-function RotatingHeroWord() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let intervalId: number | null = null;
-
-    const stopRotation = () => {
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
-        intervalId = null;
-      }
-
-      setActiveIndex(0);
-    };
-
-    const startRotation = () => {
-      if (motionQuery.matches || intervalId !== null) return;
-
-      intervalId = window.setInterval(() => {
-        setActiveIndex((currentIndex) => (currentIndex + 1) % HERO_ROTATING_WORDS.length);
-      }, HERO_ROTATION_INTERVAL_MS);
-    };
-
-    const handleMotionPreferenceChange = () => {
-      if (motionQuery.matches) {
-        stopRotation();
-        return;
-      }
-
-      startRotation();
-    };
-
-    handleMotionPreferenceChange();
-    motionQuery.addEventListener("change", handleMotionPreferenceChange);
-
-    return () => {
-      motionQuery.removeEventListener("change", handleMotionPreferenceChange);
-      stopRotation();
-    };
-  }, []);
-
-  return (
-    <span key={HERO_ROTATING_WORDS[activeIndex]} className="landing-rotating-word inline-block">
-      {HERO_ROTATING_WORDS[activeIndex]}
-    </span>
+      <div className="pointer-events-none absolute inset-0 z-30 rounded-md border border-white/15 transition-colors" />
+      <div className="pointer-events-none absolute inset-0 z-30 rounded-md border-2 border-transparent transition-colors group-hover:border-primary/75" />
+    </Link>
   );
 }
 
@@ -425,9 +331,14 @@ function FeaturedReadsMarqueeRow({
   const hasInitializedLoopRef = useRef(false);
   const isDraggingRef = useRef(false);
   const suppressClickRef = useRef(false);
-  const autoplayIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoplayFrameRef = useRef<number | null>(null);
   const autoplayResumeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAutoplayPausedRef = useRef(false);
+  const isAutoplayInViewRef = useRef(false);
+  const isReducedMotionRef = useRef(false);
+  const lastAutoplayFrameTimeRef = useRef<number | null>(null);
+  const autoplayOffsetRemainderRef = useRef(0);
+  const runAutoplayFrameRef = useRef<FrameRequestCallback>(() => {});
   const dragStateRef = useRef<{
     pointerId: number;
     startX: number;
@@ -476,7 +387,7 @@ function FeaturedReadsMarqueeRow({
     };
   }, [items.length, rowIndex]);
 
-  function normalizeScrollPosition(element: HTMLDivElement) {
+  const normalizeScrollPosition = useCallback((element: HTMLDivElement) => {
     const loopWidth = loopWidthRef.current;
     if (
       loopWidth <= 0
@@ -490,12 +401,32 @@ function FeaturedReadsMarqueeRow({
     if (normalizedScrollLeft !== element.scrollLeft) {
       element.scrollLeft = normalizedScrollLeft;
     }
-  }
+  }, []);
 
-  const clearAutoplayInterval = useCallback(() => {
-    if (autoplayIntervalRef.current === null) return;
-    clearInterval(autoplayIntervalRef.current);
-    autoplayIntervalRef.current = null;
+  const shiftScrollPosition = useCallback((element: HTMLDivElement, offsetPx: number) => {
+    const loopWidth = loopWidthRef.current;
+    if (
+      loopWidth <= 0
+      || !hasInitializedLoopRef.current
+      || element.scrollWidth <= element.clientWidth + 1
+    ) {
+      return;
+    }
+
+    const normalizedScrollLeft = getNormalizedScrollLeft(element.scrollLeft + offsetPx, loopWidth);
+    if (normalizedScrollLeft !== element.scrollLeft) {
+      element.scrollLeft = normalizedScrollLeft;
+    }
+  }, []);
+
+  const clearAutoplayFrame = useCallback(() => {
+    if (autoplayFrameRef.current !== null && typeof window !== "undefined") {
+      window.cancelAnimationFrame(autoplayFrameRef.current);
+      autoplayFrameRef.current = null;
+    }
+
+    lastAutoplayFrameTimeRef.current = null;
+    autoplayOffsetRemainderRef.current = 0;
   }, []);
 
   const clearAutoplayResumeTimeout = useCallback(() => {
@@ -504,31 +435,74 @@ function FeaturedReadsMarqueeRow({
     autoplayResumeTimeoutRef.current = null;
   }, []);
 
+  const canRunAutoplay = useCallback(() => (
+    items.length > 1
+    && isAutoplayInViewRef.current
+    && !isReducedMotionRef.current
+    && !isDraggingRef.current
+    && !isAutoplayPausedRef.current
+  ), [items.length]);
+
+  const runAutoplayFrame = useCallback((timestamp: number) => {
+    autoplayFrameRef.current = null;
+
+    if (!canRunAutoplay()) {
+      lastAutoplayFrameTimeRef.current = null;
+      autoplayOffsetRemainderRef.current = 0;
+      return;
+    }
+
+    const element = scrollRef.current;
+    if (!element) {
+      lastAutoplayFrameTimeRef.current = null;
+      autoplayOffsetRemainderRef.current = 0;
+      return;
+    }
+
+    const lastFrameTime = lastAutoplayFrameTimeRef.current;
+    const elapsedMs = lastFrameTime === null
+      ? 0
+      : Math.min(timestamp - lastFrameTime, FEATURED_READS_AUTOPLAY_MAX_FRAME_DELTA_MS);
+
+    lastAutoplayFrameTimeRef.current = timestamp;
+
+    if (elapsedMs > 0) {
+      const directionMultiplier = direction === "left" ? 1 : -1;
+      autoplayOffsetRemainderRef.current +=
+        directionMultiplier * (elapsedMs / 1000) * FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND;
+
+      const wholePixelOffset = autoplayOffsetRemainderRef.current > 0
+        ? Math.floor(autoplayOffsetRemainderRef.current)
+        : Math.ceil(autoplayOffsetRemainderRef.current);
+
+      if (wholePixelOffset !== 0) {
+        autoplayOffsetRemainderRef.current -= wholePixelOffset;
+        shiftScrollPosition(element, wholePixelOffset);
+      }
+    }
+
+    autoplayFrameRef.current = window.requestAnimationFrame(runAutoplayFrameRef.current);
+  }, [canRunAutoplay, direction, shiftScrollPosition]);
+
   const startAutoplay = useCallback(() => {
-    if (typeof window === "undefined" || items.length <= 1) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (typeof window === "undefined" || autoplayFrameRef.current !== null || !canRunAutoplay()) {
+      return;
+    }
 
-    clearAutoplayInterval();
+    lastAutoplayFrameTimeRef.current = null;
+    autoplayOffsetRemainderRef.current = 0;
+    autoplayFrameRef.current = window.requestAnimationFrame(runAutoplayFrameRef.current);
+  }, [canRunAutoplay]);
 
-    autoplayIntervalRef.current = setInterval(() => {
-      if (isDraggingRef.current || isAutoplayPausedRef.current) return;
-
-      const element = scrollRef.current;
-      if (!element) return;
-
-      normalizeScrollPosition(element);
-      element.scrollLeft += direction === "left"
-        ? FEATURED_READS_AUTOPLAY_STEP_PX
-        : -FEATURED_READS_AUTOPLAY_STEP_PX;
-      normalizeScrollPosition(element);
-    }, FEATURED_READS_AUTOPLAY_INTERVAL_MS);
-  }, [clearAutoplayInterval, direction, items.length]);
+  useEffect(() => {
+    runAutoplayFrameRef.current = runAutoplayFrame;
+  }, [runAutoplayFrame]);
 
   const pauseAutoplay = useCallback(() => {
     isAutoplayPausedRef.current = true;
     clearAutoplayResumeTimeout();
-    clearAutoplayInterval();
-  }, [clearAutoplayInterval, clearAutoplayResumeTimeout]);
+    clearAutoplayFrame();
+  }, [clearAutoplayFrame, clearAutoplayResumeTimeout]);
 
   const resumeAutoplayLater = useCallback(() => {
     clearAutoplayResumeTimeout();
@@ -548,10 +522,78 @@ function FeaturedReadsMarqueeRow({
     startAutoplay();
 
     return () => {
-      clearAutoplayInterval();
+      clearAutoplayFrame();
       clearAutoplayResumeTimeout();
     };
-  }, [clearAutoplayInterval, clearAutoplayResumeTimeout, items.length, pauseAutoplay, startAutoplay]);
+  }, [clearAutoplayFrame, clearAutoplayResumeTimeout, items.length, pauseAutoplay, startAutoplay]);
+
+  useEffect(() => {
+    const element = scrollRef.current;
+    if (!element || items.length <= 1) {
+      isAutoplayInViewRef.current = false;
+      clearAutoplayFrame();
+      return;
+    }
+
+    if (typeof IntersectionObserver === "undefined") {
+      isAutoplayInViewRef.current = true;
+      startAutoplay();
+
+      return () => {
+        isAutoplayInViewRef.current = false;
+        clearAutoplayFrame();
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isAutoplayInViewRef.current = Boolean(entry?.isIntersecting);
+
+        if (isAutoplayInViewRef.current) {
+          startAutoplay();
+          return;
+        }
+
+        clearAutoplayFrame();
+      },
+      {
+        rootMargin: "160px 0px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(element);
+
+    return () => {
+      observer.disconnect();
+      isAutoplayInViewRef.current = false;
+      clearAutoplayFrame();
+    };
+  }, [clearAutoplayFrame, items.length, startAutoplay]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const syncMotionPreference = () => {
+      isReducedMotionRef.current = motionQuery.matches;
+
+      if (motionQuery.matches) {
+        clearAutoplayFrame();
+        return;
+      }
+
+      startAutoplay();
+    };
+
+    syncMotionPreference();
+    motionQuery.addEventListener("change", syncMotionPreference);
+
+    return () => {
+      motionQuery.removeEventListener("change", syncMotionPreference);
+    };
+  }, [clearAutoplayFrame, startAutoplay]);
 
   function prepareForDrag(element: HTMLDivElement) {
     normalizeScrollPosition(element);
@@ -563,6 +605,8 @@ function FeaturedReadsMarqueeRow({
     }
 
     const element = event.currentTarget;
+    clearAutoplayResumeTimeout();
+    clearAutoplayFrame();
     prepareForDrag(element);
     isDraggingRef.current = true;
     dragStateRef.current = {
@@ -606,6 +650,7 @@ function FeaturedReadsMarqueeRow({
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     isDraggingRef.current = false;
     dragStateRef.current = null;
+    startAutoplay();
   }
 
   function handlePointerCancel(event: React.PointerEvent<HTMLDivElement>) {
@@ -616,6 +661,7 @@ function FeaturedReadsMarqueeRow({
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     isDraggingRef.current = false;
     dragStateRef.current = null;
+    startAutoplay();
   }
 
   function handleScroll() {
@@ -678,12 +724,7 @@ function FeaturedReadsMarqueeRow({
                 key={`${item.id}-a-${index}`}
                 className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                <ContentCard
-                  item={item}
-                  enableUserState={false}
-                  hideBookmark
-                  hideProgressBar
-                />
+                <FeaturedReadCard item={item} />
               </div>
             ))}
           </div>
@@ -699,12 +740,7 @@ function FeaturedReadsMarqueeRow({
                 key={`${item.id}-b-${index}`}
                 className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                <ContentCard
-                  item={item}
-                  enableUserState={false}
-                  hideBookmark
-                  hideProgressBar
-                />
+                <FeaturedReadCard item={item} />
               </div>
             ))}
           </div>
@@ -721,12 +757,7 @@ function FeaturedReadsMarqueeRow({
                 key={`${item.id}-c-${index}`}
                 className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                <ContentCard
-                  item={item}
-                  enableUserState={false}
-                  hideBookmark
-                  hideProgressBar
-                />
+                <FeaturedReadCard item={item} />
               </div>
             ))}
           </div>

@@ -31,7 +31,6 @@ export function Logo({
         src="/images/netflux-logo.png"
         alt={`${APP_NAME} logo`}
         fill
-        unoptimized
         sizes={`${calculatedWidth}px`}
         priority={priority}
         className="object-contain object-left"
