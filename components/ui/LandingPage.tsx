@@ -263,7 +263,7 @@ function HeroSection() {
         <div className="max-w-2xl">
           <div>
             <p className="mb-8 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
-              A knowledge system for non-fiction ideas
+              A summary-first knowledge system
             </p>
           </div>
 
@@ -279,7 +279,7 @@ function HeroSection() {
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Netflux turns books, podcasts, articles, and videos into readable knowledge: structured summaries, persistent highlights, and an AI that knows what you&apos;ve saved.
+              Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
             </p>
           </div>
 

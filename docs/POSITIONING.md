@@ -8,11 +8,13 @@
 
 ## 1. One-Liner
 
-> Netflux is a knowledge system for people who want to remember the best non-fiction ideas from books, podcasts, articles, and videos.
+> Netflux is a summary-first knowledge system.
+>
+> Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
 
 Completing the sentence: **"Netflux is ______ for people who ______."**
 
-- ✅ "Netflux is a knowledge system for people who want to remember the best non-fiction ideas from books, podcasts, articles, and videos."
+- ✅ "Netflux is a summary-first knowledge system that turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember."
 - ❌ "Netflux is a book summary app, but also a podcast app, and also an article reader, and also a video library..."
 
 The product can serve many audiences. The **message** speaks to one.
@@ -43,10 +45,10 @@ The gap they all share: **they help you capture, but not comprehend or retrieve.
 
 ## 3. Product Thesis: Distill → Capture → Retrieve
 
-Netflux is not a summary app. It's a **knowledge system** with three connected stages:
+Netflux is not just a summary app. It's a **summary-first knowledge system** with three connected stages:
 
 ### Distill
-Netflux turns books, podcasts, articles, and videos into readable knowledge. Each summary is organized by thesis, argument, and evidence — not just shortened — so you understand the architecture of the idea, not just the headline.
+Netflux turns books, podcasts, articles, and videos into structured knowledge. Each summary is organized by thesis, argument, and evidence — not just shortened — so you understand the architecture of the idea, not just the headline.
 
 ### Capture
 Highlight and annotate while you move through the distilled version. Highlights stay with the content — not in a separate app, not in a disconnected database. Your notes live where the ideas live.
@@ -77,13 +79,13 @@ This is the scenario we reference everywhere — launch posts, demos, pitches, l
 All public-facing copy should pull from this bank. Don't improvise new positioning — adapt these.
 
 ### Tagline
-> Learn once. Remember everything.
+> Read less. Retain more.
 
-### Hero headline (landing page)
-> Learn once. Remember everything.
+### Category line
+> A summary-first knowledge system.
 
 ### Hero subtitle (landing page)
-> Netflux turns books, podcasts, articles, and videos into readable knowledge: structured summaries, persistent highlights, and an AI that knows what you've saved.
+> Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
 
 ### Elevator pitch (30 seconds, spoken)
 > "I built Netflux because I was consuming non-fiction constantly — books, podcasts, articles, videos — and remembering almost nothing. Netflux turns every format into readable knowledge, gives you highlights that actually persist, and lets you ask an AI about anything you've saved. It's a knowledge system: the ideas stay with you."
@@ -96,7 +98,7 @@ All public-facing copy should pull from this bank. Don't improvise new positioni
 > A short email with useful ideas to remember, revisit, and apply.
 
 ### Social bio (Twitter / LinkedIn)
-> Building Netflux — a knowledge system for non-fiction ideas across books, podcasts, articles, and videos.
+> Building Netflux — a summary-first knowledge system that turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
 
 ### Footer tagline
 > Netflux — Knowledge without limits.

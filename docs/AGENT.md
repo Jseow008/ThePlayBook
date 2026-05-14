@@ -2,7 +2,7 @@
 
 > **Status:** Active  
 > **Role:** Working snapshot of what is implemented today, not the original MVP pitch.  
-> **Positioning:** Netflux is a knowledge system for non-fiction ideas across books, podcasts, articles, and videos. See [POSITIONING.md](./POSITIONING.md) for messaging and audience strategy.
+> **Positioning:** Netflux is a summary-first knowledge system that turns books, podcasts, articles, and videos into structured knowledge users can search, revisit, and remember. See [POSITIONING.md](./POSITIONING.md) for messaging and audience strategy.
 
 ## 1. Shipped Product Areas
 

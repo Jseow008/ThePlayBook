@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     return {
         name: `${APP_NAME} — Readable Knowledge`,
         short_name: APP_NAME,
-        description: "Readable knowledge from books, podcasts, articles, and videos.",
+        description: "A summary-first knowledge system for books, podcasts, articles, and videos.",
         start_url: "/",
         display: "standalone",
         background_color: "#09090b",
