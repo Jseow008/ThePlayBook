@@ -1,4 +1,4 @@
-export const CHAT_EXPORT_TTL_SECONDS = 300;
+export const CHAT_EXPORT_TTL_SECONDS = 30 * 60;
 export const CHAT_EXPORT_TTL_MS = CHAT_EXPORT_TTL_SECONDS * 1000;
 
 export type ChatExportRole = "user" | "assistant";

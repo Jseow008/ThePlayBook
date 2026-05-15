@@ -111,7 +111,7 @@ export function ChatExportButton({
     const [mounted, setMounted] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [exportState, setExportState] = useState<ExportState>({ status: "idle" });
-    const [remainingLabel, setRemainingLabel] = useState("5:00");
+    const [remainingLabel, setRemainingLabel] = useState("30:00");
     const [copied, setCopied] = useState(false);
     const exportableMessages = useMemo(() => getExportableMessages(messages), [messages]);
     const isUnavailable = disabled || exportableMessages.length === 0;
@@ -227,7 +227,7 @@ export function ChatExportButton({
                             Export chat
                         </h2>
                         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                            This encrypted QR export expires in 5 minutes.
+                            This encrypted QR export expires in 30 minutes.
                         </p>
                     </div>
                     <button

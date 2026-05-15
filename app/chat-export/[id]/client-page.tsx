@@ -123,7 +123,7 @@ export function ChatExportClientPage({ exportId }: ChatExportClientPageProps) {
                         </div>
                         <h1 className="mt-5 text-xl font-semibold text-foreground">Export expired</h1>
                         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted-foreground">
-                            This QR export was available for 5 minutes and has been deleted.
+                            This QR export was available for 30 minutes and has been deleted.
                         </p>
                     </div>
                 )}
