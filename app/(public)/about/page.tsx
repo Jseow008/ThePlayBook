@@ -11,7 +11,7 @@ import { BookOpen, Headphones, Lightbulb } from "lucide-react";
 
 export const metadata = {
     title: `About | ${APP_NAME}`,
-    description: `Learn more about ${APP_NAME} - your curated knowledge stream for books, podcasts, articles, videos, and ideas.`,
+    description: `Learn more about ${APP_NAME} - a summary-first knowledge system for books, podcasts, articles, videos, and ideas.`,
 };
 
 export default function AboutPage() {
@@ -27,7 +27,7 @@ export default function AboutPage() {
                         About {APP_NAME}
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                        A personal knowledge stream built to capture, distill, and revisit the best ideas from books, podcasts, articles, and videos.
+                        A summary-first knowledge system built to distill, capture, and retrieve the best ideas from books, podcasts, articles, and videos.
                     </p>
                 </div>
 
@@ -39,7 +39,7 @@ export default function AboutPage() {
                             We consume so much content—podcasts during commutes, books before bed, articles throughout the day, videos whenever we need to learn quickly—but how much do we actually retain? {APP_NAME} exists to solve that problem.
                         </p>
                         <p>
-                            Every entry here is a personal reflection: a distillation of key insights, memorable quotes, and actionable takeaways. It&apos;s not just a summary—it&apos;s a collection of notes for ideas worth remembering.
+                            Every entry turns source material into structured knowledge: summaries you can understand quickly, highlights and notes you can keep, and ideas you can search, revisit, and remember.
                         </p>
                     </div>
                 </section>
@@ -53,18 +53,18 @@ export default function AboutPage() {
                         {[
                             {
                                 icon: BookOpen,
-                                title: "Book Summaries",
-                                text: "Core ideas from transformative books, distilled into digestible insights you can revisit anytime.",
+                                title: "Distill",
+                                text: "Books, podcasts, articles, and videos are turned into structured summaries that make the core ideas easier to understand.",
                             },
                             {
                                 icon: Headphones,
-                                title: "Podcast Notes",
-                                text: "Key moments and insights from conversations with some of the world\u2019s most interesting minds.",
+                                title: "Capture",
+                                text: "Highlights and notes stay connected to the ideas they came from, so what matters does not disappear into a separate system.",
                             },
                             {
                                 icon: Lightbulb,
-                                title: "Personal Reflections",
-                                text: "Not just summaries\u2014personal takes on how these ideas connect and apply to real life.",
+                                title: "Retrieve",
+                                text: "Ask across your library to find the passage, note, or idea you need when it becomes useful again.",
                             },
                         ].map((card) => (
                             <div
@@ -92,7 +92,7 @@ export default function AboutPage() {
                             &ldquo;The faintest ink is more powerful than the strongest memory.&rdquo;
                         </blockquote>
                         <p className="text-muted-foreground mt-4 leading-relaxed">
-                            Ideas are only valuable if we can access them when we need them. {APP_NAME} is a living document—a place to capture wisdom before it fades.
+                            Ideas are only valuable if we can access them when we need them. {APP_NAME} keeps knowledge searchable, revisitable, and close to the context that made it useful.
                         </p>
                     </div>
                 </section>

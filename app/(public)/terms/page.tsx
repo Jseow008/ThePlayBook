@@ -41,7 +41,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Nature of Content</h2>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                            {APP_NAME} is a personal knowledge stream containing summaries, reflections, and insights derived from books, podcasts, articles, and other media. Please note:
+                            {APP_NAME} is a summary-first knowledge system containing structured summaries, commentary, and insights derived from books, podcasts, articles, and other media. Please note:
                         </p>
                         <ul className="space-y-3 text-muted-foreground">
                             <li className="flex gap-3">
