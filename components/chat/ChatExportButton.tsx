@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Download, Loader2, QrCode, RefreshCw, X } from "lucide-react";
+import { Check, Copy, Download, Loader2, QrCode, RefreshCw, Share2, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { toast } from "sonner";
 import {
@@ -213,6 +213,31 @@ export function ChatExportButton({
         }
     };
 
+    const shareLink = async () => {
+        if (exportState.status !== "ready") {
+            return;
+        }
+
+        const shareData = {
+            title: exportState.payload.title,
+            text: "Open this temporary Netflux chat export.",
+            url: exportState.url,
+        };
+
+        if (navigator.share && navigator.canShare?.(shareData)) {
+            try {
+                await navigator.share(shareData);
+                return;
+            } catch (error) {
+                if (error instanceof Error && error.name === "AbortError") {
+                    return;
+                }
+            }
+        }
+
+        await copyLink();
+    };
+
     const modal = isOpen && mounted ? createPortal(
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-background/82 px-4 py-6 backdrop-blur-md">
             <div
@@ -278,22 +303,30 @@ export function ChatExportButton({
                                     })}
                                 </span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={shareLink}
+                                    className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/65 bg-background/55 px-2 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background"
+                                >
+                                    <Share2 className="size-4 shrink-0" />
+                                    <span className="truncate">Share</span>
+                                </button>
                                 <button
                                     type="button"
                                     onClick={copyLink}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-border/65 bg-background/55 px-3 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background"
+                                    className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/65 bg-background/55 px-2 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background"
                                 >
-                                    {copied ? <Check className="size-4 text-primary" /> : <Copy className="size-4" />}
-                                    Copy link
+                                    {copied ? <Check className="size-4 shrink-0 text-primary" /> : <Copy className="size-4 shrink-0" />}
+                                    <span className="truncate">Copy link</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => downloadMarkdown(exportState.payload)}
-                                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-border/65 bg-background/55 px-3 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background"
+                                    className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/65 bg-background/55 px-2 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background"
                                 >
-                                    <Download className="size-4" />
-                                    Markdown
+                                    <Download className="size-4 shrink-0" />
+                                    <span className="truncate">Markdown</span>
                                 </button>
                             </div>
                             <button
