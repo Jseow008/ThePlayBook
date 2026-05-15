@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { AlertTriangle, Download, Loader2, LockKeyhole, MessageSquareText } from "lucide-react";
+import { AlertTriangle, Download, Loader2, LockKeyhole } from "lucide-react";
 import {
     buildChatExportMarkdown,
     getChatExportFilename,
@@ -145,9 +145,6 @@ export function ChatExportClientPage({ exportId }: ChatExportClientPageProps) {
                         <header className="border-b border-border/45 px-5 py-5 sm:px-7">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                                 <div className="min-w-0">
-                                    <div className="mb-3 flex size-10 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
-                                        <MessageSquareText className="size-4 text-primary" />
-                                    </div>
                                     <h1 className="text-xl font-semibold leading-tight text-foreground sm:text-2xl">
                                         {state.payload.title}
                                     </h1>
