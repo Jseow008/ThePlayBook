@@ -8,6 +8,7 @@ import { Bot, User, Send, Loader2, X, BotMessageSquare, Sparkles } from "lucide-
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
+import { ChatExportButton } from "@/components/chat/ChatExportButton";
 
 interface AuthorChatProps {
     contentId: string;
@@ -183,13 +184,25 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                             <p className="mt-0.5 truncate text-[0.65rem] leading-none text-muted-foreground">Author Persona &middot; AI</p>
                         </div>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/60 hover:bg-muted transition-colors"
-                        aria-label="Close chat"
-                    >
-                        <X className="size-4 text-muted-foreground" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {!isEmptyState && (
+                            <ChatExportButton
+                                title={`Chat with ${authorName}`}
+                                assistantLabel={authorName}
+                                scopeSummary={contentTitle}
+                                messages={displayMessages}
+                                disabled={isStreaming}
+                                variant="icon"
+                            />
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/60 hover:bg-muted transition-colors"
+                            aria-label="Close chat"
+                        >
+                            <X className="size-4 text-muted-foreground" />
+                        </button>
+                    </div>
                 </div>
             </header>
 

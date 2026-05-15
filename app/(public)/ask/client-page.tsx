@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
+import { ChatExportButton } from "@/components/chat/ChatExportButton";
 import { useInfiniteHighlights, type HighlightsPage } from "@/hooks/useHighlights";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
@@ -283,6 +284,15 @@ export function AskClientPage({
     const libraryComposerPlaceholder = initialLibrarySnapshot?.totalItems === 1
         ? "Ask about the item in your library..."
         : "Ask about the ideas in your library...";
+    const renderLibraryExportButton = () => isLibraryScope && !isEmptyState ? (
+        <ChatExportButton
+            title="Ask My Library"
+            assistantLabel="Ask My Library"
+            scopeSummary={libraryComposerLabel}
+            messages={displayMessages}
+            disabled={isStreaming}
+        />
+    ) : null;
 
     return (
         <div className="flex h-[100dvh] flex-col bg-background">
@@ -304,6 +314,11 @@ export function AskClientPage({
                             <p className="truncate text-[0.72rem] text-foreground/80 sm:text-xs">{pageSubtitle}</p>
                         </div>
                     </div>
+                    {!isEmptyState && isLibraryScope && (
+                        <div className="hidden sm:block">
+                            {renderLibraryExportButton()}
+                        </div>
+                    )}
                 </div>
             </header>
 
@@ -486,9 +501,14 @@ export function AskClientPage({
                                                 {libraryComposerLabel}
                                             </span>
                                         </div>
-                                        <span className="hidden text-[0.65rem] text-muted-foreground/75 sm:inline">
-                                            Enter to send · Shift+Enter for newline
-                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="sm:hidden">
+                                                {renderLibraryExportButton()}
+                                            </div>
+                                            <span className="hidden text-[0.65rem] text-muted-foreground/75 sm:inline">
+                                                Enter to send · Shift+Enter for newline
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <form

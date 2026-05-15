@@ -20,6 +20,7 @@ import {
     X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ChatExportButton } from "@/components/chat/ChatExportButton";
 import { serializeNotesChatScope, type NotesChatScopePayload } from "@/lib/notes-chat-scope";
 import {
     clearNotesChatSession,
@@ -392,6 +393,17 @@ export function NotesAskPanel({
     const latestAssistantMessageId = [...displayMessages]
         .reverse()
         .find((message) => message.role === "assistant")?.id;
+    const exportButton = !isEmptyState ? (
+        <ChatExportButton
+            title="Ask These Notes"
+            assistantLabel="Ask These Notes"
+            scopeSummary={activeScope.summary}
+            noteCount={activeScope.noteCount}
+            messages={displayMessages}
+            disabled={isStreaming}
+            className={isSidebar ? "px-3 py-1.5 text-[0.72rem]" : undefined}
+        />
+    ) : null;
 
     if (isPage) {
         return (
@@ -562,9 +574,12 @@ export function NotesAskPanel({
                                     </span>
                                 )}
                             </div>
-                            <span className="hidden text-[0.65rem] text-muted-foreground/75 sm:inline">
-                                Enter to send · Shift+Enter for newline
-                            </span>
+                            <div className="flex items-center gap-2">
+                                {exportButton}
+                                <span className="hidden text-[0.65rem] text-muted-foreground/75 sm:inline">
+                                    Enter to send · Shift+Enter for newline
+                                </span>
+                            </div>
                         </div>
 
                         <form
@@ -638,14 +653,27 @@ export function NotesAskPanel({
                             </h2>
                         </div>
 
-                        <Link
-                            href={fullScreenHref}
-                            className={sidebarUtilityActionClassName}
-                            aria-label="Open Ask These Notes in full screen"
-                            title="Open full screen"
-                        >
-                            <Expand className="size-4" />
-                        </Link>
+                        <div className="flex items-center gap-2">
+                            {!isEmptyState && (
+                                <ChatExportButton
+                                    title="Ask These Notes"
+                                    assistantLabel="Ask These Notes"
+                                    scopeSummary={activeScope.summary}
+                                    noteCount={activeScope.noteCount}
+                                    messages={displayMessages}
+                                    disabled={isStreaming}
+                                    variant="icon"
+                                />
+                            )}
+                            <Link
+                                href={fullScreenHref}
+                                className={sidebarUtilityActionClassName}
+                                aria-label="Open Ask These Notes in full screen"
+                                title="Open full screen"
+                            >
+                                <Expand className="size-4" />
+                            </Link>
+                        </div>
                     </div>
                 ) : (
                     <div className="flex items-start justify-between gap-3">
@@ -666,6 +694,7 @@ export function NotesAskPanel({
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {exportButton}
                             {!isEmptyState && (
                                 <button
                                     type="button"
