@@ -83,6 +83,7 @@ const STORYBOARD_SLIDES = [
 ] as const;
 
 const FEATURED_READS_DRAG_THRESHOLD_PX = 6;
+const FEATURED_READS_TOUCH_DRAG_INTENT_RATIO = 1.15;
 const FEATURED_READS_MIN_LOOP_ITEMS = 8;
 const FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND = 40;
 const FEATURED_READS_AUTOPLAY_MAX_FRAME_DELTA_MS = 100;
@@ -340,8 +341,11 @@ function FeaturedReadsMarqueeRow({
   const runAutoplayFrameRef = useRef<FrameRequestCallback>(() => {});
   const dragStateRef = useRef<{
     pointerId: number;
+    pointerType: string;
     startX: number;
+    startY: number;
     startScrollLeft: number;
+    intent: "pending" | "horizontal";
     moved: boolean;
   } | null>(null);
 
@@ -598,8 +602,20 @@ function FeaturedReadsMarqueeRow({
     normalizeScrollPosition(element);
   }
 
+  function releasePointerCapture(element: HTMLDivElement, pointerId: number) {
+    if (element.hasPointerCapture?.(pointerId)) {
+      element.releasePointerCapture(pointerId);
+    }
+  }
+
+  function clearDragState() {
+    isDraggingRef.current = false;
+    dragStateRef.current = null;
+    startAutoplay();
+  }
+
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
-    if ((event.pointerType && event.pointerType !== "mouse") || event.button !== 0) {
+    if (event.pointerType === "mouse" && event.button !== 0) {
       return;
     }
 
@@ -610,13 +626,19 @@ function FeaturedReadsMarqueeRow({
     isDraggingRef.current = true;
     dragStateRef.current = {
       pointerId: event.pointerId,
+      pointerType: event.pointerType,
       startX: event.clientX,
+      startY: event.clientY,
       startScrollLeft: element.scrollLeft,
+      intent: "pending",
       moved: false,
     };
     suppressClickRef.current = false;
-    element.setPointerCapture?.(event.pointerId);
-    event.preventDefault();
+
+    if (event.pointerType === "mouse") {
+      element.setPointerCapture?.(event.pointerId);
+      event.preventDefault();
+    }
   }
 
   function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
@@ -626,8 +648,29 @@ function FeaturedReadsMarqueeRow({
     }
 
     const deltaX = event.clientX - dragState.startX;
-    if (!dragState.moved && Math.abs(deltaX) > FEATURED_READS_DRAG_THRESHOLD_PX) {
+    const deltaY = event.clientY - dragState.startY;
+    const absoluteDeltaX = Math.abs(deltaX);
+    const absoluteDeltaY = Math.abs(deltaY);
+
+    if (dragState.intent === "pending") {
+      if (
+        absoluteDeltaX < FEATURED_READS_DRAG_THRESHOLD_PX
+        && absoluteDeltaY < FEATURED_READS_DRAG_THRESHOLD_PX
+      ) {
+        return;
+      }
+
+      const hasHorizontalIntent = dragState.pointerType === "mouse"
+        || absoluteDeltaX > absoluteDeltaY * FEATURED_READS_TOUCH_DRAG_INTENT_RATIO;
+
+      if (!hasHorizontalIntent) {
+        clearDragState();
+        return;
+      }
+
+      dragState.intent = "horizontal";
       dragState.moved = true;
+      event.currentTarget.setPointerCapture?.(event.pointerId);
     }
 
     if (!dragState.moved) {
@@ -646,10 +689,8 @@ function FeaturedReadsMarqueeRow({
       return;
     }
 
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-    isDraggingRef.current = false;
-    dragStateRef.current = null;
-    startAutoplay();
+    releasePointerCapture(event.currentTarget, event.pointerId);
+    clearDragState();
   }
 
   function handlePointerCancel(event: React.PointerEvent<HTMLDivElement>) {
@@ -657,10 +698,8 @@ function FeaturedReadsMarqueeRow({
       return;
     }
 
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
-    isDraggingRef.current = false;
-    dragStateRef.current = null;
-    startAutoplay();
+    releasePointerCapture(event.currentTarget, event.pointerId);
+    clearDragState();
   }
 
   function handleScroll() {
@@ -697,7 +736,7 @@ function FeaturedReadsMarqueeRow({
           isPrimaryRow ? "featured-reads-carousel" : `featured-reads-carousel${rowSuffix}`
         }
         className={cn(
-          "scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-x] cursor-grab",
+          "scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 sm:px-6 md:pb-4 md:pt-4 [scrollbar-width:none] [touch-action:pan-y_pinch-zoom] cursor-grab",
           !isPrimaryRow && "opacity-90"
         )}
         onMouseEnter={pauseAutoplay}
