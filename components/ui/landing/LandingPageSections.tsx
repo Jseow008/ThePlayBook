@@ -88,7 +88,6 @@ const FEATURED_READS_AUTOPLAY_SPEED_PX_PER_SECOND = 40;
 const FEATURED_READS_AUTOPLAY_MAX_FRAME_DELTA_MS = 100;
 const FEATURED_READS_AUTOPLAY_RESUME_DELAY_MS = 2000;
 const FEATURED_READS_ROW_COUNT = 2;
-const STORYBOARD_SWIPE_THRESHOLD_PX = 44;
 
 type FeaturedReadsMarqueeDirection = "left" | "right";
 
@@ -770,7 +769,6 @@ function FeaturedReadsMarqueeRow({
 export function CorePlatformFeaturesSection() {
   const [activeStoryboardSlide, setActiveStoryboardSlide] = useState(0);
   const [isStoryboardLightboxOpen, setIsStoryboardLightboxOpen] = useState(false);
-  const storyboardLightboxTouchStartXRef = useRef<number | null>(null);
 
   const goToPreviousStoryboardSlide = useCallback(() => {
     setActiveStoryboardSlide((current) =>
@@ -786,32 +784,7 @@ export function CorePlatformFeaturesSection() {
 
   const closeStoryboardLightbox = useCallback(() => {
     setIsStoryboardLightboxOpen(false);
-    storyboardLightboxTouchStartXRef.current = null;
   }, []);
-
-  const handleStoryboardLightboxTouchStart = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
-    storyboardLightboxTouchStartXRef.current = event.touches[0]?.clientX ?? null;
-  }, []);
-
-  const handleStoryboardLightboxTouchEnd = useCallback((event: React.TouchEvent<HTMLDivElement>) => {
-    const startX = storyboardLightboxTouchStartXRef.current;
-    storyboardLightboxTouchStartXRef.current = null;
-
-    if (startX === null) return;
-
-    const endX = event.changedTouches[0]?.clientX;
-    if (typeof endX !== "number") return;
-
-    const deltaX = endX - startX;
-    if (Math.abs(deltaX) < STORYBOARD_SWIPE_THRESHOLD_PX) return;
-
-    if (deltaX < 0) {
-      goToNextStoryboardSlide();
-      return;
-    }
-
-    goToPreviousStoryboardSlide();
-  }, [goToNextStoryboardSlide, goToPreviousStoryboardSlide]);
 
   useEffect(() => {
     if (!isStoryboardLightboxOpen) return;
@@ -962,8 +935,6 @@ export function CorePlatformFeaturesSection() {
 
           <div
             className="relative z-10 flex h-full w-full max-w-7xl flex-col justify-center gap-4"
-            onTouchStart={handleStoryboardLightboxTouchStart}
-            onTouchEnd={handleStoryboardLightboxTouchEnd}
           >
             <div className="flex items-center justify-between gap-3">
               <div>
