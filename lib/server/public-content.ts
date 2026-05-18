@@ -112,6 +112,10 @@ function buildDescription(content: MetadataSource, modeLabel: "Preview" | "Readi
     );
 }
 
+function buildContentOgImageUrl(contentId: string) {
+    return `${siteUrl}/api/og/content/${encodeURIComponent(contentId)}`;
+}
+
 async function getSeriesContext(
     item: { series_id: string | null; series_order: number | null }
 ): Promise<SeriesContext | null> {
@@ -193,7 +197,7 @@ export function buildPublicContentMetadata(
 ): Metadata {
     const title = `${content.title} — ${APP_NAME}`;
     const description = buildDescription(content, route === "preview" ? "Preview" : "Reading");
-    const ogImage = content.cover_image_url ?? `${siteUrl}/images/og-image.png`;
+    const ogImage = buildContentOgImageUrl(content.id);
     const path = route === "read" ? buildReadPath(content) : `/${route}/${content.id}`;
     const url = `${siteUrl}${path}`;
 
