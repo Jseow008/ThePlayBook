@@ -15,7 +15,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
  * Mobile Bottom Navigation
  * 
  * Provides quick access to main sections on mobile devices.
- * Inspired by Netflix/Spotify mobile navigation patterns.
+ * Inspired by streaming app mobile navigation patterns.
  */
 
 const navItems = [

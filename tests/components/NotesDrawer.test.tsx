@@ -15,17 +15,6 @@ const {
     toastErrorMock: vi.fn(),
 }));
 
-vi.mock("framer-motion", () => ({
-    motion: {
-        div: ({ children, ...props }: any) => {
-            delete props.drag;
-            delete props.dragMomentum;
-            delete props.dragElastic;
-            return <div {...props}>{children}</div>;
-        },
-    },
-}));
-
 vi.mock("@/hooks/useHighlights", () => ({
     useDeleteHighlight: () => ({
         mutateAsync: deleteHighlightMock,
