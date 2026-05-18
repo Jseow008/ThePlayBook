@@ -3,6 +3,7 @@ import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/server/rate-limit';
+import { checkAiUsageQuota, recordGeneratedAiMessage } from '@/lib/server/ai-usage-quota';
 import { streamText } from 'ai';
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -11,6 +12,12 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('@/lib/server/rate-limit', () => ({
     rateLimit: vi.fn(),
+}));
+
+vi.mock('@/lib/server/ai-usage-quota', () => ({
+    checkAiUsageQuota: vi.fn(),
+    recordGeneratedAiMessage: vi.fn(),
+    getQuotaExceededMessage: vi.fn((result) => `quota exceeded: ${result.blockedWindow}`),
 }));
 
 vi.mock('ai', () => ({
@@ -61,6 +68,8 @@ describe('Author Chat API', () => {
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        (checkAiUsageQuota as any).mockResolvedValue({ allowed: true, windows: [] });
+        (recordGeneratedAiMessage as any).mockResolvedValue(undefined);
         mockAuthUser.mockResolvedValue({ data: { user: null } });
 
         select.mockReturnValue(queryBuilder);
@@ -84,6 +93,8 @@ describe('Author Chat API', () => {
             windowMs: 60_000,
             key: 'author-chat:guest',
         });
+        expect(checkAiUsageQuota).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
     });
 
     it('accepts legacy bookTitle payloads', async () => {
@@ -116,6 +127,37 @@ describe('Author Chat API', () => {
             key: 'author-chat:user',
             identifier: 'user-123',
         });
+        expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
+            userId: 'user-123',
+            feature: 'author-chat',
+        });
+    });
+
+    it('blocks signed-in generated author answers when the AI quota is exhausted', async () => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        (checkAiUsageQuota as any).mockResolvedValueOnce({
+            allowed: false,
+            blockedWindow: 'month',
+            limit: 300,
+            used: 300,
+            retryAfterMs: 86_400_000,
+            resetAt: new Date('2026-06-01T00:00:00.000Z'),
+            windows: [],
+        });
+
+        const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
+            method: 'POST',
+            body: JSON.stringify(validBody),
+        });
+
+        const res = await POST(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(429);
+        expect(res.headers.get('Retry-After')).toBe('86400');
+        expect(json.error.code).toBe('AI_QUOTA_EXCEEDED');
+        expect(streamText).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
     });
 
     it('rate limits guests at the guest quota', async () => {

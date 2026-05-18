@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { vi } from "vitest";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { checkAiUsageQuota, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import { streamText } from "ai";
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -11,6 +12,12 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
+}));
+
+vi.mock("@/lib/server/ai-usage-quota", () => ({
+    checkAiUsageQuota: vi.fn(),
+    recordGeneratedAiMessage: vi.fn(),
+    getQuotaExceededMessage: vi.fn((result) => `quota exceeded: ${result.blockedWindow}`),
 }));
 
 vi.mock("ai", () => ({
@@ -48,6 +55,8 @@ describe("Notes chat API", () => {
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        (checkAiUsageQuota as any).mockResolvedValue({ allowed: true, windows: [] });
+        (recordGeneratedAiMessage as any).mockResolvedValue(undefined);
         mockAuthUser.mockResolvedValue({ data: { user: mockUser } });
         highlightQuery.then.mockImplementation((resolve: any) =>
             resolve({
@@ -138,6 +147,40 @@ describe("Notes chat API", () => {
             maxOutputTokens: 450,
             system: expect.stringContaining("Treat written notes as the strongest evidence"),
         }));
+        expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
+            userId: "user-123",
+            feature: "ask-notes",
+        });
+    });
+
+    it("blocks generated note answers when the AI quota is exhausted", async () => {
+        (checkAiUsageQuota as any).mockResolvedValueOnce({
+            allowed: false,
+            blockedWindow: "week",
+            limit: 100,
+            used: 100,
+            retryAfterMs: 7_200_000,
+            resetAt: new Date("2026-05-25T00:00:00.000Z"),
+            windows: [],
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
+            method: "POST",
+            body: JSON.stringify({
+                messages: [{ role: "user", content: "Summarize these notes" }],
+                highlightIds: ["123e4567-e89b-12d3-a456-426614174000"],
+            }),
+        });
+
+        const res = await POST(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(429);
+        expect(res.headers.get("Retry-After")).toBe("7200");
+        expect(json.error.code).toBe("AI_QUOTA_EXCEEDED");
+        expect(mockSupabaseClient.from).not.toHaveBeenCalledWith("user_highlights");
+        expect(streamText).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
     });
 
     it("accepts legacy content-only notes messages", async () => {

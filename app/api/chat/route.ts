@@ -4,6 +4,7 @@ import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import { GoogleGenAI } from "@google/genai";
 import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/library-snapshot";
 
@@ -277,11 +278,11 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
         }
 
-        const intent = detectAskIntent(userQuery);
         const provider = process.env.AI_PROVIDER || "anthropic";
         const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
         const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
         const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+        const intent = detectAskIntent(userQuery);
 
         if (!hasAnthropic && !hasOpenAI) {
             logApiError({ requestId, route: "/api/chat", message: "No AI provider configured", error: new Error("Missing env") });
@@ -291,6 +292,17 @@ export async function POST(req: NextRequest) {
         if (intent !== "library_metadata" && !hasGemini) {
             logApiError({ requestId, route: "/api/chat", message: "GEMINI_API_KEY not configured for retrieval embeddings", error: new Error("Missing env") });
             return apiError("INTERNAL_ERROR", "Ask My Library retrieval is not configured. Please contact an administrator.", 500, requestId);
+        }
+
+        const quota = await checkAiUsageQuota(supabase, user.id);
+        if (!quota.allowed) {
+            return NextResponse.json(
+                { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
+                {
+                    status: 429,
+                    headers: { "Retry-After": String(Math.max(1, Math.ceil(quota.retryAfterMs / 1000))) },
+                }
+            );
         }
 
         const { data: libraryRows, error: libraryError } = await supabase
@@ -399,6 +411,8 @@ Rules:
             maxOutputTokens: getOutputTokenCap(intent),
             experimental_transform: smoothStream({ delayInMs: 6 }),
         });
+
+        await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {

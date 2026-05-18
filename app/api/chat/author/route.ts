@@ -5,6 +5,7 @@ import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 
 export const maxDuration = 60;
 
@@ -156,6 +157,19 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
+        if (user) {
+            const quota = await checkAiUsageQuota(supabase, user.id);
+            if (!quota.allowed) {
+                return NextResponse.json(
+                    { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
+                    {
+                        status: 429,
+                        headers: { "Retry-After": String(Math.max(1, Math.ceil(quota.retryAfterMs / 1000))) },
+                    }
+                );
+            }
+        }
+
         // --- Sliding Context Window: only keep last N messages ---
         const messages = allMessages.slice(-MAX_HISTORY_MESSAGES);
 
@@ -221,6 +235,10 @@ Rules:
             maxOutputTokens: MAX_OUTPUT_TOKENS,
             experimental_transform: smoothStream({ delayInMs: 6 }),
         });
+
+        if (user) {
+            await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "author-chat" });
+        }
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {

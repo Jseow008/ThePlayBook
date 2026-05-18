@@ -52,6 +52,27 @@ export type Database = {
           },
         ]
       }
+      ai_message_usage: {
+        Row: {
+          created_at: string
+          feature: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feature?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_feedback: {
         Row: {
           content_id: string

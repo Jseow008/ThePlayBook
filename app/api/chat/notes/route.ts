@@ -4,6 +4,7 @@ import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 
 export const maxDuration = 60;
 
@@ -143,6 +144,17 @@ export async function POST(req: NextRequest) {
         }
         const prefersLongerSynthesis = detectNotesSynthesisIntent(lastMessage.content);
 
+        const quota = await checkAiUsageQuota(supabase, user.id);
+        if (!quota.allowed) {
+            return NextResponse.json(
+                { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
+                {
+                    status: 429,
+                    headers: { "Retry-After": String(Math.max(1, Math.ceil(quota.retryAfterMs / 1000))) },
+                }
+            );
+        }
+
         const { data: highlights, error: highlightError } = await supabase
             .from("user_highlights")
             .select(`
@@ -229,6 +241,8 @@ Rules:
             maxOutputTokens: prefersLongerSynthesis ? NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS : NOTES_DEFAULT_MAX_OUTPUT_TOKENS,
             experimental_transform: smoothStream({ delayInMs: 6 }),
         });
+
+        await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-notes" });
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {
