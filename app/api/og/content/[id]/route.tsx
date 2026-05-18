@@ -1,7 +1,10 @@
+import { readFile } from "node:fs/promises";
 import { ImageResponse } from "next/og";
 import { z } from "zod";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
+
+export const runtime = "nodejs";
 
 interface RouteContext {
     params: Promise<{ id: string }>;
@@ -29,55 +32,27 @@ const cacheControl = "public, max-age=300, s-maxage=3600, stale-while-revalidate
 
 const fontPromise = loadOgFonts();
 
-async function loadGoogleFont(family: string, weight: 400 | 700): Promise<ArrayBuffer> {
-    const cssUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@${weight}`;
-    const cssResponse = await fetch(cssUrl, {
-        headers: {
-            "User-Agent": "Mozilla/5.0",
-        },
-    });
-
-    if (!cssResponse.ok) {
-        throw new Error(`Failed to load ${family} ${weight}`);
+async function loadLocalFont(url: URL, label: string): Promise<ArrayBuffer> {
+    try {
+        const data = await readFile(url);
+        return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
+    } catch (error) {
+        throw new Error(`Failed to load local OG font: ${label}`, { cause: error });
     }
-
-    const css = await cssResponse.text();
-    const fontUrls = Array.from(css.matchAll(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+)\)/g));
-    const fontUrl = fontUrls.at(-1)?.[1];
-
-    if (!fontUrl) {
-        throw new Error(`Missing font URL for ${family} ${weight}`);
-    }
-
-    const fontResponse = await fetch(fontUrl);
-    if (!fontResponse.ok) {
-        throw new Error(`Failed to fetch ${family} ${weight}`);
-    }
-
-    return fontResponse.arrayBuffer();
 }
 
 async function loadOgFonts(): Promise<OgFont[]> {
-    const candidates: Array<Pick<OgFont, "name" | "weight">> = [
-        { name: "Inter", weight: 400 },
-        { name: "Inter", weight: 700 },
-        { name: "Outfit", weight: 700 },
+    const [interRegular, interBold, outfitBold] = await Promise.all([
+        loadLocalFont(new URL("./fonts/Inter-Regular.woff", import.meta.url), "Inter Regular"),
+        loadLocalFont(new URL("./fonts/Inter-Bold.woff", import.meta.url), "Inter Bold"),
+        loadLocalFont(new URL("./fonts/Outfit-Bold.woff", import.meta.url), "Outfit Bold"),
+    ]);
+
+    return [
+        { name: "Inter", data: interRegular, weight: 400, style: "normal" },
+        { name: "Inter", data: interBold, weight: 700, style: "normal" },
+        { name: "Outfit", data: outfitBold, weight: 700, style: "normal" },
     ];
-
-    const loaded = await Promise.allSettled(
-        candidates.map(async (font) => ({
-            ...font,
-            data: await loadGoogleFont(font.name, font.weight),
-            style: "normal" as const,
-        }))
-    );
-
-    return loaded.reduce<OgFont[]>((fonts, result) => {
-        if (result.status === "fulfilled") {
-            fonts.push(result.value);
-        }
-        return fonts;
-    }, []);
 }
 
 function normalizeLabel(value: string | null) {
@@ -346,11 +321,10 @@ export async function GET(_request: Request, context: RouteContext) {
                                 color: "rgba(250, 250, 250, 0.58)",
                                 display: "flex",
                                 fontSize: 24,
-                                justifyContent: "space-between",
+                                justifyContent: "flex-end",
                                 width: "100%",
                             }}
                         >
-                            <div style={{ display: "flex" }}>Read in {APP_NAME}</div>
                             <div
                                 style={{
                                     background: "rgba(250, 250, 250, 0.24)",
