@@ -202,13 +202,21 @@ function getFeaturedReadRows(items: ContentItem[]) {
   return rows.map((rowItems) => (rowItems.length > 0 ? rowItems : items));
 }
 
-function FeaturedReadCard({ item }: { item: ContentItem }) {
+function FeaturedReadCard({
+  item,
+  isFocusable = true,
+}: {
+  item: ContentItem;
+  isFocusable?: boolean;
+}) {
   const durationLabel = formatFeaturedReadDuration(item.duration_seconds);
 
   return (
     <Link
       href={`/preview/${item.id}`}
       aria-label={`Preview ${item.title}`}
+      aria-hidden={isFocusable ? undefined : true}
+      tabIndex={isFocusable ? undefined : -1}
       className="focus-ring group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10 hover:scale-105"
     >
       {item.cover_image_url ? (
@@ -755,6 +763,7 @@ function FeaturedReadsMarqueeRow({
             data-testid={
               isPrimaryRow ? "featured-reads-group-a" : `featured-reads-group-a${rowSuffix}`
             }
+            aria-hidden="true"
             className="flex items-center gap-4 sm:gap-6"
           >
             {loopItems.map((item, index) => (
@@ -762,7 +771,7 @@ function FeaturedReadsMarqueeRow({
                 key={`${item.id}-a-${index}`}
                 className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                <FeaturedReadCard item={item} />
+                <FeaturedReadCard item={item} isFocusable={false} />
               </div>
             ))}
           </div>
@@ -778,7 +787,7 @@ function FeaturedReadsMarqueeRow({
                 key={`${item.id}-b-${index}`}
                 className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                <FeaturedReadCard item={item} />
+                <FeaturedReadCard item={item} isFocusable={index < items.length} />
               </div>
             ))}
           </div>
@@ -795,7 +804,7 @@ function FeaturedReadsMarqueeRow({
                 key={`${item.id}-c-${index}`}
                 className="relative w-[160px] flex-none shrink-0 sm:w-[200px] md:w-[240px]"
               >
-                <FeaturedReadCard item={item} />
+                <FeaturedReadCard item={item} isFocusable={false} />
               </div>
             ))}
           </div>
