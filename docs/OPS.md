@@ -44,6 +44,9 @@ OPENAI_FALLBACK_MODEL=gpt-4o-mini
 NEXT_PUBLIC_APP_URL=...
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
+AI_DAILY_MESSAGE_LIMIT=20
+AI_WEEKLY_MESSAGE_LIMIT=100
+AI_MONTHLY_MESSAGE_LIMIT=300
 ERROR_REPORTING_WEBHOOK_URL=...
 ERROR_REPORTING_BEARER_TOKEN=...
 CRON_SECRET=...
@@ -267,6 +270,32 @@ If narration remains stuck in `processing`, verify:
 - the admin maintenance panel identifies the current processing title and whether it is stale
 - use the stale reset control if the job is clearly orphaned
 - stale `processing` rows are automatically failed the next time the narration worker or per-item narration status route touches them
+
+### 3.5 AI Usage Quotas
+
+Generated AI chat responses are counted against the authenticated user's shared AI message quota. Current default limits are:
+
+- 20 messages per UTC day
+- 100 messages per UTC week
+- 300 messages per UTC month
+
+The defaults can be overridden with `AI_DAILY_MESSAGE_LIMIT`, `AI_WEEKLY_MESSAGE_LIMIT`, and `AI_MONTHLY_MESSAGE_LIMIT`.
+
+Quota applies to generated responses from Ask My Library, Ask These Notes, and signed-in Author Chat. Guest Author Chat is protected by the existing burst limiter but does not use daily, weekly, or monthly quotas because guests do not have a durable user id.
+
+Stored recommended-prompt answers should not count against this quota if they return stored content without calling an AI provider. Generated answers should count.
+
+Current implementation notes:
+
+- quota is checked after auth, burst rate limiting, and request validation
+- usage is recorded when a generated AI response is prepared
+- quota rows are stored in `public.ai_message_usage`
+- the current implementation uses separate day, week, and month count queries; this is acceptable at the current 300 messages/month/user default
+
+Future scaling considerations:
+
+- If quotas become tied to paid plans or hard credits, replace the app-level check-then-record flow with an atomic database reservation flow to avoid concurrent request overshoot.
+- If quotas increase substantially or quota checks become a measurable latency source, consolidate the day, week, and month counts into a single Postgres RPC using filtered counts.
 
 ## 4. Deployment
 
