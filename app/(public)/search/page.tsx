@@ -7,7 +7,7 @@
 
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { Search, TrendingUp } from "lucide-react";
+import { ArrowRight, Megaphone, Search, TrendingUp } from "lucide-react";
 import { getCategoryStats } from "@/lib/server/public-content";
 import type { ContentItem, ContentType } from "@/types/database";
 import Link from "next/link";
@@ -83,6 +83,21 @@ function buildSearchHref({ query, category, type }: { query?: string; category?:
     return search ? `/search?${search}` : "/search";
 }
 
+function buildRequestHref({ query, type }: { query?: string; type?: string }) {
+    const params = new URLSearchParams();
+
+    if (query?.trim()) {
+        params.set("prefill", query.trim());
+    }
+
+    if (type && type.toLowerCase() !== "all") {
+        params.set("type", type.toLowerCase());
+    }
+
+    const search = params.toString();
+    return search ? `/requests?${search}` : "/requests";
+}
+
 function buildNormalizedTopics(categoryStats: CategoryStat[]) {
     return buildCanonicalCategoryStats(categoryStats)
         .map((item) => ({
@@ -148,12 +163,23 @@ export async function SearchResults({
 
     return (
         <div className="animate-in fade-in duration-500">
-            <p className="text-muted-foreground mb-8 text-lg font-medium">
-                {results.length} result{results.length !== 1 ? "s" : ""}
-                {query && ` for "${query}"`}
-                {categoryLabel && ` in ${categoryLabel}`}
-                {normalizedType && ` (${normalizedType})`}
-            </p>
+            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-muted-foreground text-lg font-medium">
+                    {results.length} result{results.length !== 1 ? "s" : ""}
+                    {query && ` for "${query}"`}
+                    {categoryLabel && ` in ${categoryLabel}`}
+                    {normalizedType && ` (${normalizedType})`}
+                </p>
+                {hasQuery && results.length > 0 ? (
+                    <Link
+                        href={buildRequestHref({ query: trimmedQuery, type: normalizedType })}
+                        className="focus-ring inline-flex w-fit items-center gap-2 rounded-full border border-border bg-secondary/30 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+                    >
+                        <Megaphone className="size-4" />
+                        Request another summary
+                    </Link>
+                ) : null}
+            </div>
 
             {results.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
@@ -167,20 +193,31 @@ export async function SearchResults({
                     ))}
                 </div>
             ) : (
-                <div className="text-center py-20 animate-in fade-in zoom-in-95 duration-300">
-                    <div className="inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border">
-                        <Search className="size-10 text-muted-foreground" />
+                <div className="text-center py-2 md:py-20 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="hidden md:inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border">
+                        <Search className="size-9 md:size-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-2">No results found</h3>
-                    <p className="text-muted-foreground max-w-sm mx-auto mb-6">
+                    <h3 className="text-xl font-semibold text-foreground mb-1 md:mb-2">No results found</h3>
+                    <p className="text-sm md:text-base text-muted-foreground max-w-sm mx-auto mb-3 md:mb-6">
                         We couldn&apos;t find anything matching that title, author, category, or filter.
                     </p>
-                    <Link
-                        href="/search"
-                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-                    >
-                        Clear all filters
-                    </Link>
+                    <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                        {hasQuery ? (
+                            <Link
+                                href={buildRequestHref({ query: trimmedQuery, type: normalizedType })}
+                                className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                Request this summary
+                                <ArrowRight className="size-4" />
+                            </Link>
+                        ) : null}
+                        <Link
+                            href="/search"
+                            className="focus-ring inline-flex items-center gap-2 rounded-full border border-border bg-secondary/30 px-6 py-2.5 font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+                        >
+                            Clear all filters
+                        </Link>
+                    </div>
                 </div>
             )}
         </div>

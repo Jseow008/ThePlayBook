@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, BookOpenText, LayoutDashboard, LayoutGrid, Layers3 } from "lucide-react";
+import { BarChart3, BookOpenText, Inbox, LayoutDashboard, LayoutGrid, Layers3 } from "lucide-react";
 
 const NAV_ITEMS = [
     {
@@ -16,6 +16,12 @@ const NAV_ITEMS = [
         label: "Content",
         Icon: BookOpenText,
         match: (pathname: string) => pathname.startsWith("/admin/content"),
+    },
+    {
+        href: "/admin/requests",
+        label: "Requests",
+        Icon: Inbox,
+        match: (pathname: string) => pathname.startsWith("/admin/requests"),
     },
     {
         href: "/admin/sections",
