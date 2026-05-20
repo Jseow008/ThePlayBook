@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, Sparkles } from "lucide-react";
+import { Bell, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, Sparkles } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -22,6 +22,9 @@ export default function SettingsPage() {
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const [displayName, setDisplayName] = useState("");
     const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [requestPublishedEmailEnabled, setRequestPublishedEmailEnabled] = useState(true);
+    const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+    const [isSavingNotifications, setIsSavingNotifications] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -41,6 +44,39 @@ export default function SettingsPage() {
         loadUser();
         return () => { mounted = false; };
     }, [supabase]);
+
+    useEffect(() => {
+        if (!user) return;
+
+        let mounted = true;
+        async function loadNotificationPreferences() {
+            setIsLoadingNotifications(true);
+            try {
+                const response = await fetch("/api/notification-preferences");
+                if (!response.ok) {
+                    throw new Error("Failed to load notification preferences");
+                }
+                const payload = await response.json() as {
+                    data?: { request_published_email_enabled?: boolean };
+                };
+                if (mounted) {
+                    setRequestPublishedEmailEnabled(payload.data?.request_published_email_enabled ?? true);
+                }
+            } catch (error) {
+                console.error("Notification preferences error:", error);
+                if (mounted) {
+                    toast.error("Could not load notification preferences");
+                }
+            } finally {
+                if (mounted) {
+                    setIsLoadingNotifications(false);
+                }
+            }
+        }
+
+        loadNotificationPreferences();
+        return () => { mounted = false; };
+    }, [user]);
 
     const handleSaveProfile = async () => {
         if (!user) return;
@@ -99,6 +135,38 @@ export default function SettingsPage() {
             toast.error("Failed to export data");
         } finally {
             setIsExporting(false);
+        }
+    };
+
+    const handleToggleRequestPublishedEmails = async () => {
+        if (!user || isSavingNotifications) return;
+
+        const nextValue = !requestPublishedEmailEnabled;
+        setIsSavingNotifications(true);
+        setRequestPublishedEmailEnabled(nextValue);
+
+        try {
+            const response = await fetch("/api/notification-preferences", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ request_published_email_enabled: nextValue }),
+            });
+
+            if (!response.ok) {
+                throw new Error("Failed to update notification preferences");
+            }
+
+            const payload = await response.json() as {
+                data?: { request_published_email_enabled?: boolean };
+            };
+            setRequestPublishedEmailEnabled(payload.data?.request_published_email_enabled ?? nextValue);
+            toast.success("Notification preferences updated");
+        } catch (error) {
+            console.error("Notification preferences update error:", error);
+            setRequestPublishedEmailEnabled(!nextValue);
+            toast.error("Could not update notification preferences");
+        } finally {
+            setIsSavingNotifications(false);
         }
     };
 
@@ -214,6 +282,50 @@ export default function SettingsPage() {
                         ) : (
                             <p className="text-sm text-muted-foreground">Not signed in.</p>
                         )}
+                    </div>
+                </section>
+
+                {/* Notifications Section */}
+                <section className="space-y-4">
+                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider px-2">
+                        Notifications
+                    </h2>
+                    <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
+                        <button
+                            type="button"
+                            role="switch"
+                            aria-checked={requestPublishedEmailEnabled}
+                            onClick={handleToggleRequestPublishedEmails}
+                            disabled={isLoadingAuth || isLoadingNotifications || isSavingNotifications || !user}
+                            className="w-full flex items-center justify-between gap-4 p-4 hover:bg-accent/50 transition-colors text-left disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                                    {isLoadingNotifications || isSavingNotifications
+                                        ? <Loader2 className="w-5 h-5 animate-spin" />
+                                        : <Bell className="w-5 h-5" />}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-foreground">Request published emails</p>
+                                    <p className="text-sm text-muted-foreground">
+                                        Get a transactional email when a summary you requested or voted for goes live.
+                                    </p>
+                                </div>
+                            </div>
+                            <span
+                                className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border transition-colors ${
+                                    requestPublishedEmailEnabled
+                                        ? "border-primary bg-primary"
+                                        : "border-border bg-muted"
+                                }`}
+                            >
+                                <span
+                                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                                        requestPublishedEmailEnabled ? "translate-x-5" : "translate-x-0.5"
+                                    }`}
+                                />
+                            </span>
+                        </button>
                     </div>
                 </section>
 

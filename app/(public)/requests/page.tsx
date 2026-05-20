@@ -1,5 +1,5 @@
 import { RequestBoard } from "@/components/requests/RequestBoard";
-import { fetchUserRequestVoteIds, fetchVisibleContentRequests } from "@/lib/server/content-requests";
+import { fetchUserRequestVoteIds, fetchUserSubmittedRequestIds, fetchVisibleContentRequests } from "@/lib/server/content-requests";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import type { ContentType } from "@/types/database";
@@ -23,15 +23,17 @@ export default async function RequestsPage({
     const authResult = await supabase.auth.getUser();
     const { user } = resolveAuthUserResult(authResult);
 
-    const [requests, voteIds] = await Promise.all([
+    const [requests, voteIds, submittedIds] = await Promise.all([
         fetchVisibleContentRequests(),
         user ? fetchUserRequestVoteIds(user.id) : Promise.resolve(new Set<string>()),
+        user ? fetchUserSubmittedRequestIds(user.id) : Promise.resolve(new Set<string>()),
     ]);
 
     return (
         <RequestBoard
             initialRequests={requests}
             initialVotedIds={Array.from(voteIds)}
+            initialSubmittedIds={Array.from(submittedIds)}
             initialInput={resolvedSearchParams?.prefill ?? ""}
             initialContentType={normalizeRequestType(resolvedSearchParams?.type)}
         />

@@ -24,6 +24,8 @@ const REQUIRED_ONE_OF = [
 const RECOMMENDED = [
     "NEXT_PUBLIC_APP_URL",
     "OPENAI_FALLBACK_MODEL",
+    "RESEND_API_KEY",
+    "REQUEST_NOTIFICATION_FROM_EMAIL",
 ];
 
 const URL_VARS = [
@@ -56,6 +58,8 @@ Required:
 Recommended:
 - NEXT_PUBLIC_APP_URL
 - OPENAI_FALLBACK_MODEL
+- RESEND_API_KEY
+- REQUEST_NOTIFICATION_FROM_EMAIL
 
 The script exits non-zero when required values are missing or when any provided URL is invalid.
 `);

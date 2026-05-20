@@ -50,6 +50,9 @@ AI_MONTHLY_MESSAGE_LIMIT=300
 ERROR_REPORTING_WEBHOOK_URL=...
 ERROR_REPORTING_BEARER_TOKEN=...
 CRON_SECRET=...
+RESEND_API_KEY=...
+REQUEST_NOTIFICATION_FROM_EMAIL="Netflux <notifications@yourdomain.com>"
+REQUEST_NOTIFICATION_REPLY_TO_EMAIL=...
 ```
 
 Notes:
@@ -59,6 +62,8 @@ Notes:
 - `ERROR_REPORTING_WEBHOOK_URL` is the production exception sink used by API failures and the root/app error boundaries
 - `ERROR_REPORTING_BEARER_TOKEN` is optional when your ingest endpoint expects bearer auth
 - `CRON_SECRET` protects background worker routes such as AI narration processing
+- `RESEND_API_KEY` and `REQUEST_NOTIFICATION_FROM_EMAIL` power transactional request-board notification emails
+- `REQUEST_NOTIFICATION_REPLY_TO_EMAIL` is optional
 - OAuth client credentials are typically configured in Supabase/provider dashboards rather than read directly by this app
 
 ### 1.3 Supabase Migrations
@@ -271,7 +276,41 @@ If narration remains stuck in `processing`, verify:
 - use the stale reset control if the job is clearly orphaned
 - stale `processing` rows are automatically failed the next time the narration worker or per-item narration status route touches them
 
-### 3.5 AI Usage Quotas
+### 3.5 Request Notification Operations
+
+Request-board published emails are transactional notifications, separate from weekly newsletter consent.
+
+Flow:
+
+- when an admin changes a request from a non-published status to `published` and links published content, voters are queued in `content_request_notifications`
+- submitters are included because request submission automatically creates a vote
+- queueing is idempotent with a unique `(request_id, user_id, type)` constraint
+- the admin action schedules an immediate background processing attempt after the response returns
+- recovery worker route: `GET /api/admin/request-notifications/process` for cron or external schedulers
+- manual recovery route: `POST /api/admin/request-notifications/process` from an authenticated admin session
+- cron auth: `Authorization: Bearer $CRON_SECRET`
+
+Required provider configuration:
+
+- `RESEND_API_KEY`
+- `REQUEST_NOTIFICATION_FROM_EMAIL`
+- verified sending domain in Resend for the configured sender address
+
+Recipient controls:
+
+- users can turn request-published emails on or off from `/settings`
+- each email includes a direct opt-out link for request-published notification emails
+- this preference does not subscribe or unsubscribe the user from weekly newsletter emails
+
+If notifications remain queued, verify:
+
+- the request has a linked `published_content_id`
+- the recipient has a profile email
+- `RESEND_API_KEY` and `REQUEST_NOTIFICATION_FROM_EMAIL` are configured
+- the Resend sending domain is verified
+- if you have configured a scheduler, `CRON_SECRET` matches the cron caller
+
+### 3.6 AI Usage Quotas
 
 Generated AI chat responses are counted against the authenticated user's shared AI message quota. Current default limits are:
 

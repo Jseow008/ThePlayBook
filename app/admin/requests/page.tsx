@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight, EyeOff, Inbox, SquareArrowOutUpRight } from "lucide-react";
 import { updateContentRequest } from "@/app/admin/requests/actions";
-import { fetchAdminContentRequests } from "@/lib/server/content-requests";
+import { ContentRequestPublishedPicker } from "@/components/admin/ContentRequestPublishedPicker";
+import { fetchAdminContentRequests, fetchPublishedContentOptions } from "@/lib/server/content-requests";
 import { getPublishedRequestHref } from "@/lib/content-requests";
 import type { ContentRequestStatus } from "@/types/content-requests";
+
+type AdminRequestView = "all" | "top" | "needs_review" | "in_progress";
 
 const STATUS_OPTIONS: Array<{ value: ContentRequestStatus; label: string }> = [
     { value: "requested", label: "Requested" },
@@ -14,6 +17,13 @@ const STATUS_OPTIONS: Array<{ value: ContentRequestStatus; label: string }> = [
     { value: "archived", label: "Archived" },
 ];
 
+const QUICK_FILTERS: Array<{ value: AdminRequestView; label: string; description: string }> = [
+    { value: "all", label: "All", description: "Full queue" },
+    { value: "top", label: "Top voted", description: "Highest demand" },
+    { value: "needs_review", label: "Needs review", description: "Requested and under review" },
+    { value: "in_progress", label: "In progress", description: "Currently in production" },
+];
+
 function formatContentType(type: string) {
     if (type === "book") return "Book";
     if (type === "podcast") return "Podcast";
@@ -21,10 +31,55 @@ function formatContentType(type: string) {
     return "Article";
 }
 
-export default async function AdminRequestsPage() {
-    const requests = await fetchAdminContentRequests();
+function normalizeView(value?: string): AdminRequestView {
+    return QUICK_FILTERS.some((filter) => filter.value === value) ? value as AdminRequestView : "all";
+}
+
+function filterRequests(requests: Awaited<ReturnType<typeof fetchAdminContentRequests>>, view: AdminRequestView) {
+    const visibleRequests = requests.filter((request) => !request.hidden_at && request.status !== "archived");
+
+    if (view === "top") {
+        return [...visibleRequests].sort((a, b) => b.vote_count - a.vote_count || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+
+    if (view === "needs_review") {
+        return visibleRequests.filter((request) => request.status === "requested" || request.status === "under_review");
+    }
+
+    if (view === "in_progress") {
+        return visibleRequests.filter((request) => request.status === "in_progress");
+    }
+
+    return requests;
+}
+
+function buildQuickFilterHref(view: AdminRequestView) {
+    return view === "all" ? "/admin/requests" : `/admin/requests?view=${view}`;
+}
+
+export default async function AdminRequestsPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ view?: string }>;
+}) {
+    const resolvedSearchParams = await searchParams;
+    const activeView = normalizeView(resolvedSearchParams?.view);
+    const [requests, publishedContentOptions] = await Promise.all([
+        fetchAdminContentRequests(),
+        fetchPublishedContentOptions(),
+    ]);
     const visibleRequests = requests.filter((request) => !request.hidden_at && request.status !== "archived");
     const publishedRequests = requests.filter((request) => request.status === "published").length;
+    const visibleTopRequests = [...visibleRequests].sort((a, b) => b.vote_count - a.vote_count);
+    const needsReviewRequests = visibleRequests.filter((request) => request.status === "requested" || request.status === "under_review");
+    const inProgressRequests = visibleRequests.filter((request) => request.status === "in_progress");
+    const displayRequests = filterRequests(requests, activeView);
+    const filterCounts: Record<AdminRequestView, number> = {
+        all: requests.length,
+        top: visibleTopRequests.length,
+        needs_review: needsReviewRequests.length,
+        in_progress: inProgressRequests.length,
+    };
 
     return (
         <div className="space-y-8">
@@ -62,6 +117,29 @@ export default async function AdminRequestsPage() {
                 </div>
             </div>
 
+            <nav className="flex flex-wrap gap-2" aria-label="Request board quick filters">
+                {QUICK_FILTERS.map((filter) => {
+                    const isActive = activeView === filter.value;
+
+                    return (
+                        <Link
+                            key={filter.value}
+                            href={buildQuickFilterHref(filter.value)}
+                            className={`focus-ring inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+                                isActive
+                                    ? "border-zinc-900 bg-zinc-900 text-white"
+                                    : "border-border bg-card text-foreground hover:bg-muted"
+                            }`}
+                        >
+                            <span>{filter.label}</span>
+                            <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? "bg-white/15 text-white" : "bg-zinc-100 text-zinc-700"}`}>
+                                {filterCounts[filter.value]}
+                            </span>
+                        </Link>
+                    );
+                })}
+            </nav>
+
             <section className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
                 <div className="border-b border-border px-6 py-4">
                     <h2 className="font-semibold text-foreground">Community Requests</h2>
@@ -70,9 +148,9 @@ export default async function AdminRequestsPage() {
                     </p>
                 </div>
 
-                {requests.length > 0 ? (
+                {displayRequests.length > 0 ? (
                     <div className="divide-y divide-border">
-                        {requests.map((request) => {
+                        {displayRequests.map((request) => {
                             const publishedHref = getPublishedRequestHref(request);
                             const isHidden = Boolean(request.hidden_at) || request.status === "archived";
 
@@ -146,12 +224,33 @@ export default async function AdminRequestsPage() {
                                         </label>
 
                                         <label className="grid gap-1.5 text-sm font-medium text-foreground">
-                                            Published content ID
-                                            <input
+                                            Published content
+                                            <ContentRequestPublishedPicker
                                                 name="publishedContentId"
                                                 defaultValue={request.published_content?.id ?? ""}
-                                                placeholder="UUID from content item"
-                                                className="h-10 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                                options={publishedContentOptions}
+                                            />
+                                        </label>
+
+                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
+                                            Source availability note
+                                            <textarea
+                                                name="sourceAvailabilityNote"
+                                                defaultValue={request.source_availability_note ?? ""}
+                                                placeholder="Shown publicly when source is unavailable."
+                                                rows={3}
+                                                className="min-h-20 rounded-md border border-input bg-white px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                                            />
+                                        </label>
+
+                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
+                                            Admin note
+                                            <textarea
+                                                name="adminNote"
+                                                defaultValue={request.admin_note ?? ""}
+                                                placeholder="Internal note for sourcing, review, or production context."
+                                                rows={3}
+                                                className="min-h-20 rounded-md border border-input bg-white px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                                             />
                                         </label>
 
@@ -191,9 +290,13 @@ export default async function AdminRequestsPage() {
                 ) : (
                     <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
                         <Inbox className="size-10 text-muted-foreground" />
-                        <h3 className="mt-4 font-semibold text-foreground">No requests yet</h3>
+                        <h3 className="mt-4 font-semibold text-foreground">
+                            {requests.length > 0 ? "No requests match this filter" : "No requests yet"}
+                        </h3>
                         <p className="mt-1 max-w-md text-sm text-muted-foreground">
-                            Once users submit ideas from the public board, they will appear here for review.
+                            {requests.length > 0
+                                ? "Switch filters to continue reviewing the request board."
+                                : "Once users submit ideas from the public board, they will appear here for review."}
                         </p>
                     </div>
                 )}

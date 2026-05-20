@@ -16,8 +16,10 @@ export interface ContentRequestBoardItem {
     content_type: ContentType;
     thumbnail_url: string | null;
     status: ContentRequestStatus;
+    source_availability_note: string | null;
     vote_count: number;
     created_at: string;
+    updated_at: string;
     published_content: {
         id: string;
         title: string;

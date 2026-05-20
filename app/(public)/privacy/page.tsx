@@ -76,6 +76,9 @@ export default function PrivacyPage() {
                         <p className="text-muted-foreground leading-relaxed mb-4">
                             We use this information to send the emails you requested, manage unsubscribe requests, prevent duplicate subscriptions, and understand which launch surfaces are working.
                         </p>
+                        <p className="text-muted-foreground leading-relaxed mb-4">
+                            If you use the request board, we may also send transactional emails when a summary you requested or voted for is published. These request notifications are separate from weekly email subscriptions and can be turned off from Settings or from the opt-out link in the notification email.
+                        </p>
 
                         <h3 className="text-base font-medium mb-2 mt-8 text-foreground/90">Account Information</h3>
                         <p className="text-muted-foreground leading-relaxed mb-4">
@@ -103,6 +106,7 @@ export default function PrivacyPage() {
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Improve site performance and user experience</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Identify and fix technical issues</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Send weekly emails to people who explicitly subscribe</span></li>
+                            <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Send transactional request-board notifications for summaries users requested or voted for</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Process unsubscribe requests and maintain subscription status</span></li>
                         </ul>
                     </section>
@@ -131,7 +135,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Your Rights</h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            You can request access, correction, or deletion of personal information associated with your account or email subscription. You can unsubscribe from weekly emails using the unsubscribe link included in those emails once email sending is active.
+                            You can request access, correction, or deletion of personal information associated with your account or email subscription. You can unsubscribe from weekly emails using the unsubscribe link included in those emails once email sending is active, and you can turn off request-board notification emails from Settings or from the opt-out link included in those notifications.
                         </p>
                     </section>
 
