@@ -96,12 +96,27 @@ function isProtectedAdminPath(pathname: string): boolean {
     );
 }
 
+function isCronProcessorPath(pathname: string): boolean {
+    return pathname === "/api/admin/narration/process"
+        || pathname === "/api/admin/request-notifications/process";
+}
+
+function hasValidCronSecret(request: NextRequest): boolean {
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret || !isCronProcessorPath(request.nextUrl.pathname)) {
+        return false;
+    }
+
+    return request.headers.get("authorization") === `Bearer ${cronSecret}`;
+}
+
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
     const isAdminApiRoute = pathname.startsWith("/api/admin");
+    const isAuthorizedCronProcessor = hasValidCronSecret(request);
 
     // ── Admin IP gate ────────────────────────────────────────────────
-    if (isAdminPath(pathname)) {
+    if (isAdminPath(pathname) && !isAuthorizedCronProcessor) {
         const allowedIps = getAdminAllowedIps();
 
         if (allowedIps !== null) {
@@ -121,6 +136,10 @@ export async function proxy(request: NextRequest) {
     }
 
     if (pathname.startsWith("/read")) {
+        return NextResponse.next({ request });
+    }
+
+    if (isAuthorizedCronProcessor) {
         return NextResponse.next({ request });
     }
 

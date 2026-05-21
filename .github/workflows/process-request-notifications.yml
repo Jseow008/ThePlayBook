@@ -1,0 +1,23 @@
+name: Process Notification Queue
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: process-notification-queue
+  cancel-in-progress: false
+
+jobs:
+  process-notification-queue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Trigger request notification outbox
+        run: |
+          curl --fail --show-error --silent \
+            --max-time 60 \
+            -X GET "https://www.netflux.blog/api/admin/request-notifications/process" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
