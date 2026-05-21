@@ -27,6 +27,11 @@ function emptyToNull(value: string | undefined) {
     return trimmed ? trimmed : null;
 }
 
+function getOptionalString(formData: FormData, name: string) {
+    const value = formData.get(name);
+    return typeof value === "string" ? value : undefined;
+}
+
 export async function updateContentRequest(formData: FormData): Promise<void> {
     const requestId = getRequestId();
     const isAdmin = await verifyAdminSession();
@@ -37,10 +42,10 @@ export async function updateContentRequest(formData: FormData): Promise<void> {
     const parsed = UpdateRequestSchema.safeParse({
         requestId: formData.get("requestId"),
         status: formData.get("status"),
-        publishedContentId: formData.get("publishedContentId"),
-        sourceAvailabilityNote: formData.get("sourceAvailabilityNote"),
-        adminNote: formData.get("adminNote"),
-        hiddenReason: formData.get("hiddenReason"),
+        publishedContentId: getOptionalString(formData, "publishedContentId"),
+        sourceAvailabilityNote: getOptionalString(formData, "sourceAvailabilityNote"),
+        adminNote: getOptionalString(formData, "adminNote"),
+        hiddenReason: getOptionalString(formData, "hiddenReason"),
         hideRequest: formData.get("hideRequest") || "false",
     });
 

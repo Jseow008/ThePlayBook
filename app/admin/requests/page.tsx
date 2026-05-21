@@ -1,22 +1,11 @@
 import Link from "next/link";
 import { ArrowUpRight, EyeOff, Inbox, SquareArrowOutUpRight } from "lucide-react";
-import { updateContentRequest } from "@/app/admin/requests/actions";
-import { ContentRequestPublishedPicker } from "@/components/admin/ContentRequestPublishedPicker";
+import { AdminContentRequestForm } from "@/components/admin/AdminContentRequestForm";
 import { getContentRequestNotificationBacklogStats } from "@/lib/server/content-request-notifications";
 import { fetchAdminContentRequests, fetchPublishedContentOptions } from "@/lib/server/content-requests";
 import { getPublishedRequestHref } from "@/lib/content-requests";
-import type { ContentRequestStatus } from "@/types/content-requests";
 
 type AdminRequestView = "all" | "top" | "needs_review" | "in_progress";
-
-const STATUS_OPTIONS: Array<{ value: ContentRequestStatus; label: string }> = [
-    { value: "requested", label: "Requested" },
-    { value: "under_review", label: "Under Review" },
-    { value: "in_progress", label: "In Progress" },
-    { value: "published", label: "Published" },
-    { value: "source_unavailable", label: "Source Unavailable" },
-    { value: "archived", label: "Archived" },
-];
 
 const QUICK_FILTERS: Array<{ value: AdminRequestView; label: string; description: string }> = [
     { value: "all", label: "All", description: "Full queue" },
@@ -249,7 +238,7 @@ export default async function AdminRequestsPage({
                                         </div>
 
                                         <div>
-                                            <h3 className="truncate text-lg font-semibold text-foreground">{request.title}</h3>
+                                            <h3 className="line-clamp-2 text-lg font-semibold text-foreground">{request.title}</h3>
                                             <p className="mt-1 text-sm text-muted-foreground">
                                                 {request.author || "No creator listed"} • Added{" "}
                                                 {new Date(request.created_at).toLocaleDateString()}
@@ -281,84 +270,7 @@ export default async function AdminRequestsPage({
                                         </div>
                                     </div>
 
-                                    <form action={updateContentRequest} className="grid gap-3 rounded-lg border border-border bg-background p-4">
-                                        <input type="hidden" name="requestId" value={request.id} />
-
-                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
-                                            Status
-                                            <select
-                                                name="status"
-                                                defaultValue={request.status}
-                                                className="h-10 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                            >
-                                                {STATUS_OPTIONS.map((status) => (
-                                                    <option key={status.value} value={status.value}>
-                                                        {status.label}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </label>
-
-                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
-                                            Published content
-                                            <ContentRequestPublishedPicker
-                                                name="publishedContentId"
-                                                defaultValue={request.published_content?.id ?? ""}
-                                                options={publishedContentOptions}
-                                            />
-                                        </label>
-
-                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
-                                            Source availability note
-                                            <textarea
-                                                name="sourceAvailabilityNote"
-                                                defaultValue={request.source_availability_note ?? ""}
-                                                placeholder="Shown publicly when source is unavailable."
-                                                rows={3}
-                                                className="min-h-20 rounded-md border border-input bg-white px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                            />
-                                        </label>
-
-                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
-                                            Admin note
-                                            <textarea
-                                                name="adminNote"
-                                                defaultValue={request.admin_note ?? ""}
-                                                placeholder="Internal note for sourcing, review, or production context."
-                                                rows={3}
-                                                className="min-h-20 rounded-md border border-input bg-white px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                            />
-                                        </label>
-
-                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
-                                            Visibility
-                                            <select
-                                                name="hideRequest"
-                                                defaultValue={isHidden ? "true" : "false"}
-                                                className="h-10 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                            >
-                                                <option value="false">Visible</option>
-                                                <option value="true">Hidden</option>
-                                            </select>
-                                        </label>
-
-                                        <label className="grid gap-1.5 text-sm font-medium text-foreground">
-                                            Hidden reason
-                                            <input
-                                                name="hiddenReason"
-                                                defaultValue={request.hidden_reason ?? ""}
-                                                placeholder="Spam, duplicate cleanup, source issue..."
-                                                className="h-10 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                                            />
-                                        </label>
-
-                                        <button
-                                            type="submit"
-                                            className="focus-ring inline-flex h-10 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-medium text-white transition-colors hover:bg-zinc-800"
-                                        >
-                                            Save changes
-                                        </button>
-                                    </form>
+                                    <AdminContentRequestForm request={request} publishedContentOptions={publishedContentOptions} />
                                 </article>
                             );
                         })}

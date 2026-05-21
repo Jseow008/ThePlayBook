@@ -42,22 +42,22 @@ export function ContentRequestPublishedPicker({
         : filteredOptions;
 
     return (
-        <div className="grid gap-2">
-            <div className="relative">
+        <div className="grid min-w-0 gap-2">
+            <div className="relative min-w-0">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                     type="search"
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
                     placeholder="Search published content..."
-                    className="h-10 w-full rounded-md border border-input bg-white pl-9 pr-3 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="h-10 w-full min-w-0 rounded-md border border-input bg-white pl-9 pr-3 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
             </div>
             <select
                 name={name}
                 value={selectedId}
                 onChange={(event) => setSelectedId(event.target.value)}
-                className="h-10 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="h-10 w-full min-w-0 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
                 <option value="">No published content selected</option>
                 {selectOptions.map((option) => (
