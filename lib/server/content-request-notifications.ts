@@ -59,6 +59,15 @@ interface ProcessSummary {
     retried: number;
 }
 
+export interface ContentRequestNotificationBacklogStats {
+    queued: number;
+    queuedOlderThanOneHour: number;
+    processing: number;
+    staleProcessing: number;
+    failed: number;
+    sentLast24Hours: number;
+}
+
 class EmailConfigurationError extends Error {
     constructor(message: string) {
         super(message);
@@ -349,6 +358,59 @@ async function markNotificationFailed(notificationId: string, currentAttempts: n
     }
 
     return status;
+}
+
+async function countNotifications(
+    status: NotificationStatus,
+    applyFilters?: (query: any) => any
+) {
+    const supabase = getAdminClient();
+    let query = (supabase as any).from("content_request_notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("status", status);
+
+    if (applyFilters) {
+        query = applyFilters(query);
+    }
+
+    const { count, error } = await query;
+
+    if (error) {
+        throw error;
+    }
+
+    return count ?? 0;
+}
+
+export async function getContentRequestNotificationBacklogStats(): Promise<ContentRequestNotificationBacklogStats> {
+    const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+    const staleProcessingBefore = new Date(Date.now() - STALE_PROCESSING_MINUTES * 60_000).toISOString();
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+
+    const [
+        queued,
+        queuedOlderThanOneHour,
+        processing,
+        staleProcessing,
+        failed,
+        sentLast24Hours,
+    ] = await Promise.all([
+        countNotifications("queued"),
+        countNotifications("queued", (query) => query.lt("queued_at", oneHourAgo)),
+        countNotifications("processing"),
+        countNotifications("processing", (query) => query.lt("processing_started_at", staleProcessingBefore)),
+        countNotifications("failed"),
+        countNotifications("sent", (query) => query.gte("sent_at", twentyFourHoursAgo)),
+    ]);
+
+    return {
+        queued,
+        queuedOlderThanOneHour,
+        processing,
+        staleProcessing,
+        failed,
+        sentLast24Hours,
+    };
 }
 
 export async function processQueuedContentRequestNotifications(

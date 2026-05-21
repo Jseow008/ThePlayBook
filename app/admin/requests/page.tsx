@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUpRight, EyeOff, Inbox, SquareArrowOutUpRight } from "lucide-react";
 import { updateContentRequest } from "@/app/admin/requests/actions";
 import { ContentRequestPublishedPicker } from "@/components/admin/ContentRequestPublishedPicker";
+import { getContentRequestNotificationBacklogStats } from "@/lib/server/content-request-notifications";
 import { fetchAdminContentRequests, fetchPublishedContentOptions } from "@/lib/server/content-requests";
 import { getPublishedRequestHref } from "@/lib/content-requests";
 import type { ContentRequestStatus } from "@/types/content-requests";
@@ -57,6 +58,30 @@ function buildQuickFilterHref(view: AdminRequestView) {
     return view === "all" ? "/admin/requests" : `/admin/requests?view=${view}`;
 }
 
+function getNotificationHealth(stats: Awaited<ReturnType<typeof getContentRequestNotificationBacklogStats>>) {
+    if (stats.failed > 0 || stats.queuedOlderThanOneHour > 0 || stats.staleProcessing > 0) {
+        return {
+            label: "Needs attention",
+            valueClassName: "text-amber-700",
+            description: "Review failed or aging notifications.",
+        };
+    }
+
+    if (stats.queued > 0 || stats.processing > 0) {
+        return {
+            label: "Draining",
+            valueClassName: "text-sky-700",
+            description: "Queued notifications are being processed.",
+        };
+    }
+
+    return {
+        label: "Healthy",
+        valueClassName: "text-emerald-600",
+        description: "No delayed notification work.",
+    };
+}
+
 export default async function AdminRequestsPage({
     searchParams,
 }: {
@@ -64,10 +89,12 @@ export default async function AdminRequestsPage({
 }) {
     const resolvedSearchParams = await searchParams;
     const activeView = normalizeView(resolvedSearchParams?.view);
-    const [requests, publishedContentOptions] = await Promise.all([
+    const [requests, publishedContentOptions, notificationStats] = await Promise.all([
         fetchAdminContentRequests(),
         fetchPublishedContentOptions(),
+        getContentRequestNotificationBacklogStats(),
     ]);
+    const notificationHealth = getNotificationHealth(notificationStats);
     const visibleRequests = requests.filter((request) => !request.hidden_at && request.status !== "archived");
     const publishedRequests = requests.filter((request) => request.status === "published").length;
     const visibleTopRequests = [...visibleRequests].sort((a, b) => b.vote_count - a.vote_count);
@@ -100,7 +127,7 @@ export default async function AdminRequestsPage({
                 </Link>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p className="text-sm font-medium text-muted-foreground">Visible Requests</p>
                     <p className="mt-1 text-3xl font-bold text-foreground">{visibleRequests.length}</p>
@@ -115,7 +142,56 @@ export default async function AdminRequestsPage({
                     <p className="text-sm font-medium text-muted-foreground">Published</p>
                     <p className="mt-1 text-3xl font-bold text-emerald-600">{publishedRequests}</p>
                 </div>
+                <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                    <p className="text-sm font-medium text-muted-foreground">Notification Queue</p>
+                    <p className={`mt-1 text-3xl font-bold ${notificationHealth.valueClassName}`}>
+                        {notificationHealth.label}
+                    </p>
+                    <p className="mt-1 text-sm text-muted-foreground">{notificationHealth.description}</p>
+                </div>
             </div>
+
+            <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                        <h2 className="font-semibold text-foreground">Request Notification Health</h2>
+                        <p className="text-sm text-muted-foreground">
+                            Watch for delivery backlog before users miss published-summary emails.
+                        </p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                        Sent last 24h: <span className="font-semibold text-foreground">{notificationStats.sentLast24Hours}</span>
+                    </p>
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="rounded-lg border border-border bg-background px-4 py-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Queued</p>
+                        <p className="mt-1 text-2xl font-semibold text-foreground">{notificationStats.queued}</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background px-4 py-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Queued &gt; 1h</p>
+                        <p className={`mt-1 text-2xl font-semibold ${notificationStats.queuedOlderThanOneHour > 0 ? "text-amber-700" : "text-foreground"}`}>
+                            {notificationStats.queuedOlderThanOneHour}
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background px-4 py-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Processing</p>
+                        <p className="mt-1 text-2xl font-semibold text-foreground">{notificationStats.processing}</p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background px-4 py-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Stale</p>
+                        <p className={`mt-1 text-2xl font-semibold ${notificationStats.staleProcessing > 0 ? "text-amber-700" : "text-foreground"}`}>
+                            {notificationStats.staleProcessing}
+                        </p>
+                    </div>
+                    <div className="rounded-lg border border-border bg-background px-4 py-3">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Failed</p>
+                        <p className={`mt-1 text-2xl font-semibold ${notificationStats.failed > 0 ? "text-red-700" : "text-foreground"}`}>
+                            {notificationStats.failed}
+                        </p>
+                    </div>
+                </div>
+            </section>
 
             <nav className="flex flex-wrap gap-2" aria-label="Request board quick filters">
                 {QUICK_FILTERS.map((filter) => {
