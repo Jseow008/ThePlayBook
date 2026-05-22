@@ -49,7 +49,7 @@ const securityHeaders = [
     value:
       "default-src 'self'; " +
       scriptSrc +
-      ` style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: ${supabaseOrigin} https://images.unsplash.com https://api.dicebear.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com; media-src 'self' blob: data: ${supabaseOrigin}; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; ` +
+      ` style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: ${supabaseOrigin} https://images.unsplash.com https://api.dicebear.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://i.ytimg.com https://img.youtube.com; media-src 'self' blob: data: ${supabaseOrigin}; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; ` +
       (isProduction ? "upgrade-insecure-requests; " : "") +
       `connect-src 'self' ${supabaseOrigin} ${supabaseWssOrigin};`,
   },
@@ -91,6 +91,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "api.dicebear.com" },
       { protocol: "https", hostname: "lh3.googleusercontent.com" },
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
+      { protocol: "https", hostname: "i.ytimg.com" },
+      { protocol: "https", hostname: "img.youtube.com" },
     ],
   },
   async headers() {
