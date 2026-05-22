@@ -7,12 +7,11 @@ import type { AdminContentRequest, PublishedContentOption } from "@/lib/server/c
 import type { ContentRequestStatus } from "@/types/content-requests";
 
 const STATUS_OPTIONS: Array<{ value: ContentRequestStatus; label: string }> = [
-    { value: "requested", label: "Requested" },
-    { value: "under_review", label: "Under Review" },
-    { value: "in_progress", label: "In Progress" },
+    { value: "pending", label: "Pending" },
+    { value: "processing", label: "Processing" },
     { value: "published", label: "Published" },
-    { value: "source_unavailable", label: "Source Unavailable" },
-    { value: "archived", label: "Archived" },
+    { value: "skipped", label: "Skipped" },
+    { value: "failed", label: "Failed" },
 ];
 
 export function AdminContentRequestForm({
@@ -22,12 +21,18 @@ export function AdminContentRequestForm({
     request: AdminContentRequest;
     publishedContentOptions: PublishedContentOption[];
 }) {
-    const initialHidden = Boolean(request.hidden_at) || request.status === "archived";
+    const initialHidden = Boolean(request.hidden_at);
     const [status, setStatus] = useState<ContentRequestStatus>(request.status);
     const [hideRequest, setHideRequest] = useState(initialHidden ? "true" : "false");
-    const shouldShowPublishedContent = status === "published" || status === "in_progress" || Boolean(request.published_content);
-    const shouldShowSourceNote = status === "source_unavailable" || Boolean(request.source_availability_note);
+    const shouldShowPublishedContent = status === "published" || status === "processing" || Boolean(request.published_content);
     const shouldShowHiddenReason = hideRequest === "true" || Boolean(request.hidden_reason);
+    const adminNoteRequired = status === "skipped" || status === "failed";
+    const adminNoteLabel = adminNoteRequired ? "Reason" : "Admin note";
+    const adminNotePlaceholder = status === "failed"
+        ? "What failed during generation or processing?"
+        : status === "skipped"
+        ? "Why is this request being skipped?"
+        : "Internal note for sourcing, review, or production context.";
 
     return (
         <form action={updateContentRequest} className="grid min-w-0 gap-3 rounded-lg border border-border bg-background p-4">
@@ -56,19 +61,7 @@ export function AdminContentRequestForm({
                         name="publishedContentId"
                         defaultValue={request.published_content?.id ?? ""}
                         options={publishedContentOptions}
-                    />
-                </label>
-            ) : null}
-
-            {shouldShowSourceNote ? (
-                <label className="grid min-w-0 gap-1.5 text-sm font-medium text-foreground">
-                    Source availability note
-                    <textarea
-                        name="sourceAvailabilityNote"
-                        defaultValue={request.source_availability_note ?? ""}
-                        placeholder="Shown publicly when source is unavailable."
-                        rows={3}
-                        className="min-h-20 w-full min-w-0 rounded-md border border-input bg-white px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                        required={status === "published"}
                     />
                 </label>
             ) : null}
@@ -98,16 +91,19 @@ export function AdminContentRequestForm({
                 </label>
             ) : null}
 
-            <details className="group min-w-0 rounded-lg border border-border bg-card/70 px-3 py-2" open={Boolean(request.admin_note)}>
+            <details className="group min-w-0 rounded-lg border border-border bg-card/70 px-3 py-2" open={adminNoteRequired || Boolean(request.admin_note)}>
                 <summary className="cursor-pointer list-none text-sm font-medium text-foreground marker:hidden">
-                    Admin note
-                    <span className="ml-2 text-xs font-normal text-muted-foreground group-open:hidden">Optional</span>
+                    {adminNoteLabel}
+                    {!adminNoteRequired ? (
+                        <span className="ml-2 text-xs font-normal text-muted-foreground group-open:hidden">Optional</span>
+                    ) : null}
                 </summary>
                 <textarea
                     name="adminNote"
                     defaultValue={request.admin_note ?? ""}
-                    placeholder="Internal note for sourcing, review, or production context."
+                    placeholder={adminNotePlaceholder}
                     rows={3}
+                    required={adminNoteRequired}
                     className="mt-2 min-h-20 w-full min-w-0 rounded-md border border-input bg-white px-3 py-2 text-sm font-normal text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
             </details>

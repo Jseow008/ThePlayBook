@@ -1,5 +1,5 @@
 import { getAdminClient } from "@/lib/supabase/admin";
-import type { ContentRequestBoardItem } from "@/types/content-requests";
+import { normalizeContentRequestStatus, type ContentRequestBoardItem } from "@/types/content-requests";
 
 export interface AdminContentRequest extends ContentRequestBoardItem {
     hidden_at: string | null;
@@ -86,7 +86,7 @@ export function mapRequestRow(row: any): ContentRequestBoardItem {
         source_url: row.source_url ?? null,
         content_type: row.content_type,
         thumbnail_url: row.thumbnail_url ?? null,
-        status: row.status,
+        status: normalizeContentRequestStatus(row.status),
         source_availability_note: row.source_availability_note ?? null,
         vote_count: Number(row.vote_count ?? 0),
         created_at: row.created_at,
@@ -105,7 +105,6 @@ export async function fetchVisibleContentRequests() {
     let { data, error } = await (supabase as any).from("content_requests")
         .select(REQUEST_SELECT)
         .is("hidden_at", null)
-        .neq("status", "archived")
         .order("vote_count", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(100);
@@ -114,7 +113,6 @@ export async function fetchVisibleContentRequests() {
         const fallback = await (supabase as any).from("content_requests")
             .select(LEGACY_REQUEST_SELECT)
             .is("hidden_at", null)
-            .neq("status", "archived")
             .order("vote_count", { ascending: false })
             .order("created_at", { ascending: false })
             .limit(100);
@@ -129,7 +127,9 @@ export async function fetchVisibleContentRequests() {
         throw error;
     }
 
-    return (data ?? []).map(mapRequestRow);
+    return ((data ?? []) as any[])
+        .map((row) => mapRequestRow(row))
+        .filter((request) => request.status !== "skipped" && request.status !== "failed");
 }
 
 export async function fetchAdminContentRequests(): Promise<AdminContentRequest[]> {

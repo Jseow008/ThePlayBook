@@ -11,15 +11,32 @@ import {
     queueContentRequestPublishedNotifications,
 } from "@/lib/server/content-request-notifications";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { CONTENT_REQUEST_STATUSES } from "@/types/content-requests";
 
 const UpdateRequestSchema = z.object({
     requestId: z.string().uuid(),
-    status: z.enum(["requested", "under_review", "in_progress", "published", "source_unavailable", "archived"]),
+    status: z.enum(CONTENT_REQUEST_STATUSES),
     publishedContentId: z.string().trim().optional(),
     sourceAvailabilityNote: z.string().trim().max(1000).optional(),
     adminNote: z.string().trim().max(2000).optional(),
     hiddenReason: z.string().trim().max(500).optional(),
     hideRequest: z.enum(["true", "false"]).default("false"),
+}).superRefine((data, context) => {
+    if (data.status === "published" && !data.publishedContentId?.trim()) {
+        context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["publishedContentId"],
+            message: "Published requests must be linked to content.",
+        });
+    }
+
+    if ((data.status === "skipped" || data.status === "failed") && !data.adminNote?.trim()) {
+        context.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["adminNote"],
+            message: "Skipped and failed requests require an admin reason.",
+        });
+    }
 });
 
 function emptyToNull(value: string | undefined) {

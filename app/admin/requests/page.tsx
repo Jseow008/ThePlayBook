@@ -5,13 +5,15 @@ import { getContentRequestNotificationBacklogStats } from "@/lib/server/content-
 import { fetchAdminContentRequests, fetchPublishedContentOptions } from "@/lib/server/content-requests";
 import { getPublishedRequestHref } from "@/lib/content-requests";
 
-type AdminRequestView = "all" | "top" | "needs_review" | "in_progress";
+type AdminRequestView = "all" | "top" | "pending" | "processing" | "skipped" | "failed";
 
 const QUICK_FILTERS: Array<{ value: AdminRequestView; label: string; description: string }> = [
     { value: "all", label: "All", description: "Full queue" },
     { value: "top", label: "Top voted", description: "Highest demand" },
-    { value: "needs_review", label: "Needs review", description: "Requested and under review" },
-    { value: "in_progress", label: "In progress", description: "Currently in production" },
+    { value: "pending", label: "Pending", description: "New submissions" },
+    { value: "processing", label: "Processing", description: "Claimed by script or admin" },
+    { value: "skipped", label: "Skipped", description: "Intentionally not processed" },
+    { value: "failed", label: "Failed", description: "Processing failed" },
 ];
 
 function formatContentType(type: string) {
@@ -26,21 +28,21 @@ function normalizeView(value?: string): AdminRequestView {
 }
 
 function filterRequests(requests: Awaited<ReturnType<typeof fetchAdminContentRequests>>, view: AdminRequestView) {
-    const visibleRequests = requests.filter((request) => !request.hidden_at && request.status !== "archived");
+    const actionableRequests = requests.filter((request) => !request.hidden_at && (request.status === "pending" || request.status === "processing"));
 
     if (view === "top") {
-        return [...visibleRequests].sort((a, b) => b.vote_count - a.vote_count || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        return [...actionableRequests].sort((a, b) => b.vote_count - a.vote_count || new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     }
 
-    if (view === "needs_review") {
-        return visibleRequests.filter((request) => request.status === "requested" || request.status === "under_review");
-    }
-
-    if (view === "in_progress") {
-        return visibleRequests.filter((request) => request.status === "in_progress");
+    if (view === "pending" || view === "processing" || view === "skipped" || view === "failed") {
+        return requests.filter((request) => request.status === view);
     }
 
     return requests;
+}
+
+function isPublicVisibleRequest(request: Awaited<ReturnType<typeof fetchAdminContentRequests>>[number]) {
+    return !request.hidden_at && request.status !== "skipped" && request.status !== "failed";
 }
 
 function buildQuickFilterHref(view: AdminRequestView) {
@@ -84,17 +86,21 @@ export default async function AdminRequestsPage({
         getContentRequestNotificationBacklogStats(),
     ]);
     const notificationHealth = getNotificationHealth(notificationStats);
-    const visibleRequests = requests.filter((request) => !request.hidden_at && request.status !== "archived");
+    const visibleRequests = requests.filter(isPublicVisibleRequest);
     const publishedRequests = requests.filter((request) => request.status === "published").length;
-    const visibleTopRequests = [...visibleRequests].sort((a, b) => b.vote_count - a.vote_count);
-    const needsReviewRequests = visibleRequests.filter((request) => request.status === "requested" || request.status === "under_review");
-    const inProgressRequests = visibleRequests.filter((request) => request.status === "in_progress");
+    const visibleTopRequests = visibleRequests.filter((request) => request.status === "pending" || request.status === "processing");
+    const pendingRequests = requests.filter((request) => request.status === "pending");
+    const processingRequests = requests.filter((request) => request.status === "processing");
+    const skippedRequests = requests.filter((request) => request.status === "skipped");
+    const failedRequests = requests.filter((request) => request.status === "failed");
     const displayRequests = filterRequests(requests, activeView);
     const filterCounts: Record<AdminRequestView, number> = {
         all: requests.length,
         top: visibleTopRequests.length,
-        needs_review: needsReviewRequests.length,
-        in_progress: inProgressRequests.length,
+        pending: pendingRequests.length,
+        processing: processingRequests.length,
+        skipped: skippedRequests.length,
+        failed: failedRequests.length,
     };
 
     return (
@@ -209,7 +215,7 @@ export default async function AdminRequestsPage({
                 <div className="border-b border-border px-6 py-4">
                     <h2 className="font-semibold text-foreground">Community Requests</h2>
                     <p className="text-sm text-muted-foreground">
-                        Highest-impact requests should move from review to production once source availability is clear.
+                        Highest-impact requests should move from pending to processing once source availability is clear.
                     </p>
                 </div>
 
@@ -217,7 +223,7 @@ export default async function AdminRequestsPage({
                     <div className="divide-y divide-border">
                         {displayRequests.map((request) => {
                             const publishedHref = getPublishedRequestHref(request);
-                            const isHidden = Boolean(request.hidden_at) || request.status === "archived";
+                            const isHidden = Boolean(request.hidden_at);
 
                             return (
                                 <article key={request.id} className="grid gap-5 px-6 py-5 xl:grid-cols-[minmax(0,1fr)_28rem]">

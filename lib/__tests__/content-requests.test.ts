@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { inferContentType, normalizeText, normalizeUrl, splitTitleAndAuthor } from "@/lib/content-requests";
 import { fetchRequestMetadata } from "@/lib/server/content-request-metadata";
+import { normalizeContentRequestStatus } from "@/types/content-requests";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -28,6 +29,16 @@ describe("content request helpers", () => {
         expect(inferContentType("https://youtu.be/example")).toBe("video");
         expect(inferContentType("https://podcasts.apple.com/us/podcast/example")).toBe("podcast");
         expect(inferContentType("https://example.com/essay")).toBe("article");
+    });
+
+    it("maps legacy request statuses to the simplified lifecycle", () => {
+        expect(normalizeContentRequestStatus("requested")).toBe("pending");
+        expect(normalizeContentRequestStatus("under_review")).toBe("processing");
+        expect(normalizeContentRequestStatus("in_progress")).toBe("processing");
+        expect(normalizeContentRequestStatus("source_unavailable")).toBe("skipped");
+        expect(normalizeContentRequestStatus("archived")).toBe("skipped");
+        expect(normalizeContentRequestStatus("published")).toBe("published");
+        expect(normalizeContentRequestStatus("unknown")).toBe("pending");
     });
 
     it("blocks direct private-network metadata fetches", async () => {

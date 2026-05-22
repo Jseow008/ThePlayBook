@@ -16,10 +16,12 @@ export function ContentRequestPublishedPicker({
     name,
     options,
     defaultValue,
+    required = false,
 }: {
     name: string;
     options: PublishedContentOption[];
     defaultValue?: string | null;
+    required?: boolean;
 }) {
     const [query, setQuery] = useState("");
     const [selectedId, setSelectedId] = useState(defaultValue ?? "");
@@ -57,6 +59,7 @@ export function ContentRequestPublishedPicker({
                 name={name}
                 value={selectedId}
                 onChange={(event) => setSelectedId(event.target.value)}
+                required={required}
                 className="h-10 w-full min-w-0 rounded-md border border-input bg-white px-3 text-sm font-normal text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             >
                 <option value="">No published content selected</option>

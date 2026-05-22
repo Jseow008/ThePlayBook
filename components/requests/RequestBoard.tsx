@@ -48,29 +48,25 @@ type BoardSort = typeof SORT_OPTIONS[number]["value"];
 type BoardView = "all" | "mine";
 
 const STATUS_COPY: Record<ContentRequestStatus, { label: string; className: string }> = {
-    requested: {
-        label: "Requested",
+    pending: {
+        label: "Pending",
         className: "border-sky-400/25 bg-sky-400/10 text-sky-200",
     },
-    under_review: {
-        label: "Under Review",
-        className: "border-violet-400/25 bg-violet-400/10 text-violet-200",
-    },
-    in_progress: {
-        label: "In Progress",
+    processing: {
+        label: "Processing",
         className: "border-amber-400/30 bg-amber-400/10 text-amber-200",
     },
     published: {
         label: "Published",
         className: "border-emerald-400/30 bg-emerald-400/10 text-emerald-200",
     },
-    source_unavailable: {
-        label: "Source Unavailable",
+    skipped: {
+        label: "Skipped",
         className: "border-zinc-400/25 bg-zinc-400/10 text-zinc-200",
     },
-    archived: {
-        label: "Archived",
-        className: "border-zinc-400/25 bg-zinc-400/10 text-zinc-300",
+    failed: {
+        label: "Failed",
+        className: "border-red-400/30 bg-red-400/10 text-red-200",
     },
 };
 
@@ -119,6 +115,10 @@ function matchesUserRequest(request: ContentRequestBoardItem, submittedIds: Set<
     return submittedIds.has(request.id) || votedIds.has(request.id);
 }
 
+function isOpenRequest(request: ContentRequestBoardItem) {
+    return request.status === "pending" || request.status === "processing";
+}
+
 export function RequestBoard({
     initialRequests,
     initialVotedIds,
@@ -146,7 +146,7 @@ export function RequestBoard({
     const [boardSort, setBoardSort] = useState<BoardSort>("most_voted");
 
     const topRequests = useMemo(
-        () => sortRequests(requests.filter((request) => request.status !== "published"), "most_voted").slice(0, 3),
+        () => sortRequests(requests.filter(isOpenRequest), "most_voted").slice(0, 3),
         [requests]
     );
     const myRequestCount = useMemo(
@@ -161,7 +161,7 @@ export function RequestBoard({
     );
     const openRequests = useMemo(
         () => sortRequests(
-            boardRequests.filter((request) => request.status !== "published" && matchesTypeFilter(request, boardTypeFilter)),
+            boardRequests.filter((request) => isOpenRequest(request) && matchesTypeFilter(request, boardTypeFilter)),
             boardSort
         ),
         [boardRequests, boardSort, boardTypeFilter]
@@ -530,9 +530,9 @@ export function RequestBoard({
                             </p>
                         </div>
 
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="space-y-3">
                             {openRequests.length > 0 ? openRequests.map((request) => (
-                                <RequestCard
+                                <RequestRow
                                     key={request.id}
                                     request={request}
                                     isVoted={votedIds.has(request.id)}
@@ -541,7 +541,7 @@ export function RequestBoard({
                                     onVote={() => handleVote(request)}
                                 />
                             )) : (
-                                <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center md:col-span-2 xl:col-span-3">
+                                <div className="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center">
                                     <BookOpen className="mx-auto size-10 text-muted-foreground" />
                                     <h2 className="mt-4 text-lg font-semibold text-foreground">
                                         {emptyRequestsTitle}
@@ -556,6 +556,187 @@ export function RequestBoard({
                 </div>
             </section>
         </div>
+    );
+}
+
+function RequestVoteControl({
+    request,
+    isVoted,
+    isPending,
+    isVotingLocked,
+    onVote,
+}: {
+    request: ContentRequestBoardItem;
+    isVoted: boolean;
+    isPending: boolean;
+    isVotingLocked: boolean;
+    onVote?: () => void;
+}) {
+    if (isVotingLocked) {
+        return (
+            <div className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-3 text-sm font-semibold text-emerald-100">
+                <ThumbsUp className="size-4" />
+                {request.vote_count}
+            </div>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={onVote}
+            disabled={isPending}
+            aria-pressed={isVoted}
+            className={cn(
+                "focus-ring inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors disabled:opacity-70",
+                isVoted
+                    ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "border-border bg-background text-foreground hover:bg-muted"
+            )}
+        >
+            {isPending ? <Loader2 className="size-4 animate-spin" /> : <ThumbsUp className="size-4" />}
+            {request.vote_count}
+        </button>
+    );
+}
+
+function RequestMediaPreview({
+    request,
+    className,
+}: {
+    request: ContentRequestBoardItem;
+    className?: string;
+}) {
+    const Icon = contentTypeIcon(request.content_type);
+
+    return (
+        <div className={cn("relative shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30", className)}>
+            {request.thumbnail_url ? (
+                <Image
+                    src={request.thumbnail_url}
+                    alt=""
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                />
+            ) : (
+                <div className="flex h-full items-center justify-center bg-gradient-to-br from-card via-muted/20 to-background">
+                    <Icon className="size-5 text-muted-foreground" />
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RequestMetaBadges({
+    request,
+    isSubmitted,
+    isVoted,
+}: {
+    request: ContentRequestBoardItem;
+    isSubmitted: boolean;
+    isVoted: boolean;
+}) {
+    const status = STATUS_COPY[request.status];
+
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-white/10 bg-background/80 px-2.5 py-1 text-xs font-semibold text-foreground">
+                {contentTypeLabel(request.content_type)}
+            </span>
+            <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold", status.className)}>
+                {status.label}
+            </span>
+            {isSubmitted ? (
+                <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                    You requested
+                </span>
+            ) : null}
+            {isVoted ? (
+                <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-100">
+                    Voted
+                </span>
+            ) : null}
+        </div>
+    );
+}
+
+function RequestRow({
+    request,
+    isVoted,
+    isSubmitted,
+    isPending,
+    onVote,
+}: {
+    request: ContentRequestBoardItem;
+    isVoted: boolean;
+    isSubmitted: boolean;
+    isPending: boolean;
+    onVote?: () => void;
+}) {
+    const publishedHref = getPublishedRequestHref(request);
+
+    return (
+        <article className="group rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-border/80 sm:p-5">
+            <div className="grid gap-4 md:grid-cols-[6rem_minmax(0,1fr)_auto] md:items-center">
+                <div className="flex items-start gap-3 md:block">
+                    <RequestMediaPreview request={request} className="h-16 w-24 md:h-16 md:w-24" />
+                    <div className="min-w-0 flex-1 md:hidden">
+                        <RequestMetaBadges request={request} isSubmitted={isSubmitted} isVoted={isVoted} />
+                    </div>
+                </div>
+
+                <div className="min-w-0 space-y-2">
+                    <div className="hidden md:block">
+                        <RequestMetaBadges request={request} isSubmitted={isSubmitted} isVoted={isVoted} />
+                    </div>
+                    <div>
+                        <h2 className="line-clamp-2 text-base font-semibold leading-snug text-foreground sm:text-lg">
+                            {request.title}
+                        </h2>
+                        <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">
+                            {request.author || "Creator not listed"}
+                        </p>
+                    </div>
+                    {request.status === "skipped" && request.source_availability_note ? (
+                        <p className="rounded-lg border border-zinc-500/20 bg-zinc-500/10 px-3 py-2 text-xs leading-5 text-zinc-200">
+                            {request.source_availability_note}
+                        </p>
+                    ) : null}
+                </div>
+
+                <div className="flex items-center justify-between gap-3 md:justify-end">
+                    <RequestVoteControl
+                        request={request}
+                        isVoted={isVoted}
+                        isPending={isPending}
+                        isVotingLocked={false}
+                        onVote={onVote}
+                    />
+                    <div className="flex items-center gap-2">
+                        {request.source_url ? (
+                            <a
+                                href={request.source_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="focus-ring inline-flex h-10 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                                Source
+                            </a>
+                        ) : null}
+                        {publishedHref ? (
+                            <Link
+                                href={publishedHref}
+                                className="focus-ring inline-flex h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                            >
+                                Read
+                                <ArrowUpRight className="size-4" />
+                            </Link>
+                        ) : null}
+                    </div>
+                </div>
+            </div>
+        </article>
     );
 }
 
@@ -574,33 +755,14 @@ function RequestCard({
     onVote?: () => void;
     isVotingLocked?: boolean;
 }) {
-    const Icon = contentTypeIcon(request.content_type);
-    const status = STATUS_COPY[request.status];
     const publishedHref = getPublishedRequestHref(request);
 
     return (
         <article className="group flex min-h-[22rem] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-colors hover:border-border/80">
             <div className="relative aspect-[16/9] overflow-hidden bg-muted/30">
-                {request.thumbnail_url ? (
-                    <Image
-                        src={request.thumbnail_url}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1280px) 30vw, (min-width: 768px) 45vw, 100vw"
-                        className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
-                ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-card via-muted/20 to-background">
-                        <Icon className="size-12 text-muted-foreground" />
-                    </div>
-                )}
+                <RequestMediaPreview request={request} className="h-full w-full rounded-none border-0" />
                 <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-                    <span className="rounded-full border border-white/10 bg-background/80 px-2.5 py-1 text-xs font-semibold text-foreground backdrop-blur">
-                        {contentTypeLabel(request.content_type)}
-                    </span>
-                    <span className={cn("rounded-full border px-2.5 py-1 text-xs font-semibold backdrop-blur", status.className)}>
-                        {status.label}
-                    </span>
+                    <RequestMetaBadges request={request} isSubmitted={false} isVoted={false} />
                 </div>
             </div>
 
@@ -624,7 +786,7 @@ function RequestCard({
                             ) : null}
                         </div>
                     ) : null}
-                    {request.status === "source_unavailable" && request.source_availability_note ? (
+                    {request.status === "skipped" && request.source_availability_note ? (
                         <p className="mt-3 rounded-lg border border-zinc-500/20 bg-zinc-500/10 px-3 py-2 text-xs leading-5 text-zinc-200">
                             {request.source_availability_note}
                         </p>
@@ -632,28 +794,13 @@ function RequestCard({
                 </div>
 
                 <div className="mt-auto flex items-center justify-between gap-3 pt-5">
-                    {isVotingLocked ? (
-                        <div className="inline-flex h-10 items-center gap-2 rounded-lg border border-emerald-400/25 bg-emerald-400/10 px-3 text-sm font-semibold text-emerald-100">
-                            <ThumbsUp className="size-4" />
-                            {request.vote_count}
-                        </div>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={onVote}
-                            disabled={isPending}
-                            aria-pressed={isVoted}
-                            className={cn(
-                                "focus-ring inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors disabled:opacity-70",
-                                isVoted
-                                    ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90"
-                                    : "border-border bg-background text-foreground hover:bg-muted"
-                            )}
-                        >
-                            {isPending ? <Loader2 className="size-4 animate-spin" /> : <ThumbsUp className="size-4" />}
-                            {request.vote_count}
-                        </button>
-                    )}
+                    <RequestVoteControl
+                        request={request}
+                        isVoted={isVoted}
+                        isPending={isPending}
+                        isVotingLocked={isVotingLocked}
+                        onVote={onVote}
+                    />
 
                     <div className="flex items-center gap-2">
                         {request.source_url ? (

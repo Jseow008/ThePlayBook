@@ -5,6 +5,7 @@ import { fetchContentRequestById } from "@/lib/server/content-requests";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { normalizeContentRequestStatus } from "@/types/content-requests";
 
 const ParamsSchema = z.object({
     id: z.string().uuid(),
@@ -48,6 +49,18 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         }
 
         const admin = getAdminClient();
+        const { data: targetRequest, error: targetRequestError } = await (admin as any).from("content_requests")
+            .select("id, status, hidden_at")
+            .eq("id", parsedParams.data.id)
+            .maybeSingle();
+
+        if (targetRequestError) throw targetRequestError;
+
+        const targetStatus = normalizeContentRequestStatus(targetRequest?.status);
+        if (!targetRequest || targetRequest.hidden_at || (targetStatus !== "pending" && targetStatus !== "processing")) {
+            return apiError("NOT_FOUND", "Request not found.", 404, requestId);
+        }
+
         const { error } = await (admin as any).from("content_request_votes").upsert(
             { user_id: user.id, request_id: parsedParams.data.id },
             { onConflict: "user_id,request_id", ignoreDuplicates: true }
