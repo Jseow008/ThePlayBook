@@ -8,7 +8,6 @@ import {
     BookOpen,
     CheckCircle2,
     FileText,
-    Headphones,
     Loader2,
     Play,
     Plus,
@@ -29,12 +28,10 @@ import type { ContentRequestBoardItem, ContentRequestMutationResult, ContentRequ
 const TYPE_OPTIONS: Array<{ value: ContentType; label: string; Icon: LucideIcon }> = [
     { value: "book", label: "Book", Icon: BookOpen },
     { value: "video", label: "Video", Icon: Play },
-    { value: "podcast", label: "Podcast", Icon: Headphones },
-    { value: "article", label: "Article", Icon: FileText },
 ];
 
 const BOARD_FILTER_OPTIONS: Array<{ value: "all" | ContentType; label: string; Icon?: LucideIcon }> = [
-    { value: "all", label: "All formats" },
+    { value: "all", label: "All" },
     ...TYPE_OPTIONS,
 ];
 
@@ -301,7 +298,7 @@ export function RequestBoard({
                             Vote on what Netflux should summarize next.
                         </h1>
                         <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                            Add a book, video, podcast, or article. We prioritize requests by community votes and source availability.
+                            Request a book or video. Votes help set the queue.
                         </p>
                     </div>
 
@@ -477,7 +474,7 @@ export function RequestBoard({
                                 </div>
 
                                 <label className="grid gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                                    Sort open requests
+                                    Sort
                                     <select
                                         value={boardSort}
                                         onChange={(event) => setBoardSort(event.target.value as BoardSort)}
@@ -608,16 +605,21 @@ function RequestMediaPreview({
     className?: string;
 }) {
     const Icon = contentTypeIcon(request.content_type);
+    const [hasImageError, setHasImageError] = useState(false);
+    const isBook = request.content_type === "book";
 
     return (
         <div className={cn("relative shrink-0 overflow-hidden rounded-lg border border-border bg-muted/30", className)}>
-            {request.thumbnail_url ? (
+            {request.thumbnail_url && !hasImageError ? (
                 <Image
                     src={request.thumbnail_url}
                     alt=""
                     fill
+                    unoptimized
+                    referrerPolicy="no-referrer"
                     sizes="96px"
-                    className="object-cover"
+                    className={cn(isBook ? "object-contain p-1" : "object-cover")}
+                    onError={() => setHasImageError(true)}
                 />
             ) : (
                 <div className="flex h-full items-center justify-center bg-gradient-to-br from-card via-muted/20 to-background">
@@ -675,19 +677,25 @@ function RequestRow({
     onVote?: () => void;
 }) {
     const publishedHref = getPublishedRequestHref(request);
+    const mediaClassName = request.content_type === "book"
+        ? "h-24 w-16 md:h-24 md:w-16"
+        : "h-16 w-24 md:h-16 md:w-24";
 
     return (
         <article className="group rounded-xl border border-border bg-card p-4 text-card-foreground shadow-sm transition-colors hover:border-border/80 sm:p-5">
-            <div className="grid gap-4 md:grid-cols-[6rem_minmax(0,1fr)_auto] md:items-center">
+            <div className={cn(
+                "grid items-start gap-4 md:items-center",
+                request.content_type === "book"
+                    ? "grid-cols-[4rem_minmax(0,1fr)] md:grid-cols-[4rem_minmax(0,1fr)_auto]"
+                    : "grid-cols-[6rem_minmax(0,1fr)] md:grid-cols-[6rem_minmax(0,1fr)_auto]"
+            )}
+            >
                 <div className="flex items-start gap-3 md:block">
-                    <RequestMediaPreview request={request} className="h-16 w-24 md:h-16 md:w-24" />
-                    <div className="min-w-0 flex-1 md:hidden">
-                        <RequestMetaBadges request={request} isSubmitted={isSubmitted} isVoted={isVoted} />
-                    </div>
+                    <RequestMediaPreview request={request} className={mediaClassName} />
                 </div>
 
                 <div className="min-w-0 space-y-2">
-                    <div className="hidden md:block">
+                    <div>
                         <RequestMetaBadges request={request} isSubmitted={isSubmitted} isVoted={isVoted} />
                     </div>
                     <div>
@@ -705,7 +713,7 @@ function RequestRow({
                     ) : null}
                 </div>
 
-                <div className="flex items-center justify-between gap-3 md:justify-end">
+                <div className="col-span-2 flex items-center justify-between gap-3 md:col-span-1 md:justify-end">
                     <RequestVoteControl
                         request={request}
                         isVoted={isVoted}
@@ -756,11 +764,22 @@ function RequestCard({
     isVotingLocked?: boolean;
 }) {
     const publishedHref = getPublishedRequestHref(request);
+    const isBook = request.content_type === "book";
 
     return (
         <article className="group flex min-h-[22rem] flex-col overflow-hidden rounded-xl border border-border bg-card text-card-foreground shadow-sm transition-colors hover:border-border/80">
-            <div className="relative aspect-[16/9] overflow-hidden bg-muted/30">
-                <RequestMediaPreview request={request} className="h-full w-full rounded-none border-0" />
+            <div className={cn(
+                "relative overflow-hidden bg-muted/30",
+                isBook ? "flex aspect-[4/3] items-center justify-center p-5" : "aspect-[16/9]"
+            )}
+            >
+                <RequestMediaPreview
+                    request={request}
+                    className={cn(
+                        "rounded-none border-0",
+                        isBook ? "h-full max-h-56 w-auto aspect-[2/3] rounded-lg border border-border/70" : "h-full w-full"
+                    )}
+                />
                 <div className="absolute left-3 top-3 flex flex-wrap gap-2">
                     <RequestMetaBadges request={request} isSubmitted={false} isVoted={false} />
                 </div>
