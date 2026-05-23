@@ -173,6 +173,9 @@ export default function SettingsPage() {
     const handleSignOut = async () => {
         setIsSigningOut(true);
         try {
+            const { error } = await supabase.auth.signOut();
+            if (error) throw error;
+
             await signOutAction();
         } catch (err: any) {
             toast.error(err?.message || "Failed to sign out");

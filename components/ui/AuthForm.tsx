@@ -12,6 +12,18 @@ interface AuthFormProps {
     nextUrl?: string;
 }
 
+function isMissingMagicLinkAccountError(error: { message?: string; code?: string; status?: number }) {
+    const message = error.message?.toLowerCase() ?? "";
+
+    return (
+        error.status === 422
+        || error.code === "otp_disabled"
+        || message.includes("signups not allowed")
+        || message.includes("user not found")
+        || message.includes("not found")
+    );
+}
+
 export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProps) {
     const supabase = createClient();
     const [isLoading, setIsLoading] = useState<"google" | "email" | null>(null);
@@ -69,7 +81,11 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
 
             if (error) {
                 console.error("Magic link failed:", error);
-                toast.error(error.message || "Failed to send magic link");
+                toast.error(
+                    isMissingMagicLinkAccountError(error)
+                        ? "No account found for that email. Ask for an invite or sign in with Google."
+                        : error.message || "Failed to send magic link"
+                );
             } else {
                 setEmailSent(true);
                 setEmail(normalizedEmail);

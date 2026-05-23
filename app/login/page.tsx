@@ -1,7 +1,10 @@
 import { AuthForm } from "@/components/ui/AuthForm";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { DEFAULT_LOGIN_REDIRECT_PATH, normalizeLoginNextPath } from "@/lib/auth-redirect";
+import { createClient } from "@/lib/supabase/server";
+import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 
 export default async function LoginPage({
     searchParams,
@@ -11,6 +14,12 @@ export default async function LoginPage({
     const params = await searchParams;
     const error = typeof params.error === "string" ? params.error : undefined;
     const next = normalizeLoginNextPath(typeof params.next === "string" ? params.next : undefined);
+    const supabase = await createClient();
+    const { user } = resolveAuthUserResult(await supabase.auth.getUser());
+
+    if (user) {
+        redirect(next);
+    }
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative">

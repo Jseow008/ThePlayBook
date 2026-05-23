@@ -47,6 +47,9 @@ type NormalizedReaderSettingsPayload = ReaderSettingsFields & {
 };
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
+type AuthSubscription = {
+    unsubscribe: () => void;
+};
 
 const DEFAULT_READER_SETTINGS: NormalizedReaderSettingsPayload = {
     fontSize: "medium",
@@ -58,6 +61,8 @@ const DEFAULT_READER_SETTINGS: NormalizedReaderSettingsPayload = {
 
 let currentScope: StorageScope = getStorageScope(null);
 let authSyncInitialized = false;
+let readerSettingsAuthSubscription: AuthSubscription | null = null;
+let readerSettingsConsumerCount = 0;
 let suppressStorageWrites = false;
 let currentReaderSettingsUserId: string | null | undefined = undefined;
 
@@ -425,8 +430,22 @@ async function applyReaderSettingsScope(user: User | null) {
     }
 }
 
+function releaseReaderSettingsAuthSync() {
+    if (typeof window === "undefined") return;
+
+    readerSettingsConsumerCount = Math.max(0, readerSettingsConsumerCount - 1);
+    if (readerSettingsConsumerCount > 0) return;
+
+    readerSettingsAuthSubscription?.unsubscribe();
+    readerSettingsAuthSubscription = null;
+    authSyncInitialized = false;
+}
+
 function ensureReaderSettingsAuthSync() {
-    if (typeof window === "undefined" || authSyncInitialized) return;
+    if (typeof window === "undefined") return releaseReaderSettingsAuthSync;
+
+    readerSettingsConsumerCount += 1;
+    if (authSyncInitialized) return releaseReaderSettingsAuthSync;
 
     authSyncInitialized = true;
 
@@ -441,15 +460,18 @@ function ensureReaderSettingsAuthSync() {
         void applyReaderSettingsScope(user);
     });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
         currentReaderSettingsUserId = session?.user?.id ?? null;
         void applyReaderSettingsScope(session?.user ?? null);
     });
+    readerSettingsAuthSubscription = subscription;
+
+    return releaseReaderSettingsAuthSync;
 }
 
 export function useReaderSettings() {
     useEffect(() => {
-        ensureReaderSettingsAuthSync();
+        return ensureReaderSettingsAuthSync();
     }, []);
 
     return useReaderSettingsStore();

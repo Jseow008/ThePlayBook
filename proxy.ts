@@ -135,10 +135,6 @@ export async function proxy(request: NextRequest) {
         return legacyReadRedirect;
     }
 
-    if (pathname.startsWith("/read")) {
-        return NextResponse.next({ request });
-    }
-
     if (isAuthorizedCronProcessor) {
         return NextResponse.next({ request });
     }
@@ -192,12 +188,23 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
     matcher: [
+        "/login",
+        "/auth/callback",
+        "/browse",
         "/read/:path*",
+        "/library/:path*",
         "/notes",
         "/ask",
+        "/requests",
         "/admin-login",
         "/admin/:path*",
         "/api/admin/:path*",
+        "/api/activity/:path*",
+        "/api/chat/:path*",
+        "/api/content-requests/:path*",
+        "/api/feedback/:path*",
+        "/api/library/:path*",
+        "/api/notification-preferences/:path*",
         "/profile",
         "/settings",
     ],

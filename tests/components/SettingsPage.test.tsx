@@ -21,6 +21,7 @@ const clearRecentRecommendationsMock = vi.fn();
 const toastErrorMock = vi.fn();
 const toastSuccessMock = vi.fn();
 const signOutActionMock = vi.fn();
+const browserSignOutMock = vi.fn();
 let currentUser: { id: string; email?: string; user_metadata?: { full_name?: string } } | null = null;
 
 vi.mock("next/link", () => ({
@@ -37,6 +38,7 @@ vi.mock("@/lib/supabase/client", () => ({
             getUser: vi.fn().mockResolvedValue({
                 data: { user: currentUser },
             }),
+            signOut: browserSignOutMock,
         },
         from: fromMock,
     }),
@@ -78,6 +80,7 @@ describe("SettingsPage", () => {
         vi.clearAllMocks();
         currentUser = null;
         signOutActionMock.mockResolvedValue(undefined);
+        browserSignOutMock.mockResolvedValue({ error: null });
         selectEqMock.mockResolvedValue({ data: [], error: null });
         deleteEqMock.mockResolvedValue({ error: null });
     });
@@ -219,6 +222,7 @@ describe("SettingsPage", () => {
             fireEvent.click(signOutButton);
         });
 
+        expect(browserSignOutMock).toHaveBeenCalledTimes(1);
         expect(toastErrorMock).toHaveBeenCalledWith("Sign out failed");
         expect(screen.getByRole("button", { name: /sign out/i })).not.toBeDisabled();
         expect(screen.queryByText("Signing out...")).not.toBeInTheDocument();

@@ -2,7 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthForm } from "@/components/ui/AuthForm";
 
-const signInWithOtpMock = vi.fn();
+const { signInWithOtpMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
+    signInWithOtpMock: vi.fn(),
+    toastErrorMock: vi.fn(),
+    toastSuccessMock: vi.fn(),
+}));
 
 vi.mock("@/lib/supabase/client", () => ({
     createClient: () => ({
@@ -15,14 +19,16 @@ vi.mock("@/lib/supabase/client", () => ({
 
 vi.mock("sonner", () => ({
     toast: {
-        error: vi.fn(),
-        success: vi.fn(),
+        error: toastErrorMock,
+        success: toastSuccessMock,
     },
 }));
 
 describe("AuthForm", () => {
     beforeEach(() => {
         signInWithOtpMock.mockReset();
+        toastErrorMock.mockReset();
+        toastSuccessMock.mockReset();
         signInWithOtpMock.mockResolvedValue({ error: null });
     });
 
@@ -48,5 +54,25 @@ describe("AuthForm", () => {
 
         expect(screen.queryByRole("button", { name: /sign in with apple/i })).not.toBeInTheDocument();
         expect(screen.getByRole("button", { name: /sign in with google/i })).toBeVisible();
+    });
+
+    it("shows a clear message when magic link login is blocked for a missing account", async () => {
+        signInWithOtpMock.mockResolvedValue({
+            error: {
+                status: 422,
+                message: "Signups not allowed for otp",
+            },
+        });
+
+        render(<AuthForm />);
+
+        await userEvent.type(screen.getByLabelText(/email address/i), "new@example.com");
+        await userEvent.click(screen.getByRole("button", { name: /continue with email/i }));
+
+        await waitFor(() => {
+            expect(toastErrorMock).toHaveBeenCalledWith(
+                "No account found for that email. Ask for an invite or sign in with Google."
+            );
+        });
     });
 });

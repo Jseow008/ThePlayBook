@@ -5,6 +5,8 @@ import { LogOut, User as UserIcon, Settings } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { signOutAction } from "@/lib/actions/auth";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
 
 import { AVATAR_ICONS } from "@/lib/avatars";
 import { useAuthUser } from "@/hooks/useAuthUser";
@@ -52,6 +54,15 @@ export function UserNav() {
 
     const handleSignOut = async () => {
         setIsOpen(false);
+        const supabase = createClient();
+        const { error } = await supabase.auth.signOut();
+
+        if (error) {
+            console.error("Sign out failed:", error);
+            toast.error(error.message || "Failed to sign out");
+            return;
+        }
+
         await signOutAction();
     };
 

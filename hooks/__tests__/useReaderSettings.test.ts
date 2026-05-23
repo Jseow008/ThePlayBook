@@ -20,6 +20,7 @@ let currentAuthUser: { id: string } | null = null;
 let currentAuthError: { code?: string; message?: string; name?: string } | null = null;
 let currentCloudReaderSettings: Partial<ReaderSettingsPayload> | null = null;
 const profileUpdateMock = vi.fn();
+const unsubscribeMock = vi.fn();
 
 vi.mock("@/lib/supabase/client", () => ({
     createClient: () => ({
@@ -29,7 +30,7 @@ vi.mock("@/lib/supabase/client", () => ({
                 return {
                     data: {
                         subscription: {
-                            unsubscribe: vi.fn(),
+                            unsubscribe: unsubscribeMock,
                         },
                     },
                 };
@@ -328,6 +329,22 @@ describe("useReaderSettings", () => {
             createPersistedSettings(cloudSettings),
         );
         expect(profileUpdateMock).not.toHaveBeenCalled();
+    });
+
+    it("unsubscribes the auth listener when the last hook consumer unmounts", async () => {
+        const useReaderSettings = await loadUseReaderSettings();
+        const firstRender = renderHook(() => useReaderSettings());
+        const secondRender = renderHook(() => useReaderSettings());
+
+        await waitFor(() => {
+            expect(authStateChangeHandler).not.toBeNull();
+        });
+
+        firstRender.unmount();
+        expect(unsubscribeMock).not.toHaveBeenCalled();
+
+        secondRender.unmount();
+        expect(unsubscribeMock).toHaveBeenCalledTimes(1);
     });
 
     it("prefers local legacy settings once when both local and cloud are untimestamped and differ", async () => {
