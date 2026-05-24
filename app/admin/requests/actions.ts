@@ -39,6 +39,12 @@ const UpdateRequestSchema = z.object({
     }
 });
 
+export type UpdateContentRequestState = {
+    status: "idle" | "success" | "error";
+    message: string | null;
+    fieldErrors?: Partial<Record<"publishedContentId" | "adminNote" | "hiddenReason" | "status", string>>;
+};
+
 function emptyToNull(value: string | undefined) {
     const trimmed = value?.trim();
     return trimmed ? trimmed : null;
@@ -49,11 +55,28 @@ function getOptionalString(formData: FormData, name: string) {
     return typeof value === "string" ? value : undefined;
 }
 
-export async function updateContentRequest(formData: FormData): Promise<void> {
+function getFieldErrors(error: z.ZodError): UpdateContentRequestState["fieldErrors"] {
+    const flattened = error.flatten().fieldErrors;
+
+    return {
+        publishedContentId: flattened.publishedContentId?.[0],
+        adminNote: flattened.adminNote?.[0],
+        hiddenReason: flattened.hiddenReason?.[0],
+        status: flattened.status?.[0],
+    };
+}
+
+export async function updateContentRequest(
+    _previousState: UpdateContentRequestState,
+    formData: FormData
+): Promise<UpdateContentRequestState> {
     const requestId = getRequestId();
     const isAdmin = await verifyAdminSession();
     if (!isAdmin) {
-        throw new Error("Unauthorized");
+        return {
+            status: "error",
+            message: "Your admin session could not be verified. Sign in again and retry.",
+        };
     }
 
     const parsed = UpdateRequestSchema.safeParse({
@@ -67,7 +90,11 @@ export async function updateContentRequest(formData: FormData): Promise<void> {
     });
 
     if (!parsed.success) {
-        throw new Error("Invalid request update.");
+        return {
+            status: "error",
+            message: "Fix the highlighted fields and try again.",
+            fieldErrors: getFieldErrors(parsed.error),
+        };
     }
 
     const supabase = getAdminClient();
@@ -79,23 +106,34 @@ export async function updateContentRequest(formData: FormData): Promise<void> {
 
     if (existingRequestError) {
         console.error("Failed to load content request before update:", existingRequestError);
-        throw new Error("Failed to update content request.");
+        return {
+            status: "error",
+            message: "Could not load this request before saving. Refresh and try again.",
+        };
+    }
+
+    const updatePayload: Record<string, string | null> = {
+        status: parsed.data.status,
+        published_content_id: publishedContentId,
+        admin_note: emptyToNull(parsed.data.adminNote),
+        hidden_at: parsed.data.hideRequest === "true" ? new Date().toISOString() : null,
+        hidden_reason: parsed.data.hideRequest === "true" ? emptyToNull(parsed.data.hiddenReason) : null,
+    };
+
+    if (parsed.data.sourceAvailabilityNote !== undefined) {
+        updatePayload.source_availability_note = emptyToNull(parsed.data.sourceAvailabilityNote);
     }
 
     const { error } = await (supabase as any).from("content_requests")
-        .update({
-            status: parsed.data.status,
-            published_content_id: publishedContentId,
-            source_availability_note: emptyToNull(parsed.data.sourceAvailabilityNote),
-            admin_note: emptyToNull(parsed.data.adminNote),
-            hidden_at: parsed.data.hideRequest === "true" ? new Date().toISOString() : null,
-            hidden_reason: parsed.data.hideRequest === "true" ? emptyToNull(parsed.data.hiddenReason) : null,
-        })
+        .update(updatePayload)
         .eq("id", parsed.data.requestId);
 
     if (error) {
         console.error("Failed to update content request:", error);
-        throw new Error("Failed to update content request.");
+        return {
+            status: "error",
+            message: "The request could not be saved. Check server logs if this keeps happening.",
+        };
     }
 
     const shouldQueuePublishedNotifications = existingRequest.status !== "published"
@@ -133,4 +171,9 @@ export async function updateContentRequest(formData: FormData): Promise<void> {
     revalidatePath("/requests");
     revalidatePath("/admin");
     revalidatePath("/admin/requests");
+
+    return {
+        status: "success",
+        message: "Request saved.",
+    };
 }
