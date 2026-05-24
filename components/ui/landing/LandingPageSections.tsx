@@ -881,7 +881,7 @@ export function CorePlatformFeaturesSection() {
               <SectionIntro
                 label="How Netflux works"
                 title="From insight to lasting reference."
-                body="Skim the thesis, read the structured breakdown, highlight passages worth keeping, and ask follow-up questions — all in one place."
+                body="Start with the summary, save the ideas worth keeping, and ask across your library when you need them again."
               />
             </div>
 
@@ -1159,15 +1159,15 @@ export function FinalCTASection() {
               </h2>
 
               <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-                Join learners who use Netflux to retain and revisit the best ideas from non-fiction.
+                Build a library of summaries, highlights, and saved ideas you can return to whenever they become useful again.
               </p>
 
               <EmailSubscriptionForm
                 source="landing_final_cta"
                 align="center"
                 className="mt-10"
-                title="Subscribe to the weekly note."
-                description="High-signal ideas, curated for remembering and revisiting."
+                title="Subscribe to the weekly idea note."
+                description="High-signal ideas, curated for remembering, revisiting, and using later."
               />
 
               <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">
@@ -1186,7 +1186,7 @@ export function LandingFooter() {
     <footer className="border-t border-white/[0.04] py-12">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row lg:px-8">
         <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
-          <span>{APP_NAME} - Knowledge without limits</span>
+          <span>{APP_NAME} - Summary-first knowledge system</span>
         </div>
 
         <div className="flex items-center gap-6 text-sm text-muted-foreground/60">

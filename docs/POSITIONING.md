@@ -8,13 +8,13 @@
 
 ## 1. One-Liner
 
-> Netflux is a summary-first knowledge system.
+> Netflux is a summary-first knowledge system for people who want to revisit, connect, and use ideas over time.
 >
-> Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
+> Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use later.
 
 Completing the sentence: **"Netflux is ______ for people who ______."**
 
-- ✅ "Netflux is a summary-first knowledge system that turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember."
+- ✅ "Netflux is a summary-first knowledge system for people who want to revisit, connect, and use ideas over time."
 - ❌ "Netflux is a book summary app, but also a podcast app, and also an article reader, and also a video library..."
 
 The product can serve many audiences. The **message** speaks to one.
@@ -45,7 +45,7 @@ The gap they all share: **they help you capture, but not comprehend or retrieve.
 
 ## 3. Product Thesis: Distill → Capture → Retrieve
 
-Netflux is not just a summary app. It's a **summary-first knowledge system** with three connected stages:
+Netflux is not just a summary app. It's a **summary-first knowledge system** with three connected stages. Summaries are the front door; the retention layer is library, highlights, saved ideas, cross-content search, and AI retrieval.
 
 ### Distill
 Netflux turns books, podcasts, articles, and videos into structured knowledge. Each summary is organized by thesis, argument, and evidence — not just shortened — so you understand the architecture of the idea, not just the headline.
@@ -81,11 +81,13 @@ All public-facing copy should pull from this bank. Don't improvise new positioni
 ### Tagline
 > Read less. Retain more.
 
+Use this as a consumer-facing line, not the full company thesis.
+
 ### Category line
 > A summary-first knowledge system.
 
 ### Hero subtitle (landing page)
-> Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
+> Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use over time.
 
 ### Elevator pitch (30 seconds, spoken)
 > "I built Netflux because I was consuming non-fiction constantly — books, podcasts, articles, videos — and remembering almost nothing. Netflux turns every format into readable knowledge, gives you highlights that actually persist, and lets you ask an AI about anything you've saved. It's a knowledge system: the ideas stay with you."
@@ -98,10 +100,10 @@ All public-facing copy should pull from this bank. Don't improvise new positioni
 > A short email with useful ideas to remember, revisit, and apply.
 
 ### Social bio (Twitter / LinkedIn)
-> Building Netflux — a summary-first knowledge system that turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
+> Building Netflux — a summary-first knowledge system for people who want to revisit, connect, and use ideas over time.
 
 ### Footer tagline
-> Netflux — Knowledge without limits.
+> Netflux — Summary-first knowledge system.
 
 ---
 

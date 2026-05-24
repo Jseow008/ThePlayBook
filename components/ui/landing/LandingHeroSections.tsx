@@ -63,19 +63,19 @@ export function HeroSection() {
 
           <div>
             <p className="mt-8 max-w-xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
+              Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use over time.
             </p>
           </div>
 
           <div className="mt-10">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link href="/login" className={PRIMARY_CTA_CLASS}>
-                <span className="relative z-10">Start Reading Free</span>
+                <span className="relative z-10">Start Your Library</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
                 <div className="absolute inset-0 z-0 bg-gradient-to-r from-white via-zinc-100 to-white opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               </Link>
               <Link href="/browse" className={SECONDARY_CTA_CLASS}>
-                Browse Library
+                Explore Summaries
               </Link>
             </div>
           </div>

@@ -1,10 +1,8 @@
 # Netflux
 
-> Read less. Retain more.
->
-> A summary-first knowledge system.
+> A summary-first knowledge system for people who want to revisit, connect, and use ideas over time.
 
-Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember. Built with Next.js, Supabase, and AI retrieval — public-first for discovery, then layered with authenticated reading progress, highlights, notes, and Ask My Library.
+Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use later. Built with Next.js, Supabase, and AI retrieval — public-first for discovery, then layered with authenticated reading progress, highlights, notes, and Ask My Library.
 
 ## What Ships Today
 

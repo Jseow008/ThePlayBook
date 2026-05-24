@@ -54,6 +54,8 @@ It now ships as a marketing/editorial composition with:
 - topic map / category section
 - final CTA
 
+Landing positioning should preserve Netflux as a summary-first knowledge system: summaries are the front door, while the retention layer is library, highlights, saved ideas, search, and AI retrieval. Do not reduce the page to a generic "read less" or summary-app pitch.
+
 Primary source: `components/ui/LandingPage.tsx`
 
 ### 3.2 App Shell

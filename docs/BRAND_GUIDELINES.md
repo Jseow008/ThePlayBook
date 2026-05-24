@@ -9,9 +9,9 @@ For messaging, audience, and positioning strategy, refer to [POSITIONING.md](./P
 
 ## 1. Brand Concept & Voice
 
-- **Identity:** A summary-first knowledge system.
-- **Tagline:** Read less. Retain more.
-- **Core promise:** Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.
+- **Identity:** A summary-first knowledge system for people who want to revisit, connect, and use ideas over time.
+- **Consumer line:** Read less. Retain more.
+- **Core promise:** Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use later.
 - **Voice:** Authoritative, clear, minimal, and actionable. We don't speak in buzzwords; we provide pure signal.
 - **Aesthetic Vibe:** "Cinematic Dark Mode", Premium, Uncluttered, Focused.
 

@@ -27,7 +27,7 @@ export default function AboutPage() {
                         About {APP_NAME}
                     </h1>
                     <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                        A summary-first knowledge system built to distill, capture, and retrieve the best ideas from books, podcasts, articles, and videos.
+                        A summary-first knowledge system for people who want to revisit, connect, and use ideas over time.
                     </p>
                 </div>
 
@@ -39,7 +39,7 @@ export default function AboutPage() {
                             We consume so much content—podcasts during commutes, books before bed, articles throughout the day, videos whenever we need to learn quickly—but how much do we actually retain? {APP_NAME} exists to solve that problem.
                         </p>
                         <p>
-                            Every entry turns source material into structured knowledge: summaries you can understand quickly, highlights and notes you can keep, and ideas you can search, revisit, and remember.
+                            Every entry turns source material into structured knowledge: summaries you can understand quickly, highlights and notes you can keep, and saved ideas you can search, revisit, and use later.
                         </p>
                     </div>
                 </section>

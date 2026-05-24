@@ -28,7 +28,7 @@ const playfair = Playfair_Display({
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
 const description =
-  "Netflux turns books, podcasts, articles, and videos into structured knowledge you can search, revisit, and remember.";
+  "Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use over time.";
 const showVercelTelemetry = process.env.NODE_ENV === "production";
 
 export const metadata: Metadata = {
