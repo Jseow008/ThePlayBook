@@ -1,0 +1,3 @@
+.thumbnails/
+renders/*.meta.json
+renders/*-debug.mp4
