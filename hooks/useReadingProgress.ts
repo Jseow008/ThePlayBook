@@ -11,6 +11,7 @@ import {
     type ReactNode,
 } from "react";
 import { AuthUser as User } from "@supabase/supabase-js";
+import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { deleteUserLibrary, upsertUserLibrary } from "@/lib/server/user-library-repository";
 import type { Json } from "@/types/database";
@@ -29,6 +30,11 @@ import {
     GUEST_STORAGE_SCOPE,
     migrateLegacyStorageToGuest,
 } from "@/lib/local-user-storage";
+import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
+import {
+    clearCachedRecommendations,
+    clearRecentRecommendations,
+} from "@/lib/recommendation-memory";
 
 /**
  * Reading progress data stored in localStorage
@@ -141,6 +147,7 @@ function parseProgressTimestamp(value: string) {
 }
 
 function useReadingProgressController(initialUser?: User | null) {
+    const queryClient = useQueryClient();
     const [inProgressIds, setInProgressIds] = useState<string[]>([]);
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [myListIds, setMyListIds] = useState<string[]>([]);
@@ -528,6 +535,60 @@ function useReadingProgressController(initialUser?: User | null) {
         window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [syncItemToCloud]);
 
+    const clearRecommendationMemory = useCallback((scope: StorageScope) => {
+        if (typeof window === "undefined") return;
+
+        clearRecentRecommendations(localStorage, scope);
+        clearCachedRecommendations(localStorage, scope);
+        clearCachedBrowseRecommendations(localStorage, scope);
+    }, []);
+
+    const removeFromHistory = useCallback(async (
+        itemId: string,
+        options?: { deleteNotesAndHighlights?: boolean },
+    ) => {
+        if (typeof window === "undefined") return false;
+
+        const scope = scopeRef.current;
+        localStorage.removeItem(progressKey(scope, itemId));
+        clearRecommendationMemory(scope);
+
+        setInProgressIds((prev) => prev.filter((id) => id !== itemId));
+        setCompletedIds((prev) => prev.filter((id) => id !== itemId));
+        setProgressMap((prev) => {
+            const next = { ...prev };
+            delete next[itemId];
+            return next;
+        });
+
+        const currentUser = userRef.current;
+        const cloudSync = currentUser
+            ? syncItemToCloud(currentUser, scope, itemId, undefined, null)
+            : Promise.resolve(true);
+        const activitySync = currentUser
+            ? fetch(`/api/activity/history/content/${itemId}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    deleteNotesAndHighlights: options?.deleteNotesAndHighlights === true,
+                }),
+            })
+                .then((response) => response.ok)
+                .catch(() => false)
+            : Promise.resolve(true);
+
+        const [didSyncCloud, didSyncActivity] = await Promise.all([cloudSync, activitySync]);
+
+        if (options?.deleteNotesAndHighlights) {
+            await queryClient.invalidateQueries({ queryKey: ["highlights"] });
+        }
+
+        window.dispatchEvent(new Event("netflux_progress_updated"));
+        window.dispatchEvent(new Event("netflux_activity_history_updated"));
+
+        return didSyncCloud && didSyncActivity;
+    }, [clearRecommendationMemory, queryClient, syncItemToCloud]);
+
     const archiveFromProgressList = useCallback((itemId: string, list: ProgressLibraryList) => {
         if (typeof window === "undefined") return;
 
@@ -666,6 +727,7 @@ function useReadingProgressController(initialUser?: User | null) {
         archiveFromProgressList,
         restoreProgressListArchive,
         removeFromProgress,
+        removeFromHistory,
         saveReadingProgress,
         getProgress,
         myListIds,

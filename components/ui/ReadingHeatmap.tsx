@@ -92,30 +92,36 @@ export function ReadingHeatmap() {
         });
     }, []);
 
-    useEffect(() => {
-        const fetchHistory = async () => {
-            try {
-                // Fetch enough history for the longest view (Year)
-                // In a real app we might optimize this query based on filter
-                const today = new Date();
-                const start = format(subDays(today, 365), 'yyyy-MM-dd');
-                const end = format(today, 'yyyy-MM-dd');
+    const fetchHistory = useCallback(async () => {
+        try {
+            // Fetch enough history for the longest view (Year)
+            // In a real app we might optimize this query based on filter
+            const today = new Date();
+            const start = format(subDays(today, 365), 'yyyy-MM-dd');
+            const end = format(today, 'yyyy-MM-dd');
 
-                const res = await fetch(`/api/activity/history?start=${start}&end=${end}`);
-                if (res.ok) {
-                    const history: ActivityData[] = await res.json();
-                    setData(history);
-                    calculateStats(history);
-                }
-            } catch (error) {
-                console.error("Failed to load history", error);
-            } finally {
-                setIsLoading(false);
+            const res = await fetch(`/api/activity/history?start=${start}&end=${end}`);
+            if (res.ok) {
+                const history: ActivityData[] = await res.json();
+                setData(history);
+                calculateStats(history);
             }
-        };
-
-        fetchHistory();
+        } catch (error) {
+            console.error("Failed to load history", error);
+        } finally {
+            setIsLoading(false);
+        }
     }, [calculateStats]);
+
+    useEffect(() => {
+        void fetchHistory();
+
+        window.addEventListener("netflux_activity_history_updated", fetchHistory);
+
+        return () => {
+            window.removeEventListener("netflux_activity_history_updated", fetchHistory);
+        };
+    }, [fetchHistory]);
 
     // Calculate Grid Config
     const chartConfig = useMemo(() => {

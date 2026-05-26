@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { createElement, type ReactNode } from "react";
 import { renderHook, act, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     AuthUserProvider,
@@ -95,10 +96,21 @@ Object.defineProperty(window, "localStorage", {
 });
 
 function wrapper({ children }: { children: ReactNode }) {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+            mutations: { retry: false },
+        },
+    });
+
     return createElement(
-        AuthUserProvider,
-        null,
-        createElement(ReadingProgressProvider, null, children),
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(
+            AuthUserProvider,
+            null,
+            createElement(ReadingProgressProvider, null, children),
+        ),
     );
 }
 
@@ -304,6 +316,46 @@ describe("useReadingProgress", () => {
             })
         );
         expect(result.current.getProgress("item-restore")?.archivedFromLists).toBeUndefined();
+    });
+
+    it("removes an item from history and clears recommendation memory", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(JSON.stringify({ success: true }), { status: 200 }),
+        );
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        act(() => {
+            result.current.saveReadingProgress("item-history", {
+                itemId: "item-history",
+                completed: ["seg-1", "seg-2"],
+                lastSegmentIndex: 1,
+                lastReadAt: "2026-03-10T00:00:00.000Z",
+                isCompleted: true,
+                totalSegments: 2,
+            });
+        });
+
+        localStorage.setItem(`netflux_recent_recommendations_${GUEST_STORAGE_SCOPE}`, JSON.stringify([{ id: "rec-1", shownAt: "2026-03-10T00:00:00.000Z" }]));
+        localStorage.setItem(`netflux_recommendation_cache_${GUEST_STORAGE_SCOPE}`, JSON.stringify([{ cacheKey: "cache-1", storedAt: "2026-03-10T00:00:00.000Z", items: [] }]));
+        localStorage.setItem(`netflux_browse_recommendation_cache_${GUEST_STORAGE_SCOPE}`, JSON.stringify([{ cacheKey: "browse-1", storedAt: "2026-03-10T00:00:00.000Z", data: { recentItems: [], libraryItems: [] } }]));
+
+        await act(async () => {
+            await result.current.removeFromHistory("item-history", {
+                deleteNotesAndHighlights: true,
+            });
+        });
+
+        expect(result.current.completedIds).not.toContain("item-history");
+        expect(result.current.getProgress("item-history")).toBeNull();
+        expect(localStorage.getItem(progressKey(GUEST_STORAGE_SCOPE, "item-history"))).toBeNull();
+        expect(localStorage.getItem(`netflux_recent_recommendations_${GUEST_STORAGE_SCOPE}`)).toBeNull();
+        expect(localStorage.getItem(`netflux_recommendation_cache_${GUEST_STORAGE_SCOPE}`)).toBeNull();
+        expect(localStorage.getItem(`netflux_browse_recommendation_cache_${GUEST_STORAGE_SCOPE}`)).toBeNull();
+        expect(fetchMock).not.toHaveBeenCalled();
+
+        fetchMock.mockRestore();
     });
 
     it("treats missing-session bootstrap as a guest flow without logging an error", async () => {

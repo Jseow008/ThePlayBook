@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CompletedPage from "@/app/(public)/library/completed/page";
 import type { ContentItem } from "@/types/database";
@@ -6,11 +6,14 @@ import type { ContentItem } from "@/types/database";
 const mockUseReadingProgress = vi.fn();
 const mockUseBatchContentItems = vi.fn();
 const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
 const mockContentCard = vi.fn(
     ({
         item,
         removeLabel,
         onRemove,
+        secondaryRemoveLabel,
+        onSecondaryRemove,
         showCompletedBadge,
         titleDensity,
     }: {
@@ -18,6 +21,8 @@ const mockContentCard = vi.fn(
         removeIcon?: "archive" | "trash";
         removeLabel?: string;
         onRemove?: (id: string) => void;
+        secondaryRemoveLabel?: string;
+        onSecondaryRemove?: (id: string) => void;
         showCompletedBadge?: boolean;
         titleDensity?: "default" | "app-compact";
     }) => (
@@ -26,6 +31,11 @@ const mockContentCard = vi.fn(
             {onRemove ? (
                 <button onClick={() => onRemove(item.id)}>
                     {removeLabel ?? "Remove"}
+                </button>
+            ) : null}
+            {onSecondaryRemove ? (
+                <button onClick={() => onSecondaryRemove(item.id)}>
+                    {secondaryRemoveLabel ?? "Secondary remove"}
                 </button>
             ) : null}
         </div>
@@ -54,6 +64,8 @@ vi.mock("@/components/ui/ContentCard", () => ({
         removeIcon?: "archive" | "trash";
         removeLabel?: string;
         onRemove?: (id: string) => void;
+        secondaryRemoveLabel?: string;
+        onSecondaryRemove?: (id: string) => void;
         showCompletedBadge?: boolean;
         titleDensity?: "default" | "app-compact";
     }) => mockContentCard(props),
@@ -62,6 +74,7 @@ vi.mock("@/components/ui/ContentCard", () => ({
 vi.mock("sonner", () => ({
     toast: {
         success: (...args: unknown[]) => mockToastSuccess(...args),
+        error: (...args: unknown[]) => mockToastError(...args),
     },
 }));
 
@@ -96,11 +109,13 @@ describe("CompletedPage", () => {
     beforeEach(() => {
         mockContentCard.mockClear();
         mockToastSuccess.mockClear();
+        mockToastError.mockClear();
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
             completedIds: [item.id],
             getProgress: vi.fn(() => null),
             isLoaded: true,
+            removeFromHistory: vi.fn(() => Promise.resolve(true)),
             refresh: vi.fn(),
             removeFromProgress: vi.fn(),
             restoreProgressListArchive: vi.fn(),
@@ -124,6 +139,7 @@ describe("CompletedPage", () => {
                 item,
                 removeIcon: "archive",
                 removeLabel: "Archive from List",
+                secondaryRemoveLabel: "Remove from history",
                 showCompletedBadge: true,
                 titleDensity: "app-compact",
             })
@@ -140,6 +156,7 @@ describe("CompletedPage", () => {
             completedIds: [item.id],
             getProgress: vi.fn(() => null),
             isLoaded: true,
+            removeFromHistory: vi.fn(() => Promise.resolve(true)),
             refresh: vi.fn(),
             removeFromProgress,
             restoreProgressListArchive,
@@ -165,12 +182,74 @@ describe("CompletedPage", () => {
         expect(restoreProgressListArchive).toHaveBeenCalledWith(item.id, "completed");
     });
 
+    it("removes completed cards from history after confirmation", async () => {
+        const archiveFromProgressList = vi.fn();
+        const removeFromHistory = vi.fn(() => Promise.resolve(true));
+
+        mockUseReadingProgress.mockReturnValue({
+            archiveFromProgressList,
+            completedIds: [item.id],
+            getProgress: vi.fn(() => null),
+            isLoaded: true,
+            removeFromHistory,
+            refresh: vi.fn(),
+            removeFromProgress: vi.fn(),
+            restoreProgressListArchive: vi.fn(),
+            storageScope: "guest",
+        });
+
+        render(<CompletedPage />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Remove from history" }));
+        const dialog = screen.getByRole("dialog", { name: "Remove from history?" });
+        expect(dialog).toBeInTheDocument();
+
+        fireEvent.click(within(dialog).getByRole("button", { name: "Remove from history" }));
+
+        await waitFor(() => {
+            expect(removeFromHistory).toHaveBeenCalledWith(item.id, {
+                deleteNotesAndHighlights: false,
+            });
+        });
+        expect(archiveFromProgressList).not.toHaveBeenCalled();
+    });
+
+    it("can remove notes and highlights with history", async () => {
+        const removeFromHistory = vi.fn(() => Promise.resolve(true));
+
+        mockUseReadingProgress.mockReturnValue({
+            archiveFromProgressList: vi.fn(),
+            completedIds: [item.id],
+            getProgress: vi.fn(() => null),
+            isLoaded: true,
+            removeFromHistory,
+            refresh: vi.fn(),
+            removeFromProgress: vi.fn(),
+            restoreProgressListArchive: vi.fn(),
+            storageScope: "guest",
+        });
+
+        render(<CompletedPage />);
+
+        fireEvent.click(screen.getByRole("button", { name: "Remove from history" }));
+        const dialog = screen.getByRole("dialog", { name: "Remove from history?" });
+        fireEvent.click(within(dialog).getByRole("checkbox", { name: /Also delete notes and highlights/ }));
+        fireEvent.click(within(dialog).getByRole("button", { name: "Remove from history" }));
+
+        await waitFor(() => {
+            expect(removeFromHistory).toHaveBeenCalledWith(item.id, {
+                deleteNotesAndHighlights: true,
+            });
+        });
+    });
+
     it("keeps loading chrome stable before completed items hydrate", () => {
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
             completedIds: [],
             getProgress: vi.fn(() => null),
             isLoaded: false,
+            removeFromHistory: vi.fn(() => Promise.resolve(true)),
             refresh: vi.fn(),
             removeFromProgress: vi.fn(),
             restoreProgressListArchive: vi.fn(),

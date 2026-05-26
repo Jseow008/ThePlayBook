@@ -24,6 +24,9 @@ interface ContentCardProps {
     onRemove?: (id: string) => void;
     removeLabel?: string;
     removeIcon?: "archive" | "trash";
+    onSecondaryRemove?: (id: string) => void;
+    secondaryRemoveLabel?: string;
+    secondaryRemoveIcon?: "archive" | "trash";
     hideProgressBar?: boolean;
     hideBookmark?: boolean;
     enableUserState?: boolean;
@@ -117,6 +120,9 @@ function BaseContentCard({
     onRemove,
     removeLabel = "Remove from list",
     removeIcon = "trash",
+    onSecondaryRemove,
+    secondaryRemoveLabel = "Remove from history",
+    secondaryRemoveIcon = "trash",
     hideBookmark = false,
     isBookmarked = false,
     progressPercentage = 0,
@@ -134,6 +140,7 @@ function BaseContentCard({
     };
     const Icon = typeIcon[item.type] || BookOpen;
     const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
+    const SecondaryRemoveIcon = secondaryRemoveIcon === "archive" ? Archive : Trash2;
 
     const createdAt = item.created_at ? new Date(item.created_at) : null;
     const isNew = createdAt ? createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false;
@@ -279,6 +286,24 @@ function BaseContentCard({
                     aria-label={removeLabel}
                 >
                     <RemoveIcon className="size-4 text-white" />
+                </button>
+            ) : null}
+
+            {onSecondaryRemove ? (
+                <button
+                    onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onSecondaryRemove(item.id);
+                    }}
+                    className={cn(
+                        "focus-ring absolute left-10 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 lg:opacity-0 lg:group-hover:opacity-100",
+                        secondaryRemoveIcon === "archive" ? "hover:bg-white/20" : "hover:bg-red-500/80",
+                    )}
+                    title={secondaryRemoveLabel}
+                    aria-label={secondaryRemoveLabel}
+                >
+                    <SecondaryRemoveIcon className="size-4 text-white" />
                 </button>
             ) : null}
 

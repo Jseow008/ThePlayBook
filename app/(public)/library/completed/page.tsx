@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Trophy } from "lucide-react";
 import { toast } from "sonner";
@@ -27,12 +28,25 @@ function parseCompletedTime(value: string | null | undefined) {
  * Shows all items the user has finished reading with search, filter, and sort capabilities.
  */
 export default function CompletedPage() {
-    const { archiveFromProgressList, completedIds, getProgress, isLoaded, removeFromProgress, restoreProgressListArchive } = useReadingProgress();
+    const {
+        archiveFromProgressList,
+        completedIds,
+        getProgress,
+        isLoaded,
+        removeFromHistory,
+        removeFromProgress,
+        restoreProgressListArchive,
+    } = useReadingProgress();
 
     // Filter/Sort State
     const [searchQuery, setSearchQuery] = useState("");
     const [activeFilter, setActiveFilter] = useState("all"); // 'all' | 'book' | 'podcast' | 'article'
     const [activeSort, setActiveSort] = useState<"newest" | "oldest" | "title">("newest");
+    const [pendingHistoryRemoval, setPendingHistoryRemoval] = useState<string | null>(null);
+    const [shouldDeleteNotes, setShouldDeleteNotes] = useState(false);
+    const [isRemovingHistory, setIsRemovingHistory] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+    const historyDialogRef = useRef<HTMLDivElement | null>(null);
 
     const {
         data: allItems = [],
@@ -98,6 +112,142 @@ export default function CompletedPage() {
 
         return items;
     }, [allItems, activeFilter, searchQuery, activeSort, completedIds, getProgress]);
+
+    const pendingRemovalItem = useMemo(
+        () => allItems.find((item) => item.id === pendingHistoryRemoval) ?? null,
+        [allItems, pendingHistoryRemoval],
+    );
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    const closeHistoryRemovalDialog = useCallback(() => {
+        if (isRemovingHistory) return;
+
+        setPendingHistoryRemoval(null);
+        setShouldDeleteNotes(false);
+    }, [isRemovingHistory]);
+
+    useEffect(() => {
+        if (!pendingRemovalItem) return;
+
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        function handleKeyDown(event: KeyboardEvent) {
+            if (event.key === "Escape") {
+                closeHistoryRemovalDialog();
+            }
+        }
+
+        const focusFrame = window.requestAnimationFrame(() => {
+            historyDialogRef.current?.focus();
+        });
+
+        window.addEventListener("keydown", handleKeyDown);
+
+        return () => {
+            window.cancelAnimationFrame(focusFrame);
+            document.body.style.overflow = originalOverflow;
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [closeHistoryRemovalDialog, pendingRemovalItem]);
+
+    const confirmHistoryRemoval = useCallback(() => {
+        if (!pendingRemovalItem) return;
+
+        setIsRemovingHistory(true);
+
+        void removeFromHistory(pendingRemovalItem.id, {
+            deleteNotesAndHighlights: shouldDeleteNotes,
+        })
+            .then((didSync) => {
+                if (didSync) {
+                    toast.success(
+                        shouldDeleteNotes
+                            ? "Removed from history and deleted notes"
+                            : "Removed from history"
+                    );
+                    return;
+                }
+
+                toast.error("Removed locally. Some history updates may sync later.");
+            })
+            .finally(() => {
+                setIsRemovingHistory(false);
+                setPendingHistoryRemoval(null);
+                setShouldDeleteNotes(false);
+            });
+    }, [pendingRemovalItem, removeFromHistory, shouldDeleteNotes]);
+
+    const historyRemovalDialog = pendingRemovalItem && isMounted
+        ? createPortal(
+            <div
+                className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+                role="presentation"
+                onClick={(event) => {
+                    if (event.target === event.currentTarget) {
+                        closeHistoryRemovalDialog();
+                    }
+                }}
+            >
+                <div
+                    ref={historyDialogRef}
+                    className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-md border border-border bg-card p-5 shadow-2xl outline-none"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="remove-history-title"
+                    aria-describedby="remove-history-description"
+                    tabIndex={-1}
+                >
+                    <div className="space-y-2">
+                        <h2 id="remove-history-title" className="text-lg font-semibold text-foreground">
+                            Remove from history?
+                        </h2>
+                        <p id="remove-history-description" className="text-sm leading-6 text-muted-foreground">
+                            This removes <span className="font-medium text-foreground">{pendingRemovalItem.title}</span> from your reading history and updates completed count, stats, streaks, and recommendations.
+                        </p>
+                    </div>
+
+                    <label className="mt-5 flex items-start gap-3 rounded-md border border-border/70 bg-secondary/20 p-3 text-sm text-foreground">
+                        <input
+                            type="checkbox"
+                            checked={shouldDeleteNotes}
+                            onChange={(event) => setShouldDeleteNotes(event.target.checked)}
+                            className="mt-1 size-4 rounded border-border bg-background text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        />
+                        <span>
+                            <span className="block font-medium">Also delete notes and highlights</span>
+                            <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                                This permanently removes saved highlights and written notes for this content.
+                            </span>
+                        </span>
+                    </label>
+
+                    <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                        <button
+                            type="button"
+                            onClick={closeHistoryRemovalDialog}
+                            disabled={isRemovingHistory}
+                            className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={confirmHistoryRemoval}
+                            disabled={isRemovingHistory}
+                            className="inline-flex h-10 items-center justify-center rounded-full bg-red-600 px-4 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isRemovingHistory ? "Removing..." : "Remove from history"}
+                        </button>
+                    </div>
+                </div>
+            </div>,
+            document.body,
+        )
+        : null;
 
     return (
         <div className="min-h-screen bg-background pb-20">
@@ -211,6 +361,11 @@ export default function CompletedPage() {
                                         showCompletedBadge
                                         removeIcon="archive"
                                         removeLabel="Archive from List"
+                                        secondaryRemoveLabel="Remove from history"
+                                        onSecondaryRemove={(id) => {
+                                            setPendingHistoryRemoval(id);
+                                            setShouldDeleteNotes(false);
+                                        }}
                                         onRemove={(id) => {
                                             archiveFromProgressList(id, "completed");
                                             toast.success("Archived from List", {
@@ -227,6 +382,8 @@ export default function CompletedPage() {
                     )}
                 </div>
             </div>
+
+            {historyRemovalDialog}
         </div>
     );
 }
