@@ -131,7 +131,18 @@ vi.mock('@/components/reader/SegmentAccordion', () => ({
                 <div data-testid="mock-segment-accordion">{props.expandedSegmentId ?? 'none'}</div>
                 <div data-testid="mock-active-audio-segment">{props.activeNarratedSegmentId ?? 'none'}</div>
                 {props.segments?.map((segment: { id: string }) => (
-                    <div key={segment.id} data-reader-segment-id={segment.id} />
+                    <div key={segment.id} data-reader-segment-id={segment.id}>
+                        <button aria-expanded={props.expandedSegmentId === segment.id} />
+                        <div data-reader-segment-panel="true">
+                            {props.highlights
+                                ?.filter((highlight: { segment_id: string | null }) => highlight.segment_id === segment.id)
+                                .map((highlight: { id: string; highlighted_text: string }) => (
+                                    <mark key={highlight.id} data-id={highlight.id}>
+                                        {highlight.highlighted_text}
+                                    </mark>
+                                ))}
+                        </div>
+                    </div>
                 ))}
                 <button
                     data-testid="manual-open-seg-1"
@@ -668,11 +679,6 @@ describe('ReaderView', () => {
             },
         ];
 
-        const mark = document.createElement('mark');
-        mark.setAttribute('data-id', 'highlight-1');
-        mark.textContent = 'Body 1';
-        document.body.appendChild(mark);
-
         render(<ReaderView content={mockContent} />);
 
         await waitFor(() => {
@@ -686,6 +692,73 @@ describe('ReaderView', () => {
         await waitFor(() => {
             expect(routerReplaceMock).toHaveBeenCalledWith('/read/test-item-1', { scroll: false });
         });
+    });
+
+    it('waits for the target segment to expand before scrolling to a drawer highlight', async () => {
+        highlightsState.value = [
+            {
+                id: 'highlight-1',
+                user_id: 'user-1',
+                content_item_id: 'test-item-1',
+                segment_id: 'seg-1',
+                highlighted_text: 'Body 1',
+                note_body: null,
+                color: 'yellow',
+                anchor_start: 0,
+                anchor_end: 6,
+                created_at: '2026-03-11T12:00:00.000Z',
+                updated_at: null,
+                content_item: null,
+                segment: null,
+            },
+        ];
+
+        const scrollToSpy = vi.fn();
+        window.scrollTo = scrollToSpy;
+
+        const { container } = render(<ReaderView content={mockContent} />);
+
+        let jumpPromise: Promise<void> | undefined;
+        act(() => {
+            jumpPromise = notesDrawerSpy.mock.lastCall?.[0]?.onHighlightJump('highlight-1');
+        });
+
+        await waitFor(() => {
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
+        });
+
+        const mark = container.querySelector<HTMLElement>('mark[data-id="highlight-1"]');
+        expect(mark).not.toBeNull();
+        mark!.getBoundingClientRect = vi.fn(() => ({
+            x: 0,
+            y: 320,
+            top: 320,
+            bottom: 340,
+            left: 0,
+            right: 180,
+            width: 180,
+            height: 20,
+            toJSON: () => ({}),
+        } as DOMRect));
+
+        expect(scrollToSpy).not.toHaveBeenCalled();
+
+        const panel = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-1"] [data-reader-segment-panel="true"]');
+        expect(panel).not.toBeNull();
+
+        act(() => {
+            panel!.dispatchEvent(new TransitionEvent('transitionend', { bubbles: true }));
+        });
+
+        await act(async () => {
+            await jumpPromise;
+        });
+
+        expect(scrollToSpy).toHaveBeenCalledWith({
+            top: 200,
+            behavior: 'smooth',
+        });
+        expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');
     });
 
     it('opens the notes drawer to a tapped inline highlight on mobile', async () => {

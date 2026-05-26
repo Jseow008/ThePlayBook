@@ -554,6 +554,7 @@ export function SegmentAccordion({
                         </button>
 
                         <div
+                            data-reader-segment-panel="true"
                             ref={(el) => {
                                 if (el) {
                                     contentRefs.current.set(segment.id, el);

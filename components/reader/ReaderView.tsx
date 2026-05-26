@@ -43,6 +43,14 @@ interface ReaderViewProps {
     content: ContentItemWithSegments;
 }
 
+function escapeAttributeSelector(value: string) {
+    return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function wait(ms: number) {
+    return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 export function ReaderView({ content }: ReaderViewProps) {
     const quickMode = content.quick_mode_json as QuickMode | null;
     const segmentIdSet = useMemo(() => new Set(content.segments.map((segment) => segment.id)), [content.segments]);
@@ -569,10 +577,54 @@ export function ReaderView({ content }: ReaderViewProps) {
         }, 1800);
     };
 
-    const waitForHighlightMarks = async (highlightId: string): Promise<HTMLElement[]> => {
+    const waitForSegmentExpansion = useCallback(async (segmentId: string) => {
+        const segmentSelector = `[data-reader-segment-id="${escapeAttributeSelector(segmentId)}"]`;
+
+        for (let attempt = 0; attempt < 12; attempt += 1) {
+            const segmentEl = document.querySelector<HTMLElement>(segmentSelector);
+            const panelEl = segmentEl?.querySelector<HTMLElement>('[data-reader-segment-panel="true"]');
+            const isExpanded = segmentEl?.querySelector<HTMLButtonElement>('button[aria-expanded="true"]');
+
+            if (panelEl && isExpanded) {
+                await new Promise<void>((resolve) => {
+                    let didResolve = false;
+                    let timeoutId: number | null = null;
+
+                    const finish = () => {
+                        if (didResolve) return;
+                        didResolve = true;
+                        panelEl.removeEventListener("transitionend", handleTransitionEnd);
+                        if (timeoutId !== null) {
+                            window.clearTimeout(timeoutId);
+                        }
+                        resolve();
+                    };
+
+                    const handleTransitionEnd = (event: TransitionEvent) => {
+                        if (event.target === panelEl) {
+                            finish();
+                        }
+                    };
+
+                    panelEl.addEventListener("transitionend", handleTransitionEnd);
+                    timeoutId = window.setTimeout(finish, 380);
+                });
+                return;
+            }
+
+            await wait(80);
+        }
+    }, []);
+
+    const waitForHighlightMarks = useCallback(async (highlightId: string, segmentId?: string | null): Promise<HTMLElement[]> => {
+        const highlightSelector = `mark[data-id="${escapeAttributeSelector(highlightId)}"]`;
+        const selector = segmentId
+            ? `[data-reader-segment-id="${escapeAttributeSelector(segmentId)}"] ${highlightSelector}`
+            : highlightSelector;
+
         for (let attempt = 0; attempt < 12; attempt += 1) {
             const marks = Array.from(
-                document.querySelectorAll<HTMLElement>(`mark[data-id="${highlightId}"]`)
+                document.querySelectorAll<HTMLElement>(selector)
             );
 
             if (marks.length > 0) {
@@ -583,7 +635,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         return [];
-    };
+    }, []);
 
     const handleHighlightJump = useCallback(async (highlightId: string) => {
         const highlight = highlights.find((item) => item.id === highlightId);
@@ -594,18 +646,25 @@ export function ReaderView({ content }: ReaderViewProps) {
         setActiveHighlightPosition(null);
         setIsPopoverHovered(false);
 
+        const targetSegmentId = highlight.segment_id;
+        const shouldWaitForExpansion = Boolean(targetSegmentId && expandedSegmentId !== targetSegmentId);
+
         if (highlight.segment_id) {
             setExpandedSegmentId(highlight.segment_id);
         }
 
-        const marks = await waitForHighlightMarks(highlightId);
+        if (targetSegmentId && shouldWaitForExpansion) {
+            await waitForSegmentExpansion(targetSegmentId);
+        }
+
+        const marks = await waitForHighlightMarks(highlightId, targetSegmentId);
         if (marks.length === 0) return;
 
         const [firstMark] = marks;
         const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
         window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
         applyHighlightSpotlight(highlightId, marks);
-    }, [highlights]);
+    }, [expandedSegmentId, highlights, waitForHighlightMarks, waitForSegmentExpansion]);
 
     useEffect(() => {
         const urlHighlightId = searchParams.get("highlightId");

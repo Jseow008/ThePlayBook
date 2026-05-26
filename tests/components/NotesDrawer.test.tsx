@@ -166,6 +166,7 @@ describe("NotesDrawer", () => {
         await waitFor(() => {
             expect(onHighlightJump).toHaveBeenCalledWith("highlight-1");
         });
+        expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
     it("treats whitespace-only notes as plain highlights", async () => {

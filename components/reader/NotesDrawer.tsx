@@ -160,11 +160,9 @@ export function NotesDrawer({
         }
     };
 
-    const handleJump = async (highlightId: string) => {
-        await onHighlightJump(highlightId);
-        if (isMobile) {
-            onOpenChange(false);
-        }
+    const handleJump = (highlightId: string) => {
+        onOpenChange(false);
+        void onHighlightJump(highlightId);
     };
 
     const handleOpenComposer = (item: HighlightWithContent) => {
