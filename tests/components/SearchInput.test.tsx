@@ -129,7 +129,7 @@ describe("SearchInput", () => {
         });
 
         await act(async () => {
-            vi.advanceTimersByTime(500);
+            vi.advanceTimersByTime(600);
         });
 
         expect(routerReplaceMock).toHaveBeenCalledWith("/search?q=focus");
@@ -154,11 +154,43 @@ describe("SearchInput", () => {
         });
 
         await act(async () => {
-            vi.advanceTimersByTime(500);
+            vi.advanceTimersByTime(599);
+        });
+
+        expect(routerReplaceMock).not.toHaveBeenCalled();
+
+        await act(async () => {
+            vi.advanceTimersByTime(1);
         });
 
         expect(routerReplaceMock).toHaveBeenCalledWith("/search?q=Focus");
         expect(routerPushMock).not.toHaveBeenCalled();
+    });
+
+    it("does not overwrite a newer focused draft when an older debounced route finishes", async () => {
+        vi.useFakeTimers();
+
+        const view = render(<SearchInput />);
+        const input = screen.getByRole("searchbox");
+
+        fireEvent.focus(input);
+        fireEvent.change(input, {
+            target: { value: "focus" },
+        });
+
+        await act(async () => {
+            vi.advanceTimersByTime(600);
+        });
+
+        expect(routerReplaceMock).toHaveBeenCalledWith("/search?q=focus");
+
+        fireEvent.change(input, {
+            target: { value: "focu" },
+        });
+
+        view.rerender(<SearchInput initialQuery="focus" />);
+
+        expect(input).toHaveValue("focu");
     });
 
     it("removes the query from the URL when the user deletes the last character", async () => {
@@ -171,7 +203,7 @@ describe("SearchInput", () => {
         });
 
         await act(async () => {
-            vi.advanceTimersByTime(500);
+            vi.advanceTimersByTime(600);
         });
 
         expect(routerReplaceMock).toHaveBeenCalledWith("/search?type=book");

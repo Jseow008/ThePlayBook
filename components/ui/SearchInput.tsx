@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 const RECENT_SEARCHES_KEY = "netflux_recent_searches";
 const MAX_RECENT_SEARCHES = 5;
+const SEARCH_DEBOUNCE_MS = 600;
 
 function normalizeQuery(value: string) {
     return value.trim();
@@ -85,6 +86,11 @@ export function SearchInput({
         if (pendingSearchQuery !== null) {
             if (normalizedInitialQuery === pendingSearchQuery) {
                 pendingSearchQueryRef.current = null;
+
+                if (normalizedCurrentQuery !== pendingSearchQuery) {
+                    return;
+                }
+
                 latestQueryRef.current = initialQuery;
                 setQuery(initialQuery);
                 return;
@@ -145,8 +151,9 @@ export function SearchInput({
 
         if (query.trim() !== initialQuery.trim()) {
             debounceRef.current = setTimeout(() => {
+                debounceRef.current = null;
                 performSearch(query, { saveHistory: false, replace: true });
-            }, 500);
+            }, SEARCH_DEBOUNCE_MS);
         }
 
         return () => {

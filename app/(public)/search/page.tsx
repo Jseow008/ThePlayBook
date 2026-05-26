@@ -163,7 +163,7 @@ export async function SearchResults({
 
     return (
         <div className="animate-in fade-in duration-500">
-            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <p className="text-muted-foreground text-lg font-medium">
                     {results.length} result{results.length !== 1 ? "s" : ""}
                     {query && ` for "${query}"`}
@@ -173,10 +173,10 @@ export async function SearchResults({
                 {hasQuery && results.length > 0 ? (
                     <Link
                         href={buildRequestHref({ query: trimmedQuery, type: normalizedType })}
-                        className="focus-ring inline-flex w-fit items-center gap-2 rounded-full border border-border bg-secondary/30 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+                        className="focus-ring inline-flex w-fit items-center gap-2 rounded-full border border-border bg-secondary/30 px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground lg:hidden"
                     >
                         <Megaphone className="size-4" />
-                        Request another summary
+                        Request a summary
                     </Link>
                 ) : null}
             </div>

@@ -304,6 +304,23 @@ describe("SearchPage", () => {
         expect(queryBuilder?.or).toHaveBeenCalledWith("title.ilike.%focus%,author.ilike.%focus%,category.ilike.%focus%");
     });
 
+    it("shows a nearby request-summary action when search has matching results", async () => {
+        const results = await runSearchResultsFromPage({ q: "focus", type: "book" });
+
+        await act(async () => {
+            render(results);
+        });
+
+        expect(screen.getByText('1 result for "focus" (book)')).toBeInTheDocument();
+        const requestLink = screen.getByRole("link", { name: /request a summary/i });
+
+        expect(requestLink).toHaveAttribute(
+            "href",
+            "/requests?prefill=focus&type=book"
+        );
+        expect(requestLink).toHaveClass("lg:hidden");
+    });
+
     it("uses the main results query for category pages and still applies the type filter", async () => {
         await runSearchResultsFromPage({ category: "Productivity", type: "article" });
 
