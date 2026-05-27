@@ -1,7 +1,7 @@
 import { AuthForm } from "@/components/ui/AuthForm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, BookOpen } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { DEFAULT_LOGIN_REDIRECT_PATH, normalizeLoginNextPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
@@ -33,9 +33,12 @@ export default async function LoginPage({
 
             <div className="w-full max-w-sm space-y-8">
                 <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="p-3 bg-primary/10 rounded-full">
-                        <BookOpen className="w-8 h-8 text-primary" />
-                    </div>
+                    <div
+                        aria-label="Netflux"
+                        role="img"
+                        className="h-14 w-14 bg-contain bg-center bg-no-repeat"
+                        style={{ backgroundImage: "url('/icons/netflux-icon-borderless.png')" }}
+                    />
                     <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
                     <p className="text-muted-foreground">
                         Sign in to access your library and personalized content.
