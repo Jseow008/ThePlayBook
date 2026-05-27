@@ -694,7 +694,7 @@ describe('ReaderView', () => {
         });
     });
 
-    it('waits for the target segment to expand before scrolling to a drawer highlight', async () => {
+    it('waits for the target segment to expand before scrolling drawer jumps to the segment top', async () => {
         highlightsState.value = [
             {
                 id: 'highlight-1',
@@ -727,6 +727,20 @@ describe('ReaderView', () => {
             expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
         });
 
+        const segmentNode = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-1"]');
+        expect(segmentNode).not.toBeNull();
+        segmentNode!.getBoundingClientRect = vi.fn(() => ({
+            x: 0,
+            y: 460,
+            top: 460,
+            bottom: 620,
+            left: 0,
+            right: 600,
+            width: 600,
+            height: 160,
+            toJSON: () => ({}),
+        } as DOMRect));
+
         const mark = container.querySelector<HTMLElement>('mark[data-id="highlight-1"]');
         expect(mark).not.toBeNull();
         mark!.getBoundingClientRect = vi.fn(() => ({
@@ -755,7 +769,7 @@ describe('ReaderView', () => {
         });
 
         expect(scrollToSpy).toHaveBeenCalledWith({
-            top: 200,
+            top: 360,
             behavior: 'smooth',
         });
         expect(mark).toHaveAttribute('data-highlight-spotlight', 'true');

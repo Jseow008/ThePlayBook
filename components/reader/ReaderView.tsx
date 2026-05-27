@@ -43,6 +43,8 @@ interface ReaderViewProps {
     content: ContentItemWithSegments;
 }
 
+type HighlightJumpTarget = "highlight" | "segment";
+
 function escapeAttributeSelector(value: string) {
     return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
@@ -637,7 +639,21 @@ export function ReaderView({ content }: ReaderViewProps) {
         return [];
     }, []);
 
-    const handleHighlightJump = useCallback(async (highlightId: string) => {
+    const scrollSegmentTopIntoView = useCallback((segmentId: string) => {
+        const segmentEl = document.querySelector<HTMLElement>(
+            `[data-reader-segment-id="${escapeAttributeSelector(segmentId)}"]`
+        );
+        if (!segmentEl) return false;
+
+        const top = segmentEl.getBoundingClientRect().top + window.scrollY - 100;
+        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        return true;
+    }, []);
+
+    const handleHighlightJump = useCallback(async (
+        highlightId: string,
+        options: { target?: HighlightJumpTarget } = {}
+    ) => {
         const highlight = highlights.find((item) => item.id === highlightId);
         if (!highlight) return;
 
@@ -657,14 +673,22 @@ export function ReaderView({ content }: ReaderViewProps) {
             await waitForSegmentExpansion(targetSegmentId);
         }
 
+        const jumpTarget = options.target ?? "highlight";
+        const didScrollToSegment = jumpTarget === "segment" && targetSegmentId
+            ? scrollSegmentTopIntoView(targetSegmentId)
+            : false;
         const marks = await waitForHighlightMarks(highlightId, targetSegmentId);
-        if (marks.length === 0) return;
 
-        const [firstMark] = marks;
-        const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
-        window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-        applyHighlightSpotlight(highlightId, marks);
-    }, [expandedSegmentId, highlights, waitForHighlightMarks, waitForSegmentExpansion]);
+        if (!didScrollToSegment && marks.length > 0) {
+            const [firstMark] = marks;
+            const top = firstMark.getBoundingClientRect().top + window.scrollY - 120;
+            window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+        }
+
+        if (marks.length > 0) {
+            applyHighlightSpotlight(highlightId, marks);
+        }
+    }, [expandedSegmentId, highlights, scrollSegmentTopIntoView, waitForHighlightMarks, waitForSegmentExpansion]);
 
     useEffect(() => {
         const urlHighlightId = searchParams.get("highlightId");
@@ -954,7 +978,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 sections={sectionMeta}
                 activeHighlightId={activeHighlightId}
                 isAudioMiniPlayerVisible={isAudioMiniPlayerVisible}
-                onHighlightJump={handleHighlightJump}
+                onHighlightJump={(highlightId) => handleHighlightJump(highlightId, { target: "segment" })}
             />
             {isDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (
                 <HighlightPopover
