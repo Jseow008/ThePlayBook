@@ -90,7 +90,7 @@ describe('Author Chat API', () => {
         expect(res.status).toBe(200);
         expect(rateLimit).toHaveBeenCalledWith(req, {
             limit: 3,
-            windowMs: 60_000,
+            windowMs: 10 * 60_000,
             key: 'author-chat:guest',
         });
         expect(checkAiUsageQuota).not.toHaveBeenCalled();

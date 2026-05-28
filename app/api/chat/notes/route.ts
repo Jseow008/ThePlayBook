@@ -5,6 +5,11 @@ import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
+import {
+    buildNotesContextSelection,
+    getRelevanceRankedHighlights,
+    type HighlightContextRow,
+} from "@/lib/server/notes-chat-context";
 
 export const maxDuration = 60;
 
@@ -22,27 +27,9 @@ const NotesChatRequestSchema = z.object({
 
 const MAX_HISTORY_MESSAGES = 4;
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
-const MAX_CONTEXT_CHARS = 9_000;
 const NOTES_DEFAULT_MAX_OUTPUT_TOKENS = 350;
 const NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS = 450;
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-
-type HighlightContextRow = {
-    id: string;
-    highlighted_text: string;
-    note_body: string | null;
-    created_at: string | null;
-    content_item: { title: string | null } | Array<{ title: string | null }> | null;
-    segment: { title: string | null } | Array<{ title: string | null }> | null;
-};
-
-function getRelation<T>(value: T | T[] | null): T | null {
-    if (Array.isArray(value)) {
-        return value[0] ?? null;
-    }
-
-    return value ?? null;
-}
 
 function getMessageText(message: Record<string, unknown>): string {
     if (Array.isArray(message.parts)) {
@@ -69,11 +56,6 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
             content: getMessageText(message).trim(),
         }))
         .filter((message) => message.content.length > 0);
-}
-
-function trimHighlightText(text: string, noteText: string | null): string {
-    const maxChars = noteText ? 160 : 220;
-    return text.length > maxChars ? `${text.slice(0, maxChars).trimEnd()}...` : text;
 }
 
 function detectNotesSynthesisIntent(query: string): boolean {
@@ -108,6 +90,7 @@ export async function POST(req: NextRequest) {
         const provider = process.env.AI_PROVIDER || "anthropic";
         const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
         const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
+        const hasGemini = Boolean(process.env.GEMINI_API_KEY);
 
         if (!hasAnthropic && !hasOpenAI) {
             logApiError({ requestId, route: "/api/chat/notes", message: "No AI provider configured", error: new Error("Missing env") });
@@ -177,45 +160,42 @@ export async function POST(req: NextRequest) {
         const rows = (highlights ?? []) as HighlightContextRow[];
         const noteBodyCount = rows.filter((highlight) => Boolean(highlight.note_body?.trim())).length;
         const highlightOnlyCount = rows.length - noteBodyCount;
-        let contextText = rows
-            .map((highlight, index) => {
-                const contentItem = getRelation(highlight.content_item);
-                const segment = getRelation(highlight.segment);
-                const noteText = highlight.note_body?.trim();
-                const title = contentItem?.title || "Unknown Source";
-                const section = segment?.title?.trim();
+        let rankedRows: HighlightContextRow[] | null = null;
 
-                return [
-                    `[Note ${index + 1}: "${title}"${section ? ` • ${section}` : ""}]`,
-                    noteText ? `Note: ${noteText}` : null,
-                    `Highlight: ${trimHighlightText(highlight.highlighted_text, noteText || null)}`,
-                ]
-                    .filter(Boolean)
-                    .join("\n");
-            })
-            .join("\n\n---\n\n");
-
-        if (contextText.length > MAX_CONTEXT_CHARS) {
-            contextText = contextText.slice(0, MAX_CONTEXT_CHARS);
+        if (hasGemini && rows.length > 1) {
+            try {
+                rankedRows = await getRelevanceRankedHighlights(lastMessage.content, rows, process.env.GEMINI_API_KEY!);
+            } catch (error) {
+                logApiError({
+                    requestId,
+                    route: "/api/chat/notes",
+                    message: "Notes relevance ranking failed; falling back to scope order",
+                    error,
+                });
+            }
         }
 
-        if (!contextText) {
-            contextText = "No relevant note context is available for this request.";
-        }
+        const contextSelection = buildNotesContextSelection(rankedRows ?? rows, {
+            selectionMode: rankedRows ? "relevance_ranked" : "scope_order",
+        });
 
         const systemPrompt = `You are a notes assistant inside a personal reading app.
 Answer only from the scoped note context below.
 
 Notes context:
-${contextText}
+${contextSelection.contextText}
 
 Scope: ${scopeLabel || "Current notes view"}
 Items in scope: ${rows.length}
 Written notes: ${noteBodyCount}
 Highlight-only items: ${highlightOnlyCount}
+Context selection: ${contextSelection.selectionMode === "relevance_ranked" ? "relevance-ranked from current notes scope" : "current notes scope order"}
+Notes included in context: ${contextSelection.includedCount} of ${rows.length}
+Notes omitted due to context budget: ${contextSelection.omittedCount}
 
 Rules:
 - Treat written notes as the strongest evidence. Use highlights as supporting context.
+- The current notes scope is the hard boundary. Do not infer from notes outside this scope.
 - If the scope is mostly clipped highlights, say that once and still extract the strongest themes available.
 - If the notes are insufficient, say so clearly without repeating yourself.
 - Cite source titles naturally.

@@ -10,7 +10,7 @@ import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } 
 export const maxDuration = 60;
 
 const AUTHENTICATED_LIMIT = { limit: 10, windowMs: 60_000 } as const;
-const GUEST_LIMIT = { limit: 3, windowMs: 60_000 } as const;
+const GUEST_LIMIT = { limit: 3, windowMs: 10 * 60_000 } as const;
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 
 // ---------------------------------------------------------------------------

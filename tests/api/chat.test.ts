@@ -62,14 +62,21 @@ describe('Chat API', () => {
             is_bookmarked: true,
             progress: { isCompleted: true, lastReadAt: '2026-03-10T12:00:00.000Z' },
             last_interacted_at: '2026-03-10T12:00:00.000Z',
-            content_item: { title: "Can't Hurt Me", author: 'David Goggins' },
+            content_item: { title: "Can't Hurt Me", author: 'David Goggins', category: 'Personal Growth' },
         },
         {
             content_id: 'content-2',
             is_bookmarked: false,
             progress: { isCompleted: false, lastReadAt: '2026-03-08T09:00:00.000Z' },
             last_interacted_at: '2026-03-08T09:00:00.000Z',
-            content_item: { title: 'Atomic Habits', author: 'James Clear' },
+            content_item: { title: 'Atomic Habits', author: 'James Clear', category: 'Personal Growth' },
+        },
+        {
+            content_id: 'content-3',
+            is_bookmarked: true,
+            progress: null,
+            last_interacted_at: '2026-03-07T09:00:00.000Z',
+            content_item: { title: 'The Psychology of Money', author: 'Morgan Housel', category: 'Finance' },
         },
     ];
 
@@ -307,7 +314,7 @@ describe('Chat API', () => {
             system: expect.stringContaining('Completed items: 1'),
         }));
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Saved but not started: 0'),
+            system: expect.stringContaining('Saved but not started: 1'),
         }));
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 250,
@@ -354,6 +361,72 @@ describe('Chat API', () => {
             maxOutputTokens: 450,
         }));
         expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-20250514');
+    });
+
+    it('uses reading advisor mode for next-read recommendations from completed items', async () => {
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
+        mockRpc.mockResolvedValueOnce({
+            data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.9 }],
+            error: null,
+        });
+        segmentFetchIn.mockResolvedValueOnce({
+            data: [
+                {
+                    id: 'segment-1',
+                    markdown_body: 'Completed readers often respond to discipline and compounding effort.',
+                    content_item: { title: "Can't Hurt Me" },
+                },
+            ],
+            error: null,
+        });
+
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: 'Based on my completed items, what is the next book you would recommend?' }],
+            }),
+        });
+
+        const res = await POST(req);
+
+        expect(res.status).toBe(200);
+        expect(embedContentMock).toHaveBeenCalled();
+        expect(mockRpc).toHaveBeenCalledWith('match_library_segments_gemini', expect.objectContaining({
+            match_count: 12,
+            p_boost_completed: true,
+        }));
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            system: expect.stringContaining('Intent: reading_advisor'),
+            maxOutputTokens: 550,
+        }));
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            system: expect.stringContaining('Eligible next-read candidates:'),
+        }));
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            system: expect.stringContaining('UNDER NO CIRCUMSTANCES recommend a book, article, author, or source that is not explicitly listed'),
+        }));
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-20250514');
+    });
+
+    it('can answer reading advisor questions from metadata when Gemini retrieval is unavailable', async () => {
+        delete process.env.GEMINI_API_KEY;
+
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: 'What should I read next from my library?' }],
+            }),
+        });
+
+        const res = await POST(req);
+
+        expect(res.status).toBe(200);
+        expect(embedContentMock).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            system: expect.stringContaining('Retrieved passages were not available for this recommendation request.'),
+            maxOutputTokens: 550,
+        }));
     });
 
     it('degrades to metadata-only context when retrieval is not initialized and the library is empty', async () => {
