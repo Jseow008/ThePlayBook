@@ -156,6 +156,14 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 className="object-cover object-[50%_20%]"
                                 fallback={<div className="h-full w-full bg-card" />}
                             />
+                            {!isPrevious && (
+                                <Link
+                                    href={`/preview/${item.id}`}
+                                    aria-label={`Preview ${item.title}`}
+                                    tabIndex={-1}
+                                    className="absolute inset-x-0 top-0 bottom-12 z-10 cursor-pointer md:inset-0"
+                                />
+                            )}
                         </div>
 
                         {/* Full-screen Gradient Overlay to Blend Image into Background */}
@@ -256,7 +264,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             {/* Content Layer */}
             <div className="pointer-events-none absolute inset-0 z-30 flex items-end md:items-center browse-hero-content-frame">
                 <div
-                    className="pointer-events-auto browse-hero-content w-full px-4 pb-12 md:px-6 md:pb-0 lg:px-16"
+                    className="pointer-events-none browse-hero-content w-full px-4 pb-12 md:px-6 md:pb-0 lg:px-16"
                     data-testid="hero-carousel-content"
                 >
                     <div className="max-w-6xl space-y-3 md:space-y-6 lg:space-y-7">
@@ -332,14 +340,14 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         >
                             <Link
                                 href={buildReadPath(contentItem)}
-                                className="focus-ring flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
+                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
                             >
                                 <BookOpen className="h-4 w-4 fill-black md:h-6 md:w-6 lg:h-7 lg:w-7" />
                                 Read
                             </Link>
                             <Link
                                 href={`/preview/${contentItem.id}`}
-                                className="focus-ring flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
+                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
                             >
                                 <Info className="h-4 w-4 md:h-6 md:w-6 lg:h-7 lg:w-7" />
                                 Preview
@@ -350,7 +358,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
             </div>
 
             {/* Right Side Carousel Indicators (Optional, purely aesthetic or functional) */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-4 pr-6 z-20">
+            <div className="absolute right-0 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-1 pr-6 lg:flex">
                 {items.map((_, index) => (
                     <button
                         key={index}
@@ -360,14 +368,20 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             queueTransition(() => index);
                         }}
                         className={cn(
-                            "h-1.5 rounded-full transition-all duration-500 ease-in-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-background",
-                            index === activeIndex
-                                ? "w-16 bg-white opacity-100 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
-                                : "w-8 bg-white/40 opacity-50 hover:bg-white/70 hover:w-10 hover:opacity-100"
+                            "group flex h-8 w-20 cursor-pointer items-center justify-end rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-background"
                         )}
                         aria-label={`Go to item ${index + 1}`}
                         aria-current={index === activeIndex ? "true" : undefined}
-                    />
+                    >
+                        <span
+                            className={cn(
+                                "h-1.5 rounded-full transition-all duration-500 ease-in-out",
+                                index === activeIndex
+                                    ? "w-16 bg-white opacity-100 shadow-[0_0_12px_rgba(255,255,255,0.6)]"
+                                    : "w-8 bg-white/40 opacity-50 group-hover:w-10 group-hover:bg-white/70 group-hover:opacity-100"
+                            )}
+                        />
+                    </button>
                 ))}
             </div>
 

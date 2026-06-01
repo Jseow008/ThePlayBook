@@ -201,6 +201,15 @@ describe("HeroCarousel", () => {
         expect(secondIndicator).not.toHaveAttribute("aria-current");
     });
 
+    it("lets pointer users open the current preview from the active artwork", () => {
+        render(<HeroCarousel items={items} />);
+
+        const artworkPreviewLink = screen.getByRole("link", { name: "Preview First Feature" });
+
+        expect(artworkPreviewLink).toHaveAttribute("href", "/preview/11111111-1111-1111-1111-111111111111");
+        expect(artworkPreviewLink).toHaveAttribute("tabindex", "-1");
+    });
+
     it("keeps the hero content visible if the artwork fails twice", () => {
         render(<HeroCarousel items={items} />);
 
