@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Inter, Outfit, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AppToaster } from "@/components/providers/AppToaster";
+import { PostHogPageviewTracker } from "@/components/providers/PostHogPageviewTracker";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -96,6 +98,9 @@ export default function RootLayout({
       >
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
+        <Suspense fallback={null}>
+          <PostHogPageviewTracker />
+        </Suspense>
         <AppToaster />
         {showVercelTelemetry ? <Analytics /> : null}
         {showVercelTelemetry ? <SpeedInsights /> : null}

@@ -20,6 +20,9 @@ function getSupabaseOrigin(): string {
 const supabaseOrigin = getSupabaseOrigin();
 const supabaseWssOrigin = supabaseOrigin.replace(/^https:/, "wss:");
 const supabaseHostname = new URL(supabaseOrigin).hostname;
+const posthogProxyPath = "/ingest";
+const posthogApiHost = "https://us.i.posthog.com";
+const posthogAssetsHost = "https://us-assets.i.posthog.com";
 const appOrigin =
   process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
@@ -118,6 +121,22 @@ const nextConfig: NextConfig = {
         source: "/categories",
         destination: "/browse",
         permanent: true,
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: `${posthogProxyPath}/static/:path*`,
+        destination: `${posthogAssetsHost}/static/:path*`,
+      },
+      {
+        source: `${posthogProxyPath}/array/:path*`,
+        destination: `${posthogAssetsHost}/array/:path*`,
+      },
+      {
+        source: `${posthogProxyPath}/:path*`,
+        destination: `${posthogApiHost}/:path*`,
       },
     ];
   },

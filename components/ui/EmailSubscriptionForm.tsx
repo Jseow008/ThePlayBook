@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { track } from "@vercel/analytics";
 import { ArrowRight, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 
 type EmailSubscriptionSource = "landing_final_cta";
 
@@ -61,6 +62,7 @@ export function EmailSubscriptionForm({
       }
 
       track("Email Subscription Created", { source });
+      captureAnalyticsEvent("email_subscribed", { source });
       setSubmitState("success");
       setMessage("You're subscribed. We'll send the weekly best ideas soon.");
       setEmail("");
