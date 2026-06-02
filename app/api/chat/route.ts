@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import { GoogleGenAI } from "@google/genai";
@@ -487,6 +488,19 @@ Rules:
         });
 
         await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
+        if (messages.filter((message) => message.role === "user").length === 1) {
+            await captureServerAnalyticsEvent({
+                event: "ai_chat_started",
+                distinctId: user.id,
+                insertId: `ai_chat_started:library:${user.id}:${requestId}`,
+                properties: {
+                    source: "ask_library",
+                    route: "/api/chat",
+                    chat_scope: "library",
+                    user_state: "authenticated",
+                },
+            });
+        }
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {

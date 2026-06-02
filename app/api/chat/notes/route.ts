@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import {
@@ -223,6 +224,20 @@ Rules:
         });
 
         await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-notes" });
+        if (messages.filter((message) => message.role === "user").length === 1) {
+            await captureServerAnalyticsEvent({
+                event: "ai_chat_started",
+                distinctId: user.id,
+                insertId: `ai_chat_started:notes:${user.id}:${requestId}`,
+                properties: {
+                    source: "ask_notes",
+                    route: "/api/chat/notes",
+                    chat_scope: "notes",
+                    note_count: rows.length,
+                    user_state: "authenticated",
+                },
+            });
+        }
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {

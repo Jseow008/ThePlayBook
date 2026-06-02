@@ -2,11 +2,25 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { captureAnalyticsPageview, type AnalyticsPageviewProperties } from "@/lib/analytics";
+import {
+    captureAnalyticsPageview,
+    identifyAnalyticsUser,
+    resetAnalyticsUser,
+    type AnalyticsIdentityProperties,
+} from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/client";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
+import type { UserRole } from "@/types/database";
 
-type AnalyticsUserState = AnalyticsPageviewProperties["user_state"];
+type AnalyticsUserId = string | null | undefined;
+type AnalyticsProfile = {
+    role: UserRole | null;
+    is_internal: boolean | null;
+};
+
+function getUserState(userId: AnalyticsUserId) {
+    return userId ? "authenticated" : "anonymous";
+}
 
 function shouldTrackPageview(pathname: string): boolean {
     return !(
@@ -29,7 +43,8 @@ function getContentId(pathname: string): string | undefined {
 export function PostHogPageviewTracker() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [userState, setUserState] = useState<AnalyticsUserState | undefined>(undefined);
+    const [userId, setUserId] = useState<AnalyticsUserId>(undefined);
+    const lastIdentityKeyRef = useRef<string | null>(null);
     const lastTrackedUrlRef = useRef<string | null>(null);
 
     const shouldTrack = pathname ? shouldTrackPageview(pathname) : false;
@@ -43,10 +58,6 @@ export function PostHogPageviewTracker() {
     }, [pathname, searchParams]);
 
     useEffect(() => {
-        if (!shouldTrack) {
-            return;
-        }
-
         const supabase = createClient();
         let isMounted = true;
 
@@ -54,26 +65,89 @@ export function PostHogPageviewTracker() {
             if (!isMounted) return;
 
             const { user, error } = resolveAuthUserResult(result);
-            setUserState(error || !user ? "anonymous" : "authenticated");
+            setUserId(error || !user ? null : user.id);
         }).catch(() => {
             if (isMounted) {
-                setUserState("anonymous");
+                setUserId(null);
             }
         });
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
-            setUserState(session?.user ? "authenticated" : "anonymous");
+            setUserId(session?.user?.id ?? null);
         });
 
         return () => {
             isMounted = false;
             subscription.unsubscribe();
         };
-    }, [shouldTrack]);
+    }, []);
 
     useEffect(() => {
-        if (!pathname || !shouldTrack || userState === undefined || lastTrackedUrlRef.current === urlState.key) {
+        if (userId === undefined) {
+            return;
+        }
+
+        if (!userId) {
+            if (lastIdentityKeyRef.current) {
+                resetAnalyticsUser();
+            }
+
+            lastIdentityKeyRef.current = null;
+            return;
+        }
+
+        const resolvedUserId = userId;
+        const supabase = createClient();
+        let isCancelled = false;
+
+        async function identifyUser() {
+            const properties: AnalyticsIdentityProperties = {
+                account_role: "user",
+                is_internal: false,
+                profile_available: false,
+            };
+
+            try {
+                const { data, error } = await supabase
+                    .from("profiles")
+                    .select("role, is_internal")
+                    .eq("id", resolvedUserId)
+                    .maybeSingle<AnalyticsProfile>();
+
+                if (!error && data) {
+                    properties.account_role = data.role === "admin" ? "admin" : "user";
+                    properties.is_internal = Boolean(data.is_internal);
+                    properties.profile_available = true;
+                } else if (error) {
+                    console.error("Failed to load analytics identity profile:", error);
+                }
+            } catch (error) {
+                console.error("Failed to resolve analytics identity profile:", error);
+            }
+
+            if (isCancelled) {
+                return;
+            }
+
+            const identityKey = JSON.stringify([resolvedUserId, properties]);
+            if (lastIdentityKeyRef.current === identityKey) {
+                return;
+            }
+
+            identifyAnalyticsUser(resolvedUserId, properties);
+            lastIdentityKeyRef.current = identityKey;
+        }
+
+        void identifyUser();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [userId]);
+
+    useEffect(() => {
+        if (!pathname || !shouldTrack || userId === undefined || lastTrackedUrlRef.current === urlState.key) {
             return;
         }
 
@@ -82,10 +156,10 @@ export function PostHogPageviewTracker() {
         captureAnalyticsPageview({
             path: pathname,
             search_present: urlState.searchPresent,
-            user_state: userState,
+            user_state: getUserState(userId),
             content_id: getContentId(pathname),
         });
-    }, [pathname, shouldTrack, userState, urlState]);
+    }, [pathname, shouldTrack, userId, urlState]);
 
     return null;
 }

@@ -1007,7 +1007,7 @@ describe("FocusFeed", () => {
         });
     });
 
-    it("lets desktop wheel input use native scrolling instead of forcing scrollIntoView", async () => {
+    it("limits desktop wheel input to one focus card per gesture", async () => {
         mediaQueryState.value = {
             isDesktop: true,
             prefersReducedMotion: false,
@@ -1024,7 +1024,11 @@ describe("FocusFeed", () => {
         fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
         fireEvent.wheel(list, { deltaY: 120, deltaX: 0 });
 
-        expect(scrollIntoViewMock).not.toHaveBeenCalled();
+        expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+        expect(scrollIntoViewMock).toHaveBeenCalledWith({
+            block: "start",
+            behavior: "smooth",
+        });
 
         await act(async () => {
             observer.trigger(cards[1]!);
@@ -1033,7 +1037,7 @@ describe("FocusFeed", () => {
         expect(screen.getByRole("heading", { name: "Deep Work" })).toBeInTheDocument();
     });
 
-    it("lets mobile touch input use native scrolling instead of forcing scrollIntoView", async () => {
+    it("limits mobile touch input to one focus card per swipe", async () => {
         render(<FocusFeed />);
 
         await screen.findByText("Deep Work");
@@ -1047,8 +1051,15 @@ describe("FocusFeed", () => {
         fireEvent.touchMove(list, {
             touches: [{ clientX: 36, clientY: 180 }],
         });
+        fireEvent.touchEnd(list, {
+            changedTouches: [{ clientX: 36, clientY: 180 }],
+        });
 
-        expect(scrollIntoViewMock).not.toHaveBeenCalled();
+        expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+        expect(scrollIntoViewMock).toHaveBeenCalledWith({
+            block: "start",
+            behavior: "smooth",
+        });
     });
 
     it("shows three desktop takeaways with preview and read CTAs", async () => {

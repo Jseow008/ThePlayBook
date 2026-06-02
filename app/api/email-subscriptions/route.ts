@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, isPostgresUniqueViolation, logApiError } from "@/lib/server/api";
+import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
@@ -101,6 +102,18 @@ export async function POST(request: NextRequest) {
                 throw updateError;
             }
         }
+
+        await captureServerAnalyticsEvent({
+            event: "email_subscribed",
+            distinctId: `anonymous:${requestId}`,
+            insertId: `email_subscribed:${requestId}`,
+            properties: {
+                source: parsed.data.source,
+                path: basePayload.page_path ?? undefined,
+                route: "/api/email-subscriptions",
+                user_state: "anonymous",
+            },
+        });
 
         return NextResponse.json({ success: true }, { status: 200 });
     } catch (error) {

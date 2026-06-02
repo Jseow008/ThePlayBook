@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import type { Database } from "@/types/database";
@@ -10,6 +11,7 @@ const HIGHLIGHT_TEXT_MAX = 2_000;
 const NOTE_BODY_MAX = 4_000;
 const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
 type HighlightInsert = Database["public"]["Tables"]["user_highlights"]["Insert"];
+type HighlightRow = Database["public"]["Tables"]["user_highlights"]["Row"];
 
 const CreateHighlightSchema = z.object({
     content_item_id: z.string().uuid(),
@@ -98,6 +100,38 @@ export async function POST(request: NextRequest) {
         if (error) {
             logApiError({ requestId, route: "POST /api/library/highlights", message: "Error inserting highlight", error });
             return apiError("INTERNAL_ERROR", "Failed to save highlight.", 500, requestId);
+        }
+
+        const highlight = data as HighlightRow;
+        const highlightId = typeof highlight.id === "string" ? highlight.id : requestId;
+        const noteLength = note_body?.trim().length ?? 0;
+
+        await captureServerAnalyticsEvent({
+            event: "highlight_created",
+            distinctId: user.id,
+            insertId: `highlight_created:${user.id}:${highlightId}`,
+            properties: {
+                content_id: content_item_id,
+                route: "POST /api/library/highlights",
+                color: payload.color ?? undefined,
+                has_note: noteLength > 0,
+                user_state: "authenticated",
+            },
+        });
+
+        if (noteLength > 0) {
+            await captureServerAnalyticsEvent({
+                event: "note_created",
+                distinctId: user.id,
+                insertId: `note_created:${user.id}:${highlightId}`,
+                properties: {
+                    content_id: content_item_id,
+                    route: "POST /api/library/highlights",
+                    highlight_id: highlightId,
+                    note_length: noteLength,
+                    user_state: "authenticated",
+                },
+            });
         }
 
         return NextResponse.json({ data });

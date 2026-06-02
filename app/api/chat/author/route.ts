@@ -4,6 +4,7 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 
@@ -238,6 +239,21 @@ Rules:
 
         if (user) {
             await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "author-chat" });
+        }
+        if (allMessages.filter((message) => message.role === "user").length === 1) {
+            const distinctId = user?.id ?? `anonymous:${requestId}`;
+            await captureServerAnalyticsEvent({
+                event: "ai_chat_started",
+                distinctId,
+                insertId: `ai_chat_started:content:${distinctId}:${contentId}:${requestId}`,
+                properties: {
+                    source: "author_chat",
+                    route: "/api/chat/author",
+                    chat_scope: "content",
+                    content_id: contentId,
+                    user_state: user ? "authenticated" : "anonymous",
+                },
+            });
         }
 
         return result.toTextStreamResponse();
