@@ -154,6 +154,9 @@ export function ContentPreview({
                                 title={item.title}
                                 text={`Check out "${item.title}" on ${APP_NAME}`}
                                 variant="icon"
+                                source="content_preview"
+                                contentId={item.id}
+                                contentType={item.type}
                                 className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
                             />
 
@@ -396,6 +399,9 @@ export function ContentPreview({
                     title={item.title}
                     text={`Check out "${item.title}" on ${APP_NAME}`}
                     variant="icon"
+                    source="content_preview_mobile"
+                    contentId={item.id}
+                    contentType={item.type}
                     className="h-11 w-11 rounded-xl border border-border/50 bg-secondary/40"
                 />
 

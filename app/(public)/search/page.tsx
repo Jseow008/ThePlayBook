@@ -14,6 +14,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Suspense } from "react";
+import { SearchAnalyticsTracker } from "./SearchAnalyticsTracker";
 import { SearchTopicSelect } from "@/components/ui/SearchTopicSelect";
 import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
 import {
@@ -161,8 +162,16 @@ export async function SearchResults({
         return null;
     }
 
+    const filtersCount = Number(normalizedCategoryValues.length > 0) + Number(Boolean(normalizedType));
+
     return (
         <div className="animate-in fade-in duration-500">
+            <SearchAnalyticsTracker
+                queryPresent={hasQuery}
+                queryLength={hasQuery ? trimmedQuery.length : undefined}
+                resultCount={results.length}
+                filtersCount={filtersCount}
+            />
             <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <p className="text-muted-foreground text-lg font-medium">
                     {results.length} result{results.length !== 1 ? "s" : ""}

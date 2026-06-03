@@ -31,6 +31,7 @@ import {
     migrateLegacyStorageToGuest,
 } from "@/lib/local-user-storage";
 import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import {
     clearCachedRecommendations,
     clearRecentRecommendations,
@@ -652,7 +653,17 @@ function useReadingProgressController(initialUser?: User | null) {
         writeScopedMyList(localStorage, scope, newList);
         setMyListIds(newList);
 
-        syncItemToCloud(userRef.current, scope, itemId, true, undefined);
+        void syncItemToCloud(userRef.current, scope, itemId, true, undefined)
+            .then((didSync) => {
+                if (!didSync) return;
+
+                captureAnalyticsEvent("library_saved", {
+                    content_id: itemId,
+                    route: "useReadingProgress.addToMyList",
+                    save_state: "saved",
+                    user_state: userRef.current ? "authenticated" : "anonymous",
+                });
+            });
         window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [syncItemToCloud]);
 
@@ -709,7 +720,19 @@ function useReadingProgressController(initialUser?: User | null) {
             setCompletedIds((prev) => prev.filter((id) => id !== itemId));
         }
 
-        syncItemToCloud(userRef.current, scope, itemId, undefined, nextData);
+        void syncItemToCloud(userRef.current, scope, itemId, undefined, nextData)
+            .then((didSync) => {
+                if (!didSync || !nextData.isCompleted || currentProgress?.isCompleted) {
+                    return;
+                }
+
+                captureAnalyticsEvent("content_completed", {
+                    content_id: itemId,
+                    route: "useReadingProgress.saveReadingProgress",
+                    completion_percent: 100,
+                    user_state: userRef.current ? "authenticated" : "anonymous",
+                });
+            });
         window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [insertOrMoveToFront, readProgressFromScope, syncItemToCloud]);
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Share2, Check } from "lucide-react";
 import { toast } from "sonner";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 interface ShareButtonProps {
@@ -12,6 +13,9 @@ interface ShareButtonProps {
     text?: string;
     className?: string;
     variant?: "icon" | "pill";
+    source?: string;
+    contentId?: string;
+    contentType?: string;
 }
 
 /**
@@ -27,6 +31,9 @@ export function ShareButton({
     text,
     className,
     variant = "pill",
+    source = "share_button",
+    contentId,
+    contentType,
 }: ShareButtonProps) {
     const [copied, setCopied] = useState(false);
 
@@ -42,6 +49,12 @@ export function ShareButton({
         if (navigator.share && navigator.canShare?.(shareData)) {
             try {
                 await navigator.share(shareData);
+                captureAnalyticsEvent("share_clicked", {
+                    source,
+                    content_id: contentId,
+                    content_type: contentType,
+                    share_method: "native",
+                });
                 return;
             } catch (err) {
                 // User cancelled or share failed — fall through to clipboard
@@ -53,6 +66,12 @@ export function ShareButton({
         try {
             await navigator.clipboard.writeText(resolvedUrl);
             setCopied(true);
+            captureAnalyticsEvent("share_clicked", {
+                source,
+                content_id: contentId,
+                content_type: contentType,
+                share_method: "copy_link",
+            });
             toast.success("Link copied to clipboard");
             setTimeout(() => setCopied(false), 2000);
         } catch {

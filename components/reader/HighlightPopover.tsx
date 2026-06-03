@@ -5,11 +5,13 @@ import { createPortal } from "react-dom";
 import { BookOpen, AlertCircle, Edit3, Trash2, Check, X, Highlighter } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUpdateHighlight, useDeleteHighlight } from "@/hooks/useHighlights";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 
 interface HighlightPopoverProps {
     highlightId: string;
+    contentItemId?: string;
     noteBody: string | null;
     highlightedText: string;
     currentColor: string;
@@ -25,6 +27,7 @@ const COLORS = ["yellow", "blue", "green", "red", "purple"] as const;
 
 export function HighlightPopover({
     highlightId,
+    contentItemId,
     noteBody,
     highlightedText,
     currentColor,
@@ -90,13 +93,25 @@ export function HighlightPopover({
 
     const handleSave = async () => {
         try {
+            const trimmedNote = editNote.trim();
+            const hadNote = Boolean(localNoteBody?.trim());
             await updateHighlight.mutateAsync({
                 id: highlightId,
-                note_body: editNote.trim() === "" ? null : editNote.trim(),
+                note_body: trimmedNote === "" ? null : trimmedNote,
                 color: editColor,
             });
 
-            setLocalNoteBody(editNote.trim() === "" ? null : editNote.trim());
+            if (!hadNote && trimmedNote.length > 0 && contentItemId) {
+                captureAnalyticsEvent("note_created", {
+                    content_id: contentItemId,
+                    highlight_id: highlightId,
+                    note_length: trimmedNote.length,
+                    route: "HighlightPopover",
+                    user_state: "authenticated",
+                });
+            }
+
+            setLocalNoteBody(trimmedNote === "" ? null : trimmedNote);
             setLocalColor(editColor);
             setIsEditing(false);
             toast.success("Highlight updated");

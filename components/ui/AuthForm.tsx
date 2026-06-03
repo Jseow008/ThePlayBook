@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Chrome, Mail, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { DEFAULT_LOGIN_REDIRECT_PATH } from "@/lib/auth-redirect";
 
 interface AuthFormProps {
@@ -38,6 +39,13 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
 
     const handleOAuthLogin = async (provider: "google") => {
         setIsLoading(provider);
+        captureAnalyticsEvent("signup_started", {
+            source: "auth_form",
+            auth_method: provider,
+            route: "/login",
+            user_state: "anonymous",
+        });
+
         try {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider,
@@ -69,6 +77,12 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
         }
 
         setIsLoading("email");
+        captureAnalyticsEvent("signup_started", {
+            source: "auth_form",
+            auth_method: "email",
+            route: "/login",
+            user_state: "anonymous",
+        });
 
         try {
             const { error } = await supabase.auth.signInWithOtp({

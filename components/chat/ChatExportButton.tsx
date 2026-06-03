@@ -13,6 +13,7 @@ import {
     type EncryptedChatExportPayload,
 } from "@/lib/chat-export";
 import { encryptChatExport } from "@/lib/chat-export-crypto";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 interface ChatExportButtonProps {
@@ -206,6 +207,11 @@ export function ChatExportButton({
         try {
             await navigator.clipboard.writeText(exportState.url);
             setCopied(true);
+            captureAnalyticsEvent("share_clicked", {
+                source: "chat_export",
+                share_method: "copy_link",
+                share_target: "chat_export",
+            });
             toast.success("Export link copied");
             window.setTimeout(() => setCopied(false), 1800);
         } catch {
@@ -227,6 +233,11 @@ export function ChatExportButton({
         if (navigator.share && navigator.canShare?.(shareData)) {
             try {
                 await navigator.share(shareData);
+                captureAnalyticsEvent("share_clicked", {
+                    source: "chat_export",
+                    share_method: "native",
+                    share_target: "chat_export",
+                });
                 return;
             } catch (error) {
                 if (error instanceof Error && error.name === "AbortError") {
@@ -322,7 +333,14 @@ export function ChatExportButton({
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => downloadMarkdown(exportState.payload)}
+                                    onClick={() => {
+                                        downloadMarkdown(exportState.payload);
+                                        captureAnalyticsEvent("share_clicked", {
+                                            source: "chat_export",
+                                            share_method: "download",
+                                            share_target: "markdown",
+                                        });
+                                    }}
                                     className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-border/65 bg-background/55 px-2 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-background"
                                 >
                                     <Download className="size-4 shrink-0" />

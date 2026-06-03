@@ -127,6 +127,8 @@ function eventProperties<const T extends readonly AnalyticsEventProperty[]>(
   return [...COMMON_ALLOWED_PROPERTIES, ...properties] as const;
 }
 
+// Keep requiredProperties in sync with the Phase 9 data-quality HogQL rules in
+// config/posthog/netflux-dashboard-spec.mjs.
 export const ANALYTICS_EVENT_CONTRACTS = {
   email_subscribed: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,

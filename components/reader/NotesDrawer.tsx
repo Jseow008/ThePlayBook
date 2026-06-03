@@ -6,6 +6,7 @@ import { StickyNote, AlertCircle, Trash2, X, MessageSquareQuote, ArrowUpRight, E
 import { useDeleteHighlight, useUpdateHighlight, type HighlightWithContent } from "@/hooks/useHighlights";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
 import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNoteComposer";
@@ -193,6 +194,16 @@ export function NotesDrawer({
                 note_body: trimmedNote === "" ? null : trimmedNote,
                 color: draftColor,
             });
+
+            if (!hadNote && trimmedNote.length > 0) {
+                captureAnalyticsEvent("note_created", {
+                    content_id: editingHighlight.content_item_id,
+                    highlight_id: editingHighlight.id,
+                    note_length: trimmedNote.length,
+                    route: "NotesDrawer",
+                    user_state: "authenticated",
+                });
+            }
 
             setEditingHighlight(null);
 

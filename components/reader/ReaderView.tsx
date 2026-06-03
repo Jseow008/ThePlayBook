@@ -22,6 +22,7 @@ import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
 import { findCompletedSegmentIdsForPlaybackTime, findSegmentIdForPlaybackTime } from "@/lib/reader-audio-sync";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import {
     clearScopedAudioResume,
@@ -87,6 +88,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         focusAfterScroll?: boolean;
     } | null>(null);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
+    const openedContentIdRef = useRef<string | null>(null);
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
     const pendingProgressSaveRef = useRef(false);
     const progressSnapshotRef = useRef<ReadingProgressData | null>(null);
@@ -125,6 +127,22 @@ export function ReaderView({ content }: ReaderViewProps) {
         ? activeNarrationSegmentId
         : null;
     const authorName = content.author || "the Author";
+
+    useEffect(() => {
+        if (openedContentIdRef.current === content.id) {
+            return;
+        }
+
+        openedContentIdRef.current = content.id;
+        captureAnalyticsEvent("content_opened", {
+            content_id: content.id,
+            content_type: content.type,
+            category: content.category ?? undefined,
+            source: "reader",
+            route: "/read/[id]",
+        });
+    }, [content.category, content.id, content.type]);
+
     const handleAudioTimeChange = useCallback((timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => {
         latestAudioStateRef.current = {
             timeSec,
@@ -790,6 +808,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             >
                 {/* Hero Header */}
                 <ReaderHeroHeader
+                    contentId={content.id}
                     title={content.title}
                     author={content.author}
                     type={content.type}
@@ -983,6 +1002,7 @@ export function ReaderView({ content }: ReaderViewProps) {
             {isDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (
                 <HighlightPopover
                     highlightId={popoverHighlight.id}
+                    contentItemId={content.id}
                     noteBody={popoverHighlight.note_body}
                     highlightedText={popoverHighlight.highlighted_text}
                     currentColor={popoverHighlight.color || "yellow"}

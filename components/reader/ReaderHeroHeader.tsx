@@ -16,6 +16,7 @@ import { ResilientImage } from "@/components/ui/ResilientImage";
  */
 
 interface ReaderHeroHeaderProps {
+    contentId?: string;
     title: string;
     author: string | null;
     type: string;
@@ -36,6 +37,7 @@ interface ReaderHeroHeaderProps {
 }
 
 export function ReaderHeroHeader({
+    contentId,
     title,
     author,
     type,
@@ -150,6 +152,9 @@ export function ReaderHeroHeader({
                             title={title}
                             text={`Read "${title}" on ${APP_NAME}`}
                             variant="icon"
+                            source="reader_header"
+                            contentId={contentId}
+                            contentType={type}
                         />
                     </div>
                 </div>

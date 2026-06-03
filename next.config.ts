@@ -20,7 +20,8 @@ function getSupabaseOrigin(): string {
 const supabaseOrigin = getSupabaseOrigin();
 const supabaseWssOrigin = supabaseOrigin.replace(/^https:/, "wss:");
 const supabaseHostname = new URL(supabaseOrigin).hostname;
-const posthogProxyPath = "/ingest";
+const posthogProxyPath = "/flux";
+const legacyPosthogProxyPath = "/ingest";
 const posthogApiHost = "https://us.i.posthog.com";
 const posthogAssetsHost = "https://us-assets.i.posthog.com";
 const appOrigin =
@@ -65,6 +66,23 @@ const corsHeaders = [
   { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
   { key: "Vary", value: "Origin" },
 ];
+
+function getPostHogProxyRewrites(proxyPath: string) {
+  return [
+    {
+      source: `${proxyPath}/static/:path*`,
+      destination: `${posthogAssetsHost}/static/:path*`,
+    },
+    {
+      source: `${proxyPath}/array/:path*`,
+      destination: `${posthogAssetsHost}/array/:path*`,
+    },
+    {
+      source: `${proxyPath}/:path*`,
+      destination: `${posthogApiHost}/:path*`,
+    },
+  ];
+}
 
 const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
@@ -126,18 +144,8 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
-      {
-        source: `${posthogProxyPath}/static/:path*`,
-        destination: `${posthogAssetsHost}/static/:path*`,
-      },
-      {
-        source: `${posthogProxyPath}/array/:path*`,
-        destination: `${posthogAssetsHost}/array/:path*`,
-      },
-      {
-        source: `${posthogProxyPath}/:path*`,
-        destination: `${posthogApiHost}/:path*`,
-      },
+      ...getPostHogProxyRewrites(posthogProxyPath),
+      ...getPostHogProxyRewrites(legacyPosthogProxyPath),
     ];
   },
 };

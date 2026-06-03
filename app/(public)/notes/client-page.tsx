@@ -28,6 +28,7 @@ import {
 } from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
@@ -1023,6 +1024,16 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                 note_body: trimmedNote === "" ? null : trimmedNote,
                 color: draftColor,
             });
+
+            if (!hadNote && trimmedNote.length > 0) {
+                captureAnalyticsEvent("note_created", {
+                    content_id: editingHighlight.content_item_id,
+                    highlight_id: editingHighlight.id,
+                    note_length: trimmedNote.length,
+                    route: "/notes",
+                    user_state: "authenticated",
+                });
+            }
 
             setEditingHighlight(null);
 

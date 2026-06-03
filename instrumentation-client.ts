@@ -1,8 +1,9 @@
 import posthog from "posthog-js";
 
 const posthogProjectToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-const posthogHost = process.env.NEXT_PUBLIC_POSTHOG_HOST?.replace(/\/$/, "");
+const posthogHost = (process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "/flux").replace(/\/$/, "");
 const posthogUiHost = process.env.NEXT_PUBLIC_POSTHOG_UI_HOST?.replace(/\/$/, "");
+const captureBotEvents = process.env.NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS === "true";
 
 if (posthogProjectToken && posthogHost && !posthog.__loaded) {
   posthog.init(posthogProjectToken, {
@@ -13,5 +14,6 @@ if (posthogProjectToken && posthogHost && !posthog.__loaded) {
     capture_pageleave: true,
     autocapture: false,
     disable_session_recording: true,
+    __preview_capture_bot_pageviews: captureBotEvents,
   });
 }

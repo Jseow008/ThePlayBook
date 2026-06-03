@@ -373,6 +373,9 @@ export const FocusCardView = memo(function FocusCardView({
                                         title={card.title}
                                         text={`Check out "${card.title}" on Netflux`}
                                         variant="icon"
+                                        source="focus_feed"
+                                        contentId={card.id}
+                                        contentType={card.type}
                                         className="focus-ring h-8 w-8 rounded-full p-0 text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
                                     />
                                 </div>

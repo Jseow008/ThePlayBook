@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "embeddings:sync-segments": "tsx scripts/sync-segment-embeddings.ts",
     "validate:launch-env": "node scripts/validate-launch-env.mjs",
-    "check:deployment-health": "node scripts/check-deployment-health.mjs"
+    "check:deployment-health": "node scripts/check-deployment-health.mjs",
+    "posthog:dashboards": "node scripts/create-posthog-dashboards.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.47",
