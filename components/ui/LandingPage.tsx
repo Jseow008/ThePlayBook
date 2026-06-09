@@ -25,7 +25,7 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
     <>
       <LandingHeader />
 
-      <main className="landing-page-shell relative min-h-screen overflow-x-hidden text-foreground">
+      <main className="landing-page-shell relative min-h-screen overflow-x-clip text-foreground">
         <HeroSection />
         <LandingDeferredSections
           featuredItems={featuredItems}

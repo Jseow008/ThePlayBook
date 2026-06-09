@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Inter, Outfit, Playfair_Display } from "next/font/google";
+import { Instrument_Serif, Inter, Manrope, Newsreader, Outfit, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
@@ -25,6 +25,25 @@ const outfit = Outfit({
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
+  display: "swap",
+});
+
+const landingSans = Manrope({
+  subsets: ["latin"],
+  variable: "--font-landing-sans",
+  display: "swap",
+});
+
+const landingSerif = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-landing-serif",
+  display: "swap",
+});
+
+const landingHeroSerif = Instrument_Serif({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-landing-hero-serif",
   display: "swap",
 });
 
@@ -94,7 +113,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${inter.variable} ${outfit.variable} ${playfair.variable} font-sans antialiased isolate`}
+        className={`${inter.variable} ${outfit.variable} ${playfair.variable} ${landingSans.variable} ${landingSerif.variable} ${landingHeroSerif.variable} font-sans antialiased isolate`}
       >
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
