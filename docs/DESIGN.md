@@ -30,10 +30,6 @@ Current font stack:
   - brand/logo usage
 - `Playfair Display`
   - serif/editorial display usage
-- `Manrope`
-  - landing-page-only UI and body text
-- `Newsreader`
-  - landing-page-only editorial headings and content titles
 - `Instrument Serif`
   - landing-page-only hero headline
 
@@ -43,7 +39,7 @@ Tailwind font mappings in `app/globals.css`:
 - `--font-brand: var(--font-outfit)`
 - `--font-serif: var(--font-serif)`
 
-The landing page scopes `Manrope`, `Newsreader`, and `Instrument Serif` through landing-specific CSS variables and classes. Do not apply those landing overrides to the authenticated/public app shell without an explicit typography redesign.
+The landing page uses the global `Inter` and `Playfair Display` typography mappings, with `Instrument Serif` scoped only to the landing hero headline. Do not apply the hero override to the authenticated/public app shell without an explicit typography redesign.
 
 Do not revert documentation to the older “system serif / Georgia” description unless the implementation changes back.
 

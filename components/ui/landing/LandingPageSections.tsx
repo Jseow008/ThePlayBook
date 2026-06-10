@@ -1189,10 +1189,6 @@ export function FinalCTASection() {
                 Stop forgetting what you learn.
               </h2>
 
-              <p className="mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-                Build a library of summaries, highlights, and saved ideas you can return to whenever they become useful again.
-              </p>
-
               <EmailSubscriptionForm
                 source="landing_final_cta"
                 align="center"

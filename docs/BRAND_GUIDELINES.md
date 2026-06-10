@@ -55,6 +55,8 @@ While the app remains largely monochrome to let the content shine, **Solar Gold*
 Netflux utilizes three highly specific typefaces to establish its premium brand identity. 
 *(All fonts are available freely via Google Fonts).*
 
+The web landing page additionally uses `Instrument Serif` only for its hero headline. This is a scoped marketing exception, not a replacement for the core typography system.
+
 ### A. Brand Logo & Display: `Outfit`
 Used exclusively for the logo, ultra-large hero titles, marketing landing pages, or high-impact brand statements on social media.
 - **Weight:** Medium (500) to Semi-Bold (600)

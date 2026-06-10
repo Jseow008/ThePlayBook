@@ -600,12 +600,12 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-page-shell,
 .landing-header {
-  font-family: var(--font-landing-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   font-feature-settings: "liga" 1, "kern" 1, "ss01" 1;
 }
 
 .landing-page-shell .font-serif {
-  font-family: var(--font-landing-serif), Georgia, serif;
+  font-family: var(--font-serif), Georgia, serif;
 }
 
 .landing-hero-section {
@@ -638,28 +638,28 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-hero-copy {
-  font-family: var(--font-landing-sans), ui-sans-serif, system-ui, sans-serif;
-  font-weight: 430;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
   letter-spacing: 0;
   text-wrap: pretty;
 }
 
 .landing-section-kicker {
   color: rgba(212, 212, 216, 0.72);
-  font-family: var(--font-landing-sans), ui-sans-serif, system-ui, sans-serif;
-  font-weight: 650;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
 }
 
 .landing-section-title {
-  font-family: var(--font-landing-serif), Georgia, serif;
-  font-weight: 650;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 600;
   letter-spacing: 0;
   text-wrap: pretty;
 }
 
 .landing-section-body {
-  font-family: var(--font-landing-sans), ui-sans-serif, system-ui, sans-serif;
-  font-weight: 430;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 400;
   letter-spacing: 0;
   text-wrap: pretty;
 }
@@ -671,14 +671,14 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-cta-band h2.font-serif {
-  font-family: var(--font-landing-serif), Georgia, serif;
-  font-weight: 620;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 600;
   letter-spacing: 0;
 }
 
 .landing-featured-read-card .font-serif {
-  font-family: var(--font-landing-serif), Georgia, serif;
-  font-weight: 520;
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
   letter-spacing: 0;
 }
 
