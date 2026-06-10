@@ -56,7 +56,7 @@ export function HeroSection() {
             </h1>
 
             <p className="landing-hero-copy mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use over time.
+              Turning books, podcasts, articles, and videos into searchable summaries, highlights, and saved ideas you can revisit when they matter.
             </p>
 
             <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row sm:items-center">
@@ -65,7 +65,7 @@ export function HeroSection() {
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link href="/browse" className={SECONDARY_CTA_CLASS}>
-                Explore Summaries
+                Browse Summaries
               </Link>
             </div>
           </>

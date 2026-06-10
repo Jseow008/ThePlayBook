@@ -218,6 +218,7 @@ function renderLandingPage() {
     <LandingDeferredSections
       featuredItems={featuredItems}
       curatedCategories={[]}
+      totalContentCount={487}
     />
   );
 

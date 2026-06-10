@@ -69,17 +69,26 @@ const STORYBOARD_SLIDES = [
   {
     label: "Distill",
     title: "Distill before committing time",
-    image: "/images/netflux-storyboard-distill.webp",
+    eyebrow: "Understand before you commit",
+    heading: "Find the ideas worth your attention.",
+    body: "Preview the central argument, key takeaways, and structure before deciding what deserves a deeper read or listen.",
+    image: "/images/netflux-workflow-distill-square.webp",
   },
   {
     label: "Library",
     title: "Build your personal library",
-    image: "/images/netflux-storyboard-library.webp",
+    eyebrow: "Keep what matters",
+    heading: "Turn useful ideas into a lasting library.",
+    body: "Save summaries, continue where you stopped, and connect highlights with notes you can return to when they become useful.",
+    image: "/images/netflux-workflow-library-square.webp",
   },
   {
     label: "Ask",
     title: "Think with your notes",
-    image: "/images/netflux-storyboard-ai.webp",
+    eyebrow: "Think across your knowledge",
+    heading: "Ask better questions of what you have learned.",
+    body: "Clarify an argument, challenge an idea, or search across your saved knowledge when you need a useful answer.",
+    image: "/images/netflux-workflow-ask-square.webp",
   },
 ] as const;
 
@@ -275,8 +284,19 @@ function FeaturedReadCard({
   );
 }
 
-export function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
+export function FeaturedReadsSection({
+  items,
+  totalContentCount,
+}: {
+  items: ContentItem[];
+  totalContentCount: number;
+}) {
   const rows = getFeaturedReadRows(items);
+  const roundedContentCount = Math.floor(totalContentCount / 100) * 100;
+  const popularIdeasCopy =
+    roundedContentCount >= 100
+      ? `Over ${roundedContentCount}+ summaries across books, podcasts, articles, and videos.`
+      : "Summaries across books, podcasts, articles, and videos.";
 
   if (items.length === 0) return null;
 
@@ -289,7 +309,7 @@ export function FeaturedReadsSection({ items }: { items: ContentItem[] }) {
         <SectionIntro
           label="Explore the library"
           title="Ideas worth remembering."
-          body="Popular ideas from books, podcasts, articles, and videos."
+          body={popularIdeasCopy}
         />
         <Link
           href="/browse"
@@ -906,15 +926,16 @@ export function CorePlatformFeaturesSection() {
     <section className="landing-feature-band relative py-14 sm:py-18">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
       <FadeIn className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="landing-feature-shell relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-white/5 via-white/[0.03] to-white/[0.01] p-4 shadow-[0_24px_80px_-40px_rgba(0,0,0,0.85)] sm:p-6 lg:p-8">
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/[0.035] to-transparent blur-2xl" />
-          <div className="pointer-events-none absolute bottom-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+        <div className="relative">
           <div className="relative z-10">
-            <h2 className="mb-5 text-center font-serif text-3xl font-semibold leading-none tracking-[-0.025em] text-white sm:mb-6 sm:text-4xl">
+            <h2 className="text-center font-serif text-3xl font-semibold leading-none tracking-[-0.025em] text-white sm:text-4xl">
               From insight to lasting reference
             </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-7 text-zinc-400 sm:text-base">
+              Preview what matters, keep the ideas worth remembering, and return to them when you need them.
+            </p>
 
-            <FadeIn className="mx-auto max-w-5xl" delayMs={100}>
+            <FadeIn className="mx-auto mt-6 max-w-6xl sm:mt-8" delayMs={100}>
               <div>
                 <div className="mb-4 flex flex-wrap items-center justify-center gap-3">
                   {STORYBOARD_SLIDES.map((slide, index) => {
@@ -940,34 +961,52 @@ export function CorePlatformFeaturesSection() {
                   })}
                 </div>
 
-                <button
-                  ref={storyboardLauncherRef}
-                  type="button"
-                  onClick={() => setIsStoryboardLightboxOpen(true)}
-                  className="focus-ring landing-storyboard-viewer group/storyboard relative block w-full overflow-hidden rounded-[1.45rem] border border-white/10 bg-zinc-950 text-left"
-                  aria-label={`Enlarge ${STORYBOARD_SLIDES[activeStoryboardSlide].label} storyboard`}
-                >
+                <div className="grid min-h-[34rem] items-center gap-8 rounded-[1.5rem] bg-black/20 p-5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12 lg:p-10">
                   <div
-                    className="flex transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                    style={{ transform: `translateX(-${activeStoryboardSlide * 100}%)` }}
+                    key={`copy-${STORYBOARD_SLIDES[activeStoryboardSlide].label}`}
+                    className="mx-auto max-w-md text-center lg:mx-0 lg:text-left"
                   >
-                    {STORYBOARD_SLIDES.map((slide) => (
-                      <div key={slide.title} className="relative aspect-[1672/941] w-full shrink-0">
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#e7bd72]/80">
+                      {STORYBOARD_SLIDES[activeStoryboardSlide].eyebrow}
+                    </p>
+                    <h3 className="mt-5 text-3xl font-semibold leading-tight tracking-normal text-white sm:text-4xl">
+                      {STORYBOARD_SLIDES[activeStoryboardSlide].heading}
+                    </h3>
+                    <p className="mt-5 text-base leading-8 text-zinc-400 sm:text-lg">
+                      {STORYBOARD_SLIDES[activeStoryboardSlide].body}
+                    </p>
+                  </div>
+
+                  <button
+                    ref={storyboardLauncherRef}
+                    type="button"
+                    onClick={() => setIsStoryboardLightboxOpen(true)}
+                    className="focus-ring landing-storyboard-viewer group/storyboard relative mx-auto block aspect-square w-full max-w-[34rem] overflow-hidden rounded-[1.25rem] border border-white/10 bg-white text-left"
+                    aria-label={`Enlarge ${STORYBOARD_SLIDES[activeStoryboardSlide].label} storyboard`}
+                  >
+                    {STORYBOARD_SLIDES.map((slide, index) => (
+                      <div
+                        key={slide.title}
+                        className={cn(
+                          "absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none",
+                          index === activeStoryboardSlide ? "opacity-100" : "pointer-events-none opacity-0"
+                        )}
+                      >
                         <Image
                           src={slide.image}
                           alt={`Netflux storyboard: ${slide.title}`}
                           fill
-                          sizes="(max-width: 1024px) 100vw, 760px"
-                          className="object-cover"
+                          sizes="(max-width: 1024px) calc(100vw - 4rem), 544px"
+                          className="object-contain"
                         />
                       </div>
                     ))}
-                  </div>
-                  <div className="pointer-events-none absolute inset-0 rounded-[1.45rem] ring-1 ring-inset ring-white/10" />
-                  <div className="landing-storyboard-zoom pointer-events-none absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/55 text-white/80 opacity-100 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-300 group-hover/storyboard:border-white/25 group-hover/storyboard:bg-black/70 group-hover/storyboard:text-white sm:opacity-0 sm:group-hover/storyboard:opacity-100 sm:group-focus-visible/storyboard:opacity-100">
-                    <Maximize2 className="size-4" />
-                  </div>
-                </button>
+                    <div className="pointer-events-none absolute inset-0 rounded-[1.25rem] ring-1 ring-inset ring-black/10" />
+                    <div className="landing-storyboard-zoom pointer-events-none absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/65 text-white/85 opacity-100 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-300 group-hover/storyboard:border-white/25 group-hover/storyboard:bg-black/80 group-hover/storyboard:text-white sm:opacity-0 sm:group-hover/storyboard:opacity-100 sm:group-focus-visible/storyboard:opacity-100">
+                      <Maximize2 className="size-4" />
+                    </div>
+                  </button>
+                </div>
               </div>
             </FadeIn>
           </div>
@@ -1158,8 +1197,8 @@ export function FinalCTASection() {
                 source="landing_final_cta"
                 align="center"
                 className="mt-10"
-                title="Subscribe to the weekly idea note."
-                description="High-signal ideas, curated for remembering, revisiting, and using later."
+                title="Get one high-signal idea every week."
+                description="A concise note from books, podcasts, articles, and videos worth remembering."
               />
 
               <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">

@@ -12,16 +12,20 @@ import {
 interface LandingDeferredSectionsProps {
   featuredItems: ContentItem[];
   curatedCategories: { category: string; count: number; rawValues: string[] }[];
+  totalContentCount: number;
 }
 
 export function LandingDeferredSections({
   featuredItems,
   curatedCategories,
+  totalContentCount,
 }: LandingDeferredSectionsProps) {
   return (
     <>
       <CorePlatformFeaturesSection />
-      {featuredItems.length > 0 ? <FeaturedReadsSection items={featuredItems} /> : null}
+      {featuredItems.length > 0 ? (
+        <FeaturedReadsSection items={featuredItems} totalContentCount={totalContentCount} />
+      ) : null}
       {curatedCategories.length > 0 ? <TopicMapSection categories={curatedCategories} /> : null}
       <FinalCTASection />
       <LandingFooter />

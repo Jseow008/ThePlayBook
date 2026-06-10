@@ -866,20 +866,6 @@ mark[data-highlight-spotlight="true"] {
   isolation: isolate;
 }
 
-.landing-feature-band::before {
-  content: "";
-  position: absolute;
-  inset-inline: max(1.5rem, calc((100vw - 80rem) / 2));
-  top: 3rem;
-  height: 28rem;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 560px 320px at 74% 18%, rgba(244, 192, 79, 0.052), transparent 68%),
-    radial-gradient(ellipse 620px 360px at 14% 68%, rgba(255, 255, 255, 0.034), transparent 66%);
-  opacity: 0.9;
-  z-index: -1;
-}
-
 .landing-feature-shell {
   border-color: rgba(255, 255, 255, 0.082);
   background:

@@ -18,7 +18,7 @@ interface LandingPageProps {
   totalCategoryCount?: number;
 }
 
-export function LandingPage({ featuredItems, categories }: LandingPageProps) {
+export function LandingPage({ featuredItems, categories, totalContentCount }: LandingPageProps) {
   const curatedCategories = getCuratedCategories(categories);
 
   return (
@@ -30,6 +30,7 @@ export function LandingPage({ featuredItems, categories }: LandingPageProps) {
         <LandingDeferredSections
           featuredItems={featuredItems}
           curatedCategories={curatedCategories}
+          totalContentCount={totalContentCount}
         />
       </main>
     </>
