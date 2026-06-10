@@ -623,10 +623,10 @@ mark[data-highlight-spotlight="true"] {
   inset: 0;
   z-index: 0;
   background:
-    linear-gradient(90deg, rgba(0, 0, 0, 0.46), transparent 44%, rgba(0, 0, 0, 0.2)),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.34), transparent 44%, rgba(0, 0, 0, 0.14)),
     radial-gradient(ellipse 760px 520px at 72% 34%, rgba(244, 192, 79, 0.072), transparent 64%),
     radial-gradient(ellipse 620px 460px at 23% 22%, rgba(255, 255, 255, 0.052), transparent 68%);
-  opacity: 0.88;
+  opacity: 0.8;
 }
 
 .landing-hero-section::after {

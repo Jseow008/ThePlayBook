@@ -57,10 +57,10 @@ export function BackgroundScroll({
     scrollYProgress,
     [0, 0.4, 0.7, 1],
     reduceMotion
-      ? [0.36, 0.36, 0.36, 0.36]
+      ? [0.44, 0.44, 0.44, 0.44]
       : isMobile
-        ? [0.28, 0.32, 0.36, 0.2]
-        : [0.32, 0.38, 0.44, 0.2]
+        ? [0.34, 0.38, 0.42, 0.24]
+        : [0.42, 0.46, 0.52, 0.28]
   );
   const foregroundY = useTransform(
     scrollYProgress,
@@ -103,8 +103,8 @@ export function BackgroundScroll({
           {children}
         </motion.div>
 
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,5,0.78)_0%,rgba(4,4,5,0.38)_42%,rgba(4,4,5,0.7)_100%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_0%,rgba(4,4,5,0.24)_50%,rgba(4,4,5,0.74)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(4,4,5,0.7)_0%,rgba(4,4,5,0.3)_42%,rgba(4,4,5,0.62)_100%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,transparent_0%,rgba(4,4,5,0.16)_50%,rgba(4,4,5,0.62)_100%)]" />
 
         <motion.div
           style={{ translateY: foregroundY, opacity: foregroundOpacity }}
