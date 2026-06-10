@@ -955,9 +955,26 @@ mark[data-highlight-spotlight="true"] {
   backdrop-filter: blur(14px);
 }
 
-.landing-featured-band,
-.landing-topic-band {
+.landing-featured-band {
   isolation: isolate;
+}
+
+.landing-domain-nav {
+  border-block: 1px solid rgba(255, 255, 255, 0.045);
+  padding-block: 0.75rem;
+}
+
+.landing-domain-chip {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.landing-domain-chip-active {
+  border-color: rgba(244, 192, 79, 0.28);
+  background: rgba(244, 192, 79, 0.1);
+  color: rgba(255, 247, 224, 0.96);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 24px rgba(244, 192, 79, 0.05);
 }
 
 .landing-featured-shelf {
@@ -1115,39 +1132,7 @@ mark[data-highlight-spotlight="true"] {
   }
 }
 
-.landing-topic-card {
-  border-color: rgba(255, 255, 255, 0.055);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.042), rgba(255, 255, 255, 0.018)),
-    rgba(5, 5, 6, 0.62);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 18px 52px -40px rgba(0, 0, 0, 0.92);
-}
-
-.landing-topic-card:hover {
-  border-color: rgba(244, 192, 79, 0.18);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(255, 255, 255, 0.024)),
-    rgba(8, 8, 9, 0.74);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    0 24px 62px -42px rgba(0, 0, 0, 0.96),
-    0 0 28px rgba(244, 192, 79, 0.038);
-}
-
-.landing-topic-icon {
-  border-color: rgba(255, 255, 255, 0.075);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
-    rgba(0, 0, 0, 0.4);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    inset 0 -10px 20px rgba(0, 0, 0, 0.22);
-}
-
-.landing-feature-row::after,
-.landing-topic-card::after {
+.landing-feature-row::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -1160,8 +1145,7 @@ mark[data-highlight-spotlight="true"] {
   transition: opacity 360ms ease;
 }
 
-.landing-feature-row:hover::after,
-.landing-topic-card:hover::after {
+.landing-feature-row:hover::after {
   opacity: 1;
 }
 
@@ -1176,14 +1160,14 @@ mark[data-highlight-spotlight="true"] {
   .landing-rotating-word,
   .landing-primary-cta,
   .landing-secondary-cta,
-  .landing-soft-action,
-  .landing-icon-control,
-  .landing-storyboard-tab,
-  .landing-storyboard-viewer img,
-  .landing-featured-read-shell,
-  .landing-featured-read-card,
-  .landing-featured-read-card img,
-  .landing-topic-card {
+    .landing-soft-action,
+    .landing-icon-control,
+    .landing-storyboard-tab,
+    .landing-domain-chip,
+    .landing-storyboard-viewer img,
+    .landing-featured-read-shell,
+    .landing-featured-read-card,
+    .landing-featured-read-card img {
     transform: none;
     filter: none;
     transition: none;

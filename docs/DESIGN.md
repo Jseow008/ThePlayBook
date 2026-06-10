@@ -54,8 +54,7 @@ It now ships as a marketing/editorial composition with:
 - sticky minimal header
 - editorial hero
 - core platform feature storytelling
-- horizontally scrolling featured reads strip
-- topic map / category section
+- horizontally scrolling featured reads strip with compact domain filters
 - final CTA
 
 Landing positioning should preserve Netflux as a summary-first knowledge system: summaries are the front door, while the retention layer is library, highlights, saved ideas, search, and AI retrieval. Do not reduce the page to a generic "read less" or summary-app pitch.

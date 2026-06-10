@@ -456,3 +456,55 @@ describe("LandingPage featured reads carousel", () => {
     expect(carousel.scrollLeft).toBe(800);
   });
 });
+
+describe("LandingPage domain filters", () => {
+  beforeEach(() => {
+    mockMatchMedia();
+    setupRequestAnimationFrame();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  it("shows only strong domains and renders thin results without looping cards", async () => {
+    const psychologyItems = Array.from({ length: 4 }, (_, index) => ({
+      ...featuredItems[index % featuredItems.length]!,
+      id: `psychology-${index + 1}`,
+      title: `Psychology read ${index + 1}`,
+      category: "Psychology",
+    }));
+
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ items: psychologyItems }),
+    }));
+
+    render(
+      <LandingDeferredSections
+        featuredItems={featuredItems}
+        curatedCategories={[
+          { category: "Psychology", count: 35, rawValues: ["Psychology"] },
+          { category: "Politics", count: 1, rawValues: ["Politics"] },
+        ]}
+        totalContentCount={487}
+      />
+    );
+
+    expect(screen.getByRole("tab", { name: "Psychology, 35 reads" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Politics, 1 reads" })).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("tab", { name: "Psychology, 35 reads" }));
+    });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/landing/category-content?category=Psychology&value=Psychology"
+    );
+    expect(screen.getByLabelText("Domain reads")).toBeInTheDocument();
+    expect(screen.queryByTestId("featured-reads-group-a")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Psychology read 1")).toHaveLength(1);
+    expect(screen.getByText("Showing the available Psychology reads without repetition.")).toBeInTheDocument();
+  });
+});

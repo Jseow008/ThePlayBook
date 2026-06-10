@@ -5,28 +5,11 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Activity,
   ArrowRight,
-  Brain,
-  Briefcase,
   ChevronLeft,
   ChevronRight,
-  CircleDollarSign,
-  Dumbbell,
-  GraduationCap,
-  Globe,
-  Heart,
-  Laptop,
-  Lightbulb,
-  Landmark,
-  Leaf,
   Maximize2,
-  Megaphone,
-  Microscope,
-  Smile,
   Sparkles,
-  TrendingUp,
-  Users,
   X,
 } from "lucide-react";
 import { EmailSubscriptionForm } from "@/components/ui/EmailSubscriptionForm";
@@ -34,36 +17,6 @@ import { APP_NAME } from "@/lib/brand";
 export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
-
-const CATEGORY_ICONS = {
-  "Career & Success": Briefcase,
-  "Communication Skills": Megaphone,
-  "Corporate Culture": Users,
-  Economics: TrendingUp,
-  Education: GraduationCap,
-  Entrepreneurship: Lightbulb,
-  Fitness: Dumbbell,
-  "Health & Nutrition": Activity,
-  History: Landmark,
-  Lifestyle: Smile,
-  "Management & Leadership": Users,
-  "Marketing & Sales": Megaphone,
-  "Money & Investments": CircleDollarSign,
-  "Motivation & Inspiration": Sparkles,
-  "Nature & the Environment": Leaf,
-  Parenting: Heart,
-  "Personal Development": Brain,
-  Philosophy: Lightbulb,
-  Politics: Landmark,
-  Productivity: Briefcase,
-  Psychology: Brain,
-  Relationships: Heart,
-  "Religion & Spirituality": Sparkles,
-  Science: Microscope,
-  "Society & Culture": Globe,
-  "Technology & the Future": Laptop,
-  Business: Briefcase,
-} as const;
 
 const STORYBOARD_SLIDES = [
   {
@@ -286,19 +239,95 @@ function FeaturedReadCard({
 
 export function FeaturedReadsSection({
   items,
+  categories,
   totalContentCount,
 }: {
   items: ContentItem[];
+  categories: { category: string; count: number; rawValues: string[] }[];
   totalContentCount: number;
 }) {
-  const rows = getFeaturedReadRows(items);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [displayedItems, setDisplayedItems] = useState(items);
+  const [isLoadingCategory, setIsLoadingCategory] = useState(false);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
+  const categoryCacheRef = useRef(new Map<string, ContentItem[]>());
+  const categoryRequestRef = useRef(0);
+  const visibleCategories = categories.filter((category) => category.count >= 8).slice(0, 5);
+  const activeCategoryStat = categories.find((category) => category.category === activeCategory);
+  const rows = getFeaturedReadRows(displayedItems);
+  const useStaticRow = activeCategory !== null && displayedItems.length < FEATURED_READS_MIN_LOOP_ITEMS;
   const roundedContentCount = Math.floor(totalContentCount / 100) * 100;
   const popularIdeasCopy =
     roundedContentCount >= 100
       ? `Over ${roundedContentCount}+ summaries across books, podcasts, articles, and videos.`
       : "Summaries across books, podcasts, articles, and videos.";
+  const browseHref = activeCategory
+    ? `/search?category=${encodeURIComponent(activeCategory)}`
+    : "/browse";
 
   if (items.length === 0) return null;
+
+  function showAllItems() {
+    categoryRequestRef.current += 1;
+    setActiveCategory(null);
+    setDisplayedItems(items);
+    setIsLoadingCategory(false);
+    setCategoryError(null);
+  }
+
+  async function showCategory(category: string) {
+    if (category === activeCategory) return;
+
+    const requestId = categoryRequestRef.current + 1;
+    categoryRequestRef.current = requestId;
+    setActiveCategory(category);
+    setCategoryError(null);
+
+    const cachedItems = categoryCacheRef.current.get(category);
+    if (cachedItems) {
+      setDisplayedItems(cachedItems);
+      setIsLoadingCategory(false);
+      return;
+    }
+
+    setIsLoadingCategory(true);
+
+    try {
+      const params = new URLSearchParams({ category });
+      const categoryStat = categories.find((item) => item.category === category);
+      categoryStat?.rawValues.forEach((value) => params.append("value", value));
+      const response = await fetch(`/api/landing/category-content?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error("Category request failed");
+      }
+
+      const payload = (await response.json()) as { items?: ContentItem[] };
+      const categoryItems = Array.isArray(payload.items) ? payload.items : [];
+
+      if (categoryRequestRef.current !== requestId) return;
+
+      if (categoryItems.length === 0) {
+        setCategoryError("No reads are currently available in this domain. Showing the full library instead.");
+        setActiveCategory(null);
+        setDisplayedItems(items);
+        return;
+      }
+
+      categoryCacheRef.current.set(category, categoryItems);
+      setDisplayedItems(categoryItems);
+    } catch {
+      if (categoryRequestRef.current !== requestId) return;
+
+      setCategoryError("Could not load this domain. Showing the full library instead.");
+      setActiveCategory(null);
+      setDisplayedItems(items);
+    } finally {
+      if (categoryRequestRef.current === requestId) {
+        setIsLoadingCategory(false);
+      }
+    }
+  }
 
   return (
     <section
@@ -312,29 +341,129 @@ export function FeaturedReadsSection({
           body={popularIdeasCopy}
         />
         <Link
-          href="/browse"
+          href={browseHref}
           className="focus-ring landing-soft-action group inline-flex w-fit items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-white/80 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.07] hover:text-white"
         >
-          Browse all
+          {activeCategory ? `Browse ${activeCategory}` : "Browse all"}
           <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
         </Link>
       </FadeIn>
 
+      {visibleCategories.length > 0 ? (
+        <FadeIn delayMs={75} className="mx-auto mb-7 max-w-7xl px-6">
+          <div
+            role="tablist"
+            aria-label="Explore library domains"
+            className="landing-domain-nav scrollbar-hide flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeCategory === null}
+              onClick={showAllItems}
+              className={cn(
+                "focus-ring landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                activeCategory === null
+                  ? "landing-domain-chip-active"
+                  : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
+              )}
+            >
+              All
+            </button>
+            {visibleCategories.map((category) => (
+              <button
+                key={category.category}
+                type="button"
+                role="tab"
+                aria-selected={activeCategory === category.category}
+                aria-label={`${category.category}, ${category.count} reads`}
+                onClick={() => void showCategory(category.category)}
+                className={cn(
+                  "focus-ring landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                  activeCategory === category.category
+                    ? "landing-domain-chip-active"
+                    : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
+                )}
+              >
+                {category.category}
+              </button>
+            ))}
+          </div>
+        </FadeIn>
+      ) : null}
+
       <FadeIn delayMs={100}>
-        <div className="landing-featured-shelf relative mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-hidden pb-8 pt-4 md:gap-6">
+        <div
+          className="landing-featured-shelf relative mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-hidden pb-8 pt-4 md:gap-6"
+          aria-busy={isLoadingCategory}
+        >
           <div className="landing-featured-edge landing-featured-edge-left pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#090807] via-[#090807]/72 to-transparent" />
           <div className="landing-featured-edge landing-featured-edge-right pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#090807] via-[#090807]/72 to-transparent" />
-          {rows.map((rowItems, index) => (
-            <FeaturedReadsMarqueeRow
-              key={`featured-reads-row-${index}`}
-              items={rowItems}
-              direction={index % 2 === 0 ? "left" : "right"}
-              rowIndex={index}
-            />
-          ))}
+          <div
+            key={activeCategory ?? "all"}
+            className={cn(
+              "flex flex-col gap-5 transition-opacity duration-200 md:gap-6",
+              isLoadingCategory && "pointer-events-none opacity-35"
+            )}
+          >
+            {useStaticRow ? (
+              <FeaturedReadsStaticRow items={displayedItems} />
+            ) : (
+              rows.map((rowItems, index) => (
+                <FeaturedReadsMarqueeRow
+                  key={`featured-reads-row-${index}`}
+                  items={rowItems}
+                  direction={index % 2 === 0 ? "left" : "right"}
+                  rowIndex={index}
+                />
+              ))
+            )}
+          </div>
+          {isLoadingCategory ? (
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+              <span className="rounded-full border border-white/10 bg-black/70 px-4 py-2 text-xs font-semibold text-zinc-300 backdrop-blur-md">
+                Loading {activeCategory}
+              </span>
+            </div>
+          ) : null}
         </div>
+        <p className="sr-only" aria-live="polite">
+          {isLoadingCategory
+            ? `Loading ${activeCategory}`
+            : activeCategory
+              ? `${displayedItems.length} ${activeCategory} reads shown`
+              : categoryError ?? "Showing popular reads"}
+        </p>
+        {activeCategoryStat && displayedItems.length < FEATURED_READS_MIN_LOOP_ITEMS ? (
+          <div className="mx-auto mt-2 flex max-w-7xl items-center justify-between gap-4 px-6 text-xs text-zinc-500">
+            <span>Showing the available {activeCategory} reads without repetition.</span>
+            <Link href={browseHref} className="shrink-0 font-semibold text-zinc-300 hover:text-white">
+              View domain
+            </Link>
+          </div>
+        ) : null}
+        {categoryError ? (
+          <p className="mx-auto mt-2 max-w-7xl px-6 text-xs text-zinc-500">{categoryError}</p>
+        ) : null}
       </FadeIn>
     </section>
+  );
+}
+
+function FeaturedReadsStaticRow({ items }: { items: ContentItem[] }) {
+  return (
+    <div
+      aria-label="Domain reads"
+      className="landing-featured-row landing-featured-row-primary scrollbar-hide flex w-full overflow-x-auto overscroll-x-contain px-4 pb-4 pt-4 sm:px-6 [scrollbar-width:none]"
+    >
+      <div className="flex items-stretch gap-4 sm:gap-6">
+        {items.map((item) => (
+          <div key={item.id} className="landing-featured-read-shell relative flex-none shrink-0">
+            <FeaturedReadCard item={item} />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -1127,51 +1256,6 @@ export function CorePlatformFeaturesSection() {
         </div>,
         document.body
       ) : null}
-    </section>
-  );
-}
-
-export function TopicMapSection({ categories }: { categories: { category: string; count: number }[] }) {
-  return (
-    <section className="landing-topic-band relative py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <FadeIn>
-          <SectionIntro
-            label="Explore by domain"
-            title="Deep in every domain."
-            body="Non-fiction knowledge organized by topic. Go deep on what matters to you."
-            centered
-          />
-        </FadeIn>
-
-        <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-          {categories.map((item, index) => {
-            const Icon = CATEGORY_ICONS[item.category as keyof typeof CATEGORY_ICONS] || Sparkles;
-
-            return (
-              <FadeIn key={item.category} delayMs={index * 50}>
-                <Link
-                  href={`/search?category=${encodeURIComponent(item.category)}`}
-                  className="landing-topic-card group relative flex h-full min-h-44 flex-col items-center justify-center gap-4 overflow-hidden rounded-[2rem] border border-white/5 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.03))] p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-white/[0.08] hover:shadow-[0_24px_50px_-28px_rgba(255,255,255,0.24)] sm:p-8"
-                >
-                  <div className="pointer-events-none absolute inset-x-8 top-0 h-20 bg-gradient-to-b from-white/[0.08] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                  <div className="landing-topic-icon rounded-2xl border border-white/[0.08] bg-black/40 p-4 shadow-inner transition-colors group-hover:bg-black/60">
-                    <Icon className="size-6 text-zinc-400 transition-colors group-hover:text-white" />
-                  </div>
-                  <div>
-                    <span className="text-[0.95rem] font-semibold tracking-[0.01em] text-zinc-300 transition-colors group-hover:text-white">
-                      {item.category}
-                    </span>
-                    <span className="mt-2 block text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-zinc-500 transition-colors group-hover:text-zinc-300">
-                      {item.count} {item.count === 1 ? "read" : "reads"}
-                    </span>
-                  </div>
-                </Link>
-              </FadeIn>
-            );
-          })}
-        </div>
-      </div>
     </section>
   );
 }

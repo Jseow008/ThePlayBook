@@ -6,7 +6,6 @@ import {
   FeaturedReadsSection,
   FinalCTASection,
   LandingFooter,
-  TopicMapSection,
 } from "@/components/ui/landing/LandingPageSections";
 
 interface LandingDeferredSectionsProps {
@@ -24,9 +23,12 @@ export function LandingDeferredSections({
     <>
       <CorePlatformFeaturesSection />
       {featuredItems.length > 0 ? (
-        <FeaturedReadsSection items={featuredItems} totalContentCount={totalContentCount} />
+        <FeaturedReadsSection
+          items={featuredItems}
+          categories={curatedCategories}
+          totalContentCount={totalContentCount}
+        />
       ) : null}
-      {curatedCategories.length > 0 ? <TopicMapSection categories={curatedCategories} /> : null}
       <FinalCTASection />
       <LandingFooter />
     </>

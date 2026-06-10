@@ -89,6 +89,18 @@ export function getCanonicalContentCategory(category?: string | null) {
     return resolveContentCategoryAlias(normalized) ?? normalized;
 }
 
+export function getContentCategoryRawValues(category?: string | null) {
+    const canonicalCategory = getCanonicalContentCategory(category);
+    if (!canonicalCategory) return [];
+
+    return Array.from(new Set([
+        canonicalCategory,
+        ...Object.entries(CONTENT_CATEGORY_ALIASES)
+            .filter(([, canonical]) => canonical === canonicalCategory)
+            .map(([alias]) => alias),
+    ]));
+}
+
 export function buildCanonicalCategoryStats(categoryStats: Array<{ category: string; count: number }>) {
     const categoryMap = new Map<string, { count: number; rawValues: Set<string> }>();
 
