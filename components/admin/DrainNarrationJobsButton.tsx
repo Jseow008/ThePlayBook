@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, Waves } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 type NarrationQueueSummary = {
     queuedCount: number;
@@ -225,10 +225,9 @@ export function DrainNarrationJobsButton() {
     const isBusy = isProcessing || isResetting;
 
     return (
-        <div className="min-w-[18rem] max-w-sm rounded-xl border border-border bg-card px-4 py-3 text-left shadow-sm">
-            <div className="flex items-start gap-2 text-sm font-semibold text-foreground">
-                <Waves className="mt-0.5 size-4 text-primary" />
-                <span>Retry Narration Jobs</span>
+        <div className="w-full min-w-0 rounded-xl border border-border bg-card px-4 py-3 text-left shadow-sm">
+            <div className="text-sm font-semibold text-foreground">
+                Retry Narration Jobs
             </div>
             <p className="mt-1 text-xs leading-5 text-zinc-500">
                 Manually drain queued narration jobs when one appears stuck on Hobby. This runs the same recovery worker used by the background processor.

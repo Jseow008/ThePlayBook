@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 type SyncSummary = {
     verified_items: number;
@@ -88,12 +88,11 @@ export function SyncEmbeddingsButton() {
     }, []);
 
     return (
-        <div className="min-w-[18rem] max-w-sm rounded-xl border border-border bg-card px-4 py-3 text-left shadow-sm">
+        <div className="w-full min-w-0 rounded-xl border border-border bg-card px-4 py-3 text-left shadow-sm">
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <Sparkles className="size-4 text-primary" />
-                        <span>Sync Content Embeddings</span>
+                    <div className="text-sm font-semibold text-foreground">
+                        Sync Content Embeddings
                     </div>
                     <p className="mt-1 text-xs leading-5 text-zinc-500">
                         Verified content needs a fresh metadata embedding before AI retrieval is considered ready.

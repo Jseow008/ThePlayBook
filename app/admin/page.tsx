@@ -52,7 +52,7 @@ export default async function AdminDashboardPage({
             .select("id, title, author, status, created_at, updated_at, deleted_at")
             .is("deleted_at", null)
             .order("created_at", { ascending: false })
-            .limit(5),
+            .limit(3),
     ]);
 
     const { data: recentContent, error: recentContentError } = recentContentResult;
@@ -138,6 +138,8 @@ export default async function AdminDashboardPage({
             <LaunchReadinessPanel />
 
             <div className="grid gap-6 xl:items-start xl:grid-cols-[minmax(0,1fr)_24rem]">
+                <MaintenancePanel />
+
                 <section className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
                     <div className="flex items-center justify-between border-b border-border px-6 py-4">
                         <div>
@@ -159,7 +161,7 @@ export default async function AdminDashboardPage({
                             {recentContent.map((item: any) => (
                                 <div
                                     key={item.id}
-                                    className="flex flex-col gap-3 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+                                    className="flex flex-col gap-3 px-6 py-4"
                                 >
                                     <div className="min-w-0">
                                         <p className="truncate font-medium text-foreground">{item.title}</p>
@@ -168,7 +170,7 @@ export default async function AdminDashboardPage({
                                             {new Date(item.updated_at || item.created_at).toLocaleDateString()}
                                         </p>
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-between gap-3">
                                         <ContentStatusBadge status={item.status} />
                                         <Link
                                             href={`/admin/content/${item.id}/edit?returnTo=${encodeURIComponent("/admin")}`}
@@ -186,35 +188,6 @@ export default async function AdminDashboardPage({
                         </div>
                     )}
                 </section>
-
-                <div className="space-y-6">
-                    <section className="rounded-xl border border-border bg-card px-6 py-5 text-card-foreground shadow-sm">
-                        <div>
-                            <h2 className="font-semibold text-foreground">Content Workbench</h2>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                                Search, filter, and manage the full library without the operational widgets in the way.
-                            </p>
-                        </div>
-                        <div className="mt-4 space-y-3">
-                            <Link
-                                href="/admin/content?status=draft"
-                                className="focus-ring flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                            >
-                                Review drafts
-                                <ArrowRight className="size-4" />
-                            </Link>
-                            <Link
-                                href="/admin/content?featured=true"
-                                className="focus-ring flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                            >
-                                Check featured items
-                                <ArrowRight className="size-4" />
-                            </Link>
-                        </div>
-                    </section>
-
-                    <MaintenancePanel />
-                </div>
             </div>
         </div>
     );
