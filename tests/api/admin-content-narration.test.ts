@@ -48,6 +48,7 @@ vi.mock("@/lib/server/narration-processing-state", async () => {
 describe("Admin content narration API", () => {
     const contentSelectSingleMock = vi.fn();
     const updateSelectSingleMock = vi.fn();
+    const updateEqMock = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -100,7 +101,10 @@ describe("Admin content narration API", () => {
                 };
 
                 const updateChain = {
-                    eq: vi.fn(() => updateChain),
+                    eq: vi.fn((column: string, value: unknown) => {
+                        updateEqMock(column, value);
+                        return updateChain;
+                    }),
                     is: vi.fn(() => updateChain),
                     select: vi.fn().mockReturnValue({
                         single: updateSelectSingleMock,
@@ -196,6 +200,71 @@ describe("Admin content narration API", () => {
 
         const json = await res.json();
         expect(json.data.job.status).toBe("queued");
+    });
+
+    it("queues stale narration without audio using the persisted stale status", async () => {
+        const staleRow = {
+            id: "11111111-1111-1111-1111-111111111111",
+            title: "Podcast summary",
+            status: "verified",
+            audio_url: null,
+            narration_status: "stale",
+            narration_error: "Text content changed after narration generation; regenerate audio.",
+            narration_requested_at: null,
+            narration_started_at: null,
+            narration_completed_at: null,
+        };
+        contentSelectSingleMock
+            .mockResolvedValueOnce({ data: staleRow, error: null })
+            .mockResolvedValueOnce({ data: staleRow, error: null });
+
+        const req = new NextRequest("http://localhost/api/admin/content/11111111-1111-1111-1111-111111111111/narration", {
+            method: "POST",
+        });
+
+        const res = await POST(req, {
+            params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }),
+        });
+
+        expect(res.status).toBe(202);
+        expect(updateEqMock).toHaveBeenCalledWith("narration_status", "stale");
+        expect(afterMock).toHaveBeenCalledTimes(1);
+
+        const json = await res.json();
+        expect(json.data.job.status).toBe("queued");
+    });
+
+    it("returns conflict when narration could not be queued", async () => {
+        const idleRow = {
+            id: "11111111-1111-1111-1111-111111111111",
+            title: "Podcast summary",
+            status: "verified",
+            audio_url: null,
+            narration_status: "idle",
+            narration_error: null,
+            narration_requested_at: null,
+            narration_started_at: null,
+            narration_completed_at: null,
+        };
+        contentSelectSingleMock
+            .mockResolvedValueOnce({ data: idleRow, error: null })
+            .mockResolvedValueOnce({ data: idleRow, error: null })
+            .mockResolvedValueOnce({ data: idleRow, error: null });
+        updateSelectSingleMock.mockResolvedValueOnce({ data: null, error: null });
+
+        const req = new NextRequest("http://localhost/api/admin/content/11111111-1111-1111-1111-111111111111/narration", {
+            method: "POST",
+        });
+
+        const res = await POST(req, {
+            params: Promise.resolve({ id: "11111111-1111-1111-1111-111111111111" }),
+        });
+        const json = await res.json();
+
+        expect(res.status).toBe(409);
+        expect(json.error.code).toBe("CONFLICT");
+        expect(json.error.message).toMatch(/could not be queued/i);
+        expect(afterMock).not.toHaveBeenCalled();
     });
 
     it("queues regeneration even when an audio file already exists", async () => {

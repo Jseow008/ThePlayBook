@@ -39,6 +39,7 @@ export async function queueNarrationJobIfEligible({
     void _row;
     const currentRow = await loadNarrationRow(supabase, contentId);
     const currentJob = getNarrationJobState(currentRow);
+    const persistedStatus = currentRow.narration_status ?? currentJob.status;
 
     if (
         (currentJob.audio_url && !allowReplaceExisting)
@@ -62,7 +63,7 @@ export async function queueNarrationJobIfEligible({
             narration_completed_at: null,
         })
         .eq("id", contentId)
-        .eq("narration_status", currentJob.status)
+        .eq("narration_status", persistedStatus)
         .is("deleted_at", null)
         .select("audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at")
         .maybeSingle();

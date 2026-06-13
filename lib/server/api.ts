@@ -7,6 +7,7 @@ export type ApiErrorCode =
     | "VALIDATION_ERROR"
     | "INVALID_JSON"
     | "NOT_FOUND"
+    | "CONFLICT"
     | "INTERNAL_ERROR";
 
 export function getRequestId(): string {

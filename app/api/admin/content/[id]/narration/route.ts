@@ -165,6 +165,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
                     ? "AI narration is already ready."
                     : "AI narration could not be queued right now. Please try again.";
 
+        if (!queued && job.status !== "queued" && job.status !== "processing" && !job.audio_url) {
+            return apiError("CONFLICT", message, 409, requestId);
+        }
+
         return NextResponse.json({
             success: true,
             data: {
