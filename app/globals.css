@@ -1003,7 +1003,6 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-featured-row {
   --featured-card-width: 10rem;
-  --featured-card-active-width: 10rem;
   --featured-card-height: 15rem;
   --featured-card-opacity: 1;
   --featured-card-y: 0;
@@ -1011,13 +1010,11 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-featured-row-primary {
   --featured-card-width: 10.75rem;
-  --featured-card-active-width: 10.75rem;
   --featured-card-height: 16.125rem;
 }
 
 .landing-featured-row-support {
   --featured-card-width: 9.5rem;
-  --featured-card-active-width: 9.5rem;
   --featured-card-height: 14.25rem;
   --featured-card-opacity: 0.86;
   --featured-card-y: 0.125rem;
@@ -1030,11 +1027,9 @@ mark[data-highlight-spotlight="true"] {
   opacity: var(--featured-card-opacity);
   transform: translateY(var(--featured-card-y));
   transition:
-    width 520ms cubic-bezier(0.22, 1, 0.36, 1),
-    flex-basis 520ms cubic-bezier(0.22, 1, 0.36, 1),
     opacity 360ms ease,
     transform 520ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: width, flex-basis, transform, opacity;
+  will-change: transform, opacity;
 }
 
 .landing-featured-read-card {
@@ -1092,13 +1087,11 @@ mark[data-highlight-spotlight="true"] {
 @media (min-width: 640px) {
   .landing-featured-row-primary {
     --featured-card-width: 13.125rem;
-    --featured-card-active-width: 13.125rem;
     --featured-card-height: 19.7rem;
   }
 
   .landing-featured-row-support {
     --featured-card-width: 11.625rem;
-    --featured-card-active-width: 11.625rem;
     --featured-card-height: 17.45rem;
   }
 }
@@ -1106,13 +1099,11 @@ mark[data-highlight-spotlight="true"] {
 @media (min-width: 768px) {
   .landing-featured-row-primary {
     --featured-card-width: 15.5rem;
-    --featured-card-active-width: 20.75rem;
     --featured-card-height: 23rem;
   }
 
   .landing-featured-row-support {
     --featured-card-width: 13.375rem;
-    --featured-card-active-width: 17.25rem;
     --featured-card-height: 19.75rem;
   }
 }
@@ -1120,16 +1111,8 @@ mark[data-highlight-spotlight="true"] {
 @media (hover: hover) and (pointer: fine) and (min-width: 768px) {
   .landing-featured-read-shell:hover,
   .landing-featured-read-shell:focus-within {
-    width: var(--featured-card-active-width);
-    flex-basis: var(--featured-card-active-width);
     opacity: 1;
-    transform: translateY(-0.35rem);
     z-index: 12;
-  }
-
-  .landing-featured-row-support .landing-featured-read-shell:hover,
-  .landing-featured-row-support .landing-featured-read-shell:focus-within {
-    transform: translateY(-0.2rem);
   }
 }
 
@@ -1178,13 +1161,6 @@ mark[data-highlight-spotlight="true"] {
   .landing-primary-cta::after {
     opacity: 0;
     transform: none;
-  }
-
-  .landing-featured-read-shell:hover,
-  .landing-featured-read-shell:focus-within {
-    width: var(--featured-card-width) !important;
-    flex-basis: var(--featured-card-width) !important;
-    transform: none !important;
   }
 
   .landing-rotating-word::after {
