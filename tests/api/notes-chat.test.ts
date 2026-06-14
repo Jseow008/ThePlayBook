@@ -31,6 +31,11 @@ vi.mock("@ai-sdk/anthropic", () => ({
     anthropic: vi.fn().mockReturnValue("mock-anthropic-model"),
 }));
 
+async function finishLatestStream() {
+    const options = (streamText as any).mock.calls.at(-1)?.[0];
+    await options?.onFinish?.({});
+}
+
 describe("Notes chat API", () => {
     const mockUser = { id: "user-123" };
     const mockAuthUser = vi.fn();
@@ -147,6 +152,8 @@ describe("Notes chat API", () => {
             maxOutputTokens: 450,
             system: expect.stringContaining("Treat written notes as the strongest evidence"),
         }));
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        await finishLatestStream();
         expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
             userId: "user-123",
             feature: "ask-notes",

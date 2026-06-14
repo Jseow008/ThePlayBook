@@ -485,22 +485,28 @@ Rules:
             messages: trimmedMessages,
             maxOutputTokens: getOutputTokenCap(intent),
             experimental_transform: smoothStream({ delayInMs: 6 }),
-        });
+            onFinish: async () => {
+                try {
+                    await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
+                } catch (error) {
+                    logApiError({ requestId, route: "/api/chat", message: "Failed to record AI usage", error });
+                }
 
-        await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
-        if (messages.filter((message) => message.role === "user").length === 1) {
-            await captureServerAnalyticsEvent({
-                event: "ai_chat_started",
-                distinctId: user.id,
-                insertId: `ai_chat_started:library:${user.id}:${requestId}`,
-                properties: {
-                    source: "ask_library",
-                    route: "/api/chat",
-                    chat_scope: "library",
-                    user_state: "authenticated",
-                },
-            });
-        }
+                if (messages.filter((message) => message.role === "user").length === 1) {
+                    await captureServerAnalyticsEvent({
+                        event: "ai_chat_started",
+                        distinctId: user.id,
+                        insertId: `ai_chat_started:library:${user.id}:${requestId}`,
+                        properties: {
+                            source: "ask_library",
+                            route: "/api/chat",
+                            chat_scope: "library",
+                            user_state: "authenticated",
+                        },
+                    });
+                }
+            },
+        });
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {

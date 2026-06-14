@@ -235,26 +235,32 @@ Rules:
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
             experimental_transform: smoothStream({ delayInMs: 6 }),
-        });
+            onFinish: async () => {
+                if (user) {
+                    try {
+                        await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "author-chat" });
+                    } catch (error) {
+                        logApiError({ requestId, route: "/api/chat/author", message: "Failed to record AI usage", error });
+                    }
+                }
 
-        if (user) {
-            await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "author-chat" });
-        }
-        if (allMessages.filter((message) => message.role === "user").length === 1) {
-            const distinctId = user?.id ?? `anonymous:${requestId}`;
-            await captureServerAnalyticsEvent({
-                event: "ai_chat_started",
-                distinctId,
-                insertId: `ai_chat_started:content:${distinctId}:${contentId}:${requestId}`,
-                properties: {
-                    source: "author_chat",
-                    route: "/api/chat/author",
-                    chat_scope: "content",
-                    content_id: contentId,
-                    user_state: user ? "authenticated" : "anonymous",
-                },
-            });
-        }
+                if (allMessages.filter((message) => message.role === "user").length === 1) {
+                    const distinctId = user?.id ?? `anonymous:${requestId}`;
+                    await captureServerAnalyticsEvent({
+                        event: "ai_chat_started",
+                        distinctId,
+                        insertId: `ai_chat_started:content:${distinctId}:${contentId}:${requestId}`,
+                        properties: {
+                            source: "author_chat",
+                            route: "/api/chat/author",
+                            chat_scope: "content",
+                            content_id: contentId,
+                            user_state: user ? "authenticated" : "anonymous",
+                        },
+                    });
+                }
+            },
+        });
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {

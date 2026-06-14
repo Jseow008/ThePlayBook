@@ -46,6 +46,11 @@ vi.mock('@google/genai', () => ({
     },
 }));
 
+async function finishLatestStream() {
+    const options = (streamText as any).mock.calls.at(-1)?.[0];
+    await options?.onFinish?.({});
+}
+
 describe('Chat API', () => {
     const mockUser = { id: 'user-123' };
     const mockAuthUser = vi.fn();
@@ -263,6 +268,8 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 500,
         }));
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        await finishLatestStream();
         expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
             userId: 'user-123',
             feature: 'ask-library',

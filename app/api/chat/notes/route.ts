@@ -221,23 +221,29 @@ Rules:
             messages: trimmedMessages,
             maxOutputTokens: prefersLongerSynthesis ? NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS : NOTES_DEFAULT_MAX_OUTPUT_TOKENS,
             experimental_transform: smoothStream({ delayInMs: 6 }),
-        });
+            onFinish: async () => {
+                try {
+                    await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-notes" });
+                } catch (error) {
+                    logApiError({ requestId, route: "/api/chat/notes", message: "Failed to record AI usage", error });
+                }
 
-        await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-notes" });
-        if (messages.filter((message) => message.role === "user").length === 1) {
-            await captureServerAnalyticsEvent({
-                event: "ai_chat_started",
-                distinctId: user.id,
-                insertId: `ai_chat_started:notes:${user.id}:${requestId}`,
-                properties: {
-                    source: "ask_notes",
-                    route: "/api/chat/notes",
-                    chat_scope: "notes",
-                    note_count: rows.length,
-                    user_state: "authenticated",
-                },
-            });
-        }
+                if (messages.filter((message) => message.role === "user").length === 1) {
+                    await captureServerAnalyticsEvent({
+                        event: "ai_chat_started",
+                        distinctId: user.id,
+                        insertId: `ai_chat_started:notes:${user.id}:${requestId}`,
+                        properties: {
+                            source: "ask_notes",
+                            route: "/api/chat/notes",
+                            chat_scope: "notes",
+                            note_count: rows.length,
+                            user_state: "authenticated",
+                        },
+                    });
+                }
+            },
+        });
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {

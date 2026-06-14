@@ -35,6 +35,11 @@ vi.mock('@ai-sdk/openai', () => ({
     openai: vi.fn().mockReturnValue('mock-openai-model'),
 }));
 
+async function finishLatestStream() {
+    const options = (streamText as any).mock.calls.at(-1)?.[0];
+    await options?.onFinish?.({});
+}
+
 describe('Author Chat API', () => {
     const mockUser = { id: 'user-123' };
     const mockAuthUser = vi.fn();
@@ -127,6 +132,8 @@ describe('Author Chat API', () => {
             key: 'author-chat:user',
             identifier: 'user-123',
         });
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        await finishLatestStream();
         expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
             userId: 'user-123',
             feature: 'author-chat',
