@@ -44,6 +44,7 @@ export function HomeFeed({
                                 </div>
                             }
                             items={items.slice(0, 10)}
+                            viewAllHref="/search"
                             cardTitleDensity="app-compact"
                         />
 

@@ -14,6 +14,7 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
             is: vi.fn(),
             order: vi.fn(),
             limit: vi.fn(),
+            range: vi.fn(),
             or: vi.fn(),
             then: vi.fn(),
         };
@@ -24,9 +25,10 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
         builder.is.mockReturnValue(builder);
         builder.order.mockReturnValue(builder);
         builder.limit.mockReturnValue(builder);
+        builder.range.mockReturnValue(builder);
         builder.or.mockReturnValue(builder);
-        builder.then.mockImplementation((resolve: (value: { data: Array<Record<string, unknown>> }) => unknown) =>
-            Promise.resolve(resolve({ data: [{ id: "matched-result", title: "Matched Result" }] }))
+        builder.then.mockImplementation((resolve: (value: { data: Array<Record<string, unknown>>; count: number }) => unknown) =>
+            Promise.resolve(resolve({ data: [{ id: "matched-result", title: "Matched Result" }], count: 41 }))
         );
 
         latestQueryBuilder = builder;
@@ -100,7 +102,7 @@ vi.mock("@/components/ui/ContentCard", () => ({
     ContentCard: ({ item }: { item: { title: string } }) => <div>{item.title}</div>,
 }));
 
-type SearchParams = { q?: string; category?: string; type?: string };
+type SearchParams = { q?: string; category?: string; type?: string; sort?: string; page?: string };
 const suspenseType = Symbol.for("react.suspense") as unknown as ElementType;
 
 function replaceAsyncResultsWithFallback(node: ReactNode): ReactNode {
@@ -183,6 +185,20 @@ async function runSearchResultsFromPage(searchParams: SearchParams = {}) {
     return searchPageModule.SearchResults(searchResultsProps);
 }
 
+async function runRecentCatalogFromPage(searchParams: SearchParams = {}) {
+    const { searchPageModule, page } = await loadSearchPage(searchParams);
+    const recentCatalogProps = findElementProps<Parameters<typeof searchPageModule.RecentCatalog>[0]>(
+        page,
+        searchPageModule.RecentCatalog
+    );
+
+    if (!recentCatalogProps) {
+        throw new Error("RecentCatalog was not rendered for the supplied search params");
+    }
+
+    return searchPageModule.RecentCatalog(recentCatalogProps);
+}
+
 describe("SearchPage", () => {
     beforeEach(() => {
         vi.resetModules();
@@ -218,7 +234,7 @@ describe("SearchPage", () => {
         });
     });
 
-    it("loads default trending items when no query or category is present", async () => {
+    it("defaults the full catalog to newest-first when no query or category is present", async () => {
         rpcMock.mockImplementation((fn: string) => {
             if (fn === "get_category_stats") {
                 return Promise.resolve({
@@ -245,12 +261,10 @@ describe("SearchPage", () => {
         await renderSearchPage({});
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
-        expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
-            p_limit: 10,
-            p_type: null,
-        });
-        expect(screen.getByText("Trending Now")).toBeInTheDocument();
-        expect(screen.getByText("Trending Item")).toBeInTheDocument();
+        expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
+        expect(screen.getByText("Sort by")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Newest" })).toHaveAttribute("aria-current", "page");
+        expect(screen.getByRole("link", { name: "Popular" })).toHaveAttribute("href", "/search?sort=popular");
         expect(screen.getByRole("link", { name: "All topics" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Business" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Productivity" })).toBeInTheDocument();
@@ -262,7 +276,18 @@ describe("SearchPage", () => {
         expect(fromMock).not.toHaveBeenCalled();
     });
 
-    it("loads type-filtered trending items when only a type is selected", async () => {
+    it("labels the newest-first result grid as the full catalog", async () => {
+        const catalog = await runRecentCatalogFromPage({});
+
+        await act(async () => {
+            render(catalog);
+        });
+
+        expect(screen.getByRole("heading", { name: "All Content" })).toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: "Recently Added" })).not.toBeInTheDocument();
+    });
+
+    it("loads type-filtered popular items when Popular is selected", async () => {
         rpcMock.mockImplementation((fn: string) => {
             if (fn === "get_category_stats") {
                 return Promise.resolve({
@@ -282,14 +307,15 @@ describe("SearchPage", () => {
             throw new Error(`Unexpected RPC: ${fn}`);
         });
 
-        await renderSearchPage({ type: "book" });
+        await renderSearchPage({ type: "book", sort: "popular" });
 
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
-            p_limit: 10,
+            p_limit: 20,
             p_type: "book",
+            p_categories: null,
         });
-        expect(screen.getByText("Trending Books")).toBeInTheDocument();
+        expect(screen.getByText("Popular Books")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Personal Development" })).toBeInTheDocument();
         expect(fromMock).not.toHaveBeenCalled();
     });
@@ -321,8 +347,8 @@ describe("SearchPage", () => {
         expect(requestLink).toHaveClass("lg:hidden");
     });
 
-    it("uses the main results query for category pages and still applies the type filter", async () => {
-        await runSearchResultsFromPage({ category: "Productivity", type: "article" });
+    it("uses the recent catalog query for category pages and still applies the type filter", async () => {
+        await runRecentCatalogFromPage({ category: "Productivity", type: "article" });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
@@ -332,7 +358,7 @@ describe("SearchPage", () => {
     });
 
     it("queries across duplicate raw variants for normalized topics", async () => {
-        await runSearchResultsFromPage({ category: "Business" });
+        await runRecentCatalogFromPage({ category: "Business" });
 
         const queryBuilder = getLatestQueryBuilder();
         expect(queryBuilder?.in).toHaveBeenCalledWith("category", ["'Business'", "Business"]);
@@ -387,6 +413,20 @@ describe("SearchPage", () => {
         expect(screen.getByRole("link", { name: "All" })).toHaveAttribute("href", "/search?category=Productivity");
     });
 
+    it("preserves Popular mode when switching filters", async () => {
+        await renderSearchPage({ category: "Productivity", sort: "popular" });
+
+        expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute(
+            "href",
+            "/search?category=Productivity&type=podcast&sort=popular"
+        );
+        expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
+            p_limit: 20,
+            p_type: null,
+            p_categories: ["Productivity"],
+        });
+    });
+
     it("renders remaining normalized topics in the dropdown", async () => {
         await renderSearchPage({});
 
@@ -413,13 +453,14 @@ describe("SearchPage", () => {
     });
 
     it("treats invalid type params as the default All state", async () => {
-        await renderSearchPage({ type: "invalid" });
+        await renderSearchPage({ type: "invalid", sort: "popular" });
 
         expect(screen.getByRole("link", { name: "All" })).toHaveClass("bg-primary");
-        expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute("href", "/search?type=podcast");
+        expect(screen.getByRole("link", { name: "Podcast" })).toHaveAttribute("href", "/search?type=podcast&sort=popular");
         expect(rpcMock).toHaveBeenCalledWith("get_trending_content", {
-            p_limit: 10,
+            p_limit: 20,
             p_type: null,
+            p_categories: null,
         });
     });
 

@@ -180,7 +180,7 @@ function FeaturedReadCard({
       aria-label={`Preview ${item.title}`}
       aria-hidden={isFocusable ? undefined : true}
       tabIndex={isFocusable ? undefined : -1}
-      className="focus-ring landing-featured-read-card group relative block h-full w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10"
+      className="focus-ring landing-featured-read-card group relative block h-full w-full overflow-hidden rounded-md bg-card transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:focus-visible:z-10 md:focus-visible:-translate-y-1"
     >
       {item.cover_image_url ? (
         <Image
@@ -188,7 +188,7 @@ function FeaturedReadCard({
           alt={item.title}
           fill
           sizes="(max-width: 640px) 180px, (max-width: 768px) 220px, 340px"
-          className="object-cover transition-transform duration-500 group-hover:scale-[1.045]"
+          className="object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-visible:scale-[1.035]"
         />
       ) : (
         <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">

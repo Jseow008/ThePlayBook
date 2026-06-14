@@ -152,7 +152,7 @@ function BaseContentCard({
     const showBookmarkButton = !hideBookmark && Boolean(onToggleBookmark);
 
     return (
-        <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card transition-transform duration-300 hover:z-10 hover:scale-105">
+        <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)]">
             <Link href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
                 <span className="sr-only">{linkLabel}</span>
             </Link>
@@ -164,7 +164,7 @@ function BaseContentCard({
                         alt={item.title}
                         fill
                         surface="content-card"
-                        className="object-cover transition-transform duration-300 group-hover:scale-110"
+                        className="object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035]"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
                         priority={priority}
                         fallback={

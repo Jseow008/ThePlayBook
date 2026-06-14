@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 interface SearchTopicSelectProps {
     query?: string;
     type?: string;
+    sort?: "recent" | "popular";
     value?: string;
     options: string[];
 }
 
-function buildSearchHref({ query, category, type }: { query?: string; category?: string; type?: string }) {
+function buildSearchHref({ query, category, type, sort }: { query?: string; category?: string; type?: string; sort?: "recent" | "popular" }) {
     const params = new URLSearchParams();
 
     if (query?.trim()) {
@@ -25,11 +26,15 @@ function buildSearchHref({ query, category, type }: { query?: string; category?:
         params.set("type", type.toLowerCase());
     }
 
+    if (!query?.trim() && sort === "popular") {
+        params.set("sort", sort);
+    }
+
     const search = params.toString();
     return search ? `/search?${search}` : "/search";
 }
 
-export function SearchTopicSelect({ query, type, value = "", options }: SearchTopicSelectProps) {
+export function SearchTopicSelect({ query, type, sort, value = "", options }: SearchTopicSelectProps) {
     const router = useRouter();
 
     if (options.length === 0 && !value) {
@@ -47,7 +52,7 @@ export function SearchTopicSelect({ query, type, value = "", options }: SearchTo
                 value={value}
                 onChange={(event) => {
                     const nextCategory = event.target.value || undefined;
-                    router.push(buildSearchHref({ query, category: nextCategory, type }));
+                    router.push(buildSearchHref({ query, category: nextCategory, type, sort }));
                 }}
                 className="h-9 w-full appearance-none rounded-full border border-border bg-secondary/30 pl-4 pr-10 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-primary"
             >

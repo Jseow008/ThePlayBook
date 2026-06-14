@@ -297,7 +297,7 @@ describe("LandingPage featured reads carousel", () => {
     expect(carousel.scrollLeft).toBe(beforeHidden);
   });
 
-  it("matches browse lane vertical padding so hover scaling is not clipped", () => {
+  it("matches browse lane vertical padding so hover motion is not clipped", () => {
     const carousel = renderLandingPage();
 
     expect(carousel).toHaveClass("pt-3", "pb-3", "md:pt-4", "md:pb-4");

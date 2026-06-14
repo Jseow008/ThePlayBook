@@ -1070,22 +1070,23 @@ mark[data-highlight-spotlight="true"] {
   transition: opacity 420ms ease;
 }
 
-.landing-featured-read-card:hover,
-.landing-featured-read-card:focus-visible {
-  box-shadow:
-    0 30px 74px -38px rgba(0, 0, 0, 0.98),
-    0 0 0 1px rgba(255, 255, 255, 0.075),
-    0 0 34px rgba(244, 192, 79, 0.06);
-}
+@media (min-width: 768px) {
+  .landing-featured-read-card:hover,
+  .landing-featured-read-card:focus-visible {
+    box-shadow:
+      0 14px 32px rgba(0, 0, 0, 0.42),
+      0 0 0 1px rgba(255, 255, 255, 0.15);
+  }
 
-.landing-featured-read-card:hover::before,
-.landing-featured-read-card:focus-visible::before {
-  opacity: 1;
-}
+  .landing-featured-read-card:hover::before,
+  .landing-featured-read-card:focus-visible::before {
+    opacity: 1;
+  }
 
-.landing-featured-read-card:hover::after,
-.landing-featured-read-card:focus-visible::after {
-  opacity: 0.44;
+  .landing-featured-read-card:hover::after,
+  .landing-featured-read-card:focus-visible::after {
+    opacity: 0.44;
+  }
 }
 
 @media (min-width: 640px) {
