@@ -466,7 +466,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
 
                 {/* Type Filters */}
-                <div className="mb-6 md:mb-8">
+                <div className="mb-6 md:mb-8 lg:mb-5">
                     <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
                         Type
                     </p>
@@ -498,7 +498,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
 
                 {curatedTopicItems.length > 0 || dropdownOptions.length > 0 ? (
-                    <div className="mb-6 md:mb-8">
+                    <div className="mb-6 md:mb-8 lg:mb-5">
                         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
                             Topics
                         </p>
@@ -553,7 +553,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 ) : null}
 
                 {!hasContentSearch ? (
-                    <div className="mb-6 border-b border-border pb-3 md:mb-8">
+                    <div className="mb-6 border-b border-border pb-3 md:mb-8 lg:mb-5">
                         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground/80">
                             Sort by
                         </p>
