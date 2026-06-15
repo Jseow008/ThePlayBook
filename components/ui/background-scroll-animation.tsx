@@ -14,12 +14,14 @@ interface BackgroundScrollProps {
   foreground: ReactNode;
   children: ReactNode;
   className?: string;
+  foregroundClassName?: string;
 }
 
 export function BackgroundScroll({
   foreground,
   children,
   className,
+  foregroundClassName,
 }: BackgroundScrollProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -108,7 +110,10 @@ export function BackgroundScroll({
 
         <motion.div
           style={{ translateY: foregroundY, opacity: foregroundOpacity }}
-          className="relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-4xl items-center justify-center px-6 py-14 text-center lg:px-8"
+          className={cn(
+            "relative z-10 mx-auto flex min-h-[calc(100svh-4rem)] w-full max-w-4xl items-center justify-center px-6 py-14 text-center lg:px-8",
+            foregroundClassName
+          )}
         >
           <div className="w-full">{foreground}</div>
         </motion.div>

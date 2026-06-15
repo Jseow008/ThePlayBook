@@ -24,7 +24,7 @@ const STORYBOARD_SLIDES = [
     title: "Distill before committing time",
     eyebrow: "Understand before you commit",
     heading: "Find the ideas worth your attention.",
-    body: "Preview the central argument, key takeaways, and structure before deciding what deserves a deeper read or listen.",
+    body: "See the central argument and key takeaways before deciding what deserves more of your time.",
     image: "/images/netflux-workflow-distill-square.webp",
   },
   {
@@ -32,7 +32,7 @@ const STORYBOARD_SLIDES = [
     title: "Build your personal library",
     eyebrow: "Keep what matters",
     heading: "Turn useful ideas into a lasting library.",
-    body: "Save summaries, continue where you stopped, and connect highlights with notes you can return to when they become useful.",
+    body: "Save summaries, highlights, and notes in one place you can return to when they become useful.",
     image: "/images/netflux-workflow-library-square.webp",
   },
   {
@@ -40,7 +40,7 @@ const STORYBOARD_SLIDES = [
     title: "Think with your notes",
     eyebrow: "Think across your knowledge",
     heading: "Ask better questions of what you have learned.",
-    body: "Clarify an argument, challenge an idea, or search across your saved knowledge when you need a useful answer.",
+    body: "Clarify an argument, challenge an idea, or search your saved knowledge for a useful answer.",
     image: "/images/netflux-workflow-ask-square.webp",
   },
 ] as const;
@@ -132,22 +132,38 @@ function SectionIntro({
   title,
   body,
   centered = false,
+  compact = false,
 }: {
   label: string;
   title: string;
   body?: string;
   centered?: boolean;
+  compact?: boolean;
 }) {
   return (
     <div className={cn("max-w-3xl", centered && "mx-auto text-center")}>
       <p className="landing-section-kicker mb-4 text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-zinc-400">
         {label}
       </p>
-      <h2 className="landing-section-title font-serif text-4xl font-bold leading-[1.02] tracking-[-0.035em] text-white sm:text-5xl md:text-[3.65rem]">
+      <h2
+        className={cn(
+          "landing-section-title font-serif font-bold leading-[1.02] tracking-[-0.035em] text-white",
+          compact
+            ? "text-4xl sm:text-[2.8rem] md:text-[3.15rem]"
+            : "text-4xl sm:text-5xl md:text-[3.65rem]"
+        )}
+      >
         {title}
       </h2>
       {body ? (
-        <p className="landing-section-body mt-6 text-base leading-8 text-zinc-300 sm:text-[1.15rem]">{body}</p>
+        <p
+          className={cn(
+            "landing-section-body text-base text-zinc-300",
+            compact ? "mt-5 max-w-2xl leading-7 sm:text-[1.05rem] sm:leading-8" : "mt-6 leading-8 sm:text-[1.15rem]"
+          )}
+        >
+          {body}
+        </p>
       ) : null}
     </div>
   );
@@ -1057,85 +1073,82 @@ export function CorePlatformFeaturesSection() {
       <FadeIn className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="relative">
           <div className="relative z-10">
-            <h2 className="text-center font-serif text-3xl font-semibold leading-none tracking-[-0.025em] text-white sm:text-4xl">
-              From insight to lasting reference
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-7 text-zinc-400 sm:text-base">
-              Preview what matters, keep the ideas worth remembering, and return to them when you need them.
-            </p>
+            <SectionIntro
+              label="How Netflux works"
+              title="Understand it. Keep it. Use it."
+              body="Distill essential ideas, build your personal knowledge library, and find useful answers whenever you need them."
+              compact
+            />
 
-            <FadeIn className="mx-auto mt-6 max-w-6xl sm:mt-8" delayMs={100}>
-              <div>
-                <div className="mb-4 flex flex-wrap items-center justify-center gap-3">
-                  {STORYBOARD_SLIDES.map((slide, index) => {
-                    const isActive = index === activeStoryboardSlide;
+            <FadeIn className="mx-auto mt-8 max-w-6xl sm:mt-10" delayMs={100}>
+              <div className="grid min-h-[32rem] items-center gap-8 rounded-[1.5rem] bg-black/20 p-5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-x-10 lg:gap-y-8 lg:p-10">
+                <div className="mx-auto max-w-sm text-center lg:mx-0 lg:text-left">
+                  <div className="mb-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                    {STORYBOARD_SLIDES.map((slide, index) => {
+                      const isActive = index === activeStoryboardSlide;
 
-                    return (
-                      <button
-                        key={slide.title}
-                        type="button"
-                        onClick={() => setActiveStoryboardSlide(index)}
-                        className={cn(
-                          "focus-ring landing-storyboard-tab inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[0.64rem] font-semibold uppercase tracking-[0.14em] transition-all duration-300",
-                          isActive
-                            ? "landing-storyboard-tab-active border-white/30 bg-white/[0.1] text-white"
-                            : "landing-storyboard-tab-idle border-white/10 bg-white/[0.025] text-zinc-500 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
-                        )}
-                        aria-label={`Show ${slide.label} storyboard`}
-                        aria-pressed={isActive}
-                      >
-                        {slide.label}
-                      </button>
-                    );
-                  })}
-                </div>
+                      return (
+                        <button
+                          key={slide.title}
+                          type="button"
+                          onClick={() => setActiveStoryboardSlide(index)}
+                          className={cn(
+                            "focus-ring landing-storyboard-tab inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[0.64rem] font-semibold uppercase tracking-[0.14em] transition-all duration-300",
+                            isActive
+                              ? "landing-storyboard-tab-active border-white/30 bg-white/[0.1] text-white"
+                              : "landing-storyboard-tab-idle border-white/10 bg-white/[0.025] text-zinc-500 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
+                          )}
+                          aria-label={`Show ${slide.label} storyboard`}
+                          aria-pressed={isActive}
+                        >
+                          {slide.label}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-                <div className="grid min-h-[34rem] items-center gap-8 rounded-[1.5rem] bg-black/20 p-5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-12 lg:p-10">
-                  <div
-                    key={`copy-${STORYBOARD_SLIDES[activeStoryboardSlide].label}`}
-                    className="mx-auto max-w-md text-center lg:mx-0 lg:text-left"
-                  >
-                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-[#e7bd72]/80">
+                  <div key={`copy-${STORYBOARD_SLIDES[activeStoryboardSlide].label}`}>
+                    <p className="text-[0.68rem] font-semibold uppercase tracking-[0.17em] text-[#e7bd72]/90">
                       {STORYBOARD_SLIDES[activeStoryboardSlide].eyebrow}
                     </p>
-                    <h3 className="mt-5 text-3xl font-semibold leading-tight tracking-normal text-white sm:text-4xl">
+                    <h3 className="mt-4 text-3xl font-medium leading-[1.15] tracking-[-0.02em] text-white sm:text-[2.15rem]">
                       {STORYBOARD_SLIDES[activeStoryboardSlide].heading}
                     </h3>
-                    <p className="mt-5 text-base leading-8 text-zinc-400 sm:text-lg">
+                    <p className="mt-4 text-base leading-7 text-zinc-300 sm:text-[1.05rem] sm:leading-8">
                       {STORYBOARD_SLIDES[activeStoryboardSlide].body}
                     </p>
                   </div>
-
-                  <button
-                    ref={storyboardLauncherRef}
-                    type="button"
-                    onClick={() => setIsStoryboardLightboxOpen(true)}
-                    className="focus-ring landing-storyboard-viewer group/storyboard relative mx-auto block aspect-square w-full max-w-[34rem] overflow-hidden rounded-[1.25rem] border border-white/10 bg-white text-left"
-                    aria-label={`Enlarge ${STORYBOARD_SLIDES[activeStoryboardSlide].label} storyboard`}
-                  >
-                    {STORYBOARD_SLIDES.map((slide, index) => (
-                      <div
-                        key={slide.title}
-                        className={cn(
-                          "absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none",
-                          index === activeStoryboardSlide ? "opacity-100" : "pointer-events-none opacity-0"
-                        )}
-                      >
-                        <Image
-                          src={slide.image}
-                          alt={`Netflux storyboard: ${slide.title}`}
-                          fill
-                          sizes="(max-width: 1024px) calc(100vw - 4rem), 544px"
-                          className="object-contain"
-                        />
-                      </div>
-                    ))}
-                    <div className="pointer-events-none absolute inset-0 rounded-[1.25rem] ring-1 ring-inset ring-black/10" />
-                    <div className="landing-storyboard-zoom pointer-events-none absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/65 text-white/85 opacity-100 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-300 group-hover/storyboard:border-white/25 group-hover/storyboard:bg-black/80 group-hover/storyboard:text-white sm:opacity-0 sm:group-hover/storyboard:opacity-100 sm:group-focus-visible/storyboard:opacity-100">
-                      <Maximize2 className="size-4" />
-                    </div>
-                  </button>
                 </div>
+
+                <button
+                  ref={storyboardLauncherRef}
+                  type="button"
+                  onClick={() => setIsStoryboardLightboxOpen(true)}
+                  className="focus-ring landing-storyboard-viewer group/storyboard relative mx-auto block aspect-square w-full max-w-[34rem] overflow-hidden rounded-[1.25rem] border border-white/10 bg-white text-left"
+                  aria-label={`Enlarge ${STORYBOARD_SLIDES[activeStoryboardSlide].label} storyboard`}
+                >
+                  {STORYBOARD_SLIDES.map((slide, index) => (
+                    <div
+                      key={slide.title}
+                      className={cn(
+                        "absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none",
+                        index === activeStoryboardSlide ? "opacity-100" : "pointer-events-none opacity-0"
+                      )}
+                    >
+                      <Image
+                        src={slide.image}
+                        alt={`Netflux storyboard: ${slide.title}`}
+                        fill
+                        sizes="(max-width: 1024px) calc(100vw - 4rem), 544px"
+                        className="object-contain"
+                      />
+                    </div>
+                  ))}
+                  <div className="pointer-events-none absolute inset-0 rounded-[1.25rem] ring-1 ring-inset ring-black/10" />
+                  <div className="landing-storyboard-zoom pointer-events-none absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-black/65 text-white/85 opacity-100 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all duration-300 group-hover/storyboard:border-white/25 group-hover/storyboard:bg-black/80 group-hover/storyboard:text-white sm:opacity-0 sm:group-hover/storyboard:opacity-100 sm:group-focus-visible/storyboard:opacity-100">
+                    <Maximize2 className="size-4" />
+                  </div>
+                </button>
               </div>
             </FadeIn>
           </div>
