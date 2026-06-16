@@ -25,7 +25,7 @@ const STORYBOARD_SLIDES = [
     eyebrow: "Understand before you commit",
     heading: "Find the ideas worth your attention.",
     body: "See the central argument and key takeaways before deciding what deserves more of your time.",
-    image: "/images/netflux-workflow-distill-square.webp",
+    image: "/images/netflux-workflow-distill-square.png",
   },
   {
     label: "Library",
@@ -33,7 +33,7 @@ const STORYBOARD_SLIDES = [
     eyebrow: "Keep what matters",
     heading: "Turn useful ideas into a lasting library.",
     body: "Save summaries, highlights, and notes in one place you can return to when they become useful.",
-    image: "/images/netflux-workflow-library-square.webp",
+    image: "/images/netflux-workflow-library-square.png",
   },
   {
     label: "Ask",
@@ -41,7 +41,7 @@ const STORYBOARD_SLIDES = [
     eyebrow: "Think across your knowledge",
     heading: "Ask better questions of what you have learned.",
     body: "Clarify an argument, challenge an idea, or search your saved knowledge for a useful answer.",
-    image: "/images/netflux-workflow-ask-square.webp",
+    image: "/images/netflux-workflow-ask-square.png",
   },
 ] as const;
 

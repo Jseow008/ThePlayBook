@@ -52,7 +52,7 @@ export function HeroSection() {
         foregroundClassName="max-w-7xl"
         foreground={
           <>
-            <h1 className="mx-auto max-w-full font-serif text-[1.8rem] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:text-6xl sm:leading-[0.98] md:text-[3.55rem] lg:text-[4.65rem]">
+            <h1 className="mx-auto max-w-full font-serif text-[1.8rem] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:text-6xl sm:leading-[1.05] md:text-[3.55rem] lg:text-[4.65rem]">
               <span className="sr-only">From passive consumption to knowledge that compounds.</span>
 
               <span aria-hidden="true" className="block sm:hidden">
@@ -72,13 +72,13 @@ export function HeroSection() {
               </span>
             </h1>
 
-            <p className="landing-hero-copy mx-auto mt-8 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
+            <p className="landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
               Explore high-signal summaries, save the ideas worth keeping, and find them when they matter.
             </p>
 
             <HeroWorkflow />
 
-            <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row sm:items-center">
+            <div className="mt-7 flex flex-col justify-center gap-4 sm:flex-row sm:items-center">
               <Link href="/browse" className={PRIMARY_CTA_CLASS}>
                 <span className="relative z-10">Explore the Library</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
