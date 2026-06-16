@@ -195,7 +195,7 @@ export function buildPublicContentMetadata(
     content: MetadataSource,
     route: "preview" | "read"
 ): Metadata {
-    const title = `${content.title} — ${APP_NAME}`;
+    const title = content.title;
     const description = buildDescription(content, route === "preview" ? "Preview" : "Reading");
     const ogImage = buildContentOgImageUrl(content.id);
     const path = route === "read" ? buildReadPath(content) : `/${route}/${content.id}`;

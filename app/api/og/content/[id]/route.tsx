@@ -31,6 +31,10 @@ const size = { width: 1200, height: 630 };
 const cacheControl = "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400";
 
 const fontPromise = loadOgFonts();
+const logoPromise = loadLocalImageDataUrl(
+    new URL("../../../../../public/icons/netflux-icon-borderless.png", import.meta.url),
+    "Netflux icon"
+);
 
 async function loadLocalFont(url: URL, label: string): Promise<ArrayBuffer> {
     try {
@@ -38,6 +42,15 @@ async function loadLocalFont(url: URL, label: string): Promise<ArrayBuffer> {
         return data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
     } catch (error) {
         throw new Error(`Failed to load local OG font: ${label}`, { cause: error });
+    }
+}
+
+async function loadLocalImageDataUrl(url: URL, label: string): Promise<string> {
+    try {
+        const data = await readFile(url);
+        return `data:image/png;base64,${data.toString("base64")}`;
+    } catch (error) {
+        throw new Error(`Failed to load local OG image: ${label}`, { cause: error });
     }
 }
 
@@ -167,7 +180,7 @@ export async function GET(_request: Request, context: RouteContext) {
         return new Response("Content not found", { status: 404 });
     }
 
-    const fonts = await fontPromise;
+    const [fonts, logoSrc] = await Promise.all([fontPromise, logoPromise]);
     const uiFont = fonts.some((font) => font.name === "Inter") ? "Inter" : "sans-serif";
     const brandFont = fonts.some((font) => font.name === "Outfit") ? "Outfit" : uiFont;
     const title = clampText(content.title, 92);
@@ -268,17 +281,16 @@ export async function GET(_request: Request, context: RouteContext) {
                                 {badge}
                             </div>
 
-                            <div
+                            <img
+                                alt={APP_NAME}
+                                src={logoSrc}
                                 style={{
-                                    color: "rgba(250, 250, 250, 0.72)",
-                                    display: "flex",
-                                    fontFamily: brandFont,
-                                    fontSize: 34,
-                                    fontWeight: 700,
+                                    height: 56,
+                                    objectFit: "contain",
+                                    opacity: 0.9,
+                                    width: 58,
                                 }}
-                            >
-                                {APP_NAME}
-                            </div>
+                            />
                         </div>
 
                         <div
