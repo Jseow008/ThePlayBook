@@ -19,13 +19,16 @@ vi.mock("@/components/ui/ContentLane", () => ({
     ContentLane: ({
         title,
         enableCardUserState,
+        viewAllHref,
     }: {
         title: React.ReactNode;
         enableCardUserState?: boolean;
+        viewAllHref?: string;
     }) => (
         <div
             data-testid="content-lane"
             data-enable-card-user-state={String(enableCardUserState)}
+            data-view-all-href={viewAllHref ?? ""}
         >
             {title}
         </div>
@@ -87,5 +90,21 @@ describe("HomeFeed", () => {
         for (const lane of screen.getAllByTestId("content-lane")) {
             expect(lane).toHaveAttribute("data-enable-card-user-state", "undefined");
         }
+    });
+
+    it("does not show a generic view-all link for the new-on-netflux lane", () => {
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[]}
+                sectionItems={{}}
+            />
+        );
+
+        const [newOnNetfluxLane] = screen.getAllByTestId("content-lane");
+
+        expect(newOnNetfluxLane).toHaveTextContent("New on");
+        expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "");
     });
 });
