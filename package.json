@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "security:function-acls": "node scripts/check-supabase-function-acls.mjs",
     "embeddings:sync-segments": "tsx scripts/sync-segment-embeddings.ts",
     "validate:launch-env": "node scripts/validate-launch-env.mjs",
     "check:deployment-health": "node scripts/check-deployment-health.mjs",
@@ -38,7 +39,7 @@
     "ffmpeg-static": "^5.3.0",
     "framer-motion": "^12.40.0",
     "lucide-react": "^0.469.0",
-    "next": "^16.2.4",
+    "next": "^16.2.9",
     "posthog-js": "^1.378.1",
     "posthog-node": "^5.35.11",
     "qrcode.react": "^4.2.0",
@@ -57,7 +58,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@next/bundle-analyzer": "^16.2.4",
+    "@next/bundle-analyzer": "^16.2.9",
     "@playwright/test": "^1.49.1",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.15",
