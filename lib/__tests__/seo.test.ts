@@ -7,6 +7,7 @@ import {
     buildSeriesCollectionJsonLd,
     buildWebsiteJsonLd,
     serializeJsonLd,
+    serializeJsonLdGraph,
     SITE_URL,
 } from "@/lib/seo";
 
@@ -72,5 +73,46 @@ describe("seo helpers", () => {
         expect(serializeJsonLd(buildBreadcrumbJsonLd([
             { name: "</script>", path: "/" },
         ]))).toContain("\\u003c/script>");
+    });
+
+    it("serializes multiple JSON-LD nodes as a schema.org graph", () => {
+        const serialized = serializeJsonLdGraph([
+            buildOrganizationJsonLd(),
+            buildBreadcrumbJsonLd([
+                { name: "Home", path: "/" },
+                { name: "</script>", path: "/browse" },
+            ]),
+        ]);
+        const jsonLd = JSON.parse(serialized) as {
+            "@context": string;
+            "@graph": Array<Record<string, unknown>>;
+        };
+
+        expect(serialized.trim().startsWith("[")).toBe(false);
+        expect(serialized).toContain("\\u003c/script>");
+        expect(jsonLd["@context"]).toBe("https://schema.org");
+        expect(jsonLd["@graph"]).toHaveLength(2);
+        expect(jsonLd["@graph"][0]).toMatchObject({
+            "@type": "Organization",
+            "@id": `${SITE_URL}/#organization`,
+        });
+        expect(jsonLd["@graph"][0]).not.toHaveProperty("@context");
+        expect(jsonLd["@graph"][1]).toMatchObject({
+            "@type": "BreadcrumbList",
+            itemListElement: [
+                {
+                    "@type": "ListItem",
+                    position: 1,
+                    name: "Home",
+                    item: `${SITE_URL}/`,
+                },
+                {
+                    "@type": "ListItem",
+                    position: 2,
+                    name: "</script>",
+                    item: `${SITE_URL}/browse`,
+                },
+            ],
+        });
     });
 });

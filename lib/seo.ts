@@ -13,7 +13,9 @@ export type JsonLdValue =
     | boolean
     | null
     | JsonLdValue[]
-    | { [key: string]: JsonLdValue };
+    | JsonLdObject;
+
+export type JsonLdObject = { [key: string]: JsonLdValue };
 
 export function absoluteUrl(pathOrUrl: string) {
     try {
@@ -26,6 +28,29 @@ export function absoluteUrl(pathOrUrl: string) {
 
 export function serializeJsonLd(value: JsonLdValue | JsonLdValue[]) {
     return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
+export function serializeJsonLdGraph(nodes: JsonLdValue[]) {
+    return serializeJsonLd({
+        "@context": "https://schema.org",
+        "@graph": nodes.map(stripTopLevelJsonLdContext),
+    });
+}
+
+function stripTopLevelJsonLdContext(value: JsonLdValue): JsonLdValue {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return value;
+    }
+
+    const node: JsonLdObject = {};
+
+    for (const [key, entry] of Object.entries(value)) {
+        if (key !== "@context") {
+            node[key] = entry;
+        }
+    }
+
+    return node;
 }
 
 export function buildOrganizationJsonLd(): JsonLdValue {

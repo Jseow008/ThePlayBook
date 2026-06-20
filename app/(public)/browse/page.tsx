@@ -10,7 +10,7 @@ import {
     buildBreadcrumbJsonLd,
     ROOT_OG_IMAGE,
     ROOT_OG_IMAGE_ALT,
-    serializeJsonLd,
+    serializeJsonLdGraph,
 } from "@/lib/seo";
 
 /**
@@ -77,7 +77,7 @@ export default function BrowsePage() {
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: serializeJsonLd(browseJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: serializeJsonLdGraph(browseJsonLd) }}
             />
             <Suspense fallback={<HomeFeedSkeleton />}>
                 <HomeFeedServer />

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { ReaderView } from "@/components/reader/ReaderView";
 import { buildPublicContentDescription, buildPublicContentMetadata, getReadPageData } from "@/lib/server/public-content";
 import { buildCanonicalReadPath, isCanonicalReadSlug } from "@/lib/content-paths";
-import { buildArticleJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "@/lib/seo";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd, serializeJsonLdGraph } from "@/lib/seo";
 
 interface PageProps {
     params: Promise<{ id: string; slug?: string[] }>;
@@ -85,7 +85,7 @@ export default async function ReadPage({ params, searchParams }: PageProps) {
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: serializeJsonLd(readJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: serializeJsonLdGraph(readJsonLd) }}
             />
             <ReaderView content={content} />
         </>

@@ -14,7 +14,7 @@ import {
   buildWebsiteJsonLd,
   ROOT_OG_IMAGE,
   ROOT_OG_IMAGE_ALT,
-  serializeJsonLd,
+  serializeJsonLdGraph,
   SITE_DESCRIPTION,
 } from "@/lib/seo";
 
@@ -114,7 +114,7 @@ export default function RootLayout({
       >
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLdGraph(siteJsonLd) }}
         />
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>

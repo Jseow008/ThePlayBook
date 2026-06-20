@@ -13,7 +13,7 @@ import {
     buildSeriesCollectionJsonLd,
     ROOT_OG_IMAGE,
     ROOT_OG_IMAGE_ALT,
-    serializeJsonLd,
+    serializeJsonLdGraph,
 } from "@/lib/seo";
 
 interface SeriesPageProps {
@@ -132,7 +132,7 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
         <div className="min-h-screen bg-background pb-8 lg:pb-24">
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: serializeJsonLd(seriesJsonLd) }}
+                dangerouslySetInnerHTML={{ __html: serializeJsonLdGraph(seriesJsonLd) }}
             />
             <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
                 <section className="mb-8 mt-2 rounded-[1.75rem] border border-border/60 bg-card/20 px-5 py-6 md:mt-4 sm:px-6 sm:py-7 lg:flex lg:items-end lg:justify-between lg:gap-8">
