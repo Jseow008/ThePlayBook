@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { EmailSubscriptionForm } from "@/components/ui/EmailSubscriptionForm";
+import { Logo } from "@/components/ui/Logo";
 import { APP_NAME } from "@/lib/brand";
 export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 import { cn } from "@/lib/utils";
@@ -413,8 +414,8 @@ export function FeaturedReadsSection({
           className="landing-featured-shelf relative mx-auto flex w-full max-w-7xl flex-col gap-5 overflow-hidden pb-8 pt-4 md:gap-6"
           aria-busy={isLoadingCategory}
         >
-          <div className="landing-featured-edge landing-featured-edge-left pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#090807] via-[#090807]/72 to-transparent" />
-          <div className="landing-featured-edge landing-featured-edge-right pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#090807] via-[#090807]/72 to-transparent" />
+          <div className="landing-featured-edge landing-featured-edge-left pointer-events-none absolute inset-y-0 left-0 z-10 w-16" />
+          <div className="landing-featured-edge landing-featured-edge-right pointer-events-none absolute inset-y-0 right-0 z-10 w-16" />
           <div
             key={activeCategory ?? "all"}
             className={cn(
@@ -1308,12 +1309,22 @@ export function FinalCTASection() {
 export function LandingFooter() {
   return (
     <footer className="border-t border-white/[0.04] py-12">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-6 sm:flex-row lg:px-8">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground/60">
-          <span>{APP_NAME} - Summary-first knowledge system</span>
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-6 text-center sm:flex-row sm:text-left lg:px-8">
+        <div className="flex flex-col items-center gap-3 sm:items-start">
+          <Link href="/" className="focus-ring inline-flex rounded-sm">
+            <Logo
+              width={96}
+              height={26}
+              className="brightness-110 drop-shadow-[0_1px_8px_rgba(255,255,255,0.06)]"
+            />
+          </Link>
+          <div className="space-y-1 text-sm text-muted-foreground/60">
+            <p>Summary-first knowledge system</p>
+            <p>&copy; 2026 {APP_NAME}. All rights reserved.</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-6 text-sm text-muted-foreground/60">
+        <nav aria-label="Footer navigation" className="flex items-center gap-6 text-sm text-muted-foreground/60">
           <Link href="/about" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
             About
           </Link>
@@ -1323,7 +1334,7 @@ export function LandingFooter() {
           <Link href="/terms" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
             Terms
           </Link>
-        </div>
+        </nav>
       </div>
     </footer>
   );

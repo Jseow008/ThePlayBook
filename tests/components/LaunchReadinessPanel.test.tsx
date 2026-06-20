@@ -28,7 +28,7 @@ describe("LaunchReadinessPanel", () => {
                     },
                     issues: [
                         "Ask My Library retrieval requires GEMINI_API_KEY.",
-                        "Production exception monitoring requires ERROR_REPORTING_WEBHOOK_URL.",
+                        "Production exception monitoring requires NEXT_PUBLIC_SENTRY_DSN.",
                     ],
                 },
                 database: {
@@ -70,7 +70,7 @@ describe("LaunchReadinessPanel", () => {
                 },
                 issues: [
                     "Ask My Library retrieval requires GEMINI_API_KEY.",
-                    "Production exception monitoring requires ERROR_REPORTING_WEBHOOK_URL.",
+                    "Production exception monitoring requires NEXT_PUBLIC_SENTRY_DSN.",
                     'Supabase storage bucket "audio" is missing.',
                 ],
             }),

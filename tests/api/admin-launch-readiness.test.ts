@@ -121,7 +121,7 @@ describe("Admin launch readiness API", () => {
             GEMINI_API_KEY: "gemini-key",
             UPSTASH_REDIS_REST_URL: "https://upstash.example",
             UPSTASH_REDIS_REST_TOKEN: "upstash-token",
-            ERROR_REPORTING_WEBHOOK_URL: "https://monitoring.example/ingest",
+            NEXT_PUBLIC_SENTRY_DSN: "https://public@example.ingest.sentry.io/123",
         };
         (verifyAdminSession as any).mockResolvedValue(true);
         (bestEffortRateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });

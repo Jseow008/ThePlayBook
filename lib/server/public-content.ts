@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { cache } from "react";
 import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
+import { SITE_URL } from "@/lib/seo";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import type { ContentItem, Json } from "@/types/database";
 import type {
@@ -14,7 +15,7 @@ import type {
     SeriesContext,
 } from "@/types/domain";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
+const siteUrl = SITE_URL;
 
 const PREVIEW_SELECT =
     "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, category, created_at, series_id, series_order";
@@ -72,6 +73,8 @@ interface ReadContentRow {
     audio_url: string | null;
     series_id: string | null;
     series_order: number | null;
+    created_at: string;
+    updated_at: string;
     segments: Array<{
         id: string;
         item_id: string;
@@ -226,6 +229,10 @@ export function buildPublicContentMetadata(
     };
 }
 
+export function buildPublicContentDescription(content: MetadataSource, route: "preview" | "read") {
+    return buildDescription(content, route === "preview" ? "Preview" : "Reading");
+}
+
 export const getPreviewPageData = cache(async (id: string): Promise<PreviewPageData | null> => {
     const supabase = createPublicServerClient();
     const [{ data, error }, { count, error: segmentError }] = await Promise.all([
@@ -288,6 +295,8 @@ export const getReadPageData = cache(async (id: string): Promise<ContentItemWith
         audio_url: content.audio_url,
         series_id: content.series_id,
         series_order: content.series_order,
+        created_at: content.created_at,
+        updated_at: content.updated_at,
         seriesContext,
         segments: content.segments
             .filter((segment) => !segment.deleted_at)

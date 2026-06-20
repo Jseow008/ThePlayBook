@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
-import { reportClientException } from "@/app/error-reporting-client";
+import * as Sentry from "@sentry/nextjs";
 
 interface ErrorProps {
     error: Error & { digest?: string };
@@ -12,9 +12,14 @@ interface ErrorProps {
 export default function GlobalError({ error, reset }: ErrorProps) {
     useEffect(() => {
         console.error("[GlobalError]", error);
-        void reportClientException({
-            boundary: "global-error-boundary",
-            error,
+        Sentry.withScope((scope) => {
+            scope.setTag("boundary", "global-error-boundary");
+            scope.setContext("global_error_boundary", {
+                digest: error.digest ?? null,
+                pathname: window.location.pathname,
+                href: window.location.href,
+            });
+            Sentry.captureException(error);
         });
     }, [error]);
 

@@ -1,8 +1,9 @@
 import { notFound, permanentRedirect } from "next/navigation";
 import type { Metadata } from "next";
 import { ReaderView } from "@/components/reader/ReaderView";
-import { buildPublicContentMetadata, getReadPageData } from "@/lib/server/public-content";
+import { buildPublicContentDescription, buildPublicContentMetadata, getReadPageData } from "@/lib/server/public-content";
 import { buildCanonicalReadPath, isCanonicalReadSlug } from "@/lib/content-paths";
+import { buildArticleJsonLd, buildBreadcrumbJsonLd, serializeJsonLd } from "@/lib/seo";
 
 interface PageProps {
     params: Promise<{ id: string; slug?: string[] }>;
@@ -62,5 +63,31 @@ export default async function ReadPage({ params, searchParams }: PageProps) {
         permanentRedirect(buildRedirectTarget(buildCanonicalReadPath(content.id, content.title), resolvedSearchParams));
     }
 
-    return <ReaderView content={content} />;
+    const readPath = buildCanonicalReadPath(content.id, content.title);
+    const readJsonLd = [
+        buildArticleJsonLd({
+            id: content.id,
+            title: content.title,
+            author: content.author,
+            description: buildPublicContentDescription(content, "read"),
+            cover_image_url: content.cover_image_url,
+            created_at: content.created_at,
+            updated_at: content.updated_at,
+        }),
+        buildBreadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Browse", path: "/browse" },
+            { name: content.title, path: readPath },
+        ]),
+    ];
+
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: serializeJsonLd(readJsonLd) }}
+            />
+            <ReaderView content={content} />
+        </>
+    );
 }

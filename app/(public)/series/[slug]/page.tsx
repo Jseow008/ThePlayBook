@@ -7,6 +7,14 @@ import { getSeriesPageData } from "@/lib/server/public-content";
 import { buildReadPath } from "@/lib/content-paths";
 import type { ContentItem } from "@/types/database";
 import { SeriesSequenceList } from "@/components/ui/SeriesSequenceList";
+import {
+    absoluteUrl,
+    buildBreadcrumbJsonLd,
+    buildSeriesCollectionJsonLd,
+    ROOT_OG_IMAGE,
+    ROOT_OG_IMAGE_ALT,
+    serializeJsonLd,
+} from "@/lib/seo";
 
 interface SeriesPageProps {
     params: Promise<{ slug: string }>;
@@ -25,6 +33,23 @@ export async function generateMetadata({ params }: SeriesPageProps): Promise<Met
     return {
         title: `${data.series.title} — ${APP_NAME}`,
         description: data.series.description ?? `Read the ${data.series.title} series on ${APP_NAME}.`,
+        alternates: {
+            canonical: absoluteUrl(`/series/${data.series.slug}`),
+        },
+        openGraph: {
+            title: `${data.series.title} — ${APP_NAME}`,
+            description: data.series.description ?? `Read the ${data.series.title} series on ${APP_NAME}.`,
+            url: absoluteUrl(`/series/${data.series.slug}`),
+            siteName: APP_NAME,
+            images: [{ url: ROOT_OG_IMAGE, width: 1200, height: 630, alt: ROOT_OG_IMAGE_ALT }],
+            type: "website",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title: `${data.series.title} — ${APP_NAME}`,
+            description: data.series.description ?? `Read the ${data.series.title} series on ${APP_NAME}.`,
+            images: [ROOT_OG_IMAGE],
+        },
     };
 }
 
@@ -94,9 +119,21 @@ export default async function SeriesPage({ params }: SeriesPageProps) {
     const formatSummary = getFormatSummary(data.items);
     const seriesAuthor = getSeriesAuthor(data.items);
     const firstItem = data.items[0] ?? null;
+    const seriesJsonLd = [
+        buildSeriesCollectionJsonLd(data.series, data.items),
+        buildBreadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Series", path: "/browse" },
+            { name: data.series.title, path: `/series/${data.series.slug}` },
+        ]),
+    ];
 
     return (
         <div className="min-h-screen bg-background pb-8 lg:pb-24">
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: serializeJsonLd(seriesJsonLd) }}
+            />
             <div className="max-w-7xl mx-auto px-6 lg:px-16 py-8 md:py-12">
                 <section className="mb-8 mt-2 rounded-[1.75rem] border border-border/60 bg-card/20 px-5 py-6 md:mt-4 sm:px-6 sm:py-7 lg:flex lg:items-end lg:justify-between lg:gap-8">
                     <div className="max-w-3xl space-y-3.5 sm:space-y-4">

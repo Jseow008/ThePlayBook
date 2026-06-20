@@ -104,6 +104,7 @@ describe("public content routes", () => {
         });
 
         vi.doMock("@/lib/server/public-content", () => ({
+            buildPublicContentDescription: vi.fn(() => "Big idea"),
             buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Netflux" })),
             getReadPageData: getReadPageDataMock,
         }));
@@ -161,6 +162,7 @@ describe("public content routes", () => {
         }));
 
         vi.doMock("@/lib/server/public-content", () => ({
+            buildPublicContentDescription: vi.fn(() => "Read Title description"),
             buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Netflux" })),
             getReadPageData: getReadPageDataMock,
         }));
@@ -205,6 +207,7 @@ describe("public content routes", () => {
         }));
 
         vi.doMock("@/lib/server/public-content", () => ({
+            buildPublicContentDescription: vi.fn(() => "Read Title description"),
             buildPublicContentMetadata: vi.fn(() => ({ title: "Read Title — Netflux" })),
             getReadPageData: getReadPageDataMock,
         }));

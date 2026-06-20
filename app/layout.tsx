@@ -9,6 +9,14 @@ import { AppToaster } from "@/components/providers/AppToaster";
 import { PostHogPageviewTracker } from "@/components/providers/PostHogPageviewTracker";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import {
+  buildOrganizationJsonLd,
+  buildWebsiteJsonLd,
+  ROOT_OG_IMAGE,
+  ROOT_OG_IMAGE_ALT,
+  serializeJsonLd,
+  SITE_DESCRIPTION,
+} from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,8 +44,7 @@ const landingHeroSerif = Instrument_Serif({
 });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
-const description =
-  "Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use over time.";
+const description = SITE_DESCRIPTION;
 const showVercelTelemetry = process.env.NODE_ENV === "production";
 
 export const metadata: Metadata = {
@@ -65,10 +72,10 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     images: [
       {
-        url: "/images/og-image.png",
+        url: ROOT_OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: `${APP_NAME} — ${APP_TAGLINE}`,
+        alt: ROOT_OG_IMAGE_ALT,
       },
     ],
     locale: "en_US",
@@ -78,7 +85,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${APP_NAME} | ${APP_TAGLINE}`,
     description,
-    images: ["/images/og-image.png"],
+    images: [ROOT_OG_IMAGE],
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
@@ -98,11 +105,17 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const siteJsonLd = [buildOrganizationJsonLd(), buildWebsiteJsonLd()];
+
   return (
     <html lang="en" className="dark">
       <body
         className={`${inter.variable} ${outfit.variable} ${playfair.variable} ${landingHeroSerif.variable} font-sans antialiased isolate`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(siteJsonLd) }}
+        />
         <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
         <Suspense fallback={null}>

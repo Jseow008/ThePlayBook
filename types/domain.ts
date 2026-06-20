@@ -116,6 +116,8 @@ export interface ContentItemWithSegments {
     audio_url: string | null;
     series_id: string | null;
     series_order: number | null;
+    created_at?: string | null;
+    updated_at?: string | null;
     seriesContext?: SeriesContext | null;
     segments: SegmentFull[];
     artifacts: ArtifactSummary[];

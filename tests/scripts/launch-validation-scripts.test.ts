@@ -83,7 +83,7 @@ describe("launch validation scripts", () => {
         expect(result.code).toBe(1);
         expect(result.stdout).toContain("Status: failed");
         expect(result.stdout).toContain("Missing required env var: AI_PROVIDER");
-        expect(result.stdout).toContain("Missing required env var: ERROR_REPORTING_WEBHOOK_URL");
+        expect(result.stdout).toContain("Missing required env var: NEXT_PUBLIC_SENTRY_DSN");
     });
 
     it("passes env validation when all required values are supplied via an explicit env file", async () => {
@@ -103,7 +103,7 @@ describe("launch validation scripts", () => {
             "GEMINI_API_KEY=test-gemini",
             "UPSTASH_REDIS_REST_URL=https://upstash.example",
             "UPSTASH_REDIS_REST_TOKEN=test-upstash",
-            "ERROR_REPORTING_WEBHOOK_URL=https://monitoring.example/ingest",
+            "NEXT_PUBLIC_SENTRY_DSN=https://public@example.ingest.sentry.io/123",
         ].join("\n"));
 
         const result = await runNodeScript(

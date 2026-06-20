@@ -1,6 +1,28 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getRequestId, apiError, logApiError } from "../api";
+
+const sentryMocks = vi.hoisted(() => ({
+    captureException: vi.fn(),
+    withScope: vi.fn((callback: (scope: {
+        setTag: ReturnType<typeof vi.fn>;
+        setContext: ReturnType<typeof vi.fn>;
+        setUser: ReturnType<typeof vi.fn>;
+        setExtra: ReturnType<typeof vi.fn>;
+    }) => void) => callback({
+        setTag: vi.fn(),
+        setContext: vi.fn(),
+        setUser: vi.fn(),
+        setExtra: vi.fn(),
+    })),
+}));
+
+vi.mock("@sentry/nextjs", () => sentryMocks);
+
 describe("api utilities", () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     describe("getRequestId", () => {
         it("returns a string UUID", () => {
             const id = getRequestId();
@@ -57,6 +79,8 @@ describe("api utilities", () => {
                     error_message: "Test internal error",
                 }
             );
+            expect(sentryMocks.withScope).toHaveBeenCalled();
+            expect(sentryMocks.captureException).toHaveBeenCalledWith(error);
 
             consoleErrorSpy.mockRestore();
         });
@@ -82,6 +106,8 @@ describe("api utilities", () => {
                     error: "Bad string error",
                 }
             );
+            expect(sentryMocks.captureException).toHaveBeenCalledWith(expect.any(Error));
+            expect(sentryMocks.captureException.mock.calls[0][0].message).toBe("Something failed with string");
 
             consoleErrorSpy.mockRestore();
         });

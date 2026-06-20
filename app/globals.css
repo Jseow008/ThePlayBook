@@ -996,6 +996,8 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-featured-shelf {
+  --landing-featured-edge-bg: 9 8 7;
+
   border-radius: 1.75rem;
 }
 
@@ -1012,11 +1014,11 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-featured-edge-left {
-  background: linear-gradient(90deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 42%, transparent 100%);
+  background: linear-gradient(90deg, rgb(var(--landing-featured-edge-bg)) 0%, rgb(var(--landing-featured-edge-bg) / 0.72) 42%, transparent 100%);
 }
 
 .landing-featured-edge-right {
-  background: linear-gradient(270deg, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 42%, transparent 100%);
+  background: linear-gradient(270deg, rgb(var(--landing-featured-edge-bg)) 0%, rgb(var(--landing-featured-edge-bg) / 0.72) 42%, transparent 100%);
 }
 
 .landing-featured-row {

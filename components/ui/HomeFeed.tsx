@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { HeroCarousel } from "@/components/ui/HeroCarousel";
 
 import { RecommendationsRow } from "@/components/ui/RecommendationsRow";
@@ -75,13 +77,13 @@ export function HomeFeed({
                         <div className="w-6 h-6 bg-foreground rounded-md flex items-center justify-center text-background font-display font-bold">
                             {APP_NAME.charAt(0)}
                         </div>
-                        <p>© 2026 {APP_NAME}</p>
+                        <p>© 2026 {APP_NAME}. All rights reserved.</p>
                     </div>
-                    <div className="flex gap-8">
-                        <a href="/about" className="hover:text-foreground transition-colors">About</a>
-                        <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
-                        <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
-                    </div>
+                    <nav aria-label="Footer navigation" className="flex gap-8">
+                        <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+                        <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+                        <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+                    </nav>
                 </div>
             </footer>
         </div>

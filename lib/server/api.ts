@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { reportException } from "@/lib/server/error-reporting";
+import * as Sentry from "@sentry/nextjs";
 
 export type ApiErrorCode =
     | "UNAUTHORIZED"
@@ -57,14 +57,26 @@ export function logApiError(params: {
         console.error(base, { error: params.error });
     }
 
-    void reportException({
-        source: "api",
-        message: params.message,
-        requestId: params.requestId,
-        route: params.route,
-        userId: params.userId,
-        error: params.error,
-        skipConsoleLog: true,
+    Sentry.withScope((scope) => {
+        scope.setTag("source", "api");
+        scope.setTag("route", params.route);
+        scope.setContext("api_error", {
+            request_id: params.requestId,
+            route: params.route,
+            message: params.message,
+        });
+
+        if (params.userId) {
+            scope.setUser({ id: params.userId });
+        }
+
+        if (params.error instanceof Error) {
+            Sentry.captureException(params.error);
+            return;
+        }
+
+        scope.setExtra("original_error", params.error);
+        Sentry.captureException(new Error(params.message));
     });
 }
 

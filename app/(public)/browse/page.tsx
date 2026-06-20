@@ -1,8 +1,17 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { HomeFeed } from "@/components/ui/HomeFeed";
 import { getRequestId, logApiError } from "@/lib/server/api";
 import type { ContentItem, Database, HomepageSection } from "@/types/database";
+import { APP_NAME } from "@/lib/brand";
+import {
+    absoluteUrl,
+    buildBreadcrumbJsonLd,
+    ROOT_OG_IMAGE,
+    ROOT_OG_IMAGE_ALT,
+    serializeJsonLd,
+} from "@/lib/seo";
 
 /**
  * Browse Page (Content Dashboard)
@@ -14,6 +23,31 @@ import type { ContentItem, Database, HomepageSection } from "@/types/database";
 
 export const revalidate = 300; // Revalidate every 5 minutes
 
+const browseDescription =
+    "Browse summaries, highlights, and saved ideas from books, podcasts, articles, and videos in the Netflux library.";
+
+export const metadata: Metadata = {
+    title: `Browse summaries - ${APP_NAME}`,
+    description: browseDescription,
+    alternates: {
+        canonical: absoluteUrl("/browse"),
+    },
+    openGraph: {
+        title: `Browse summaries - ${APP_NAME}`,
+        description: browseDescription,
+        url: absoluteUrl("/browse"),
+        siteName: APP_NAME,
+        images: [{ url: ROOT_OG_IMAGE, width: 1200, height: 630, alt: ROOT_OG_IMAGE_ALT }],
+        type: "website",
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: `Browse summaries - ${APP_NAME}`,
+        description: browseDescription,
+        images: [ROOT_OG_IMAGE],
+    },
+};
+
 const FEED_CARD_SELECT =
     "id, type, title, duration_seconds, author, cover_image_url, category, created_at";
 const HERO_CARD_SELECT =
@@ -21,10 +55,34 @@ const HERO_CARD_SELECT =
 type HomepageSectionsRpcRow = Database["public"]["Functions"]["get_homepage_sections_with_items"]["Returns"][number];
 
 export default function BrowsePage() {
+    const browseJsonLd = [
+        {
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "@id": `${absoluteUrl("/browse")}#collection`,
+            name: "Browse summaries",
+            description: browseDescription,
+            url: absoluteUrl("/browse"),
+            isPartOf: {
+                "@id": `${absoluteUrl("/")}#website`,
+            },
+        },
+        buildBreadcrumbJsonLd([
+            { name: "Home", path: "/" },
+            { name: "Browse", path: "/browse" },
+        ]),
+    ];
+
     return (
-        <Suspense fallback={<HomeFeedSkeleton />}>
-            <HomeFeedServer />
-        </Suspense>
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: serializeJsonLd(browseJsonLd) }}
+            />
+            <Suspense fallback={<HomeFeedSkeleton />}>
+                <HomeFeedServer />
+            </Suspense>
+        </>
     );
 }
 

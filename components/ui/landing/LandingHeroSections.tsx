@@ -73,7 +73,7 @@ export function HeroSection() {
             </h1>
 
             <p className="landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
-              Explore high-signal summaries, save the ideas worth keeping, and find them when they matter.
+              The best ideas only matter if you can find them again.
             </p>
 
             <HeroWorkflow />

@@ -1,5 +1,3 @@
-import { isErrorReportingConfigured } from "@/lib/server/error-reporting";
-
 export type ReadinessState =
     | "ready"
     | "missing"
@@ -40,6 +38,10 @@ function isValidUrl(value: string | undefined) {
     }
 }
 
+function isSentryConfigured(env: NodeJS.ProcessEnv = process.env) {
+    return hasNonEmptyEnv(env.NEXT_PUBLIC_SENTRY_DSN);
+}
+
 export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): RuntimeReadiness {
     const environment = env.NODE_ENV ?? "development";
     const isProduction = environment === "production";
@@ -55,7 +57,7 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
     const hasGemini = hasNonEmptyEnv(env.GEMINI_API_KEY);
     const hasUpstashUrl = hasNonEmptyEnv(env.UPSTASH_REDIS_REST_URL);
     const hasUpstashToken = hasNonEmptyEnv(env.UPSTASH_REDIS_REST_TOKEN);
-    const hasErrorReporting = isErrorReportingConfigured(env);
+    const hasErrorReporting = isSentryConfigured(env);
 
     const checks: RuntimeReadiness["checks"] = {
         supabase_public: hasSupabasePublicUrl && hasSupabaseAnonKey ? "ready" : "missing",
@@ -111,7 +113,7 @@ export function getRuntimeReadiness(env: NodeJS.ProcessEnv = process.env): Runti
     }
 
     if (checks.error_reporting === "missing") {
-        issues.push("Production exception monitoring requires ERROR_REPORTING_WEBHOOK_URL.");
+        issues.push("Production exception monitoring requires NEXT_PUBLIC_SENTRY_DSN.");
     }
 
     return {

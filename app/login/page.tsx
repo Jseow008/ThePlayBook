@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { AuthForm } from "@/components/ui/AuthForm";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -5,6 +6,20 @@ import { ArrowLeft } from "lucide-react";
 import { DEFAULT_LOGIN_REDIRECT_PATH, normalizeLoginNextPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
+import { APP_NAME } from "@/lib/brand";
+import { absoluteUrl } from "@/lib/seo";
+
+export const metadata: Metadata = {
+    title: `Sign in - ${APP_NAME}`,
+    description: "Sign in to Netflux to access your library, saved summaries, notes, highlights, and personalized content.",
+    alternates: {
+        canonical: absoluteUrl("/login"),
+    },
+    robots: {
+        index: false,
+        follow: false,
+    },
+};
 
 export default async function LoginPage({
     searchParams,

@@ -34,6 +34,7 @@ AI_MODEL=claude-haiku-4-5-20251001
 AI_COMPLEX_MODEL=claude-sonnet-4-20250514
 ANTHROPIC_API_KEY=...
 GEMINI_API_KEY=...
+NEXT_PUBLIC_SENTRY_DSN=...
 ```
 
 Optional:
@@ -47,8 +48,10 @@ UPSTASH_REDIS_REST_TOKEN=...
 AI_DAILY_MESSAGE_LIMIT=20
 AI_WEEKLY_MESSAGE_LIMIT=100
 AI_MONTHLY_MESSAGE_LIMIT=300
-ERROR_REPORTING_WEBHOOK_URL=...
-ERROR_REPORTING_BEARER_TOKEN=...
+SENTRY_DSN=...
+SENTRY_AUTH_TOKEN=...
+SENTRY_ORG=...
+SENTRY_PROJECT=...
 CRON_SECRET=...
 RESEND_API_KEY=...
 REQUEST_NOTIFICATION_FROM_EMAIL="Netflux <notifications@yourdomain.com>"
@@ -59,8 +62,9 @@ Notes:
 
 - `NEXT_PUBLIC_SITE_URL` drives metadata, sitemap, robots, and default OG URLs
 - `NEXT_PUBLIC_APP_URL` is only used for API CORS header generation in `next.config.ts`
-- `ERROR_REPORTING_WEBHOOK_URL` is the production exception sink used by API failures and the root/app error boundaries
-- `ERROR_REPORTING_BEARER_TOKEN` is optional when your ingest endpoint expects bearer auth
+- `NEXT_PUBLIC_SENTRY_DSN` enables browser and server-side Sentry error monitoring
+- `SENTRY_DSN` is optional when you want a separate server-side DSN; server monitoring falls back to `NEXT_PUBLIC_SENTRY_DSN`
+- `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, and `SENTRY_PROJECT` are build-time settings for source map upload and should not be treated as runtime health requirements
 - `CRON_SECRET` protects background worker routes such as AI narration processing
 - `RESEND_API_KEY` and `REQUEST_NOTIFICATION_FROM_EMAIL` power transactional request-board notification emails
 - `REQUEST_NOTIFICATION_REPLY_TO_EMAIL` is optional
@@ -408,7 +412,19 @@ The launch-readiness endpoint is admin-only. Use `/admin` as the operator surfac
 
 If you wrap these checks in automation, keep the same order: env check, lint, test, build, health, admin readiness.
 
-Then trigger one handled server error and one browser error in preview/staging and confirm both appear in your monitoring sink. Browser boundary errors post through `/api/monitor/exceptions`; API failures emit directly from the server helper.
+Then trigger one handled server error and one browser error in preview/staging and confirm both appear in Sentry. Browser boundary errors call `Sentry.captureException()` from `app/error.tsx` and `app/global-error.tsx`; API failures are captured through the shared `logApiError()` helper.
+
+#### Sentry Deployment Status
+
+Completed on 2026-06-18.
+
+Verified:
+
+- Vercel production exposes `NEXT_PUBLIC_SENTRY_DSN`; `/api/health` reports `error_reporting: "ready"`.
+- Local launch environment validation passes with `NEXT_PUBLIC_SENTRY_DSN` configured.
+- A controlled API/server event reached Sentry through `logApiError()`: `Netflux Sentry API verification event`.
+- A controlled browser boundary event reached Sentry through `app/error.tsx`: `Netflux Sentry browser boundary verification event`.
+- Browser events used the same-origin Sentry tunnel at `/error-monitoring`, keeping the current CSP compatible.
 
 ### 4.4 Metadata and Web Surfaces
 

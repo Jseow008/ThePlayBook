@@ -1,9 +1,41 @@
+import type { Metadata } from "next";
 import { LandingPage } from "@/components/ui/LandingPage";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { LandingRedirectGuard } from "@/components/ui/LandingRedirectGuard";
 import type { ContentItem } from "@/types/database";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { ROOT_OG_IMAGE, ROOT_OG_IMAGE_ALT, SITE_DESCRIPTION, SITE_URL } from "@/lib/seo";
 
 export const revalidate = 3600;
+
+export const metadata: Metadata = {
+  title: `${APP_NAME} | ${APP_TAGLINE}`,
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: SITE_URL,
+  },
+  openGraph: {
+    title: `${APP_NAME} | ${APP_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: APP_NAME,
+    images: [
+      {
+        url: ROOT_OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: ROOT_OG_IMAGE_ALT,
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME} | ${APP_TAGLINE}`,
+    description: SITE_DESCRIPTION,
+    images: [ROOT_OG_IMAGE],
+  },
+};
 
 const LANDING_SELECT =
   "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, created_at, is_featured";

@@ -24,6 +24,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@google/genai": "^1.50.1",
     "@phosphor-icons/react": "^2.1.10",
+    "@sentry/nextjs": "^10.58.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@tanstack/react-query": "^5.62.0",
