@@ -94,7 +94,7 @@ Use the launch-validation sequence below before a production push or after a pre
 
 1. Validate production env values against `.env.example`.
 2. Run `npm run lint && npm run typecheck && npm test && npm run build`.
-3. Check `GET /api/health` and confirm the response is `ok`.
+3. Check `GET /api/health` and confirm the response is `ok`. Use `HEALTH_CHECK_SECRET` for detailed readiness and database monitoring.
 4. Open `/admin` and confirm the launch-readiness panel plus the AI readiness badges and sync actions render.
 5. Verify content and segment embedding coverage before treating Ask My Library as launch-ready.
 
@@ -106,7 +106,7 @@ npm run typecheck
 npm test
 npm run build
 npm run validate:launch-env
-npm run check:deployment-health -- --url https://<your-production-domain>
+HEALTH_CHECK_SECRET=... npm run check:deployment-health -- --url https://<your-production-domain>
 ```
 
 CI runs:
@@ -393,7 +393,7 @@ npm run validate:launch-env
 npm run lint
 npm test
 npm run build
-npm run check:deployment-health -- --url https://<your-production-domain>
+HEALTH_CHECK_SECRET=... npm run check:deployment-health -- --url https://<your-production-domain>
 ```
 
 If you want to validate a file instead of the current process environment, make the source explicit:
@@ -406,9 +406,10 @@ Then confirm `/api/health` reports `ok` and `/api/admin/launch-readiness` is cle
 
 ```bash
 curl https://<your-production-domain>/api/health
+curl -H "Authorization: Bearer $HEALTH_CHECK_SECRET" https://<your-production-domain>/api/health
 ```
 
-The launch-readiness endpoint is admin-only. Use `/admin` as the operator surface for that check.
+The unauthenticated health response is intentionally a shallow liveness check. It does not validate environment configuration or query Supabase. Detailed readiness requires `HEALTH_CHECK_SECRET`; the database probe is cached briefly, concurrent probe refreshes are collapsed into one in-flight request per process, and slow probes fail fast as degraded. The launch-readiness endpoint is admin-only. Use `/admin` as the operator surface for that check.
 
 If you wrap these checks in automation, keep the same order: env check, lint, test, build, health, admin readiness.
 

@@ -44,7 +44,11 @@ function createBaseEnv(overrides: Record<string, string> = {}): NodeJS.ProcessEn
     };
 }
 
-function createHealthServer(statusCode: number, payload: unknown) {
+function createHealthServer(
+    statusCode: number,
+    payload: unknown,
+    onRequest?: (request: http.IncomingMessage) => void
+) {
     return new Promise<{ server: http.Server; url: string }>((resolve) => {
         const server = http.createServer((request, response) => {
             if (request.url !== "/api/health") {
@@ -53,6 +57,7 @@ function createHealthServer(statusCode: number, payload: unknown) {
                 return;
             }
 
+            onRequest?.(request);
             response.writeHead(statusCode, { "content-type": "application/json" });
             response.end(JSON.stringify(payload));
         });
@@ -104,6 +109,7 @@ describe("launch validation scripts", () => {
             "UPSTASH_REDIS_REST_URL=https://upstash.example",
             "UPSTASH_REDIS_REST_TOKEN=test-upstash",
             "NEXT_PUBLIC_SENTRY_DSN=https://public@example.ingest.sentry.io/123",
+            "HEALTH_CHECK_SECRET=test-health-secret",
         ].join("\n"));
 
         const result = await runNodeScript(
@@ -116,16 +122,20 @@ describe("launch validation scripts", () => {
     });
 
     it("passes deployment health when the endpoint returns ok", async () => {
-        const { server, url } = await createHealthServer(200, { status: "ok", issues: [] });
+        let authorizationHeader = "";
+        const { server, url } = await createHealthServer(200, { status: "ok", issues: [] }, (request) => {
+            authorizationHeader = request.headers.authorization ?? "";
+        });
 
         try {
             const result = await runNodeScript(
                 ["scripts/check-deployment-health.mjs", "--url", url],
-                createBaseEnv()
+                createBaseEnv({ HEALTH_CHECK_SECRET: "health-secret" })
             );
 
             expect(result.code).toBe(0);
             expect(result.stdout).toContain("Deployment health ok");
+            expect(authorizationHeader).toBe("Bearer health-secret");
         } finally {
             await new Promise<void>((resolve, reject) => {
                 server.close((error) => (error ? reject(error) : resolve()));

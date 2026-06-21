@@ -2,7 +2,7 @@
 
 This document is the source of truth for pre-production security work. Do not ship production until all P0 items are complete and verified. P1 items should be complete before public launch unless explicitly risk-accepted.
 
-Last updated: 2026-06-21
+Last updated: 2026-06-22
 
 ## Operating Rules
 
@@ -110,7 +110,7 @@ Implementation notes:
 
 ### 3. Add runtime guards inside admin `SECURITY DEFINER` functions
 
-Status: Complete for admin mutation RPCs on 2026-06-21.
+Status: Complete after full live function classification on 2026-06-22.
 
 Issue: Grants can drift. Admin definer functions should reject non-service-role callers even if grants are accidentally opened.
 
@@ -140,13 +140,43 @@ Implementation notes:
 
 - Added and applied `supabase/migrations/20260620171256_guard_admin_update_content_graph.sql`.
 - Verified `admin_update_content_graph` remains `SECURITY DEFINER`, has fixed `search_path`, is executable only by `service_role`, and now contains an internal `auth.role() <> 'service_role'` guard.
+- Added and applied `supabase/migrations/20260621161235_audit_admin_definer_runtime_guards.sql` after a live inventory of every `public` function.
+- Added runtime `auth.role() <> 'service_role'` guards to service-only analytics definer RPCs:
+  - `increment_reading_activity_for_user(date, integer, uuid)`
+  - `log_reading_activity(date, integer, uuid)`
+  - `log_anonymous_reading_activity(date, integer, uuid, text)`
+  - `log_reading_activity_for_user(date, integer, uuid, uuid)`
+- Confirmed all non-trigger `SECURITY DEFINER` RPCs now have fixed `search_path`, service-role-only execute grants, and an internal service-role guard.
+- Confirmed trigger-only helpers are not directly executable by `anon` or `authenticated`; no runtime role guard was added to trigger-only functions to avoid breaking trigger context.
+- Fixed mutable `search_path` on public functions discovered during classification, including public read RPCs, embedding maintenance RPCs, recommendation/vector RPCs, and trigger helpers.
 - Verified rollback smoke tests:
   - `authenticated` cannot call `admin_update_content_graph`.
   - `service_role` reaches the function's normal `p_content_id is required` validation path.
-- Added `npm run security:function-acls` as the CI-ready ACL drift check. It runs `scripts/security-function-acl-check.sql` through the Supabase CLI and fails if any public `SECURITY DEFINER` function is executable by `anon`/`authenticated` or lacks a fixed `search_path`.
-- Existing trigger-only definer functions remain direct-execute locked to `service_role`; they are not public/admin RPC entrypoints.
+- Added `npm run security:function-acls` as the CI-ready ACL drift check. It runs `scripts/security-function-acl-check.sql` through the Supabase CLI and fails if:
+  - any public `SECURITY DEFINER` function is executable by `anon` or `authenticated`
+  - any public `SECURITY DEFINER` function lacks fixed `search_path`
+  - any non-trigger public `SECURITY DEFINER` RPC lacks an internal service-role guard
+  - any trigger-backed helper is directly executable by `anon` or `authenticated`
+- Verified smoke tests:
+  - `authenticated` cannot call guarded activity definer RPCs.
+  - `service_role` reaches the guarded functions' normal validation paths.
+- Verified `npm run security:function-acls` passes against the linked Supabase project.
+- Supabase security advisor has no `SECURITY DEFINER` anon/auth execute findings after this pass. Remaining advisor findings are tracked separately: analytics RLS-with-no-policy, public bucket listing, and leaked password protection.
+
+Function classification summary:
+
+| Category | Functions | Required control |
+| --- | --- | --- |
+| Service-only/admin definer RPCs | `admin_update_content_graph`, `admin_finalize_narration_generation`, `insert_generated_content`, `queue_content_request_published_notifications`, `claim_content_request_notifications`, `submit_content_request`, `increment_reading_activity_for_user`, `log_reading_activity`, `log_anonymous_reading_activity`, `log_reading_activity_for_user` | `SECURITY DEFINER`, fixed `search_path`, service-role-only execute grant, internal service-role guard |
+| Trigger-only helpers | `handle_new_user`, `invalidate_gemini_segment_embedding_on_body_change`, `update_content_request_vote_count`, `update_updated_at_column` | fixed `search_path`, no direct `anon`/`authenticated` execute grant, no runtime service-role guard |
+| Public read/recommendation RPCs | `get_category_stats`, `get_homepage_sections_with_items`, `get_random_verified_content`, `get_trending_content`, `match_recommendations` | `SECURITY INVOKER`, fixed `search_path`, intentionally public |
+| Authenticated user RPCs | `is_admin`, `set_onboarding_state`, `match_library_segments_gemini` | `SECURITY INVOKER`, fixed `search_path`, authenticated-only or user-scoped filtering |
+| Service-only maintenance RPCs | `get_segments_missing_gemini_embeddings`, `get_gemini_segment_embedding_coverage`, `increment_reading_activity` | fixed `search_path`, no `anon`/`authenticated` execute grant |
+| Legacy embedding maintenance gap | `get_segments_missing_embeddings` | fixed `search_path`; execute grant lockdown remains tracked in item 13 |
 
 ### 4. Validate `x-forwarded-host` in auth callback
+
+Status: Complete on 2026-06-21.
 
 Issue: `app/auth/callback/route.ts` builds redirect URLs from `x-forwarded-host`. If spoofable, this can become an open redirect.
 
@@ -159,7 +189,18 @@ Acceptance criteria:
 
 - Tests cover valid host, spoofed host, and local development behavior.
 
+Implementation notes:
+
+- `app/auth/callback/route.ts` now derives trusted production redirect origins from `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_SITE_URL`.
+- `x-forwarded-host` is accepted only when its normalized host exactly matches one of those configured origins.
+- Spoofed, malformed, comma-separated, path-bearing, or otherwise invalid forwarded hosts fall back to the configured canonical app origin.
+- Development keeps redirects on the request origin so local callbacks continue to work.
+- Production fails closed with a `500` JSON response when no valid configured auth redirect origin exists, and does not exchange the auth code in that state.
+- Added `tests/api/auth-callback.test.ts` covering valid forwarded host, spoofed forwarded host, malformed forwarded host, local development behavior, one-valid-origin production behavior, missing/malformed production origin fail-closed behavior, and auth error redirect fallback.
+
 ### 5. Restrict detailed `/api/health` output
+
+Status: Complete on 2026-06-21.
 
 Issue: `/api/health` exposes environment, DB reachability, readiness details, and missing service names.
 
@@ -172,6 +213,18 @@ Acceptance criteria:
 
 - Anonymous request cannot see detailed env/service readiness.
 - Authorized health check still supports deployment monitoring.
+
+Implementation notes:
+
+- Anonymous `/api/health` responses now act as shallow liveness checks and include only coarse `status` and `timestamp`.
+- Anonymous `/api/health` requests do not run readiness evaluation, create a Supabase client, or query the database.
+- Detailed `environment`, `database`, `readiness`, and `issues` fields require `HEALTH_CHECK_SECRET` via `Authorization: Bearer <secret>` or `x-health-check-secret`.
+- Authorized database readiness checks are cached briefly in-process to reduce monitor burst pressure.
+- Concurrent authorized database probe refreshes are collapsed into one in-flight query per process.
+- Authorized database probes use an abortable 2.5 second timeout and return degraded instead of hanging when Supabase is slow or unavailable.
+- `scripts/check-deployment-health.mjs` now forwards `HEALTH_CHECK_SECRET` when present, and also accepts `--secret`.
+- `scripts/validate-launch-env.mjs` now requires `HEALTH_CHECK_SECRET` for production validation.
+- Tests cover anonymous liveness output, anonymous no-DB behavior, authorized detailed output, authorized DB readiness caching, concurrent request collapsing, timeout/abort behavior, and deployment-health secret forwarding.
 
 ### 6. Remove service-role usage from public email subscription routes
 
@@ -289,7 +342,34 @@ Acceptance criteria:
 - `anon` cannot directly list embeddings.
 - Ask/recommendation flows still work through approved RPCs.
 
-### 13. Controlled dependency remediation
+### 13. Lock down embedding maintenance RPC exposure
+
+Issue: Cross-checking P1 admin `SECURITY DEFINER` guards found that some embedding-related maintenance RPCs are not `SECURITY DEFINER`, but still have broad execute grants. In particular, legacy `get_segments_missing_embeddings(integer)` is currently callable by `PUBLIC`, `anon`, and `authenticated`. This is not part of the admin-definer guard requirement, but it is still an unnecessary maintenance surface.
+
+Status: Partially reduced on 2026-06-22. Item 3's full function classification fixed mutable `search_path` on embedding RPCs, but legacy execute exposure remains to be locked down here.
+
+Functions to review:
+
+- `get_segments_missing_embeddings(integer)`
+- `get_segments_missing_gemini_embeddings(integer)`
+- `get_gemini_segment_embedding_coverage()`
+- `match_library_segments(vector, double precision, integer, uuid)`
+- `match_library_segments_gemini(vector, double precision, integer, uuid, boolean)`
+
+Required outcome:
+
+- Maintenance and coverage RPCs are executable only by `service_role`.
+- User-facing vector match RPCs remain callable only by roles that actually need them, and continue to filter to the current user/library where applicable.
+- All embedding-related RPCs have fixed `search_path`.
+
+Acceptance criteria:
+
+- `anon` cannot call embedding maintenance or coverage RPCs.
+- `authenticated` cannot call service-only embedding maintenance RPCs.
+- Ask/recommendation flows still work through approved user-facing RPCs.
+- Supabase advisor no longer reports mutable `search_path` for embedding RPCs.
+
+### 14. Controlled dependency remediation
 
 Issue: `npm audit --omit=dev` reports production advisories beyond Next.js, including `protobufjs`, `ws`, `posthog-js` transitive packages, and related OpenTelemetry packages.
 
@@ -304,7 +384,7 @@ Acceptance criteria:
 - No high or critical production advisories remain.
 - Remaining moderate advisories are documented with impact and owner.
 
-### 14. Public bucket listing policy review
+### 15. Public bucket listing policy review
 
 Issue: Supabase advisor reports `media` and `audio` public buckets allow object listing via broad SELECT policies.
 
@@ -320,7 +400,7 @@ Acceptance criteria:
 
 ## P3: Cleanup and Future-Proofing
 
-### 15. Document RLS-enabled tables with no policies
+### 16. Document RLS-enabled tables with no policies
 
 Issue: Supabase advisor reports RLS enabled with no policies on analytics tables.
 
@@ -340,7 +420,7 @@ Acceptance criteria:
 - Future maintainers understand the pattern.
 - Supabase advisor finding is either resolved or explicitly risk-accepted.
 
-### 16. Add security gates to CI/deployment
+### 17. Add security gates to CI/deployment
 
 Status: Partially complete. `npm run security:function-acls` now covers Supabase `SECURITY DEFINER` ACL/search_path drift.
 
@@ -357,7 +437,7 @@ Acceptance criteria:
 
 - Production deployment blocks on P0/P1 security regressions.
 
-### 17. Remove tracked local/generated artifacts
+### 18. Remove tracked local/generated artifacts
 
 Issue: `.npm-cache-temp` and `test-results` are tracked or present in ways that make security scans noisy and increase repository risk.
 
@@ -371,7 +451,7 @@ Acceptance criteria:
 - `git ls-files .npm-cache-temp test-results` returns no tracked artifacts.
 - Secret scans no longer process generated npm cache contents.
 
-### 18. Improve security observability
+### 19. Improve security observability
 
 Required outcome:
 

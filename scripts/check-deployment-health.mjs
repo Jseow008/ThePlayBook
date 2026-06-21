@@ -10,6 +10,7 @@ Fetches <base-url>/api/health and exits non-zero unless the response is 200 and 
 Options:
   --url <base-url>     Base deployment URL to check.
   --timeout <ms>       Request timeout in milliseconds. Default: ${DEFAULT_TIMEOUT_MS}
+  --secret <secret>    Optional health check secret. Defaults to HEALTH_CHECK_SECRET.
   -h, --help           Show this help text.
 `);
 }
@@ -18,6 +19,7 @@ function parseArgs(argv) {
     const args = {
         url: "",
         timeoutMs: DEFAULT_TIMEOUT_MS,
+        secret: process.env.HEALTH_CHECK_SECRET ?? "",
     };
 
     for (let index = 0; index < argv.length; index += 1) {
@@ -35,6 +37,11 @@ function parseArgs(argv) {
                 throw new Error(`Invalid timeout value: ${rawTimeout}`);
             }
             args.timeoutMs = Math.floor(parsedTimeout);
+            continue;
+        }
+
+        if (arg === "--secret") {
+            args.secret = argv[++index] ?? "";
             continue;
         }
 
@@ -112,6 +119,7 @@ async function main() {
             signal: timeout.signal,
             headers: {
                 accept: "application/json",
+                ...(args.secret ? { authorization: `Bearer ${args.secret}` } : {}),
             },
         });
 

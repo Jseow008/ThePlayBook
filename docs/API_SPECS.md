@@ -212,7 +212,7 @@ Delete request:
 | `/api/content/batch` | `POST` | `public` | Fetch multiple verified content items by ID. |
 | `/api/focus` | `GET` | `public` | Return randomized quick-mode-ready focus feed items. |
 | `/api/recommendations` | `POST` | `public` | RPC-backed recommendations based on completed IDs. |
-| `/api/health` | `GET` | `public` | Deployment readiness checker for env config and database reachability. |
+| `/api/health` | `GET` | `public liveness`; detailed via `HEALTH_CHECK_SECRET` | Deployment health checker. Anonymous callers receive only process liveness and never trigger DB checks; detailed env/database readiness requires `Authorization: Bearer <HEALTH_CHECK_SECRET>` or `x-health-check-secret` and uses cached, fail-fast DB probes. |
 | `/api/monitor/image-fallback` | `POST` | `public` | Diagnostic logging for image fallback events. |
 
 ### 4.1 `/api/content/batch`
