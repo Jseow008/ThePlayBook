@@ -51,8 +51,9 @@ async function getLegacyReadRedirect(request: NextRequest) {
  *   ADMIN_ALLOWED_IPS=203.0.113.42
  *   ADMIN_ALLOWED_IPS=203.0.113.42,198.51.100.7,2001:db8::1
  *
- * When the variable is **unset or empty** the IP gate is disabled so that
- * local development is never accidentally locked out.
+ * In production, an unset or empty value fails closed for admin paths. In
+ * non-production environments, the gate is disabled so local development is
+ * never accidentally locked out.
  */
 function getAdminAllowedIps(): Set<string> | null {
     const raw = process.env.ADMIN_ALLOWED_IPS;
@@ -66,6 +67,10 @@ function getAdminAllowedIps(): Set<string> | null {
             .map((ip) => ip.trim())
             .filter(Boolean)
     );
+}
+
+function isProductionRuntime(): boolean {
+    return process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
 }
 
 function getClientIp(request: NextRequest): string {
@@ -118,6 +123,10 @@ export async function proxy(request: NextRequest) {
     // ── Admin IP gate ────────────────────────────────────────────────
     if (isAdminPath(pathname) && !isAuthorizedCronProcessor) {
         const allowedIps = getAdminAllowedIps();
+
+        if (allowedIps === null && isProductionRuntime()) {
+            return new NextResponse("Not Found", { status: 404 });
+        }
 
         if (allowedIps !== null) {
             const clientIp = getClientIp(request);

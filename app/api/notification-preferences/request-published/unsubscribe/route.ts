@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { getAdminClient } from "@/lib/supabase/admin";
+import { rateLimit } from "@/lib/server/rate-limit";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 const UnsubscribeSchema = z.object({
     token: z.string().trim().min(32).max(128).regex(/^[a-f0-9]+$/i),
@@ -36,6 +37,18 @@ function unsubscribeHtml() {
 
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
+
+    const rl = await rateLimit(request, { limit: 12, windowMs: 60_000 });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
+            }
+        );
+    }
+
     const parsed = UnsubscribeSchema.safeParse({
         token: request.nextUrl.searchParams.get("token"),
     });
@@ -45,10 +58,10 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const supabase = getAdminClient();
-        const { error } = await (supabase as any).from("user_notification_preferences")
-            .update({ request_published_email_enabled: false })
-            .eq("unsubscribe_token", parsed.data.token);
+        const { error } = await createPublicServerClient().rpc(
+            "unsubscribe_request_published_notifications_by_token",
+            { p_token: parsed.data.token }
+        );
 
         if (error) {
             throw error;

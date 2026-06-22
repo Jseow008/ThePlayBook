@@ -16,6 +16,8 @@ const REQUIRED_ALL = [
     "UPSTASH_REDIS_REST_TOKEN",
     "NEXT_PUBLIC_SENTRY_DSN",
     "HEALTH_CHECK_SECRET",
+    "ADMIN_ALLOWED_IPS",
+    "ANONYMOUS_ACTIVITY_SECRET",
 ];
 
 const REQUIRED_ONE_OF = [
@@ -56,6 +58,8 @@ Required:
 - UPSTASH_REDIS_REST_TOKEN
 - NEXT_PUBLIC_SENTRY_DSN
 - HEALTH_CHECK_SECRET
+- ADMIN_ALLOWED_IPS
+- ANONYMOUS_ACTIVITY_SECRET
 - at least one of ANTHROPIC_API_KEY or OPENAI_API_KEY
 
 Recommended:
@@ -80,6 +84,46 @@ function isValidHttpUrl(value) {
     } catch {
         return false;
     }
+}
+
+const IPV4_REGEX = /^(?:\d{1,3}\.){3}\d{1,3}$/;
+const IPV6_REGEX = /^[a-fA-F0-9:]+$/;
+
+function isValidIpv4(value) {
+    if (!IPV4_REGEX.test(value)) {
+        return false;
+    }
+
+    return value.split(".").every((part) => {
+        const octet = Number(part);
+        return Number.isInteger(octet) && octet >= 0 && octet <= 255 && String(octet) === part;
+    });
+}
+
+function isValidIpv6(value) {
+    return value.includes(":") && value.length <= 64 && IPV6_REGEX.test(value);
+}
+
+function validateAdminAllowedIps(value) {
+    if (!value) {
+        return [];
+    }
+
+    const rawEntries = value.split(",");
+    const entries = rawEntries.map((entry) => entry.trim());
+    const errors = [];
+
+    if (entries.some((entry) => !entry)) {
+        errors.push("ADMIN_ALLOWED_IPS contains an empty entry");
+    }
+
+    for (const entry of entries.filter(Boolean)) {
+        if (!isValidIpv4(entry) && !isValidIpv6(entry)) {
+            errors.push(`Invalid IP address in ADMIN_ALLOWED_IPS: ${entry}`);
+        }
+    }
+
+    return errors;
 }
 
 function formatEnvList(names) {
@@ -137,6 +181,8 @@ for (const name of URL_VARS) {
         errors.push(`Invalid URL in ${name}: ${value}`);
     }
 }
+
+errors.push(...validateAdminAllowedIps(valueOf("ADMIN_ALLOWED_IPS")));
 
 for (const name of RECOMMENDED) {
     if (!valueOf(name)) {

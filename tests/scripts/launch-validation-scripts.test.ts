@@ -110,6 +110,8 @@ describe("launch validation scripts", () => {
             "UPSTASH_REDIS_REST_TOKEN=test-upstash",
             "NEXT_PUBLIC_SENTRY_DSN=https://public@example.ingest.sentry.io/123",
             "HEALTH_CHECK_SECRET=test-health-secret",
+            "ADMIN_ALLOWED_IPS=203.0.113.42,2001:db8::1",
+            "ANONYMOUS_ACTIVITY_SECRET=test-anonymous-activity-secret",
         ].join("\n"));
 
         const result = await runNodeScript(
@@ -119,6 +121,70 @@ describe("launch validation scripts", () => {
 
         expect(result.code).toBe(0);
         expect(result.stdout).toContain("Status: ok");
+    });
+
+    it("fails env validation when production admin access control is missing", async () => {
+        const tempDir = mkdtempSync(path.join(os.tmpdir(), "netflux-launch-env-"));
+        tempDirs.push(tempDir);
+
+        const envFile = path.join(tempDir, "launch.env");
+        writeFileSync(envFile, [
+            "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co",
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key",
+            "SUPABASE_SERVICE_KEY=test-service-key",
+            "NEXT_PUBLIC_SITE_URL=https://netflux.example",
+            "AI_PROVIDER=anthropic",
+            "AI_MODEL=test-model",
+            "ANTHROPIC_API_KEY=test-anthropic",
+            "GEMINI_API_KEY=test-gemini",
+            "UPSTASH_REDIS_REST_URL=https://upstash.example",
+            "UPSTASH_REDIS_REST_TOKEN=test-upstash",
+            "NEXT_PUBLIC_SENTRY_DSN=https://public@example.ingest.sentry.io/123",
+            "HEALTH_CHECK_SECRET=test-health-secret",
+            "ANONYMOUS_ACTIVITY_SECRET=test-anonymous-activity-secret",
+        ].join("\n"));
+
+        const result = await runNodeScript(
+            ["scripts/validate-launch-env.mjs", "--env-file", envFile],
+            createBaseEnv()
+        );
+
+        expect(result.code).toBe(1);
+        expect(result.stdout).toContain("Status: failed");
+        expect(result.stdout).toContain("Missing required env var: ADMIN_ALLOWED_IPS");
+    });
+
+    it("fails env validation when ADMIN_ALLOWED_IPS is malformed", async () => {
+        const tempDir = mkdtempSync(path.join(os.tmpdir(), "netflux-launch-env-"));
+        tempDirs.push(tempDir);
+
+        const envFile = path.join(tempDir, "launch.env");
+        writeFileSync(envFile, [
+            "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co",
+            "NEXT_PUBLIC_SUPABASE_ANON_KEY=test-anon-key",
+            "SUPABASE_SERVICE_KEY=test-service-key",
+            "NEXT_PUBLIC_SITE_URL=https://netflux.example",
+            "AI_PROVIDER=anthropic",
+            "AI_MODEL=test-model",
+            "ANTHROPIC_API_KEY=test-anthropic",
+            "GEMINI_API_KEY=test-gemini",
+            "UPSTASH_REDIS_REST_URL=https://upstash.example",
+            "UPSTASH_REDIS_REST_TOKEN=test-upstash",
+            "NEXT_PUBLIC_SENTRY_DSN=https://public@example.ingest.sentry.io/123",
+            "HEALTH_CHECK_SECRET=test-health-secret",
+            "ADMIN_ALLOWED_IPS=203.0.113.42,,not-an-ip",
+            "ANONYMOUS_ACTIVITY_SECRET=test-anonymous-activity-secret",
+        ].join("\n"));
+
+        const result = await runNodeScript(
+            ["scripts/validate-launch-env.mjs", "--env-file", envFile],
+            createBaseEnv()
+        );
+
+        expect(result.code).toBe(1);
+        expect(result.stdout).toContain("Status: failed");
+        expect(result.stdout).toContain("ADMIN_ALLOWED_IPS contains an empty entry");
+        expect(result.stdout).toContain("Invalid IP address in ADMIN_ALLOWED_IPS: not-an-ip");
     });
 
     it("passes deployment health when the endpoint returns ok", async () => {

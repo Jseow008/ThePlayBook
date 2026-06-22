@@ -2,21 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { getAdminClient } from "@/lib/supabase/admin";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 const UnsubscribeSchema = z.object({
-    token: z.string().trim().min(32).max(128),
+    token: z.string().trim().min(32).max(128).regex(/^[a-f0-9]+$/i),
 });
 
 async function unsubscribeByToken(token: string) {
-    const now = new Date().toISOString();
-    return getAdminClient()
-        .from("email_subscription")
-        .update({
-            status: "unsubscribed",
-            unsubscribed_at: now,
-        })
-        .eq("unsubscribe_token", token);
+    return createPublicServerClient().rpc("unsubscribe_email_subscription_by_token", {
+        p_token: token,
+    });
 }
 
 function unsubscribeSuccessHtml() {

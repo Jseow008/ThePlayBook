@@ -45,12 +45,14 @@ vi.mock("@supabase/supabase-js", () => ({
 describe("proxy auth routing", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.unstubAllEnvs();
         getUserMock.mockResolvedValue({ data: { user: null }, error: null });
         profileSingleMock.mockResolvedValue({ data: null, error: null });
         legacyMaybeSingleMock.mockResolvedValue({ data: null, error: null });
         process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:54321";
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
         delete process.env.ADMIN_ALLOWED_IPS;
+        delete process.env.CRON_SECRET;
     });
 
     it("does not require an existing admin session to reach the admin login page", async () => {
@@ -67,6 +69,55 @@ describe("proxy auth routing", () => {
         expect(response.status).toBe(307);
         expect(response.headers.get("location")).toBe("http://localhost/login?next=%2Fadmin%2Fcontent");
         expect(getUserMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("blocks production admin paths when ADMIN_ALLOWED_IPS is unset", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+
+        const response = await proxy(new NextRequest("http://localhost/admin/content"));
+
+        expect(response.status).toBe(404);
+        expect(getUserMock).not.toHaveBeenCalled();
+        expect(updateSession).not.toHaveBeenCalled();
+    });
+
+    it("allows configured production admin IPs to reach admin auth checks", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        process.env.ADMIN_ALLOWED_IPS = "203.0.113.42";
+
+        const response = await proxy(new NextRequest("http://localhost/admin/content", {
+            headers: { "x-forwarded-for": "203.0.113.42" },
+        }));
+
+        expect(response.status).toBe(307);
+        expect(response.headers.get("location")).toBe("http://localhost/login?next=%2Fadmin%2Fcontent");
+        expect(getUserMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("hides production admin paths from non-allowlisted IPs", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        process.env.ADMIN_ALLOWED_IPS = "203.0.113.42";
+
+        const response = await proxy(new NextRequest("http://localhost/admin/content", {
+            headers: { "x-forwarded-for": "198.51.100.10" },
+        }));
+
+        expect(response.status).toBe(404);
+        expect(getUserMock).not.toHaveBeenCalled();
+        expect(updateSession).not.toHaveBeenCalled();
+    });
+
+    it("lets authorized cron processors bypass the admin IP gate", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        process.env.CRON_SECRET = "cron-secret";
+
+        const response = await proxy(new NextRequest("http://localhost/api/admin/narration/process", {
+            headers: { authorization: "Bearer cron-secret" },
+        }));
+
+        expect(response.status).toBe(200);
+        expect(getUserMock).not.toHaveBeenCalled();
+        expect(updateSession).not.toHaveBeenCalled();
     });
 
     it("refreshes sessions on read routes after legacy redirect checks", async () => {

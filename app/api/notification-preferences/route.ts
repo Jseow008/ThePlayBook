@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { getAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const NotificationPreferencesSchema = z.object({
@@ -14,22 +13,25 @@ async function getAuthenticatedUser(requestId: string) {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
-        return { user: null, response: apiError("UNAUTHORIZED", "Sign in to manage notification preferences.", 401, requestId) };
+        return {
+            supabase,
+            user: null,
+            response: apiError("UNAUTHORIZED", "Sign in to manage notification preferences.", 401, requestId),
+        };
     }
 
-    return { user, response: null };
+    return { supabase, user, response: null };
 }
 
 export async function GET() {
     const requestId = getRequestId();
 
     try {
-        const { user, response } = await getAuthenticatedUser(requestId);
+        const { supabase, user, response } = await getAuthenticatedUser(requestId);
         if (response || !user) {
             return response;
         }
 
-        const supabase = getAdminClient();
         const { data, error } = await (supabase as any).from("user_notification_preferences")
             .select("request_published_email_enabled")
             .eq("user_id", user.id)
@@ -68,7 +70,7 @@ export async function PUT(request: NextRequest) {
     }
 
     try {
-        const { user, response } = await getAuthenticatedUser(requestId);
+        const { supabase, user, response } = await getAuthenticatedUser(requestId);
         if (response || !user) {
             return response;
         }
@@ -85,7 +87,6 @@ export async function PUT(request: NextRequest) {
             return apiError("VALIDATION_ERROR", "Invalid notification preference.", 400, requestId);
         }
 
-        const supabase = getAdminClient();
         const { data, error } = await (supabase as any).from("user_notification_preferences")
             .upsert({
                 user_id: user.id,

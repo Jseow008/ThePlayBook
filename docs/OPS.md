@@ -367,11 +367,25 @@ For rate-limited routes in production:
 - `UPSTASH_REDIS_REST_URL`
 - `UPSTASH_REDIS_REST_TOKEN`
 
+For admin access control in production:
+
+- `ADMIN_ALLOWED_IPS`
+
+`ADMIN_ALLOWED_IPS` is a comma-separated list of IPv4 or IPv6 addresses that may access `/admin-login`, `/admin/*`, and `/api/admin/*`. The app-level proxy in `proxy.ts` is the source of truth for admin path network access. Vercel Firewall rules may be added as defense in depth, but they are not a replacement for `ADMIN_ALLOWED_IPS` unless this runbook and launch validation are updated to verify that alternative control explicitly.
+
+For anonymous reading analytics in production:
+
+- `ANONYMOUS_ACTIVITY_SECRET`
+
+`ANONYMOUS_ACTIVITY_SECRET` signs server-issued anonymous visitor tokens. Anonymous reading activity is accepted only when the visitor ID and token match, and the activity route additionally verifies that the content item is published and not deleted before updating aggregate analytics.
+
 Important distinction:
 
 - in development, the rate limiter can fall back to in-memory
 - in production, most protected routes fail closed if Upstash is unavailable
 - low-risk browse/personalization endpoints use best-effort rate limiting instead
+- in non-production, unset `ADMIN_ALLOWED_IPS` leaves the admin IP gate open for local development
+- in production, unset `ADMIN_ALLOWED_IPS` makes admin paths return a generic `404`
 
 ### 4.3 Preflight Environment Validation
 
@@ -384,6 +398,8 @@ Before a production deploy, verify:
 - at least one of `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is present
 - `GEMINI_API_KEY` is present for retrieval and embedding sync
 - `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are present in production
+- `ADMIN_ALLOWED_IPS` is present and contains the operator IP addresses allowed to reach admin paths
+- `ANONYMOUS_ACTIVITY_SECRET` is present for signed anonymous reading activity tokens
 - if you have a scheduled narration worker, `CRON_SECRET` is present and matches the cron caller
 
 Recommended validation steps:

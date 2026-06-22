@@ -153,7 +153,7 @@ Implementation notes:
   - `authenticated` cannot call `admin_update_content_graph`.
   - `service_role` reaches the function's normal `p_content_id is required` validation path.
 - Added `npm run security:function-acls` as the CI-ready ACL drift check. It runs `scripts/security-function-acl-check.sql` through the Supabase CLI and fails if:
-  - any public `SECURITY DEFINER` function is executable by `anon` or `authenticated`
+  - any public `SECURITY DEFINER` function is executable by `anon` or `authenticated`, except the exact token/email-scoped item 6 allowlist
   - any public `SECURITY DEFINER` function lacks fixed `search_path`
   - any non-trigger public `SECURITY DEFINER` RPC lacks an internal service-role guard
   - any trigger-backed helper is directly executable by `anon` or `authenticated`
@@ -170,6 +170,7 @@ Function classification summary:
 | Service-only/admin definer RPCs | `admin_update_content_graph`, `admin_finalize_narration_generation`, `insert_generated_content`, `queue_content_request_published_notifications`, `claim_content_request_notifications`, `submit_content_request`, `increment_reading_activity_for_user`, `log_reading_activity`, `log_anonymous_reading_activity`, `log_reading_activity_for_user` | `SECURITY DEFINER`, fixed `search_path`, service-role-only execute grant, internal service-role guard |
 | Trigger-only helpers | `handle_new_user`, `invalidate_gemini_segment_embedding_on_body_change`, `update_content_request_vote_count`, `update_updated_at_column` | fixed `search_path`, no direct `anon`/`authenticated` execute grant, no runtime service-role guard |
 | Public read/recommendation RPCs | `get_category_stats`, `get_homepage_sections_with_items`, `get_random_verified_content`, `get_trending_content`, `match_recommendations` | `SECURITY INVOKER`, fixed `search_path`, intentionally public |
+| Public token/email RPCs | `subscribe_email_subscription`, `unsubscribe_email_subscription_by_token`, `unsubscribe_request_published_notifications_by_token` | `SECURITY DEFINER`, fixed `search_path`, exact allowlist in `npm run security:function-acls`, no broad table grants |
 | Authenticated user RPCs | `is_admin`, `set_onboarding_state`, `match_library_segments_gemini` | `SECURITY INVOKER`, fixed `search_path`, authenticated-only or user-scoped filtering |
 | Service-only maintenance RPCs | `get_segments_missing_gemini_embeddings`, `get_gemini_segment_embedding_coverage`, `increment_reading_activity` | fixed `search_path`, no `anon`/`authenticated` execute grant |
 | Legacy embedding maintenance gap | `get_segments_missing_embeddings` | fixed `search_path`; execute grant lockdown remains tracked in item 13 |
@@ -228,6 +229,8 @@ Implementation notes:
 
 ### 6. Remove service-role usage from public email subscription routes
 
+Status: Complete on 2026-06-22.
+
 Issue: Public unauthenticated email routes use `getAdminClient()`. A handler bug would bypass RLS with service-role power.
 
 Affected routes:
@@ -247,7 +250,27 @@ Acceptance criteria:
 - RLS policies constrain operations to exactly the intended row/token.
 - Tests cover invalid token, valid token, duplicate subscription, and malformed payload.
 
+Implementation notes:
+
+- Added `supabase/migrations/20260622120000_add_public_email_subscription_rpcs.sql`.
+- Added `supabase/migrations/20260622121500_lock_public_email_table_grants.sql`.
+- Added three narrow public `SECURITY DEFINER` RPCs:
+  - `subscribe_email_subscription(text, text, text, text, text, text, text)`
+  - `unsubscribe_email_subscription_by_token(text)`
+  - `unsubscribe_request_published_notifications_by_token(text)`
+- The public unsubscribe/subscription routes now use `createPublicServerClient()` with the anon key instead of `getAdminClient()`.
+- The authenticated `/api/notification-preferences` route now uses the user-scoped Supabase server client and authenticated RLS instead of `getAdminClient()`.
+- Anonymous direct table privileges were removed from `email_subscription` and `user_notification_preferences`.
+- Authenticated direct table privileges were removed from `email_subscription`; authenticated `user_notification_preferences` access is limited to own-row `SELECT`, `INSERT`, and `UPDATE`.
+- Subscription writes are constrained by database-side email/source/length validation and idempotent `ON CONFLICT (email_normalized)` resubscribe behavior.
+- Unsubscribe writes are token-scoped, validate hex tokens, and intentionally return generic success without revealing whether a token matched a row.
+- Added exact public definer allowlist entries to `scripts/security-function-acl-check.sql`; all other public `SECURITY DEFINER` functions remain blocked from anon/authenticated execution.
+- Added route tests for valid token, invalid token, duplicate subscription behavior through the idempotent RPC, malformed payloads, RPC failure handling, and rate limiting on the request-published unsubscribe endpoint.
+- Supabase security advisor reports expected `anon_security_definer_function_executable` and `authenticated_security_definer_function_executable` warnings for the three item 6 RPCs. These are intentional public token/email-scoped exceptions; admin/service-only definer findings remain unexpected and blocked by `npm run security:function-acls`.
+
 ### 7. Enforce production admin IP allowlist configuration
+
+Status: Complete on 2026-06-22.
 
 Issue: `ADMIN_ALLOWED_IPS` silently disables admin IP gating when unset.
 
@@ -261,7 +284,20 @@ Acceptance criteria:
 - `validate:launch-env` fails production validation without admin access control.
 - Deployment docs specify how admin paths are protected.
 
+Implementation notes:
+
+- App-level proxy enforcement in `proxy.ts` is the source of truth for admin path network access.
+- `ADMIN_ALLOWED_IPS` is now required by `npm run validate:launch-env`.
+- `ADMIN_ALLOWED_IPS` format validation rejects empty comma-separated entries and malformed IPv4/IPv6 values.
+- Production admin paths fail closed with a generic `404` when `ADMIN_ALLOWED_IPS` is unset or empty.
+- Non-production keeps the unset allowlist behavior open for local development.
+- Valid `CRON_SECRET` requests to admin processor endpoints continue to bypass the admin IP gate.
+- `docs/OPS.md` documents the protected paths, source of truth, and Vercel Firewall defense-in-depth stance.
+- `.env.example` now shows `ADMIN_ALLOWED_IPS` as required for production launch validation.
+
 ### 8. Lock down anonymous activity analytics
+
+Status: Complete on 2026-06-22.
 
 Issue: Anonymous activity logging can inflate content analytics and reader counts with arbitrary `visitor_id` and `content_id` payloads.
 
@@ -278,6 +314,26 @@ Acceptance criteria:
 - Invalid/unverified content IDs cannot affect analytics.
 - Repeated forged visitors from one client are throttled.
 - Tests cover anonymous abuse cases.
+
+Implementation notes:
+
+- Added `supabase/migrations/20260621170836_harden_anonymous_activity_analytics.sql`.
+- `log_anonymous_reading_activity`, `log_reading_activity_for_user`, and legacy `log_reading_activity` now reject content IDs unless the content item is `verified` and not deleted.
+- `/api/activity/log` verifies content status before calling content-level activity RPCs for both anonymous and authenticated readers.
+- Anonymous activity now requires a server-issued visitor token signed with `ANONYMOUS_ACTIVITY_SECRET` in production.
+- Added `/api/activity/anonymous-session` to issue anonymous `visitor_id` and `visitor_token` pairs.
+- `useReadingTimer` fetches and caches the anonymous activity session before sending anonymous heartbeats.
+- Added anonymous-only throttles:
+  - per-IP anonymous activity limit
+  - per-visitor anonymous activity limit
+  - per-IP plus content-item anonymous activity limit
+- Rejected anonymous activity logs structured warning metadata for rate-limit, invalid-token, and invalid-content cases.
+- `ANONYMOUS_ACTIVITY_SECRET` is now required by `npm run validate:launch-env` and documented in `.env.example` and `docs/OPS.md`.
+- Tests cover invalid/unverified content rejection, production token enforcement, valid signed tokens, per-IP throttling, per-visitor throttling, and the updated reader heartbeat token flow.
+- Live Supabase smoke checks verified:
+  - draft content is rejected by `log_anonymous_reading_activity`
+  - nonexistent content is rejected by `log_anonymous_reading_activity`
+  - verified content succeeds inside a rollback transaction
 
 ## P2: Important Hardening
 

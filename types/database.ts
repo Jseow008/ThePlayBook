@@ -759,6 +759,30 @@ export type Database = {
         }
         Returns: Json
       }
+      subscribe_email_subscription: {
+        Args: {
+          p_consent_text: string
+          p_consent_version: string
+          p_email: string
+          p_page_path: string | null
+          p_referrer: string | null
+          p_source: string
+          p_user_agent: string | null
+        }
+        Returns: undefined
+      }
+      unsubscribe_email_subscription_by_token: {
+        Args: {
+          p_token: string
+        }
+        Returns: undefined
+      }
+      unsubscribe_request_published_notifications_by_token: {
+        Args: {
+          p_token: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       artifact_type: "checklist" | "plan" | "script"

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 
 const VISITOR_ID_STORAGE_KEY = "netflux_reader_visitor_id";
+const VISITOR_TOKEN_STORAGE_KEY = "netflux_reader_visitor_token";
+const VISITOR_TOKEN_EXPIRES_AT_STORAGE_KEY = "netflux_reader_visitor_token_expires_at";
 const HEARTBEAT_BATCH_SECONDS = 60;
 
 function getOrCreateVisitorId() {
@@ -21,6 +23,61 @@ function getOrCreateVisitorId() {
         return visitorId;
     } catch {
         return null;
+    }
+}
+
+async function getAnonymousActivitySession() {
+    if (typeof window === "undefined") {
+        return null;
+    }
+
+    const now = Date.now();
+    const existingVisitorId = window.localStorage.getItem(VISITOR_ID_STORAGE_KEY);
+    const existingToken = window.localStorage.getItem(VISITOR_TOKEN_STORAGE_KEY);
+    const existingExpiresAt = Number(window.localStorage.getItem(VISITOR_TOKEN_EXPIRES_AT_STORAGE_KEY) ?? "0");
+
+    if (existingVisitorId && existingToken && Number.isFinite(existingExpiresAt) && existingExpiresAt > now + 60_000) {
+        return {
+            visitorId: existingVisitorId,
+            visitorToken: existingToken,
+        };
+    }
+
+    try {
+        const response = await fetch("/api/activity/anonymous-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+            return existingVisitorId ? { visitorId: existingVisitorId, visitorToken: existingToken ?? "" } : null;
+        }
+
+        const data = await response.json() as {
+            visitor_id?: unknown;
+            visitor_token?: unknown;
+            expires_at?: unknown;
+        };
+
+        if (
+            typeof data.visitor_id !== "string" ||
+            typeof data.expires_at !== "number" ||
+            (data.visitor_token !== undefined && typeof data.visitor_token !== "string")
+        ) {
+            return existingVisitorId ? { visitorId: existingVisitorId, visitorToken: existingToken ?? "" } : null;
+        }
+
+        const visitorToken = data.visitor_token ?? "";
+        window.localStorage.setItem(VISITOR_ID_STORAGE_KEY, data.visitor_id);
+        window.localStorage.setItem(VISITOR_TOKEN_STORAGE_KEY, visitorToken);
+        window.localStorage.setItem(VISITOR_TOKEN_EXPIRES_AT_STORAGE_KEY, String(data.expires_at));
+
+        return {
+            visitorId: data.visitor_id,
+            visitorToken,
+        };
+    } catch {
+        return existingVisitorId ? { visitorId: existingVisitorId, visitorToken: existingToken ?? "" } : null;
     }
 }
 
@@ -73,12 +130,14 @@ export function useReadingTimer(contentId?: string) {
 
             heartbeatInFlightRef.current = true;
             try {
-                const visitorId = getOrCreateVisitorId();
+                const anonymousSession = await getAnonymousActivitySession();
+                const visitorId = anonymousSession?.visitorId ?? getOrCreateVisitorId();
                 pendingSecondsRef.current = 0;
                 const payload: {
                     duration_seconds: number;
                     content_id: string;
                     visitor_id?: string;
+                    visitor_token?: string;
                 } = {
                     duration_seconds: toSend,
                     content_id: contentId,
@@ -86,6 +145,10 @@ export function useReadingTimer(contentId?: string) {
 
                 if (visitorId) {
                     payload.visitor_id = visitorId;
+                }
+
+                if (anonymousSession?.visitorToken) {
+                    payload.visitor_token = anonymousSession.visitorToken;
                 }
 
                 const response = await fetch('/api/activity/log', {

@@ -5,11 +5,12 @@ import {
     GET as unsubscribeGet,
     POST as unsubscribe,
 } from "@/app/api/email-subscriptions/unsubscribe/route";
-import { getAdminClient } from "@/lib/supabase/admin";
+import { GET as unsubscribeRequestPublishedGet } from "@/app/api/notification-preferences/request-published/unsubscribe/route";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { rateLimit } from "@/lib/server/rate-limit";
 
-vi.mock("@/lib/supabase/admin", () => ({
-    getAdminClient: vi.fn(),
+vi.mock("@/lib/supabase/public-server", () => ({
+    createPublicServerClient: vi.fn(),
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
@@ -17,10 +18,7 @@ vi.mock("@/lib/server/rate-limit", () => ({
 }));
 
 describe("Email subscriptions API", () => {
-    const mockInsert = vi.fn();
-    const mockUpdate = vi.fn();
-    const mockEq = vi.fn();
-    const mockFrom = vi.fn();
+    const mockRpc = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -30,16 +28,10 @@ describe("Email subscriptions API", () => {
             retryAfterMs: 0,
         });
 
-        mockInsert.mockResolvedValue({ error: null });
-        mockEq.mockResolvedValue({ error: null });
-        mockUpdate.mockReturnValue({ eq: mockEq });
-        mockFrom.mockReturnValue({
-            insert: mockInsert,
-            update: mockUpdate,
-        });
+        mockRpc.mockResolvedValue({ error: null });
 
-        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            from: mockFrom,
+        (createPublicServerClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            rpc: mockRpc,
         });
     });
 
@@ -71,18 +63,19 @@ describe("Email subscriptions API", () => {
         }));
 
         expect(response.status).toBe(200);
-        expect(mockFrom).toHaveBeenCalledWith("email_subscription");
-        expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({
-            email: "Reader@Example.com",
-            source: "landing_final_cta",
-            page_path: "/",
-            referrer: "https://example.com",
-            user_agent: "vitest",
-            status: "subscribed",
-            unsubscribed_at: null,
-            consent_version: "weekly-ideas-v1",
-            consent_text: expect.stringContaining("Subscribe to receive weekly"),
-        }));
+        expect(createPublicServerClient).toHaveBeenCalled();
+        expect(mockRpc).toHaveBeenCalledWith(
+            "subscribe_email_subscription",
+            expect.objectContaining({
+                p_email: "Reader@Example.com",
+                p_source: "landing_final_cta",
+                p_page_path: "/",
+                p_referrer: "https://example.com",
+                p_user_agent: "vitest",
+                p_consent_version: "weekly-ideas-v1",
+                p_consent_text: expect.stringContaining("Subscribe to receive weekly"),
+            })
+        );
     });
 
     it("rejects invalid email payloads", async () => {
@@ -92,7 +85,7 @@ describe("Email subscriptions API", () => {
         }));
 
         expect(response.status).toBe(400);
-        expect(mockInsert).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
     });
 
     it("rejects unknown subscription sources", async () => {
@@ -102,27 +95,23 @@ describe("Email subscriptions API", () => {
         }));
 
         expect(response.status).toBe(400);
-        expect(mockInsert).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
     });
 
-    it("resubscribes existing emails without creating duplicates", async () => {
-        mockInsert.mockResolvedValueOnce({
-            error: { code: "23505", message: "duplicate key value violates unique constraint" },
-        });
-
+    it("routes duplicate subscriptions through the idempotent subscription RPC", async () => {
         const response = await subscribe(subscriptionRequest({
             email: "Reader@Example.com",
             source: "landing_final_cta",
         }));
 
         expect(response.status).toBe(200);
-        expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            email: "Reader@Example.com",
-            status: "subscribed",
-            unsubscribed_at: null,
-            subscribed_at: expect.any(String),
-        }));
-        expect(mockEq).toHaveBeenCalledWith("email_normalized", "reader@example.com");
+        expect(mockRpc).toHaveBeenCalledWith(
+            "subscribe_email_subscription",
+            expect.objectContaining({
+                p_email: "Reader@Example.com",
+                p_source: "landing_final_cta",
+            })
+        );
     });
 
     it("returns 429 when subscription requests are rate limited", async () => {
@@ -138,11 +127,11 @@ describe("Email subscriptions API", () => {
 
         expect(response.status).toBe(429);
         expect(response.headers.get("Retry-After")).toBe("2");
-        expect(mockInsert).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
     });
 
     it("returns 500 when subscription persistence fails", async () => {
-        mockInsert.mockResolvedValueOnce({ error: new Error("database unavailable") });
+        mockRpc.mockResolvedValueOnce({ error: new Error("database unavailable") });
 
         const response = await subscribe(subscriptionRequest({
             email: "reader@example.com",
@@ -157,12 +146,9 @@ describe("Email subscriptions API", () => {
         const response = await unsubscribe(unsubscribeRequest({ token }));
 
         expect(response.status).toBe(200);
-        expect(mockFrom).toHaveBeenCalledWith("email_subscription");
-        expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            status: "unsubscribed",
-            unsubscribed_at: expect.any(String),
-        }));
-        expect(mockEq).toHaveBeenCalledWith("unsubscribe_token", token);
+        expect(mockRpc).toHaveBeenCalledWith("unsubscribe_email_subscription_by_token", {
+            p_token: token,
+        });
     });
 
     it("supports one-click unsubscribe links", async () => {
@@ -173,17 +159,65 @@ describe("Email subscriptions API", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("Content-Type")).toContain("text/html");
-        expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            status: "unsubscribed",
-            unsubscribed_at: expect.any(String),
-        }));
-        expect(mockEq).toHaveBeenCalledWith("unsubscribe_token", token);
+        expect(mockRpc).toHaveBeenCalledWith("unsubscribe_email_subscription_by_token", {
+            p_token: token,
+        });
     });
 
     it("rejects malformed unsubscribe tokens", async () => {
-        const response = await unsubscribe(unsubscribeRequest({ token: "short" }));
+        const response = await unsubscribe(unsubscribeRequest({ token: "not-hex-".repeat(8) }));
 
         expect(response.status).toBe(400);
-        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("turns off request-published notifications by token", async () => {
+        const token = "c".repeat(64);
+        const response = await unsubscribeRequestPublishedGet(
+            new NextRequest(`http://localhost/api/notification-preferences/request-published/unsubscribe?token=${token}`)
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Content-Type")).toContain("text/html");
+        expect(mockRpc).toHaveBeenCalledWith(
+            "unsubscribe_request_published_notifications_by_token",
+            { p_token: token }
+        );
+    });
+
+    it("rejects malformed request-published unsubscribe tokens", async () => {
+        const response = await unsubscribeRequestPublishedGet(
+            new NextRequest("http://localhost/api/notification-preferences/request-published/unsubscribe?token=short")
+        );
+
+        expect(response.status).toBe(400);
+        expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("returns 500 when request-published unsubscribe persistence fails", async () => {
+        mockRpc.mockResolvedValueOnce({ error: new Error("database unavailable") });
+
+        const token = "d".repeat(64);
+        const response = await unsubscribeRequestPublishedGet(
+            new NextRequest(`http://localhost/api/notification-preferences/request-published/unsubscribe?token=${token}`)
+        );
+
+        expect(response.status).toBe(500);
+    });
+
+    it("returns 429 when request-published unsubscribe requests are rate limited", async () => {
+        (rateLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            success: false,
+            retryAfterMs: 1500,
+        });
+
+        const token = "e".repeat(64);
+        const response = await unsubscribeRequestPublishedGet(
+            new NextRequest(`http://localhost/api/notification-preferences/request-published/unsubscribe?token=${token}`)
+        );
+
+        expect(response.status).toBe(429);
+        expect(response.headers.get("Retry-After")).toBe("2");
+        expect(mockRpc).not.toHaveBeenCalled();
     });
 });
