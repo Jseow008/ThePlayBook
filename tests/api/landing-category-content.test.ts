@@ -2,14 +2,23 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/landing/category-content/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { bestEffortRateLimit } from "@/lib/server/rate-limit";
+import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: vi.fn(),
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
-    bestEffortRateLimit: vi.fn(),
+    strictPublicRateLimit: vi.fn(),
+    rateLimitFailureResponse: vi.fn((result: { unavailable?: boolean }) => Response.json(
+        {
+            error: {
+                code: result.unavailable ? "RATE_LIMIT_UNAVAILABLE" : "RATE_LIMITED",
+                message: result.unavailable ? "Service temporarily unavailable." : "Too many requests.",
+            },
+        },
+        { status: result.unavailable ? 503 : 429 }
+    )),
 }));
 
 function createQuery(data: unknown[] = [], error: unknown = null) {
@@ -28,7 +37,7 @@ function createQuery(data: unknown[] = [], error: unknown = null) {
 describe("Landing category content API", () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(bestEffortRateLimit).mockResolvedValue({ success: true });
+        vi.mocked(strictPublicRateLimit).mockResolvedValue({ success: true });
     });
 
     it("loads verified content using the canonical category and its aliases", async () => {
@@ -68,6 +77,27 @@ describe("Landing category content API", () => {
         );
 
         expect(response.status).toBe(400);
+        expect(createPublicServerClient).not.toHaveBeenCalled();
+    });
+
+    it("fails closed before querying when strict rate limiting is unavailable", async () => {
+        vi.mocked(strictPublicRateLimit).mockResolvedValueOnce({
+            success: false,
+            retryAfterMs: 60_000,
+            unavailable: true,
+        });
+
+        const response = await GET(
+            new NextRequest("http://localhost/api/landing/category-content?category=Psychology&value=Psychology")
+        );
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toEqual({
+            error: {
+                code: "RATE_LIMIT_UNAVAILABLE",
+                message: "Service temporarily unavailable.",
+            },
+        });
         expect(createPublicServerClient).not.toHaveBeenCalled();
     });
 });

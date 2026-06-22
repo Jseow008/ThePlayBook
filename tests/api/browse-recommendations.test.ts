@@ -2,14 +2,23 @@ import { POST } from "@/app/api/recommendations/browse/route";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { bestEffortRateLimit } from "@/lib/server/rate-limit";
+import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: vi.fn(),
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
-    bestEffortRateLimit: vi.fn(),
+    strictPublicRateLimit: vi.fn(),
+    rateLimitFailureResponse: vi.fn((result: { unavailable?: boolean }) => Response.json(
+        {
+            error: {
+                code: result.unavailable ? "RATE_LIMIT_UNAVAILABLE" : "RATE_LIMITED",
+                message: result.unavailable ? "Service temporarily unavailable." : "Too many requests.",
+            },
+        },
+        { status: result.unavailable ? 503 : 429 }
+    )),
 }));
 
 const RECENT_SEED_ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -69,7 +78,7 @@ describe("Browse recommendations API", () => {
             rpc: mockRpc,
             from: mockFrom,
         } as any);
-        vi.mocked(bestEffortRateLimit).mockResolvedValue({ success: true });
+        vi.mocked(strictPublicRateLimit).mockResolvedValue({ success: true });
         mockRpc.mockResolvedValue({ data: [], error: null });
         mockFrom.mockReturnValue(createLatestQuery());
     });
@@ -155,5 +164,29 @@ describe("Browse recommendations API", () => {
             recentItems: [recentItem],
             libraryItems: [],
         });
+    });
+
+    it("fails closed before querying when strict rate limiting is unavailable", async () => {
+        vi.mocked(strictPublicRateLimit).mockResolvedValueOnce({
+            success: false,
+            retryAfterMs: 60_000,
+            unavailable: true,
+        });
+
+        const response = await POST(createRequest({
+            recentSeedId: RECENT_SEED_ID,
+            librarySeedIds: [LIBRARY_SEED_ID],
+            targetCount: 3,
+        }));
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toEqual({
+            error: {
+                code: "RATE_LIMIT_UNAVAILABLE",
+                message: "Service temporarily unavailable.",
+            },
+        });
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockFrom).not.toHaveBeenCalled();
     });
 });

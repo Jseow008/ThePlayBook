@@ -3,6 +3,8 @@ import {
     bestEffortRateLimit,
     RateLimitBackendUnavailableError,
     rateLimit,
+    rateLimitFailureResponse,
+    strictPublicRateLimit,
 } from "../server/rate-limit";
 import { NextRequest } from "next/server";
 
@@ -147,17 +149,58 @@ describe("rateLimit", () => {
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const req = createMockRequest("12.12.12.12", "/api/recommendations");
+        const req = createMockRequest("12.12.12.12", "/api/admin/launch-readiness");
 
         await expect(bestEffortRateLimit(req, {
             limit: 1,
             windowMs: 1000,
-            routeLabel: "/api/recommendations",
+            routeLabel: "/api/admin/launch-readiness",
         })).resolves.toEqual({ success: true });
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
+            expect.stringContaining("/api/admin/launch-readiness"),
+            expect.any(RateLimitBackendUnavailableError)
+        );
+    });
+
+    it("fails closed for expensive public routes when the shared limiter is unavailable", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        delete process.env.UPSTASH_REDIS_REST_URL;
+        delete process.env.UPSTASH_REDIS_REST_TOKEN;
+
+        const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+        const req = createMockRequest("13.13.13.13", "/api/recommendations");
+
+        await expect(strictPublicRateLimit(req, {
+            limit: 1,
+            windowMs: 1000,
+            routeLabel: "/api/recommendations",
+        })).resolves.toEqual({
+            success: false,
+            retryAfterMs: 60_000,
+            unavailable: true,
+        });
+
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
             expect.stringContaining("/api/recommendations"),
             expect.any(RateLimitBackendUnavailableError)
         );
+    });
+
+    it("formats rate-limit backend failures as a 503 response", async () => {
+        const response = rateLimitFailureResponse({
+            success: false,
+            retryAfterMs: 60_000,
+            unavailable: true,
+        });
+
+        expect(response.status).toBe(503);
+        expect(response.headers.get("Retry-After")).toBe("60");
+        await expect(response.json()).resolves.toEqual({
+            error: {
+                code: "RATE_LIMIT_UNAVAILABLE",
+                message: "Service temporarily unavailable.",
+            },
+        });
     });
 });

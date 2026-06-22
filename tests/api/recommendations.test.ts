@@ -2,14 +2,23 @@ import { POST } from '@/app/api/recommendations/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
 import { createPublicServerClient } from '@/lib/supabase/public-server';
-import { bestEffortRateLimit } from '@/lib/server/rate-limit';
+import { rateLimitFailureResponse, strictPublicRateLimit } from '@/lib/server/rate-limit';
 
 vi.mock('@/lib/supabase/public-server', () => ({
     createPublicServerClient: vi.fn(),
 }));
 
 vi.mock('@/lib/server/rate-limit', () => ({
-    bestEffortRateLimit: vi.fn(),
+    strictPublicRateLimit: vi.fn(),
+    rateLimitFailureResponse: vi.fn((result: { unavailable?: boolean }) => Response.json(
+        {
+            error: {
+                code: result.unavailable ? "RATE_LIMIT_UNAVAILABLE" : "RATE_LIMITED",
+                message: result.unavailable ? "Service temporarily unavailable." : "Too many requests.",
+            },
+        },
+        { status: result.unavailable ? 503 : 429 }
+    )),
     RateLimitBackendUnavailableError: class RateLimitBackendUnavailableError extends Error {},
 }));
 
@@ -23,7 +32,7 @@ describe('Recommendations API', () => {
         vi.clearAllMocks();
 
         (createPublicServerClient as any).mockReturnValue(mockSupabaseClient);
-        (bestEffortRateLimit as any).mockResolvedValue({ success: true });
+        (strictPublicRateLimit as any).mockResolvedValue({ success: true });
         mockRpc.mockResolvedValue({ data: [{ id: '123', title: 'Test Item' }], error: null });
     });
 
@@ -130,8 +139,12 @@ describe('Recommendations API', () => {
         expect(res.status).toBe(500);
     });
 
-    it('still returns recommendations when the shared rate-limit backend is unavailable', async () => {
-        (bestEffortRateLimit as any).mockResolvedValueOnce({ success: true });
+    it('fails closed before querying when the strict rate-limit backend is unavailable', async () => {
+        (strictPublicRateLimit as any).mockResolvedValueOnce({
+            success: false,
+            retryAfterMs: 60_000,
+            unavailable: true,
+        });
 
         const validId = '123e4567-e89b-12d3-a456-426614174000';
         const req = new NextRequest(new URL('http://localhost/api/recommendations'), {
@@ -140,11 +153,18 @@ describe('Recommendations API', () => {
         });
 
         const res = await POST(req);
-        expect(res.status).toBe(200);
-        expect(mockRpc).toHaveBeenCalledWith('match_recommendations', {
-            seed_ids: [validId],
-            exclude_ids: [validId],
-            match_count: 40,
+        expect(res.status).toBe(503);
+        await expect(res.json()).resolves.toEqual({
+            error: {
+                code: "RATE_LIMIT_UNAVAILABLE",
+                message: "Service temporarily unavailable.",
+            },
         });
+        expect(rateLimitFailureResponse).toHaveBeenCalledWith({
+            success: false,
+            retryAfterMs: 60_000,
+            unavailable: true,
+        });
+        expect(mockRpc).not.toHaveBeenCalled();
     });
 });

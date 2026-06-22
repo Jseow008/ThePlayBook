@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
@@ -33,6 +33,15 @@ interface BestEffortRateLimitOptions extends RateLimitOptions {
     routeLabel: string;
 }
 
+interface StrictPublicRateLimitOptions extends RateLimitOptions {
+    routeLabel: string;
+}
+
+interface StrictRateLimitResult extends RateLimitResult {
+    unavailable?: boolean;
+}
+
+const RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_MS = 60_000;
 const IP_V4_REGEX = /^(?:\d{1,3}\.){3}\d{1,3}$/;
 const IP_V6_REGEX = /^[a-fA-F0-9:]+$/;
 
@@ -182,4 +191,56 @@ export async function bestEffortRateLimit(
 
         throw error;
     }
+}
+
+export async function strictPublicRateLimit(
+    req: NextRequest,
+    options: StrictPublicRateLimitOptions
+): Promise<StrictRateLimitResult> {
+    const { routeLabel, ...rateLimitOptions } = options;
+
+    try {
+        return await rateLimit(req, rateLimitOptions);
+    } catch (error) {
+        if (error instanceof RateLimitBackendUnavailableError) {
+            console.error(`Rate limiting unavailable for ${routeLabel}; blocking expensive public route`, error);
+            return {
+                success: false,
+                retryAfterMs: RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_MS,
+                unavailable: true,
+            };
+        }
+
+        throw error;
+    }
+}
+
+export function rateLimitFailureResponse(
+    result: StrictRateLimitResult | RateLimitResult,
+    message = "Too many requests. Please wait and try again."
+) {
+    const retryAfterSeconds = String(Math.ceil((result.retryAfterMs ?? 60_000) / 1000));
+
+    if ("unavailable" in result && result.unavailable) {
+        return NextResponse.json(
+            {
+                error: {
+                    code: "RATE_LIMIT_UNAVAILABLE",
+                    message: "Service temporarily unavailable.",
+                },
+            },
+            {
+                status: 503,
+                headers: { "Retry-After": retryAfterSeconds },
+            }
+        );
+    }
+
+    return NextResponse.json(
+        { error: { code: "RATE_LIMITED", message } },
+        {
+            status: 429,
+            headers: { "Retry-After": retryAfterSeconds },
+        }
+    );
 }

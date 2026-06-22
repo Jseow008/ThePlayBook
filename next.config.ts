@@ -2,9 +2,9 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const isProduction = process.env.NODE_ENV === "production";
-const scriptSrc = isProduction
-  ? "script-src 'self' 'unsafe-inline';"
-  : "script-src 'self' 'unsafe-eval' 'unsafe-inline';";
+const productionScriptSrc = "script-src 'self' 'unsafe-inline';";
+const developmentScriptSrc = "script-src 'self' 'unsafe-eval' 'unsafe-inline';";
+const strictReportOnlyScriptSrc = "script-src 'self';";
 
 function getSupabaseOrigin(): string {
   const envUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -25,10 +25,12 @@ const posthogProxyPath = "/flux";
 const legacyPosthogProxyPath = "/ingest";
 const posthogApiHost = "https://us.i.posthog.com";
 const posthogAssetsHost = "https://us-assets.i.posthog.com";
+export const cspReportEndpoint = "/api/security/csp-report";
 const appOrigin =
   process.env.NEXT_PUBLIC_APP_URL ||
   process.env.NEXT_PUBLIC_SITE_URL ||
   "http://localhost:3000";
+const cspReportingEndpointUrl = new URL(cspReportEndpoint, appOrigin).toString();
 const ffmpegTraceIncludes = [
   process.platform === "win32"
     ? "./node_modules/ffmpeg-static/ffmpeg.exe"
@@ -36,29 +38,62 @@ const ffmpegTraceIncludes = [
   "./node_modules/ffmpeg-static/package.json",
 ];
 
-const securityHeaders = [
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  { key: "X-Frame-Options", value: "DENY" },
-  { key: "X-XSS-Protection", value: "1; mode=block" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
-  {
-    key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=()",
-  },
-  {
-    key: "Content-Security-Policy",
-    value:
-      "default-src 'self'; " +
-      scriptSrc +
-      ` style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: ${supabaseOrigin} https://images.unsplash.com https://api.dicebear.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://i.ytimg.com https://img.youtube.com https://books.google.com https://books.googleusercontent.com https://covers.openlibrary.org; media-src 'self' blob: data: ${supabaseOrigin}; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; ` +
-      (isProduction ? "upgrade-insecure-requests; " : "") +
-      `connect-src 'self' ${supabaseOrigin} ${supabaseWssOrigin};`,
-  },
-];
+type CspOptions = {
+  production?: boolean;
+  reportOnly?: boolean;
+};
+
+export function buildContentSecurityPolicy(options: CspOptions = {}) {
+  const production = options.production ?? isProduction;
+  const scriptSrc = options.reportOnly
+    ? strictReportOnlyScriptSrc
+    : production
+      ? productionScriptSrc
+      : developmentScriptSrc;
+
+  return (
+    "default-src 'self'; " +
+    scriptSrc +
+    ` style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: ${supabaseOrigin} https://images.unsplash.com https://api.dicebear.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://i.ytimg.com https://img.youtube.com https://books.google.com https://books.googleusercontent.com https://covers.openlibrary.org; media-src 'self' blob: data: ${supabaseOrigin}; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; ` +
+    (production ? "upgrade-insecure-requests; " : "") +
+    `connect-src 'self' ${supabaseOrigin} ${supabaseWssOrigin}; report-uri ${cspReportEndpoint}; report-to csp-endpoint;`
+  );
+}
+
+export function buildSecurityHeaders(production = isProduction) {
+  return [
+    { key: "X-Content-Type-Options", value: "nosniff" },
+    { key: "X-Frame-Options", value: "DENY" },
+    { key: "X-XSS-Protection", value: "1; mode=block" },
+    { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    {
+      key: "Strict-Transport-Security",
+      value: "max-age=63072000; includeSubDomains; preload",
+    },
+    {
+      key: "Permissions-Policy",
+      value: "camera=(), microphone=(), geolocation=()",
+    },
+    {
+      key: "Content-Security-Policy",
+      value: buildContentSecurityPolicy({ production }),
+    },
+    ...(production
+      ? [
+        {
+          key: "Content-Security-Policy-Report-Only",
+          value: buildContentSecurityPolicy({ production: true, reportOnly: true }),
+        },
+      ]
+      : []),
+    {
+      key: "Reporting-Endpoints",
+      value: `csp-endpoint="${cspReportingEndpointUrl}"`,
+    },
+  ];
+}
+
+export const securityHeaders = buildSecurityHeaders();
 
 const corsHeaders = [
   { key: "Access-Control-Allow-Credentials", value: "true" },

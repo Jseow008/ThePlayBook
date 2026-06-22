@@ -2,7 +2,7 @@
 
 This document is the source of truth for pre-production security work. Do not ship production until all P0 items are complete and verified. P1 items should be complete before public launch unless explicitly risk-accepted.
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## Operating Rules
 
@@ -339,6 +339,8 @@ Implementation notes:
 
 ### 9. Make expensive public routes fail closed or degrade safely
 
+Status: Complete on 2026-06-23.
+
 Issue: `bestEffortRateLimit` allows traffic when Redis is missing or unavailable.
 
 Affected routes include:
@@ -357,7 +359,27 @@ Acceptance criteria:
 
 - Production tests simulate missing Upstash config and confirm expensive routes do not run unthrottled.
 
+Implementation notes:
+
+- Added `strictPublicRateLimit` and `rateLimitFailureResponse` in `lib/server/rate-limit.ts`.
+- `strictPublicRateLimit` preserves the development in-memory fallback through `rateLimit`, but catches production `RateLimitBackendUnavailableError` and fails closed instead of allowing traffic.
+- Backend-unavailable failures return `503` with:
+  - `error.code = RATE_LIMIT_UNAVAILABLE`
+  - generic client message `Service temporarily unavailable.`
+  - `Retry-After: 60`
+- Moved these expensive public dynamic routes from `bestEffortRateLimit` to `strictPublicRateLimit`:
+  - `/api/recommendations`
+  - `/api/recommendations/browse`
+  - `/api/focus`
+  - `/api/content/batch`
+  - `/api/landing/category-content`
+- Tests confirm missing production Upstash configuration fails closed through the strict helper.
+- Route tests confirm each affected route returns `503` and does not call Supabase/RPC/query code when strict rate limiting is unavailable.
+- `bestEffortRateLimit` remains available for explicitly low-risk routes that can safely degrade.
+
 ### 10. Add CSP violation reporting
+
+Status: Complete on 2026-06-23.
 
 Issue: CSP exists, but production has no report endpoint or external reporting collector.
 
@@ -370,7 +392,20 @@ Acceptance criteria:
 
 - Controlled CSP violation produces an observable report without logging sensitive payloads.
 
+Implementation notes:
+
+- Added same-origin report endpoint at `/api/security/csp-report`.
+- CSP now includes both legacy `report-uri /api/security/csp-report` and modern `report-to csp-endpoint`.
+- Responses now include `Reporting-Endpoints: csp-endpoint="<absolute-origin>/api/security/csp-report"`.
+- The endpoint accepts legacy `application/csp-report` payloads and Reporting API `application/reports+json` batches.
+- CSP report ingestion is rate-limited with `rateLimit`; production Redis/rate-limit backend failures fail closed with `503`.
+- Reports are sent to Sentry as warning-level `CSP violation` messages with sanitized context only.
+- Sanitization strips query strings and fragments from document/source URLs, keeps only origins for URL-like blocked resources, omits `original-policy`, and never stores raw `script-sample`.
+- `docs/OPS.md` documents a controlled `curl` verification command and the expected sanitized Sentry event.
+
 ### 11. Move toward nonce/hash-based CSP
+
+Status: Report-only trial implemented on 2026-06-23. Final enforcement remains pending production report review.
 
 Issue: Production CSP allows `script-src 'unsafe-inline'`.
 
@@ -383,6 +418,23 @@ Acceptance criteria:
 
 - Production CSP no longer requires `unsafe-inline` for scripts.
 - No console CSP errors in browser smoke tests.
+
+Implementation notes:
+
+- Added a production-only `Content-Security-Policy-Report-Only` header that uses `script-src 'self';` with no script `unsafe-inline`.
+- The existing enforcing `Content-Security-Policy` intentionally remains unchanged for now to avoid breaking Next.js runtime scripts before we have production/staging violation data.
+- Report-only CSP keeps the existing same-origin reporting pipeline: `report-uri /api/security/csp-report`, `report-to csp-endpoint`, and the `Reporting-Endpoints` header from item 10.
+- `next.config.ts` now exposes `buildContentSecurityPolicy()` and `buildSecurityHeaders()` so enforced and report-only CSP behavior can be tested separately.
+- Tests assert that production emits the strict report-only script policy, that the report-only script policy omits `unsafe-inline`, and that non-production does not emit the trial header.
+
+Next steps before marking complete:
+
+- Deploy to staging/preview and observe Sentry `CSP violation` warnings for real browser traffic.
+- Run browser smoke tests on `/`, `/browse`, `/read/[id]/...`, `/series/[slug]`, `/login`, and representative admin pages.
+- Decide enforcement strategy after reviewing reports:
+  - If violations are only expected Next runtime inline scripts, evaluate nonce CSP route-by-route and document any ISR/dynamic-rendering tradeoff.
+  - If violations are app-owned or third-party inline scripts, remove/configure those scripts or add stable hashes only where appropriate.
+- Remove script `unsafe-inline` from the enforcing production CSP only after the report-only policy is clean or each remaining violation has an accepted mitigation.
 
 ### 12. Restrict embedding table reads
 

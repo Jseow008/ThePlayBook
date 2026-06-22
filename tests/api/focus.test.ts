@@ -2,14 +2,23 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/focus/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { bestEffortRateLimit } from "@/lib/server/rate-limit";
+import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: vi.fn(),
 }));
 
 vi.mock("@/lib/server/rate-limit", () => ({
-    bestEffortRateLimit: vi.fn(),
+    strictPublicRateLimit: vi.fn(),
+    rateLimitFailureResponse: vi.fn((result: { unavailable?: boolean }) => Response.json(
+        {
+            error: {
+                code: result.unavailable ? "RATE_LIMIT_UNAVAILABLE" : "RATE_LIMITED",
+                message: result.unavailable ? "Service temporarily unavailable." : "Too many requests.",
+            },
+        },
+        { status: result.unavailable ? 503 : 429 }
+    )),
 }));
 
 vi.mock("@/lib/server/api", async () => {
@@ -52,7 +61,7 @@ describe("Focus API", () => {
         (createPublicServerClient as any).mockReturnValue({
             from: mockFrom,
         });
-        (bestEffortRateLimit as any).mockResolvedValue({ success: true });
+        (strictPublicRateLimit as any).mockResolvedValue({ success: true });
         mockLimit.mockResolvedValue({
             data: [
                 {
@@ -426,16 +435,24 @@ describe("Focus API", () => {
         );
     });
 
-    it("keeps serving focus items when rate limiting degrades safely", async () => {
-        (bestEffortRateLimit as any).mockResolvedValueOnce({ success: true });
+    it("fails closed before scanning content when strict rate limiting is unavailable", async () => {
+        (strictPublicRateLimit as any).mockResolvedValueOnce({
+            success: false,
+            retryAfterMs: 60_000,
+            unavailable: true,
+        });
 
         const request = new NextRequest(new URL("http://localhost/api/focus?limit=1"));
 
         const response = await GET(request);
-        const json = await response.json();
 
-        expect(response.status).toBe(200);
-        expect(Array.isArray(json.items)).toBe(true);
-        expect(json.items).toHaveLength(1);
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toEqual({
+            error: {
+                code: "RATE_LIMIT_UNAVAILABLE",
+                message: "Service temporarily unavailable.",
+            },
+        });
+        expect(mockFrom).not.toHaveBeenCalled();
     });
 });

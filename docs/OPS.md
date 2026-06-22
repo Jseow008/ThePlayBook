@@ -431,6 +431,38 @@ If you wrap these checks in automation, keep the same order: env check, lint, te
 
 Then trigger one handled server error and one browser error in preview/staging and confirm both appear in Sentry. Browser boundary errors call `Sentry.captureException()` from `app/error.tsx` and `app/global-error.tsx`; API failures are captured through the shared `logApiError()` helper.
 
+#### CSP Violation Reporting
+
+Production CSP includes `report-uri /api/security/csp-report` and `report-to csp-endpoint`. The same-origin report endpoint rate-limits ingestion, strips query strings and raw script samples, and sends sanitized `CSP violation` warning events to Sentry.
+
+To verify reporting after deploy, send a controlled report and confirm a sanitized Sentry event appears:
+
+```bash
+curl -X POST https://<your-production-domain>/api/security/csp-report \
+  -H "Content-Type: application/csp-report" \
+  --data '{"csp-report":{"document-uri":"https://<your-production-domain>/test?secret=redacted","violated-directive":"script-src","effective-directive":"script-src","blocked-uri":"inline","source-file":"https://<your-production-domain>/page?token=secret","line-number":1,"column-number":1,"script-sample":"sensitive inline sample"}}'
+```
+
+Expected response: `204 No Content`. The Sentry context must not include `original-policy`, raw `script-sample`, query strings, tokens, or other sensitive payload details.
+
+#### CSP Inline Script Hardening Trial
+
+Production responses also include a `Content-Security-Policy-Report-Only` trial policy for item 11. The report-only policy removes script `unsafe-inline` with `script-src 'self';` while the existing enforcing policy remains unchanged until staging/production reports prove that Next.js, Sentry, PostHog, Vercel Analytics, and Speed Insights still work under stricter enforcement.
+
+After deploying to preview or staging, inspect the headers:
+
+```bash
+curl -I https://<your-production-domain>/ | grep -i "content-security-policy"
+```
+
+Expected:
+
+- `Content-Security-Policy` is still the enforcing compatibility policy.
+- `Content-Security-Policy-Report-Only` includes `script-src 'self';` and does not include script `unsafe-inline`.
+- Both policies keep `report-uri /api/security/csp-report` and `report-to csp-endpoint`.
+
+Review Sentry warning events tagged `source=csp`. Do not remove script `unsafe-inline` from the enforcing policy until report-only traffic is clean or each remaining violation has an accepted mitigation. If nonce CSP is required, validate the ISR/dynamic-rendering tradeoff route-by-route before rollout.
+
 #### Sentry Deployment Status
 
 Completed on 2026-06-18.

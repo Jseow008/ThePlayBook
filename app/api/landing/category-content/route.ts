@@ -5,7 +5,7 @@ import {
     getContentCategoryRawValues,
 } from "@/lib/content-categories";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { bestEffortRateLimit } from "@/lib/server/rate-limit";
+import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 const CategoryQuerySchema = z.object({
     category: z.string().trim().min(1).max(80),
@@ -16,20 +16,14 @@ const LANDING_CATEGORY_SELECT =
     "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, created_at, is_featured";
 
 export async function GET(request: NextRequest) {
-    const rl = await bestEffortRateLimit(request, {
+    const rl = await strictPublicRateLimit(request, {
         limit: 30,
         windowMs: 60_000,
         routeLabel: "/api/landing/category-content",
     });
 
     if (!rl.success) {
-        return NextResponse.json(
-            { error: "Too many requests." },
-            {
-                status: 429,
-                headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
-            }
-        );
+        return rateLimitFailureResponse(rl, "Too many requests.");
     }
 
     const parsed = CategoryQuerySchema.safeParse({
