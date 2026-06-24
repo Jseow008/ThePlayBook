@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
+import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { saveChatExport } from "@/lib/server/chat-export-store";
 import { CHAT_EXPORT_TTL_MS, type StoredChatExportPayload } from "@/lib/chat-export";
 
@@ -33,13 +34,16 @@ export async function POST(req: NextRequest) {
 
         const rl = await rateLimit(req, { limit: 8, windowMs: 60_000, key: `${user.id}:chat-export` });
         if (!rl.success) {
-            return NextResponse.json(
-                { error: { code: "RATE_LIMITED", message: "Too many exports. Please wait a moment." } },
-                {
-                    status: 429,
-                    headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
-                }
-            );
+            return rateLimitFailureResponseWithTelemetry({
+                request: req,
+                requestId,
+                result: rl,
+                route: "/api/chat/exports",
+                category: "ai",
+                userId: user.id,
+                authState: "authenticated",
+                message: "Too many exports. Please wait a moment.",
+            });
         }
 
         let body: unknown;
@@ -51,6 +55,15 @@ export async function POST(req: NextRequest) {
 
         const parsed = CreateChatExportSchema.safeParse(body);
         if (!parsed.success) {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat/exports",
+                userId: user.id,
+                reason: "invalid_payload",
+                metadata: { payload_kind: "chat_export" },
+            });
             return apiError("VALIDATION_ERROR", "Invalid chat export payload", 400, requestId);
         }
 

@@ -12,6 +12,19 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
+    rateLimitFailureResponseWithTelemetry: vi.fn(({ result, message }) =>
+        Response.json(
+            { error: { code: "RATE_LIMITED", message } },
+            {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil((result.retryAfterMs ?? 60_000) / 1000)) },
+            },
+        )
+    ),
+}));
+
+vi.mock("@/lib/server/security-telemetry", () => ({
+    recordAiRouteAbuse: vi.fn(),
 }));
 
 vi.mock("@/lib/server/api", async () => {

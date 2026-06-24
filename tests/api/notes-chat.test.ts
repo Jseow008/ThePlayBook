@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { vi } from "vitest";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { checkAiUsageQuota, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import { streamText } from "ai";
 
@@ -12,6 +13,19 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
+    rateLimitFailureResponseWithTelemetry: vi.fn(({ result, message }) =>
+        Response.json(
+            { error: { code: "RATE_LIMITED", message } },
+            {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil((result.retryAfterMs ?? 60_000) / 1000)) },
+            },
+        )
+    ),
+}));
+
+vi.mock("@/lib/server/security-telemetry", () => ({
+    recordAiRouteAbuse: vi.fn(),
 }));
 
 vi.mock("@/lib/server/ai-usage-quota", () => ({
@@ -110,6 +124,11 @@ describe("Notes chat API", () => {
         expect(res.status).toBe(400);
         const json = await res.json();
         expect(json.error.code).toBe("VALIDATION_ERROR");
+        expect(recordAiRouteAbuse).toHaveBeenCalledWith(expect.objectContaining({
+            signal: "ai_invalid_payload",
+            route: "/api/chat/notes",
+            reason: "invalid_payload",
+        }));
     });
 
     it("rejects user-supplied system messages", async () => {

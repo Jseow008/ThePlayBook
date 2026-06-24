@@ -159,4 +159,12 @@ describe("proxy auth routing", () => {
             "/api/notification-preferences/:path*",
         ]));
     });
+
+    it("keeps the Next 16 proxy entrypoint covering admin routes", () => {
+        expect(typeof proxy).toBe("function");
+        expect(config.matcher).toEqual(expect.arrayContaining([
+            "/admin/:path*",
+            "/api/admin/:path*",
+        ]));
+    });
 });

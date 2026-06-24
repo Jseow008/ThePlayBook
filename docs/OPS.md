@@ -431,6 +431,46 @@ If you wrap these checks in automation, keep the same order: env check, lint, te
 
 Then trigger one handled server error and one browser error in preview/staging and confirm both appear in Sentry. Browser boundary errors call `Sentry.captureException()` from `app/error.tsx` and `app/global-error.tsx`; API failures are captured through the shared `logApiError()` helper.
 
+#### CI Security Gates
+
+Production deploys should require the GitHub Actions `Security Validation` job from `.github/workflows/security.yml`.
+
+The PR/push security gate runs without production database credentials:
+
+```bash
+npm run security:audit
+npm run validate:launch-env
+npm run test:security
+SUPABASE_LOCAL=1 npm run security:function-acls
+SUPABASE_LOCAL=1 npm run security:embedding-table-reads
+SUPABASE_LOCAL=1 npm run security:storage-bucket-listing
+SUPABASE_LOCAL=1 npm run security:analytics-rls
+```
+
+In CI, the workflow starts a local Supabase stack and resets it before SQL drift checks. That makes the check validate the schema produced by the PR migrations instead of stale production state, and it avoids exposing production database credentials to pull request runners.
+
+The scheduled/manual `Supabase Advisor Audit` job uses these GitHub secrets when configured:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_REF`
+
+Supabase advisor results are an audit signal, not the real-time PR blocker, because advisor findings can lag behind schema changes. Exact accepted advisor findings are tracked in `scripts/supabase-security-advisor-allowlist.json`; unallowlisted `WARN` and `ERROR` findings fail the advisor audit when that job runs.
+
+#### Security Observability
+
+Runtime security telemetry uses structured server logs as the complete event stream and throttled Sentry warning events for alert-grade summaries. The telemetry contract intentionally excludes raw IPs, hashed IPs, unsubscribe tokens, chat prompts, model responses, request bodies, cookies, authorization headers, API keys, and Supabase access tokens.
+
+Recommended Sentry issue alerts:
+
+- `security_signal=admin_auth_failure`: alert when repeated failures exceed the normal admin login pattern, for example 5 events in 10 minutes.
+- `security_signal=invalid_unsubscribe_token`: alert on repeated malformed unsubscribe attempts, for example 10 events in 10 minutes.
+- `security_signal=ai_rate_limit_exhausted`: alert on repeated AI/chat rate-limit exhaustion, for example 10 events in 10 minutes.
+- `security_signal=ai_quota_exhausted`: lower-severity abuse/cost review signal.
+
+High-volume events are throttled before Sentry capture, so use the structured server log stream for exact event counts and forensic review. Correlate app telemetry with CDN/WAF logs by `request_id`; do not add raw or hashed IP addresses to Sentry context.
+
+Supabase advisor regressions are monitored by the scheduled/manual `Supabase Advisor Audit` GitHub Actions job, not runtime telemetry. Configure repository or team notifications so a failed `supabase-advisor-audit` job pages the security owner for review.
+
 #### CSP Violation Reporting
 
 Production CSP includes `report-uri /api/security/csp-report` and `report-to csp-endpoint`. The same-origin report endpoint rate-limits ingestion, strips query strings and raw script samples, and sends sanitized `CSP violation` warning events to Sentry.

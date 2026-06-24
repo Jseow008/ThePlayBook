@@ -1,3 +1,3 @@
 import { runSupabaseSqlCheck } from "./run-supabase-sql-check.mjs";
 
-runSupabaseSqlCheck("security-function-acl-check.sql");
+runSupabaseSqlCheck("security-analytics-rls-check.sql");

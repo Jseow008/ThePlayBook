@@ -4,7 +4,8 @@ import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
+import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import { GoogleGenAI } from "@google/genai";
 import { buildLibraryMetadataContext, getLibraryItemStatus, type LibraryItemRow } from "@/lib/server/library-snapshot";
@@ -300,13 +301,16 @@ export async function POST(req: NextRequest) {
         // --- Rate Limiting ---
         const rl = await rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
         if (!rl.success) {
-            return NextResponse.json(
-                { error: { code: "RATE_LIMITED", message: "Too many requests. Please wait a moment." } },
-                {
-                    status: 429,
-                    headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60000) / 1000)) },
-                }
-            );
+            return rateLimitFailureResponseWithTelemetry({
+                request: req,
+                requestId,
+                result: rl,
+                route: "/api/chat",
+                category: "ai",
+                userId: user.id,
+                authState: "authenticated",
+                message: "Too many requests. Please wait a moment.",
+            });
         }
 
         // --- Parse & Validate Body ---
@@ -319,27 +323,80 @@ export async function POST(req: NextRequest) {
 
         const parsed = ChatRequestSchema.safeParse(body);
         if (!parsed.success) {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat",
+                userId: user.id,
+                reason: "invalid_payload",
+                metadata: { payload_kind: "chat" },
+            });
             return apiError("VALIDATION_ERROR", "Invalid chat payload", 400, requestId);
         }
 
         const messages = normalizeMessages(parsed.data.messages as Array<Record<string, unknown>>);
         if (messages.length === 0) {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat",
+                userId: user.id,
+                reason: "empty_messages",
+                metadata: { message_count: 0, payload_kind: "chat" },
+            });
             return apiError("VALIDATION_ERROR", "No valid messages provided", 400, requestId);
         }
 
         const totalChars = messages.reduce((sum, msg) => sum + msg.content.length, 0);
         if (totalChars > MAX_TOTAL_MESSAGE_CHARS) {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat",
+                userId: user.id,
+                reason: "conversation_too_long",
+                metadata: {
+                    message_count: messages.length,
+                    total_chars: totalChars,
+                    payload_kind: "chat",
+                },
+            });
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
         const trimmedMessages = messages.slice(-MAX_HISTORY_MESSAGES);
         const lastMessage = trimmedMessages[trimmedMessages.length - 1];
         if (!lastMessage || lastMessage.role !== "user") {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat",
+                userId: user.id,
+                reason: "last_message_not_user",
+                metadata: { message_count: messages.length, payload_kind: "chat" },
+            });
             return apiError("VALIDATION_ERROR", "Last message must be a user message with text content", 400, requestId);
         }
 
         const userQuery = lastMessage.content.trim();
         if (!userQuery || userQuery.length > 2000) {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat",
+                userId: user.id,
+                reason: "query_length_invalid",
+                metadata: {
+                    message_count: messages.length,
+                    total_chars: totalChars,
+                    payload_kind: "chat",
+                },
+            });
             return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
         }
 
@@ -361,6 +418,21 @@ export async function POST(req: NextRequest) {
 
         const quota = await checkAiUsageQuota(supabase, user.id);
         if (!quota.allowed) {
+            recordAiRouteAbuse({
+                signal: "ai_quota_exhausted",
+                request: req,
+                requestId,
+                route: "/api/chat",
+                userId: user.id,
+                reason: "quota_exhausted",
+                retryAfterMs: quota.retryAfterMs,
+                metadata: {
+                    blocked_window: quota.blockedWindow,
+                    limit: quota.limit,
+                    used: quota.used,
+                    reset_after_seconds: Math.max(1, Math.ceil(quota.retryAfterMs / 1000)),
+                },
+            });
             return NextResponse.json(
                 { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
                 {

@@ -522,6 +522,8 @@ Implementation notes:
 
 ### 14. Controlled dependency remediation
 
+Status: Complete on 2026-06-24.
+
 Issue: `npm audit --omit=dev` reports production advisories beyond Next.js, including `protobufjs`, `ws`, `posthog-js` transitive packages, and related OpenTelemetry packages.
 
 Required outcome:
@@ -535,7 +537,31 @@ Acceptance criteria:
 - No high or critical production advisories remain.
 - Remaining moderate advisories are documented with impact and owner.
 
+Implementation notes:
+
+- Upgraded direct production dependencies related to the reported advisory chains:
+  - `@google/genai` from `^1.50.1` to `^1.52.0`, resolving to `@google/genai@1.52.0`.
+  - `@sentry/nextjs` from `^10.58.0` to `^10.60.0`, resolving OpenTelemetry transitive packages to `@opentelemetry/core@2.8.0` and `@opentelemetry/sdk-trace-base@2.8.0`.
+  - `@supabase/supabase-js` from `^2.47.10` to `^2.108.2`.
+  - `posthog-js` from `^1.378.1` to `^1.393.0`.
+  - `tsx` from `^4.21.0` to `^4.22.4`.
+- Verified the named production advisory packages now resolve to:
+  - `protobufjs@7.6.4` and `ws@8.21.0` through `@google/genai@1.52.0`.
+  - `posthog-js@1.393.0`.
+  - OpenTelemetry packages through `@sentry/nextjs@10.60.0`, `ai@6.0.97`, and `next@16.2.9`.
+- No new package overrides were added; the existing `postcss` override remains unchanged.
+- `npm audit --omit=dev --json` reports zero production vulnerabilities: no moderate, high, or critical advisories remain.
+- No remaining moderate production advisories require risk acceptance or owner assignment.
+- Validation passes:
+  - `npm audit --omit=dev`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
+
 ### 15. Public bucket listing policy review
+
+Status: Complete on 2026-06-24.
 
 Issue: Supabase advisor reports `media` and `audio` public buckets allow object listing via broad SELECT policies.
 
@@ -548,6 +574,32 @@ Acceptance criteria:
 
 - Public users cannot list bucket contents.
 - Existing image/audio playback still works.
+
+Implementation notes:
+
+- Added and applied `supabase/migrations/20260624090733_restrict_public_bucket_listing.sql` to linked Supabase project `xmuqsgfxuaaophxnwure`.
+- Kept the `media` and `audio` buckets public so existing public object URLs continue to work.
+- Dropped broad listing-capable storage policies:
+  - `Public Access` on `storage.objects`.
+  - `Public audio read` on `storage.objects`.
+- Preserved scoped admin write policies for media and audio uploads, updates, and deletes.
+- Added `npm run security:storage-bucket-listing`, backed by `scripts/security-storage-bucket-listing-check.sql`, to verify:
+  - public bucket listing policies do not return,
+  - no broad public `SELECT` policy exists for `media` or `audio`,
+  - both buckets remain public,
+  - expected admin write policies remain present.
+- Added static regression coverage in `tests/security/storage-bucket-listing.test.ts`.
+- Live direct policy verification shows only the admin media/audio write policies remain for those buckets.
+- Supabase security advisors no longer report `public_bucket_allows_listing` for `media` or `audio`.
+- Anon storage list checks against `media`, `media/covers`, `audio`, and `audio/generated` return zero object rows.
+- Existing sampled public media and audio object URLs return `200`.
+- Validation passes:
+  - `npm run security:storage-bucket-listing`
+  - `npm test -- tests/security/storage-bucket-listing.test.ts`
+  - `npm run typecheck`
+  - `npm run lint`
+  - `npm test`
+  - `npm run build`
 
 ## P3: Cleanup and Future-Proofing
 
@@ -571,9 +623,53 @@ Acceptance criteria:
 - Future maintainers understand the pattern.
 - Supabase advisor finding is either resolved or explicitly risk-accepted.
 
+Status: Complete on 2026-06-24. Resolved rather than risk-accepted.
+
+Implementation:
+
+- Added and applied `supabase/migrations/20260624093402_document_service_only_analytics_rls.sql` to linked Supabase project `xmuqsgfxuaaophxnwure`.
+- Documented the service-only pattern with table comments:
+  - `public.content_reading_activity` is a service-only content/date aggregate table.
+  - `public.content_reader_daily` is a service-only per-user daily dedupe table.
+  - `public.content_reader_visitor_daily` is a service-only anonymous visitor daily dedupe table.
+  - `public.segment_embedding_gemini` is also documented as service-only so the new generic RLS sentinel has no current exception.
+- Revoked all direct table privileges from `PUBLIC`, `anon`, and `authenticated` on those service-only tables.
+- Re-granted only `SELECT`, `INSERT`, `UPDATE`, and `DELETE` to `service_role` for the service/admin paths that need direct table access.
+- Added explicit deny-all RLS policies for `anon` and `authenticated`:
+  - `Service-only analytics table: deny public access`
+  - `Service-only embedding table: deny public access`
+- Preserved the existing service-role guarded activity logging RPC model:
+  - `increment_reading_activity_for_user(date, integer, uuid)`
+  - `log_reading_activity(date, integer, uuid)`
+  - `log_anonymous_reading_activity(date, integer, uuid, text)`
+  - `log_reading_activity_for_user(date, integer, uuid, uuid)`
+
+Ongoing guardrails:
+
+- Added `npm run security:analytics-rls`, backed by `scripts/security-analytics-rls-check.sql`, to verify:
+  - expected service-only tables have RLS enabled,
+  - expected deny-all policies exist,
+  - public client roles have no effective direct `SELECT`, `INSERT`, `UPDATE`, or `DELETE` privileges,
+  - `service_role` retains required direct table privileges,
+  - activity logging RPCs are `SECURITY DEFINER`, fixed-search-path, and executable only by `service_role`,
+  - no table in the `public` schema has RLS enabled with zero policies.
+- Added static regression coverage in `tests/security/analytics-rls.test.ts`.
+
+Verification:
+
+- `npm run security:analytics-rls`
+- `npm run security:embedding-table-reads`
+- `npm test -- tests/security/analytics-rls.test.ts`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- Direct live SQL confirms the three analytics tables and `segment_embedding_gemini` each have one deny-all policy, no effective `anon`/`authenticated` `SELECT` or `INSERT` privileges, and retained `service_role` `SELECT`/`INSERT` privileges.
+- Supabase security advisors no longer report `rls_enabled_no_policy` for the analytics tables.
+
 ### 17. Add security gates to CI/deployment
 
-Status: Partially complete. `npm run security:function-acls` now covers Supabase `SECURITY DEFINER` ACL/search_path drift.
+Status: Complete on 2026-06-24.
 
 Required checks:
 
@@ -588,7 +684,56 @@ Acceptance criteria:
 
 - Production deployment blocks on P0/P1 security regressions.
 
+Implementation notes:
+
+- Added `.github/workflows/security.yml` with a dedicated `security-gate` job for `pull_request`, `push` to `main`, and manual runs.
+- Added `npm run security:audit` to block high/critical production dependency advisories:
+  - `npm audit --omit=dev --audit-level=high`
+- Added `.gitleaks.toml` and a blocking Gitleaks workflow step with full-history checkout.
+  - Generated/noisy paths are excluded: `.npm-cache-temp`, `test-results`, `playwright-report`, `.next`, `node_modules`, `coverage`, `dist`, and `build`.
+  - Dummy secret allowlists are regex-scoped; source directories such as `scripts/` and `docs/` are not blanket-ignored.
+- Added `npm run test:security` to cover:
+  - `tests/proxy.test.ts`
+  - `tests/security/`
+  - `tests/api/health.test.ts`
+  - `tests/api/activity-log.test.ts`
+  - `tests/api/admin-*.test.ts`
+- Updated Supabase SQL drift wrappers to support local PR checks:
+  - `SUPABASE_LOCAL=1 npm run security:function-acls`
+  - `SUPABASE_LOCAL=1 npm run security:embedding-table-reads`
+  - `SUPABASE_LOCAL=1 npm run security:storage-bucket-listing`
+  - `SUPABASE_LOCAL=1 npm run security:analytics-rls`
+- The CI security gate starts a local Supabase stack and runs `npx supabase db reset` before SQL drift checks. This validates the PR migration state without production database credentials.
+- Added `scripts/check-supabase-security-advisors.mjs` and `npm run security:supabase-advisors`.
+  - Supabase advisors are treated as scheduled/manual audit because advisor results can lag behind schema changes.
+  - The advisor script fails on unallowlisted `WARN`/`ERROR` findings when run.
+  - Exact allowlisted findings live in `scripts/supabase-security-advisor-allowlist.json` with owner and review date.
+  - Current allowlist covers only the intentional token/email public `SECURITY DEFINER` RPC warnings already guarded by `npm run security:function-acls`.
+  - `auth_leaked_password_protection` is not allowlisted.
+- Added static regression coverage in `tests/security/security-gates.test.ts`.
+
+Required deployment setting:
+
+- Configure GitHub branch protection or Vercel deployment protection so production deploys require the `Security Validation` job from `.github/workflows/security.yml`.
+- Do not use Supabase advisor freshness as the real-time PR blocker; use the local SQL drift checks for that.
+
+Security gate commands:
+
+- `npm run security:audit`
+- `npm run validate:launch-env`
+- `npm run test:security`
+- `SUPABASE_LOCAL=1 npm run security:function-acls`
+- `SUPABASE_LOCAL=1 npm run security:embedding-table-reads`
+- `SUPABASE_LOCAL=1 npm run security:storage-bucket-listing`
+- `SUPABASE_LOCAL=1 npm run security:analytics-rls`
+- `npm run typecheck`
+- `npm run lint`
+- `npm test`
+- `npm run build`
+
 ### 18. Remove tracked local/generated artifacts
+
+Status: Complete on 2026-06-24.
 
 Issue: `.npm-cache-temp` and `test-results` are tracked or present in ways that make security scans noisy and increase repository risk.
 
@@ -602,7 +747,33 @@ Acceptance criteria:
 - `git ls-files .npm-cache-temp test-results` returns no tracked artifacts.
 - Secret scans no longer process generated npm cache contents.
 
+Implementation notes:
+
+- Removed `.npm-cache-temp` and `test-results` from the git index with `git rm -r --cached`.
+- Added `.gitignore` rules for:
+  - `/.npm-cache-temp/`
+  - `/test-results/`
+- Kept generated artifact exclusions in `.gitleaks.toml` for:
+  - `.npm-cache-temp`
+  - `test-results`
+  - `playwright-report`
+  - `.next`
+  - `node_modules`
+  - `coverage`
+  - `dist`
+  - `build`
+- Added `tests/security/generated-artifacts.test.ts` to assert the ignore rules, Gitleaks exclusions, and direct `git ls-files .npm-cache-temp test-results` acceptance criterion.
+
+Verification:
+
+- `git ls-files .npm-cache-temp test-results` returns empty output.
+- `git check-ignore -v .npm-cache-temp test-results` shows both paths are ignored by `.gitignore`.
+- `npm test -- tests/security/generated-artifacts.test.ts`
+- `npm run test:security`
+
 ### 19. Improve security observability
+
+Status: Completed on 2026-06-24.
 
 Required outcome:
 
@@ -614,6 +785,33 @@ Required outcome:
 Acceptance criteria:
 
 - Security-relevant failures produce useful, non-sensitive telemetry.
+
+Implementation:
+
+- Added `lib/server/security-telemetry.ts` as the shared runtime security telemetry helper.
+  - Emits structured `console.warn` records for every security signal.
+  - Sends Sentry warning events only through an in-memory throttle keyed by signal, route, category, and authenticated user ID or `anonymous`.
+  - Does not include raw IPs, hashed IPs, unsubscribe tokens, prompts, request bodies, cookies, authorization headers, API keys, or model output.
+- Added `rateLimitFailureResponseWithTelemetry` in `lib/server/rate-limit.ts` so rate-limit response handling can emit security telemetry without per-route duplication.
+- Added admin auth failure telemetry through `verifyAdminSession()`, covering admin pages, server actions, and admin API routes that use the shared verifier.
+- Added invalid unsubscribe token telemetry for:
+  - `app/api/email-subscriptions/unsubscribe/route.ts`
+  - `app/api/notification-preferences/request-published/unsubscribe/route.ts`
+- Added AI/chat abuse telemetry for rate-limit exhaustion, invalid payloads, oversized conversations, invalid final-message shape, quota exhaustion, and chat export validation failures in:
+  - `app/api/chat/route.ts`
+  - `app/api/chat/author/route.ts`
+  - `app/api/chat/notes/route.ts`
+  - `app/api/chat/exports/route.ts`
+- Kept Supabase advisor regression monitoring in CI/static audit only through `.github/workflows/security.yml` and `npm run security:supabase-advisors`; runtime telemetry does not import or execute advisor checks.
+- Preserved the Next 16 `proxy.ts` convention and added regression coverage for the proxy export and admin matchers instead of adding a deprecated `middleware.ts` wrapper.
+
+Verification:
+
+- `npm test -- tests/security/security-observability.test.ts`
+- `npm test -- tests/api/email-subscriptions.test.ts tests/api/chat.test.ts tests/api/author-chat.test.ts tests/api/notes-chat.test.ts tests/api/chat-exports.test.ts tests/proxy.test.ts`
+- `npm run test:security`
+- `npm run typecheck`
+- `npm run lint`
 
 ## Verification Checklist Before Production
 

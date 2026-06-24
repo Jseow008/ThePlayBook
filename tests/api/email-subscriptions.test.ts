@@ -8,6 +8,7 @@ import {
 import { GET as unsubscribeRequestPublishedGet } from "@/app/api/notification-preferences/request-published/unsubscribe/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { recordInvalidUnsubscribeToken } from "@/lib/server/security-telemetry";
 
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: vi.fn(),
@@ -15,6 +16,19 @@ vi.mock("@/lib/supabase/public-server", () => ({
 
 vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
+    rateLimitFailureResponseWithTelemetry: vi.fn(({ result, message }) =>
+        Response.json(
+            { error: { code: "RATE_LIMITED", message } },
+            {
+                status: 429,
+                headers: { "Retry-After": String(Math.ceil((result.retryAfterMs ?? 60_000) / 1000)) },
+            },
+        )
+    ),
+}));
+
+vi.mock("@/lib/server/security-telemetry", () => ({
+    recordInvalidUnsubscribeToken: vi.fn(),
 }));
 
 describe("Email subscriptions API", () => {
@@ -169,6 +183,11 @@ describe("Email subscriptions API", () => {
 
         expect(response.status).toBe(400);
         expect(mockRpc).not.toHaveBeenCalled();
+        expect(recordInvalidUnsubscribeToken).toHaveBeenCalledWith(expect.objectContaining({
+            route: "/api/email-subscriptions/unsubscribe",
+            channel: "weekly_email",
+        }));
+        expect(JSON.stringify((recordInvalidUnsubscribeToken as any).mock.calls[0][0])).not.toContain("not-hex");
     });
 
     it("turns off request-published notifications by token", async () => {
@@ -192,6 +211,11 @@ describe("Email subscriptions API", () => {
 
         expect(response.status).toBe(400);
         expect(mockRpc).not.toHaveBeenCalled();
+        expect(recordInvalidUnsubscribeToken).toHaveBeenCalledWith(expect.objectContaining({
+            route: "/api/notification-preferences/request-published/unsubscribe[GET]",
+            channel: "request_published",
+        }));
+        expect(JSON.stringify((recordInvalidUnsubscribeToken as any).mock.calls[0][0])).not.toContain("short");
     });
 
     it("returns 500 when request-published unsubscribe persistence fails", async () => {

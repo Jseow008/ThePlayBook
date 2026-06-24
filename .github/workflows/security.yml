@@ -1,0 +1,108 @@
+name: Security Gates
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: "17 12 * * *"
+
+jobs:
+  security-gate:
+    if: github.event_name != 'schedule'
+    name: Security Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_SERVICE_KEY: dummy-service-key
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      AI_PROVIDER: gemini
+      AI_MODEL: gemini-pro
+      GEMINI_API_KEY: dummy-gemini-key
+      UPSTASH_REDIS_REST_URL: https://dummy-redis.upstash.io
+      UPSTASH_REDIS_REST_TOKEN: dummy-redis-token
+      NEXT_PUBLIC_SENTRY_DSN: https://dummy@sentry.io/123456
+      HEALTH_CHECK_SECRET: dummy-health-secret
+      ADMIN_ALLOWED_IPS: 127.0.0.1
+      ANONYMOUS_ACTIVITY_SECRET: dummy-activity-secret
+      ANTHROPIC_API_KEY: dummy-anthropic-key
+      SUPABASE_LOCAL: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production dependency audit
+        run: npm run security:audit
+
+      - name: Validate launch environment
+        run: npm run validate:launch-env
+
+      - name: Setup local Supabase
+        run: |
+          npx supabase start
+          npx supabase db reset
+
+      - name: Supabase SQL drift checks
+        run: |
+          npm run security:function-acls
+          npm run security:embedding-table-reads
+          npm run security:storage-bucket-listing
+          npm run security:analytics-rls
+
+      - name: Security route and static tests
+        run: npm run test:security
+
+  supabase-advisor-audit:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    name: Supabase Advisor Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Supabase security advisors
+        if: env.SUPABASE_ACCESS_TOKEN != '' && env.SUPABASE_PROJECT_REF != ''
+        run: npm run security:supabase-advisors
+
+      - name: Skip advisor audit without credentials
+        if: env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_PROJECT_REF == ''
+        run: |
+          echo "Skipping Supabase advisor audit because SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF is not configured."

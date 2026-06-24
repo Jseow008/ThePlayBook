@@ -49,5 +49,7 @@ next-env.d.ts
 # local caches and artifacts
 .notebooklm-data/
 .npm-cache-mcp/
+/.npm-cache-temp/
+/test-results/
 desktop_preview.png
 playwright-report/

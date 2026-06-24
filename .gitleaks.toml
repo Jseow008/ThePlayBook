@@ -1,0 +1,22 @@
+title = "Netflux Gitleaks configuration"
+
+[allowlist]
+description = "Allow generated artifacts and explicit dummy test secrets only."
+paths = [
+  '''(^|/)\.npm-cache-temp/''',
+  '''(^|/)test-results/''',
+  '''(^|/)playwright-report/''',
+  '''(^|/)\.next/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)coverage/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/'''
+]
+regexes = [
+  '''ci-anon-key''',
+  '''anon-key''',
+  '''dummy-[A-Za-z0-9._/-]+''',
+  '''test-[A-Za-z0-9._-]*secret''',
+  '''health-secret''',
+  '''cron-secret'''
+]

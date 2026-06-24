@@ -20,7 +20,7 @@ export default async function AdminLayout({
 }: {
     children: React.ReactNode;
 }) {
-    const isAuthenticated = await verifyAdminSession();
+    const isAuthenticated = await verifyAdminSession({ route: "/admin" });
 
     if (!isAuthenticated) {
         redirect("/admin-login");

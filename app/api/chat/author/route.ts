@@ -5,7 +5,8 @@ import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
+import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 
 export const maxDuration = 60;
@@ -102,18 +103,16 @@ export async function POST(req: NextRequest) {
             });
         if (!rl.success) {
             const retryAfterSeconds = Math.max(1, Math.ceil((rl.retryAfterMs ?? 60000) / 1000));
-            return NextResponse.json(
-                {
-                    error: {
-                        code: "RATE_LIMITED",
-                        message: `Too many requests. Please wait ${retryAfterSeconds} second${retryAfterSeconds === 1 ? "" : "s"} and try again.`,
-                    }
-                },
-                {
-                    status: 429,
-                    headers: { "Retry-After": String(retryAfterSeconds) },
-                }
-            );
+            return rateLimitFailureResponseWithTelemetry({
+                request: req,
+                requestId,
+                result: rl,
+                route: "/api/chat/author",
+                category: "ai",
+                userId: user?.id,
+                authState: user ? "authenticated" : "anonymous",
+                message: `Too many requests. Please wait ${retryAfterSeconds} second${retryAfterSeconds === 1 ? "" : "s"} and try again.`,
+            });
         }
 
         // --- Validate API Key ---
@@ -133,6 +132,16 @@ export async function POST(req: NextRequest) {
         const parsed = AuthorChatBodySchema.safeParse(body);
         if (!parsed.success) {
             logApiError({ requestId, route: "/api/chat/author", message: "Validation failed", error: new Error(parsed.error.message) });
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat/author",
+                userId: user?.id,
+                authState: user ? "authenticated" : "anonymous",
+                reason: "invalid_payload",
+                metadata: { payload_kind: "author_chat" },
+            });
             return apiError("VALIDATION_ERROR", "Invalid chat payload", 400, requestId);
         }
 
@@ -143,24 +152,73 @@ export async function POST(req: NextRequest) {
         const allMessages = normalizeMessages(rawMessages);
 
         if (allMessages.length === 0) {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat/author",
+                userId: user?.id,
+                authState: user ? "authenticated" : "anonymous",
+                reason: "empty_messages",
+                metadata: { message_count: 0, payload_kind: "author_chat" },
+            });
             return apiError("VALIDATION_ERROR", "No valid messages provided", 400, requestId);
         }
 
         // --- Validate last message is from user ---
         const lastMsg = allMessages[allMessages.length - 1];
         if (lastMsg.role !== "user") {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat/author",
+                userId: user?.id,
+                authState: user ? "authenticated" : "anonymous",
+                reason: "last_message_not_user",
+                metadata: { message_count: allMessages.length, payload_kind: "author_chat" },
+            });
             return apiError("VALIDATION_ERROR", "Last message must be a user message", 400, requestId);
         }
 
         // --- Guard: max character length ---
         const totalTextChars = allMessages.reduce((sum, m) => sum + m.content.length, 0);
         if (totalTextChars > 20_000) {
+            recordAiRouteAbuse({
+                signal: "ai_invalid_payload",
+                request: req,
+                requestId,
+                route: "/api/chat/author",
+                userId: user?.id,
+                authState: user ? "authenticated" : "anonymous",
+                reason: "conversation_too_long",
+                metadata: {
+                    message_count: allMessages.length,
+                    total_chars: totalTextChars,
+                    payload_kind: "author_chat",
+                },
+            });
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
         if (user) {
             const quota = await checkAiUsageQuota(supabase, user.id);
             if (!quota.allowed) {
+                recordAiRouteAbuse({
+                    signal: "ai_quota_exhausted",
+                    request: req,
+                    requestId,
+                    route: "/api/chat/author",
+                    userId: user.id,
+                    reason: "quota_exhausted",
+                    retryAfterMs: quota.retryAfterMs,
+                    metadata: {
+                        blocked_window: quota.blockedWindow,
+                        limit: quota.limit,
+                        used: quota.used,
+                        reset_after_seconds: Math.max(1, Math.ceil(quota.retryAfterMs / 1000)),
+                    },
+                });
                 return NextResponse.json(
                     { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
                     {

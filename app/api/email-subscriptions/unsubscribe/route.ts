@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
+import { recordInvalidUnsubscribeToken } from "@/lib/server/security-telemetry";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 const UnsubscribeSchema = z.object({
@@ -46,13 +47,15 @@ export async function GET(request: NextRequest) {
 
     const rl = await rateLimit(request, { limit: 12, windowMs: 60_000 });
     if (!rl.success) {
-        return NextResponse.json(
-            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
-            {
-                status: 429,
-                headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
-            }
-        );
+        return rateLimitFailureResponseWithTelemetry({
+            request,
+            requestId,
+            result: rl,
+            route: "/api/email-subscriptions/unsubscribe[GET]",
+            category: "unsubscribe",
+            authState: "anonymous",
+            message: "Too many requests.",
+        });
     }
 
     try {
@@ -61,6 +64,12 @@ export async function GET(request: NextRequest) {
         });
 
         if (!parsed.success) {
+            recordInvalidUnsubscribeToken({
+                request,
+                requestId,
+                route: "/api/email-subscriptions/unsubscribe[GET]",
+                channel: "weekly_email",
+            });
             return apiError("VALIDATION_ERROR", "Invalid unsubscribe token.", 400, requestId);
         }
 
@@ -90,13 +99,15 @@ export async function POST(request: NextRequest) {
 
     const rl = await rateLimit(request, { limit: 12, windowMs: 60_000 });
     if (!rl.success) {
-        return NextResponse.json(
-            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
-            {
-                status: 429,
-                headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) },
-            }
-        );
+        return rateLimitFailureResponseWithTelemetry({
+            request,
+            requestId,
+            result: rl,
+            route: "/api/email-subscriptions/unsubscribe",
+            category: "unsubscribe",
+            authState: "anonymous",
+            message: "Too many requests.",
+        });
     }
 
     try {
@@ -110,6 +121,12 @@ export async function POST(request: NextRequest) {
         const parsed = UnsubscribeSchema.safeParse(body);
 
         if (!parsed.success) {
+            recordInvalidUnsubscribeToken({
+                request,
+                requestId,
+                route: "/api/email-subscriptions/unsubscribe",
+                channel: "weekly_email",
+            });
             return apiError("VALIDATION_ERROR", "Invalid unsubscribe token.", 400, requestId);
         }
 

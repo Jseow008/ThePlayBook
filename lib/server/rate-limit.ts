@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { recordSecuritySignal, type SecurityTelemetryCategory } from "@/lib/server/security-telemetry";
 
 interface RateLimitOptions {
     /** Max requests allowed in the window */
@@ -243,4 +244,35 @@ export function rateLimitFailureResponse(
             headers: { "Retry-After": retryAfterSeconds },
         }
     );
+}
+
+export function rateLimitFailureResponseWithTelemetry(params: {
+    request: NextRequest;
+    requestId?: string;
+    result: StrictRateLimitResult | RateLimitResult;
+    route: string;
+    category: SecurityTelemetryCategory;
+    userId?: string;
+    authState?: "anonymous" | "authenticated" | "unknown";
+    message?: string;
+}) {
+    const isUnavailable = "unavailable" in params.result && params.result.unavailable;
+
+    recordSecuritySignal({
+        signal: isUnavailable
+            ? "rate_limit_unavailable"
+            : params.category === "ai"
+                ? "ai_rate_limit_exhausted"
+                : "rate_limit_exhausted",
+        category: params.category,
+        route: params.route,
+        request: params.request,
+        requestId: params.requestId,
+        userId: params.userId,
+        authState: params.authState,
+        reason: isUnavailable ? "rate_limit_unavailable" : "rate_limit_exhausted",
+        retryAfterMs: params.result.retryAfterMs ?? 60_000,
+    });
+
+    return rateLimitFailureResponse(params.result, params.message);
 }
