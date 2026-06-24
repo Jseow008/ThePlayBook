@@ -200,17 +200,9 @@ async function fetchRelevantSegments(
     }
 
     if (segmentResults.length === 0) {
-        const { count, error } = await supabase
-            .from("segment_embedding_gemini")
-            .select("id", { count: "exact", head: true });
-
-        if (error) {
-            throw error;
-        }
-
         return {
             contextText: "",
-            retrievalStatus: count ? "no_match" : "not_initialized",
+            retrievalStatus: "no_match",
         };
     }
 

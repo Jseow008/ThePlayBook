@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "security:function-acls": "node scripts/check-supabase-function-acls.mjs",
+    "security:embedding-table-reads": "node scripts/check-supabase-embedding-table-reads.mjs",
     "embeddings:sync-segments": "tsx scripts/sync-segment-embeddings.ts",
     "validate:launch-env": "node scripts/validate-launch-env.mjs",
     "check:deployment-health": "node scripts/check-deployment-health.mjs",

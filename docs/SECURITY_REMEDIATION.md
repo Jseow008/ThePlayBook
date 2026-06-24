@@ -438,6 +438,8 @@ Next steps before marking complete:
 
 ### 12. Restrict embedding table reads
 
+Status: Complete on 2026-06-23.
+
 Issue: `segment_embedding` and `segment_embedding_gemini` allow broad SELECT. Even if embeddings are not raw text, they are derived corpus data.
 
 Required outcome:
@@ -450,11 +452,34 @@ Acceptance criteria:
 - `anon` cannot directly list embeddings.
 - Ask/recommendation flows still work through approved RPCs.
 
+Implementation notes:
+
+- Added and applied `supabase/migrations/20260622165437_restrict_embedding_table_reads.sql` to linked Supabase project `xmuqsgfxuaaophxnwure`.
+- Removed the permissive embedding table read policies:
+  - `Enable read access for all users` on `public.segment_embedding`
+  - `Enable read access for all users on Gemini segment embeddings` on `public.segment_embedding_gemini`
+- Revoked direct `SELECT` on both embedding tables from `PUBLIC`, `anon`, and `authenticated`; retained service-role table access.
+- Preserved the public Ask RPC signatures as `SECURITY INVOKER` wrappers:
+  - `match_library_segments(vector, double precision, integer, uuid)`
+  - `match_library_segments_gemini(vector, double precision, integer, uuid, boolean)`
+- Added guarded private `SECURITY DEFINER` helpers for the privileged vector reads, with fixed `search_path = public, extensions`.
+- The private helpers reject cross-user matching unless `auth.role() = 'service_role'`, and filter to the requested user's library plus `content_item.status = 'verified'` and `content_item.deleted_at IS NULL`.
+- Removed the `/api/chat` direct `segment_embedding_gemini` count fallback; empty RPC match results now degrade to limited-evidence metadata context without probing the embedding table.
+- Added `npm run security:embedding-table-reads`, backed by `scripts/security-embedding-table-read-check.sql`, to verify direct grants, removed policies, helper guards, and public RPC anon exposure.
+- Added static regression coverage in `tests/security/embedding-table-reads.test.ts` and updated chat tests to assert the embedding table is not directly queried by the user client.
+- Live verification notes:
+  - `public.segment_embedding` is absent in the linked database, so legacy direct table privilege assertions return `NULL`.
+  - `anon` and `authenticated` direct `SELECT` on `public.segment_embedding_gemini` return `false`.
+  - `anon` execute on `match_library_segments(...)` and `match_library_segments_gemini(...)` returns `false`.
+  - `authenticated` execute on `match_library_segments_gemini(...)` returns `true`.
+  - `npm run security:embedding-table-reads` passes against the linked Supabase project.
+  - `npm run security:function-acls` passes against the linked Supabase project.
+
 ### 13. Lock down embedding maintenance RPC exposure
 
 Issue: Cross-checking P1 admin `SECURITY DEFINER` guards found that some embedding-related maintenance RPCs are not `SECURITY DEFINER`, but still have broad execute grants. In particular, legacy `get_segments_missing_embeddings(integer)` is currently callable by `PUBLIC`, `anon`, and `authenticated`. This is not part of the admin-definer guard requirement, but it is still an unnecessary maintenance surface.
 
-Status: Partially reduced on 2026-06-22. Item 3's full function classification fixed mutable `search_path` on embedding RPCs, but legacy execute exposure remains to be locked down here.
+Status: Complete on 2026-06-24.
 
 Functions to review:
 
@@ -476,6 +501,24 @@ Acceptance criteria:
 - `authenticated` cannot call service-only embedding maintenance RPCs.
 - Ask/recommendation flows still work through approved user-facing RPCs.
 - Supabase advisor no longer reports mutable `search_path` for embedding RPCs.
+
+Implementation notes:
+
+- Added and applied `supabase/migrations/20260624083713_lock_down_embedding_rpc_exposure.sql` to linked Supabase project `xmuqsgfxuaaophxnwure`.
+- `supabase db push --dry-run` remains blocked by pre-existing remote migration-history drift, so the migration SQL was applied with `supabase db query --file`.
+- Revoked `EXECUTE` on embedding maintenance and coverage RPCs from `PUBLIC`, `anon`, and `authenticated`; granted those RPCs only to `service_role`.
+- Fully reset public match RPC grants by revoking from `PUBLIC`, `anon`, and `authenticated`, then granting back only to `authenticated` and `service_role`.
+- Preserved item 12's matching architecture: public `SECURITY INVOKER` wrappers continue to delegate privileged embedding reads to guarded private `SECURITY DEFINER` helpers with explicit user-boundary and verified-content filters.
+- Reasserted fixed `search_path` on reviewed embedding RPCs.
+- Extended `npm run security:embedding-table-reads` to check embedding RPC ACLs and fixed `search_path` in addition to direct embedding table read exposure.
+- Live direct ACL verification confirms:
+  - `anon` and `authenticated` cannot execute `get_segments_missing_embeddings(integer)`, `get_segments_missing_gemini_embeddings(integer)`, or `get_gemini_segment_embedding_coverage()`.
+  - `service_role` can execute the maintenance and coverage RPCs.
+  - `anon` cannot execute `match_library_segments(...)` or `match_library_segments_gemini(...)`.
+  - `authenticated` and `service_role` can execute the public match RPCs.
+  - all five reviewed public RPCs have fixed `search_path`.
+- Supabase security advisors no longer report mutable `search_path` for embedding RPCs; remaining advisor findings are tracked by other remediation items or intentional token/email public RPC allowlists.
+- `npm run security:embedding-table-reads`, `npm run security:function-acls`, targeted API/security tests, and `npm run typecheck` pass.
 
 ### 14. Controlled dependency remediation
 

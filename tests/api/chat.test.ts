@@ -57,7 +57,6 @@ describe('Chat API', () => {
     const mockRpc = vi.fn();
     const mockFrom = vi.fn();
     const segmentFetchIn = vi.fn();
-    const segmentEmbeddingsSelect = vi.fn();
     const libraryOrder = vi.fn();
     const libraryEq = vi.fn();
     const librarySelect = vi.fn();
@@ -110,7 +109,6 @@ describe('Chat API', () => {
             embeddings: [{ values: Array.from({ length: 768 }, (_, index) => index / 1000) }],
         });
         segmentFetchIn.mockResolvedValue({ data: [], error: null });
-        segmentEmbeddingsSelect.mockResolvedValue({ count: 1, error: null });
         libraryOrder.mockResolvedValue({ data: defaultLibraryRows, error: null });
         libraryEq.mockReturnValue({ order: libraryOrder });
         librarySelect.mockReturnValue({ eq: libraryEq });
@@ -126,12 +124,6 @@ describe('Chat API', () => {
                     select: vi.fn().mockReturnValue({
                         in: segmentFetchIn,
                     }),
-                };
-            }
-
-            if (table === 'segment_embedding_gemini') {
-                return {
-                    select: segmentEmbeddingsSelect,
                 };
             }
 
@@ -436,9 +428,8 @@ describe('Chat API', () => {
         }));
     });
 
-    it('degrades to metadata-only context when retrieval is not initialized and the library is empty', async () => {
+    it('degrades to metadata-only context when retrieval has no matches and the library is empty', async () => {
         libraryOrder.mockResolvedValueOnce({ data: [], error: null });
-        segmentEmbeddingsSelect.mockResolvedValueOnce({ count: 0, error: null });
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
@@ -450,8 +441,9 @@ describe('Chat API', () => {
         const res = await POST(req);
 
         expect(res.status).toBe(200);
+        expect(mockFrom).not.toHaveBeenCalledWith('segment_embedding_gemini');
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Retrieved passages are not initialized yet. Only library metadata is available for this request.'),
+            system: expect.stringContaining('Matching saved passages were limited for this topic.'),
         }));
     });
 
@@ -522,8 +514,7 @@ describe('Chat API', () => {
         expect(json.error.message).toContain('Last message must be a user message');
     });
 
-    it('degrades gracefully when no Gemini segment embeddings exist yet and no library metadata exists', async () => {
-        segmentEmbeddingsSelect.mockResolvedValueOnce({ count: 0, error: null });
+    it('degrades gracefully when retrieval has no matches and no library metadata exists', async () => {
         libraryOrder.mockResolvedValueOnce({ data: [], error: null });
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
@@ -533,8 +524,9 @@ describe('Chat API', () => {
 
         const res = await POST(req);
         expect(res.status).toBe(200);
+        expect(mockFrom).not.toHaveBeenCalledWith('segment_embedding_gemini');
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Retrieved passages are not initialized yet. Only library metadata is available for this request.'),
+            system: expect.stringContaining('Matching saved passages were limited for this topic.'),
         }));
     });
 });
