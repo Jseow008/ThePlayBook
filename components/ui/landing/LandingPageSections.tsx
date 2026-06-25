@@ -1276,10 +1276,10 @@ export function CorePlatformFeaturesSection() {
 
 export function FinalCTASection() {
   return (
-    <section className="landing-cta-band relative overflow-hidden py-32 sm:py-40">
+    <section className="landing-cta-band relative overflow-hidden pt-16 pb-24 sm:pt-24 sm:pb-32 lg:pt-28 lg:pb-36">
       <FadeIn>
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center lg:px-8">
-          <div className="relative px-6 py-14 sm:px-10">
+          <div className="relative px-6 py-10 sm:px-10 sm:py-14">
             <div className="pointer-events-none absolute inset-x-0 top-1/2 h-32 -translate-y-1/2 bg-gradient-to-r from-transparent via-white/[0.035] to-transparent blur-3xl" />
 
             <div className="relative">
