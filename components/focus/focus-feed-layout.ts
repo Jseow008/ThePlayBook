@@ -9,6 +9,7 @@ export const TAKEAWAYS_SHEET_ENTER_DELAY_MS = 16;
 
 export type TakeawaysSheetPhase = "closed" | "entering" | "entered" | "exiting";
 export type SheetTouchPoint = { y: number; time: number };
+export type DesktopCompactLevel = 0 | 1 | 2 | 3;
 
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
 export const MOBILE_MIN_READABLE_HOOK_HEIGHT_PX = 72;
@@ -16,6 +17,10 @@ const DESKTOP_VISIBLE_TAKEAWAY_COUNT = 3;
 const DESKTOP_DEFAULT_COVER_WIDTH = 132;
 const DESKTOP_MEDIUM_COVER_WIDTH = 116;
 const DESKTOP_COMPACT_COVER_WIDTH = 104;
+const DESKTOP_DENSE_COVER_WIDTH = 92;
+
+export const DESKTOP_COMPACT_LEVELS = [0, 1, 2, 3] as const;
+export const MAX_DESKTOP_COMPACT_LEVEL = 3 satisfies DesktopCompactLevel;
 
 export function formatDuration(durationSeconds: number | null) {
     if (!durationSeconds) return null;
@@ -57,11 +62,41 @@ export function getDesktopAvailableContentHeight(viewportHeight: number) {
     return Math.max(viewportHeight - 42, 0);
 }
 
+export function getInitialDesktopCompactLevel(availableContentHeight: number): DesktopCompactLevel {
+    if (availableContentHeight >= 700) {
+        return 0;
+    }
+
+    if (availableContentHeight >= 620) {
+        return 1;
+    }
+
+    if (availableContentHeight >= 540) {
+        return 2;
+    }
+
+    return 3;
+}
+
 export function getDesktopCoverWidth({
     availableContentHeight,
+    compactLevel = getInitialDesktopCompactLevel(availableContentHeight),
 }: {
     availableContentHeight: number;
+    compactLevel?: DesktopCompactLevel;
 }) {
+    if (compactLevel >= 3) {
+        return DESKTOP_DENSE_COVER_WIDTH;
+    }
+
+    if (compactLevel >= 2) {
+        return DESKTOP_COMPACT_COVER_WIDTH;
+    }
+
+    if (compactLevel >= 1) {
+        return DESKTOP_MEDIUM_COVER_WIDTH;
+    }
+
     if (availableContentHeight >= 700) {
         return DESKTOP_DEFAULT_COVER_WIDTH;
     }
@@ -76,12 +111,26 @@ export function getDesktopCoverWidth({
 export function getDesktopVisibleTakeawayCount({
     availableContentHeight,
     totalTakeaways,
+    compactLevel = getInitialDesktopCompactLevel(availableContentHeight),
 }: {
     availableContentHeight: number;
     totalTakeaways: number;
+    compactLevel?: DesktopCompactLevel;
 }) {
     if (totalTakeaways <= 0) {
         return 0;
+    }
+
+    if (compactLevel >= 3) {
+        return 0;
+    }
+
+    if (compactLevel >= 2) {
+        return Math.min(totalTakeaways, 1);
+    }
+
+    if (compactLevel >= 1) {
+        return Math.min(totalTakeaways, 2);
     }
 
     if (availableContentHeight >= 700) {

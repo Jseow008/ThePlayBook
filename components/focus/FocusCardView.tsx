@@ -6,15 +6,89 @@ import { ShareButton } from "@/components/ui/ShareButton";
 import { buildReadPath } from "@/lib/content-paths";
 import type { FocusCard } from "@/components/focus/focus-feed-utils";
 import {
+    MAX_DESKTOP_COMPACT_LEVEL,
     FEED_CARD_HEIGHT_CLASS,
     MOBILE_MIN_READABLE_HOOK_HEIGHT_PX,
+    type DesktopCompactLevel,
     formatDuration,
     getDesktopAvailableContentHeight,
     getDesktopCoverWidth,
+    getInitialDesktopCompactLevel,
     getDesktopVisibleTakeawayCount,
     getMobileAvailableContentHeight,
     getMobileHookMaxHeight,
 } from "@/components/focus/focus-feed-layout";
+
+const DESKTOP_COMPACT_CLASSES = [
+    {
+        layoutGap: "gap-3",
+        headerSpacing: "space-y-3",
+        titleClamp: "line-clamp-3",
+        metadataSpacing: "space-y-1",
+        hookPadding: "py-2 pl-5 pr-4",
+        hookClamp: "line-clamp-6",
+        actionsSpacing: "gap-3 pt-1 md:pt-0.5",
+    },
+    {
+        layoutGap: "gap-2.5",
+        headerSpacing: "space-y-2.5",
+        titleClamp: "line-clamp-3",
+        metadataSpacing: "space-y-1",
+        hookPadding: "py-2 pl-5 pr-4",
+        hookClamp: "line-clamp-5",
+        actionsSpacing: "gap-3 pt-0.5",
+    },
+    {
+        layoutGap: "gap-2",
+        headerSpacing: "space-y-2",
+        titleClamp: "line-clamp-2",
+        metadataSpacing: "space-y-0.5",
+        hookPadding: "py-2 pl-4 pr-4",
+        hookClamp: "line-clamp-4",
+        actionsSpacing: "gap-2.5 pt-0",
+    },
+    {
+        layoutGap: "gap-1.5",
+        headerSpacing: "space-y-1.5",
+        titleClamp: "line-clamp-2",
+        metadataSpacing: "space-y-0.5",
+        hookPadding: "py-1.5 pl-4 pr-4",
+        hookClamp: "line-clamp-4",
+        actionsSpacing: "gap-2 pt-0",
+    },
+] as const;
+
+type DesktopTakeawayClasses = {
+    contentSpacing: string;
+    takeawayGap: string;
+    takeawayClamp: string;
+};
+
+const DESKTOP_TAKEAWAY_CLASSES: readonly DesktopTakeawayClasses[] = [
+    {
+        contentSpacing: "space-y-2.5",
+        takeawayGap: "gap-2",
+        takeawayClamp: "line-clamp-3",
+    },
+    {
+        contentSpacing: "space-y-2",
+        takeawayGap: "gap-2",
+        takeawayClamp: "line-clamp-3",
+    },
+    {
+        contentSpacing: "space-y-1.5",
+        takeawayGap: "gap-1.5",
+        takeawayClamp: "line-clamp-2",
+    },
+] as const;
+
+function getDesktopTakeawayClasses(compactLevel: DesktopCompactLevel) {
+    if (compactLevel >= DESKTOP_TAKEAWAY_CLASSES.length) {
+        return null;
+    }
+
+    return DESKTOP_TAKEAWAY_CLASSES[compactLevel] ?? null;
+}
 
 export const FocusCardView = memo(function FocusCardView({
     card,
@@ -47,16 +121,40 @@ export const FocusCardView = memo(function FocusCardView({
     const desktopAvailableContentHeight = mobileCardTargetHeight === null || mobileCardTargetHeight <= 0
         ? 720
         : getDesktopAvailableContentHeight(mobileCardTargetHeight);
+    const heuristicDesktopCompactLevel = getInitialDesktopCompactLevel(desktopAvailableContentHeight);
+    const desktopFitKey = isDesktop && cardWidth > 0 && mobileCardTargetHeight !== null
+        ? `${card.id}:${cardWidth}:${mobileCardTargetHeight}`
+        : null;
+    const [measuredDesktopCompactLevel, setMeasuredDesktopCompactLevel] = useState<{
+        key: string;
+        level: DesktopCompactLevel;
+    } | null>(null);
+    const desktopCompactLevel = isDesktop
+        ? Math.max(
+            heuristicDesktopCompactLevel,
+            measuredDesktopCompactLevel?.key === desktopFitKey
+                ? measuredDesktopCompactLevel.level
+                : heuristicDesktopCompactLevel
+        ) as DesktopCompactLevel
+        : 0;
+    const desktopCompactClasses = DESKTOP_COMPACT_CLASSES[desktopCompactLevel];
+    const desktopTakeawayClasses = getDesktopTakeawayClasses(desktopCompactLevel);
     const desktopCoverWidth = getDesktopCoverWidth({
         availableContentHeight: desktopAvailableContentHeight,
+        compactLevel: desktopCompactLevel,
     });
     const desktopVisibleTakeawayCount = isDesktop
         ? getDesktopVisibleTakeawayCount({
             availableContentHeight: desktopAvailableContentHeight,
             totalTakeaways: card.takeaways.length,
+            compactLevel: desktopCompactLevel,
         })
         : card.takeaways.length;
     const desktopVisibleTakeaways = card.takeaways.slice(0, desktopVisibleTakeawayCount);
+    const shouldShowDesktopTakeaways =
+        isDesktop
+        && desktopTakeawayClasses !== null
+        && (desktopVisibleTakeawayCount > 0 || card.takeaways.length === 0);
     const isCompactMobileLayout =
         !isDesktop
         && mobileHookMaxHeight !== null
@@ -69,12 +167,6 @@ export const FocusCardView = memo(function FocusCardView({
         : "Key Takeaways";
 
     useEffect(() => {
-        if (isDesktop) {
-            setCardWidth(0);
-            setMobileHookMaxHeight(null);
-            return;
-        }
-
         const cardElement = cardRef.current;
         if (!cardElement) {
             setCardWidth(0);
@@ -95,7 +187,7 @@ export const FocusCardView = memo(function FocusCardView({
         observer.observe(cardElement);
 
         return () => observer.disconnect();
-    }, [isDesktop]);
+    }, []);
 
     useEffect(() => {
         if (isDesktop) {
@@ -166,6 +258,44 @@ export const FocusCardView = memo(function FocusCardView({
         mobileHookMaxHeight,
     ]);
 
+    useLayoutEffect(() => {
+        if (!isDesktop || !desktopFitKey || mobileCardTargetHeight === null) {
+            return;
+        }
+
+        const cardElement = cardRef.current;
+        const cardContentElement = cardContentRef.current;
+        if (!cardElement || !cardContentElement) {
+            return;
+        }
+
+        const computedStyle = window.getComputedStyle(cardElement);
+        const verticalPadding =
+            Number.parseFloat(computedStyle.paddingTop) + Number.parseFloat(computedStyle.paddingBottom);
+        const availableContentHeight = Math.max(mobileCardTargetHeight - verticalPadding - 8, 0);
+        const requiredContentHeight = Math.ceil(cardContentElement.scrollHeight);
+
+        if (
+            requiredContentHeight <= availableContentHeight + 1
+            || desktopCompactLevel >= MAX_DESKTOP_COMPACT_LEVEL
+        ) {
+            return;
+        }
+
+        setMeasuredDesktopCompactLevel({
+            key: desktopFitKey,
+            level: Math.min(
+                desktopCompactLevel + 1,
+                MAX_DESKTOP_COMPACT_LEVEL
+            ) as DesktopCompactLevel,
+        });
+    }, [
+        desktopCompactLevel,
+        desktopFitKey,
+        isDesktop,
+        mobileCardTargetHeight,
+    ]);
+
     return (
         <article
             data-focus-card-index={cardIndex}
@@ -175,8 +305,8 @@ export const FocusCardView = memo(function FocusCardView({
         >
             <div ref={cardContentRef} data-testid="focus-card-content" className="flex h-full min-h-0 flex-col">
                 {isDesktop ? (
-                    <div className="flex h-full min-h-0 flex-col gap-3">
-                        <div className="shrink-0 space-y-3 text-center">
+                    <div className={`flex h-full min-h-0 flex-col ${desktopCompactClasses.layoutGap}`}>
+                        <div className={`shrink-0 ${desktopCompactClasses.headerSpacing} text-center`}>
                             <div className="flex justify-center">
                                 <div className="relative">
                                     <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
@@ -211,10 +341,10 @@ export const FocusCardView = memo(function FocusCardView({
                             </div>
 
                             <div className="space-y-1.5">
-                                <h2 className="mx-auto line-clamp-3 max-w-[34rem] text-[1.2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[1.5rem] sm:leading-[1.1]">
+                                <h2 className={`mx-auto max-w-[34rem] text-[1.2rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[1.5rem] sm:leading-[1.1] ${desktopCompactClasses.titleClamp}`}>
                                     {card.title}
                                 </h2>
-                                <div className="space-y-1">
+                                <div className={desktopCompactClasses.metadataSpacing}>
                                     {card.author && (
                                         <p className="line-clamp-1 text-[0.9rem] font-medium text-muted-foreground/80">
                                             {card.author}
@@ -239,47 +369,49 @@ export const FocusCardView = memo(function FocusCardView({
                             </div>
                         </div>
 
-                        <section className="relative shrink-0 rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 py-2 pl-5 pr-4">
-                            <p className="line-clamp-6 text-[1.05rem] leading-[1.58] text-foreground/92">
+                        <section className={`relative shrink-0 rounded-r-2xl border-l-[3px] border-primary/45 bg-secondary/25 ${desktopCompactClasses.hookPadding}`}>
+                            <p className={`text-[1.05rem] leading-[1.58] text-foreground/92 ${desktopCompactClasses.hookClamp}`}>
                                 {card.hook}
                             </p>
                         </section>
 
-                        <section className="flex min-h-0 flex-1 flex-col space-y-2.5">
-                            <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
-                                {desktopTakeawaysHeading}
-                            </p>
-                            {card.takeaways.length > 0 ? (
-                                <div
-                                    data-testid="focus-desktop-takeaways-list"
-                                    className="min-h-0 overflow-hidden pr-1"
-                                    aria-label={`${card.title} key takeaways`}
-                                >
-                                    <div className="grid gap-2">
-                                        {desktopVisibleTakeaways.map((takeaway, index) => (
-                                            <div
-                                                key={`${card.id}-${index}`}
-                                                data-focus-desktop-takeaway-row
-                                                className="flex gap-3 px-1 py-0.5"
-                                            >
-                                                <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
-                                                    {index + 1}
-                                                </span>
-                                                <span className="min-w-0 line-clamp-3 text-[1rem] leading-[1.58] text-foreground/90">
-                                                    {takeaway}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            ) : (
-                                <p className="px-1 text-[1rem] leading-[1.6] text-muted-foreground">
-                                    Open the full summary for the complete breakdown.
+                        {shouldShowDesktopTakeaways && desktopTakeawayClasses ? (
+                            <section className={`flex min-h-0 flex-1 flex-col ${desktopTakeawayClasses.contentSpacing}`}>
+                                <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/75">
+                                    {desktopTakeawaysHeading}
                                 </p>
-                            )}
-                        </section>
+                                {desktopVisibleTakeaways.length > 0 ? (
+                                    <div
+                                        data-testid="focus-desktop-takeaways-list"
+                                        className="min-h-0 overflow-hidden pr-1"
+                                        aria-label={`${card.title} key takeaways`}
+                                    >
+                                        <div className={`grid ${desktopTakeawayClasses.takeawayGap}`}>
+                                            {desktopVisibleTakeaways.map((takeaway, index) => (
+                                                <div
+                                                    key={`${card.id}-${index}`}
+                                                    data-focus-desktop-takeaway-row
+                                                    className="flex gap-3 px-1 py-0.5"
+                                                >
+                                                    <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[10px] font-bold text-primary">
+                                                        {index + 1}
+                                                    </span>
+                                                    <span className={`min-w-0 text-[1rem] leading-[1.58] text-foreground/90 ${desktopTakeawayClasses.takeawayClamp}`}>
+                                                        {takeaway}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="px-1 text-[1rem] leading-[1.6] text-muted-foreground">
+                                        Open the full summary for the complete breakdown.
+                                    </p>
+                                )}
+                            </section>
+                        ) : null}
 
-                        <div className="flex flex-wrap items-center justify-start gap-3 pt-1 md:pt-0.5">
+                        <div className={`flex flex-wrap items-center justify-start ${desktopCompactClasses.actionsSpacing}`}>
                             {isDesktopTakeawaysTruncated ? (
                                 <Link
                                     href={`/preview/${card.id}?takeaways=all`}
@@ -416,7 +548,7 @@ export const FocusCardView = memo(function FocusCardView({
                     </div>
                 )}
             </div>
-            {isDesktop && isActive && showDesktopScrollCue ? (
+            {isDesktop && isActive && showDesktopScrollCue && desktopCompactLevel < MAX_DESKTOP_COMPACT_LEVEL ? (
                 <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center">
                     <div
                         data-testid="focus-navigation-cue"
