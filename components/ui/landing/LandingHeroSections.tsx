@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,6 +10,8 @@ import { Logo } from "@/components/ui/Logo";
 
 const HERO_WORKFLOW_STEPS = ["Discover", "Understand", "Save", "Recall"] as const;
 const HERO_WORKFLOW_INTERVAL_MS = 2800;
+const heroRevealStyle = (delay: string) =>
+  ({ "--hero-reveal-delay": delay } as CSSProperties);
 const PRIMARY_CTA_CLASS =
   "focus-ring landing-primary-cta group relative inline-flex w-full min-w-0 items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 sm:w-auto";
 const SECONDARY_CTA_CLASS =
@@ -52,7 +55,10 @@ export function HeroSection() {
         foregroundClassName="max-w-7xl"
         foreground={
           <>
-            <h1 className="mx-auto max-w-full font-serif text-[1.8rem] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:text-6xl sm:leading-[1.05] md:text-[3.55rem] lg:text-[4.65rem]">
+            <h1
+              className="landing-hero-reveal mx-auto max-w-full font-serif text-[1.8rem] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:text-6xl sm:leading-[1.05] md:text-[3.55rem] lg:text-[4.65rem]"
+              style={heroRevealStyle("80ms")}
+            >
               <span className="sr-only">From passive consumption to knowledge that compounds.</span>
 
               <span aria-hidden="true" className="block sm:hidden">
@@ -72,13 +78,19 @@ export function HeroSection() {
               </span>
             </h1>
 
-            <p className="landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]">
+            <p
+              className="landing-hero-reveal landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]"
+              style={heroRevealStyle("260ms")}
+            >
               The best ideas only matter if you can find them again.
             </p>
 
             <HeroWorkflow />
 
-            <div className="mt-7 flex flex-col justify-center gap-4 sm:flex-row sm:items-center">
+            <div
+              className="landing-hero-reveal mt-7 flex flex-col justify-center gap-4 sm:flex-row sm:items-center"
+              style={heroRevealStyle("560ms")}
+            >
               <Link href="/browse" className={PRIMARY_CTA_CLASS}>
                 <span className="relative z-10">Explore the Library</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
@@ -96,7 +108,7 @@ export function HeroSection() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[42%_center] md:object-center"
+          className="landing-hero-background-image object-cover object-[42%_center] md:object-center"
         />
       </BackgroundScroll>
     </section>
@@ -149,14 +161,17 @@ function HeroWorkflow() {
 
   return (
     <div
-      className="landing-hero-workflow mx-auto mt-7 sm:mt-8"
+      className="landing-hero-reveal landing-hero-workflow mx-auto mt-7 sm:mt-8"
+      style={heroRevealStyle("410ms")}
       aria-label="Netflux workflow: Discover, Understand, Save, Recall"
     >
       <div className="flex flex-nowrap items-center justify-center gap-2 sm:gap-4" aria-hidden="true">
         {HERO_WORKFLOW_STEPS.map((step, index) => (
           <Fragment key={step}>
             <HeroWorkflowStep step={step} isActive={index === activeIndex} />
-            {index < HERO_WORKFLOW_STEPS.length - 1 ? <HeroWorkflowConnector /> : null}
+            {index < HERO_WORKFLOW_STEPS.length - 1 ? (
+              <HeroWorkflowConnector isActive={index === activeIndex} />
+            ) : null}
           </Fragment>
         ))}
       </div>
@@ -181,8 +196,8 @@ function HeroWorkflowStep({
   );
 }
 
-function HeroWorkflowConnector() {
+function HeroWorkflowConnector({ isActive }: { isActive: boolean }) {
   return (
-    <span className="landing-hero-workflow-connector" />
+    <span className="landing-hero-workflow-connector" data-active={isActive} />
   );
 }

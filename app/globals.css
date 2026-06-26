@@ -644,6 +644,16 @@ mark[data-highlight-spotlight="true"] {
   text-wrap: pretty;
 }
 
+.landing-hero-background-image {
+  transform-origin: 50% 50%;
+}
+
+.landing-hero-reveal {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
 .landing-section-kicker {
   color: rgba(212, 212, 216, 0.72);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
@@ -778,7 +788,6 @@ mark[data-highlight-spotlight="true"] {
   opacity: 0;
   transform: translateX(-50%) scaleX(0);
   transform-origin: center;
-  animation: landingHeroUnderlineReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
   will-change: opacity, transform;
 }
 
@@ -793,10 +802,21 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-hero-workflow-connector {
+  position: relative;
+  overflow: hidden;
   width: 0.6rem;
   height: 1px;
   flex: none;
   background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), rgba(231, 189, 114, 0.42));
+}
+
+.landing-hero-workflow-connector::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 247, 224, 0.86), transparent);
+  opacity: 0;
+  transform: translateX(-115%);
 }
 
 .landing-hero-workflow-step[data-active="true"] {
@@ -843,6 +863,99 @@ mark[data-highlight-spotlight="true"] {
   to {
     opacity: 0.46;
     transform: translateX(-50%) scaleX(1);
+  }
+}
+
+@keyframes landingHeroReveal {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+@keyframes landingHeroBackgroundDrift {
+  from {
+    transform: translate3d(-0.32%, -0.18%, 0) scale(1.01);
+  }
+
+  to {
+    transform: translate3d(0.32%, 0.22%, 0) scale(1.024);
+  }
+}
+
+@keyframes landingWorkflowConnectorSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-115%);
+  }
+
+  16% {
+    opacity: 0.82;
+  }
+
+  82% {
+    opacity: 0.62;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(115%);
+  }
+}
+
+@keyframes landingCtaSheenOnce {
+  0% {
+    opacity: 0;
+    transform: translateX(-30%) skewX(-18deg);
+  }
+
+  28% {
+    opacity: 0.82;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(360%) skewX(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-hero-background-image {
+    animation: landingHeroBackgroundDrift 18s ease-in-out 700ms infinite alternate;
+    will-change: transform;
+  }
+
+  .landing-hero-reveal {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(10px);
+    animation: landingHeroReveal 780ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--hero-reveal-delay, 0ms);
+    will-change: opacity, transform, filter;
+  }
+
+  .landing-hero-emphasis::after {
+    animation: landingHeroUnderlineReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 940ms both;
+  }
+
+  .landing-hero-workflow-connector[data-active="true"]::after {
+    animation: landingWorkflowConnectorSweep 2800ms linear both;
+  }
+
+  .landing-primary-cta::after {
+    animation: landingCtaSheenOnce 980ms cubic-bezier(0.22, 1, 0.36, 1) 900ms;
+  }
+
+  .landing-primary-cta:hover::after {
+    opacity: 1 !important;
+    transform: translateX(360%) skewX(-18deg) !important;
   }
 }
 
