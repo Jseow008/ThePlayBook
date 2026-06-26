@@ -802,12 +802,16 @@ Implementation:
   - `app/api/chat/author/route.ts`
   - `app/api/chat/notes/route.ts`
   - `app/api/chat/exports/route.ts`
+- Added edge-safe admin rejection telemetry in `proxy.ts` for admin IP gate blocks, missing admin sessions, and authenticated non-admin access. These proxy-layer events reuse `admin_auth_failure` with reason-specific values and do not import Sentry into the Edge/proxy runtime.
+- Moved admin password sign-in through `/api/admin-login`, added strict app-level rate limiting, fails closed if the rate-limit backend is unavailable, and emits `admin_auth_failure` telemetry for invalid credentials, missing users/profiles, non-admin users, rate-limit exhaustion, rate-limit backend unavailability, and unexpected login errors without logging credentials.
 - Kept Supabase advisor regression monitoring in CI/static audit only through `.github/workflows/security.yml` and `npm run security:supabase-advisors`; runtime telemetry does not import or execute advisor checks.
 - Preserved the Next 16 `proxy.ts` convention and added regression coverage for the proxy export and admin matchers instead of adding a deprecated `middleware.ts` wrapper.
+- Documented that Sentry throttling is best-effort per warm runtime instance; structured logs remain authoritative for exact counts.
 
 Verification:
 
 - `npm test -- tests/security/security-observability.test.ts`
+- `npm test -- tests/api/admin-login.test.ts tests/proxy.test.ts`
 - `npm test -- tests/api/email-subscriptions.test.ts tests/api/chat.test.ts tests/api/author-chat.test.ts tests/api/notes-chat.test.ts tests/api/chat-exports.test.ts tests/proxy.test.ts`
 - `npm run test:security`
 - `npm run typecheck`
@@ -815,16 +819,25 @@ Verification:
 
 ## Verification Checklist Before Production
 
+- [ ] `npm run verify:production -- --env-file <production-env> --base-url https://<deployment-domain>` passes.
 - [ ] Supabase security advisor has no unaccepted warnings for function ACLs, public definer functions, mutable search paths, or public bucket listing.
-- [ ] Direct SQL confirms admin RPCs are not executable by `anon`/`authenticated`.
+- [ ] Direct SQL confirms admin RPCs are not executable by `PUBLIC`, `anon`, or `authenticated` through `npm run security:admin-rpc-acls`.
 - [ ] `npm audit --omit=dev` has no high or critical vulnerabilities.
 - [ ] `npm run validate:launch-env -- --env-file <production-env>` passes.
 - [ ] `npm run lint` passes.
 - [ ] `npm run typecheck` passes.
 - [ ] `npm run test` passes.
 - [ ] `npm run build` passes.
-- [ ] Browser smoke tests cover login, auth callback, public browse/read, admin access denied, admin access allowed, and health endpoint behavior.
+- [ ] Browser smoke tests cover login, auth callback, public browse/read, admin access denied, admin access allowed, shallow health, and authorized detailed health.
 - [ ] Admin path protection is verified at the platform layer or via enforced env checks.
+
+Implementation:
+
+- Added `npm run verify:production` as the production checklist orchestrator.
+- Added `npm run security:admin-rpc-acls` and `scripts/security-admin-rpc-acl-check.sql` to directly assert all `public.admin_%` RPCs are not executable by `PUBLIC`, `anon`, or `authenticated`, and remain executable by `service_role`.
+- Added `tests/e2e/production-smoke.spec.ts` for login, auth callback, public browse/read, admin denied, admin allowed, and health endpoint smoke coverage.
+- Updated Playwright config so `PLAYWRIGHT_BASE_URL` targets an external deployment without starting the local dev server.
+- Added a manual `production-verification` GitHub Actions job in `.github/workflows/security.yml`.
 
 ## Risk Acceptance Log
 

@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:security": "vitest run tests/proxy.test.ts tests/security/ tests/api/health.test.ts tests/api/activity-log.test.ts tests/api/admin-*.test.ts",
     "security:audit": "npm audit --omit=dev --audit-level=high",
+    "security:admin-rpc-acls": "node scripts/check-supabase-admin-rpc-acls.mjs",
     "security:function-acls": "node scripts/check-supabase-function-acls.mjs",
     "security:supabase-advisors": "node scripts/check-supabase-security-advisors.mjs",
     "security:analytics-rls": "node scripts/check-supabase-analytics-rls.mjs",
@@ -20,6 +21,7 @@
     "security:storage-bucket-listing": "node scripts/check-supabase-storage-bucket-listing.mjs",
     "embeddings:sync-segments": "tsx scripts/sync-segment-embeddings.ts",
     "validate:launch-env": "node scripts/validate-launch-env.mjs",
+    "verify:production": "node scripts/verify-production.mjs",
     "check:deployment-health": "node scripts/check-deployment-health.mjs",
     "posthog:dashboards": "node scripts/create-posthog-dashboards.mjs"
   },

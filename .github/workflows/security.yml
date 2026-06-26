@@ -6,6 +6,11 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      base_url:
+        description: Production or preview URL for full pre-production browser smoke verification
+        required: false
+        type: string
   schedule:
     - cron: "17 12 * * *"
 
@@ -68,12 +73,68 @@ jobs:
       - name: Supabase SQL drift checks
         run: |
           npm run security:function-acls
+          npm run security:admin-rpc-acls
           npm run security:embedding-table-reads
           npm run security:storage-bucket-listing
           npm run security:analytics-rls
 
       - name: Security route and static tests
         run: npm run test:security
+
+  production-verification:
+    if: github.event_name == 'workflow_dispatch' && inputs.base_url != ''
+    name: Production Verification
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      NEXT_PUBLIC_SITE_URL: ${{ inputs.base_url }}
+      NEXT_PUBLIC_APP_URL: ${{ inputs.base_url }}
+      AI_PROVIDER: ${{ secrets.AI_PROVIDER }}
+      AI_MODEL: ${{ secrets.AI_MODEL }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+      HEALTH_CHECK_SECRET: ${{ secrets.HEALTH_CHECK_SECRET }}
+      ADMIN_ALLOWED_IPS: ${{ secrets.ADMIN_ALLOWED_IPS }}
+      ANONYMOUS_ACTIVITY_SECRET: ${{ secrets.ANONYMOUS_ACTIVITY_SECRET }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SMOKE_ADMIN_EMAIL: ${{ secrets.SMOKE_ADMIN_EMAIL }}
+      SMOKE_ADMIN_PASSWORD: ${{ secrets.SMOKE_ADMIN_PASSWORD }}
+      SMOKE_READ_PATH: ${{ vars.SMOKE_READ_PATH }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run production verification checklist
+        run: npm run verify:production -- --base-url "${{ inputs.base_url }}"
 
   supabase-advisor-audit:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'

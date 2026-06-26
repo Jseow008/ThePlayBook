@@ -4,6 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
 import { buildCanonicalReadPath, getLegacyReadIdFromPathname } from "@/lib/content-paths";
+import { recordEdgeAdminAuthFailure } from "@/lib/security/edge-security-telemetry";
 
 async function getLegacyReadRedirect(request: NextRequest) {
     const contentId = getLegacyReadIdFromPathname(request.nextUrl.pathname);
@@ -87,17 +88,22 @@ function isAdminPath(pathname: string): boolean {
     return (
         pathname === "/admin-login" ||
         pathname.startsWith("/admin-login/") ||
+        pathname === "/api/admin-login" ||
         pathname === "/admin" ||
         pathname.startsWith("/admin/") ||
-        pathname.startsWith("/api/admin")
+        isAdminApiPath(pathname)
     );
+}
+
+function isAdminApiPath(pathname: string): boolean {
+    return pathname === "/api/admin" || pathname.startsWith("/api/admin/");
 }
 
 function isProtectedAdminPath(pathname: string): boolean {
     return (
         pathname === "/admin" ||
         pathname.startsWith("/admin/") ||
-        pathname.startsWith("/api/admin")
+        isAdminApiPath(pathname)
     );
 }
 
@@ -117,7 +123,7 @@ function hasValidCronSecret(request: NextRequest): boolean {
 
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
-    const isAdminApiRoute = pathname.startsWith("/api/admin");
+    const isAdminApiRoute = isAdminApiPath(pathname);
     const isAuthorizedCronProcessor = hasValidCronSecret(request);
 
     // ── Admin IP gate ────────────────────────────────────────────────
@@ -125,6 +131,11 @@ export async function proxy(request: NextRequest) {
         const allowedIps = getAdminAllowedIps();
 
         if (allowedIps === null && isProductionRuntime()) {
+            recordEdgeAdminAuthFailure({
+                request,
+                route: pathname,
+                reason: "admin_ips_unconfigured",
+            });
             return new NextResponse("Not Found", { status: 404 });
         }
 
@@ -134,6 +145,11 @@ export async function proxy(request: NextRequest) {
             if (!allowedIps.has(clientIp)) {
                 // Return a generic 404 so attackers can't even confirm
                 // the admin panel exists.
+                recordEdgeAdminAuthFailure({
+                    request,
+                    route: pathname,
+                    reason: "ip_not_allowed",
+                });
                 return new NextResponse("Not Found", { status: 404 });
             }
         }
@@ -166,6 +182,11 @@ export async function proxy(request: NextRequest) {
 
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
+            recordEdgeAdminAuthFailure({
+                request,
+                route: pathname,
+                reason: "missing_user",
+            });
             if (isAdminApiRoute) {
                 return NextResponse.json(
                     { error: { code: "UNAUTHORIZED", message: "Not authenticated" } },
@@ -182,6 +203,12 @@ export async function proxy(request: NextRequest) {
             .single();
 
         if (!profile || profile.role !== "admin") {
+            recordEdgeAdminAuthFailure({
+                request,
+                route: pathname,
+                reason: "not_admin",
+                userId: user.id,
+            });
             if (isAdminApiRoute) {
                 return NextResponse.json(
                     { error: { code: "FORBIDDEN", message: "Admin access required" } },
@@ -206,6 +233,7 @@ export const config = {
         "/ask",
         "/requests",
         "/admin-login",
+        "/api/admin-login",
         "/admin/:path*",
         "/api/admin/:path*",
         "/api/activity/:path*",

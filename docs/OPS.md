@@ -442,6 +442,7 @@ npm run security:audit
 npm run validate:launch-env
 npm run test:security
 SUPABASE_LOCAL=1 npm run security:function-acls
+SUPABASE_LOCAL=1 npm run security:admin-rpc-acls
 SUPABASE_LOCAL=1 npm run security:embedding-table-reads
 SUPABASE_LOCAL=1 npm run security:storage-bucket-listing
 SUPABASE_LOCAL=1 npm run security:analytics-rls
@@ -456,9 +457,38 @@ The scheduled/manual `Supabase Advisor Audit` job uses these GitHub secrets when
 
 Supabase advisor results are an audit signal, not the real-time PR blocker, because advisor findings can lag behind schema changes. Exact accepted advisor findings are tracked in `scripts/supabase-security-advisor-allowlist.json`; unallowlisted `WARN` and `ERROR` findings fail the advisor audit when that job runs.
 
+#### Production Verification Checklist
+
+Before production promotion, run the full checklist against the exact deployment URL:
+
+```bash
+npm run verify:production -- --env-file <production-env> --base-url https://<deployment-domain>
+```
+
+The command runs the production dependency audit, launch env validation, Supabase advisors, direct Supabase SQL security checks, lint, typecheck, unit/security tests, build, and Playwright smoke tests.
+
+Required production verification environment:
+
+- `SUPABASE_ACCESS_TOKEN`
+- `SUPABASE_PROJECT_REF`
+- `SUPABASE_DB_URL`
+- `HEALTH_CHECK_SECRET`
+- `SMOKE_ADMIN_EMAIL`
+- `SMOKE_ADMIN_PASSWORD`
+- `SMOKE_READ_PATH`, set to a known public `/read/...` or `/preview/...` path
+
+The same checklist can be run from GitHub Actions through the manual `Security Gates` workflow by providing `base_url`. The manual production job also runs Gitleaks and uses repository secrets plus the `SMOKE_READ_PATH` repository variable.
+
+Admin path protection must be validated two ways: unauthenticated `/admin` access must redirect or be denied by the platform, and an admin smoke account from an allowed network must reach the admin dashboard. If the platform intentionally blocks the GitHub runner IP, run `npm run verify:production` from an allowed network before promotion.
+
 #### Security Observability
 
 Runtime security telemetry uses structured server logs as the complete event stream and throttled Sentry warning events for alert-grade summaries. The telemetry contract intentionally excludes raw IPs, hashed IPs, unsubscribe tokens, chat prompts, model responses, request bodies, cookies, authorization headers, API keys, and Supabase access tokens.
+
+Admin route protection emits server-side security telemetry at both layers:
+
+- `proxy.ts` emits edge-safe structured logs for admin IP gate blocks, unauthenticated protected admin access, and authenticated non-admin access. This layer intentionally logs to `console.warn` only because it runs in the Edge/proxy runtime.
+- `/api/admin-login` handles admin password sign-in server-side, applies a strict login attempt rate limit, emits `admin_auth_failure` telemetry for failed attempts, and never logs credentials or raw Supabase auth payloads.
 
 Recommended Sentry issue alerts:
 
@@ -467,7 +497,7 @@ Recommended Sentry issue alerts:
 - `security_signal=ai_rate_limit_exhausted`: alert on repeated AI/chat rate-limit exhaustion, for example 10 events in 10 minutes.
 - `security_signal=ai_quota_exhausted`: lower-severity abuse/cost review signal.
 
-High-volume events are throttled before Sentry capture, so use the structured server log stream for exact event counts and forensic review. Correlate app telemetry with CDN/WAF logs by `request_id`; do not add raw or hashed IP addresses to Sentry context.
+High-volume events are throttled before Sentry capture on a best-effort, per warm runtime instance basis. Serverless cold starts and concurrent function instances can still produce more than one Sentry event per logical throttle window, so use Sentry as an alert-grade summary channel and use the structured server log stream for exact event counts and forensic review. Correlate app telemetry with CDN/WAF logs by `request_id`; do not add raw or hashed IP addresses to Sentry context.
 
 Supabase advisor regressions are monitored by the scheduled/manual `Supabase Advisor Audit` GitHub Actions job, not runtime telemetry. Configure repository or team notifications so a failed `supabase-advisor-audit` job pages the security owner for review.
 

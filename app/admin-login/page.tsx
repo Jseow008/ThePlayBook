@@ -10,7 +10,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, Loader2, AlertCircle, Mail } from "lucide-react";
-import { createClient } from "@/lib/supabase/client";
 import { APP_NAME } from "@/lib/brand";
 
 export default function AdminLoginPage() {
@@ -26,48 +25,23 @@ export default function AdminLoginPage() {
         setIsLoading(true);
 
         try {
-            const supabase = createClient();
-
-            // Sign in with Supabase Auth
-            const { data, error: signInError } = await supabase.auth.signInWithPassword({
-                email,
-                password,
+            const response = await fetch("/api/admin-login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ email, password }),
             });
 
-            if (signInError) {
-                setError(signInError.message);
+            if (!response.ok) {
+                const payload = await response.json().catch(() => null) as {
+                    error?: { message?: string };
+                } | null;
+                setError(payload?.error?.message ?? "Unable to sign in. Please try again.");
                 setIsLoading(false);
                 return;
             }
 
-            if (!data.user) {
-                setError("Login failed. Please try again.");
-                setIsLoading(false);
-                return;
-            }
-
-            // Check if user has admin role
-            const { data: profile, error: profileError } = await supabase
-                .from("profiles")
-                .select("role")
-                .eq("id", data.user.id)
-                .single<{ role: string }>();
-
-            if (profileError || !profile) {
-                await supabase.auth.signOut();
-                setError("Unable to verify your account. Please contact support.");
-                setIsLoading(false);
-                return;
-            }
-
-            if (profile.role !== "admin") {
-                await supabase.auth.signOut();
-                setError("Access denied. You do not have admin privileges.");
-                setIsLoading(false);
-                return;
-            }
-
-            // Success - redirect to admin dashboard
             router.push("/admin");
             router.refresh();
         } catch {

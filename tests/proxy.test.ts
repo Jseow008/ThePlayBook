@@ -43,9 +43,12 @@ vi.mock("@supabase/supabase-js", () => ({
 }));
 
 describe("proxy auth routing", () => {
+    let warnSpy: ReturnType<typeof vi.spyOn>;
+
     beforeEach(() => {
         vi.clearAllMocks();
         vi.unstubAllEnvs();
+        warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         getUserMock.mockResolvedValue({ data: { user: null }, error: null });
         profileSingleMock.mockResolvedValue({ data: null, error: null });
         legacyMaybeSingleMock.mockResolvedValue({ data: null, error: null });
@@ -54,6 +57,23 @@ describe("proxy auth routing", () => {
         delete process.env.ADMIN_ALLOWED_IPS;
         delete process.env.CRON_SECRET;
     });
+
+    afterEach(() => {
+        warnSpy.mockRestore();
+    });
+
+    function expectAdminTelemetry(reason: string, route: string) {
+        expect(warnSpy).toHaveBeenCalledWith(
+            "[security]",
+            expect.objectContaining({
+                security_signal: "admin_auth_failure",
+                category: "admin",
+                runtime: "edge",
+                route,
+                reason,
+            }),
+        );
+    }
 
     it("does not require an existing admin session to reach the admin login page", async () => {
         const response = await proxy(new NextRequest("http://localhost/admin-login"));
@@ -69,6 +89,7 @@ describe("proxy auth routing", () => {
         expect(response.status).toBe(307);
         expect(response.headers.get("location")).toBe("http://localhost/login?next=%2Fadmin%2Fcontent");
         expect(getUserMock).toHaveBeenCalledTimes(1);
+        expectAdminTelemetry("missing_user", "/admin/content");
     });
 
     it("blocks production admin paths when ADMIN_ALLOWED_IPS is unset", async () => {
@@ -79,6 +100,7 @@ describe("proxy auth routing", () => {
         expect(response.status).toBe(404);
         expect(getUserMock).not.toHaveBeenCalled();
         expect(updateSession).not.toHaveBeenCalled();
+        expectAdminTelemetry("admin_ips_unconfigured", "/admin/content");
     });
 
     it("allows configured production admin IPs to reach admin auth checks", async () => {
@@ -105,6 +127,54 @@ describe("proxy auth routing", () => {
         expect(response.status).toBe(404);
         expect(getUserMock).not.toHaveBeenCalled();
         expect(updateSession).not.toHaveBeenCalled();
+        expectAdminTelemetry("ip_not_allowed", "/admin/content");
+    });
+
+    it("hides the admin login API from non-allowlisted IPs", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        process.env.ADMIN_ALLOWED_IPS = "203.0.113.42";
+
+        const response = await proxy(new NextRequest("http://localhost/api/admin-login", {
+            method: "POST",
+            headers: { "x-forwarded-for": "198.51.100.10" },
+        }));
+
+        expect(response.status).toBe(404);
+        expect(getUserMock).not.toHaveBeenCalled();
+        expect(updateSession).not.toHaveBeenCalled();
+        expectAdminTelemetry("ip_not_allowed", "/api/admin-login");
+    });
+
+    it("allows unauthenticated users from configured IPs to reach the admin login API", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        process.env.ADMIN_ALLOWED_IPS = "203.0.113.42";
+
+        const response = await proxy(new NextRequest("http://localhost/api/admin-login", {
+            method: "POST",
+            headers: { "x-forwarded-for": "203.0.113.42" },
+        }));
+
+        expect(response.status).toBe(200);
+        expect(getUserMock).not.toHaveBeenCalled();
+        expect(updateSession).toHaveBeenCalledTimes(1);
+        expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it("redirects authenticated non-admin users away from admin pages with telemetry", async () => {
+        getUserMock.mockResolvedValue({
+            data: { user: { id: "user-123" } },
+            error: null,
+        });
+        profileSingleMock.mockResolvedValue({
+            data: { role: "reader" },
+            error: null,
+        });
+
+        const response = await proxy(new NextRequest("http://localhost/admin/content"));
+
+        expect(response.status).toBe(307);
+        expect(response.headers.get("location")).toBe("http://localhost/");
+        expectAdminTelemetry("not_admin", "/admin/content");
     });
 
     it("lets authorized cron processors bypass the admin IP gate", async () => {
@@ -164,6 +234,7 @@ describe("proxy auth routing", () => {
         expect(typeof proxy).toBe("function");
         expect(config.matcher).toEqual(expect.arrayContaining([
             "/admin/:path*",
+            "/api/admin-login",
             "/api/admin/:path*",
         ]));
     });

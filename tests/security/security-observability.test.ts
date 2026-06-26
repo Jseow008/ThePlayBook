@@ -4,6 +4,7 @@ import {
     __resetSecurityTelemetryForTests,
     recordSecuritySignal,
 } from "@/lib/server/security-telemetry";
+import { recordEdgeAdminAuthFailure } from "@/lib/security/edge-security-telemetry";
 
 const sentryMocks = vi.hoisted(() => {
     const scope = {
@@ -94,5 +95,31 @@ describe("security observability", () => {
         expect(serializedContext).not.toContain("private prompt text");
         expect(serializedContext).not.toContain("Bearer secret");
         expect(serializedContext).not.toContain("203.0.113.10");
+    });
+
+    it("emits edge-safe admin telemetry without Sentry", () => {
+        const request = new NextRequest("http://localhost/admin/content", {
+            method: "GET",
+        });
+
+        recordEdgeAdminAuthFailure({
+            request,
+            reason: "ip_not_allowed",
+        });
+
+        expect(warnSpy).toHaveBeenCalledWith(
+            "[security]",
+            expect.objectContaining({
+                source: "security",
+                runtime: "edge",
+                security_signal: "admin_auth_failure",
+                category: "admin",
+                route: "/admin/content",
+                method: "GET",
+                auth_state: "anonymous",
+                reason: "ip_not_allowed",
+            }),
+        );
+        expect(sentryMocks.captureMessage).not.toHaveBeenCalled();
     });
 });

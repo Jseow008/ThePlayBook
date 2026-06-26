@@ -33,6 +33,12 @@ describe("security gate CI configuration", () => {
         expect(packageJson.scripts?.["security:supabase-advisors"]).toBe(
             "node scripts/check-supabase-security-advisors.mjs",
         );
+        expect(packageJson.scripts?.["security:admin-rpc-acls"]).toBe(
+            "node scripts/check-supabase-admin-rpc-acls.mjs",
+        );
+        expect(packageJson.scripts?.["verify:production"]).toBe(
+            "node scripts/verify-production.mjs",
+        );
         expect(packageJson.scripts?.["test:security"]).toBe(
             "vitest run tests/proxy.test.ts tests/security/ tests/api/health.test.ts tests/api/activity-log.test.ts tests/api/admin-*.test.ts",
         );
@@ -43,6 +49,7 @@ describe("security gate CI configuration", () => {
         expect(workflow).toContain("npx supabase start");
         expect(workflow).toContain("npx supabase db reset");
         expect(workflow).toContain("npm run security:function-acls");
+        expect(workflow).toContain("npm run security:admin-rpc-acls");
         expect(workflow).toContain("npm run security:embedding-table-reads");
         expect(workflow).toContain("npm run security:storage-bucket-listing");
         expect(workflow).toContain("npm run security:analytics-rls");
@@ -57,6 +64,16 @@ describe("security gate CI configuration", () => {
         expect(workflow).toContain("npm run validate:launch-env");
         expect(workflow).toContain("npm run test:security");
         expect(workflow).toContain("fetch-depth: 0");
+    });
+
+    it("adds a manual production verification job with browser smoke coverage", () => {
+        expect(workflow).toContain("production-verification");
+        expect(workflow).toContain("inputs.base_url");
+        expect(workflow).toContain("npm run verify:production -- --base-url");
+        expect(workflow).toContain("SMOKE_ADMIN_EMAIL");
+        expect(workflow).toContain("SMOKE_ADMIN_PASSWORD");
+        expect(workflow).toContain("SMOKE_READ_PATH");
+        expect(workflow).toContain("npx playwright install --with-deps chromium");
     });
 
     it("keeps generated cache exclusions narrow for secret scanning", () => {
