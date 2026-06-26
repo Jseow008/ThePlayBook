@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Clock, BookOpen, Sparkles, ChevronDown, Bookmark, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -36,6 +37,7 @@ export function ContentPreview({
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
     const hookRef = useRef<HTMLDivElement>(null);
+    const [hasMounted, setHasMounted] = useState(false);
     const [isTruncated, setIsTruncated] = useState(false);
     const [showAllTakeaways, setShowAllTakeaways] = useState(initialShowAllTakeaways);
     const [showFullHook, setShowFullHook] = useState(false);
@@ -43,6 +45,10 @@ export function ContentPreview({
     // logic for "Save to My List"
     const { isInMyList, toggleMyList, isLoaded: isReadingProgressLoaded } = useReadingProgress();
     const isSaved = isReadingProgressLoaded && isInMyList(item.id);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     useEffect(() => {
         setShowFullHook(false);
@@ -90,7 +96,7 @@ export function ContentPreview({
     const hasHidden = activeTakeaways.length > collapsedTakeawayCount;
 
     return (
-        <div className="min-h-screen bg-background text-foreground pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-10 lg:pb-8">
+        <div className="min-h-screen bg-background text-foreground pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:pb-10 lg:pb-8">
             {/* Container */}
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
 
@@ -361,63 +367,70 @@ export function ContentPreview({
                 )}
             </div>
 
-            {/* ── Sticky Mobile CTA ── */}
-            <div className="sm:hidden fixed bottom-[max(1rem,env(safe-area-inset-bottom))] inset-x-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border/40 p-3 flex gap-3 safe-area-pb">
-                <Link
-                    href={buildReadPath(item)}
-                    className="flex-1 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-secondary text-secondary-foreground font-semibold text-base border border-border/50 hover:bg-secondary/80 transition-all active:scale-95 shadow-sm"
-                >
-                    <BookOpen className="size-4" />
-                    Read
-                </Link>
+            {hasMounted
+                ? createPortal(
+                    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex h-20 items-end px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+                        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/70 to-transparent" />
+                        <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+                            <Link
+                                href={buildReadPath(item)}
+                                className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-border/45 bg-secondary/80 text-base font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary active:scale-95"
+                            >
+                                <BookOpen className="size-4 shrink-0" />
+                                <span className="truncate">Read</span>
+                            </Link>
 
-                <button
-                    type="button"
-                    disabled={!isReadingProgressLoaded}
-                    onClick={() => {
-                        toggleMyList(item.id);
-                        toast.success(isSaved ? "Removed from My List" : "Added to My List");
-                    }}
-                    className={`h-11 w-11 flex items-center justify-center rounded-xl border transition-all active:scale-95 disabled:cursor-wait disabled:active:scale-100 ${!isReadingProgressLoaded
-                        ? "bg-secondary/30 border-border/40 text-muted-foreground/60"
-                        : isSaved
-                        ? "bg-secondary/60 border-primary/50 text-primary"
-                        : "bg-secondary/40 border-border/50 text-muted-foreground hover:text-foreground"
-                        }`}
-                    aria-label={isReadingProgressLoaded
-                        ? isSaved
-                            ? `Remove ${item.title} from My List`
-                            : `Save ${item.title} to My List`
-                        : "Loading My List state"}
-                >
-                    {isSaved ? <Check className="size-5" /> : <Bookmark className="size-5" />}
-                </button>
+                            <button
+                                type="button"
+                                disabled={!isReadingProgressLoaded}
+                                onClick={() => {
+                                    toggleMyList(item.id);
+                                    toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                                }}
+                                className={`focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:scale-95 disabled:cursor-wait disabled:active:scale-100 ${!isReadingProgressLoaded
+                                    ? "bg-secondary/25 border-border/35 text-muted-foreground/60"
+                                    : isSaved
+                                    ? "bg-secondary/55 border-primary/45 text-primary"
+                                    : "bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground"
+                                    }`}
+                                aria-label={isReadingProgressLoaded
+                                    ? isSaved
+                                        ? `Remove ${item.title} from My List`
+                                        : `Save ${item.title} to My List`
+                                    : "Loading My List state"}
+                            >
+                                {isSaved ? <Check className="size-5" /> : <Bookmark className="size-5" />}
+                            </button>
 
-                {/* Mobile Share */}
-                <ShareButton
-                    path={`/preview/${item.id}`}
-                    title={item.title}
-                    text={`Check out "${item.title}" on ${APP_NAME}`}
-                    variant="icon"
-                    source="content_preview_mobile"
-                    contentId={item.id}
-                    contentType={item.type}
-                    className="h-11 w-11 rounded-xl border border-border/50 bg-secondary/40"
-                />
+                            {/* Mobile Share */}
+                            <ShareButton
+                                path={`/preview/${item.id}`}
+                                title={item.title}
+                                text={`Check out "${item.title}" on ${APP_NAME}`}
+                                variant="icon"
+                                source="content_preview_mobile"
+                                contentId={item.id}
+                                contentType={item.type}
+                                className="focus-ring h-11 w-11 shrink-0 rounded-xl border border-border/40 bg-secondary/30"
+                            />
 
-                {onSpinAgain && (
-                    <button
-                        type="button"
-                        onClick={onSpinAgain}
-                        disabled={isSpinning}
-                        className="h-11 w-11 flex items-center justify-center rounded-xl bg-secondary/40 border border-border/50 text-foreground transition-all active:scale-95"
-                    >
-                        <CtaIcon
-                            className={`size-5 ${isSpinning ? "animate-spin" : ""}`}
-                        />
-                    </button>
-                )}
-            </div>
+                            {onSpinAgain && (
+                                <button
+                                    type="button"
+                                    onClick={onSpinAgain}
+                                    disabled={isSpinning}
+                                    className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-secondary/30 text-foreground transition-colors active:scale-95"
+                                >
+                                    <CtaIcon
+                                        className={`size-5 ${isSpinning ? "animate-spin" : ""}`}
+                                    />
+                                </button>
+                            )}
+                        </div>
+                    </div>,
+                    document.body
+                )
+                : null}
         </div>
     );
 }
