@@ -10,7 +10,6 @@ import {
     BookOpenIcon,
     BookOpenTextIcon,
     ChatCircleDotsIcon,
-    ChatCircleTextIcon,
     CheckCircleIcon,
     FrameCornersIcon,
     HouseIcon,
@@ -397,8 +396,8 @@ export function NetfluxSidebar() {
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <ChatCircleDotsIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
-                                <span className="text-sm whitespace-nowrap flex-1">Ask My Library</span>
+                                <BooksIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
+                                <span className="text-sm whitespace-nowrap flex-1">Library</span>
                             </Link>
 
                             <Link
@@ -410,8 +409,8 @@ export function NetfluxSidebar() {
                                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                                 )}
                             >
-                                <ChatCircleTextIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
-                                <span className="text-sm whitespace-nowrap flex-1">Ask These Notes</span>
+                                <NotebookIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
+                                <span className="text-sm whitespace-nowrap flex-1">Current Notes</span>
                             </Link>
                         </div>
                     )}

@@ -170,8 +170,8 @@ describe("AskClientPage", () => {
 
         render(<AskClientPage scope="notes" />);
 
-        const libraryHref = screen.getByRole("link", { name: "Ask My Library" }).getAttribute("href") ?? "";
-        const notesHref = screen.getByRole("link", { name: "Ask These Notes" }).getAttribute("href") ?? "";
+        const libraryHref = screen.getByRole("link", { name: "Library" }).getAttribute("href") ?? "";
+        const notesHref = screen.getByRole("link", { name: "Current Notes" }).getAttribute("href") ?? "";
         const libraryUrl = new URL(libraryHref, "http://localhost");
         const notesUrl = new URL(notesHref, "http://localhost");
 
@@ -289,8 +289,8 @@ describe("AskClientPage", () => {
         );
 
         const expectedSerializedScope = serializeNotesChatScope(initialNotesScope);
-        const libraryHref = screen.getByRole("link", { name: "Ask My Library" }).getAttribute("href") ?? "";
-        const notesHref = screen.getByRole("link", { name: "Ask These Notes" }).getAttribute("href") ?? "";
+        const libraryHref = screen.getByRole("link", { name: "Library" }).getAttribute("href") ?? "";
+        const notesHref = screen.getByRole("link", { name: "Current Notes" }).getAttribute("href") ?? "";
         const libraryUrl = new URL(libraryHref, "http://localhost");
         const notesUrl = new URL(notesHref, "http://localhost");
 

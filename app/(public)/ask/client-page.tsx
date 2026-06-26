@@ -335,7 +335,7 @@ export function AskClientPage({
                             )}
                             aria-current={isLibraryScope ? "page" : undefined}
                         >
-                            Ask My Library
+                            Library
                         </Link>
                         <Link
                             href={mobileNotesHref}
@@ -347,7 +347,7 @@ export function AskClientPage({
                             )}
                             aria-current={!isLibraryScope ? "page" : undefined}
                         >
-                            Ask These Notes
+                            Current Notes
                         </Link>
                     </div>
                 </div>

@@ -114,8 +114,8 @@ describe("app navigation", () => {
         });
 
         expect(screen.getByRole("button", { name: /ask/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Ask My Library" })).toHaveAttribute("href", "/ask");
-        expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveAttribute("href", "/notes?ask=1");
+        expect(screen.getByRole("link", { name: "Library" })).toHaveAttribute("href", "/ask");
+        expect(screen.getByRole("link", { name: "Current Notes" })).toHaveAttribute("href", "/notes?ask=1");
 
         vi.useRealTimers();
     });
@@ -205,7 +205,7 @@ describe("app navigation", () => {
         vi.useRealTimers();
     });
 
-    it("highlights Ask These Notes instead of Notes for the notes ask query", async () => {
+    it("highlights Current Notes instead of Notes for the notes ask query", async () => {
         pathnameState.value = "/notes";
         searchParamsState.value = "ask=1";
         vi.useFakeTimers();
@@ -220,13 +220,13 @@ describe("app navigation", () => {
 
         expect(screen.getByRole("link", { name: /^notes$/i })).not.toHaveClass("border-l-4");
         expect(screen.getByRole("button", { name: /ask/i })).toHaveClass("border-l-4");
-        expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveClass("bg-accent");
-        expect(screen.getByRole("link", { name: "Ask My Library" })).not.toHaveClass("bg-accent");
+        expect(screen.getByRole("link", { name: "Current Notes" })).toHaveClass("bg-accent");
+        expect(screen.getByRole("link", { name: "Library" })).not.toHaveClass("bg-accent");
 
         vi.useRealTimers();
     });
 
-    it("highlights Ask These Notes on the full-screen notes ask route", async () => {
+    it("highlights Current Notes on the full-screen notes ask route", async () => {
         pathnameState.value = "/ask";
         searchParamsState.value = "scope=notes";
         vi.useFakeTimers();
@@ -240,8 +240,8 @@ describe("app navigation", () => {
         });
 
         expect(screen.getByRole("button", { name: /ask/i })).toHaveClass("border-l-4");
-        expect(screen.getByRole("link", { name: "Ask These Notes" })).toHaveClass("bg-accent");
-        expect(screen.getByRole("link", { name: "Ask My Library" })).not.toHaveClass("bg-accent");
+        expect(screen.getByRole("link", { name: "Current Notes" })).toHaveClass("bg-accent");
+        expect(screen.getByRole("link", { name: "Library" })).not.toHaveClass("bg-accent");
 
         vi.useRealTimers();
     });
