@@ -15,7 +15,6 @@ import {
     FrameCornersIcon,
     HouseIcon,
     MagnifyingGlassIcon,
-    MegaphoneIcon,
     NotebookIcon,
 } from "@phosphor-icons/react";
 import {
@@ -31,7 +30,6 @@ import { SignInLink } from "@/components/ui/SignInLink";
 const navItems = [
     { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
     { icon: HouseIcon, label: "Home", href: "/browse" },
-    { icon: MegaphoneIcon, label: "Requests", href: "/requests" },
     { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
 ];
 

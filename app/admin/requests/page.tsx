@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, EyeOff, Inbox, SquareArrowOutUpRight } from "lucide-react";
+import { ArrowUpRight, EyeOff, Inbox } from "lucide-react";
 import { AdminContentRequestForm } from "@/components/admin/AdminContentRequestForm";
 import { getContentRequestNotificationBacklogStats } from "@/lib/server/content-request-notifications";
 import { fetchAdminContentRequests, fetchPublishedContentOptions } from "@/lib/server/content-requests";
@@ -105,21 +105,13 @@ export default async function AdminRequestsPage({
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div>
                 <div>
-                    <h1 className="text-2xl font-bold text-foreground">Request Board</h1>
+                    <h1 className="text-2xl font-bold text-foreground">Summary Requests</h1>
                     <p className="mt-1 text-muted-foreground">
-                        Review community demand, update production status, and connect published summaries.
+                        Review user demand, update production status, and connect published summaries.
                     </p>
                 </div>
-                <Link
-                    href="/requests"
-                    target="_blank"
-                    className="focus-ring inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                >
-                    View public board
-                    <SquareArrowOutUpRight className="size-4" />
-                </Link>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -213,9 +205,9 @@ export default async function AdminRequestsPage({
 
             <section className="rounded-xl border border-border bg-card text-card-foreground shadow-sm">
                 <div className="border-b border-border px-6 py-4">
-                    <h2 className="font-semibold text-foreground">Community Requests</h2>
+                    <h2 className="font-semibold text-foreground">User Requests</h2>
                     <p className="text-sm text-muted-foreground">
-                        Highest-impact requests should move from pending to processing once source availability is clear.
+                        Highest-demand requests should move from pending to processing once source availability is clear.
                     </p>
                 </div>
 

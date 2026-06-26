@@ -3,8 +3,9 @@ import type { ElementType, ReactElement, ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock } = vi.hoisted(() => {
+const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock, setQueryData } = vi.hoisted(() => {
     let latestQueryBuilder: Record<string, ReturnType<typeof vi.fn>> | null = null;
+    let queryData: Array<Record<string, unknown>> = [{ id: "matched-result", title: "Matched Result" }];
 
     const createQueryBuilder = () => {
         const builder = {
@@ -28,7 +29,7 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
         builder.range.mockReturnValue(builder);
         builder.or.mockReturnValue(builder);
         builder.then.mockImplementation((resolve: (value: { data: Array<Record<string, unknown>>; count: number }) => unknown) =>
-            Promise.resolve(resolve({ data: [{ id: "matched-result", title: "Matched Result" }], count: 41 }))
+            Promise.resolve(resolve({ data: queryData, count: queryData.length === 0 ? 0 : 41 }))
         );
 
         latestQueryBuilder = builder;
@@ -41,6 +42,10 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
         getLatestQueryBuilder: () => latestQueryBuilder,
         resetSupabaseMocks: () => {
             latestQueryBuilder = null;
+            queryData = [{ id: "matched-result", title: "Matched Result" }];
+        },
+        setQueryData: (nextData: Array<Record<string, unknown>>) => {
+            queryData = nextData;
         },
         routerPushMock: vi.fn(),
         redirectMock: vi.fn((url: string) => {
@@ -155,9 +160,10 @@ function findElementProps<TProps>(node: ReactNode, type: ElementType): TProps | 
 
 async function loadSearchPage(searchParams: SearchParams = {}) {
     const searchPageModule = await import("@/app/(public)/search/page");
+    const searchComponentsModule = await import("@/app/(public)/search/search-components");
     const page = await searchPageModule.default({ searchParams: Promise.resolve(searchParams) });
 
-    return { searchPageModule, page };
+    return { searchComponentsModule, page };
 }
 
 async function renderSearchPage(searchParams: SearchParams = {}) {
@@ -172,31 +178,31 @@ async function renderSearchPage(searchParams: SearchParams = {}) {
 }
 
 async function runSearchResultsFromPage(searchParams: SearchParams = {}) {
-    const { searchPageModule, page } = await loadSearchPage(searchParams);
-    const searchResultsProps = findElementProps<Parameters<typeof searchPageModule.SearchResults>[0]>(
+    const { searchComponentsModule, page } = await loadSearchPage(searchParams);
+    const searchResultsProps = findElementProps<Parameters<typeof searchComponentsModule.SearchResults>[0]>(
         page,
-        searchPageModule.SearchResults
+        searchComponentsModule.SearchResults
     );
 
     if (!searchResultsProps) {
         throw new Error("SearchResults was not rendered for the supplied search params");
     }
 
-    return searchPageModule.SearchResults(searchResultsProps);
+    return searchComponentsModule.SearchResults(searchResultsProps);
 }
 
 async function runRecentCatalogFromPage(searchParams: SearchParams = {}) {
-    const { searchPageModule, page } = await loadSearchPage(searchParams);
-    const recentCatalogProps = findElementProps<Parameters<typeof searchPageModule.RecentCatalog>[0]>(
+    const { searchComponentsModule, page } = await loadSearchPage(searchParams);
+    const recentCatalogProps = findElementProps<Parameters<typeof searchComponentsModule.RecentCatalog>[0]>(
         page,
-        searchPageModule.RecentCatalog
+        searchComponentsModule.RecentCatalog
     );
 
     if (!recentCatalogProps) {
         throw new Error("RecentCatalog was not rendered for the supplied search params");
     }
 
-    return searchPageModule.RecentCatalog(recentCatalogProps);
+    return searchComponentsModule.RecentCatalog(recentCatalogProps);
 }
 
 describe("SearchPage", () => {
@@ -330,7 +336,7 @@ describe("SearchPage", () => {
         expect(queryBuilder?.or).toHaveBeenCalledWith("title.ilike.%focus%,author.ilike.%focus%,category.ilike.%focus%");
     });
 
-    it("shows a nearby request-summary action when search has matching results", async () => {
+    it("does not show a request-summary action when search has matching results", async () => {
         const results = await runSearchResultsFromPage({ q: "focus", type: "book" });
 
         await act(async () => {
@@ -338,13 +344,23 @@ describe("SearchPage", () => {
         });
 
         expect(screen.getByText('1 result for "focus" (book)')).toBeInTheDocument();
-        const requestLink = screen.getByRole("link", { name: /request a summary/i });
+        expect(screen.queryByRole("link", { name: /request a summary/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /request this summary/i })).not.toBeInTheDocument();
+    });
 
-        expect(requestLink).toHaveAttribute(
+    it("shows a request-summary action when search has zero results", async () => {
+        setQueryData([]);
+        const results = await runSearchResultsFromPage({ q: "focus", type: "book" });
+
+        await act(async () => {
+            render(results);
+        });
+
+        expect(screen.getByText('0 results for "focus" (book)')).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /request this summary/i })).toHaveAttribute(
             "href",
             "/requests?prefill=focus&type=book"
         );
-        expect(requestLink).toHaveClass("lg:hidden");
     });
 
     it("uses the recent catalog query for category pages and still applies the type filter", async () => {

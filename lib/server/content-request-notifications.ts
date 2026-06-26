@@ -154,7 +154,7 @@ function buildPublishedEmail(params: {
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e5e5e5;border-radius:12px;padding:28px;">
             <tr>
               <td>
-                <p style="margin:0 0 12px;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#737373;">Netflux Request Board</p>
+                <p style="margin:0 0 12px;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#737373;">Netflux Summary Requests</p>
                 <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;color:#171717;">The summary you requested is now live.</h1>
                 <p style="margin:0 0 20px;font-size:16px;line-height:1.6;color:#404040;">The Netflux summary for <strong>${contentTitle}</strong> is available now.</p>
                 <p style="margin:0 0 28px;">
