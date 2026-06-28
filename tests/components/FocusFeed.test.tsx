@@ -1062,7 +1062,7 @@ describe("FocusFeed", () => {
         });
     });
 
-    it("shows three desktop takeaways with preview and read CTAs", async () => {
+    it("shows three desktop takeaways with utility actions, preview, and read CTAs", async () => {
         mediaQueryState.value = {
             isDesktop: true,
             prefersReducedMotion: false,
@@ -1094,14 +1094,20 @@ describe("FocusFeed", () => {
             "href",
             `/preview/${focusItems[0]!.id}?takeaways=all`
         );
-        expect(within(firstCard).queryByRole("button", { name: "Save Essentialism to My List" })).not.toBeInTheDocument();
+        const desktopSaveButton = within(firstCard).getByRole("button", { name: "Save Essentialism to My List" });
+        expect(desktopSaveButton).toBeInTheDocument();
+        expect(desktopSaveButton).toHaveClass("h-9");
+        expect(desktopSaveButton).toHaveClass("w-9");
+        expect(desktopSaveButton.parentElement).toHaveClass("pt-1");
+        expect(desktopSaveButton.parentElement).toHaveClass("justify-center");
+        expect(within(firstCard).getByRole("button", { name: "Share this content" })).toHaveClass("h-9");
         expect(within(firstCard).queryByRole("button", { name: "Not interested in Essentialism" })).not.toBeInTheDocument();
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("px-1");
         expect(within(firstCard).getByText("Say no more often").closest("div")).toHaveClass("py-0.5");
         expect(within(firstCard).getByRole("link", { name: "Read Essentialism" }).parentElement).toHaveClass("justify-start");
     });
 
-    it("reduces desktop takeaways and shows preview on shorter desktop heights", async () => {
+    it("keeps preview available when desktop height is too short for takeaways", async () => {
         mediaQueryState.value = {
             isDesktop: true,
             prefersReducedMotion: false,
@@ -1122,15 +1128,13 @@ describe("FocusFeed", () => {
 
             const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
 
-            await waitFor(() => {
-                expect(within(firstCard).getByText("Key Takeaways (1 of 8)")).toBeInTheDocument();
-            });
-
             expect(within(firstCard).getByRole("link", { name: "Preview Essentialism" })).toHaveAttribute(
                 "href",
                 `/preview/${focusItems[0]!.id}?takeaways=all`
             );
-            expect(within(firstCard).getByText("Say no more often")).toBeInTheDocument();
+            await waitFor(() => {
+                expect(within(firstCard).queryByText("Say no more often")).not.toBeInTheDocument();
+            });
             expect(within(firstCard).queryByText("Protect white space")).not.toBeInTheDocument();
             expect(within(firstCard).queryByText("Trade busyness for clarity")).not.toBeInTheDocument();
             expect(within(firstCard).queryByText("Audit every commitment")).not.toBeInTheDocument();

@@ -365,6 +365,31 @@ export const FocusCardView = memo(function FocusCardView({
                                             </span>
                                         )}
                                     </div>
+                                    <div className="flex items-center justify-center gap-2 pt-1">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                onToggleSave(card);
+                                            }}
+                                            className={`focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors touch-manipulation ${isSaved
+                                                ? "border-primary/30 bg-primary/10 text-primary"
+                                                : "border-border/45 bg-secondary/20 text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground"
+                                                }`}
+                                            aria-label={isSaved ? `Remove ${card.title} from My List` : `Save ${card.title} to My List`}
+                                        >
+                                            <Bookmark className="size-4" fill={isSaved ? "currentColor" : "none"} />
+                                        </button>
+                                        <ShareButton
+                                            path={`/preview/${card.id}`}
+                                            title={card.title}
+                                            text={`Check out "${card.title}" on Netflux`}
+                                            variant="icon"
+                                            source="focus_feed"
+                                            contentId={card.id}
+                                            contentType={card.type}
+                                            className="focus-ring h-9 w-9 rounded-full border border-border/45 bg-secondary/20 p-0 text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
