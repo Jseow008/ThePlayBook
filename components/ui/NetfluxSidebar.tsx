@@ -28,7 +28,7 @@ import { SignInLink } from "@/components/ui/SignInLink";
 
 const navItems = [
     { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
-    { icon: HouseIcon, label: "Home", href: "/browse" },
+    { icon: HouseIcon, label: "Browse", href: "/browse" },
     { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
 ];
 

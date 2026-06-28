@@ -166,6 +166,27 @@ describe("ContentCard", () => {
         expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("leading-[1.18]");
     });
 
+    it("renders a desktop hover hook without changing the primary link", () => {
+        render(
+            <ContentCard
+                item={{
+                    ...item,
+                    quick_mode_json: {
+                        hook: "Train attention by protecting your best hours from shallow work.",
+                        big_idea: "Deep work compounds.",
+                        key_takeaways: ["Protect focus"],
+                    },
+                }}
+            />
+        );
+
+        expect(screen.getByText("Train attention by protecting your best hours from shallow work.")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Preview Deep Work" })).toHaveAttribute(
+            "href",
+            "/preview/11111111-1111-1111-1111-111111111111"
+        );
+    });
+
     it("falls back to the non-image artwork treatment after the direct retry fails", () => {
         const itemWithCover = {
             ...item,

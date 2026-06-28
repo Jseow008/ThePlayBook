@@ -68,6 +68,20 @@ function getContentCardLabel(href: string, title: string) {
     return href.startsWith("/read/") ? `Read ${title}` : `Preview ${title}`;
 }
 
+function getContentCardHook(item: ContentItem) {
+    const quickMode = item.quick_mode_json;
+    if (!quickMode || typeof quickMode !== "object" || Array.isArray(quickMode)) {
+        return null;
+    }
+
+    const hook = (quickMode as { hook?: unknown }).hook;
+    if (typeof hook !== "string") {
+        return null;
+    }
+
+    return hook.trim() || null;
+}
+
 export function ContentCard({
     enableUserState = true,
     ...props
@@ -150,6 +164,8 @@ function BaseContentCard({
         ? `Remove ${item.title} from My List`
         : `Add ${item.title} to My List`;
     const showBookmarkButton = !hideBookmark && Boolean(onToggleBookmark);
+    const contentHook = getContentCardHook(item);
+    const hasHoverHook = Boolean(contentHook);
 
     return (
         <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)]">
@@ -221,13 +237,23 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            <div className="pointer-events-none absolute inset-0 rounded-md bg-black/30 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 md:group-hover:opacity-100 md:group-focus-within:opacity-100" />
+
+            {contentHook ? (
+                <p
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 bottom-[26%] z-30 hidden translate-y-2 px-4 text-[10px] font-medium leading-snug text-white/88 opacity-0 drop-shadow-md transition-[opacity,transform] duration-300 md:line-clamp-3 md:block md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 lg:text-[11px]"
+                >
+                    {contentHook}
+                </p>
+            ) : null}
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/72 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
                 <div className="flex h-full flex-col justify-end gap-1">
                     <h3
                         className={cn(
                             "w-full line-clamp-3 font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
+                            hasHoverHook && "md:group-hover:line-clamp-2 md:group-focus-within:line-clamp-2",
                             titleDensity === "app-compact"
                                 ? "text-[0.88rem] leading-[1.13]"
                                 : "text-[0.95rem] leading-[1.18]"
@@ -236,7 +262,12 @@ function BaseContentCard({
                         {item.title}
                     </h3>
 
-                    <div className="w-full space-y-0.5">
+                    <div
+                        className={cn(
+                            "w-full max-h-12 space-y-0.5 overflow-hidden transition-[max-height,opacity,transform] duration-300",
+                            hasHoverHook && "md:group-hover:max-h-0 md:group-hover:-translate-y-1 md:group-hover:opacity-0 md:group-focus-within:max-h-0 md:group-focus-within:-translate-y-1 md:group-focus-within:opacity-0"
+                        )}
+                    >
                         {item.category ? (
                             <p className="line-clamp-1 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest">
                                 {item.category}
