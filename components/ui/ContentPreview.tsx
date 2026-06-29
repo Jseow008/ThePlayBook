@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Clock, BookOpen, Sparkles, ChevronDown, Bookmark, Check } from "lucide-react";
+import { Clock, BookOpen, Sparkles, ChevronDown, Bookmark } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -165,6 +165,32 @@ export function ContentPreview({
                                 contentType={item.type}
                                 className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
                             />
+                            <button
+                                type="button"
+                                disabled={!isReadingProgressLoaded}
+                                onClick={() => {
+                                    toggleMyList(item.id);
+                                    toast.success(isSaved ? "Removed from Library" : "Saved to Library");
+                                }}
+                                className={`focus-ring ml-1 hidden size-8 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:inline-flex ${!isReadingProgressLoaded
+                                    ? "border-border/35 bg-secondary/25 text-muted-foreground/60"
+                                    : isSaved
+                                    ? "border-primary/35 bg-primary/10 text-primary"
+                                    : "border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                    }`}
+                                title={isReadingProgressLoaded
+                                    ? isSaved
+                                        ? "Remove from Library"
+                                        : "Save to Library"
+                                    : "Loading Library state"}
+                                aria-label={isReadingProgressLoaded
+                                    ? isSaved
+                                        ? `Remove ${item.title} from Library`
+                                        : `Save ${item.title} to Library`
+                                    : "Loading Library state"}
+                            >
+                                <Bookmark className="size-4" fill={isSaved ? "currentColor" : "none"} />
+                            </button>
 
                             {seriesContext && (
                                 <div className="hidden sm:flex w-full flex-wrap items-center gap-x-3 gap-y-2 pt-1 text-sm text-muted-foreground">
@@ -222,39 +248,6 @@ export function ContentPreview({
                                 <BookOpen className="size-5" />
                                 Read Summary
                             </Link>
-
-                            {/* Save to Library Button */}
-                            <button
-                                type="button"
-                                disabled={!isReadingProgressLoaded}
-                                onClick={() => {
-                                    toggleMyList(item.id);
-                                    toast.success(isSaved ? "Removed from Library" : "Saved to Library");
-                                }}
-                                className={`inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border font-bold text-base transition-all disabled:cursor-wait disabled:hover:scale-100 disabled:active:scale-100 ${!isReadingProgressLoaded
-                                    ? "bg-background border-border/60 text-muted-foreground/70"
-                                    : isSaved
-                                    ? "bg-secondary/50 border-primary/50 text-foreground hover:bg-secondary/70"
-                                    : "bg-background border-border hover:bg-secondary/30 text-muted-foreground hover:text-foreground"
-                                    }`}
-                            >
-                                {!isReadingProgressLoaded ? (
-                                    <>
-                                        <Bookmark className="size-5" />
-                                        <span>Library</span>
-                                    </>
-                                ) : isSaved ? (
-                                    <>
-                                        <Check className="size-5 text-primary" />
-                                        <span>Saved to Library</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <Bookmark className="size-5" />
-                                        <span>Save to Library</span>
-                                    </>
-                                )}
-                            </button>
 
                             {onSpinAgain && (
                                 <button
@@ -399,7 +392,7 @@ export function ContentPreview({
                                         : `Save ${item.title} to Library`
                                     : "Loading Library state"}
                             >
-                                {isSaved ? <Check className="size-5" /> : <Bookmark className="size-5" />}
+                                <Bookmark className="size-5" fill={isSaved ? "currentColor" : "none"} />
                             </button>
 
                             {/* Mobile Share */}
