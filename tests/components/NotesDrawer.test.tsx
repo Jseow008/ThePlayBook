@@ -95,6 +95,42 @@ describe("NotesDrawer", () => {
         vi.clearAllMocks();
     });
 
+    it("keeps the floating toggle clear of safe area and audio mini-player", async () => {
+        const { rerender } = render(
+            <NotesDrawer
+                isOpen={false}
+                onOpenChange={onOpenChange}
+                highlights={highlights}
+                isLoading={false}
+                hasError={false}
+                sections={[]}
+                onHighlightJump={onHighlightJump}
+            />
+        );
+
+        const toggle = await screen.findByRole("button", { name: /open notes drawer/i });
+        expect(toggle.parentElement).toHaveClass(
+            "bottom-[calc(2rem+var(--safe-area-bottom))]"
+        );
+
+        rerender(
+            <NotesDrawer
+                isOpen={false}
+                onOpenChange={onOpenChange}
+                highlights={highlights}
+                isLoading={false}
+                hasError={false}
+                sections={[]}
+                isAudioMiniPlayerVisible
+                onHighlightJump={onHighlightJump}
+            />
+        );
+
+        expect(toggle.parentElement).toHaveClass(
+            "bottom-[calc(5.25rem+var(--safe-area-bottom))]"
+        );
+    });
+
     it("renders navigation-first cards with source context and note content", async () => {
         render(
             <NotesDrawer

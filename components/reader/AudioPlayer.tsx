@@ -399,7 +399,7 @@ export function AudioPlayer({
                 <div
                     className={cn(
                         `reader-${readerTheme}`,
-                        "fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]",
+                        "fixed inset-x-3 safe-area-bottom-sm z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]",
                         "animate-in fade-in slide-in-from-bottom-3 duration-300 motion-reduce:animate-none"
                     )}
                     role="region"

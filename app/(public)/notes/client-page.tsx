@@ -512,7 +512,7 @@ function NoteEditorOverlay({
                         </div>
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 border-t border-white/8 bg-background/92 px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-4">
+                    <div className="flex items-center justify-between gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
                         <button
                             type="button"
                             onClick={onClose}

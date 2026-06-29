@@ -97,13 +97,13 @@ Acceptance criteria:
 
 ### 2. Centralize mobile chrome and viewport sizing primitives
 
-Status: Partially implemented in `400d2c4`; remaining page-level safe-area migration is still open.
+Status: Implemented.
 
 Implementation notes:
 
 - Commit: `400d2c4` (`Add responsive chrome policy and viewport gates`).
 - Shared primitives: `app/globals.css` now declares `--mobile-header-height`, `--mobile-header-compact-height`, `--mobile-bottom-nav-height`, `--mobile-bottom-nav-compact-height`, `--safe-area-bottom`, `--safe-area-top`, and `--focus-mobile-vertical-chrome`.
-- Shared utilities: `app/globals.css` now provides `.mobile-header-height`, `.mobile-header-compact-height`, `.mobile-bottom-nav-height`, `.mobile-bottom-nav-compact-height`, `.mobile-shell-bottom-padding`, and `.mobile-shell-bottom-padding-compact`.
+- Shared utilities: `app/globals.css` now provides low-specificity `:where(...)` utilities for mobile chrome heights, shell bottom padding, recurring safe-area padding, safe-area top padding, and safe-area bottom offsets so breakpoint-specific Tailwind classes can still override them.
 - Shell policy map: `lib/route-chrome-policy.ts` defines typed route chrome policies using `satisfies RouteChromePolicy` for landing, browse, read, preview, ask, focus, and standard app pages.
 - Shell refactor: `components/ui/PublicLayoutShell.tsx` now consumes `getRouteChromePolicy(pathname)` instead of duplicating route-specific chrome conditionals inline.
 - Header/nav refactor: `components/ui/MobileHeader.tsx` and `components/ui/MobileBottomNav.tsx` consume shared height utilities. Test IDs were added to support browser-level chrome assertions.
@@ -111,13 +111,15 @@ Implementation notes:
 - Test corrections: `tests/components/PublicLayoutShell.test.tsx` was updated to match real shell behavior, including correcting the existing `/read/*` mock mismatch where the test previously hid `MobileHeader` even though production rendered it.
 - Regression coverage: `tests/components/route-chrome-policy.test.ts` covers landing, browse, read, preview, ask, focus, default app routes, and `/notes` as a standard-policy anchor for the next safe-area migration.
 - Related test updates: focus feed tests now assert the exported layout constants rather than hard-coded old class strings; mobile header tests assert the explicit transform state used for scroll hiding.
-- Verification run before merge: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, focused desktop dynamic-route Playwright check, and `npm run test:e2e:responsive` all passed.
+- Verification: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, focused component tests, and `npm run test:e2e:responsive` all passed.
 - Production behavior note: `/read/*` and `/preview/*` intentionally keep the mobile header and suppress the mobile bottom nav; `/ask` owns the viewport with no mobile chrome; `/focus` owns the viewport while retaining the bottom nav.
+- Safe-area migration: recurring page/component safe-area padding now uses shared utilities (`safe-area-pb-sm`, `safe-area-pb-md`, `safe-area-pb-lg`, `safe-area-pb-xl`, `safe-area-pt-md`, and `safe-area-bottom-sm`) instead of direct `env(safe-area-inset-*)` expressions.
+- Accepted local safe-area contracts: `ContentPreview.tsx` keeps a preview CTA clearance of `5.75rem + var(--safe-area-bottom)`; `NotesDrawer.tsx` keeps audio-aware floating offsets of `5.25rem + var(--safe-area-bottom)` and `2rem + var(--safe-area-bottom)`; `MobileNoteComposer.tsx` and `NotesAskPanel.tsx` keep exact one-off composer padding values using `var(--safe-area-bottom)`.
 
-Remaining scope:
+Accepted exceptions:
 
-- Migrate the remaining inline `env(safe-area-inset-bottom)` usages listed below to shared utilities or component-level primitives.
-- Revisit page-owned viewport surfaces after those migrations to remove redundant `min-h-screen` / fixed-padding patterns where appropriate.
+- The canonical `env(safe-area-inset-bottom)` and `env(safe-area-inset-top)` declarations remain centralized in `app/globals.css`.
+- A small number of local compound offsets intentionally use `var(--safe-area-bottom)` because they encode component-specific clearance rather than reusable shell chrome.
 
 Issue: There are many independent height, fixed-position, safe-area, and overflow patterns across the codebase.
 
@@ -135,7 +137,7 @@ Evidence of height/padding fragmentation:
 | Bottom padding (browse) | `3.5rem + safe-area` | `PublicLayoutShell.tsx:71` |
 | Focus feed list height | `calc(100dvh-3rem-4rem-safe-area)` | `focus-feed-layout.ts:2` |
 
-23 locations use `env(safe-area-inset-bottom)` inline across `app/` and `components/`, including: `PublicLayoutShell.tsx` (L71–72), `ContentPreview.tsx` (L99, L372), ask page (L358, L496, L558), notes page (L515), `AudioPlayer.tsx` (L402), `AuthorChat.tsx` (L355), `MobileNoteComposer.tsx` (L133), `MobileSelectionActions.tsx` (L199), `NotesDrawer.tsx` (L231–232), `ReaderSettingsMenu.tsx` (L263), `FocusTakeawaysSheet.tsx` (L142, L190), and the landing lightbox (L1165).
+Previously, 23 locations used `env(safe-area-inset-bottom)` inline across `app/` and `components/`, including: `PublicLayoutShell.tsx` (L71–72), `ContentPreview.tsx` (L99, L372), ask page (L358, L496, L558), notes page (L515), `AudioPlayer.tsx` (L402), `AuthorChat.tsx` (L355), `MobileNoteComposer.tsx` (L133), `MobileSelectionActions.tsx` (L199), `NotesDrawer.tsx` (L231–232), `ReaderSettingsMenu.tsx` (L263), `FocusTakeawaysSheet.tsx` (L142, L190), and the landing lightbox (L1165). Direct `env(safe-area-inset-*)` usage is now centralized in `app/globals.css`.
 
 Risk:
 

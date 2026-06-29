@@ -96,7 +96,8 @@ export function ContentPreview({
     const hasHidden = activeTakeaways.length > collapsedTakeawayCount;
 
     return (
-        <div className="min-h-screen bg-background text-foreground pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:pb-10 lg:pb-8">
+        // Mobile padding keeps the final content clear of the portalled CTA rail.
+        <div className="min-h-screen bg-background text-foreground pb-[calc(5.75rem+var(--safe-area-bottom))] sm:pb-10 lg:pb-8">
             {/* Container */}
             <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
 
@@ -362,7 +363,7 @@ export function ContentPreview({
 
             {hasMounted
                 ? createPortal(
-                    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex h-20 items-end px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:hidden">
+                    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex h-20 items-end px-3 safe-area-pb-sm sm:hidden">
                         <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/70 to-transparent" />
                         <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
                             <Link

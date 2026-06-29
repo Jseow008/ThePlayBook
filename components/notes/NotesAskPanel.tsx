@@ -555,7 +555,7 @@ export function NotesAskPanel({
                     </div>
                 </div>
 
-                <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-0 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-0">
+                <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-0 pt-4 safe-area-pb-lg sm:px-0">
                     <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
                         {hasScopeChanged && (
                             <div className="mb-3">
@@ -903,7 +903,7 @@ export function NotesAskPanel({
             </div>
 
             <div className={cn(
-                "shrink-0 border-t border-border/45 bg-card/30 px-3 pt-3 pb-[max(0.85rem,env(safe-area-inset-bottom))]",
+                "shrink-0 border-t border-border/45 bg-card/30 px-3 pt-3 pb-[max(0.85rem,var(--safe-area-bottom))]",
                 isSidebar && "px-4 pt-4"
             )}>
                 {hasScopeChanged && (

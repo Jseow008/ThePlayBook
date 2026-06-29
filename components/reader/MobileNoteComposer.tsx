@@ -130,7 +130,7 @@ export function MobileNoteComposer({
                     </button>
                 </div>
 
-                <div className="max-h-[74vh] overflow-y-auto px-4 pb-[max(0.9rem,env(safe-area-inset-bottom))]">
+                <div className="max-h-[74vh] overflow-y-auto px-4 pb-[max(0.9rem,var(--safe-area-bottom))]">
                     <div className={cn("rounded-2xl border bg-background/60 px-4 py-3.5", colorClasses.border)}>
                         <p className="text-[0.98rem] leading-7 text-foreground/94 italic">
                             &ldquo;{context.highlightedText}&rdquo;

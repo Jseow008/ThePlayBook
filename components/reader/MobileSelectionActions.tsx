@@ -196,7 +196,7 @@ export function MobileSelectionActions({
     return createPortal(
         <div className={`reader-${readerTheme} text-foreground`}>
             {!isComposerOpen && (
-                <div className="fixed inset-x-0 bottom-0 z-[55] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:hidden">
+                <div className="fixed inset-x-0 bottom-0 z-[55] px-4 safe-area-pb-md sm:hidden">
                     <div className="rounded-3xl border border-border/80 bg-card/96 p-4 shadow-[0_-18px_48px_rgba(0,0,0,0.3)] backdrop-blur-xl">
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">

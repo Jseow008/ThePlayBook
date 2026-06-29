@@ -352,7 +352,7 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                 </div>
             </main>
 
-            <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-4 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
+            <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-4 pt-2 safe-area-pb-lg sm:px-6">
                 <div className="mx-auto w-full max-w-5xl">
                     <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
                         <form

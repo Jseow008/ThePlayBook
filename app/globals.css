@@ -522,31 +522,55 @@ mark[data-highlight-spotlight="true"] {
 }
 
 /* Safe area padding for mobile devices with notch/home indicator */
-.safe-area-pb {
+:where(.safe-area-pb) {
   padding-bottom: var(--safe-area-bottom);
 }
 
-.mobile-header-height {
+:where(.safe-area-pb-sm) {
+  padding-bottom: max(0.75rem, var(--safe-area-bottom));
+}
+
+:where(.safe-area-pb-md) {
+  padding-bottom: max(1rem, var(--safe-area-bottom));
+}
+
+:where(.safe-area-pb-lg) {
+  padding-bottom: max(1.25rem, var(--safe-area-bottom));
+}
+
+:where(.safe-area-pb-xl) {
+  padding-bottom: max(1.5rem, var(--safe-area-bottom));
+}
+
+:where(.safe-area-pt-md) {
+  padding-top: max(1rem, var(--safe-area-top));
+}
+
+:where(.safe-area-bottom-sm) {
+  bottom: max(0.75rem, var(--safe-area-bottom));
+}
+
+:where(.mobile-header-height) {
   height: var(--mobile-header-height);
 }
 
-.mobile-header-compact-height {
+:where(.mobile-header-compact-height) {
   height: var(--mobile-header-compact-height);
 }
 
-.mobile-bottom-nav-height {
+:where(.mobile-bottom-nav-height) {
   height: var(--mobile-bottom-nav-height);
 }
 
-.mobile-bottom-nav-compact-height {
+:where(.mobile-bottom-nav-compact-height) {
   height: var(--mobile-bottom-nav-compact-height);
 }
 
-.mobile-shell-bottom-padding {
+:where(.mobile-shell-bottom-padding) {
   padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--safe-area-bottom));
 }
 
-.mobile-shell-bottom-padding-compact {
+:where(.mobile-shell-bottom-padding-compact) {
   padding-bottom: calc(var(--mobile-bottom-nav-compact-height) + var(--safe-area-bottom));
 }
 

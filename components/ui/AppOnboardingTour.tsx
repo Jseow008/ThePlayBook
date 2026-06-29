@@ -134,7 +134,7 @@ export function AppOnboardingTour({
                 className="flex h-[100dvh] min-h-[100dvh] flex-col overflow-hidden"
                 data-testid="app-onboarding-tour"
             >
-                <div className="flex flex-none items-center justify-between px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] sm:px-8 sm:pt-6">
+                <div className="flex flex-none items-center justify-between px-4 pb-3 safe-area-pt-md sm:px-8 sm:pt-6">
                     <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
                         {progressLabel}
                     </div>
@@ -270,7 +270,7 @@ export function AppOnboardingTour({
                 </div>
 
                 <div
-                    className="flex-none border-t border-white/10 bg-black/25 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-xl sm:px-8 sm:py-4 sm:pb-4"
+                    className="flex-none border-t border-white/10 bg-black/25 px-4 py-4 safe-area-pb-md backdrop-blur-xl sm:px-8 sm:py-4 sm:pb-4"
                     data-testid="app-onboarding-footer"
                 >
                     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

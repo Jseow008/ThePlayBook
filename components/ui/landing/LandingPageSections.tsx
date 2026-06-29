@@ -1162,7 +1162,7 @@ export function CorePlatformFeaturesSection() {
           role="dialog"
           aria-modal="true"
           aria-label="Netflux storyboard image viewer"
-          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/88 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-xl sm:p-6"
+          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/88 px-4 safe-area-pb-md safe-area-pt-md backdrop-blur-xl sm:p-6"
         >
           <button
             type="button"

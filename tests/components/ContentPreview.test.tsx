@@ -86,6 +86,15 @@ describe('ContentPreview', () => {
         expect(screen.getByText('Takeaway 2')).toBeInTheDocument();
     });
 
+    it('keeps mobile CTA clearance tied to the shared safe-area variable', () => {
+        const { container } = render(<ContentPreview {...defaultProps} />);
+
+        expect(container.firstElementChild).toHaveClass(
+            'pb-[calc(5.75rem+var(--safe-area-bottom))]'
+        );
+        expect(document.querySelector('.safe-area-pb-sm')).toBeInTheDocument();
+    });
+
     it('can initially show all takeaways when opened from Focus', () => {
         render(
             <ContentPreview

@@ -140,7 +140,7 @@ export function FocusTakeawaysSheet({
 
             <div
                 data-testid="focus-takeaways-sheet-frame"
-                className="absolute inset-x-0 bottom-0 px-5 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+                className="absolute inset-x-0 bottom-0 px-5 safe-area-pb-sm"
             >
                 <div
                     role="dialog"
@@ -197,7 +197,7 @@ export function FocusTakeawaysSheet({
                         </div>
                     </div>
 
-                    <div className="border-t border-border/40 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                    <div className="border-t border-border/40 px-4 pt-3 safe-area-pb-md">
                         <Link
                             href={buildReadPath(card)}
                             className="focus-ring inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"

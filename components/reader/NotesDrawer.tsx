@@ -227,9 +227,10 @@ export function NotesDrawer({
                 style={{ touchAction: 'none' }}
                 className={cn(
                     "fixed right-4 z-40 flex flex-col items-end gap-2 transition-[bottom] duration-300 sm:right-6",
+                    // The larger offset clears the audio mini-player when it is visible.
                     isAudioMiniPlayerVisible
-                        ? "bottom-[calc(5.25rem+env(safe-area-inset-bottom))] sm:bottom-24"
-                        : "bottom-[calc(2rem+env(safe-area-inset-bottom))] sm:bottom-6"
+                        ? "bottom-[calc(5.25rem+var(--safe-area-bottom))] sm:bottom-24"
+                        : "bottom-[calc(2rem+var(--safe-area-bottom))] sm:bottom-6"
                 )}
             >
                 <button

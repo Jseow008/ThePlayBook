@@ -355,7 +355,7 @@ export function AskClientPage({
 
             {isLibraryScope ? (
                 <main className="min-h-0 flex-1 overflow-hidden">
-                    <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6">
+                    <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 pt-4 safe-area-pb-md sm:px-6 sm:pt-6">
                         <section className="flex h-full min-h-0 flex-1 flex-col">
                             <div className="flex min-h-0 flex-1 flex-col rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
                                 <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
@@ -493,7 +493,7 @@ export function AskClientPage({
                                 </div>
                             </div>
 
-                            <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-0 pt-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-0">
+                            <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-0 pt-4 safe-area-pb-lg sm:px-0">
                                 <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
                                     <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
                                         <div className="flex flex-wrap items-center gap-2">
@@ -555,7 +555,7 @@ export function AskClientPage({
                 </main>
             ) : (
                 <main className="min-h-0 flex-1 overflow-hidden">
-                    <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 sm:pt-6">
+                    <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 pt-4 safe-area-pb-md sm:px-6 sm:pt-6">
                         {isNotesLoading && noteHighlights.length === 0 ? (
                             <div className="flex flex-1 items-center justify-center px-4 py-12">
                                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
