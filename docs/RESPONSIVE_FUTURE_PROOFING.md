@@ -61,9 +61,17 @@ Status: Implemented in `400d2c4`.
 
 Implementation notes:
 
-- Added responsive Playwright projects for mobile, tablet, mobile landscape, and desktop.
-- Added public, authenticated, and admin responsive specs with horizontal overflow, chrome overlap, focus target, and console-error guards.
-- Dynamic `/preview/*` and `/read/*` coverage uses configured `RESPONSIVE_PREVIEW_PATH` / `RESPONSIVE_READ_PATH` when available, with route discovery fallback for local/dev data.
+- Commit: `400d2c4` (`Add responsive chrome policy and viewport gates`).
+- Playwright config: `playwright.config.ts` now defines responsive projects for `mobile-se` (375 × 667), `mobile-iphone` (390 × 844), `mobile-landscape` (667 × 375), `tablet-portrait` (768 × 1024), `tablet-landscape` (1024 × 768), and `desktop-chromium` (1440 × 900).
+- NPM script: `package.json` includes `npm run test:e2e:responsive` so CI and local checks can run the responsive gate directly.
+- Shared assertions: `tests/e2e/helpers/responsive.ts` centralizes the route health checks: document horizontal overflow, visible focus target, fixed chrome overlap, mobile header scroll states, critical console/page errors, guest onboarding bypass, and test auth helpers.
+- Public route coverage: `tests/e2e/responsive-public.spec.ts` guards `/`, `/browse`, `/search`, `/requests`, `/focus`, plus dynamic `/preview/*` and `/read/*` routes.
+- Authenticated route coverage: `tests/e2e/responsive-authenticated.spec.ts` guards `/notes`, `/ask`, and `/library/my-list`.
+- Admin route coverage: `tests/e2e/responsive-admin.spec.ts` guards unauthenticated `/admin` redirect behavior plus authenticated `/admin` and `/admin/content` when responsive admin credentials are configured.
+- Dynamic content strategy: `/preview/*` and `/read/*` use `RESPONSIVE_PREVIEW_PATH` and `RESPONSIVE_READ_PATH` when configured. If those variables are absent, the test discovers a preview link from `/browse`, reads the canonical `Read Summary` link when available, and falls back to `/read/<id>` for environments where the app redirect can canonicalize the slug.
+- Production/CI note: for non-skippable dynamic route coverage in CI, configure stable public verified content paths via `RESPONSIVE_PREVIEW_PATH` and `RESPONSIVE_READ_PATH`. `RESPONSIVE_READ_PATH` also falls back to `SMOKE_READ_PATH`.
+- Verification run before merge: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, focused desktop dynamic-route Playwright check, and `npm run test:e2e:responsive` all passed.
+- Known limitation: WebKit/Safari projects were not added in this PR. That remains optional follow-up scope because the required viewport matrix is now covered in Chromium.
 
 Issue: `playwright.config.ts` currently defines only one project: `chromium` using `devices['Desktop Chrome']` (L16–21). No mobile or tablet viewport projects exist. Component tests cover some mobile intent, but they do not prove rendered layout behavior in real mobile/tablet browser dimensions.
 
@@ -93,9 +101,18 @@ Status: Partially implemented in `400d2c4`; remaining page-level safe-area migra
 
 Implementation notes:
 
-- Added shared mobile chrome and safe-area CSS custom properties.
-- Added a typed route chrome policy map for landing, browse, read, preview, ask, focus, and standard app pages.
-- Refactored `PublicLayoutShell`, `MobileHeader`, `MobileBottomNav`, and focus feed viewport sizing to consume the shared primitives.
+- Commit: `400d2c4` (`Add responsive chrome policy and viewport gates`).
+- Shared primitives: `app/globals.css` now declares `--mobile-header-height`, `--mobile-header-compact-height`, `--mobile-bottom-nav-height`, `--mobile-bottom-nav-compact-height`, `--safe-area-bottom`, `--safe-area-top`, and `--focus-mobile-vertical-chrome`.
+- Shared utilities: `app/globals.css` now provides `.mobile-header-height`, `.mobile-header-compact-height`, `.mobile-bottom-nav-height`, `.mobile-bottom-nav-compact-height`, `.mobile-shell-bottom-padding`, and `.mobile-shell-bottom-padding-compact`.
+- Shell policy map: `lib/route-chrome-policy.ts` defines typed route chrome policies using `satisfies RouteChromePolicy` for landing, browse, read, preview, ask, focus, and standard app pages.
+- Shell refactor: `components/ui/PublicLayoutShell.tsx` now consumes `getRouteChromePolicy(pathname)` instead of duplicating route-specific chrome conditionals inline.
+- Header/nav refactor: `components/ui/MobileHeader.tsx` and `components/ui/MobileBottomNav.tsx` consume shared height utilities. Test IDs were added to support browser-level chrome assertions.
+- Focus viewport refactor: `components/focus/focus-feed-layout.ts` now uses shared CSS variables for mobile viewport sizing instead of embedding the old `3rem + 4rem + env(safe-area-inset-bottom)` calculation directly.
+- Test corrections: `tests/components/PublicLayoutShell.test.tsx` was updated to match real shell behavior, including correcting the existing `/read/*` mock mismatch where the test previously hid `MobileHeader` even though production rendered it.
+- Regression coverage: `tests/components/route-chrome-policy.test.ts` covers landing, browse, read, preview, ask, focus, default app routes, and `/notes` as a standard-policy anchor for the next safe-area migration.
+- Related test updates: focus feed tests now assert the exported layout constants rather than hard-coded old class strings; mobile header tests assert the explicit transform state used for scroll hiding.
+- Verification run before merge: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, focused desktop dynamic-route Playwright check, and `npm run test:e2e:responsive` all passed.
+- Production behavior note: `/read/*` and `/preview/*` intentionally keep the mobile header and suppress the mobile bottom nav; `/ask` owns the viewport with no mobile chrome; `/focus` owns the viewport while retaining the bottom nav.
 
 Remaining scope:
 
