@@ -907,7 +907,7 @@ describe("FocusFeed", () => {
                 expect(hookBody.style.maxHeight).toBe("72px");
             });
 
-            expect(within(firstCard).getByTestId("focus-mobile-hook-fade")).toBeInTheDocument();
+            expect(within(firstCard).queryByTestId("focus-mobile-hook-fade")).not.toBeInTheDocument();
             expect(within(firstCard).getByRole("button", { name: "Preview Essentialism" })).toBeInTheDocument();
         } finally {
             rectSpy.mockRestore();

@@ -550,13 +550,6 @@ export const FocusCardView = memo(function FocusCardView({
                                     {card.hook}
                                 </p>
                             </div>
-                            {mobileHookMaxHeight !== null ? (
-                                <div
-                                    data-testid="focus-mobile-hook-fade"
-                                    className={`pointer-events-none absolute h-10 bg-gradient-to-t from-secondary/95 via-secondary/65 to-transparent sm:inset-x-5 ${isCompactMobileLayout ? "inset-x-3.5 bottom-2.5" : "inset-x-4 bottom-3.5"}`}
-                                    aria-hidden="true"
-                                />
-                            ) : null}
                         </section>
 
                         <div className={`flex flex-col items-center pt-0.5 ${isCompactMobileLayout ? "gap-1.5" : "gap-2"}`}>
