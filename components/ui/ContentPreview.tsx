@@ -142,7 +142,7 @@ export function ContentPreview({
                             {item.duration_seconds && (
                                 <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
                                     <Clock className="size-3" />
-                                    {Math.round(item.duration_seconds / 60)} min
+                                    {Math.round(item.duration_seconds / 60)} min read
                                 </span>
                             )}
                             <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50 uppercase tracking-wider">
