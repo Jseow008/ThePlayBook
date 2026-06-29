@@ -74,7 +74,7 @@ describe("HomeFeed", () => {
         updated_at: "2026-03-01T00:00:00Z",
     };
 
-    it("leaves browse feed cards interactive so bookmark buttons can save to My List", () => {
+    it("leaves browse feed cards interactive so bookmark buttons can save to Library", () => {
         render(
             <HomeFeed
                 items={[item]}

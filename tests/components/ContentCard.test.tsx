@@ -99,13 +99,13 @@ describe("ContentCard", () => {
     it("uses item-specific bookmark labels", () => {
         render(<ContentCard item={item} />);
 
-        expect(screen.getByRole("button", { name: "Add Deep Work to My List" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toBeInTheDocument();
     });
 
     it("does not render an inert bookmark button when user state is disabled", () => {
         render(<ContentCard item={item} enableUserState={false} />);
 
-        expect(screen.queryByRole("button", { name: "Add Deep Work to My List" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Save Deep Work to Library" })).not.toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Preview Deep Work" })).toBeInTheDocument();
     });
 

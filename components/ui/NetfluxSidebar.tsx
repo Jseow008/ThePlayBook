@@ -208,7 +208,7 @@ export function NetfluxSidebar() {
                 {/* Divider */}
                 <div className="my-4 mx-4 border-t border-border" />
 
-                {/* My Library Section */}
+                {/* Library Section */}
                 <div className="space-y-1">
                     {isExpanded ? (
                         <button
@@ -229,7 +229,7 @@ export function NetfluxSidebar() {
                                     "text-sm font-medium transition-opacity whitespace-nowrap flex-1 text-left opacity-100"
                                 )}
                             >
-                                My Library
+                                Library
                             </span>
                             <ChevronDown
                                 className={cn(
@@ -241,7 +241,7 @@ export function NetfluxSidebar() {
                     ) : (
                         <Link
                             href="/library/reading"
-                            title="My Library"
+                            title="Library"
                             className={cn(
                                 "w-full flex items-center h-12 px-4 transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 justify-center",
                                 isLibrarySectionActive && "text-foreground bg-accent border-l-4 border-primary"
@@ -262,7 +262,7 @@ export function NetfluxSidebar() {
                     {/* Library Sub-items (only when expanded and open) */}
                     {isExpanded && isLibraryOpen && (
                         <div id="sidebar-library-subnav" className="ml-4 space-y-1">
-                            {/* My List */}
+                            {/* Saved */}
                             <Link
                                 href="/library/my-list"
                                 className={cn(
@@ -273,7 +273,7 @@ export function NetfluxSidebar() {
                                 )}
                             >
                                 <BookmarkSimpleIcon className="size-4 mr-3 flex-shrink-0" weight="duotone" />
-                                <span className="text-sm whitespace-nowrap flex-1">My List</span>
+                                <span className="text-sm whitespace-nowrap flex-1">Saved</span>
                                 {myListCount > 0 && (
                                     <span className="text-xs bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-medium">
                                         {myListCount}

@@ -779,15 +779,15 @@ describe("FocusFeed", () => {
 
         await screen.findByText("Essentialism");
 
-        const saveButton = screen.getByRole("button", { name: "Save Essentialism to My List" });
+        const saveButton = screen.getByRole("button", { name: "Save Essentialism to Library" });
 
         fireEvent.click(saveButton);
         fireEvent.click(saveButton);
 
         expect(toggleMyListMock).toHaveBeenNthCalledWith(1, focusItems[0]!.id);
         expect(toggleMyListMock).toHaveBeenNthCalledWith(2, focusItems[0]!.id);
-        expect(toastSuccessMock).toHaveBeenNthCalledWith(1, "Added to My List");
-        expect(toastSuccessMock).toHaveBeenNthCalledWith(2, "Removed from My List");
+        expect(toastSuccessMock).toHaveBeenNthCalledWith(1, "Saved to Library");
+        expect(toastSuccessMock).toHaveBeenNthCalledWith(2, "Removed from Library");
     });
 
     it("opens a simplified mobile takeaways sheet with the full takeaway list and closes back to the same feed", async () => {
@@ -805,11 +805,12 @@ describe("FocusFeed", () => {
         const sheet = await screen.findByTestId("focus-takeaways-sheet");
         const closeButton = screen.getByTestId("focus-takeaways-sheet-close");
         expect(sheetFrame).toHaveClass("px-5");
-        expect(sheet).toHaveAttribute("aria-label", "Preview for Essentialism");
+        expect(sheet).toHaveAccessibleName("8 Key Takeaways");
+        expect(within(sheet).getByText("Preview")).toBeInTheDocument();
         expect(sheet).toHaveClass("transition-transform");
         expect(sheet).toHaveClass("transition-opacity");
         expect(screen.getByTestId("focus-takeaways-sheet-backdrop")).toHaveClass("transition-opacity");
-        expect(within(sheet).queryByText("Key Takeaways")).not.toBeInTheDocument();
+        expect(within(sheet).getByText("8 Key Takeaways")).toBeInTheDocument();
         expect(within(sheet).queryByText("Essentialism")).not.toBeInTheDocument();
         expect(within(sheet).queryByText("Greg McKeown")).not.toBeInTheDocument();
         expect(sheet.firstElementChild).not.toHaveClass("border-b");
@@ -1094,7 +1095,7 @@ describe("FocusFeed", () => {
             "href",
             `/preview/${focusItems[0]!.id}?takeaways=all`
         );
-        const desktopSaveButton = within(firstCard).getByRole("button", { name: "Save Essentialism to My List" });
+        const desktopSaveButton = within(firstCard).getByRole("button", { name: "Save Essentialism to Library" });
         expect(desktopSaveButton).toBeInTheDocument();
         expect(desktopSaveButton).toHaveClass("h-9");
         expect(desktopSaveButton).toHaveClass("w-9");
@@ -1154,7 +1155,7 @@ describe("FocusFeed", () => {
             name: "Preview Essentialism",
         });
         expect(screen.getByRole("button", {
-            name: "Save Essentialism to My List",
+            name: "Save Essentialism to Library",
         })).toBeInTheDocument();
         expect(within(firstCard).getByRole("button", {
             name: "Share this content",
@@ -1376,17 +1377,17 @@ describe("FocusFeed", () => {
         }
     });
 
-    it("saves a mobile focus item to My List", async () => {
+    it("saves a mobile focus item to Library", async () => {
         render(<FocusFeed />);
 
         await screen.findByText("Essentialism");
 
         fireEvent.click(
-            screen.getByRole("button", { name: "Save Essentialism to My List" })
+            screen.getByRole("button", { name: "Save Essentialism to Library" })
         );
 
         expect(toggleMyListMock).toHaveBeenCalledWith(focusItems[0]!.id);
-        expect(toastSuccessMock).toHaveBeenCalledWith("Added to My List");
+        expect(toastSuccessMock).toHaveBeenCalledWith("Saved to Library");
     });
 
     it("keeps the full takeaway list available in the mobile bottom sheet regardless of the card limit", async () => {

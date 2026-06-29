@@ -375,7 +375,7 @@ export const FocusCardView = memo(function FocusCardView({
                                                 ? "border-primary/30 bg-primary/10 text-primary"
                                                 : "border-border/45 bg-secondary/20 text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground"
                                                 }`}
-                                            aria-label={isSaved ? `Remove ${card.title} from My List` : `Save ${card.title} to My List`}
+                                            aria-label={isSaved ? `Remove ${card.title} from Library` : `Save ${card.title} to Library`}
                                         >
                                             <Bookmark className="size-4" fill={isSaved ? "currentColor" : "none"} />
                                         </button>
@@ -521,7 +521,7 @@ export const FocusCardView = memo(function FocusCardView({
                                             ? "bg-primary/10 text-primary"
                                             : "text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
                                             }`}
-                                        aria-label={isSaved ? `Remove ${card.title} from My List` : `Save ${card.title} to My List`}
+                                        aria-label={isSaved ? `Remove ${card.title} from Library` : `Save ${card.title} to Library`}
                                     >
                                         <Bookmark className="size-3.5" fill={isSaved ? "currentColor" : "none"} />
                                     </button>

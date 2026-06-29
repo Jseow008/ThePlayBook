@@ -90,6 +90,7 @@ export function FocusTakeawaysSheet({
     };
 
     const isDragging = dragOffset > 0;
+    const titleId = `focus-takeaways-sheet-title-${card.id}`;
     const shouldAnimateMotion = !prefersReducedMotion && !isDragging;
     const isExiting = phase === "exiting";
     const backdropOpacityClass =
@@ -144,7 +145,7 @@ export function FocusTakeawaysSheet({
                 <div
                     role="dialog"
                     aria-modal="true"
-                    aria-label={`Preview for ${card.title}`}
+                    aria-labelledby={titleId}
                     data-testid="focus-takeaways-sheet"
                     ref={dialogRef}
                     tabIndex={-1}
@@ -172,6 +173,15 @@ export function FocusTakeawaysSheet({
                     </div>
 
                     <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
+                        <div className="mb-4 space-y-1">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75">
+                                Preview
+                            </p>
+                            <h2 id={titleId} className="text-base font-semibold leading-tight text-foreground">
+                                {card.takeaways.length} Key {card.takeaways.length === 1 ? "Takeaway" : "Takeaways"}
+                            </h2>
+                        </div>
+
                         <div className="space-y-3">
                             {card.takeaways.map((takeaway, index) => (
                                 <div

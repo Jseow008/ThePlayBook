@@ -545,7 +545,7 @@ export function FocusFeed() {
         } else {
             myListIdSetRef.current.add(card.id);
         }
-        toast.success(wasSaved ? "Removed from My List" : "Added to My List");
+        toast.success(wasSaved ? "Removed from Library" : "Saved to Library");
     }, [toggleMyList]);
 
     const fetchBatch = useCallback(async (options?: {

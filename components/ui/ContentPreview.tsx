@@ -42,7 +42,7 @@ export function ContentPreview({
     const [showAllTakeaways, setShowAllTakeaways] = useState(initialShowAllTakeaways);
     const [showFullHook, setShowFullHook] = useState(false);
 
-    // logic for "Save to My List"
+    // logic for "Save to Library"
     const { isInMyList, toggleMyList, isLoaded: isReadingProgressLoaded } = useReadingProgress();
     const isSaved = isReadingProgressLoaded && isInMyList(item.id);
 
@@ -223,13 +223,13 @@ export function ContentPreview({
                                 Read Summary
                             </Link>
 
-                            {/* Save to My List Button */}
+                            {/* Save to Library Button */}
                             <button
                                 type="button"
                                 disabled={!isReadingProgressLoaded}
                                 onClick={() => {
                                     toggleMyList(item.id);
-                                    toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                                    toast.success(isSaved ? "Removed from Library" : "Saved to Library");
                                 }}
                                 className={`inline-flex h-12 items-center justify-center gap-2.5 rounded-xl border font-bold text-base transition-all disabled:cursor-wait disabled:hover:scale-100 disabled:active:scale-100 ${!isReadingProgressLoaded
                                     ? "bg-background border-border/60 text-muted-foreground/70"
@@ -241,17 +241,17 @@ export function ContentPreview({
                                 {!isReadingProgressLoaded ? (
                                     <>
                                         <Bookmark className="size-5" />
-                                        <span>My List</span>
+                                        <span>Library</span>
                                     </>
                                 ) : isSaved ? (
                                     <>
                                         <Check className="size-5 text-primary" />
-                                        <span>Saved to My List</span>
+                                        <span>Saved to Library</span>
                                     </>
                                 ) : (
                                     <>
                                         <Bookmark className="size-5" />
-                                        <span>Save to My List</span>
+                                        <span>Save to Library</span>
                                     </>
                                 )}
                             </button>
@@ -385,7 +385,7 @@ export function ContentPreview({
                                 disabled={!isReadingProgressLoaded}
                                 onClick={() => {
                                     toggleMyList(item.id);
-                                    toast.success(isSaved ? "Removed from My List" : "Added to My List");
+                                    toast.success(isSaved ? "Removed from Library" : "Saved to Library");
                                 }}
                                 className={`focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:scale-95 disabled:cursor-wait disabled:active:scale-100 ${!isReadingProgressLoaded
                                     ? "bg-secondary/25 border-border/35 text-muted-foreground/60"
@@ -395,9 +395,9 @@ export function ContentPreview({
                                     }`}
                                 aria-label={isReadingProgressLoaded
                                     ? isSaved
-                                        ? `Remove ${item.title} from My List`
-                                        : `Save ${item.title} to My List`
-                                    : "Loading My List state"}
+                                        ? `Remove ${item.title} from Library`
+                                        : `Save ${item.title} to Library`
+                                    : "Loading Library state"}
                             >
                                 {isSaved ? <Check className="size-5" /> : <Bookmark className="size-5" />}
                             </button>

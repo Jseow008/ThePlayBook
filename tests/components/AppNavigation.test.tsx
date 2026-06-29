@@ -92,10 +92,10 @@ describe("app navigation", () => {
     it("renders Focus in the mobile bottom nav instead of Ask", () => {
         render(<MobileBottomNav />);
 
-        expect(screen.getByRole("link", { name: /home/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /browse/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /search/i })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /^focus$/i })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /my library/i })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /library/i })).toBeInTheDocument();
         expect(screen.queryByText("Categories")).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /^ask$/i })).not.toBeInTheDocument();
         expect(screen.getByRole("link", { name: /^focus$/i })).toHaveAttribute("href", "/focus");
@@ -131,13 +131,13 @@ describe("app navigation", () => {
             await vi.advanceTimersByTimeAsync(300);
         });
 
-        const libraryButton = screen.getByRole("button", { name: /my library/i });
+        const libraryButton = screen.getByRole("button", { name: /^library$/i });
         expect(libraryButton).toHaveAttribute("aria-expanded", "false");
 
         fireEvent.click(libraryButton);
 
         expect(libraryButton).toHaveAttribute("aria-expanded", "true");
-        expect(screen.getByRole("link", { name: /my list/i })).toHaveAttribute("href", "/library/my-list");
+        expect(screen.getByRole("link", { name: /saved/i })).toHaveAttribute("href", "/library/my-list");
         expect(screen.getByRole("link", { name: /continue reading/i })).toHaveAttribute("href", "/library/reading");
         expect(screen.getByRole("link", { name: /completed/i })).toHaveAttribute("href", "/library/completed");
 
@@ -149,7 +149,7 @@ describe("app navigation", () => {
 
         fireEvent.focus(screen.getByRole("link", { name: /search/i }));
 
-        const libraryButton = screen.getByRole("button", { name: /my library/i });
+        const libraryButton = screen.getByRole("button", { name: /^library$/i });
         expect(libraryButton).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /ask/i })).toBeInTheDocument();
     });
@@ -172,13 +172,13 @@ describe("app navigation", () => {
             await vi.advanceTimersByTimeAsync(300);
         });
 
-        const libraryButton = screen.getByRole("button", { name: /my library/i });
+        const libraryButton = screen.getByRole("button", { name: /^library$/i });
         expect(libraryButton).toHaveAttribute("aria-expanded", "false");
 
         fireEvent.click(libraryButton);
 
         expect(libraryButton).toHaveAttribute("aria-expanded", "true");
-        expect(screen.getByRole("link", { name: "My List" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Saved" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Continue Reading" })).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Completed" })).toBeInTheDocument();
 

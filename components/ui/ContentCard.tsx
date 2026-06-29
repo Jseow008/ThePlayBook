@@ -122,7 +122,7 @@ function InteractiveContentCard(props: ContentCardProps) {
                 event.stopPropagation();
 
                 toggleMyList(item.id);
-                toast.success(isBookmarked ? "Removed from My List" : "Added to My List");
+                toast.success(isBookmarked ? "Removed from Library" : "Saved to Library");
             }}
         />
     );
@@ -161,8 +161,8 @@ function BaseContentCard({
     const renderNewBadge = isNew && !showCompletedBadge;
     const linkLabel = getContentCardLabel(href, item.title);
     const bookmarkLabel = isBookmarked
-        ? `Remove ${item.title} from My List`
-        : `Add ${item.title} to My List`;
+        ? `Remove ${item.title} from Library`
+        : `Save ${item.title} to Library`;
     const showBookmarkButton = !hideBookmark && Boolean(onToggleBookmark);
     const contentHook = getContentCardHook(item);
 
@@ -217,7 +217,7 @@ function BaseContentCard({
                             ? "bg-primary text-primary-foreground opacity-100"
                             : "bg-black/40 text-white opacity-100 hover:bg-black/70 lg:opacity-0 lg:group-hover:opacity-100"
                     )}
-                    title={isBookmarked ? "Remove from My List" : "Add to My List"}
+                    title={isBookmarked ? "Remove from Library" : "Save to Library"}
                     aria-label={bookmarkLabel}
                 >
                     {isBookmarked ? (

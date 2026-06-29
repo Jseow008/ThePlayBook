@@ -22,7 +22,7 @@ const navItems = [
     { icon: HouseIcon, label: "Browse", href: "/browse" },
     { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
     { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
-    { icon: BooksIcon, label: "My Library", href: "/library/my-list" },
+    { icon: BooksIcon, label: "Library", href: "/library/my-list" },
 ];
 
 export function MobileBottomNav({ compact = false }: { compact?: boolean }) {

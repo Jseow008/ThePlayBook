@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const libraryNavItems = [
-    { label: "My List", href: "/library/my-list" },
+    { label: "Saved", href: "/library/my-list" },
     { label: "Continue Reading", href: "/library/reading" },
     { label: "Completed", href: "/library/completed" },
 ];

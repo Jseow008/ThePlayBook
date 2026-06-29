@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/LibraryLoadingStates";
 
 /**
- * My List Page
+ * Saved Library Page
  * 
  * Shows content manually bookmarked by the user for later reading.
  */
@@ -71,7 +71,7 @@ export default function MyListPage() {
             if (activeSort === "title") {
                 return a.title.localeCompare(b.title);
             }
-            // For newest/oldest in My List, we rely on the order in myListIds (which is added-to-top by default)
+            // For newest/oldest saved items, we rely on the order in myListIds (which is added-to-top by default)
             const indexA = myListIds.indexOf(a.id);
             const indexB = myListIds.indexOf(b.id);
 
@@ -96,7 +96,7 @@ export default function MyListPage() {
                 <div className="flex flex-col gap-2 mb-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">My List</h1>
+                            <h1 className="text-3xl font-bold text-foreground font-display tracking-tight leading-tight">Saved</h1>
                         </div>
 
                         {/* Stats Summary - Desktop only for now to save space on mobile */}
@@ -142,7 +142,7 @@ export default function MyListPage() {
                                 <AlertCircle className="size-10 text-muted-foreground" />
                             </div>
                             <h2 className="text-xl font-semibold text-foreground mb-2">
-                                We couldn&apos;t load your list
+                                We couldn&apos;t load your saved items
                             </h2>
                             <p className="text-muted-foreground mb-8 max-w-sm">
                                 Your saved items are still intact. Try again in a moment.
@@ -160,10 +160,10 @@ export default function MyListPage() {
                                 <Plus className="size-10 text-muted-foreground" />
                             </div>
                             <h2 className="text-xl font-semibold text-foreground mb-2">
-                                Your list is empty
+                                Your library is empty
                             </h2>
                             <p className="text-muted-foreground mb-8 max-w-sm">
-                                Add books, podcasts, articles, and videos to your list so you can easily find them later.
+                                Save books, podcasts, articles, and videos to your library so you can easily find them later.
                             </p>
                             <Link
                                 href="/browse"
@@ -195,7 +195,7 @@ export default function MyListPage() {
                                         key={item.id}
                                         item={item}
                                         titleDensity="app-compact"
-                                        removeLabel="Remove from My List"
+                                        removeLabel="Remove from Library"
                                         onRemove={(id) => removeFromMyList(id)}
                                     />
                                 ))}
