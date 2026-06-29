@@ -9,7 +9,6 @@ import { ContentLane } from "@/components/ui/ContentLane";
 import type { ContentItem, HomepageSection } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/brand";
-import { Logo } from "@/components/ui/Logo";
 
 interface HomeFeedProps {
     items: ContentItem[];
@@ -42,7 +41,10 @@ export function HomeFeed({
                         <ContentLane
                             title={
                                 <div className="flex items-center gap-2">
-                                    New on <Logo width={100} height={30} className="inline-flex" />
+                                    <span>New on </span>
+                                    <span className="font-brand text-[0.95em] font-bold uppercase tracking-[0.18em]">
+                                        {APP_NAME}
+                                    </span>
                                 </div>
                             }
                             items={items.slice(0, 10)}

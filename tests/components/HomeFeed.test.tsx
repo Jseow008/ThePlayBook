@@ -85,6 +85,7 @@ describe("HomeFeed", () => {
         );
 
         expect(screen.getByText("New on")).toBeInTheDocument();
+        expect(screen.getByText("Netflux")).toBeInTheDocument();
         expect(screen.getByText("Featured Section")).toBeInTheDocument();
 
         for (const lane of screen.getAllByTestId("content-lane")) {
@@ -104,7 +105,7 @@ describe("HomeFeed", () => {
 
         const [newOnNetfluxLane] = screen.getAllByTestId("content-lane");
 
-        expect(newOnNetfluxLane).toHaveTextContent("New on");
+        expect(newOnNetfluxLane).toHaveTextContent("New on Netflux");
         expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "");
     });
 });
