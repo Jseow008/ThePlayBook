@@ -57,7 +57,13 @@ The current product has enough responsive treatment to continue development. The
 
 ### 1. Add a real responsive Playwright gate
 
-Status: Open.
+Status: Implemented in `400d2c4`.
+
+Implementation notes:
+
+- Added responsive Playwright projects for mobile, tablet, mobile landscape, and desktop.
+- Added public, authenticated, and admin responsive specs with horizontal overflow, chrome overlap, focus target, and console-error guards.
+- Dynamic `/preview/*` and `/read/*` coverage uses configured `RESPONSIVE_PREVIEW_PATH` / `RESPONSIVE_READ_PATH` when available, with route discovery fallback for local/dev data.
 
 Issue: `playwright.config.ts` currently defines only one project: `chromium` using `devices['Desktop Chrome']` (L16–21). No mobile or tablet viewport projects exist. Component tests cover some mobile intent, but they do not prove rendered layout behavior in real mobile/tablet browser dimensions.
 
@@ -83,7 +89,18 @@ Acceptance criteria:
 
 ### 2. Centralize mobile chrome and viewport sizing primitives
 
-Status: Open.
+Status: Partially implemented in `400d2c4`; remaining page-level safe-area migration is still open.
+
+Implementation notes:
+
+- Added shared mobile chrome and safe-area CSS custom properties.
+- Added a typed route chrome policy map for landing, browse, read, preview, ask, focus, and standard app pages.
+- Refactored `PublicLayoutShell`, `MobileHeader`, `MobileBottomNav`, and focus feed viewport sizing to consume the shared primitives.
+
+Remaining scope:
+
+- Migrate the remaining inline `env(safe-area-inset-bottom)` usages listed below to shared utilities or component-level primitives.
+- Revisit page-owned viewport surfaces after those migrations to remove redundant `min-h-screen` / fixed-padding patterns where appropriate.
 
 Issue: There are many independent height, fixed-position, safe-area, and overflow patterns across the codebase.
 
