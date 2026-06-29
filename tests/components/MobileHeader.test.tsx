@@ -54,12 +54,12 @@ describe("MobileHeader", () => {
         window.scrollY = 120;
         fireEvent.scroll(window);
 
-        expect(container.firstChild).toHaveClass("-translate-y-full");
+        expect(container.firstChild).toHaveStyle({ transform: "translateY(-100%)" });
 
         pathnameState.value = "/search";
         rerender(<MobileHeader />);
 
-        expect(container.firstChild).toHaveClass("translate-y-0");
+        expect(container.firstChild).toHaveStyle({ transform: "translateY(0)" });
     });
 
     it("keeps rendering on read routes", () => {

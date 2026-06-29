@@ -8,6 +8,10 @@ import {
     getDesktopVisibleTakeawayCount,
     getMobileHookMaxHeight,
 } from "@/components/focus/FocusFeed";
+import {
+    FEED_CARD_HEIGHT_CLASS,
+    FEED_LIST_VIEWPORT_CLASS,
+} from "@/components/focus/focus-feed-layout";
 
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
 const FOCUS_FEED_SEED_STORAGE_KEY = "focus-feed-seed-v1";
@@ -272,8 +276,9 @@ describe("FocusFeed", () => {
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("overflow-y-auto");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("scrollbar-hide");
         expect(screen.getByTestId("focus-feed-list")).toHaveClass("snap-mandatory");
-        expect(screen.getByTestId("focus-feed-list")).toHaveClass("h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))]");
-        expect(screen.getByTestId("focus-feed-list")).toHaveClass("md:h-[calc(100dvh-7.5rem)]");
+        for (const className of FEED_LIST_VIEWPORT_CLASS.split(" ")) {
+            expect(screen.getByTestId("focus-feed-list")).toHaveClass(className);
+        }
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("pb-4");
         expect(screen.getByTestId("focus-feed-list").firstElementChild).toHaveClass("md:pb-2");
         expect(screen.getByRole("button", { name: "Preview Essentialism" })).toBeInTheDocument();
@@ -288,8 +293,9 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/20");
         expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toHaveAttribute("src", "https://example.com/essentialism.jpg");
-        expect(firstCard).toHaveClass("min-h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))]");
-        expect(firstCard).toHaveClass("md:min-h-[calc(100dvh-7.5rem)]");
+        for (const className of FEED_CARD_HEIGHT_CLASS.split(" ")) {
+            expect(firstCard).toHaveClass(className);
+        }
         expect(firstCard).toHaveClass("py-4");
     });
 

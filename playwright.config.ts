@@ -15,8 +15,50 @@ export default defineConfig({
     },
     projects: [
         {
-            name: 'chromium',
-            use: { ...devices['Desktop Chrome'] },
+            name: 'desktop-chromium',
+            use: {
+                ...devices['Desktop Chrome'],
+                viewport: { width: 1440, height: 900 },
+            },
+        },
+        {
+            name: 'mobile-se',
+            use: {
+                ...devices['iPhone SE'],
+                browserName: 'chromium',
+                viewport: { width: 375, height: 667 },
+            },
+        },
+        {
+            name: 'mobile-iphone',
+            use: {
+                ...devices['iPhone 14'],
+                browserName: 'chromium',
+                viewport: { width: 390, height: 844 },
+            },
+        },
+        {
+            name: 'mobile-landscape',
+            use: {
+                ...devices['iPhone 14 landscape'],
+                browserName: 'chromium',
+                viewport: { width: 844, height: 390 },
+            },
+        },
+        {
+            name: 'tablet-portrait',
+            use: {
+                ...devices['iPad (gen 11)'],
+                browserName: 'chromium',
+                viewport: { width: 768, height: 1024 },
+            },
+        },
+        {
+            name: 'tablet-landscape',
+            use: {
+                ...devices['Desktop Chrome'],
+                viewport: { width: 1024, height: 768 },
+            },
         },
     ],
     webServer: process.env.PLAYWRIGHT_BASE_URL

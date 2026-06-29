@@ -53,6 +53,14 @@
   --reading-text-soft: 0 0% 88%;
   --reading-text-default: 0 0% 92%;
   --reading-text-strong: 0 0% 95%;
+
+  --mobile-header-height: 3.5rem;
+  --mobile-header-compact-height: 3rem;
+  --mobile-bottom-nav-height: 4rem;
+  --mobile-bottom-nav-compact-height: 3.5rem;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --focus-mobile-vertical-chrome: 3rem;
 }
 
 .light {
@@ -515,7 +523,31 @@ mark[data-highlight-spotlight="true"] {
 
 /* Safe area padding for mobile devices with notch/home indicator */
 .safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.mobile-header-height {
+  height: var(--mobile-header-height);
+}
+
+.mobile-header-compact-height {
+  height: var(--mobile-header-compact-height);
+}
+
+.mobile-bottom-nav-height {
+  height: var(--mobile-bottom-nav-height);
+}
+
+.mobile-bottom-nav-compact-height {
+  height: var(--mobile-bottom-nav-compact-height);
+}
+
+.mobile-shell-bottom-padding {
+  padding-bottom: calc(var(--mobile-bottom-nav-height) + var(--safe-area-bottom));
+}
+
+.mobile-shell-bottom-padding-compact {
+  padding-bottom: calc(var(--mobile-bottom-nav-compact-height) + var(--safe-area-bottom));
 }
 
 /* Browse hero responsiveness */

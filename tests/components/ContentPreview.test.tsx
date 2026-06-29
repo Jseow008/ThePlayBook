@@ -73,7 +73,7 @@ describe('ContentPreview', () => {
 
         expect(screen.getByText('Test Title')).toBeInTheDocument();
         expect(screen.getByText('Test Author')).toBeInTheDocument();
-        expect(screen.getByText('10 min')).toBeInTheDocument();
+        expect(screen.getByText(/10\s+min read/)).toBeInTheDocument();
         expect(screen.getByText('5 sections')).toBeInTheDocument();
         expect(screen.getByText('article')).toBeInTheDocument();
     });

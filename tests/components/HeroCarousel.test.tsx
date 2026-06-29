@@ -163,7 +163,7 @@ describe("HeroCarousel", () => {
     it("pauses autoplay while keyboard focus is inside the hero", () => {
         render(<HeroCarousel items={items} />);
 
-        const readLink = screen.getByRole("link", { name: "Read" });
+        const readLink = screen.getByRole("link", { name: "Read Summary" });
 
         act(() => {
             fireEvent.focusIn(readLink);
@@ -218,8 +218,8 @@ describe("HeroCarousel", () => {
 
         expect(screen.queryByAltText("First Feature")).not.toBeInTheDocument();
         expect(screen.getByRole("heading", { name: "First Feature" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Read" })).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: "Preview" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Read Summary" })).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Preview Takeaways" })).toHaveAttribute(
             "href",
             "/preview/11111111-1111-1111-1111-111111111111"
         );

@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:security": "vitest run tests/proxy.test.ts tests/security/ tests/api/health.test.ts tests/api/activity-log.test.ts tests/api/admin-*.test.ts",
+    "test:e2e:responsive": "playwright test tests/e2e/responsive-public.spec.ts tests/e2e/responsive-authenticated.spec.ts tests/e2e/responsive-admin.spec.ts --project=mobile-se --project=mobile-iphone --project=mobile-landscape --project=tablet-portrait --project=tablet-landscape --project=desktop-chromium",
     "security:audit": "npm audit --omit=dev --audit-level=high",
     "security:admin-rpc-acls": "node scripts/check-supabase-admin-rpc-acls.mjs",
     "security:function-acls": "node scripts/check-supabase-function-acls.mjs",

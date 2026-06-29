@@ -34,8 +34,14 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
     const isFocusActive = pathname === "/focus";
 
     return (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border safe-area-pb">
-            <div className={cn("flex items-center justify-around", compact ? "h-14" : "h-16")}>
+        <nav
+            data-testid="mobile-bottom-nav"
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border safe-area-pb"
+        >
+            <div className={cn(
+                "flex items-center justify-around",
+                compact ? "mobile-bottom-nav-compact-height" : "mobile-bottom-nav-height"
+            )}>
                 {navItems.map((item) => {
                     const isActive = item.href === "/library/my-list"
                         ? isLibraryActive

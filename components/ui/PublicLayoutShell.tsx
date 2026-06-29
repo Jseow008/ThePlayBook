@@ -7,6 +7,8 @@ import { UserNav } from "@/components/ui/UserNav";
 import { MobileBottomNav } from "@/components/ui/MobileBottomNav";
 import { MobileHeader } from "@/components/ui/MobileHeader";
 import { AppOnboardingGate } from "@/components/ui/AppOnboardingGate";
+import { getRouteChromePolicy } from "@/lib/route-chrome-policy";
+import { cn } from "@/lib/utils";
 
 /**
  * Public Layout Shell
@@ -18,20 +20,24 @@ import { AppOnboardingGate } from "@/components/ui/AppOnboardingGate";
 
 export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const isLandingPage = pathname === "/";
-    const isBrowsePage = pathname === "/browse";
-    const isFocusPage = pathname === "/focus";
-    const isReadPage = pathname.startsWith("/read");
-    const isPreviewPage = pathname.startsWith("/preview");
-    const isAskPage = pathname === "/ask";
+    const policy = getRouteChromePolicy(pathname);
+    const showMobileHeader = policy.mobileHeader !== "none";
+    const showMobileBottomNav = policy.mobileBottomNav !== "none";
 
     // Landing page: standalone layout (no sidebar, no bottom nav)
-    if (isLandingPage) {
+    if (policy.viewportMode === "standalone") {
         return <>{children}</>;
     }
 
     return (
-        <div className={isFocusPage ? "h-[100dvh] overflow-hidden bg-background" : "min-h-screen bg-background"}>
+        <div
+            className={cn(
+                "bg-background",
+                policy.viewportMode === "immersive"
+                    ? "h-[100dvh] overflow-hidden"
+                    : "min-h-dvh"
+            )}
+        >
             <Suspense fallback={null}>
                 <AppOnboardingGate />
             </Suspense>
@@ -50,37 +56,37 @@ export function PublicLayoutShell({ children }: { children: React.ReactNode }) {
 
 
             {/* Mobile Header */}
-            {!isFocusPage && !isAskPage && (
+            {showMobileHeader && (
                 <Suspense fallback={null}>
-                    <MobileHeader compact={isBrowsePage} />
+                    <MobileHeader compact={policy.mobileHeader === "compact"} />
                 </Suspense>
             )}
 
             {/* Main Content */}
             <main
-                className={
-                    isFocusPage
-                        ? "h-full overflow-hidden lg:pl-16"
-                        : isReadPage
-                        ? "lg:pl-16"
-                        : isPreviewPage
-                        ? "lg:pl-16"
-                        : isAskPage
-                        ? "lg:pl-16"
-                        : isBrowsePage
-                        ? "lg:pl-16 pb-[calc(3.5rem+env(safe-area-inset-bottom))] lg:pb-0"
-                        : "lg:pl-16 pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0"
-                }
+                className={cn(
+                    policy.desktopSidebarPadding && "lg:pl-16",
+                    policy.viewportMode === "immersive" && "h-full overflow-hidden",
+                    policy.mobileBottomPadding === "default" && "mobile-shell-bottom-padding lg:pb-0",
+                    policy.mobileBottomPadding === "compact" && "mobile-shell-bottom-padding-compact lg:pb-0"
+                )}
             >
                 {/* Mobile padding for fixed header */}
-                {!isFocusPage && !isAskPage && (
-                    <div className={isBrowsePage ? "lg:hidden h-12" : "lg:hidden h-14"} />
+                {showMobileHeader && (
+                    <div
+                        className={cn(
+                            "lg:hidden",
+                            policy.mobileHeader === "compact"
+                                ? "mobile-header-compact-height"
+                                : "mobile-header-height"
+                        )}
+                    />
                 )}
                 {children}
             </main>
 
             {/* Mobile Bottom Navigation */}
-            {!isReadPage && !isPreviewPage && !isAskPage && <MobileBottomNav compact={isBrowsePage} />}
+            {showMobileBottomNav && <MobileBottomNav compact={policy.mobileBottomNav === "compact"} />}
         </div>
     );
 }

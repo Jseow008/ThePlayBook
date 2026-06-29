@@ -1,7 +1,9 @@
+// /focus has no mobile header. The mobile vertical chrome term is focus-internal
+// spacing plus the shell bottom nav and safe-area, not the compact header height.
 export const FEED_LIST_VIEWPORT_CLASS =
-    "h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))] md:h-[calc(100dvh-7.5rem)]";
+    "h-[calc(100dvh-var(--focus-mobile-vertical-chrome)-var(--mobile-bottom-nav-height)-var(--safe-area-bottom))] md:h-[calc(100dvh-7.5rem)]";
 export const FEED_CARD_HEIGHT_CLASS =
-    "min-h-[calc(100dvh-3rem-4rem-env(safe-area-inset-bottom))] md:min-h-[calc(100dvh-7.5rem)]";
+    "min-h-[calc(100dvh-var(--focus-mobile-vertical-chrome)-var(--mobile-bottom-nav-height)-var(--safe-area-bottom))] md:min-h-[calc(100dvh-7.5rem)]";
 export const TAKEAWAYS_SHEET_OPEN_DURATION_MS = 240;
 export const TAKEAWAYS_SHEET_CLOSE_DURATION_MS = 210;
 export const TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS = 200;
