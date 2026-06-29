@@ -119,7 +119,7 @@ export function SeriesSequenceList({ items, showItemAuthors = false }: SeriesSeq
                                             className="focus-ring inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-white px-4 text-sm font-bold text-black shadow-[0_0_16px_rgba(255,255,255,0.14)] transition-all hover:scale-[1.02] hover:bg-white/95 hover:shadow-[0_0_24px_rgba(255,255,255,0.22)] active:scale-95 md:h-10 md:w-fit md:flex-none md:self-start md:px-5 md:hover:scale-105"
                                         >
                                             <BookOpen className="size-4 fill-black" />
-                                            <span>Read</span>
+                                            <span>Read Summary</span>
                                         </Link>
                                         <Link
                                             href={`/preview/${item.id}`}
@@ -127,7 +127,7 @@ export function SeriesSequenceList({ items, showItemAuthors = false }: SeriesSeq
                                             className="focus-ring inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-white/20 bg-black/20 px-4 text-sm font-semibold text-white backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-all hover:scale-[1.02] hover:bg-black/35 hover:border-white/35 hover:shadow-[0_8px_24px_rgba(0,0,0,0.35)] active:scale-95 md:h-10 md:w-fit md:flex-none md:self-start md:px-5 md:hover:scale-105"
                                         >
                                             <Info className="size-4" />
-                                            <span>Preview</span>
+                                            <span>Preview Takeaways</span>
                                         </Link>
                                     </div>
                                 </div>

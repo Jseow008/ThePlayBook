@@ -220,7 +220,7 @@ export function ContentPreview({
                                 className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
                             >
                                 <BookOpen className="size-5" />
-                                Read
+                                Read Summary
                             </Link>
 
                             {/* Save to My List Button */}
@@ -377,7 +377,7 @@ export function ContentPreview({
                                 className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-border/45 bg-secondary/80 text-base font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary active:scale-95"
                             >
                                 <BookOpen className="size-4 shrink-0" />
-                                <span className="truncate">Read</span>
+                                <span className="truncate">Read Summary</span>
                             </Link>
 
                             <button

@@ -194,7 +194,7 @@ export function FocusTakeawaysSheet({
                             aria-label={`Read ${card.title}`}
                         >
                             <BookOpen className="size-4" />
-                            Read
+                            Read Summary
                         </Link>
                     </div>
                 </div>

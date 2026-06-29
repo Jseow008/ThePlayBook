@@ -340,17 +340,17 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         >
                             <Link
                                 href={buildReadPath(contentItem)}
-                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full bg-white px-5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
+                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full bg-white px-4.5 py-2 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-all hover:scale-105 hover:bg-white/95 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] active:scale-95 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
                             >
-                                <BookOpen className="h-4 w-4 fill-black md:h-6 md:w-6 lg:h-7 lg:w-7" />
-                                Read
+                                <BookOpen className="h-4 w-4 fill-black md:h-5 md:w-5" />
+                                Read Summary
                             </Link>
                             <Link
                                 href={`/preview/${contentItem.id}`}
-                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:gap-3 md:px-7 md:py-2.5 md:text-base lg:px-8 lg:py-3 lg:text-lg"
+                                className="focus-ring pointer-events-auto flex items-center gap-2 rounded-full border border-white/20 bg-black/20 px-4.5 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,0,0,0.4)] backdrop-blur-md transition-all hover:scale-105 hover:border-white/40 hover:bg-black/40 active:scale-95 md:gap-2.5 md:px-6 md:py-2.5 md:text-base lg:px-6 lg:py-2.5"
                             >
-                                <Info className="h-4 w-4 md:h-6 md:w-6 lg:h-7 lg:w-7" />
-                                Preview
+                                <Info className="h-4 w-4 md:h-5 md:w-5" />
+                                Preview Takeaways
                             </Link>
                         </div>
                     </div>

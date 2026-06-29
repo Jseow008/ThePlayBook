@@ -444,7 +444,7 @@ export const FocusCardView = memo(function FocusCardView({
                                     aria-label={`Preview ${card.title}`}
                                 >
                                     <Info className="size-4" />
-                                    Preview
+                                    Preview Takeaways
                                 </Link>
                             ) : null}
                             <Link
@@ -453,7 +453,7 @@ export const FocusCardView = memo(function FocusCardView({
                                 aria-label={`Read ${card.title}`}
                             >
                                 <BookOpen className="size-4" />
-                                Read
+                                Read Summary
                             </Link>
                         </div>
                     </div>
@@ -567,7 +567,7 @@ export const FocusCardView = memo(function FocusCardView({
                                 aria-label={`Preview ${card.title}`}
                             >
                                 <Info className="size-4" />
-                                Preview
+                                Preview Takeaways
                             </button>
                         </div>
                     </div>
