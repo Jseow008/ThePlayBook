@@ -9,7 +9,8 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { ChatExportButton } from "@/components/chat/ChatExportButton";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface AuthorChatProps {
     contentId: string;
@@ -81,9 +82,17 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
     );
 
     const [mounted, setMounted] = useState(false);
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     useEffect(() => setMounted(true), []);
 
-    useBodyScrollLock(true);
+    useOverlayInteractions({
+        enabled: mounted,
+        containerRef: dialogRef,
+        initialFocusRef: textareaRef,
+        onEscape: onClose,
+        scrollLock: true,
+    });
 
     const {
         messages,
@@ -94,7 +103,6 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
     const displayErrorMessage = useMemo(() => getDisplayErrorMessage(error), [error]);
 
     const [input, setInput] = useState("");
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Auto-resize textarea
     useEffect(() => {
@@ -163,10 +171,12 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
 
     return createPortal(
         <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label={`Chat with ${authorName} persona`}
-            className="fixed inset-0 z-[100] flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300"
+            tabIndex={-1}
+            className={`fixed inset-0 ${OVERLAY_LAYER_CLASS.popover} flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300`}
         >
             <header className="flex-shrink-0 border-b border-border/50 px-4 py-3 sm:px-6">
                 <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">

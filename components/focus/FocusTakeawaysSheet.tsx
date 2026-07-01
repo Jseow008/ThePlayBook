@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { MutableRefObject, TouchEvent as ReactTouchEvent } from "react";
 import { BookOpen, X } from "lucide-react";
 import { buildReadPath } from "@/lib/content-paths";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import type { FocusCard } from "@/components/focus/focus-feed-utils";
 import {
     TAKEAWAYS_SHEET_BACKDROP_OPEN_DURATION_MS,
@@ -128,7 +129,7 @@ export function FocusTakeawaysSheet({
         };
 
     return (
-        <div className="fixed inset-0 z-[80] lg:hidden" aria-hidden={false}>
+        <div className={`fixed inset-0 ${OVERLAY_LAYER_CLASS.sheet} lg:hidden`} aria-hidden={false}>
             <button
                 type="button"
                 data-testid="focus-takeaways-sheet-backdrop"

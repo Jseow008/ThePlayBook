@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import type { OnboardingSlide, OnboardingStatus } from "@/lib/onboarding";
 
 interface AppOnboardingTourProps {
@@ -16,16 +17,6 @@ interface AppOnboardingTourProps {
     isSaving: boolean;
     onFinish: (status: OnboardingStatus) => void | Promise<void>;
     slides: OnboardingSlide[];
-}
-
-function getFocusableElements(container: HTMLElement | null) {
-    if (!container) return [];
-
-    return Array.from(
-        container.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-    ).filter((element) => !element.hasAttribute("disabled") && element.tabIndex !== -1);
 }
 
 export function AppOnboardingTour({
@@ -63,22 +54,19 @@ export function AppOnboardingTour({
         setActiveIndex(0);
     }, [isOpen]);
 
-    useBodyScrollLock(isOpen);
+    useOverlayInteractions({
+        enabled: isOpen && mounted,
+        containerRef,
+        onEscape: () => {
+            void onFinish("dismissed");
+        },
+        scrollLock: true,
+    });
 
     useEffect(() => {
         if (!isOpen) return;
 
-        const container = containerRef.current;
-        const focusable = getFocusableElements(container);
-        focusable[0]?.focus();
-
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                event.preventDefault();
-                void onFinish("dismissed");
-                return;
-            }
-
             if (event.key === "ArrowRight") {
                 event.preventDefault();
                 setActiveIndex((current) => Math.min(current + 1, slides.length - 1));
@@ -90,35 +78,18 @@ export function AppOnboardingTour({
                 setActiveIndex((current) => Math.max(current - 1, 0));
                 return;
             }
-
-            if (event.key !== "Tab") return;
-
-            const elements = getFocusableElements(containerRef.current);
-            if (elements.length === 0) return;
-
-            const first = elements[0];
-            const last = elements[elements.length - 1];
-            const activeElement = document.activeElement as HTMLElement | null;
-
-            if (event.shiftKey && activeElement === first) {
-                event.preventDefault();
-                last.focus();
-            } else if (!event.shiftKey && activeElement === last) {
-                event.preventDefault();
-                first.focus();
-            }
         };
 
         document.addEventListener("keydown", handleKeyDown);
         return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onFinish, slides.length]);
+    }, [isOpen, slides.length]);
 
     if (!isOpen || !mounted) {
         return null;
     }
 
     return createPortal(
-        <div className="fixed inset-0 z-[120] overflow-x-hidden bg-[rgba(10,14,21,0.88)] backdrop-blur-xl">
+        <div className={`fixed inset-0 ${OVERLAY_LAYER_CLASS.dialog} overflow-x-hidden bg-[rgba(10,14,21,0.88)] backdrop-blur-xl`}>
             <div
                 ref={containerRef}
                 role="dialog"

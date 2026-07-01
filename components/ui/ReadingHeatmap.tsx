@@ -6,6 +6,7 @@ import { format, subDays, eachDayOfInterval, isSameDay, startOfYear, endOfYear, 
 import { Flame, Info, BookOpen } from "lucide-react";
 import Link from "next/link";
 import { Button } from "./button";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface ActivityData {
     activity_date: string;
@@ -463,7 +464,7 @@ function HeatmapGrid({ data }: { data: { date: Date, intensity: number, dateStr:
             {/* Floating Tooltip */}
             {isMounted && hoveredDay && createPortal(
                 <div
-                    className="absolute z-[100] px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]"
+                    className={`absolute ${OVERLAY_LAYER_CLASS.popover} px-3 py-2 bg-popover text-popover-foreground text-xs rounded-md shadow-lg border border-border pointer-events-none transform -translate-x-1/2 -translate-y-full flex flex-col items-center min-w-[100px]`}
                     style={{
                         left: hoveredDay.x,
                         top: hoveredDay.y - 8

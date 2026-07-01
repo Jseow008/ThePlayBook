@@ -8,6 +8,7 @@ import { useUpdateHighlight, useDeleteHighlight } from "@/hooks/useHighlights";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface HighlightPopoverProps {
     highlightId: string;
@@ -139,7 +140,7 @@ export function HighlightPopover({
                     onMouseLeave();
                 }
             }}
-            className="absolute z-[100] transform -translate-x-1/2 -translate-y-full w-80 origin-bottom animate-in fade-in zoom-in-95 duration-200 pb-2.5"
+            className={`absolute ${OVERLAY_LAYER_CLASS.popover} transform -translate-x-1/2 -translate-y-full w-80 origin-bottom animate-in fade-in zoom-in-95 duration-200 pb-2.5`}
             style={{ top, left }}
         >
             <div className="bg-popover/95 backdrop-blur-md text-popover-foreground rounded-xl shadow-2xl border border-border/50 overflow-hidden flex flex-col pointer-events-auto">

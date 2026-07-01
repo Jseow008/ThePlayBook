@@ -12,6 +12,8 @@ import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor }
 import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNoteComposer";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface NotesDrawerProps {
     isOpen: boolean;
@@ -42,7 +44,7 @@ export function NotesDrawer({
     const [mounted, setMounted] = useState(false);
     const drawerPanelRef = useRef<HTMLDivElement>(null);
     const openerButtonRef = useRef<HTMLButtonElement>(null);
-    const shouldRestoreFocusRef = useRef(false);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
     const activeRowScrollTimeoutRef = useRef<number | null>(null);
     const deleteHighlight = useDeleteHighlight();
     const updateHighlight = useUpdateHighlight();
@@ -82,26 +84,18 @@ export function NotesDrawer({
         setMounted(true);
     }, []);
 
-    // Handle Escape key to close drawer
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && isOpen) {
-                onOpenChange(false);
-            }
-        };
-        if (isOpen) {
-            document.addEventListener("keydown", handleKeyDown);
-        }
-        return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, onOpenChange]);
+    useOverlayInteractions({
+        enabled: isOpen && editingHighlight === null,
+        containerRef: drawerPanelRef,
+        initialFocusRef: closeButtonRef,
+        restoreFocusRef: openerButtonRef,
+        onEscape: () => onOpenChange(false),
+        scrollLock: true,
+    });
 
     useEffect(() => {
         if (!isOpen) {
             setEditingHighlight(null);
-            if (shouldRestoreFocusRef.current) {
-                shouldRestoreFocusRef.current = false;
-                requestAnimationFrame(() => openerButtonRef.current?.focus());
-            }
         }
     }, [isOpen]);
 
@@ -225,7 +219,8 @@ export function NotesDrawer({
             <div
                 style={{ touchAction: 'none' }}
                 className={cn(
-                    "fixed right-4 z-40 flex flex-col items-end gap-2 transition-[bottom] duration-300 sm:right-6",
+                    "fixed right-4 flex flex-col items-end gap-2 transition-[bottom] duration-300 sm:right-6",
+                    OVERLAY_LAYER_CLASS.shell,
                     // The larger offset clears the audio mini-player when it is visible.
                     isAudioMiniPlayerVisible
                         ? "bottom-[calc(5.25rem+var(--safe-area-bottom))] sm:bottom-24"
@@ -235,7 +230,6 @@ export function NotesDrawer({
                 <button
                     ref={openerButtonRef}
                     onClick={() => {
-                        shouldRestoreFocusRef.current = true;
                         onOpenChange(true);
                     }}
                     aria-label="Open notes drawer"
@@ -254,7 +248,8 @@ export function NotesDrawer({
             {/* Backdrop */}
             <div
                 className={cn(
-                    "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+                    "fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+                    OVERLAY_LAYER_CLASS.drawer,
                     isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
                 onClick={() => onOpenChange(false)}
@@ -265,19 +260,27 @@ export function NotesDrawer({
                 ref={drawerPanelRef}
                 data-testid="reader-notes-drawer"
                 data-state={isOpen ? "open" : "closed"}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="reader-notes-drawer-title"
+                aria-hidden={!isOpen}
+                inert={!isOpen}
+                tabIndex={-1}
                 onTransitionEnd={handlePanelTransitionEnd}
                 className={cn(
-                    "fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm sm:max-w-md bg-background border-l border-border/40 shadow-2xl transition-transform duration-500 ease-spring flex flex-col",
+                    "fixed top-0 right-0 bottom-0 w-full max-w-sm sm:max-w-md bg-background border-l border-border/40 shadow-2xl transition-transform duration-500 ease-spring flex flex-col",
+                    OVERLAY_LAYER_CLASS.drawer,
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}
             >
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-border/40 bg-card/30">
-                    <h2 className="text-lg font-bold flex items-center gap-2">
+                    <h2 id="reader-notes-drawer-title" className="text-lg font-bold flex items-center gap-2">
                         <MessageSquareQuote className="size-5 text-primary" />
                         Highlights & Notes
                     </h2>
                     <button
+                        ref={closeButtonRef}
                         onClick={() => onOpenChange(false)}
                         className="p-2 -mr-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
                         aria-label="Close notes drawer"

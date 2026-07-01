@@ -7,9 +7,11 @@ import { AlertCircle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
+import { cn } from "@/lib/utils";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import {
     LIBRARY_CARD_GRID_CLASS,
     LibraryGridSkeleton,
@@ -130,28 +132,12 @@ export default function CompletedPage() {
         setShouldDeleteNotes(false);
     }, [isRemovingHistory]);
 
-    useBodyScrollLock(pendingRemovalItem !== null);
-
-    useEffect(() => {
-        if (!pendingRemovalItem) return;
-
-        function handleKeyDown(event: KeyboardEvent) {
-            if (event.key === "Escape") {
-                closeHistoryRemovalDialog();
-            }
-        }
-
-        const focusFrame = window.requestAnimationFrame(() => {
-            historyDialogRef.current?.focus();
-        });
-
-        window.addEventListener("keydown", handleKeyDown);
-
-        return () => {
-            window.cancelAnimationFrame(focusFrame);
-            window.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [closeHistoryRemovalDialog, pendingRemovalItem]);
+    useOverlayInteractions({
+        enabled: pendingRemovalItem !== null,
+        containerRef: historyDialogRef,
+        onEscape: isRemovingHistory ? undefined : closeHistoryRemovalDialog,
+        scrollLock: true,
+    });
 
     const confirmHistoryRemoval = useCallback(() => {
         if (!pendingRemovalItem) return;
@@ -183,7 +169,10 @@ export default function CompletedPage() {
     const historyRemovalDialog = pendingRemovalItem && isMounted
         ? createPortal(
             <div
-                className="fixed inset-0 z-[120] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+                className={cn(
+                    "fixed inset-0 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm",
+                    OVERLAY_LAYER_CLASS.dialog
+                )}
                 role="presentation"
                 onClick={(event) => {
                     if (event.target === event.currentTarget) {

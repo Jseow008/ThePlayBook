@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { ThumbsUp, ThumbsDown, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthUser } from "@/hooks/useAuthUser";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface ContentFeedbackProps {
     contentId: string;
@@ -32,16 +33,29 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const modalRef = useRef<HTMLDivElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    useBodyScrollLock(isModalOpen);
-
     // Form state
     const [reason, setReason] = useState("");
     const [details, setDetails] = useState("");
+
+    const closeFeedbackModal = () => {
+        setIsModalOpen(false);
+        resetDownvoteForm(setReason, setDetails);
+    };
+
+    useOverlayInteractions({
+        enabled: isModalOpen && mounted,
+        containerRef: modalRef,
+        initialFocusRef: closeButtonRef,
+        onEscape: isSubmitting ? undefined : closeFeedbackModal,
+        scrollLock: true,
+    });
 
     const parseResponseError = async (response: Response) => {
         try {
@@ -200,19 +214,23 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
 
             {/* Modal Overlay via Portal */}
             {isModalOpen && mounted && createPortal(
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+                <div className={cn(
+                    "fixed inset-0 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm",
+                    OVERLAY_LAYER_CLASS.popover
+                )}>
                     <div
+                        ref={modalRef}
                         className="bg-card w-full max-w-md rounded-xl shadow-xl border border-border p-6 flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200"
                         role="dialog"
                         aria-modal="true"
+                        aria-labelledby="content-feedback-dialog-title"
+                        tabIndex={-1}
                     >
                         <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-semibold text-foreground">Help us improve</h2>
+                            <h2 id="content-feedback-dialog-title" className="text-xl font-semibold text-foreground">Help us improve</h2>
                             <button
-                                onClick={() => {
-                                    setIsModalOpen(false);
-                                    resetDownvoteForm(setReason, setDetails);
-                                }}
+                                ref={closeButtonRef}
+                                onClick={closeFeedbackModal}
                                 className="text-muted-foreground hover:text-foreground transition-colors p-1"
                                 aria-label="Close"
                             >

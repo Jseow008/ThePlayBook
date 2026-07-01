@@ -93,6 +93,8 @@ describe("NotesDrawer", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        document.body.style.overflow = "";
+        document.documentElement.style.overflow = "";
     });
 
     it("keeps the floating toggle clear of safe area and audio mini-player", async () => {
@@ -166,6 +168,29 @@ describe("NotesDrawer", () => {
         expect(document.querySelectorAll('[data-highlight-rail="true"]').length).toBe(highlights.length);
         expect(document.querySelector('[data-highlight-quote="true"]')?.className).toContain("text-[0.94rem]");
         expect(screen.queryByText("?")).not.toBeInTheDocument();
+    });
+
+    it("applies dialog semantics, scroll lock, and Escape close behavior when open", async () => {
+        render(
+            <NotesDrawer
+                isOpen
+                onOpenChange={onOpenChange}
+                highlights={highlights}
+                isLoading={false}
+                hasError={false}
+                sections={[]}
+                onHighlightJump={onHighlightJump}
+            />
+        );
+
+        const dialog = await screen.findByRole("dialog", { name: /highlights & notes/i });
+
+        expect(dialog).toHaveAttribute("aria-modal", "true");
+        expect(document.body.style.overflow).toBe("hidden");
+
+        fireEvent.keyDown(document, { key: "Escape" });
+
+        expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
     it("jumps on card tap and keeps delete isolated", async () => {

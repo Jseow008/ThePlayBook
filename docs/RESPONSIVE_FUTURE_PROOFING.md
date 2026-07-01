@@ -438,11 +438,23 @@ Acceptance criteria:
 
 ### 9. Standardize modal, drawer, and sheet behavior
 
-Status: Open.
+Status: Implemented.
 
-Issue: The project has multiple overlay implementations, and only 1 of 9+ overlays implements a focus trap.
+Implementation notes:
 
-Evidence of overlay focus trap coverage:
+- Shared overlay layers: `lib/overlay-layers.ts` now names the intended stacking scale for shell chrome, reader floating elements, drawers, composers, panels, sheets, popovers, raised sheets, and top-level dialogs.
+- Shared overlay interactions: `hooks/useOverlayInteractions.ts` centralizes focus trap behavior, Escape handling, initial focus, focus restoration, optional body/html scroll lock via `useBodyScrollLock`, and a small overlay stack so nested overlays only let the top overlay handle keyboard events.
+- Reader overlays migrated: `NotesDrawer`, `MobileNoteComposer`, `ReaderSettingsMenu`, `AuthorChat`, `HighlightPopover`, and `TextSelectionToolbar` now use shared interaction behavior and/or named overlay layers while preserving existing styling and reader layout.
+- Focus overlay migrated: `FocusTakeawaysSheet` keeps its existing drag and animation behavior, while `FocusFeed` now delegates focus trap, Escape handling, scroll lock, and focus restoration to the shared hook.
+- Notes overlays migrated: the Notes editor overlay now owns its modal focus, Escape, and scroll-lock contract through the shared hook. The desktop Notes Ask sidebar remains a non-modal sidebar.
+- Dialogs migrated: `ChatExportButton`, `ContentFeedback`, the completed-library history removal dialog, `AppOnboardingTour`, and the landing storyboard lightbox now use shared overlay behavior.
+- Local shortcut exceptions retained: landing storyboard ArrowLeft/ArrowRight navigation and onboarding ArrowLeft/ArrowRight slide navigation remain local because they are feature-specific keyboard shortcuts, not generic overlay mechanics.
+- Regression coverage: `hooks/__tests__/useOverlayInteractions.test.tsx` covers focus wrapping, nested overlay Escape routing, focus restoration, and scroll lock. `tests/components/NotesDrawer.test.tsx` now asserts dialog semantics, scroll lock, and Escape close behavior on a migrated reader overlay.
+- Verification: `npm run typecheck`, focused Vitest coverage for affected overlays, and `npm run lint` passed.
+
+Previous issue: The project had multiple overlay implementations, and only 1 of 9+ overlays implemented a focus trap.
+
+Previous evidence of overlay focus trap coverage:
 
 | Overlay | Focus Trap | Escape | Scroll Lock | aria-modal | Z-Index | File |
 |---------|------------|--------|-------------|------------|---------|------|

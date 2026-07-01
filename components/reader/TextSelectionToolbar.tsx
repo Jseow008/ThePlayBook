@@ -7,6 +7,7 @@ import { useCreateHighlight } from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { findSegmentElement, getTrimmedSelection } from "./selection-utils";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface TextSelectionToolbarProps {
     contentItemId: string;
@@ -186,7 +187,8 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 }
             }}
             className={cn(
-                "absolute z-[100] flex flex-col gap-2 -translate-x-1/2 -translate-y-full rounded-xl shadow-2xl bg-zinc-900 border border-white/10 p-1.5 transition-all duration-200 animate-in fade-in zoom-in-95",
+                "absolute flex flex-col gap-2 -translate-x-1/2 -translate-y-full rounded-xl shadow-2xl bg-zinc-900 border border-white/10 p-1.5 transition-all duration-200 animate-in fade-in zoom-in-95",
+                OVERLAY_LAYER_CLASS.popover,
                 isAddingNote ? "w-64" : "w-auto"
             )}
             style={{

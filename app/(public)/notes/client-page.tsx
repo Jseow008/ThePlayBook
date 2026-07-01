@@ -28,7 +28,7 @@ import {
     type HighlightWithContent,
 } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { captureAnalyticsEvent } from "@/lib/analytics";
@@ -37,6 +37,7 @@ import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor }
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 type ItemTypeFilter = "all" | "note" | "highlight";
 type SortDirection = "newest" | "oldest";
@@ -391,6 +392,17 @@ function NoteEditorOverlay({
     onClearDraft,
     onSave,
 }: NoteEditorOverlayProps) {
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    useOverlayInteractions({
+        enabled: item !== null,
+        containerRef: dialogRef,
+        initialFocusRef: textareaRef,
+        onEscape: isSaving ? undefined : onClose,
+        scrollLock: { lockDocumentElement: true },
+    });
+
     if (!item) {
         return null;
     }
@@ -401,7 +413,7 @@ function NoteEditorOverlay({
     const segmentTitle = item.segment?.title?.trim() || null;
 
     return (
-        <div className="fixed inset-0 z-[70]">
+        <div className={cn("fixed inset-0", OVERLAY_LAYER_CLASS.panel)}>
             <button
                 type="button"
                 aria-label="Close note editor"
@@ -411,9 +423,11 @@ function NoteEditorOverlay({
 
             <div className="absolute inset-x-0 bottom-0 flex justify-center px-0 sm:inset-0 sm:items-center sm:px-4">
                 <div
+                    ref={dialogRef}
                     role="dialog"
                     aria-modal="true"
                     aria-labelledby="note-editor-title"
+                    tabIndex={-1}
                     className="relative flex w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-background/96 shadow-[0_-20px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:rounded-[1.75rem]"
                 >
                     <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/14 sm:hidden" />
@@ -508,8 +522,8 @@ function NoteEditorOverlay({
                             </div>
 
                             <textarea
+                                ref={textareaRef}
                                 id="note-editor-textarea"
-                                autoFocus
                                 value={draftNote}
                                 onChange={(event) => onDraftNoteChange(event.target.value)}
                                 placeholder="Capture what matters about this passage."
@@ -638,26 +652,6 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             }
         };
     }, [armedDeleteId]);
-
-    useBodyScrollLock(editingHighlight !== null, { lockDocumentElement: true });
-
-    useEffect(() => {
-        if (!editingHighlight) {
-            return;
-        }
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape" && !updateHighlight.isPending) {
-                setEditingHighlight(null);
-            }
-        };
-
-        document.addEventListener("keydown", handleKeyDown);
-
-        return () => {
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [editingHighlight, updateHighlight.isPending]);
 
     useEffect(() => {
         const currentQuery = searchParams.toString();

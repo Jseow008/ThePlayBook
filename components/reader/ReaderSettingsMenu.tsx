@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { useReaderSettings, type ReaderTheme } from "@/hooks/useReaderSettings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 const themeOptions: { value: ReaderTheme; label: string; icon: typeof Sun; preview: string }[] = [
     { value: "light", label: "Light", icon: Sun, preview: "bg-[hsl(0,0%,98%)] border-gray-300" },
@@ -18,7 +20,8 @@ export function ReaderSettingsMenu() {
     const [isOpen, setIsOpen] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-    const portalRef = useRef<HTMLDivElement>(null);
+    const panelRef = useRef<HTMLDivElement>(null);
+    const triggerButtonRef = useRef<HTMLButtonElement>(null);
     const { fontSize, fontFamily, readerTheme, lineHeight, setFontSize, setFontFamily, setReaderTheme, setLineHeight } = useReaderSettings();
     const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const [mounted, setMounted] = useState(false);
@@ -36,18 +39,13 @@ export function ReaderSettingsMenu() {
         return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
     }, []);
 
-    // Handle Escape key to close menu
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === "Escape" && isOpen) {
-                setIsOpen(false);
-            }
-        };
-        if (isOpen) {
-            document.addEventListener("keydown", handleKeyDown);
-        }
-        return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen]);
+    useOverlayInteractions({
+        enabled: isOpen && mounted,
+        containerRef: panelRef,
+        restoreFocusRef: triggerButtonRef,
+        onEscape: () => setIsOpen(false),
+        scrollLock: isCompactReaderControls,
+    });
 
     const toggleFullscreen = () => {
         if (!document.fullscreenElement) {
@@ -63,7 +61,7 @@ export function ReaderSettingsMenu() {
         const handleClickOutside = (event: MouseEvent | TouchEvent) => {
             const target = event.target as Node;
             const insideTrigger = menuRef.current?.contains(target);
-            const insidePortal = portalRef.current?.contains(target);
+            const insidePortal = panelRef.current?.contains(target);
             if (!insideTrigger && !insidePortal) {
                 setIsOpen(false);
             }
@@ -237,6 +235,7 @@ export function ReaderSettingsMenu() {
         <div className="relative" ref={menuRef}>
             {/* Trigger Button */}
             <button
+                ref={triggerButtonRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
                     "inline-flex items-center justify-center p-2 rounded-lg bg-secondary text-muted-foreground border border-border transition-colors hover:text-foreground hover:bg-secondary/80",
@@ -253,16 +252,39 @@ export function ReaderSettingsMenu() {
                 isCompactReaderControls ? createPortal(
                     <>
                         <div
-                            className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm animate-in fade-in"
+                            className={cn(
+                                "fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in",
+                                OVERLAY_LAYER_CLASS.popover
+                            )}
                             onClick={() => setIsOpen(false)}
                         />
-                        <div ref={portalRef} role="dialog" aria-modal="true" aria-label="Reader Settings" className="fixed inset-x-0 bottom-0 z-[101] w-full bg-card border-t border-border p-4 safe-area-pb-xl rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300">
+                        <div
+                            ref={panelRef}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label="Reader Settings"
+                            tabIndex={-1}
+                            className={cn(
+                                "fixed inset-x-0 bottom-0 w-full bg-card border-t border-border p-4 safe-area-pb-xl rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300",
+                                OVERLAY_LAYER_CLASS.sheetRaised
+                            )}
+                        >
                             {menuContent}
                         </div>
                     </>,
                     document.body
                 ) : (
-                    <div role="dialog" aria-modal="true" aria-label="Reader Settings" className="absolute right-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl p-4 z-50 animate-fade-in origin-top-right">
+                    <div
+                        ref={panelRef}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Reader Settings"
+                        tabIndex={-1}
+                        className={cn(
+                            "absolute right-0 mt-2 w-64 bg-card border border-border rounded-xl shadow-2xl p-4 animate-fade-in origin-top-right",
+                            OVERLAY_LAYER_CLASS.drawer
+                        )}
+                    >
                         {menuContent}
                     </div>
                 )

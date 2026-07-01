@@ -12,7 +12,7 @@ import { ChevronUp, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
@@ -136,18 +136,6 @@ function removeSessionStorageItem(key: string) {
     } catch {
         // Storage can be unavailable in private or restricted browser contexts.
     }
-}
-
-function getFocusableElements(container: HTMLElement | null): HTMLElement[] {
-    if (!container) {
-        return [];
-    }
-
-    return Array.from(
-        container.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-        )
-    ).filter((element) => !element.hasAttribute("hidden") && element.getAttribute("aria-hidden") !== "true");
 }
 
 function shuffleItems<T>(items: T[]): T[] {
@@ -745,23 +733,14 @@ export function FocusFeed() {
         void fetchBatch({ includeCompletedIds: false });
     }, [fetchBatch]);
 
-    useEffect(() => {
-        if (!isTakeawaysSheetOpen) {
-            return;
-        }
-
-        const dialog = takeawaysSheetDialogRef.current;
-        if (!dialog) {
-            return;
-        }
-
-        if (dialog.contains(document.activeElement)) {
-            return;
-        }
-
-        const focusTarget = takeawaysSheetCloseButtonRef.current ?? dialog;
-        focusTarget.focus();
-    }, [isTakeawaysSheetOpen, takeawaysSheetPhase]);
+    useOverlayInteractions({
+        enabled: isTakeawaysSheetOpen,
+        containerRef: takeawaysSheetDialogRef,
+        initialFocusRef: takeawaysSheetCloseButtonRef,
+        restoreFocusRef: takeawaysSheetOpenerRef,
+        onEscape: closeTakeawaysSheet,
+        scrollLock: { lockDocumentElement: true },
+    });
 
     useEffect(() => {
         if (pendingRestoreCardIndexRef.current === null) {
@@ -1113,57 +1092,6 @@ export function FocusFeed() {
         sheetTouchVelocityRef.current = 0;
         restoreTakeawaysSheetFocus();
     }, [clearSheetAnimationTimeouts, isFocusDesktop, restoreTakeawaysSheetFocus, takeawaysSheetCard]);
-
-    useBodyScrollLock(mounted && isTakeawaysSheetOpen, { lockDocumentElement: true });
-
-    useEffect(() => {
-        if (!isTakeawaysSheetOpen) {
-            return;
-        }
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                event.preventDefault();
-                closeTakeawaysSheet();
-                return;
-            }
-
-            if (event.key !== "Tab") {
-                return;
-            }
-
-            const focusableElements = getFocusableElements(takeawaysSheetDialogRef.current);
-            if (focusableElements.length === 0) {
-                event.preventDefault();
-                takeawaysSheetDialogRef.current?.focus();
-                return;
-            }
-
-            const first = focusableElements[0];
-            const last = focusableElements[focusableElements.length - 1];
-            const activeElement = document.activeElement as HTMLElement | null;
-
-            if (!activeElement || !takeawaysSheetDialogRef.current?.contains(activeElement)) {
-                event.preventDefault();
-                (event.shiftKey ? last : first)?.focus();
-                return;
-            }
-
-            if (event.shiftKey && activeElement === first) {
-                event.preventDefault();
-                last?.focus();
-                return;
-            }
-
-            if (!event.shiftKey && activeElement === last) {
-                event.preventDefault();
-                first?.focus();
-            }
-        };
-
-        document.addEventListener("keydown", handleKeyDown);
-        return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [closeTakeawaysSheet, isTakeawaysSheetOpen]);
 
     useEffect(() => {
         if (!hasInitializedRef.current || isRestoringSnapshotRef.current || !hasMore || items.length > 0 || error) {

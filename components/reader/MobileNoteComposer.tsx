@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HIGHLIGHT_COLOR_CLASSES, type HighlightColor } from "@/lib/highlight-utils";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
 
@@ -46,27 +47,20 @@ export function MobileNoteComposer({
 }: MobileNoteComposerProps) {
     const [mounted, setMounted] = useState(false);
     const { readerTheme } = useReaderSettings();
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         setMounted(true);
     }, []);
 
-    useBodyScrollLock(isOpen && mounted, { lockDocumentElement: true });
-
-    useEffect(() => {
-        if (!isOpen || !mounted) {
-            return;
-        }
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === "Escape" && !isSaving) {
-                onClose();
-            }
-        };
-
-        document.addEventListener("keydown", handleKeyDown);
-        return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [isOpen, isSaving, mounted, onClose]);
+    useOverlayInteractions({
+        enabled: isOpen && mounted,
+        containerRef: dialogRef,
+        initialFocusRef: textareaRef,
+        onEscape: isSaving ? undefined : onClose,
+        scrollLock: { lockDocumentElement: true },
+    });
 
     if (!mounted || !isOpen || !context) {
         return null;
@@ -83,14 +77,22 @@ export function MobileNoteComposer({
                 type="button"
                 aria-label="Close note composer"
                 onClick={onClose}
-                className="fixed inset-0 z-[60] bg-black/65 backdrop-blur-sm"
+                className={cn(
+                    "fixed inset-0 bg-black/65 backdrop-blur-sm",
+                    OVERLAY_LAYER_CLASS.composerBackdrop
+                )}
             />
 
             <div
+                ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="reader-mobile-note-composer-title"
-                className="fixed inset-x-0 bottom-0 z-[61] w-full rounded-t-[1.75rem] border-t border-border bg-card shadow-[0_-18px_48px_rgba(0,0,0,0.45)]"
+                tabIndex={-1}
+                className={cn(
+                    "fixed inset-x-0 bottom-0 w-full rounded-t-[1.75rem] border-t border-border bg-card shadow-[0_-18px_48px_rgba(0,0,0,0.45)]",
+                    OVERLAY_LAYER_CLASS.composer
+                )}
             >
                 <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-border/80" />
 
@@ -173,6 +175,7 @@ export function MobileNoteComposer({
                         </div>
 
                         <textarea
+                            ref={textareaRef}
                             id="reader-mobile-note-composer-textarea"
                             value={noteValue}
                             onChange={(event) => onNoteChange(event.target.value)}

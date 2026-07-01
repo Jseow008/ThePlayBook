@@ -17,7 +17,8 @@ import { Logo } from "@/components/ui/Logo";
 import { APP_NAME } from "@/lib/brand";
 export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 import { cn } from "@/lib/utils";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import type { ContentItem } from "@/types/database";
 
 const STORYBOARD_SLIDES = [
@@ -1005,20 +1006,19 @@ export function CorePlatformFeaturesSection() {
     setIsStoryboardLightboxOpen(false);
   }, []);
 
-  useBodyScrollLock(isStoryboardLightboxOpen);
+  useOverlayInteractions({
+    enabled: isStoryboardLightboxOpen,
+    containerRef: storyboardLightboxRef,
+    initialFocusRef: storyboardCloseButtonRef,
+    restoreFocusRef: storyboardLauncherRef,
+    onEscape: closeStoryboardLightbox,
+    scrollLock: true,
+  });
 
   useEffect(() => {
     if (!isStoryboardLightboxOpen) return;
 
-    const storyboardLauncher = storyboardLauncherRef.current;
-    storyboardCloseButtonRef.current?.focus();
-
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        closeStoryboardLightbox();
-        return;
-      }
-
       if (event.key === "ArrowLeft") {
         goToPreviousStoryboardSlide();
         return;
@@ -1026,43 +1026,15 @@ export function CorePlatformFeaturesSection() {
 
       if (event.key === "ArrowRight") {
         goToNextStoryboardSlide();
-        return;
-      }
-
-      if (event.key === "Tab") {
-        const focusableElements = Array.from(
-          storyboardLightboxRef.current?.querySelectorAll<HTMLElement>(
-            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-          ) ?? []
-        ).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
-
-        if (focusableElements.length === 0) {
-          event.preventDefault();
-          storyboardCloseButtonRef.current?.focus();
-          return;
-        }
-
-        const firstElement = focusableElements[0];
-        const lastElement = focusableElements[focusableElements.length - 1];
-
-        if (event.shiftKey && document.activeElement === firstElement) {
-          event.preventDefault();
-          lastElement.focus();
-        } else if (!event.shiftKey && document.activeElement === lastElement) {
-          event.preventDefault();
-          firstElement.focus();
-        }
       }
     }
 
-    window.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      storyboardLauncher?.focus();
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [
-    closeStoryboardLightbox,
     goToNextStoryboardSlide,
     goToPreviousStoryboardSlide,
     isStoryboardLightboxOpen,
@@ -1162,7 +1134,11 @@ export function CorePlatformFeaturesSection() {
           role="dialog"
           aria-modal="true"
           aria-label="Netflux storyboard image viewer"
-          className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/88 px-4 safe-area-pb-md safe-area-pt-md backdrop-blur-xl sm:p-6"
+          tabIndex={-1}
+          className={cn(
+            "fixed inset-0 flex items-center justify-center overflow-hidden bg-black/88 px-4 safe-area-pb-md safe-area-pt-md backdrop-blur-xl sm:p-6",
+            OVERLAY_LAYER_CLASS.popover
+          )}
         >
           <button
             type="button"

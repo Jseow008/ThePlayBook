@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy, Download, Loader2, QrCode, RefreshCw, Share2, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
@@ -15,7 +15,8 @@ import {
 import { encryptChatExport } from "@/lib/chat-export-crypto";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
-import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
+import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface ChatExportButtonProps {
     title: string;
@@ -115,6 +116,8 @@ export function ChatExportButton({
     const [exportState, setExportState] = useState<ExportState>({ status: "idle" });
     const [remainingLabel, setRemainingLabel] = useState("30:00");
     const [copied, setCopied] = useState(false);
+    const modalRef = useRef<HTMLDivElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
     const exportableMessages = useMemo(() => getExportableMessages(messages), [messages]);
     const isUnavailable = disabled || exportableMessages.length === 0;
 
@@ -142,7 +145,13 @@ export function ChatExportButton({
         return () => window.clearInterval(interval);
     }, [exportState, isOpen]);
 
-    useBodyScrollLock(isOpen);
+    useOverlayInteractions({
+        enabled: isOpen && mounted,
+        containerRef: modalRef,
+        initialFocusRef: closeButtonRef,
+        onEscape: () => setIsOpen(false),
+        scrollLock: true,
+    });
 
     const createExport = async () => {
         if (isUnavailable) {
@@ -241,11 +250,13 @@ export function ChatExportButton({
     };
 
     const modal = isOpen && mounted ? createPortal(
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-background/82 px-4 py-6 backdrop-blur-md">
+        <div className={`fixed inset-0 ${OVERLAY_LAYER_CLASS.dialog} flex items-center justify-center bg-background/82 px-4 py-6 backdrop-blur-md`}>
             <div
+                ref={modalRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="chat-export-title"
+                tabIndex={-1}
                 className="w-full max-w-md rounded-[24px] border border-border/55 bg-card p-5 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             >
                 <div className="flex items-start justify-between gap-4">
@@ -258,6 +269,7 @@ export function ChatExportButton({
                         </p>
                     </div>
                     <button
+                        ref={closeButtonRef}
                         type="button"
                         onClick={() => setIsOpen(false)}
                         className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-background/70 hover:text-foreground"
