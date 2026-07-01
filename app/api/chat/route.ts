@@ -66,8 +66,8 @@ function getAnthropicModelName(intent: AskIntent) {
 function getMessageText(message: Record<string, unknown>): string {
     if (Array.isArray(message.parts)) {
         return message.parts
-            .filter((part: any) => part.type === "text" && typeof part.text === "string")
-            .map((part: any) => part.text as string)
+            .filter(isTextPart)
+            .map((part) => part.text)
             .join("");
     }
 
@@ -76,6 +76,19 @@ function getMessageText(message: Record<string, unknown>): string {
     }
 
     return "";
+}
+
+type TextPart = { type: "text"; text: string };
+
+function isTextPart(part: unknown): part is TextPart {
+    return Boolean(
+        part
+        && typeof part === "object"
+        && "type" in part
+        && "text" in part
+        && part.type === "text"
+        && typeof part.text === "string"
+    );
 }
 
 function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "user" | "assistant"; content: string }> {

@@ -897,6 +897,7 @@ export function ContentForm({
                                     {/* Preview */}
                                     {formData.cover_image_url && (
                                         <div className="relative w-40 aspect-[2/3] rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 shadow-sm">
+                                            {/* eslint-disable-next-line @next/next/no-img-element -- Admin URL previews need raw onError fallback to swap broken remote URLs for an inline placeholder. */}
                                             <img
                                                 src={formData.cover_image_url}
                                                 alt="Preview"
@@ -1113,6 +1114,7 @@ export function ContentForm({
                                     {/* Preview */}
                                     {formData.hero_image_url && (
                                         <div className="relative w-full max-w-md aspect-video rounded-lg overflow-hidden border border-zinc-200 bg-zinc-50 shadow-sm">
+                                            {/* eslint-disable-next-line @next/next/no-img-element -- Admin URL previews need raw onError fallback to swap broken remote URLs for an inline placeholder. */}
                                             <img
                                                 src={formData.hero_image_url}
                                                 alt="Hero Preview"

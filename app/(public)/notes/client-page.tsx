@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
@@ -232,9 +233,11 @@ function HighlightListItem({
                         >
                             <div className="flex items-start gap-3">
                                 {item.content_item?.cover_image_url ? (
-                                    <img
+                                    <Image
                                         src={item.content_item.cover_image_url}
                                         alt=""
+                                        width={32}
+                                        height={32}
                                         className="mt-0.5 h-8 w-8 shrink-0 rounded-lg object-cover"
                                     />
                                 ) : (

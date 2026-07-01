@@ -333,7 +333,16 @@ Acceptance criteria:
 
 ### 7. Tighten future type-safety gates
 
-Status: Open.
+Status: Partially implemented.
+
+Implementation notes:
+
+- Type-safety ratchet policy: `docs/TYPE_SAFETY_RATCHET.md`.
+- `package.json` now runs `scripts/check-type-safety-ratchet.mjs` as part of `npm run lint`.
+- Supabase type regeneration commands are documented and available as `npm run supabase:types` and `npm run supabase:types:local`.
+- `@typescript-eslint/no-explicit-any` is enforced for new files in `lib/`, `app/api/`, and `hooks/`, with existing Supabase generated-type/RPC debt bounded in `eslint.config.mjs` and counted by the ratchet script.
+- `@next/next/no-img-element` is enabled for production code. Raw `<img>` remains locally documented where required for Satori OG rendering or admin URL-preview `onError` fallbacks.
+- Remaining follow-up: expand `no-explicit-any` coverage into `app/admin/**` and selected `components/**` after existing casts are cleaned or explicitly allowlisted; review/narrow the React hook rule suppressions.
 
 Issue: TypeScript strict mode is enabled (`tsconfig.json` strict: true), but several future-proofing rules are relaxed globally in `eslint.config.mjs`:
 

@@ -27,7 +27,7 @@ const AuthorChatBodySchema = z.object({
     messages: z.array(z.object({
         role: z.enum(["user", "assistant"]),
         content: z.string().optional(),
-        parts: z.array(z.any()).optional() // Since @ai-sdk/react uses parts or content
+        parts: z.array(z.unknown()).optional() // Since @ai-sdk/react uses parts or content
     })).min(1).max(30),
 }).refine((body) => body.contentTitle || body.bookTitle, {
     message: "contentTitle is required",
@@ -52,11 +52,24 @@ const MAX_OUTPUT_TOKENS = 400;
 // ---------------------------------------------------------------------------
 
 /** Extract plain text from a message (handles both `parts` and legacy `content` formats). */
+type TextPart = { type: "text"; text: string };
+
+function isTextPart(part: unknown): part is TextPart {
+    return Boolean(
+        part
+        && typeof part === "object"
+        && "type" in part
+        && "text" in part
+        && part.type === "text"
+        && typeof part.text === "string"
+    );
+}
+
 function getMessageText(msg: Record<string, unknown>): string {
     if (Array.isArray(msg.parts)) {
         return msg.parts
-            .filter((p: any) => p.type === "text" && typeof p.text === "string")
-            .map((p: any) => p.text as string)
+            .filter(isTextPart)
+            .map((p) => p.text)
             .join("");
     }
     if (typeof msg.content === "string") {
@@ -66,11 +79,13 @@ function getMessageText(msg: Record<string, unknown>): string {
 }
 
 /** Convert UI messages (parts-based) to the simple {role, content} format that streamText accepts. */
-function normalizeMessages(rawMessages: any[]): Array<{ role: "user" | "assistant"; content: string }> {
+function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{ role: "user" | "assistant"; content: string }> {
     return rawMessages
-        .filter((m: any) => m.role === "user" || m.role === "assistant")
-        .map((m: any) => ({
-            role: m.role as "user" | "assistant",
+        .filter((m): m is Record<string, unknown> & { role: "user" | "assistant" } =>
+            m.role === "user" || m.role === "assistant"
+        )
+        .map((m) => ({
+            role: m.role,
             content: getMessageText(m).trim(),
         }))
         .filter((m) => m.content.length > 0);

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import {
     X,
 } from "lucide-react";
@@ -212,19 +213,15 @@ export function AppOnboardingTour({
                                                                 className="relative h-[15.75rem] overflow-hidden rounded-[1.15rem] border border-white/10 bg-black/30 sm:h-[17rem] lg:hidden"
                                                                 data-testid="app-onboarding-mobile-media-frame"
                                                             >
-                                                                <img
+                                                                <Image
                                                                     src={slide.imageSrc}
                                                                     alt={slide.imageAlt}
                                                                     data-testid="app-onboarding-mobile-image"
+                                                                    fill
+                                                                    sizes="(min-width: 1024px) 0px, 100vw"
                                                                     fetchPriority={index === 0 ? "high" : "auto"}
                                                                     loading={index === 0 ? "eager" : "lazy"}
                                                                     className="object-cover object-top"
-                                                                    style={{
-                                                                        height: "100%",
-                                                                        inset: 0,
-                                                                        position: "absolute",
-                                                                        width: "100%",
-                                                                    }}
                                                                 />
                                                                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/55 to-transparent" />
                                                             </div>
@@ -233,19 +230,15 @@ export function AppOnboardingTour({
                                                                 className="relative hidden h-[300px] overflow-hidden rounded-[1.16rem] border border-white/10 bg-black/30 lg:block"
                                                                 data-testid="app-onboarding-desktop-image-frame"
                                                             >
-                                                                <img
+                                                                <Image
                                                                     src={desktopImageSrc}
                                                                     alt={slide.imageAlt}
                                                                     data-testid="app-onboarding-desktop-image"
+                                                                    fill
+                                                                    sizes="(min-width: 1024px) 32rem, 0px"
                                                                     fetchPriority={index === 0 ? "high" : "auto"}
                                                                     loading={index === 0 ? "eager" : "lazy"}
                                                                     className="object-cover object-top"
-                                                                    style={{
-                                                                        height: "100%",
-                                                                        inset: 0,
-                                                                        position: "absolute",
-                                                                        width: "100%",
-                                                                    }}
                                                                 />
                                                                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/55 to-transparent" />
                                                             </div>

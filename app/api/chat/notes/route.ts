@@ -18,7 +18,7 @@ export const maxDuration = 60;
 const ChatMessageSchema = z.object({
     role: z.enum(["user", "assistant"]),
     content: z.string().trim().max(2_000).optional(),
-    parts: z.array(z.any()).optional(),
+    parts: z.array(z.unknown()).optional(),
 });
 
 const NotesChatRequestSchema = z.object({
@@ -33,11 +33,24 @@ const NOTES_DEFAULT_MAX_OUTPUT_TOKENS = 350;
 const NOTES_SYNTHESIS_MAX_OUTPUT_TOKENS = 450;
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 
+type TextPart = { type: "text"; text: string };
+
+function isTextPart(part: unknown): part is TextPart {
+    return Boolean(
+        part
+        && typeof part === "object"
+        && "type" in part
+        && "text" in part
+        && part.type === "text"
+        && typeof part.text === "string"
+    );
+}
+
 function getMessageText(message: Record<string, unknown>): string {
     if (Array.isArray(message.parts)) {
         return message.parts
-            .filter((part: any) => part.type === "text" && typeof part.text === "string")
-            .map((part: any) => part.text as string)
+            .filter(isTextPart)
+            .map((part) => part.text)
             .join("");
     }
 

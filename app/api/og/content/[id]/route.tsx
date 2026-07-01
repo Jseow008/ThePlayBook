@@ -234,6 +234,7 @@ export async function GET(_request: Request, context: RouteContext) {
                         }}
                     >
                         {hasCover ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- Satori OG image markup uses raw img elements, not next/image.
                             <img
                                 alt=""
                                 src={coverImageSrc!}
@@ -281,6 +282,7 @@ export async function GET(_request: Request, context: RouteContext) {
                                 {badge}
                             </div>
 
+                            {/* eslint-disable-next-line @next/next/no-img-element -- Satori OG image markup uses raw img elements, not next/image. */}
                             <img
                                 alt={APP_NAME}
                                 src={logoSrc}
