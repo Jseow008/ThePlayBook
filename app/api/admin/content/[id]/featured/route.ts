@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { revalidateContentFeaturedChanged } from "@/lib/server/revalidation";
 
 const FeaturedPayloadSchema = z.object({
     is_featured: z.boolean(),
@@ -68,10 +68,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             return apiError("NOT_FOUND", "Content not found", 404, requestId);
         }
 
-        revalidatePath("/");
-        revalidatePath("/admin");
-        revalidatePath("/admin/content");
-        revalidatePath(`/admin/content/${id}/edit`);
+        revalidateContentFeaturedChanged({ ids: [id] });
 
         return NextResponse.json({
             success: true,

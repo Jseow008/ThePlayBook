@@ -1,24 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import { revalidateSeriesAdminSurfaces } from "@/lib/server/revalidation";
 
 const CreateSeriesSchema = z.object({
     title: z.string().trim().min(1, "Title is required").max(120),
     slug: z.string().trim().min(1, "Slug is required").max(120).regex(/^[a-z0-9-]+$/, "Slug must contain only lowercase letters, numbers, and hyphens"),
     description: z.string().trim().max(500).optional().nullable(),
 });
-
-function revalidateSeriesAdminSurfaces(slug?: string | null) {
-    revalidatePath("/admin/series");
-    revalidatePath("/admin/content/new");
-    if (slug) {
-        revalidatePath(`/series/${slug}`);
-    }
-}
 
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
@@ -141,6 +133,6 @@ export async function POST(request: NextRequest) {
         return apiError("INTERNAL_ERROR", "Failed to create series", 500, requestId);
     }
 
-    revalidateSeriesAdminSurfaces(data.slug);
+    revalidateSeriesAdminSurfaces([data.slug]);
     return NextResponse.json({ ...data, content_count: 0 }, { status: 201 });
 }

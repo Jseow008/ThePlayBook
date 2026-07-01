@@ -8,7 +8,6 @@ import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
-import { revalidatePath } from "next/cache";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
@@ -28,7 +27,10 @@ import {
     getAdminAiReadinessMap,
 } from "@/lib/server/admin-ai-readiness";
 import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
-import { buildCanonicalReadPath } from "@/lib/content-paths";
+import {
+    getSeriesSlugsByIds,
+    revalidateContentCreated,
+} from "@/lib/server/revalidation";
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
@@ -102,27 +104,6 @@ function validateSegmentTimingRanges(
             });
         }
     });
-}
-
-async function getSeriesSlugsByIds(
-    supabase: ReturnType<typeof getAdminClient>,
-    seriesIds: Array<string | null | undefined>
-) {
-    const uniqueSeriesIds = Array.from(new Set(seriesIds.filter((value): value is string => Boolean(value))));
-    if (uniqueSeriesIds.length === 0) {
-        return [];
-    }
-
-    const { data, error } = await supabase
-        .from("content_series")
-        .select("slug")
-        .in("id", uniqueSeriesIds);
-
-    if (error || !data) {
-        return [];
-    }
-
-    return Array.from(new Set(data.map((entry) => entry.slug).filter(Boolean)));
 }
 
 function buildNarrationStateForAudioUrl(audioUrl: string | null | undefined) {
@@ -518,16 +499,12 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        revalidatePath("/");
-        revalidatePath("/browse");
-        revalidatePath("/search");
-        revalidatePath("/admin");
-        revalidatePath("/admin/content");
-        revalidatePath(`/preview/${contentItem.id}`);
-        revalidatePath(`/read/${contentItem.id}`);
-        revalidatePath(buildCanonicalReadPath(contentItem.id, contentData.title));
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [contentItem.series_id]);
-        seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
+        revalidateContentCreated({
+            id: contentItem.id,
+            title: contentData.title,
+            seriesSlugs,
+        });
 
         let narrationWarning: string | null = null;
 

@@ -388,7 +388,19 @@ Acceptance criteria:
 
 ### 8. Centralize cache and revalidation policy
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- Shared policy helper: `lib/server/revalidation.ts` centralizes public content, admin content, featured, narration, and series revalidation paths behind mutation-specific helpers.
+- Content create/update/delete now call intent-specific helpers instead of duplicating public route path lists in `app/api/admin/content/route.ts` and `app/api/admin/content/[id]/route.ts`.
+- Bulk content actions now branch by mutation type: feature/unfeature uses the narrower featured helper, narration queueing uses narration revalidation, delete skips unnecessary admin edit-page invalidation, and publish/draft keep full content invalidation.
+- Featured toggles in both `app/api/admin/content/[id]/featured/route.ts` and `app/admin/actions.ts` now share `revalidateContentFeaturedChanged`, which invalidates `/`, `/browse`, admin content surfaces, and the edit page while intentionally avoiding read/preview body paths.
+- Narration completion now uses `revalidateNarrationContentChanged` with the content title when available, so canonical read slug paths are invalidated in addition to id-based read/preview paths.
+- Series admin mutations now use `revalidateSeriesAdminSurfaces`.
+- Cache policy documentation lives in `docs/CACHE_REVALIDATION_POLICY.md`, including current ISR durations, mutation scopes, direct `revalidatePath` exceptions, and the decision to defer `revalidateTag`.
+- Regression coverage: `lib/server/__tests__/revalidation.test.ts` covers create/update/delete/bulk/featured/narration/series path sets and de-duping.
+- Guardrail: `scripts/check-revalidation-boundaries.mjs` is wired into `npm run lint` through `check:revalidation-boundaries`, with an explicit allowlist for legitimate non-content direct `revalidatePath` calls.
 
 Issue: ISR and `revalidatePath` are used, but cache strategy is distributed across pages and admin/API mutation routes with no tag-based invalidation.
 

@@ -10,7 +10,6 @@ import { z } from "zod";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
-import { revalidatePath } from "next/cache";
 import type { Database } from "@/types/database";
 import {
     apiError,
@@ -27,7 +26,11 @@ import {
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
-import { buildCanonicalReadPath } from "@/lib/content-paths";
+import {
+    getSeriesSlugsByIds,
+    revalidateContentDeleted,
+    revalidateContentUpdated,
+} from "@/lib/server/revalidation";
 
 type QuickModeValue = {
     hook?: string | null;
@@ -101,27 +104,6 @@ function validateSegmentTimingRanges(
             });
         }
     });
-}
-
-async function getSeriesSlugsByIds(
-    supabase: ReturnType<typeof getAdminClient>,
-    seriesIds: Array<string | null | undefined>
-) {
-    const uniqueSeriesIds = Array.from(new Set(seriesIds.filter((value): value is string => Boolean(value))));
-    if (uniqueSeriesIds.length === 0) {
-        return [];
-    }
-
-    const { data, error } = await supabase
-        .from("content_series")
-        .select("slug")
-        .in("id", uniqueSeriesIds);
-
-    if (error || !data) {
-        return [];
-    }
-
-    return Array.from(new Set(data.map((entry) => entry.slug).filter(Boolean)));
 }
 
 function buildNarrationStateForAudioUrl(audioUrl: string | null | undefined) {
@@ -588,22 +570,16 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
         }
 
-        revalidatePath("/");
-        revalidatePath("/browse");
-        revalidatePath("/search");
-        revalidatePath("/admin");
-        revalidatePath("/admin/content");
-        revalidatePath(`/preview/${id}`);
-        revalidatePath(`/read/${id}`);
-        revalidatePath(buildCanonicalReadPath(id, existingContent?.title ?? contentData.title ?? id));
-        if (contentData.title && contentData.title !== existingContent?.title) {
-            revalidatePath(buildCanonicalReadPath(id, contentData.title));
-        }
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [
             existingContent?.series_id,
             contentData.series_id,
         ]);
-        seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
+        revalidateContentUpdated({
+            id,
+            previousTitle: existingContent?.title,
+            nextTitle: contentData.title ?? existingContent?.title,
+            seriesSlugs,
+        });
 
         let narrationWarning: string | null = null;
 
@@ -717,18 +693,12 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             throw error;
         }
 
-        revalidatePath("/");
-        revalidatePath("/browse");
-        revalidatePath("/search");
-        revalidatePath("/admin");
-        revalidatePath("/admin/content");
-        revalidatePath(`/preview/${id}`);
-        revalidatePath(`/read/${id}`);
-        if (existingContent?.title) {
-            revalidatePath(buildCanonicalReadPath(id, existingContent.title));
-        }
         const seriesSlugs = await getSeriesSlugsByIds(supabase, [existingContent?.series_id]);
-        seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
+        revalidateContentDeleted({
+            id,
+            title: existingContent?.title,
+            seriesSlugs,
+        });
 
         return NextResponse.json({
             success: true,

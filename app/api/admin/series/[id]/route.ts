@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import type { TablesUpdate } from "@/types/database";
+import { revalidateSeriesAdminSurfaces } from "@/lib/server/revalidation";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -18,14 +18,6 @@ const UpdateSeriesSchema = z.object({
 }).refine((data) => Object.values(data).some((value) => value !== undefined), {
     message: "At least one field is required",
 });
-
-function revalidateSeriesAdminSurfaces(slug?: string | null) {
-    revalidatePath("/admin/series");
-    revalidatePath("/admin/content/new");
-    if (slug) {
-        revalidatePath(`/series/${slug}`);
-    }
-}
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
     const requestId = getRequestId();
@@ -113,8 +105,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         return apiError("INTERNAL_ERROR", "Failed to update series", 500, requestId);
     }
 
-    revalidateSeriesAdminSurfaces(existing.slug);
-    revalidateSeriesAdminSurfaces(data.slug);
+    revalidateSeriesAdminSurfaces([existing.slug, data.slug]);
     return NextResponse.json(data);
 }
 
@@ -189,6 +180,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         return apiError("INTERNAL_ERROR", "Failed to delete series", 500, requestId);
     }
 
-    revalidateSeriesAdminSurfaces(existing.slug);
+    revalidateSeriesAdminSurfaces([existing.slug]);
     return NextResponse.json({ success: true });
 }

@@ -1,5 +1,5 @@
-import { revalidatePath } from "next/cache";
 import { getAdminClient } from "@/lib/supabase/admin";
+import { revalidateNarrationContentChanged } from "@/lib/server/revalidation";
 
 export const NARRATION_PROCESS_BATCH_SIZE = 3;
 export const STALE_NARRATION_PROCESSING_MAX_AGE_MS = 2 * 60 * 60 * 1000;
@@ -81,18 +81,7 @@ async function loadProcessingNarrationJobs(options?: {
 }
 
 export function revalidateNarrationPaths(contentIds: string[]) {
-    if (contentIds.length === 0) {
-        return;
-    }
-
-    revalidatePath("/admin");
-    revalidatePath("/admin/content");
-
-    for (const contentId of contentIds) {
-        revalidatePath(`/preview/${contentId}`);
-        revalidatePath(`/read/${contentId}`);
-        revalidatePath(`/admin/content/${contentId}/edit`);
-    }
+    revalidateNarrationContentChanged(contentIds.map((id) => ({ id })));
 }
 
 export async function getNarrationQueueSummary(): Promise<NarrationQueueSummary> {

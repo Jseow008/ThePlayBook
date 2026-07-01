@@ -2,7 +2,7 @@
 
 import { getAdminClient } from "@/lib/supabase/admin";
 import { verifyAdminSession } from "@/lib/admin/auth";
-import { revalidatePath } from "next/cache";
+import { revalidateContentFeaturedChanged } from "@/lib/server/revalidation";
 import { z } from "zod";
 
 const ToggleFeaturedStatusSchema = z.object({
@@ -36,10 +36,7 @@ export async function toggleFeaturedStatus(contentId: string, currentStatus: boo
             return { success: false, error: error.message };
         }
 
-        revalidatePath("/admin");
-        revalidatePath("/admin/content");
-        revalidatePath(`/admin/content/${validContentId}/edit`);
-        revalidatePath("/"); // Also update homepage to show changes immediately
+        revalidateContentFeaturedChanged({ ids: [validContentId] });
         return { success: true };
     } catch (error) {
         console.error("Server action error:", error);

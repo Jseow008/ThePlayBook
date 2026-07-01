@@ -1,8 +1,7 @@
-import { revalidatePath } from "next/cache";
 import { getAdminClient } from "@/lib/supabase/admin";
 import type { GeneratedNarrationSegmentTiming } from "@/lib/server/narration-script";
 import { logApiError } from "@/lib/server/api";
-import { revalidateNarrationPaths } from "@/lib/server/narration-processing-state";
+import { revalidateNarrationContentChanged } from "@/lib/server/revalidation";
 
 const MAX_AUDIO_BYTES = 50 * 1024 * 1024;
 const GENERATED_AUDIO_PREFIX = "/storage/v1/object/public/audio/";
@@ -344,10 +343,7 @@ export async function processNextNarrationJob(requestId: string) {
             await cleanupUploadedNarration(audioBucket, previousGeneratedStoragePath, requestId);
         }
 
-        revalidatePath("/");
-        revalidatePath("/browse");
-        revalidatePath("/search");
-        revalidateNarrationPaths([contentId]);
+        revalidateNarrationContentChanged([{ id: contentId, title: contentItem.title }]);
 
         return {
             processed: true as const,

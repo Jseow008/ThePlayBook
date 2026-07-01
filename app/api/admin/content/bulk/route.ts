@@ -1,6 +1,5 @@
 import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { revalidatePath } from "next/cache";
 import { verifyAdminSession } from "@/lib/admin/auth";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
@@ -8,7 +7,12 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
-import { buildCanonicalReadPath } from "@/lib/content-paths";
+import {
+    getSeriesSlugsByIds,
+    revalidateContentBulkChanged,
+    revalidateContentFeaturedChanged,
+    revalidateNarrationContentChanged,
+} from "@/lib/server/revalidation";
 
 const BulkActionSchema = z.object({
     ids: z.array(z.string().uuid()).min(1).max(100),
@@ -46,44 +50,6 @@ function summarizeResults(params: {
         default:
             return "Bulk action completed.";
     }
-}
-
-async function getSeriesSlugsByIds(
-    supabase: ReturnType<typeof getAdminClient>,
-    seriesIds: Array<string | null | undefined>
-) {
-    const uniqueSeriesIds = Array.from(new Set(seriesIds.filter((value): value is string => Boolean(value))));
-    if (uniqueSeriesIds.length === 0) {
-        return [];
-    }
-
-    const { data, error } = await supabase
-        .from("content_series")
-        .select("slug")
-        .in("id", uniqueSeriesIds);
-
-    if (error || !data) {
-        return [];
-    }
-
-    return Array.from(new Set(data.map((entry) => entry.slug).filter(Boolean)));
-}
-
-function revalidateContentPaths(items: Array<{ id: string; title: string }>, seriesSlugs: string[]) {
-    revalidatePath("/");
-    revalidatePath("/browse");
-    revalidatePath("/search");
-    revalidatePath("/admin");
-    revalidatePath("/admin/content");
-
-    items.forEach((item) => {
-        revalidatePath(`/preview/${item.id}`);
-        revalidatePath(`/read/${item.id}`);
-        revalidatePath(buildCanonicalReadPath(item.id, item.title));
-        revalidatePath(`/admin/content/${item.id}/edit`);
-    });
-
-    seriesSlugs.forEach((slug) => revalidatePath(`/series/${slug}`));
 }
 
 export async function POST(request: NextRequest) {
@@ -404,10 +370,19 @@ export async function POST(request: NextRequest) {
 
         const seriesSlugs = await getSeriesSlugsByIds(supabase, Array.from(touchedSeriesIds));
         const updatedIdSet = new Set(updatedIds);
-        revalidateContentPaths(
-            availableItems.filter((item) => updatedIdSet.has(item.id)),
-            seriesSlugs
-        );
+        const updatedItems = availableItems.filter((item) => updatedIdSet.has(item.id));
+
+        if (action === "feature" || action === "unfeature") {
+            revalidateContentFeaturedChanged({ ids: updatedIds });
+        } else if (action === "queue_narration") {
+            revalidateNarrationContentChanged(updatedItems);
+        } else {
+            revalidateContentBulkChanged({
+                items: updatedItems,
+                includeAdminEditPaths: action !== "delete",
+                seriesSlugs,
+            });
+        }
 
         return NextResponse.json({
             success: true,
