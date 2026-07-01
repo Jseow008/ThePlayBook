@@ -564,7 +564,16 @@ Required outcome:
 
 ### 12. Strengthen admin responsive patterns
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- Admin responsive standards are documented in `docs/ADMIN_RESPONSIVE_PATTERNS.md`.
+- The standards preserve the existing admin light theme, navigation structure, workflow order, and `xl` table/card split.
+- `xl` (`1280px`) is codified as the canonical admin list threshold for switching from card layouts to dense table/comparison layouts.
+- Admin primary navigation may wrap at tablet widths, but it must not exceed two visual nav lines at `md` (`768px`).
+- Tablet Playwright coverage checks content filters, admin nav wrapping, New Content navigation, editor title/type/action anchors, and document horizontal overflow.
+- Authenticated browser checks reuse the existing responsive credential fallback and skip behavior when `RESPONSIVE_AUTH_EMAIL`/`RESPONSIVE_AUTH_PASSWORD`, `SMOKE_ADMIN_EMAIL`/`SMOKE_ADMIN_PASSWORD`, or `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` are not configured.
 
 Issue: Admin pages are functional and use wrapping filters, but they are more table/form dense than public pages. As admin workflows grow, mobile and tablet usability will regress unless table and editor patterns are standardized.
 
