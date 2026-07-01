@@ -14,6 +14,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 interface NotesDrawerProps {
     isOpen: boolean;
@@ -49,6 +50,7 @@ export function NotesDrawer({
     const deleteHighlight = useDeleteHighlight();
     const updateHighlight = useUpdateHighlight();
     const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
+    const prefersReducedMotion = usePrefersReducedMotion();
     const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
     const [draftNote, setDraftNote] = useState("");
     const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
@@ -107,8 +109,11 @@ export function NotesDrawer({
         const row = drawerPanelRef.current?.querySelector<HTMLElement>(
             `[data-highlight-id="${activeHighlightId}"]`
         );
-        row?.scrollIntoView?.({ block: "center", behavior: "smooth" });
-    }, [activeHighlightId]);
+        row?.scrollIntoView?.({
+            block: "center",
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+        });
+    }, [activeHighlightId, prefersReducedMotion]);
 
     useEffect(() => {
         if (!isOpen || !activeHighlightId) {
@@ -219,7 +224,7 @@ export function NotesDrawer({
             <div
                 style={{ touchAction: 'none' }}
                 className={cn(
-                    "fixed right-4 flex flex-col items-end gap-2 transition-[bottom] duration-300 sm:right-6",
+                    "notes-drawer-motion-anchor fixed right-4 flex flex-col items-end gap-2 transition-[bottom] duration-300 motion-reduce:transition-none sm:right-6",
                     OVERLAY_LAYER_CLASS.shell,
                     // The larger offset clears the audio mini-player when it is visible.
                     isAudioMiniPlayerVisible
@@ -233,7 +238,7 @@ export function NotesDrawer({
                         onOpenChange(true);
                     }}
                     aria-label="Open notes drawer"
-                    className="relative flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
+                    className="notes-drawer-motion-opener relative flex min-h-[3rem] min-w-[3rem] items-center justify-center gap-2 rounded-full bg-primary p-3 font-semibold text-primary-foreground shadow-[0_8px_30px_rgb(0,0,0,0.12)] transition-all duration-300 hover:-translate-y-1 hover:shadow-xl motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:px-4 sm:py-3"
                 >
                     <StickyNote className="size-5 shrink-0" />
                     <span className="hidden sm:inline">Notes</span>
@@ -248,7 +253,7 @@ export function NotesDrawer({
             {/* Backdrop */}
             <div
                 className={cn(
-                    "fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300",
+                    "notes-drawer-motion-backdrop fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 motion-reduce:transition-none",
                     OVERLAY_LAYER_CLASS.drawer,
                     isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
                 )}
@@ -268,7 +273,7 @@ export function NotesDrawer({
                 tabIndex={-1}
                 onTransitionEnd={handlePanelTransitionEnd}
                 className={cn(
-                    "fixed top-0 right-0 bottom-0 w-full max-w-sm sm:max-w-md bg-background border-l border-border/40 shadow-2xl transition-transform duration-500 ease-spring flex flex-col",
+                    "notes-drawer-motion-panel fixed top-0 right-0 bottom-0 flex w-full max-w-sm flex-col border-l border-border/40 bg-background shadow-2xl transition-transform duration-500 ease-spring motion-reduce:transition-none sm:max-w-md",
                     OVERLAY_LAYER_CLASS.drawer,
                     isOpen ? "translate-x-0" : "translate-x-full"
                 )}

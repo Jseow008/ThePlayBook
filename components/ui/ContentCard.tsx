@@ -167,7 +167,7 @@ function BaseContentCard({
     const contentHook = getContentCardHook(item);
 
     return (
-        <div className="group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)]">
+        <div className="content-card-motion-surface group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:transition-none">
             <Link href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
                 <span className="sr-only">{linkLabel}</span>
             </Link>
@@ -179,7 +179,7 @@ function BaseContentCard({
                         alt={item.title}
                         fill
                         surface="content-card"
-                        className="object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035]"
+                        className="content-card-motion-image object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none"
                         sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
                         priority={priority}
                         fallback={
@@ -211,11 +211,11 @@ function BaseContentCard({
                 <button
                     onClick={onToggleBookmark}
                     className={cn(
-                        "focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300",
+                        "content-card-motion-action focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
                         showCompletedBadge ? "right-10" : "right-2",
                         isBookmarked
                             ? "bg-primary text-primary-foreground opacity-100"
-                            : "bg-black/40 text-white opacity-100 hover:bg-black/70 lg:opacity-0 lg:group-hover:opacity-100"
+                            : "content-card-hover-action bg-black/40 text-white opacity-100 hover:bg-black/70"
                     )}
                     title={isBookmarked ? "Remove from Library" : "Save to Library"}
                     aria-label={bookmarkLabel}
@@ -236,14 +236,14 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            <div className="pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 md:group-hover:opacity-100 md:group-focus-within:opacity-100" />
+            <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/72 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
                 <div className="flex h-full flex-col justify-end gap-1">
                     {contentHook ? (
                         <p
                             aria-hidden="true"
-                            className="hidden w-full translate-y-1 text-[10px] font-medium leading-snug text-white/76 opacity-0 drop-shadow-md transition-[opacity,transform] duration-300 md:mb-1 md:line-clamp-2 md:block md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 lg:text-[11px]"
+                            className="content-card-motion-hook hidden w-full translate-y-1 text-[10px] font-medium leading-snug text-white/76 opacity-0 drop-shadow-md transition-[opacity,transform] duration-300 md:mb-1 md:line-clamp-2 md:block md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 lg:text-[11px] motion-reduce:transition-none"
                         >
                             {contentHook}
                         </p>
@@ -291,7 +291,7 @@ function BaseContentCard({
             {showProgress ? (
                 <div className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/40 backdrop-blur-sm">
                     <div
-                        className="h-full rounded-b-[5px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300"
+                        className="content-card-motion-progress h-full rounded-b-[5px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300 motion-reduce:transition-none"
                         style={{ width: `${progressPercentage}%` }}
                     />
                 </div>
@@ -305,7 +305,7 @@ function BaseContentCard({
                         onRemove(item.id);
                     }}
                     className={cn(
-                        "focus-ring absolute left-2 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 lg:opacity-0 lg:group-hover:opacity-100",
+                        "content-card-hover-action focus-ring absolute left-2 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
                         removeIcon === "archive" ? "hover:bg-white/20" : "hover:bg-red-500/80",
                     )}
                     title={removeLabel}
@@ -323,7 +323,7 @@ function BaseContentCard({
                         onSecondaryRemove(item.id);
                     }}
                     className={cn(
-                        "focus-ring absolute left-10 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 lg:opacity-0 lg:group-hover:opacity-100",
+                        "content-card-hover-action focus-ring absolute left-10 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
                         secondaryRemoveIcon === "archive" ? "hover:bg-white/20" : "hover:bg-red-500/80",
                     )}
                     title={secondaryRemoveLabel}
@@ -333,8 +333,8 @@ function BaseContentCard({
                 </button>
             ) : null}
 
-            <div className="pointer-events-none absolute inset-0 z-30 rounded-md border border-white/15 transition-colors" />
-            <div className="pointer-events-none absolute inset-0 z-30 rounded-md border-2 border-transparent transition-colors group-hover:border-primary/75" />
+            <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border border-white/15 transition-colors motion-reduce:transition-none" />
+            <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border-2 border-transparent transition-colors group-hover:border-primary/75 motion-reduce:transition-none" />
         </div>
     );
 }

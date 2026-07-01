@@ -253,7 +253,7 @@ export function ReaderSettingsMenu() {
                     <>
                         <div
                             className={cn(
-                                "fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in",
+                                "reader-settings-motion-backdrop fixed inset-0 bg-background/80 backdrop-blur-sm animate-in fade-in motion-reduce:animate-none",
                                 OVERLAY_LAYER_CLASS.popover
                             )}
                             onClick={() => setIsOpen(false)}
@@ -265,7 +265,7 @@ export function ReaderSettingsMenu() {
                             aria-label="Reader Settings"
                             tabIndex={-1}
                             className={cn(
-                                "fixed inset-x-0 bottom-0 w-full bg-card border-t border-border p-4 safe-area-pb-xl rounded-t-2xl shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300",
+                                "reader-settings-motion-sheet fixed inset-x-0 bottom-0 w-full rounded-t-2xl border-t border-border bg-card p-4 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300 motion-reduce:animate-none motion-reduce:transition-none",
                                 OVERLAY_LAYER_CLASS.sheetRaised
                             )}
                         >

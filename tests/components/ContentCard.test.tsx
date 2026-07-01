@@ -102,6 +102,31 @@ describe("ContentCard", () => {
         expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toBeInTheDocument();
     });
 
+    it("keeps card actions discoverable without large-screen hover-only opacity classes", () => {
+        const onRemove = vi.fn();
+        const onSecondaryRemove = vi.fn();
+
+        render(
+            <ContentCard
+                item={item}
+                onRemove={onRemove}
+                onSecondaryRemove={onSecondaryRemove}
+                removeLabel="Archive from List"
+                secondaryRemoveLabel="Delete from List"
+            />
+        );
+
+        const bookmarkButton = screen.getByRole("button", { name: "Save Deep Work to Library" });
+        const removeButton = screen.getByRole("button", { name: "Archive from List" });
+        const secondaryRemoveButton = screen.getByRole("button", { name: "Delete from List" });
+
+        for (const action of [bookmarkButton, removeButton, secondaryRemoveButton]) {
+            expect(action).toHaveClass("content-card-hover-action");
+            expect(action.className).not.toContain("lg:opacity-0");
+            expect(action.className).not.toContain("lg:group-hover:opacity-100");
+        }
+    });
+
     it("does not render an inert bookmark button when user state is disabled", () => {
         render(<ContentCard item={item} enableUserState={false} />);
 

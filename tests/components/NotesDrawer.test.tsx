@@ -193,6 +193,31 @@ describe("NotesDrawer", () => {
         expect(onOpenChange).toHaveBeenCalledWith(false);
     });
 
+    it("marks drawer motion surfaces for reduced-motion browser handling", async () => {
+        // Structural smoke test only: JSDOM does not evaluate prefers-reduced-motion.
+        // Browser behavior is covered by the reduced-motion Playwright spec.
+        render(
+            <NotesDrawer
+                isOpen
+                onOpenChange={onOpenChange}
+                highlights={highlights}
+                isLoading={false}
+                hasError={false}
+                sections={[]}
+                onHighlightJump={onHighlightJump}
+            />
+        );
+
+        const opener = await screen.findByRole("button", { name: /open notes drawer/i });
+        const dialog = await screen.findByRole("dialog", { name: /highlights & notes/i });
+
+        expect(opener).toHaveClass("notes-drawer-motion-opener");
+        expect(opener).toHaveClass("motion-reduce:hover:translate-y-0");
+        expect(opener.parentElement).toHaveClass("notes-drawer-motion-anchor");
+        expect(dialog).toHaveClass("notes-drawer-motion-panel");
+        expect(dialog).toHaveClass("motion-reduce:transition-none");
+    });
+
     it("jumps on card tap and keeps delete isolated", async () => {
         deleteHighlightMock.mockResolvedValue("highlight-1");
         onHighlightJump.mockResolvedValue(undefined);

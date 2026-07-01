@@ -59,7 +59,7 @@ export function MobileHeader({
             data-testid="mobile-header"
             style={{ transform: isVisible ? "translateY(0)" : "translateY(-100%)" }}
             className={cn(
-                "lg:hidden fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 transition-transform duration-300",
+                "mobile-header-motion lg:hidden fixed top-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4 transition-transform duration-300 motion-reduce:transition-none",
                 compact ? "mobile-header-compact-height" : "mobile-header-height"
             )}
         >

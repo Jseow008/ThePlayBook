@@ -521,6 +521,18 @@ mark[data-highlight-spotlight="true"] {
   @apply active:scale-95 transition-transform;
 }
 
+@media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
+  .content-card-hover-action {
+    opacity: 0;
+  }
+
+  .group:hover .content-card-hover-action,
+  .group:focus-within .content-card-hover-action,
+  .content-card-hover-action:focus-visible {
+    opacity: 1;
+  }
+}
+
 /* Safe area padding for mobile devices with notch/home indicator */
 :where(.safe-area-pb) {
   padding-bottom: var(--safe-area-bottom);
@@ -1323,6 +1335,48 @@ mark[data-highlight-spotlight="true"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Named motion classes are for decorative transition surfaces only.
+     Do not apply them to layout-critical transform elements such as virtualized rows. */
+  .card-hover,
+  .card-hover:hover,
+  .btn-active,
+  .btn-active:active,
+  .content-card-motion-surface,
+  .content-card-motion-surface:hover,
+  .content-card-motion-surface:focus-within,
+  .content-card-motion-image,
+  .group:hover .content-card-motion-image,
+  .group:focus-within .content-card-motion-image,
+  .content-card-motion-hook,
+  .group:hover .content-card-motion-hook,
+  .group:focus-within .content-card-motion-hook,
+  .notes-drawer-motion-opener,
+  .notes-drawer-motion-opener:hover,
+  .reader-settings-motion-sheet {
+    transform: none !important;
+  }
+
+  .card-hover,
+  .btn-active,
+  .mobile-header-motion,
+  .content-card-motion-surface,
+  .content-card-motion-image,
+  .content-card-motion-overlay,
+  .content-card-motion-hook,
+  .content-card-motion-progress,
+  .content-card-motion-border,
+  .content-card-motion-action,
+  .content-card-hover-action,
+  .notes-drawer-motion-anchor,
+  .notes-drawer-motion-opener,
+  .notes-drawer-motion-backdrop,
+  .notes-drawer-motion-panel,
+  .reader-settings-motion-backdrop,
+  .reader-settings-motion-sheet {
+    animation: none !important;
+    transition-duration: 0ms !important;
+  }
+
   .animate-fade-in {
     animation: none;
     opacity: 1;

@@ -490,7 +490,21 @@ Required outcome:
 
 ### 10. Add a motion-reduction audit
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- Shared motion fallbacks: `app/globals.css` now extends the reduced-motion policy beyond landing-only classes to cover `.card-hover`, `.btn-active`, content-card motion hooks, mobile-header transform transitions, reader drawer transitions, and reader settings sheet animations.
+- State changes intentionally still happen under reduced motion. Mobile header hide/show and drawer open/close snap instantly instead of staying visible forever or animating through the viewport.
+- Touch discoverability: `ContentCard` no longer hides bookmark/remove actions with `lg:opacity-0 lg:group-hover:opacity-100`. A pointer-aware `.content-card-hover-action` rule hides actions only for `hover: hover` + `pointer: fine` large screens, leaving large touch devices discoverable.
+- Content card hardening: `ContentCard` now marks card lift, image scale, overlay fade, hook reveal, progress transition, border transition, and action transitions with explicit motion classes so browser-level reduced-motion checks can assert behavior.
+- Reader overlay hardening: `NotesDrawer` removes decorative opener lift and transition travel under reduced motion, and uses the shared `usePrefersReducedMotion` hook to switch active-highlight scrolling from `smooth` to `auto`.
+- Reader settings hardening: compact reader settings sheet/backdrop now use reduced-motion guards. The desktop popover keeps relying on the existing global `.animate-fade-in` reduced-motion fallback.
+- Regression coverage: component tests assert reduced-motion class wiring as structural smoke tests, with comments noting that JSDOM does not evaluate media queries.
+- Browser coverage: `tests/e2e/reduced-motion.spec.ts` uses `page.emulateMedia({ reducedMotion: "reduce" })` to verify browse cards and reader notes drawer behavior in real browser viewports.
+- NPM script: `package.json` now includes `npm run test:e2e:reduced-motion`, covering `mobile-iphone` and `desktop-chromium`.
+- Verification: `npm run test -- tests/components/ContentCard.test.tsx tests/components/NotesDrawer.test.tsx tests/components/ReaderSettingsMenu.test.tsx`, `npm run typecheck`, `npm run lint`, and `npm run test:e2e:reduced-motion` passed.
+- Rendered sanity check: the in-app Browser loaded `/browse` on the existing local dev server, confirmed main content, content-card motion hooks, no document horizontal overflow, and no console warnings/errors.
 
 Issue: Some surfaces respect reduced motion well, while others lack coverage.
 
