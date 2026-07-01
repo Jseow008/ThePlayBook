@@ -143,22 +143,25 @@ export function ContentLane({
                 <div className="relative w-full overflow-hidden">
                     <div
                         ref={scrollRef}
-                        className="scrollbar-hide flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-3 pt-3 scroll-smooth md:scroll-px-6 md:gap-4 md:px-6 md:pb-4 md:pt-4 lg:scroll-px-16 lg:px-16"
+                        data-testid="content-lane-scroller"
+                        className="scrollbar-hide snap-x snap-mandatory scroll-px-4 overflow-x-auto px-4 pb-3 pt-3 scroll-smooth md:scroll-px-6 md:px-6 md:pb-4 md:pt-4 lg:scroll-px-16 lg:px-16"
                     >
-                        {items.map((item) => (
-                            <div
-                                key={item.id}
-                                data-content-lane-card
-                                className="w-[168px] min-w-[168px] snap-start md:w-[240px] md:min-w-[240px]"
-                            >
-                                <ContentCard
-                                    item={item}
-                                    enableUserState={enableCardUserState}
-                                    navigationMode={cardNavigationMode}
-                                    titleDensity={cardTitleDensity}
-                                />
-                            </div>
-                        ))}
+                        <div className="flex w-max gap-3 md:gap-4">
+                            {items.map((item) => (
+                                <div
+                                    key={item.id}
+                                    data-content-lane-card
+                                    className="w-[168px] min-w-[168px] snap-start md:w-[240px] md:min-w-[240px]"
+                                >
+                                    <ContentCard
+                                        item={item}
+                                        enableUserState={enableCardUserState}
+                                        navigationMode={cardNavigationMode}
+                                        titleDensity={cardTitleDensity}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 

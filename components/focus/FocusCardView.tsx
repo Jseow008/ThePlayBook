@@ -555,6 +555,7 @@ export const FocusCardView = memo(function FocusCardView({
                         <div className={`flex flex-col items-center pt-0.5 ${isCompactMobileLayout ? "gap-1.5" : "gap-2"}`}>
                             <button
                                 type="button"
+                                data-testid="focus-takeaways-opener"
                                 onClick={(event) => onOpenTakeaways(card, event.currentTarget)}
                                 className="focus-ring inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 touch-manipulation"
                                 aria-label={`Preview ${card.title}`}

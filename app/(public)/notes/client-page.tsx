@@ -561,7 +561,9 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
     const [draftNote, setDraftNote] = useState("");
     const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
+    const askToggleButtonRef = useRef<HTMLButtonElement | null>(null);
     const listContainerRef = useRef<HTMLDivElement | null>(null);
+    const shouldRestoreAskFocusRef = useRef(false);
     const scrollFrameRef = useRef<number | null>(null);
     const deleteArmTimeoutRef = useRef<number | null>(null);
     const previousSearchParamsRef = useRef<string | null>(null);
@@ -602,6 +604,15 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             window.removeEventListener("scroll", updateCompactState);
         };
     }, []);
+
+    useEffect(() => {
+        if (isAskOpen || !shouldRestoreAskFocusRef.current) {
+            return;
+        }
+
+        shouldRestoreAskFocusRef.current = false;
+        requestAnimationFrame(() => askToggleButtonRef.current?.focus());
+    }, [isAskOpen]);
 
     useEffect(() => {
         if (!armedDeleteId) {
@@ -1052,6 +1063,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
             params.set("ask", "1");
         } else {
             params.delete("ask");
+            shouldRestoreAskFocusRef.current = true;
         }
 
         const nextQuery = params.toString();
@@ -1099,6 +1111,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                         </div>
 
                         <button
+                            ref={askToggleButtonRef}
                             type="button"
                             onClick={toggleAskPanel}
                             aria-pressed={isAskOpen}

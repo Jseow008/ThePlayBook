@@ -41,6 +41,8 @@ export function NotesDrawer({
 }: NotesDrawerProps) {
     const [mounted, setMounted] = useState(false);
     const drawerPanelRef = useRef<HTMLDivElement>(null);
+    const openerButtonRef = useRef<HTMLButtonElement>(null);
+    const shouldRestoreFocusRef = useRef(false);
     const activeRowScrollTimeoutRef = useRef<number | null>(null);
     const deleteHighlight = useDeleteHighlight();
     const updateHighlight = useUpdateHighlight();
@@ -96,6 +98,10 @@ export function NotesDrawer({
     useEffect(() => {
         if (!isOpen) {
             setEditingHighlight(null);
+            if (shouldRestoreFocusRef.current) {
+                shouldRestoreFocusRef.current = false;
+                requestAnimationFrame(() => openerButtonRef.current?.focus());
+            }
         }
     }, [isOpen]);
 
@@ -227,7 +233,11 @@ export function NotesDrawer({
                 )}
             >
                 <button
-                    onClick={() => onOpenChange(true)}
+                    ref={openerButtonRef}
+                    onClick={() => {
+                        shouldRestoreFocusRef.current = true;
+                        onOpenChange(true);
+                    }}
                     aria-label="Open notes drawer"
                     className="relative flex items-center justify-center gap-2 p-3 sm:px-4 sm:py-3 bg-primary text-primary-foreground font-semibold rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 min-w-[3rem] min-h-[3rem]"
                 >
@@ -253,6 +263,8 @@ export function NotesDrawer({
             {/* Slide-out Drawer */}
             <div
                 ref={drawerPanelRef}
+                data-testid="reader-notes-drawer"
+                data-state={isOpen ? "open" : "closed"}
                 onTransitionEnd={handlePanelTransitionEnd}
                 className={cn(
                     "fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm sm:max-w-md bg-background border-l border-border/40 shadow-2xl transition-transform duration-500 ease-spring flex flex-col",

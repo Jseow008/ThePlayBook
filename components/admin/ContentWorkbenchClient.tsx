@@ -416,7 +416,7 @@ export function ContentWorkbenchClient({
                             })}
                         </div>
 
-                        <div className="hidden overflow-x-auto xl:block">
+                        <div data-testid="admin-content-table-scroll" className="hidden overflow-x-auto xl:block">
                             <div className="min-w-[980px]">
                                 <div className="sticky top-0 z-10 grid grid-cols-[36px_48px_minmax(0,1fr)_148px_80px_100px_120px] gap-4 border-b border-border bg-muted/50 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                     <div className="flex items-center justify-center">

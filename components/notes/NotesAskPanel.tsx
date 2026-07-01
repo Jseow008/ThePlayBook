@@ -630,6 +630,7 @@ export function NotesAskPanel({
 
     return (
         <section
+            data-testid={isSidebar ? "notes-ask-sidebar-panel" : "notes-ask-panel"}
             className={cn(
                 "flex h-full flex-col overflow-hidden rounded-[24px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm",
                 mobile && "min-h-0 flex-1 rounded-t-[24px] rounded-b-none border-b-0",

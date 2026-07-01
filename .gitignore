@@ -53,3 +53,5 @@ next-env.d.ts
 /test-results/
 desktop_preview.png
 playwright-report/
+docs/performance/analyze/
+docs/performance/*.html

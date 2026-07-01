@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { GET, resetHealthCheckCacheForTests } from "@/app/api/health/route";
+import { resetHealthCheckCacheForTests } from "@/app/api/health/database-check";
+import { GET } from "@/app/api/health/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 vi.mock("@/lib/supabase/public-server", () => ({

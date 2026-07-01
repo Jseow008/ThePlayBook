@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-07-01T11:24:43.928Z",
+  "source": ".next/server/app/*_client-reference-manifest.js",
+  "metric": "clientReferenceManifestJsBytes",
+  "unit": "bytes",
+  "thresholds": {
+    "warnPercent": 10,
+    "failPercent": 20
+  },
+  "routes": {
+    "/": {
+      "nextRoute": "/",
+      "clientReferenceRoute": "/page",
+      "baselineBytes": 1484745,
+      "warnAtBytes": 1633220,
+      "failAtBytes": 1781694
+    },
+    "/browse": {
+      "nextRoute": "/browse",
+      "clientReferenceRoute": "/(public)/browse/page",
+      "baselineBytes": 1526563,
+      "warnAtBytes": 1679220,
+      "failAtBytes": 1831876
+    },
+    "/read/[id]": {
+      "nextRoute": "/read/[id]/[[...slug]]",
+      "clientReferenceRoute": "/(public)/read/[id]/[[...slug]]/page",
+      "baselineBytes": 2087557,
+      "warnAtBytes": 2296313,
+      "failAtBytes": 2505069
+    },
+    "/notes": {
+      "nextRoute": "/notes",
+      "clientReferenceRoute": "/(public)/notes/page",
+      "baselineBytes": 1939623,
+      "warnAtBytes": 2133586,
+      "failAtBytes": 2327548
+    },
+    "/focus": {
+      "nextRoute": "/focus",
+      "clientReferenceRoute": "/(public)/focus/page",
+      "baselineBytes": 1585824,
+      "warnAtBytes": 1744407,
+      "failAtBytes": 1902989
+    }
+  }
+}

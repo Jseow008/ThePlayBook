@@ -254,7 +254,19 @@ Acceptance criteria:
 
 ### 5. Expand responsive regression tests around high-risk surfaces
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- Shared Playwright assertions in `tests/e2e/helpers/responsive.ts` now cover viewport containment with tolerance, intentional horizontal scroller ownership, focused input visibility, and overlay focus/scroll/body-overflow restoration.
+- New suite: `tests/e2e/responsive-surfaces-public.spec.ts`, `tests/e2e/responsive-surfaces-authenticated.spec.ts`, and `tests/e2e/responsive-surfaces-admin.spec.ts`.
+- NPM script: `npm run test:e2e:responsive:surfaces` runs the surface checks across `mobile-se`, `mobile-iphone`, `mobile-landscape`, `tablet-portrait`, `tablet-landscape`, and `desktop-chromium`.
+- Public coverage checks landing CTA reachability, landing featured reads carousel overflow ownership, browse hero containment, browse lane horizontal scrolling, focus card containment, and mobile focus takeaways sheet focus/scroll restoration.
+- Authenticated coverage checks Notes sticky search/focus behavior, desktop Notes Ask panel close restoration, dynamic reader notes drawer close restoration, and audio mini-player containment when audio is available.
+- Admin coverage checks `/admin/content` search/filter/action containment and validates the desktop table wrapper when the table is visible.
+- Minimal stable selectors were added for `ContentLane`, the Focus takeaways opener, reader notes drawer state, Notes Ask panels, and the admin content table scroll wrapper.
+- Related product hardening: `ContentLane` now uses an inner `w-max` flex track inside the scroll container so horizontal lanes accept real user horizontal scroll gestures while preserving existing card sizing, gaps, snap behavior, and layout rhythm.
+- Verification: `npm run typecheck`, `npm run lint`, `npm run test:e2e:responsive:surfaces`, and a warm rerun of `npm run test:e2e:responsive` passed. The first cold run of `npm run test:e2e:responsive` had initial `page.goto(..., load)` timeouts under concurrent dev-server startup, then passed on rerun once the server was warm.
 
 Issue: High-risk surfaces have good unit/component intent tests, but not enough browser-level checks for visual containment.
 
@@ -280,7 +292,21 @@ Acceptance criteria:
 
 ### 6. Formalize a bundle and client-boundary budget
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- `next.config.ts` now composes `@next/bundle-analyzer` outside the Sentry-wrapped config with `enabled: process.env.ANALYZE === "true"` and `openAnalyzer: process.env.CI !== "true"`.
+- NPM scripts now include `analyze`, `analyze:ci`, `check:bundle-budgets`, and `check:client-boundaries`.
+- `analyze` and `analyze:ci` use `next build --webpack` because `@next/bundle-analyzer` does not emit HTML reports for Turbopack builds.
+- Analyzer HTML output remains local under `.next/analyze/`; `.gitignore` also excludes copied docs analyzer HTML via `docs/performance/analyze/` and `docs/performance/*.html`.
+- Client-boundary policy lives in `docs/CLIENT_BOUNDARY_POLICY.md`.
+- Route budgets live in `docs/performance/bundle-budgets.json`, with a human-readable summary in `docs/performance/BUNDLE_BUDGETS.md`.
+- Bundle baseline artifact lives in `docs/performance/BUNDLE_ANALYSIS_BASELINE.md`.
+- `scripts/check-bundle-budgets.mjs` compares the current build output against the committed route budgets. It supports Turbopack route diagnostics when present and webpack client-reference manifests for analyzer builds.
+- `scripts/check-client-boundaries.mjs` reports the current `"use client"` file count, largest client-marked files, and new client boundaries against `docs/performance/client-boundaries.json`.
+- The first baseline tracks `/`, `/browse`, `/read/[id]`, `/notes`, and `/focus`.
+- No additional lazy-loading split was made from this baseline alone. Further splits should be analyzer-led; the landing page already defers `LandingDeferredSections` through `next/dynamic`.
 
 Issue: The app has 102 client-marked files. Some large surfaces are necessarily interactive, but future growth will make bundle size and hydration cost harder to reason about.
 
