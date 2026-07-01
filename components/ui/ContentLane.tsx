@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
 import { ContentCard } from "@/components/ui/ContentCard";
+import { COMPACT_SHELF_CARD_CLASS } from "@/components/ui/content-card-standards";
 
 interface ContentLaneProps {
     title: React.ReactNode;
@@ -151,7 +152,7 @@ export function ContentLane({
                                 <div
                                     key={item.id}
                                     data-content-lane-card
-                                    className="w-[168px] min-w-[168px] snap-start md:w-[240px] md:min-w-[240px]"
+                                    className={COMPACT_SHELF_CARD_CLASS}
                                 >
                                     <ContentCard
                                         item={item}

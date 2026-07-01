@@ -15,6 +15,11 @@ import { toast } from "sonner";
 import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import {
+    READER_COVER_FRAME_CLASS,
+    READER_COVER_IMAGE_SIZES,
+    READER_COVER_WRAPPER_CLASS,
+} from "@/components/ui/content-card-standards";
 
 interface ContentPreviewProps {
     item: ContentItem;
@@ -106,15 +111,15 @@ export function ContentPreview({
                 <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-6">
                     {/* Cover Image */}
                     {item.cover_image_url && (
-                        <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
-                            <div className="aspect-[2/3] w-[140px] sm:w-full max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/20 border border-border relative group">
+                        <div className={READER_COVER_WRAPPER_CLASS}>
+                            <div className={`${READER_COVER_FRAME_CLASS} max-w-[220px] mx-auto sm:max-w-none rounded-2xl overflow-hidden shadow-2xl shadow-black/20 border border-border relative group`}>
                                 <ResilientImage
                                     src={item.cover_image_url}
                                     alt={item.title}
                                     fill
                                     surface="content-preview"
                                     className="object-cover transition-transform duration-700 group-hover:scale-105"
-                                    sizes="(max-width: 640px) 220px, 224px"
+                                    sizes={READER_COVER_IMAGE_SIZES}
                                     priority
                                     fallback={
                                         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-secondary via-card to-background">

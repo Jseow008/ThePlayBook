@@ -5,6 +5,7 @@ import { HomeFeed } from "@/components/ui/HomeFeed";
 import { getRequestId, logApiError } from "@/lib/server/api";
 import type { ContentItem, Database, HomepageSection } from "@/types/database";
 import { APP_NAME } from "@/lib/brand";
+import { COMPACT_SHELF_SKELETON_CARD_CLASS } from "@/components/ui/content-card-standards";
 import {
     absoluteUrl,
     buildBreadcrumbJsonLd,
@@ -95,7 +96,11 @@ function HomeFeedSkeleton() {
                     <div className="h-8 w-48 bg-card/30 rounded" />
                     <div className="flex gap-4 overflow-hidden">
                         {[1, 2, 3, 4, 5].map(i => (
-                            <div key={i} className="flex-none w-[140px] md:w-[200px] lg:w-[240px] aspect-[2/3] bg-card/30 rounded-lg" />
+                            <div
+                                key={i}
+                                data-testid="browse-shelf-skeleton-card"
+                                className={`${COMPACT_SHELF_SKELETON_CARD_CLASS} bg-card/30 rounded-lg`}
+                            />
                         ))}
                     </div>
                 </div>

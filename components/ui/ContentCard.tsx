@@ -17,6 +17,10 @@ import { cn } from "@/lib/utils";
 import { buildReadPath } from "@/lib/content-paths";
 import { toast } from "sonner";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import {
+    CONTENT_CARD_ASPECT_CLASS,
+    CONTENT_CARD_IMAGE_SIZES,
+} from "@/components/ui/content-card-standards";
 
 interface ContentCardProps {
     item: ContentItem;
@@ -167,7 +171,10 @@ function BaseContentCard({
     const contentHook = getContentCardHook(item);
 
     return (
-        <div className="content-card-motion-surface group relative block aspect-[2/3] w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:transition-none">
+        <div className={cn(
+            "content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:transition-none",
+            CONTENT_CARD_ASPECT_CLASS
+        )}>
             <Link href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
                 <span className="sr-only">{linkLabel}</span>
             </Link>
@@ -180,7 +187,7 @@ function BaseContentCard({
                         fill
                         surface="content-card"
                         className="content-card-motion-image object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none"
-                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                        sizes={CONTENT_CARD_IMAGE_SIZES}
                         priority={priority}
                         fallback={
                             <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">

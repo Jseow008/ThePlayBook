@@ -11,6 +11,7 @@ import {
 import {
     FEED_CARD_HEIGHT_CLASS,
     FEED_LIST_VIEWPORT_CLASS,
+    FOCUS_COVER_WIDTHS,
 } from "@/components/focus/focus-feed-layout";
 
 const FOCUS_FEED_RESTORE_STORAGE_KEY = "focus-feed-restore-v1";
@@ -333,19 +334,19 @@ describe("FocusFeed", () => {
             getDesktopCoverWidth({
                 availableContentHeight: 718,
             })
-        ).toBe(132);
+        ).toBe(FOCUS_COVER_WIDTHS.default);
 
         expect(
             getDesktopCoverWidth({
                 availableContentHeight: 650,
             })
-        ).toBe(116);
+        ).toBe(FOCUS_COVER_WIDTHS.medium);
 
         expect(
             getDesktopCoverWidth({
                 availableContentHeight: 578,
             })
-        ).toBe(104);
+        ).toBe(FOCUS_COVER_WIDTHS.compact);
 
         expect(
             getDesktopVisibleTakeawayCount({

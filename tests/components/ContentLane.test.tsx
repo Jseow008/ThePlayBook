@@ -1,6 +1,7 @@
 import { render, screen, act } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ContentLane } from "@/components/ui/ContentLane";
+import { COMPACT_SHELF_CARD_CLASS } from "@/components/ui/content-card-standards";
 import type { ContentItem } from "@/types/database";
 
 vi.mock("next/link", () => ({
@@ -110,6 +111,13 @@ describe("ContentLane", () => {
 
         expect(screen.getByText("resume:default:One")).toBeInTheDocument();
         expect(screen.getByText("resume:default:Two")).toBeInTheDocument();
+    });
+
+    it("renders lane cards with the compact shelf sizing standard", () => {
+        const { container } = render(<ContentLane title="Standard Lane" items={items} />);
+
+        const laneCard = container.querySelector("[data-content-lane-card]");
+        expect(laneCard).toHaveClass(...COMPACT_SHELF_CARD_CLASS.split(" "));
     });
 
     it("passes through the requested card title density", () => {

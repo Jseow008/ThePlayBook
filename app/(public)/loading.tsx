@@ -1,3 +1,5 @@
+import { ROUTE_LOADING_SHELF_SKELETON_CARD_CLASS } from "@/components/ui/content-card-standards";
+
 /**
  * Public Route Loading Skeleton
  *
@@ -21,7 +23,8 @@ export default function Loading() {
                             {[1, 2, 3, 4, 5, 6].map((card) => (
                                 <div
                                     key={card}
-                                    className="flex-none w-[120px] sm:w-[140px] aspect-[2/3] bg-secondary/50 rounded-md"
+                                    data-testid="route-loading-shelf-skeleton-card"
+                                    className={`${ROUTE_LOADING_SHELF_SKELETON_CARD_CLASS} bg-secondary/50 rounded-md`}
                                 />
                             ))}
                         </div>

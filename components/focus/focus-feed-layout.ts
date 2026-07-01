@@ -16,10 +16,12 @@ export type DesktopCompactLevel = 0 | 1 | 2 | 3;
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
 export const MOBILE_MIN_READABLE_HOOK_HEIGHT_PX = 72;
 const DESKTOP_VISIBLE_TAKEAWAY_COUNT = 3;
-const DESKTOP_DEFAULT_COVER_WIDTH = 132;
-const DESKTOP_MEDIUM_COVER_WIDTH = 116;
-const DESKTOP_COMPACT_COVER_WIDTH = 104;
-const DESKTOP_DENSE_COVER_WIDTH = 92;
+export const FOCUS_COVER_WIDTHS = {
+    default: 132,
+    medium: 116,
+    compact: 104,
+    dense: 92,
+} as const;
 
 export const DESKTOP_COMPACT_LEVELS = [0, 1, 2, 3] as const;
 export const MAX_DESKTOP_COMPACT_LEVEL = 3 satisfies DesktopCompactLevel;
@@ -88,26 +90,26 @@ export function getDesktopCoverWidth({
     compactLevel?: DesktopCompactLevel;
 }) {
     if (compactLevel >= 3) {
-        return DESKTOP_DENSE_COVER_WIDTH;
+        return FOCUS_COVER_WIDTHS.dense;
     }
 
     if (compactLevel >= 2) {
-        return DESKTOP_COMPACT_COVER_WIDTH;
+        return FOCUS_COVER_WIDTHS.compact;
     }
 
     if (compactLevel >= 1) {
-        return DESKTOP_MEDIUM_COVER_WIDTH;
+        return FOCUS_COVER_WIDTHS.medium;
     }
 
     if (availableContentHeight >= 700) {
-        return DESKTOP_DEFAULT_COVER_WIDTH;
+        return FOCUS_COVER_WIDTHS.default;
     }
 
     if (availableContentHeight >= 620) {
-        return DESKTOP_MEDIUM_COVER_WIDTH;
+        return FOCUS_COVER_WIDTHS.medium;
     }
 
-    return DESKTOP_COMPACT_COVER_WIDTH;
+    return FOCUS_COVER_WIDTHS.compact;
 }
 
 export function getDesktopVisibleTakeawayCount({

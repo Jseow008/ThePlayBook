@@ -531,7 +531,17 @@ Required outcome:
 
 ### 11. Create responsive content-card standards
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- Shared standards: `components/ui/content-card-standards.ts` defines the reusable card aspect, compact shelf card sizing, loading skeleton sizing, catalog card image `sizes`, and reader cover image `sizes`.
+- Design source of truth: `docs/DESIGN.md` now documents the responsive card families: compact shelf card, catalog grid card, landing featured card, focus card cover, and reader cover.
+- Shelf standardization: `ContentLane.tsx` uses the compact shelf standard (`168px` mobile, `240px` from `md`), and browse/public route loading skeletons now match that same family instead of using separate transient widths.
+- Reader cover fix: `ReaderHeroHeader.tsx` and `ContentPreview.tsx` share the same reader cover wrapper/frame sizing and image `sizes` hint. This corrects the previous `ReaderHeroHeader` mobile hint that advertised `100vw` for a `140px` rendered cover.
+- Focus standardization: `focus-feed-layout.ts` now exports `FOCUS_COVER_WIDTHS` while preserving `getDesktopCoverWidth()` as the behavior API for viewport-height-aware cover sizing.
+- Regression coverage: component tests assert rendered linkage for `ContentCard`, `ContentLane`, `ContentPreview`, `ReaderHeroHeader`, public loading skeletons, browse skeleton source linkage, and focus cover width behavior.
+- Verification: focused component tests, `npm run lint`, `npm run typecheck`, and `npm run test:e2e:responsive:surfaces` passed.
 
 Issue: Content cards are central to browse, search, library, landing featured reads, and focus. They mostly behave well, but card widths, text clamps, overlay gradients, and image sizes are spread across multiple components.
 
@@ -544,6 +554,8 @@ Evidence of card sizing fragmentation:
 | Landing featured (primary) | `10.75rem × 16.125rem` → `sm:13.125rem` → `md:15.5rem` | `globals.css:1145–1241` |
 | Landing featured (support) | `9.5rem × 14.25rem` → `sm:11.625rem` → `md:13.375rem` | `globals.css:1154–1241` |
 | Focus card | Dynamic cover width: 132/116/104/92px by compact level | `focus-feed-layout.ts:17–20` |
+| Browse loading skeleton | Previously `w-[140px]` → `md:w-[200px]` → `lg:w-[240px]`; now compact shelf standard | `app/(public)/browse/page.tsx` |
+| Public route loading skeleton | Previously `w-[120px]` → `sm:w-[140px]`; now compact shelf standard | `app/(public)/loading.tsx` |
 
 Required outcome:
 

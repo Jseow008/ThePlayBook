@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ContentPreview } from '@/components/ui/ContentPreview';
+import { READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
 import { vi } from 'vitest';
 import type { ContentItem } from '@/types/database';
 
@@ -93,6 +94,12 @@ describe('ContentPreview', () => {
             'pb-[calc(5.75rem+var(--safe-area-bottom))]'
         );
         expect(document.querySelector('.safe-area-pb-sm')).toBeInTheDocument();
+    });
+
+    it('uses the shared reader cover image sizes hint', () => {
+        render(<ContentPreview {...defaultProps} />);
+
+        expect(screen.getByAltText('Test Title')).toHaveAttribute('sizes', READER_COVER_IMAGE_SIZES);
     });
 
     it('can initially show all takeaways when opened from Focus', () => {

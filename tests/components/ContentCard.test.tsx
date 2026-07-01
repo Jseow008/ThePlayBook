@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ContentCard } from "@/components/ui/ContentCard";
+import {
+    CONTENT_CARD_ASPECT_CLASS,
+    CONTENT_CARD_IMAGE_SIZES,
+} from "@/components/ui/content-card-standards";
 import type { ContentItem } from "@/types/database";
 import type { ReadingProgressData } from "@/hooks/useReadingProgress";
 
@@ -100,6 +104,21 @@ describe("ContentCard", () => {
         render(<ContentCard item={item} />);
 
         expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toBeInTheDocument();
+    });
+
+    it("uses the shared catalog card frame and image sizing contract", () => {
+        render(
+            <ContentCard
+                item={{
+                    ...item,
+                    cover_image_url: "https://example.com/deep-work.jpg",
+                }}
+            />
+        );
+
+        const link = screen.getByRole("link", { name: "Preview Deep Work" });
+        expect(link.parentElement).toHaveClass(CONTENT_CARD_ASPECT_CLASS);
+        expect(screen.getByAltText("Deep Work")).toHaveAttribute("sizes", CONTENT_CARD_IMAGE_SIZES);
     });
 
     it("keeps card actions discoverable without large-screen hover-only opacity classes", () => {

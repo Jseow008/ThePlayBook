@@ -7,6 +7,11 @@ import { APP_NAME } from "@/lib/brand";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import {
+    READER_COVER_FRAME_CLASS,
+    READER_COVER_IMAGE_SIZES,
+    READER_COVER_WRAPPER_CLASS,
+} from "@/components/ui/content-card-standards";
 
 /**
  * Reader Hero Header
@@ -88,13 +93,13 @@ export function ReaderHeroHeader({
             <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
                 {/* Cover Image */}
                 {coverImageUrl && (
-                    <div className="flex-shrink-0 w-full sm:w-48 md:w-56">
-                        <div className="aspect-[2/3] w-[140px] sm:w-full rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative mx-auto sm:mx-0">
+                    <div className={READER_COVER_WRAPPER_CLASS}>
+                        <div className={`${READER_COVER_FRAME_CLASS} rounded-xl overflow-hidden shadow-xl shadow-black/30 border border-white/10 relative mx-auto sm:mx-0`}>
                             <ResilientImage
                                 src={coverImageUrl}
                                 alt={title}
                                 fill
-                                sizes="(max-width: 640px) 100vw, 224px"
+                                sizes={READER_COVER_IMAGE_SIZES}
                                 priority
                                 surface="reader-hero"
                                 className="object-cover"

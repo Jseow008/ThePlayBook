@@ -80,6 +80,20 @@ Primary source: `components/ui/PublicLayoutShell.tsx`
 - horizontally organized sections
 - configurable homepage lanes from `homepage_section`
 
+### 3.4 Responsive Content Cards
+
+Content cards use a consistent 2:3 cover/card ratio across public discovery, reader context, and focus surfaces. Keep sizing changes local to the relevant family instead of copying one surface's dimensions into another.
+
+| Family | Surfaces | Sizing Standard | Notes |
+|--------|----------|-----------------|-------|
+| Compact shelf card | Browse lanes, horizontal app shelves | `168px` mobile, `240px` from `md` | Loading skeletons for browse/public route transitions should match this family unless a different real card is being represented. |
+| Catalog grid card | Shared `ContentCard` in search, library, browse lanes | 2:3 full-width card within the parent grid/shelf track | Text stays clamped inside the overlay; actions remain discoverable without hover-only opacity requirements. |
+| Landing featured card | Landing featured reads strip | Primary: `10.75rem x 16.125rem`, `13.125rem x 19.7rem` at `sm`, `15.5rem x 23rem` at `md`; support: `9.5rem x 14.25rem`, `11.625rem x 17.45rem` at `sm`, `13.375rem x 19.75rem` at `md` | Keep this family in landing CSS custom properties because the carousel uses separate primary/support rows and landing-specific motion treatment. |
+| Focus card cover | Focus feed | Desktop cover widths are `132px`, `116px`, `104px`, and `92px` by compact level; mobile uses `96px/112px` compact and `112px/124px` default | Preserve `getDesktopCoverWidth()` as the behavior API because it factors viewport height and compact level. |
+| Reader cover | Preview and reader hero | `140px` below `sm`, then `192px` at `sm`, `224px` at `md` | Image `sizes` hints should match these rendered widths to avoid oversized mobile image requests. |
+
+Implementation source: `components/ui/content-card-standards.ts`, with focus-specific cover widths in `components/focus/focus-feed-layout.ts`.
+
 ## 4. Reader Experience
 
 ### 4.1 Current Reader Layout
