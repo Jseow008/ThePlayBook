@@ -62,6 +62,7 @@ Admin access is enforced twice:
 - `app/layout.tsx` sets global fonts, global CSS, ambient background, React Query provider, `sonner`, and Vercel telemetry
 - `app/(public)/layout.tsx` wraps public app routes with auth and reading-progress providers
 - `components/ui/PublicLayoutShell.tsx` conditionally applies app chrome based on the current route
+- `docs/ROUTE_SHELL_POLICY.md` documents route ownership, shell behavior, viewport modes, and standalone/admin exceptions
 
 ### 3.2 Supabase Client Split
 

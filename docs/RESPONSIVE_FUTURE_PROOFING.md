@@ -591,11 +591,20 @@ Required outcome:
 
 ### 13. Add route ownership and shell-behavior documentation
 
-Status: Open.
+Status: Implemented.
 
-Issue: Shell behavior is currently encoded in `PublicLayoutShell.tsx` conditionals (L20–83). This works now, but route growth will make it easy to forget whether a page wants mobile chrome, immersive viewport ownership, bottom padding, or desktop sidebar padding.
+Implementation notes:
 
-Current encoded behaviors in `PublicLayoutShell.tsx`:
+- Route shell ownership is documented in `docs/ROUTE_SHELL_POLICY.md`, split between routes governed by `getRouteChromePolicy`, standalone root routes, and admin routes that use the separate admin shell.
+- `lib/route-chrome-policy.ts` now defines the canonical viewport mode semantics inline and exposes the documented special route patterns for tests.
+- `tests/components/route-chrome-policy.test.ts` covers all special policy patterns plus representative default public routes.
+- `scripts/check-route-shell-policy.mjs` inventories `app/(public)/**/page.tsx`, verifies standalone route documentation, and checks that special policy patterns remain documented.
+- `npm run lint` now includes `npm run check:route-shell-policy`, so a new public page route must update the shell policy documentation before passing lint.
+- `/chat-export/*` is documented as a standalone root route at `app/chat-export/[id]` and must not inherit public mobile app chrome.
+
+Previous issue: Shell behavior was encoded in `PublicLayoutShell.tsx` conditionals. This worked, but route growth made it easy to forget whether a page wanted mobile chrome, immersive viewport ownership, bottom padding, or desktop sidebar padding.
+
+Current public-shell policy summary:
 
 | Route | Header | Bottom Nav | Sidebar Padding | Bottom Padding | Viewport Mode |
 |-------|--------|-----------|-----------------|----------------|---------------|
@@ -606,6 +615,10 @@ Current encoded behaviors in `PublicLayoutShell.tsx`:
 | `/ask` | None | None | `lg:pl-16` | None | Immersive |
 | `/focus` | None | ✅ (via bottom nav) | `lg:pl-16` | None | `100dvh` immersive |
 | Default pages | Default (h-14) | Default (h-16) | `lg:pl-16` | `4rem + safe-area` | Standard |
+
+Canonical route matrix:
+
+- See `docs/ROUTE_SHELL_POLICY.md` for all public-shell routes, standalone routes such as `/chat-export/*`, and the separate admin shell.
 
 Required outcome:
 

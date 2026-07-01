@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { getRouteChromePolicy } from "@/lib/route-chrome-policy";
+import {
+    DEFAULT_ROUTE_CHROME_POLICY,
+    ROUTE_CHROME_POLICY_RULE_PATTERNS,
+    getRouteChromePolicy,
+} from "@/lib/route-chrome-policy";
 
 describe("getRouteChromePolicy", () => {
+    it("exports the documented special policy patterns", () => {
+        expect(ROUTE_CHROME_POLICY_RULE_PATTERNS).toEqual([
+            "/",
+            "/browse",
+            "/read/*",
+            "/preview/*",
+            "/ask",
+            "/focus",
+        ]);
+    });
+
     it("returns standalone chrome policy for the landing page", () => {
         expect(getRouteChromePolicy("/")).toEqual({
             mobileHeader: "none",
@@ -80,5 +95,21 @@ describe("getRouteChromePolicy", () => {
             desktopSidebarPadding: true,
             viewportMode: "standard",
         });
+    });
+
+    it.each([
+        "/about",
+        "/library/completed",
+        "/library/my-list",
+        "/library/reading",
+        "/privacy",
+        "/profile",
+        "/requests",
+        "/search",
+        "/series/test-series",
+        "/settings",
+        "/terms",
+    ])("returns default standard chrome for %s", (pathname) => {
+        expect(getRouteChromePolicy(pathname)).toEqual(DEFAULT_ROUTE_CHROME_POLICY);
     });
 });
