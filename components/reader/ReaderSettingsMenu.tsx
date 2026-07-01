@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { Minus, Plus, Sun, Moon, BookOpen, Maximize, Minimize, Rows4, Rows3, Rows2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReaderSettings, type ReaderTheme } from "@/hooks/useReaderSettings";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
 const themeOptions: { value: ReaderTheme; label: string; icon: typeof Sun; preview: string }[] = [
     { value: "light", label: "Light", icon: Sun, preview: "bg-[hsl(0,0%,98%)] border-gray-300" },
@@ -18,17 +20,11 @@ export function ReaderSettingsMenu() {
     const menuRef = useRef<HTMLDivElement>(null);
     const portalRef = useRef<HTMLDivElement>(null);
     const { fontSize, fontFamily, readerTheme, lineHeight, setFontSize, setFontFamily, setReaderTheme, setLineHeight } = useReaderSettings();
-    const [isMobile, setIsMobile] = useState(false);
+    const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
         setMounted(true);
-        if (typeof window !== "undefined") {
-            const checkMobile = () => setIsMobile(window.innerWidth < 640);
-            checkMobile();
-            window.addEventListener('resize', checkMobile);
-            return () => window.removeEventListener('resize', checkMobile);
-        }
     }, []);
 
     // Track Fullscreen status
@@ -254,7 +250,7 @@ export function ReaderSettingsMenu() {
 
             {/* Menu Render via Portal or inline */}
             {isOpen && mounted && (
-                isMobile ? createPortal(
+                isCompactReaderControls ? createPortal(
                     <>
                         <div
                             className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm animate-in fade-in"

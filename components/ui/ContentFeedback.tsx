@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuthUser } from "@/hooks/useAuthUser";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 interface ContentFeedbackProps {
     contentId: string;
@@ -36,14 +37,7 @@ export function ContentFeedback({ contentId }: ContentFeedbackProps) {
         setMounted(true);
     }, []);
 
-    // Lock body scroll while modal is open
-    useEffect(() => {
-        if (isModalOpen) {
-            const original = document.body.style.overflow;
-            document.body.style.overflow = "hidden";
-            return () => { document.body.style.overflow = original; };
-        }
-    }, [isModalOpen]);
+    useBodyScrollLock(isModalOpen);
 
     // Form state
     const [reason, setReason] = useState("");

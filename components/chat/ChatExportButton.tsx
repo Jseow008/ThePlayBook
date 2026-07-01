@@ -15,6 +15,7 @@ import {
 import { encryptChatExport } from "@/lib/chat-export-crypto";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 interface ChatExportButtonProps {
     title: string;
@@ -141,17 +142,7 @@ export function ChatExportButton({
         return () => window.clearInterval(interval);
     }, [exportState, isOpen]);
 
-    useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-
-        const original = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => {
-            document.body.style.overflow = original;
-        };
-    }, [isOpen]);
+    useBodyScrollLock(isOpen);
 
     const createExport = async () => {
         if (isUnavailable) {

@@ -10,6 +10,8 @@ import { captureAnalyticsEvent } from "@/lib/analytics";
 import { toast } from "sonner";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
 import { MobileNoteComposer, type MobileNoteComposerContext } from "./MobileNoteComposer";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
 interface NotesDrawerProps {
     isOpen: boolean;
@@ -42,7 +44,7 @@ export function NotesDrawer({
     const activeRowScrollTimeoutRef = useRef<number | null>(null);
     const deleteHighlight = useDeleteHighlight();
     const updateHighlight = useUpdateHighlight();
-    const [isMobile, setIsMobile] = useState(false);
+    const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
     const [draftNote, setDraftNote] = useState("");
     const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
@@ -76,15 +78,6 @@ export function NotesDrawer({
 
     useEffect(() => {
         setMounted(true);
-        if (typeof window !== "undefined") {
-            const checkMobile = () => setIsMobile(window.innerWidth < 640);
-            checkMobile();
-            window.addEventListener('resize', checkMobile);
-
-            return () => {
-                window.removeEventListener('resize', checkMobile);
-            };
-        }
     }, []);
 
     // Handle Escape key to close drawer
@@ -329,7 +322,7 @@ export function NotesDrawer({
                                             aria-label={`${itemLabel} ${sectionTitle}`}
                                             className={cn(
                                                 "focus-ring relative w-full rounded-lg pl-5 py-2.5 text-left transition-colors duration-150",
-                                                isMobile ? "pr-28" : "pr-14",
+                                                isCompactReaderControls ? "pr-28" : "pr-14",
                                                 isActive
                                                     ? "bg-card/50"
                                                     : "bg-card/[0.14] hover:bg-card/[0.28]"
@@ -381,7 +374,7 @@ export function NotesDrawer({
                                         </button>
 
                                         <div className="absolute right-1.5 top-1.5 flex items-center gap-0.5">
-                                            {isMobile && (
+                                            {isCompactReaderControls && (
                                                 <button
                                                     onClick={(e) => {
                                                         e.preventDefault();

@@ -2,8 +2,8 @@
 
 This document is the source of truth for responsive resilience and medium-term maintainability work. It is intentionally documentation-only: it does not replace the current Netflux design system, page structure, typography, spacing rhythm, or product identity.
 
-Last updated: 2026-06-27
-Last verified by codebase audit: 2026-06-27
+Last updated: 2026-07-01
+Last verified by codebase audit: 2026-07-01
 
 ## Operating Rules
 
@@ -159,11 +159,20 @@ Acceptance criteria:
 
 ### 3. Harmonize "isDesktop" breakpoint thresholds
 
-Status: Open.
+Status: Implemented.
 
-Issue: Three different pixel thresholds are used to distinguish mobile from desktop behavior. This creates edge cases where a device at 768px is "mobile" for the reader but "desktop" for the focus feed and "mobile" for the ask page.
+Implementation notes:
 
-Evidence:
+- Shared contract: `lib/breakpoints.ts` defines Tailwind-aligned `BREAKPOINTS`, reusable `MEDIA_QUERIES`, and semantic `VIEWPORT_QUERIES`.
+- Hook hardening: `hooks/useMediaQuery.ts` now avoids render-time `window` access, syncs after mount, uses `[query]` as its effect dependency, supports both modern `addEventListener` and legacy `addListener`, and cleans up subscriptions correctly.
+- Reader interaction semantics: `ReaderView.tsx` and `SegmentAccordion.tsx` use `VIEWPORT_QUERIES.readerInteractionDesktop`, preserving the current `sm >= 640px` interaction threshold for text selection toolbar, highlight popover, and mobile selection actions.
+- Reader compact controls: `NotesDrawer.tsx` and `ReaderSettingsMenu.tsx` use `VIEWPORT_QUERIES.compactReaderControls`, preserving the current `<640px` compact control threshold.
+- Focus/content semantics: `FocusFeed.tsx` uses `VIEWPORT_QUERIES.focusDesktop`, preserving the current `md >= 768px` behavior.
+- Full-layout app semantics: Ask and Notes use `VIEWPORT_QUERIES.askFullLayout` and `VIEWPORT_QUERIES.notesAskSidebarAvailable`, preserving the current `lg >= 1024px` full-layout/sidebar threshold.
+- Landing mobile motion: `background-scroll-animation.tsx` uses `VIEWPORT_QUERIES.landingMobileMotion`, preserving the current `<768px` motion tuning threshold.
+- Regression coverage: `lib/__tests__/breakpoints.test.ts`, `hooks/__tests__/useMediaQuery.test.tsx`, and targeted component tests cover the semantic mappings, hook subscription behavior, Notes mobile routing, and Notes desktop sidebar availability.
+
+Previous evidence:
 
 | Threshold | Used by | File:Line |
 |-----------|---------|-----------|
@@ -178,20 +187,39 @@ Evidence:
 
 Required outcome:
 
-- Define a shared set of named breakpoint constants or a convention document.
-- Decide whether "desktop" means `sm` (640px), `md` (768px), or `lg` (1024px) for layout-switching purposes, and apply consistently.
-- Replace ad hoc `window.innerWidth` checks and direct `window.matchMedia` calls with the shared `useMediaQuery` hook where possible.
+- Define a shared set of named breakpoint constants and semantic viewport query aliases.
+- Preserve separate thresholds where they encode different behavior: reader interaction, compact reader controls, content desktop, full-layout app chrome/sidebar, and landing motion tuning.
+- Replace ad hoc runtime viewport width checks and direct viewport `matchMedia` calls with the shared `useMediaQuery` hook where possible.
 
 Acceptance criteria:
 
-- No component uses a different definition of "desktop" without an explicit reason documented in code.
-- A viewport at 768px behaves consistently across reader, focus, notes, and ask surfaces.
+- Covered runtime viewport decisions use `VIEWPORT_QUERIES` instead of raw width literals.
+- Components avoid ambiguous local `isDesktop` naming when the behavior is actually reader interaction, Ask full layout, compact controls, or Notes sidebar availability.
+- Different thresholds are allowed only through named semantic queries.
+- A `768px` viewport is intentional and documented: focus/content desktop is active, reader interaction desktop is already active, Ask/Notes full sidebar layout is not active until `1024px`.
 
 ### 4. Create shared viewport, media query, and body-scroll-lock hooks
 
-Status: Open.
+Status: Implemented.
 
-Issue: Responsive behavior is implemented with several local patterns: `useMediaQuery`, direct `window.innerWidth` checks, local `matchMedia`, duplicated `resize` listeners, and repeated body/html overflow locks.
+Implementation notes:
+
+- Shared scroll lock: `hooks/useBodyScrollLock.ts` uses stable per-hook tokens and module-level lock sets so overlapping overlays compose safely.
+- Lock targets are tracked independently. Body-only overlays lock `document.body`; composer/sheet/editor overlays that previously locked both body and html now pass `{ lockDocumentElement: true }`.
+- Migrated body-only locks: library completed removal dialog, chat export dialog, author chat overlay, app onboarding tour, content feedback dialog, and landing storyboard lightbox.
+- Migrated body + html locks: Notes editor overlay, Focus takeaways sheet, and mobile note composer.
+- Reduced-motion helper: `hooks/usePrefersReducedMotion.ts` wraps the raw `prefers-reduced-motion` media query without colliding with Framer Motion's `useReducedMotion` export.
+- Migrated direct reduced-motion `useMediaQuery` usage in `FocusFeed.tsx` and `HeroCarousel.tsx`.
+- Regression coverage: `hooks/__tests__/useBodyScrollLock.test.tsx` covers overlapping body locks, body/html locks, independent target restoration, and enabled toggles; `hooks/__tests__/usePrefersReducedMotion.test.tsx` covers the named preference query.
+
+Accepted exceptions:
+
+- `background-scroll-animation.tsx` keeps Framer Motion's `useReducedMotion` because the component already depends on Framer Motion values.
+- Landing hero/section imperative `matchMedia("(prefers-reduced-motion: reduce)")` listeners remain local because they drive ref-based animation loops without React state.
+- Component-specific `ResizeObserver` and viewport measurement logic remains local where a shared hook would only move code without simplifying behavior.
+- `useMediaQuery` still defaults to `false` for SSR. A `useSyncExternalStore` or server-hint redesign remains optional follow-up scope.
+
+Previous issue: Responsive behavior still had several local body/html overflow locks and a few specialized viewport/motion helper patterns. Runtime width breakpoint checks were centralized in item 3.
 
 Evidence for scroll lock fragmentation (9+ independent implementations):
 
@@ -209,24 +237,18 @@ Evidence for scroll lock fragmentation (9+ independent implementations):
 
 Note: several overlays lock both `document.body` and `document.documentElement`, while most lock only `body`. Because each implementation restores its own captured previous value, overlapping overlays can still restore scroll state out of order.
 
-Evidence for `useMediaQuery` resubscription issue:
-
-`hooks/useMediaQuery.ts` (L14) includes `matches` in the effect dependency array. This causes the `matchMedia` listener to unsubscribe and resubscribe whenever the match state changes, though the practical impact is low since `matchMedia` change events fire infrequently.
-
 Evidence for `useMediaQuery` SSR hydration concern:
 
-`hooks/useMediaQuery.ts` (L4) initializes with `useState(false)`. On SSR, all media queries are `false`, which may cause a layout flash on hydration when the real viewport matches. Components using this hook for layout decisions (e.g., isDesktop in `FocusFeed.tsx`, `ReaderView.tsx`) will render the mobile layout on the server and then switch to desktop on the client.
+`hooks/useMediaQuery.ts` initializes with `useState(false)`. On SSR, all media queries are `false`, which may cause a layout flash on hydration when the real viewport matches. Components using this hook for layout decisions will render the mobile/default layout on the server and then switch to the matched client layout after mount.
 
 Required outcome:
 
-- Replace ad hoc viewport checks with a shared `useMediaQuery` based on a stable subscription pattern (remove `matches` from effect deps).
-- Add shared `useBodyScrollLock` with nested lock safety (reference count or Set-based tracking).
-- Add shared reduced-motion and viewport-size helpers where layout measurement is required.
-- Consider initializing `useMediaQuery` from server-side hints or from CSS media queries via `useSyncExternalStore` to reduce hydration flicker.
+- Add shared `useBodyScrollLock` with nested lock safety.
+- Add shared reduced-motion helper where it replaces direct React-state media query usage.
+- Keep complex viewport measurement and SSR media-query redesign as separate follow-up scope unless a concrete regression appears.
 
 Acceptance criteria:
 
-- No component needs direct `window.innerWidth < ...` for breakpoint state.
 - Scroll locks compose correctly when drawers, sheets, and composers overlap.
 - Event listeners do not resubscribe on every state transition.
 

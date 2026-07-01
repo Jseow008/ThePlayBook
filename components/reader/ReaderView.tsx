@@ -18,6 +18,7 @@ import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HighlightPopover } from "./HighlightPopover";
 import { MobileSelectionActions } from "./MobileSelectionActions";
@@ -102,7 +103,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const previousStorageScopeRef = useRef(storageScope);
     const { data: highlights = [], isLoading: highlightsLoading, error: highlightsError } = useHighlights(content.id, { limit: 50 });
     const { readerTheme, fontFamily, fontSize, lineHeight } = useReaderSettings();
-    const isDesktop = useMediaQuery("(min-width: 640px)");
+    const isReaderInteractionDesktop = useMediaQuery(VIEWPORT_QUERIES.readerInteractionDesktop);
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -543,7 +544,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, []);
 
     useEffect(() => {
-        if (!isDesktop || !popoverHighlightId || isPopoverHovered) {
+        if (!isReaderInteractionDesktop || !popoverHighlightId || isPopoverHovered) {
             return;
         }
 
@@ -554,7 +555,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         window.addEventListener("scroll", handleScroll, { passive: true });
         return () => window.removeEventListener("scroll", handleScroll);
-    }, [popoverHighlightId, isDesktop, isPopoverHovered]);
+    }, [popoverHighlightId, isReaderInteractionDesktop, isPopoverHovered]);
 
     useEffect(() => {
         return () => {
@@ -924,7 +925,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     activeNarratedSegmentId={activeNarratedSegmentId}
                     onHighlightActivate={(highlightId, position) => {
                         setActiveHighlightId(highlightId);
-                        if (isDesktop) {
+                        if (isReaderInteractionDesktop) {
                             setPopoverHighlightId(highlightId);
                             setActiveHighlightPosition(position);
                             return;
@@ -980,8 +981,8 @@ export function ReaderView({ content }: ReaderViewProps) {
             </div>
 
             {/* Floating elements — rendered OUTSIDE the content wrapper so position:fixed works correctly */}
-            {isDesktop && <TextSelectionToolbar contentItemId={content.id} />}
-            {!isDesktop && (
+            {isReaderInteractionDesktop && <TextSelectionToolbar contentItemId={content.id} />}
+            {!isReaderInteractionDesktop && (
                 <MobileSelectionActions
                     contentItemId={content.id}
                     contentTitle={content.title}
@@ -999,7 +1000,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                 isAudioMiniPlayerVisible={isAudioMiniPlayerVisible}
                 onHighlightJump={(highlightId) => handleHighlightJump(highlightId, { target: "segment" })}
             />
-            {isDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (
+            {isReaderInteractionDesktop && popoverHighlight && activeHighlightPosition && popoverPortalEl && (
                 <HighlightPopover
                     highlightId={popoverHighlight.id}
                     contentItemId={content.id}

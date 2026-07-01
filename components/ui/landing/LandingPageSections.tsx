@@ -17,6 +17,7 @@ import { Logo } from "@/components/ui/Logo";
 import { APP_NAME } from "@/lib/brand";
 export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 import { cn } from "@/lib/utils";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import type { ContentItem } from "@/types/database";
 
 const STORYBOARD_SLIDES = [
@@ -1004,12 +1005,12 @@ export function CorePlatformFeaturesSection() {
     setIsStoryboardLightboxOpen(false);
   }, []);
 
+  useBodyScrollLock(isStoryboardLightboxOpen);
+
   useEffect(() => {
     if (!isStoryboardLightboxOpen) return;
 
-    const originalOverflow = document.body.style.overflow;
     const storyboardLauncher = storyboardLauncherRef.current;
-    document.body.style.overflow = "hidden";
     storyboardCloseButtonRef.current?.focus();
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -1057,7 +1058,6 @@ export function CorePlatformFeaturesSection() {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = originalOverflow;
       window.removeEventListener("keydown", handleKeyDown);
       storyboardLauncher?.focus();
     };

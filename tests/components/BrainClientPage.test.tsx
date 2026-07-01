@@ -11,6 +11,7 @@ const {
     toastErrorMock,
     infiniteHighlightsState,
     searchParamsState,
+    mediaQueryState,
 } = vi.hoisted(() => ({
     deleteHighlightMock: vi.fn(),
     updateHighlightMock: vi.fn(),
@@ -35,6 +36,11 @@ const {
     searchParamsState: {
         value: "",
     },
+    mediaQueryState: {
+        value: {
+            isNotesAskSidebarAvailable: true,
+        },
+    },
 }));
 
 const notesAskPanelMock = vi.fn();
@@ -51,6 +57,10 @@ vi.mock("@/hooks/useHighlights", () => ({
         mutateAsync: updateHighlightMock,
         isPending: false,
     }),
+}));
+
+vi.mock("@/hooks/useMediaQuery", () => ({
+    useMediaQuery: () => mediaQueryState.value.isNotesAskSidebarAvailable,
 }));
 
 vi.mock("sonner", () => ({
@@ -158,12 +168,10 @@ describe("BrainClientPage", () => {
         routerReplaceMock.mockClear();
         routerPushMock.mockClear();
         searchParamsState.value = "";
+        mediaQueryState.value = {
+            isNotesAskSidebarAvailable: true,
+        };
         document.body.style.overflow = "";
-        Object.defineProperty(window, "innerWidth", {
-            configurable: true,
-            writable: true,
-            value: 1280,
-        });
         fetchNextPageMock.mockResolvedValue(undefined);
         infiniteHighlightsState.value = {
             data: {
@@ -294,11 +302,9 @@ describe("BrainClientPage", () => {
     });
 
     it("routes mobile ask entry to the full-screen notes ask page", () => {
-        Object.defineProperty(window, "innerWidth", {
-            configurable: true,
-            writable: true,
-            value: 390,
-        });
+        mediaQueryState.value = {
+            isNotesAskSidebarAvailable: false,
+        };
 
         render(<BrainClientPage initialPage={initialPage} />);
 
@@ -310,6 +316,19 @@ describe("BrainClientPage", () => {
         expect(routerPushMock).toHaveBeenCalledWith(
             expect.stringContaining("returnTo=%2Fnotes")
         );
+    });
+
+    it("opens the desktop notes ask sidebar without routing away", async () => {
+        mediaQueryState.value = {
+            isNotesAskSidebarAvailable: true,
+        };
+
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        fireEvent.click(screen.getByRole("button", { name: /ask these notes/i }));
+
+        expect(routerPushMock).not.toHaveBeenCalled();
+        expect((await screen.findAllByTestId("notes-ask-panel")).length).toBeGreaterThan(0);
     });
 
     it("does not lock body scroll for the desktop ask sidebar", async () => {

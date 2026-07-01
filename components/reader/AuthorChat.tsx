@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { ChatExportButton } from "@/components/chat/ChatExportButton";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 interface AuthorChatProps {
     contentId: string;
@@ -82,12 +83,7 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
-    // Lock body scroll while chat overlay is open
-    useEffect(() => {
-        const original = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-        return () => { document.body.style.overflow = original; };
-    }, []);
+    useBodyScrollLock(true);
 
     const {
         messages,

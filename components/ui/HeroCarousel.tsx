@@ -9,7 +9,7 @@ import { buildReadPath } from "@/lib/content-paths";
 import type { ContentItem } from "@/types/database";
 import { APP_NAME } from "@/lib/brand";
 import { ResilientImage } from "@/components/ui/ResilientImage";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 const IMAGE_TRANSITION_DURATION_MS = 1600;
 const CONTENT_SWAP_DELAY_MS = 900;
@@ -31,7 +31,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const contentRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const incomingFrameRef = useRef<number | null>(null);
     const contentRevealFrameRef = useRef<number | null>(null);
-    const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+    const prefersReducedMotion = usePrefersReducedMotion();
     const isPaused = isFocusPaused || prefersReducedMotion;
 
     const clearAutoRotate = useCallback(() => {

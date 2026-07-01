@@ -7,6 +7,7 @@ import { AlertCircle, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import { LibraryToolbar } from "@/components/ui/LibraryToolbar";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
 import {
@@ -129,11 +130,10 @@ export default function CompletedPage() {
         setShouldDeleteNotes(false);
     }, [isRemovingHistory]);
 
+    useBodyScrollLock(pendingRemovalItem !== null);
+
     useEffect(() => {
         if (!pendingRemovalItem) return;
-
-        const originalOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
 
         function handleKeyDown(event: KeyboardEvent) {
             if (event.key === "Escape") {
@@ -149,7 +149,6 @@ export default function CompletedPage() {
 
         return () => {
             window.cancelAnimationFrame(focusFrame);
-            document.body.style.overflow = originalOverflow;
             window.removeEventListener("keydown", handleKeyDown);
         };
     }, [closeHistoryRemovalDialog, pendingRemovalItem]);

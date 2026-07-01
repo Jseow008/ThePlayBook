@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import type { OnboardingSlide, OnboardingStatus } from "@/lib/onboarding";
 
 interface AppOnboardingTourProps {
@@ -61,16 +62,7 @@ export function AppOnboardingTour({
         setActiveIndex(0);
     }, [isOpen]);
 
-    useEffect(() => {
-        if (!isOpen) return;
-
-        const originalOverflow = document.body.style.overflow;
-        document.body.style.overflow = "hidden";
-
-        return () => {
-            document.body.style.overflow = originalOverflow;
-        };
-    }, [isOpen]);
+    useBodyScrollLock(isOpen);
 
     useEffect(() => {
         if (!isOpen) return;

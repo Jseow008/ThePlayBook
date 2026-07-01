@@ -26,6 +26,8 @@ import {
     type HighlightsPage,
     type HighlightWithContent,
 } from "@/hooks/useHighlights";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { captureAnalyticsEvent } from "@/lib/analytics";
@@ -33,6 +35,7 @@ import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
 type ItemTypeFilter = "all" | "note" | "highlight";
 type SortDirection = "newest" | "oldest";
@@ -547,6 +550,8 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     const [selectedColor, setSelectedColor] = useState<ColorFilter>(getValidColorFilter(searchParams.get("color")));
     const [sortBy, setSortBy] = useState<SortDirection>(getValidSortDirection(searchParams.get("sort")));
     const [isAskOpen, setIsAskOpen] = useState(initialAskOpen);
+    // Keep this aligned with the lg: sidebar and panel CSS below.
+    const isNotesAskSidebarAvailable = useMediaQuery(VIEWPORT_QUERIES.notesAskSidebarAvailable);
     const [isFilterBarCompact, setIsFilterBarCompact] = useState(false);
     const [isMobileFiltersExpanded, setIsMobileFiltersExpanded] = useState(false);
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchParams.get("q") ?? "");
@@ -620,21 +625,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         };
     }, [armedDeleteId]);
 
-    useEffect(() => {
-        if (!editingHighlight) {
-            return;
-        }
-
-        const previousBodyOverflow = document.body.style.overflow;
-        const previousHtmlOverflow = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-
-        return () => {
-            document.body.style.overflow = previousBodyOverflow;
-            document.documentElement.style.overflow = previousHtmlOverflow;
-        };
-    }, [editingHighlight]);
+    useBodyScrollLock(editingHighlight !== null, { lockDocumentElement: true });
 
     useEffect(() => {
         if (!editingHighlight) {
@@ -1049,7 +1040,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     };
 
     const toggleAskPanel = () => {
-        if (typeof window !== "undefined" && window.innerWidth < 1024) {
+        if (!isNotesAskSidebarAvailable) {
             router.push(mobileAskHref);
             return;
         }

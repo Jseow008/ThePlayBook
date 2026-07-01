@@ -6,6 +6,7 @@ import { Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HIGHLIGHT_COLOR_CLASSES, type HighlightColor } from "@/lib/highlight-utils";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
+import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
 
@@ -50,21 +51,7 @@ export function MobileNoteComposer({
         setMounted(true);
     }, []);
 
-    useEffect(() => {
-        if (!isOpen || !mounted) {
-            return;
-        }
-
-        const previousBodyOverflow = document.body.style.overflow;
-        const previousHtmlOverflow = document.documentElement.style.overflow;
-        document.body.style.overflow = "hidden";
-        document.documentElement.style.overflow = "hidden";
-
-        return () => {
-            document.body.style.overflow = previousBodyOverflow;
-            document.documentElement.style.overflow = previousHtmlOverflow;
-        };
-    }, [isOpen, mounted]);
+    useBodyScrollLock(isOpen && mounted, { lockDocumentElement: true });
 
     useEffect(() => {
         if (!isOpen || !mounted) {

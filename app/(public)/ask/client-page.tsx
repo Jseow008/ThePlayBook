@@ -9,11 +9,13 @@ import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { ChatExportButton } from "@/components/chat/ChatExportButton";
 import { useInfiniteHighlights, type HighlightsPage } from "@/hooks/useHighlights";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
 import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
 const chatTransport = new TextStreamChatTransport({ api: "/api/chat" });
 
@@ -86,24 +88,6 @@ function getMessageText(message: {
     return typeof message.content === "string" ? message.content : "";
 }
 
-function useIsDesktop() {
-    const [isDesktop, setIsDesktop] = useState(false);
-
-    useEffect(() => {
-        const mediaQuery = window.matchMedia("(min-width: 1024px)");
-        const update = () => setIsDesktop(mediaQuery.matches);
-
-        update();
-        mediaQuery.addEventListener("change", update);
-
-        return () => {
-            mediaQuery.removeEventListener("change", update);
-        };
-    }, []);
-
-    return isDesktop;
-}
-
 function LibraryScopeOverview({ snapshot }: { snapshot: LibrarySnapshot }) {
     return (
         <section className="rounded-[20px] border border-border/55 bg-background/55 px-4 py-3 shadow-[0_10px_30px_-24px_rgba(0,0,0,0.75)]">
@@ -154,7 +138,8 @@ export function AskClientPage({
 
     const [input, setInput] = useState("");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const isDesktop = useIsDesktop();
+    // Full Ask layout follows lg app chrome behavior, not generic content desktop.
+    const isAskFullLayout = useMediaQuery(VIEWPORT_QUERIES.askFullLayout);
     const resolvedScope = scope;
 
     const {
@@ -271,7 +256,7 @@ export function AskClientPage({
         return `/ask?${params.toString()}`;
     }, [returnTo, serializedNotesScope]);
 
-    const showMobileAskNav = !isDesktop;
+    const showMobileAskNav = !isAskFullLayout;
     const isLibraryScope = resolvedScope === "library";
     const pageTitle = isLibraryScope ? "Ask My Library" : "Ask These Notes";
     const pageSubtitle = isLibraryScope

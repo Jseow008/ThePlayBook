@@ -12,6 +12,7 @@ import type { SegmentFull } from "@/types/domain";
 import type { HighlightWithContent } from "@/hooks/useHighlights";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor } from "@/lib/highlight-utils";
 
 interface HighlightPosition {
@@ -265,7 +266,7 @@ export function SegmentAccordion({
     const pendingScrollCleanupRef = useRef<(() => void) | null>(null);
     const lastProcessedScrollRequestRef = useRef<string | null>(null);
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
-    const isDesktop = useMediaQuery("(min-width: 640px)");
+    const isReaderInteractionDesktop = useMediaQuery(VIEWPORT_QUERIES.readerInteractionDesktop);
     const currentExpandedId = expandedSegmentId !== undefined ? expandedSegmentId : uncontrolledExpandedId;
     const isContentCompleted = segments.length > 0 && segments.every((segment) => completedSegments.has(segment.id));
     const scrollRequestSegmentId = scrollRequest?.segmentId;
@@ -444,7 +445,7 @@ export function SegmentAccordion({
                 return;
             }
 
-            if (!isDesktop && event.type === "click") {
+            if (!isReaderInteractionDesktop && event.type === "click") {
                 event.preventDefault();
                 event.stopPropagation();
             }
@@ -457,7 +458,7 @@ export function SegmentAccordion({
                 height: rect.height,
             });
         },
-        [isDesktop, onHighlightActivate]
+        [isReaderInteractionDesktop, onHighlightActivate]
     );
 
     return (
@@ -573,7 +574,7 @@ export function SegmentAccordion({
                                 <div className="px-4 pt-3 pb-5 ml-[3.25rem]">
                                         <div
                                             data-segment-id={segment.id}
-                                            onMouseMove={isDesktop ? activateHighlight : undefined}
+                                            onMouseMove={isReaderInteractionDesktop ? activateHighlight : undefined}
                                             onClick={activateHighlight}
                                             className={cn(
                                             "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative transition-all duration-300",

@@ -94,7 +94,7 @@ export const FocusCardView = memo(function FocusCardView({
     card,
     cardIndex,
     isSaved,
-    isDesktop,
+    isFocusDesktop,
     isActive,
     showDesktopScrollCue,
     mobileCardTargetHeight,
@@ -104,7 +104,7 @@ export const FocusCardView = memo(function FocusCardView({
     card: FocusCard;
     cardIndex: number;
     isSaved: boolean;
-    isDesktop: boolean;
+    isFocusDesktop: boolean;
     isActive: boolean;
     showDesktopScrollCue: boolean;
     mobileCardTargetHeight: number | null;
@@ -122,14 +122,14 @@ export const FocusCardView = memo(function FocusCardView({
         ? 720
         : getDesktopAvailableContentHeight(mobileCardTargetHeight);
     const heuristicDesktopCompactLevel = getInitialDesktopCompactLevel(desktopAvailableContentHeight);
-    const desktopFitKey = isDesktop && cardWidth > 0 && mobileCardTargetHeight !== null
+    const desktopFitKey = isFocusDesktop && cardWidth > 0 && mobileCardTargetHeight !== null
         ? `${card.id}:${cardWidth}:${mobileCardTargetHeight}`
         : null;
     const [measuredDesktopCompactLevel, setMeasuredDesktopCompactLevel] = useState<{
         key: string;
         level: DesktopCompactLevel;
     } | null>(null);
-    const desktopCompactLevel = isDesktop
+    const desktopCompactLevel = isFocusDesktop
         ? Math.max(
             heuristicDesktopCompactLevel,
             measuredDesktopCompactLevel?.key === desktopFitKey
@@ -143,7 +143,7 @@ export const FocusCardView = memo(function FocusCardView({
         availableContentHeight: desktopAvailableContentHeight,
         compactLevel: desktopCompactLevel,
     });
-    const desktopVisibleTakeawayCount = isDesktop
+    const desktopVisibleTakeawayCount = isFocusDesktop
         ? getDesktopVisibleTakeawayCount({
             availableContentHeight: desktopAvailableContentHeight,
             totalTakeaways: card.takeaways.length,
@@ -152,15 +152,15 @@ export const FocusCardView = memo(function FocusCardView({
         : card.takeaways.length;
     const desktopVisibleTakeaways = card.takeaways.slice(0, desktopVisibleTakeawayCount);
     const shouldShowDesktopTakeaways =
-        isDesktop
+        isFocusDesktop
         && desktopTakeawayClasses !== null
         && (desktopVisibleTakeawayCount > 0 || card.takeaways.length === 0);
     const isCompactMobileLayout =
-        !isDesktop
+        !isFocusDesktop
         && mobileHookMaxHeight !== null
         && mobileHookMaxHeight <= MOBILE_MIN_READABLE_HOOK_HEIGHT_PX;
     const isDesktopTakeawaysTruncated =
-        isDesktop
+        isFocusDesktop
         && desktopVisibleTakeawayCount < card.takeaways.length;
     const desktopTakeawaysHeading = isDesktopTakeawaysTruncated
         ? `Key Takeaways (${desktopVisibleTakeaways.length} of ${card.totalTakeaways})`
@@ -190,16 +190,16 @@ export const FocusCardView = memo(function FocusCardView({
     }, []);
 
     useEffect(() => {
-        if (isDesktop) {
+        if (isFocusDesktop) {
             setMobileHookMaxHeight(null);
             return;
         }
 
         setMobileHookMaxHeight(null);
-    }, [card.id, isDesktop]);
+    }, [card.id, isFocusDesktop]);
 
     useLayoutEffect(() => {
-        if (isDesktop || mobileCardTargetHeight === null) {
+        if (isFocusDesktop || mobileCardTargetHeight === null) {
             mobileHookFitKeyRef.current = null;
             return;
         }
@@ -253,13 +253,13 @@ export const FocusCardView = memo(function FocusCardView({
     }, [
         card.id,
         cardWidth,
-        isDesktop,
+        isFocusDesktop,
         mobileCardTargetHeight,
         mobileHookMaxHeight,
     ]);
 
     useLayoutEffect(() => {
-        if (!isDesktop || !desktopFitKey || mobileCardTargetHeight === null) {
+        if (!isFocusDesktop || !desktopFitKey || mobileCardTargetHeight === null) {
             return;
         }
 
@@ -292,7 +292,7 @@ export const FocusCardView = memo(function FocusCardView({
     }, [
         desktopCompactLevel,
         desktopFitKey,
-        isDesktop,
+        isFocusDesktop,
         mobileCardTargetHeight,
     ]);
 
@@ -304,7 +304,7 @@ export const FocusCardView = memo(function FocusCardView({
             className={`${FEED_CARD_HEIGHT_CLASS} relative snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
             <div ref={cardContentRef} data-testid="focus-card-content" className="flex h-full min-h-0 flex-col">
-                {isDesktop ? (
+                {isFocusDesktop ? (
                     <div className={`flex h-full min-h-0 flex-col ${desktopCompactClasses.layoutGap}`}>
                         <div className={`shrink-0 ${desktopCompactClasses.headerSpacing} text-center`}>
                             <div className="flex justify-center">
@@ -566,7 +566,7 @@ export const FocusCardView = memo(function FocusCardView({
                     </div>
                 )}
             </div>
-            {isDesktop && isActive && showDesktopScrollCue && desktopCompactLevel < MAX_DESKTOP_COMPACT_LEVEL ? (
+            {isFocusDesktop && isActive && showDesktopScrollCue && desktopCompactLevel < MAX_DESKTOP_COMPACT_LEVEL ? (
                 <div className="pointer-events-none absolute inset-x-0 bottom-5 flex justify-center">
                     <div
                         data-testid="focus-navigation-cue"

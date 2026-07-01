@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import {
   motion,
   useReducedMotion,
@@ -9,6 +9,8 @@ import {
   useTransform,
 } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
 interface BackgroundScrollProps {
   foreground: ReactNode;
@@ -24,21 +26,12 @@ export function BackgroundScroll({
   foregroundClassName,
 }: BackgroundScrollProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const isLandingMobileMotion = useMediaQuery(VIEWPORT_QUERIES.landingMobileMotion);
   const prefersReducedMotion = useReducedMotion();
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
-
-  useEffect(() => {
-    const mobileQuery = window.matchMedia("(max-width: 767px)");
-    const syncViewport = () => setIsMobile(mobileQuery.matches);
-
-    syncViewport();
-    mobileQuery.addEventListener("change", syncViewport);
-    return () => mobileQuery.removeEventListener("change", syncViewport);
-  }, []);
 
   const reduceMotion = Boolean(prefersReducedMotion);
   const backgroundY = useTransform(
@@ -46,28 +39,28 @@ export function BackgroundScroll({
     [0, 1],
     reduceMotion
       ? ["0%", "0%"]
-      : isMobile
+      : isLandingMobileMotion
         ? ["1%", "-1%"]
         : ["2%", "-2%"]
   );
   const backgroundScale = useTransform(
     scrollYProgress,
     [0, 1],
-    reduceMotion ? [1.01, 1.01] : isMobile ? [1.03, 1.01] : [1.04, 1.01]
+    reduceMotion ? [1.01, 1.01] : isLandingMobileMotion ? [1.03, 1.01] : [1.04, 1.01]
   );
   const backgroundOpacity = useTransform(
     scrollYProgress,
     [0, 0.4, 0.7, 1],
     reduceMotion
       ? [0.44, 0.44, 0.44, 0.44]
-      : isMobile
+      : isLandingMobileMotion
         ? [0.34, 0.38, 0.42, 0.24]
         : [0.42, 0.46, 0.52, 0.28]
   );
   const backgroundFocusOpacity = useTransform(
     scrollYProgress,
     [0, 0.62, 1],
-    reduceMotion ? [0, 0, 0] : isMobile ? [0, 0.04, 0.16] : [0, 0.05, 0.2]
+    reduceMotion ? [0, 0, 0] : isLandingMobileMotion ? [0, 0.04, 0.16] : [0, 0.05, 0.2]
   );
 
   return (
