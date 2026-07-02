@@ -271,8 +271,8 @@ body {
 }
 
 .reader-size-small {
-  font-size: 0.875rem;
-  /* 14px */
+  font-size: 1rem;
+  /* 16px */
   line-height: var(--reader-line-height, var(--reading-line-height-base));
 }
 
@@ -405,8 +405,8 @@ mark[data-highlight-spotlight="true"] {
 
 
 .reader-size-medium {
-  font-size: 1rem;
-  /* 16px */
+  font-size: 1.125rem;
+  /* 18px */
   line-height: var(--reader-line-height, var(--reading-line-height-base));
 }
 
@@ -419,8 +419,8 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .reader-size-large {
-  font-size: 1.125rem;
-  /* 18px */
+  font-size: 1.25rem;
+  /* 20px */
   line-height: var(--reader-line-height, var(--reading-line-height-base));
 }
 
