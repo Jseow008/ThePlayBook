@@ -173,23 +173,23 @@ export function FocusTakeawaysSheet({
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
-                        <div className="mb-4 space-y-1">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75">
+                    <div className="flex-1 overflow-y-auto px-4 pt-3 pb-5">
+                        <div className="mb-5 space-y-1.5">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground/75">
                                 Preview
                             </p>
-                            <h2 id={titleId} className="text-base font-semibold leading-tight text-foreground">
+                            <h2 id={titleId} className="text-lg font-semibold leading-tight text-foreground">
                                 {card.takeaways.length} Key {card.takeaways.length === 1 ? "Takeaway" : "Takeaways"}
                             </h2>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {card.takeaways.map((takeaway, index) => (
                                 <div
                                     key={`${card.id}-sheet-${index}`}
-                                    className="flex gap-3 text-[0.92rem] leading-[1.55] text-foreground/90"
+                                    className="flex gap-3.5 text-base leading-[1.62] text-foreground/90"
                                 >
-                                    <span className="mt-0.5 text-[11px] font-semibold text-primary">
+                                    <span className="mt-1 text-xs font-semibold text-primary">
                                         {String(index + 1).padStart(2, "0")}
                                     </span>
                                     <span>{takeaway}</span>

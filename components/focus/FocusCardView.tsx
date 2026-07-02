@@ -458,17 +458,17 @@ export const FocusCardView = memo(function FocusCardView({
                         </div>
                     </div>
                 ) : (
-                    <div className={isCompactMobileLayout ? "space-y-2" : "space-y-2.5"}>
+                    <div className={isCompactMobileLayout ? "space-y-2.5" : "space-y-3"}>
                         <div className="flex flex-col items-center text-center">
                             <div className="relative">
                                 <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
                                 {card.cover_image_url ? (
-                                    <div className={`relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[96px] sm:w-[112px]" : "w-[112px] sm:w-[124px]"}`}>
+                                    <div className={`relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[112px] sm:w-[124px]" : "w-[128px] sm:w-[140px]"}`}>
                                         <ResilientImage
                                             src={card.cover_image_url}
                                             alt={card.title}
                                             fill
-                                            sizes={isCompactMobileLayout ? "(max-width: 640px) 96px, 112px" : "(max-width: 640px) 112px, 124px"}
+                                            sizes={isCompactMobileLayout ? "(max-width: 640px) 112px, 124px" : "(max-width: 640px) 128px, 140px"}
                                             surface="content-preview"
                                             className="object-cover"
                                             fallback={
@@ -479,51 +479,51 @@ export const FocusCardView = memo(function FocusCardView({
                                         />
                                     </div>
                                 ) : (
-                                    <div className={`relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[96px] sm:w-[112px]" : "w-[112px] sm:w-[124px]"}`}>
+                                    <div className={`relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[112px] sm:w-[124px]" : "w-[128px] sm:w-[140px]"}`}>
                                         <BookOpen className="size-10 text-muted-foreground" />
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div className={`${isCompactMobileLayout ? "space-y-2" : "space-y-2.5"} text-center`}>
-                            <h2 className={`mx-auto max-w-[22rem] font-semibold leading-[1.1] tracking-tight text-foreground sm:max-w-[30rem] sm:leading-[1.1] ${isCompactMobileLayout ? "text-[1.08rem] sm:text-[1.35rem]" : "text-[1.2rem] sm:text-[1.5rem]"}`}>
+                        <div className={`${isCompactMobileLayout ? "space-y-2.5" : "space-y-3"} text-center`}>
+                            <h2 className={`mx-auto max-w-[22rem] font-semibold leading-[1.12] tracking-tight text-foreground sm:max-w-[30rem] sm:leading-[1.1] ${isCompactMobileLayout ? "text-[1.18rem] sm:text-[1.45rem]" : "text-[1.32rem] sm:text-[1.6rem]"}`}>
                                 {card.title}
                             </h2>
-                            <div className="space-y-0.5">
+                            <div className="space-y-1">
                                 {card.author && (
-                                    <p className="line-clamp-1 text-sm font-medium text-muted-foreground/80 sm:text-base">
+                                    <p className={`line-clamp-1 font-medium text-muted-foreground/80 ${isCompactMobileLayout ? "text-[0.95rem] sm:text-base" : "text-base sm:text-[1.0625rem]"}`}>
                                         {card.author}
                                     </p>
                                 )}
                                 <div className={`flex flex-wrap items-center justify-center ${isCompactMobileLayout ? "gap-1 sm:gap-1.5" : "gap-1.5 sm:gap-2"}`}>
-                                    <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-semibold uppercase tracking-wider text-muted-foreground ${isCompactMobileLayout ? "px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px]" : "px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs"}`}>
+                                    <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-semibold uppercase tracking-wider text-muted-foreground ${isCompactMobileLayout ? "px-2 py-0.5 text-[11px] sm:text-xs" : "px-2.5 py-1 text-xs sm:text-[0.8rem]"}`}>
                                         {card.type}
                                     </span>
                                     {card.category && (
-                                        <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-medium text-muted-foreground ${isCompactMobileLayout ? "px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px]" : "px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs"}`}>
+                                        <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-medium text-muted-foreground ${isCompactMobileLayout ? "px-2 py-0.5 text-[11px] sm:text-xs" : "px-2.5 py-1 text-xs sm:text-[0.8rem]"}`}>
                                             {card.category}
                                         </span>
                                     )}
                                     {duration && (
-                                        <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-medium text-muted-foreground ${isCompactMobileLayout ? "px-1.5 py-0.5 text-[10px] sm:px-2 sm:text-[11px]" : "px-2 py-0.5 text-[11px] sm:px-2.5 sm:py-1 sm:text-xs"}`}>
+                                        <span className={`inline-flex items-center rounded-full border border-border/50 bg-secondary/60 font-medium text-muted-foreground ${isCompactMobileLayout ? "px-2 py-0.5 text-[11px] sm:text-xs" : "px-2.5 py-1 text-xs sm:text-[0.8rem]"}`}>
                                             {duration}
                                         </span>
                                     )}
                                 </div>
-                                <div className={`flex items-center justify-center pt-0 ${isCompactMobileLayout ? "gap-2" : "gap-2.5"}`}>
+                                <div className={`flex items-center justify-center pt-0 ${isCompactMobileLayout ? "gap-2.5" : "gap-3"}`}>
                                     <button
                                         type="button"
                                         onClick={() => {
                                             onToggleSave(card);
                                         }}
-                                        className={`focus-ring inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors touch-manipulation ${isSaved
+                                        className={`focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors touch-manipulation ${isSaved
                                             ? "bg-primary/10 text-primary"
                                             : "text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
                                             }`}
                                         aria-label={isSaved ? `Remove ${card.title} from Library` : `Save ${card.title} to Library`}
                                     >
-                                        <Bookmark className="size-3.5" fill={isSaved ? "currentColor" : "none"} />
+                                        <Bookmark className="size-4" fill={isSaved ? "currentColor" : "none"} />
                                     </button>
                                     <ShareButton
                                         path={`/preview/${card.id}`}
@@ -533,20 +533,20 @@ export const FocusCardView = memo(function FocusCardView({
                                         source="focus_feed"
                                         contentId={card.id}
                                         contentType={card.type}
-                                        className="focus-ring h-8 w-8 rounded-full p-0 text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
+                                        className="focus-ring h-9 w-9 rounded-full p-0 text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
                                     />
                                 </div>
                             </div>
                         </div>
 
-                        <section className={`relative rounded-[1.4rem] border border-border/35 bg-secondary/20 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:px-5 ${isCompactMobileLayout ? "px-3.5 py-2.5" : "px-4 py-3.5"}`}>
+                        <section className={`relative rounded-[1.4rem] border border-border/35 bg-secondary/20 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:px-5 ${isCompactMobileLayout ? "px-4 py-3" : "px-4 py-4"}`}>
                             <div
                                 ref={hookBodyRef}
                                 data-testid="focus-mobile-hook-body"
                                 className="overflow-hidden"
                                 style={mobileHookMaxHeight !== null ? { maxHeight: `${mobileHookMaxHeight}px` } : undefined}
                             >
-                                <p className={`text-foreground/92 sm:text-base ${isCompactMobileLayout ? "text-[0.92rem] leading-[1.52]" : "text-[0.95rem] leading-[1.58]"}`}>
+                                <p className={`text-foreground/92 ${isCompactMobileLayout ? "text-base leading-[1.58] sm:text-[1.05rem]" : "text-[1.0625rem] leading-[1.62] sm:text-[1.1rem]"}`}>
                                     {card.hook}
                                 </p>
                             </div>
