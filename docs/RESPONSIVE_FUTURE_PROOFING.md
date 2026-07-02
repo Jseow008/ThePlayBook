@@ -670,7 +670,15 @@ Required outcome:
 
 ### 15. Audit low-use and heavy dependencies
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- Audit artifact: `docs/performance/DEPENDENCY_AUDIT.md` records the 2026-07-02 webpack analyzer findings, route budget snapshot, dependency-specific keep/replace thresholds, and current ffmpeg server trace scope.
+- Enforcement: `scripts/check-dependency-isolation.mjs` is wired into `npm run lint` through `check:dependency-isolation`.
+- `framer-motion` remains isolated to `components/ui/background-scroll-animation.tsx`; measured landing impact is 487.2 KiB stat / 129.7 KiB parsed / 47.3 KiB gzip in the webpack client analyzer, below the 50 KiB gzip replacement threshold but close enough to keep watched.
+- `@dnd-kit/*` remains isolated to admin content editing surfaces; measured impact is 130.4 KiB stat / 44.7 KiB parsed / 15.6 KiB gzip on admin new/edit entrypoints only.
+- `ffmpeg-static` remains absent from client bundles. The native binary is traced only by admin API server traces in the current build; the audit records the current route list and notes `/api/admin/content/[id]/featured` as an admin-only transitive trace cleanup candidate.
 
 Issue: Some production dependencies are heavy, native, or low-use. They are not necessarily unused, but they should be reviewed periodically so bundle/runtime cost remains intentional.
 
@@ -678,9 +686,9 @@ Known low-use or high-impact dependencies:
 
 | Package | Bundle Impact | Used In | Consideration |
 |---------|--------------|---------|---------------|
-| `framer-motion ^12.40.0` | Estimate: sizable client dependency; confirm with bundle analyzer | `background-scroll-animation.tsx` only | Evaluate replacing with CSS scroll-linked or transform animations if bundle analysis shows meaningful route cost |
-| `ffmpeg-static ^5.3.0` | Native binary/server trace impact | Narration audio processing (`next.config.ts`, `lib/server/ai-narration.ts`) | Required for server-side audio; keep out of client bundles and verify tracing stays route-scoped |
-| `@dnd-kit/* (3 packages)` | Moderate client dependency; confirm with bundle analyzer | Admin content form and sortable segment components | Required for admin drag-and-drop; keep isolated to admin/editor routes |
+| `framer-motion ^12.40.0` | Measured: 487.2 KiB stat / 129.7 KiB parsed / 47.3 KiB gzip on `app/page` | `background-scroll-animation.tsx` only | Keep isolated; replace if it exceeds 50 KiB gzip on `/`, appears outside landing, or pushes `/` over the warning budget |
+| `ffmpeg-static ^5.3.0` | Measured: 0 B client; ~43 MiB native binary traced by admin API routes | Narration audio processing (`next.config.ts`, `lib/server/ai-narration.ts`) | Required for server-side audio; keep out of client bundles and verify tracing stays admin-only |
+| `@dnd-kit/* (3 packages)` | Measured: 130.4 KiB stat / 44.7 KiB parsed / 15.6 KiB gzip on admin new/edit entrypoints | Admin content form and sortable segment components | Required for admin drag-and-drop; keep isolated to admin/editor routes |
 
 ## Recommended Verification Commands
 
