@@ -40,8 +40,12 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
             data-testid="mobile-bottom-nav"
             className="fixed inset-x-0 z-50 px-3 safe-area-bottom-sm lg:hidden"
         >
+            <div
+                aria-hidden="true"
+                className="pointer-events-none fixed inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/90 to-transparent"
+            />
             <div className={cn(
-                "mx-auto flex w-full max-w-md items-center justify-center",
+                "relative z-10 mx-auto flex w-full max-w-md items-center justify-center",
                 compact ? "mobile-bottom-nav-compact-height" : "mobile-bottom-nav-height"
             )}>
                 <div className={cn(
