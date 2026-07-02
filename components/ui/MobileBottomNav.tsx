@@ -46,7 +46,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
             )}>
                 <div className={cn(
                     "grid w-full grid-cols-5 items-center gap-1 rounded-full border border-white/10 bg-zinc-950/90 p-1 shadow-[0_18px_48px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl",
-                    compact ? "h-12" : "h-14"
+                    compact ? "h-16" : "h-[4.25rem]"
                 )}>
                     {navItems.map((item) => {
                         const isActive = item.href === "/library/my-list"
@@ -62,16 +62,14 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                 href={item.href}
                                 aria-current={isActive ? "page" : undefined}
                                 className={cn(
-                                    "focus-ring relative flex h-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-full px-1 transition-[background-color,color,box-shadow] duration-200",
+                                    "focus-ring relative flex h-full min-w-0 flex-col items-center justify-center gap-1 rounded-full px-1 transition-[background-color,color,box-shadow] duration-200",
                                     isActive
                                         ? "bg-white/[0.14] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                                         : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
                                 )}
                             >
                                 <div className="relative">
-                                    <item.icon className={cn(
-                                        compact ? "size-[17px]" : "size-5"
-                                    )} weight={isActive ? "fill" : "regular"} />
+                                    <item.icon className="size-6" weight={isActive ? "fill" : "regular"} />
                                     {/* Badge for library items */}
                                     {isLibrary && isLoaded && totalLibraryItems > 0 && (
                                         <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
@@ -79,10 +77,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                         </span>
                                     )}
                                 </div>
-                                <span className={cn(
-                                    "max-w-full truncate font-medium leading-none",
-                                    compact ? "text-[9px]" : "text-[10px]"
-                                )}>
+                                <span className="max-w-full truncate text-[11px] font-medium leading-none">
                                     {item.label}
                                 </span>
                             </Link>

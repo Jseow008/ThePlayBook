@@ -56,8 +56,8 @@
 
   --mobile-header-height: 3.5rem;
   --mobile-header-compact-height: 3rem;
-  --mobile-bottom-nav-height: 4rem;
-  --mobile-bottom-nav-compact-height: 3.5rem;
+  --mobile-bottom-nav-height: 4.5rem;
+  --mobile-bottom-nav-compact-height: 4rem;
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-top: env(safe-area-inset-top, 0px);
   --focus-mobile-vertical-chrome: 3rem;
