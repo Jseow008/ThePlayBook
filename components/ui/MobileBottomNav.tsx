@@ -7,6 +7,7 @@ import {
     FrameCornersIcon,
     HouseIcon,
     MagnifyingGlassIcon,
+    NotepadIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -22,6 +23,7 @@ const navItems = [
     { icon: HouseIcon, label: "Browse", href: "/browse" },
     { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
     { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
+    { icon: NotepadIcon, label: "Notes", href: "/notes" },
     { icon: BooksIcon, label: "Library", href: "/library/my-list" },
 ];
 
@@ -36,53 +38,57 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
     return (
         <nav
             data-testid="mobile-bottom-nav"
-            className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border safe-area-pb"
+            className="fixed inset-x-0 z-50 px-3 safe-area-bottom-sm lg:hidden"
         >
             <div className={cn(
-                "flex items-center justify-around",
+                "mx-auto flex w-full max-w-md items-center justify-center",
                 compact ? "mobile-bottom-nav-compact-height" : "mobile-bottom-nav-height"
             )}>
-                {navItems.map((item) => {
-                    const isActive = item.href === "/library/my-list"
-                        ? isLibraryActive
-                        : item.href === "/focus"
-                            ? isFocusActive
-                            : pathname === item.href;
-                    const isLibrary = item.href === "/library/my-list";
+                <div className={cn(
+                    "grid w-full grid-cols-5 items-center gap-1 rounded-full border border-white/10 bg-zinc-950/90 p-1 shadow-[0_18px_48px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl",
+                    compact ? "h-12" : "h-14"
+                )}>
+                    {navItems.map((item) => {
+                        const isActive = item.href === "/library/my-list"
+                            ? isLibraryActive
+                            : item.href === "/focus"
+                                ? isFocusActive
+                                : pathname === item.href;
+                        const isLibrary = item.href === "/library/my-list";
 
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex flex-col items-center justify-center px-4 py-2 min-w-[64px] transition-colors focus-ring rounded-md",
-                                compact ? "gap-0.5" : "gap-1",
-                                isActive
-                                    ? "text-foreground"
-                                    : "text-muted-foreground"
-                            )}
-                        >
-                            <div className="relative">
-                                <item.icon className={cn(
-                                    compact ? "size-[18px]" : "size-5",
-                                    isActive && "text-primary"
-                                )} weight="duotone" />
-                                {/* Badge for library items */}
-                                {isLibrary && isLoaded && totalLibraryItems > 0 && (
-                                    <span className="absolute -top-1 -right-2 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
-                                        {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
-                                    </span>
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                aria-current={isActive ? "page" : undefined}
+                                className={cn(
+                                    "focus-ring relative flex h-full min-w-0 flex-col items-center justify-center gap-0.5 rounded-full px-1 transition-[background-color,color,box-shadow] duration-200",
+                                    isActive
+                                        ? "bg-white/[0.14] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                                        : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
                                 )}
-                            </div>
-                            <span className={cn(
-                                compact ? "text-[9px] font-medium" : "text-[10px] font-medium",
-                                isActive ? "text-foreground" : "text-muted-foreground"
-                            )}>
-                                {item.label}
-                            </span>
-                        </Link>
-                    );
-                })}
+                            >
+                                <div className="relative">
+                                    <item.icon className={cn(
+                                        compact ? "size-[17px]" : "size-5"
+                                    )} weight={isActive ? "fill" : "regular"} />
+                                    {/* Badge for library items */}
+                                    {isLibrary && isLoaded && totalLibraryItems > 0 && (
+                                        <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                                            {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
+                                        </span>
+                                    )}
+                                </div>
+                                <span className={cn(
+                                    "max-w-full truncate font-medium leading-none",
+                                    compact ? "text-[9px]" : "text-[10px]"
+                                )}>
+                                    {item.label}
+                                </span>
+                            </Link>
+                        );
+                    })}
+                </div>
             </div>
         </nav>
     );

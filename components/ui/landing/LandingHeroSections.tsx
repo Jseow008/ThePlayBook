@@ -82,7 +82,7 @@ export function HeroSection() {
               className="landing-hero-reveal landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]"
               style={heroRevealStyle("260ms")}
             >
-              The best ideas only matter if you can find them again.
+              Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search and revisit.
             </p>
 
             <HeroWorkflow />
@@ -96,7 +96,7 @@ export function HeroSection() {
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link href="/login" className={SECONDARY_CTA_CLASS}>
-                Start Your Library
+                Sign Up Free
               </Link>
             </div>
           </>
