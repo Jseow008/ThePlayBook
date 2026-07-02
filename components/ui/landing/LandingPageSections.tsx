@@ -12,7 +12,6 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { EmailSubscriptionForm } from "@/components/ui/EmailSubscriptionForm";
 import { Logo } from "@/components/ui/Logo";
 import { APP_NAME } from "@/lib/brand";
 export { getCuratedCategories } from "@/components/ui/landing/landingCategories";
@@ -1253,7 +1252,7 @@ export function CorePlatformFeaturesSection() {
 export function FinalCTASection() {
   return (
     <section className="landing-cta-band relative overflow-hidden pt-16 pb-24 sm:pt-24 sm:pb-32 lg:pt-28 lg:pb-36">
-      <FadeIn>
+      <FadeIn className="is-visible">
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center lg:px-8">
           <div className="relative px-6 py-10 sm:px-10 sm:py-14">
             <div className="pointer-events-none absolute inset-x-0 top-1/2 h-32 -translate-y-1/2 bg-gradient-to-r from-transparent via-white/[0.035] to-transparent blur-3xl" />
@@ -1263,17 +1262,17 @@ export function FinalCTASection() {
                 Stop forgetting what you learn.
               </h2>
 
-              <EmailSubscriptionForm
-                source="landing_final_cta"
-                align="center"
-                className="mt-10"
-                title="Get one high-signal idea every week."
-                description="A concise note from books, podcasts, articles, and videos worth remembering."
-              />
-
-              <p className="mt-12 text-sm font-semibold uppercase tracking-[0.24em] text-zinc-400">
-                Save the idea. Revisit what matters.
+              <p className="mx-auto mt-7 max-w-xl text-base leading-7 text-zinc-300 sm:text-lg">
+                Build a library of ideas you can return to.
               </p>
+
+              <Link
+                href="/login"
+                className="focus-ring group mt-10 inline-flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-[0_18px_42px_-24px_rgba(255,255,255,0.8)]"
+              >
+                Sign Up Free
+                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
           </div>
         </div>
