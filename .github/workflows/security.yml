@@ -167,3 +167,28 @@ jobs:
         if: env.SUPABASE_ACCESS_TOKEN == '' || env.SUPABASE_PROJECT_REF == ''
         run: |
           echo "Skipping Supabase advisor audit because SUPABASE_ACCESS_TOKEN or SUPABASE_PROJECT_REF is not configured."
+
+  dependency-posture-audit:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    name: Dependency Posture Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check dependency posture
+        run: npm run check:dependency-posture
+
+      - name: Report outdated dependencies
+        run: npm run deps:outdated

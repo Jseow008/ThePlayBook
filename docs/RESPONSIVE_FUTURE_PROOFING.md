@@ -627,7 +627,18 @@ Required outcome:
 
 ### 14. Track dependency upgrade posture
 
-Status: Open.
+Status: Implemented.
+
+Implementation notes:
+
+- Upgrade policy: `docs/DEPENDENCY_UPGRADE_POSTURE.md` defines the cadence, tracked dependency tiers, special watch items, and the ordered verification checklist for framework/runtime upgrades.
+- Structural checker: `scripts/check-dependency-posture.mjs` verifies tracked packages exist in `package.json` and reports configured ranges plus lockfile-resolved versions when available.
+- Exit-code contract: `npm run check:dependency-posture` fails only for missing tracked packages or unreadable metadata. It does not fail when newer upstream versions exist.
+- Informational freshness report: `npm run deps:outdated` runs the same checker with `npm outdated --json --long` reporting for scheduled visibility.
+- CI gate: `.github/workflows/ci.yml` runs `npm run check:dependency-posture` after `npm ci`.
+- Scheduled visibility: `.github/workflows/security.yml` adds a sibling `dependency-posture-audit` job under the existing scheduled/manual workflow.
+- Scope boundary: `framer-motion`, `ffmpeg-static`, and `@dnd-kit/*` are kept as special watch items here, but active bundle-cost reduction remains item 15 scope.
+- Tracked package tiers include framework/runtime packages plus AI provider SDKs, Google GenAI, React Query, PostHog, Upstash, content rendering packages, UI libraries, `@types/node`, ESLint, `jsdom`, and Testing Library.
 
 Issue: The app is on modern tooling. Future-proofing now depends on an explicit upgrade rhythm.
 
@@ -639,15 +650,16 @@ Current major versions:
 | React | `^19.2.5` | Latest major |
 | TypeScript | `^5` | Current |
 | Tailwind CSS | `^4` | Latest major |
+| PostCSS | `8.5.10` | Pinned via `package.json` override; tracked under Tailwind/PostCSS policy |
 | Sentry | `^10.60.0` | Current |
 | Supabase JS | `^2.108.2` | Current |
 | AI SDK | `^6.0.97` | Current |
 | Playwright | `^1.49.1` | Current |
 | Vitest | `^4.0.18` | Current |
-| Framer Motion | `^12.40.0` | Used in 1 file only — evaluate replacing with CSS animations |
+| Framer Motion | `^12.40.0` | Used in 1 file only; replacement evaluation belongs to item 15 |
 | Zustand | `^5.0.2` | Used in 1 file only (`hooks/useReaderSettings.ts`) |
 
-Note: `stores/` directory is empty. The only Zustand store lives in `hooks/useReaderSettings.ts` (L4–5) using `create` with `persist` middleware. PostCSS is pinned to `8.5.10` via an override in `package.json`.
+Note: `stores/` directory is empty. The only Zustand store lives in `hooks/useReaderSettings.ts` (L4–5) using `create` with `persist` middleware.
 
 Required outcome:
 
