@@ -104,7 +104,7 @@ export function ContentPreview({
         // Mobile padding keeps the final content clear of the portalled CTA rail.
         <div className="min-h-screen bg-background text-foreground pb-[calc(5.75rem+var(--safe-area-bottom))] sm:pb-10 lg:pb-8">
             {/* Container */}
-            <div className="max-w-3xl mx-auto px-5 sm:px-6 py-8 sm:py-12">
+            <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-3 sm:py-12">
 
 
                 {/* ── Hero: Cover + Info ── */}
@@ -417,7 +417,7 @@ export function ContentPreview({
                         <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
                             <Link
                                 href={buildReadPath(item)}
-                                className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl border border-border/45 bg-secondary/80 text-base font-semibold text-secondary-foreground shadow-sm transition-colors hover:bg-secondary active:scale-95"
+                                className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95"
                             >
                                 <BookOpen className="size-4 shrink-0" />
                                 <span className="truncate">Read Summary</span>
