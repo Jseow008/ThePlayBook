@@ -43,7 +43,7 @@ describe('ContentPreview', () => {
         cover_image_url: 'https://example.com/cover.jpg',
         source_id: 'test-source',
         type: 'article',
-        category: null,
+        category: 'Productivity',
         estimated_reading_time_minutes: 10,
         quick_mode_json: {
             hook: 'This is the hook.',
@@ -74,9 +74,16 @@ describe('ContentPreview', () => {
 
         expect(screen.getByText('Test Title')).toBeInTheDocument();
         expect(screen.getByText('Test Author')).toBeInTheDocument();
-        expect(screen.getByText(/10\s+min read/)).toBeInTheDocument();
-        expect(screen.getByText('5 sections')).toBeInTheDocument();
-        expect(screen.getByText('article')).toBeInTheDocument();
+        expect(screen.getAllByText(/10\s+min read/)).toHaveLength(2);
+        expect(screen.getAllByText('5 sections')).toHaveLength(2);
+        expect(screen.getAllByText('article')).toHaveLength(2);
+        expect(screen.getAllByText('Productivity')).toHaveLength(2);
+    });
+
+    it('keeps share available in the desktop hero and mobile bottom rail', () => {
+        render(<ContentPreview {...defaultProps} />);
+
+        expect(screen.getAllByRole('button', { name: 'Share this content' })).toHaveLength(2);
     });
 
     it('renders quick mode hook and takeaways', () => {

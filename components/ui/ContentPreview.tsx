@@ -108,7 +108,7 @@ export function ContentPreview({
 
 
                 {/* ── Hero: Cover + Info ── */}
-                <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-6">
+                <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 mb-4 sm:mb-6">
                     {/* Cover Image */}
                     {item.cover_image_url && (
                         <div className={READER_COVER_WRAPPER_CLASS}>
@@ -143,60 +143,66 @@ export function ContentPreview({
                             </p>
                         )}
 
-                        {/* Metadata Pills */}
-                        <div className="order-1 flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-6">
-                            {item.duration_seconds && (
-                                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
-                                    <Clock className="size-3" />
-                                    {Math.round(item.duration_seconds / 60)} min read
+                        {/* Mobile Metadata Pills */}
+                        <div className="order-1 mb-4 flex flex-col items-center gap-2 sm:hidden">
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50 uppercase tracking-wider">
+                                    {item.type}
                                 </span>
-                            )}
-                            <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50 uppercase tracking-wider">
-                                {item.type}
-                            </span>
-                            {segmentCount !== undefined &&
-                                segmentCount !== null &&
-                                segmentCount > 0 && (
+                                {item.category && (
                                     <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
-                                        {segmentCount} sections
+                                        {item.category}
                                     </span>
                                 )}
-                            <ShareButton
-                                path={`/preview/${item.id}`}
-                                title={item.title}
-                                text={`Check out "${item.title}" on ${APP_NAME}`}
-                                variant="icon"
-                                source="content_preview"
-                                contentId={item.id}
-                                contentType={item.type}
-                                className="ml-1 opacity-70 hover:opacity-100 transition-opacity"
-                            />
-                            <button
-                                type="button"
-                                disabled={!isReadingProgressLoaded}
-                                onClick={() => {
-                                    toggleMyList(item.id);
-                                    toast.success(isSaved ? "Removed from Library" : "Saved to Library");
-                                }}
-                                className={`focus-ring ml-1 hidden size-8 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:inline-flex ${!isReadingProgressLoaded
-                                    ? "border-border/35 bg-secondary/25 text-muted-foreground/60"
-                                    : isSaved
-                                    ? "border-primary/35 bg-primary/10 text-primary"
-                                    : "border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                                    }`}
-                                title={isReadingProgressLoaded
-                                    ? isSaved
-                                        ? "Remove from Library"
-                                        : "Save to Library"
-                                    : "Loading Library state"}
-                                aria-label={isReadingProgressLoaded
-                                    ? isSaved
-                                        ? `Remove ${item.title} from Library`
-                                        : `Save ${item.title} to Library`
-                                    : "Loading Library state"}
-                            >
-                                <Bookmark className="size-4" fill={isSaved ? "currentColor" : "none"} />
-                            </button>
+                            </div>
+
+                            {(item.duration_seconds ||
+                                (segmentCount !== undefined &&
+                                    segmentCount !== null &&
+                                    segmentCount > 0)) && (
+                                <div className="flex flex-wrap items-center justify-center gap-2">
+                                    {item.duration_seconds && (
+                                        <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
+                                            <Clock className="size-3" />
+                                            {Math.round(item.duration_seconds / 60)} min read
+                                        </span>
+                                    )}
+                                    {segmentCount !== undefined &&
+                                        segmentCount !== null &&
+                                        segmentCount > 0 && (
+                                            <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
+                                                {segmentCount} sections
+                                            </span>
+                                        )}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Desktop Metadata Pills */}
+                        <div className="order-1 mb-6 hidden flex-col items-start gap-2 sm:flex">
+                            <div className="flex flex-wrap items-center justify-start gap-2">
+                                <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50 uppercase tracking-wider">
+                                    {item.type}
+                                </span>
+                                {item.category && (
+                                    <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
+                                        {item.category}
+                                    </span>
+                                )}
+                                {item.duration_seconds && (
+                                    <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
+                                        <Clock className="size-3" />
+                                        {Math.round(item.duration_seconds / 60)} min read
+                                    </span>
+                                )}
+                                {segmentCount !== undefined &&
+                                    segmentCount !== null &&
+                                    segmentCount > 0 && (
+                                        <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
+                                            {segmentCount} sections
+                                        </span>
+                                    )}
+                            </div>
 
                             {seriesContext && (
                                 <div className="hidden sm:flex w-full flex-wrap items-center gap-x-3 gap-y-2 pt-1 text-sm text-muted-foreground">
@@ -247,13 +253,51 @@ export function ContentPreview({
 
                         {/* CTA Buttons */}
                         <div className="order-3 hidden sm:flex flex-col gap-3 sm:order-2">
-                            <Link
-                                href={buildReadPath(item)}
-                                className="inline-flex h-12 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
-                            >
-                                <BookOpen className="size-5" />
-                                Read Summary
-                            </Link>
+                            <div className="flex items-center gap-2.5">
+                                <Link
+                                    href={buildReadPath(item)}
+                                    className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
+                                >
+                                    <BookOpen className="size-5" />
+                                    <span className="truncate">Read Summary</span>
+                                </Link>
+                                <button
+                                    type="button"
+                                    disabled={!isReadingProgressLoaded}
+                                    onClick={() => {
+                                        toggleMyList(item.id);
+                                        toast.success(isSaved ? "Removed from Library" : "Saved to Library");
+                                    }}
+                                    className={`focus-ring inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait ${!isReadingProgressLoaded
+                                        ? "border-border/35 bg-secondary/25 text-muted-foreground/60"
+                                        : isSaved
+                                        ? "border-primary/35 bg-primary/10 text-primary"
+                                        : "border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                        }`}
+                                    title={isReadingProgressLoaded
+                                        ? isSaved
+                                            ? "Remove from Library"
+                                            : "Save to Library"
+                                        : "Loading Library state"}
+                                    aria-label={isReadingProgressLoaded
+                                        ? isSaved
+                                            ? `Remove ${item.title} from Library`
+                                            : `Save ${item.title} to Library`
+                                        : "Loading Library state"}
+                                >
+                                    <Bookmark className="size-5" fill={isSaved ? "currentColor" : "none"} />
+                                </button>
+                                <ShareButton
+                                    path={`/preview/${item.id}`}
+                                    title={item.title}
+                                    text={`Check out "${item.title}" on ${APP_NAME}`}
+                                    variant="icon"
+                                    source="content_preview"
+                                    contentId={item.id}
+                                    contentType={item.type}
+                                    className="focus-ring h-12 w-12 shrink-0 rounded-xl border border-border/40 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                />
+                            </div>
 
                             {onSpinAgain && (
                                 <button
