@@ -169,6 +169,7 @@ function BaseContentCard({
         : `Save ${item.title} to Library`;
     const showBookmarkButton = !hideBookmark && Boolean(onToggleBookmark);
     const contentHook = getContentCardHook(item);
+    const isAppCompact = titleDensity === "app-compact";
 
     return (
         <div className={cn(
@@ -237,7 +238,12 @@ function BaseContentCard({
 
             {item.author ? (
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
-                    <p className="translate-z-0 break-words text-center text-[9px] font-medium uppercase leading-relaxed tracking-[0.12em] whitespace-normal text-white/90 drop-shadow-md md:text-[11px] md:tracking-[0.15em]">
+                    <p
+                        className={cn(
+                            "translate-z-0 break-words text-center font-medium uppercase leading-relaxed tracking-[0.12em] whitespace-normal text-white/90 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",
+                            isAppCompact ? "text-[10px]" : "text-[9px]"
+                        )}
+                    >
                         {item.author}
                     </p>
                 </div>
@@ -259,8 +265,8 @@ function BaseContentCard({
                     <h3
                         className={cn(
                             "w-full line-clamp-3 font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
-                            titleDensity === "app-compact"
-                                ? "text-[0.88rem] leading-[1.13]"
+                            isAppCompact
+                                ? "text-[0.92rem] leading-[1.16]"
                                 : "text-[0.95rem] leading-[1.18]"
                         )}
                     >
@@ -268,14 +274,24 @@ function BaseContentCard({
                     </h3>
 
                     <div
-                        className="w-full max-h-12 space-y-0.5 overflow-hidden"
+                        className="w-full max-h-14 space-y-0.5 overflow-hidden md:max-h-12"
                     >
                         {item.category ? (
-                            <p className="line-clamp-1 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest">
+                            <p
+                                className={cn(
+                                    "line-clamp-1 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest",
+                                    isAppCompact ? "text-[10px]" : "text-[9px]"
+                                )}
+                            >
                                 {item.category}
                             </p>
                         ) : null}
-                        <p className="flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest">
+                        <p
+                            className={cn(
+                                "flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest",
+                                isAppCompact ? "text-[10px]" : "text-[9px]"
+                            )}
+                        >
                             <span>{item.type}</span>
                             {item.duration_seconds ? (
                                 <span className="flex items-center gap-1.5 whitespace-nowrap">

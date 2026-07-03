@@ -279,7 +279,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-base font-bold text-black font-brand md:h-8 md:w-8 md:text-lg">
                                     {APP_NAME.charAt(0)}
                                 </div>
-                                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-muted-foreground md:text-sm md:tracking-[0.2em]">
+                                <span className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground md:text-sm md:tracking-[0.2em]">
                                     FEATURED
                                 </span>
                             </div>
@@ -302,12 +302,12 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 contentVisible ? "opacity-100" : "opacity-0"
                             )}
                         >
-                            <span className="flex-shrink-0 rounded bg-white/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm md:px-2 md:py-1 md:text-sm md:tracking-wide">
+                            <span className="flex-shrink-0 rounded bg-white/20 px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.12em] text-white backdrop-blur-sm md:px-2 md:py-1 md:text-sm md:tracking-wide">
                                 {contentItem.type}
                             </span>
 
                             {/* Group Author and Category for better wrapping */}
-                            <span className="text-xs leading-snug text-white/80 md:text-base">
+                            <span className="text-sm leading-snug text-white/80 md:text-base">
                                 {contentItem.author && (
                                     <>
                                         by <span className="font-semibold text-white">{contentItem.author}</span>
@@ -324,7 +324,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         {/* Description */}
                         <p
                             className={cn(
-                                "max-w-lg text-sm font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-[1100ms] delay-200 md:max-w-xl md:text-lg lg:text-xl",
+                                "max-w-lg text-[0.95rem] font-medium leading-relaxed text-white/90 drop-shadow-md transition-all duration-[1100ms] delay-200 md:max-w-xl md:text-lg lg:text-xl",
                                 contentVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                             )}
                         >
