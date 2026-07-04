@@ -68,8 +68,9 @@ function getContentCardHref(item: ContentItem, navigationMode: "preview" | "resu
     return `/preview/${item.id}`;
 }
 
-function getContentCardLabel(href: string, title: string) {
-    return href.startsWith("/read/") ? `Read ${title}` : `Preview ${title}`;
+function getContentCardLabel(href: string, title: string, hasAudioSummary: boolean) {
+    const baseLabel = href.startsWith("/read/") ? `Read ${title}` : `Preview ${title}`;
+    return hasAudioSummary ? `${baseLabel}. Audio summary available.` : baseLabel;
 }
 
 function getContentCardHook(item: ContentItem) {
@@ -163,7 +164,8 @@ function BaseContentCard({
     const createdAt = item.created_at ? new Date(item.created_at) : null;
     const isNew = createdAt ? createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false;
     const renderNewBadge = isNew && !showCompletedBadge;
-    const linkLabel = getContentCardLabel(href, item.title);
+    const hasAudioSummary = Boolean(item.audio_url?.trim());
+    const linkLabel = getContentCardLabel(href, item.title, hasAudioSummary);
     const bookmarkLabel = isBookmarked
         ? `Remove ${item.title} from Library`
         : `Save ${item.title} to Library`;
@@ -304,6 +306,13 @@ function BaseContentCard({
                                                 : ""
                                             }`}
                                     </span>
+                                </span>
+                            ) : null}
+                            {hasAudioSummary ? (
+                                <span className="flex items-center gap-1.5 whitespace-nowrap">
+                                    <span className="opacity-40">•</span>
+                                    <Headphones className="size-3 text-white/70" aria-hidden="true" />
+                                    <span className="sr-only">Audio summary available</span>
                                 </span>
                             ) : null}
                         </p>

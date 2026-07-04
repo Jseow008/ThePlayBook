@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  Headphones,
   Maximize2,
   Sparkles,
   X,
@@ -191,11 +192,12 @@ function FeaturedReadCard({
   isFocusable?: boolean;
 }) {
   const durationLabel = formatFeaturedReadDuration(item.duration_seconds);
+  const hasAudioSummary = Boolean(item.audio_url?.trim());
 
   return (
     <Link
       href={`/preview/${item.id}`}
-      aria-label={`Preview ${item.title}`}
+      aria-label={`Preview ${item.title}${hasAudioSummary ? ". Audio summary available." : ""}`}
       aria-hidden={isFocusable ? undefined : true}
       tabIndex={isFocusable ? undefined : -1}
       className="focus-ring landing-featured-read-card group relative block h-full w-full overflow-hidden rounded-md bg-card transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:focus-visible:z-10 md:focus-visible:-translate-y-1"
@@ -242,6 +244,13 @@ function FeaturedReadCard({
                 <span className="flex items-center gap-1.5 whitespace-nowrap">
                   <span className="opacity-40">&middot;</span>
                   <span>{durationLabel}</span>
+                </span>
+              ) : null}
+              {hasAudioSummary ? (
+                <span className="flex items-center gap-1.5 whitespace-nowrap">
+                  <span className="opacity-40">&middot;</span>
+                  <Headphones className="size-3 text-white/70" aria-hidden="true" />
+                  <span className="sr-only">Audio summary available</span>
                 </span>
               ) : null}
             </p>

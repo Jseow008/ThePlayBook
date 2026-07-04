@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 };
 
 const LANDING_SELECT =
-  "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, created_at, is_featured";
+  "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, audio_url, created_at, is_featured";
 
 export default async function LandingPageRoute() {
   const landingContent = await LandingPageData();

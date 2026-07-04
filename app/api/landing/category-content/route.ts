@@ -13,7 +13,7 @@ const CategoryQuerySchema = z.object({
 });
 
 const LANDING_CATEGORY_SELECT =
-    "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, created_at, is_featured";
+    "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, audio_url, created_at, is_featured";
 
 export async function GET(request: NextRequest) {
     const rl = await strictPublicRateLimit(request, {

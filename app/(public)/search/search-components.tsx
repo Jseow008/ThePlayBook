@@ -6,7 +6,7 @@ import type { ContentItem, ContentType } from "@/types/database";
 import { ArrowLeft, ArrowRight, Clock3, Search } from "lucide-react";
 import Link from "next/link";
 
-const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url, duration_seconds, created_at, quick_mode_json";
+const CONTENT_CARD_SELECT = "id, type, title, author, category, cover_image_url, duration_seconds, audio_url, created_at, quick_mode_json";
 const CATALOG_PAGE_SIZE = 20;
 const SEARCHABLE_TYPES: ContentType[] = ["book", "podcast", "article"];
 type CatalogSort = "recent" | "popular";
