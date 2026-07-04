@@ -143,7 +143,6 @@ export function AppOnboardingGate() {
 
     return (
         <AppOnboardingTour
-            finalCtaLabel={activeTour === "guest" ? "Create Account to unlock Ask My Library." : undefined}
             isOpen={isOpen}
             isSaving={isSaving}
             onFinish={handleFinish}

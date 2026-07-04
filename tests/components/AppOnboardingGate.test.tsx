@@ -92,20 +92,6 @@ describe("AppOnboardingGate", () => {
         expect(rpcMock).not.toHaveBeenCalled();
     });
 
-    it("shows the account-unlock final CTA for signed-out visitors", async () => {
-        authUserState.value = null;
-
-        render(<AppOnboardingGate />);
-
-        await screen.findByRole("dialog");
-
-        for (let index = 0; index < 5; index += 1) {
-            fireEvent.click(screen.getByRole("button", { name: "Next" }));
-        }
-
-        expect(screen.getByRole("button", { name: "Create Account to unlock Ask My Library." })).toBeInTheDocument();
-    });
-
     it("opens the tour for a signed-in user who has not seen it", async () => {
         render(<AppOnboardingGate />);
 
