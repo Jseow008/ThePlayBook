@@ -41,6 +41,18 @@
   --input: 240 3.7% 15.9%;
   --ring: 240 4.9% 83.9%;
 
+  --solar-gold-50: #fffbeb;
+  --solar-gold-100: #fef3c7;
+  --solar-gold-200: #fde68a;
+  --solar-gold-300: #fcd34d;
+  --solar-gold-400: #fbbf24;
+  --solar-gold-500: #f59e0b;
+  --solar-gold-600: #d97706;
+  --solar-gold-700: #b45309;
+  --solar-gold-800: #92400e;
+  --solar-gold-900: #78350f;
+  --solar-gold-foreground: #09090b;
+
   /* Highlight fallbacks for portaled reader UI outside theme scope */
   --highlight-yellow: 45 100% 50%;
   --highlight-blue: 217 100% 65%;
@@ -195,13 +207,25 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  --color-solar-gold: var(--solar-gold-500);
+  --color-solar-gold-50: var(--solar-gold-50);
+  --color-solar-gold-100: var(--solar-gold-100);
+  --color-solar-gold-200: var(--solar-gold-200);
+  --color-solar-gold-300: var(--solar-gold-300);
+  --color-solar-gold-400: var(--solar-gold-400);
+  --color-solar-gold-500: var(--solar-gold-500);
+  --color-solar-gold-600: var(--solar-gold-600);
+  --color-solar-gold-700: var(--solar-gold-700);
+  --color-solar-gold-800: var(--solar-gold-800);
+  --color-solar-gold-900: var(--solar-gold-900);
+  --color-solar-gold-foreground: var(--solar-gold-foreground);
 
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
 
   --font-sans: var(--font-inter);
-  --font-display: var(--font-inter);
+  --font-display: var(--font-outfit);
   --font-brand: var(--font-outfit);
   --font-serif: var(--font-serif);
 }
@@ -762,9 +786,9 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-primary-cta {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
     inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-    0 18px 46px -22px rgba(255, 255, 255, 0.58),
+    0 18px 46px -22px color-mix(in srgb, var(--solar-gold-500) 58%, transparent),
     0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
@@ -778,7 +802,7 @@ mark[data-highlight-spotlight="true"] {
 .landing-primary-cta::before {
   inset: 0;
   z-index: 0;
-  background: linear-gradient(180deg, #ffffff 0%, #f5f2ea 52%, #e9e4d6 100%);
+  background: linear-gradient(180deg, var(--solar-gold-300) 0%, var(--solar-gold-500) 52%, var(--solar-gold-600) 100%);
   transition: opacity 300ms ease;
 }
 
@@ -798,10 +822,10 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-primary-cta:hover {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 0 1px 0 rgba(255, 255, 255, 0.54),
     inset 0 -1px 0 rgba(0, 0, 0, 0.16),
-    0 24px 58px -24px rgba(255, 255, 255, 0.66),
-    0 0 34px rgba(244, 192, 79, 0.1);
+    0 24px 58px -24px color-mix(in srgb, var(--solar-gold-500) 68%, transparent),
+    0 0 34px color-mix(in srgb, var(--solar-gold-400) 14%, transparent);
 }
 
 .landing-primary-cta:hover::after {
@@ -841,7 +865,7 @@ mark[data-highlight-spotlight="true"] {
 
 .landing-hero-emphasis {
   position: relative;
-  color: #e7bd72;
+  color: var(--solar-gold-300);
 }
 
 .landing-hero-emphasis::after {
@@ -852,7 +876,7 @@ mark[data-highlight-spotlight="true"] {
   width: calc(100% - 0.16em);
   height: 1px;
   border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(231, 189, 114, 0.44), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--solar-gold-300) 44%, transparent), transparent);
   opacity: 0;
   transform: translateX(-50%) scaleX(0);
   transform-origin: center;
@@ -875,7 +899,7 @@ mark[data-highlight-spotlight="true"] {
   width: 0.6rem;
   height: 1px;
   flex: none;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), rgba(231, 189, 114, 0.42));
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), color-mix(in srgb, var(--solar-gold-300) 42%, transparent));
 }
 
 .landing-hero-workflow-connector::after {
@@ -888,7 +912,7 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-hero-workflow-step[data-active="true"] {
-  color: #fff7e0;
+  color: var(--solar-gold-50);
 }
 
 .landing-hero-workflow-marker {
@@ -898,7 +922,7 @@ mark[data-highlight-spotlight="true"] {
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.11);
-  box-shadow: 0 0 0 0 rgba(231, 189, 114, 0);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--solar-gold-300) 0%, transparent);
   transition:
     border-color 420ms ease,
     background-color 420ms ease,
@@ -906,9 +930,9 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-hero-workflow-step[data-active="true"] .landing-hero-workflow-marker {
-  border-color: rgba(231, 189, 114, 0.9);
-  background: #e7bd72;
-  box-shadow: 0 0 0 5px rgba(231, 189, 114, 0.1), 0 0 18px rgba(231, 189, 114, 0.28);
+  border-color: color-mix(in srgb, var(--solar-gold-300) 90%, transparent);
+  background: var(--solar-gold-300);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--solar-gold-300) 10%, transparent), 0 0 18px color-mix(in srgb, var(--solar-gold-300) 28%, transparent);
 }
 
 @media (min-width: 640px) {

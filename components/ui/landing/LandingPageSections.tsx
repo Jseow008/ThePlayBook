@@ -1268,10 +1268,10 @@ export function FinalCTASection() {
 
               <Link
                 href="/login"
-                className="focus-ring group mt-10 inline-flex items-center justify-center gap-3 rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 hover:bg-white/90 hover:shadow-[0_18px_42px_-24px_rgba(255,255,255,0.8)]"
+                className="focus-ring landing-primary-cta group relative mt-10 inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-solar-gold px-8 py-4 text-base font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5"
               >
-                Sign Up Free
-                <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+                <span className="relative z-10">Sign Up Free</span>
+                <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </div>

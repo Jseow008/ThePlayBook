@@ -13,7 +13,7 @@ const HERO_WORKFLOW_INTERVAL_MS = 2800;
 const heroRevealStyle = (delay: string) =>
   ({ "--hero-reveal-delay": delay } as CSSProperties);
 const PRIMARY_CTA_CLASS =
-  "focus-ring landing-primary-cta group relative inline-flex w-full min-w-0 items-center justify-center gap-3 overflow-hidden rounded-full bg-white px-8 py-4 text-base font-semibold text-black transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 sm:w-auto";
+  "focus-ring landing-primary-cta group relative inline-flex w-full min-w-0 items-center justify-center gap-3 overflow-hidden rounded-full bg-solar-gold px-8 py-4 text-base font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 sm:w-auto";
 const SECONDARY_CTA_CLASS =
   "focus-ring landing-secondary-cta inline-flex w-full min-w-0 items-center justify-center rounded-full border border-white/[0.18] bg-white/[0.07] px-8 py-4 text-base font-medium text-white/90 transition-[border-color,background-color,color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.11] hover:text-white sm:w-auto";
 
