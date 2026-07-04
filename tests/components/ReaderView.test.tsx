@@ -333,7 +333,7 @@ describe('ReaderView', () => {
         expect(screen.getByTestId('mock-segment-accordion')).toBeInTheDocument();
         expect(screen.getByTestId('mock-notes-drawer')).toBeInTheDocument();
         expect(screen.getByTestId('mock-text-toolbar')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Open chat' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Discuss ideas' })).toBeInTheDocument();
 
         // Before completion, displays feedback form
         expect(screen.getByTestId('mock-content-feedback')).toBeInTheDocument();
@@ -348,7 +348,7 @@ describe('ReaderView', () => {
     it('lets readers open Ask Author before full completion', async () => {
         render(<ReaderView content={mockContent} />);
 
-        fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Discuss ideas' }));
 
         await waitFor(() => {
             expect(screen.getByTestId('mock-author-chat')).toBeInTheDocument();
@@ -360,7 +360,7 @@ describe('ReaderView', () => {
     it('closes the pre-completion author chat once the reader reaches completion', async () => {
         render(<ReaderView content={mockContent} />);
 
-        fireEvent.click(screen.getByRole('button', { name: 'Open chat' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Discuss ideas' }));
 
         await waitFor(() => {
             expect(screen.getByTestId('mock-author-chat')).toBeInTheDocument();

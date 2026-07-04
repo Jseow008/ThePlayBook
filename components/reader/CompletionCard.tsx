@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BotMessageSquare, BookOpen, ArrowRight, PartyPopper, BookmarkCheck } from "lucide-react";
+import { MessageCircleQuestion, BookOpen, ArrowRight, PartyPopper, BookmarkCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthorChat } from "./AuthorChat";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
@@ -73,7 +73,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                     >
                         <div className="flex items-start gap-4">
                             <div className="flex-shrink-0 size-12 rounded-xl bg-primary/15 flex items-center justify-center group-hover:bg-primary/25 transition-colors">
-                                <BotMessageSquare className="size-5 text-primary" />
+                                <MessageCircleQuestion className="size-5 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h3 className="font-bold text-foreground text-base mb-1">

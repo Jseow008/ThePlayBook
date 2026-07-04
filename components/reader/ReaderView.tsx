@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, BotMessageSquare, List } from "lucide-react";
+import { ArrowLeft, ArrowRight, MessageCircleQuestion, List } from "lucide-react";
 import { toast } from "sonner";
 import { ReaderHeroHeader } from "./ReaderHeroHeader";
 import { SegmentAccordion } from "./SegmentAccordion";
@@ -944,7 +944,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                             <div className="min-w-0">
                                 <div className="flex items-center gap-3">
                                     <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/12 text-primary">
-                                        <BotMessageSquare className="size-5" />
+                                        <MessageCircleQuestion className="size-5" />
                                     </div>
                                     <div>
                                         <h2 className="text-base font-semibold text-foreground">
@@ -961,7 +961,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                                 onClick={() => setShowAuthorChat(true)}
                                 className="inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
                             >
-                                Open chat
+                                Discuss ideas
                             </button>
                         </div>
                     </div>
