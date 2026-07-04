@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BotMessageSquare, BookOpen, ArrowRight, PartyPopper } from "lucide-react";
+import { BotMessageSquare, BookOpen, ArrowRight, PartyPopper, BookmarkCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AuthorChat } from "./AuthorChat";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
@@ -10,6 +10,7 @@ import { ResilientImage } from "@/components/ui/ResilientImage";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useRecommendations } from "@/hooks/use-content-queries";
 import { buildReadPath } from "@/lib/content-paths";
+import { SignInLink } from "@/components/ui/SignInLink";
 
 interface CompletionCardProps {
     contentId: string;
@@ -19,7 +20,7 @@ interface CompletionCardProps {
 }
 
 export function CompletionCard({ contentId, title, author, segmentCount }: CompletionCardProps) {
-    const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
+    const { completedIds, inProgressIds, myListIds, isLoaded, user } = useReadingProgress();
     const [showChat, setShowChat] = useState(false);
     const { data: recommendationItems = [], isLoading: loadingRec } = useRecommendations(
         [contentId],
@@ -31,6 +32,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
     );
     const recommendation = recommendationItems[0] ?? null;
     const isRecommendationLoading = !isLoaded || loadingRec;
+    const isGuest = isLoaded && user === null;
 
     const authorName = author || "the Author";
 
@@ -49,6 +51,12 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                         <span className="text-foreground font-semibold">{title}</span>
                         {author && <span> by {author}</span>}
                         <span className="block mt-1 text-xs opacity-70">{segmentCount} sections completed</span>
+                        {isGuest && (
+                            <SignInLink className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3.5 py-2 font-sans text-xs font-semibold leading-none text-primary shadow-sm transition-colors hover:border-primary/35 hover:bg-primary/15 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-background">
+                                <BookmarkCheck className="size-3.5" aria-hidden="true" />
+                                <span>Sign up to save your progress.</span>
+                            </SignInLink>
+                        )}
                     </p>
                 </div>
 

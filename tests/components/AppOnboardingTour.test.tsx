@@ -129,6 +129,28 @@ describe("AppOnboardingTour", () => {
         expect(onFinish).toHaveBeenCalledWith("completed");
     });
 
+    it("uses a custom final CTA label without changing completion behavior", () => {
+        const onFinish = vi.fn();
+        render(
+            <AppOnboardingTour
+                finalCtaLabel="Create Account to unlock Ask My Library."
+                isOpen
+                isSaving={false}
+                onFinish={onFinish}
+                slides={APP_ONBOARDING_SLIDES}
+            />
+        );
+
+        expect(screen.queryByRole("button", { name: "Create Account to unlock Ask My Library." })).not.toBeInTheDocument();
+
+        for (let index = 0; index < 5; index += 1) {
+            fireEvent.click(screen.getByRole("button", { name: "Next" }));
+        }
+
+        fireEvent.click(screen.getByRole("button", { name: "Create Account to unlock Ask My Library." }));
+        expect(onFinish).toHaveBeenCalledWith("completed");
+    });
+
     it("changes slides from swipe gestures", () => {
         render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
 

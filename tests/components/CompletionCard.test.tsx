@@ -42,6 +42,20 @@ vi.mock("@/components/ui/ResilientImage", () => ({
     ResilientImage: ({ alt }: { alt: string }) => <img alt={alt} />,
 }));
 
+vi.mock("@/components/ui/SignInLink", () => ({
+    SignInLink: ({
+        children,
+        className,
+    }: {
+        children: ReactNode;
+        className?: string;
+    }) => (
+        <a href="/login?next=%2Fread%2Ftest-item" className={className}>
+            {children}
+        </a>
+    ),
+}));
+
 describe("CompletionCard", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -53,6 +67,7 @@ describe("CompletionCard", () => {
             inProgressIds: [],
             myListIds: [],
             isLoaded: false,
+            user: null,
         });
         useRecommendationsMock.mockReturnValue({
             data: [],
@@ -71,6 +86,7 @@ describe("CompletionCard", () => {
 
         expect(screen.getByText("Finding your next read...")).toBeInTheDocument();
         expect(screen.queryByText("Explore More")).not.toBeInTheDocument();
+        expect(screen.queryByText("Sign up to save your progress.")).not.toBeInTheDocument();
     });
 
     it("passes completed ids as exclusions when requesting the next recommendation", () => {
@@ -82,6 +98,7 @@ describe("CompletionCard", () => {
             inProgressIds: [],
             myListIds: [],
             isLoaded: true,
+            user: { id: "user-1" },
         });
         useRecommendationsMock.mockReturnValue({
             data: [],
@@ -109,5 +126,60 @@ describe("CompletionCard", () => {
                 matchCount: 1,
             },
         );
+    });
+
+    it("shows the sign-up prompt for hydrated guests", () => {
+        useReadingProgressMock.mockReturnValue({
+            completedIds: [],
+            inProgressIds: [],
+            myListIds: [],
+            isLoaded: true,
+            user: null,
+        });
+        useRecommendationsMock.mockReturnValue({
+            data: [],
+            isLoading: false,
+            isPlaceholderData: false,
+        });
+
+        render(
+            <CompletionCard
+                contentId="11111111-1111-1111-1111-111111111111"
+                title="Deep Work"
+                author="Cal Newport"
+                segmentCount={12}
+            />
+        );
+
+        expect(screen.getByRole("link", { name: "Sign up to save your progress." })).toHaveAttribute(
+            "href",
+            "/login?next=%2Fread%2Ftest-item"
+        );
+    });
+
+    it("does not show the sign-up prompt for authenticated readers", () => {
+        useReadingProgressMock.mockReturnValue({
+            completedIds: [],
+            inProgressIds: [],
+            myListIds: [],
+            isLoaded: true,
+            user: { id: "user-1" },
+        });
+        useRecommendationsMock.mockReturnValue({
+            data: [],
+            isLoading: false,
+            isPlaceholderData: false,
+        });
+
+        render(
+            <CompletionCard
+                contentId="11111111-1111-1111-1111-111111111111"
+                title="Deep Work"
+                author="Cal Newport"
+                segmentCount={12}
+            />
+        );
+
+        expect(screen.queryByText("Sign up to save your progress.")).not.toBeInTheDocument();
     });
 });

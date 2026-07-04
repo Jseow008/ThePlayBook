@@ -13,13 +13,17 @@ import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import type { OnboardingSlide, OnboardingStatus } from "@/lib/onboarding";
 
 interface AppOnboardingTourProps {
+    finalCtaLabel?: string;
     isOpen: boolean;
     isSaving: boolean;
     onFinish: (status: OnboardingStatus) => void | Promise<void>;
     slides: OnboardingSlide[];
 }
 
+const DEFAULT_FINAL_CTA_LABEL = "Start exploring";
+
 export function AppOnboardingTour({
+    finalCtaLabel = DEFAULT_FINAL_CTA_LABEL,
     isOpen,
     isSaving,
     onFinish,
@@ -260,7 +264,7 @@ export function AppOnboardingTour({
 
                             <Button
                                 type="button"
-                                className="min-w-32 rounded-full bg-white text-black hover:bg-white/90"
+                                className="h-auto min-h-10 min-w-32 flex-1 whitespace-normal rounded-full bg-white px-4 py-2 text-center leading-tight text-black hover:bg-white/90 sm:flex-none sm:whitespace-nowrap"
                                 onClick={() => {
                                     if (isLastSlide) {
                                         void onFinish("completed");
@@ -271,7 +275,7 @@ export function AppOnboardingTour({
                                 }}
                                 disabled={isSaving}
                             >
-                                {isSaving ? "Saving..." : isLastSlide ? "Start exploring" : "Next"}
+                                {isSaving ? "Saving..." : isLastSlide ? finalCtaLabel : "Next"}
                             </Button>
                         </div>
                     </div>
