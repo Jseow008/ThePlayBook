@@ -1303,14 +1303,20 @@ export function LandingFooter() {
             />
           </Link>
           <div className="space-y-1 text-sm text-muted-foreground/60">
-            <p>Summary-first knowledge system</p>
+            <p>Turn what you read into a personal knowledge library.</p>
             <p>&copy; 2026 {APP_NAME}. All rights reserved.</p>
           </div>
         </div>
 
         <nav aria-label="Footer navigation" className="flex items-center gap-6 text-sm text-muted-foreground/60">
+          <Link href="/browse" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
+            Browse
+          </Link>
           <Link href="/about" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
             About
+          </Link>
+          <Link href="mailto:javierseowww@gmail.com" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
+            Contact
           </Link>
           <Link href="/privacy" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
             Privacy

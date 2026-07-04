@@ -6,6 +6,7 @@ import { HeroCarousel } from "@/components/ui/HeroCarousel";
 
 import { RecommendationsRow } from "@/components/ui/RecommendationsRow";
 import { ContentLane } from "@/components/ui/ContentLane";
+import { Logo } from "@/components/ui/Logo";
 import type { ContentItem, HomepageSection } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/brand";
@@ -73,18 +74,27 @@ export function HomeFeed({
             </div>
 
             {/* Footer */}
-            <footer className="border-t border-border px-4 py-8 md:px-6 lg:px-16 lg:py-12 mt-12 md:mt-20 bg-card/10 backdrop-blur-sm">
+            <footer className="mt-8 border-t border-border bg-card/10 px-4 py-8 backdrop-blur-sm md:mt-12 md:px-6 lg:px-16 lg:py-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-foreground rounded-md flex items-center justify-center text-background font-display font-bold">
-                            {APP_NAME.charAt(0)}
+                    <div className="flex flex-col items-center gap-3 md:items-start">
+                        <Link href="/" className="focus-ring inline-flex rounded-sm">
+                            <Logo
+                                width={96}
+                                height={26}
+                                className="brightness-110 drop-shadow-[0_1px_8px_rgba(255,255,255,0.06)]"
+                            />
+                        </Link>
+                        <div className="space-y-1 text-center md:text-left">
+                            <p>Turn what you read into a personal knowledge library.</p>
+                            <p>© 2026 {APP_NAME}. All rights reserved.</p>
                         </div>
-                        <p>© 2026 {APP_NAME}. All rights reserved.</p>
                     </div>
-                    <nav aria-label="Footer navigation" className="flex gap-8">
-                        <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
-                        <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-                        <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+                    <nav aria-label="Footer navigation" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+                        <Link href="/browse" className="focus-ring rounded-sm hover:text-foreground transition-colors">Browse</Link>
+                        <Link href="/about" className="focus-ring rounded-sm hover:text-foreground transition-colors">About</Link>
+                        <Link href="mailto:javierseowww@gmail.com" className="focus-ring rounded-sm hover:text-foreground transition-colors">Contact</Link>
+                        <Link href="/privacy" className="focus-ring rounded-sm hover:text-foreground transition-colors">Privacy</Link>
+                        <Link href="/terms" className="focus-ring rounded-sm hover:text-foreground transition-colors">Terms</Link>
                     </nav>
                 </div>
             </footer>

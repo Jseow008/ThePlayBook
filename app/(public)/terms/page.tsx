@@ -6,7 +6,7 @@
  */
 
 import { APP_NAME } from "@/lib/brand";
-import Link from "next/link";
+import { CompactPublicFooter } from "@/components/ui/CompactPublicFooter";
 
 export const metadata = {
     title: `Terms of Service | ${APP_NAME}`,
@@ -145,14 +145,7 @@ export default function TermsPage() {
                     </section>
                 </div>
 
-                {/* Footer nav */}
-                <div className="mt-16 pt-8 border-t border-border/40 flex items-center justify-between text-sm text-muted-foreground">
-                    <span>&copy; {new Date().getFullYear()} {APP_NAME}</span>
-                    <div className="flex gap-6">
-                        <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
-                        <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-                    </div>
-                </div>
+                <CompactPublicFooter />
             </main>
         </div>
     );
