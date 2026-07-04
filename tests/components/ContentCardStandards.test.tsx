@@ -25,7 +25,7 @@ describe("content card responsive standards", () => {
         );
 
         expect(browsePageSource).toContain("COMPACT_SHELF_SKELETON_CARD_CLASS");
-        expect(COMPACT_SHELF_SKELETON_CARD_CLASS).toContain("w-[168px]");
+        expect(COMPACT_SHELF_SKELETON_CARD_CLASS).toContain("w-[172px]");
         expect(COMPACT_SHELF_SKELETON_CARD_CLASS).toContain("md:w-[240px]");
     });
 });
