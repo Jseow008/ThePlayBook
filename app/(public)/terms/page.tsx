@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default function TermsPage() {
-    const lastUpdated = "February 2026";
+    const lastUpdated = "July 2026";
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -34,6 +34,23 @@ export default function TermsPage() {
                         <p className="text-muted-foreground leading-relaxed">
                             By accessing and using {APP_NAME} (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.
                         </p>
+                    </section>
+
+                    <hr className="border-border/40" />
+
+                    <section>
+                        <h2 className="text-xl font-semibold mb-4 font-display">Eligibility and Accounts</h2>
+                        <div className="space-y-4 text-muted-foreground leading-relaxed">
+                            <p>
+                                You may use {APP_NAME} only if you are legally able to agree to these Terms and use the Service under the laws that apply to you.
+                            </p>
+                            <p>
+                                If you create an account, you are responsible for keeping your sign-in information secure and for activity that occurs through your account. You agree to provide accurate account information and to notify us if you believe your account has been accessed without permission.
+                            </p>
+                            <p>
+                                You may request account deletion from your Settings page, where available, or by contacting us. We may suspend or terminate access to the Service if an account is used in a way that violates these Terms, creates risk for other users, or may harm the Service.
+                            </p>
+                        </div>
                     </section>
 
                     <hr className="border-border/40" />
@@ -69,9 +86,9 @@ export default function TermsPage() {
                             The books, podcasts, and other media summarized on {APP_NAME} are the intellectual property of their respective authors, publishers, and creators. All rights to original works remain with their owners.
                         </p>
 
-                        <h3 className="text-base font-medium mb-2 text-foreground/90">Our Content</h3>
+                        <h3 className="text-base font-medium mb-2 mt-8 text-foreground/90">Your Content</h3>
                         <p className="text-muted-foreground leading-relaxed">
-                            The summaries, commentary, and presentation on {APP_NAME} are original works created through personal reflection and analysis. This content is protected under applicable copyright laws.
+                            You retain ownership of notes, highlights, requests, prompts, and other content you submit or save through the Service. You grant {APP_NAME} permission to host, store, process, display, and use that content as needed to operate, secure, improve, and provide the Service and its features to you.
                         </p>
                     </section>
 
@@ -87,8 +104,19 @@ export default function TermsPage() {
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Use content for commercial purposes</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Scrape, crawl, or use automated tools to extract content</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Misrepresent summaries as official or endorsed by original authors</span></li>
+                            <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Submit unlawful, infringing, abusive, deceptive, or harmful content</span></li>
+                            <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Attempt to bypass rate limits, access controls, security measures, or usage restrictions</span></li>
                             <li className="flex gap-3"><span className="text-primary mt-1.5 shrink-0">•</span><span>Use the Service in any way that violates applicable laws</span></li>
                         </ul>
+                    </section>
+
+                    <hr className="border-border/40" />
+
+                    <section>
+                        <h2 className="text-xl font-semibold mb-4 font-display">AI-Assisted Features</h2>
+                        <p className="text-muted-foreground leading-relaxed">
+                            {APP_NAME} may provide search, retrieval, recommendation, and ask features powered by AI systems. AI-generated responses may be incomplete, inaccurate, or based on limited context. You are responsible for evaluating responses before relying on them, and they should not be treated as professional, legal, financial, medical, or other specialist advice.
+                        </p>
                     </section>
 
                     <hr className="border-border/40" />
@@ -120,6 +148,36 @@ export default function TermsPage() {
                     <hr className="border-border/40" />
 
                     <section>
+                        <h2 className="text-xl font-semibold mb-4 font-display">Service Changes and Availability</h2>
+                        <p className="text-muted-foreground leading-relaxed">
+                            We may add, modify, suspend, or discontinue features or parts of the Service at any time. We do not guarantee that the Service or any specific feature will always be available, uninterrupted, or unchanged.
+                        </p>
+                    </section>
+
+                    <hr className="border-border/40" />
+
+                    <section>
+                        <h2 className="text-xl font-semibold mb-4 font-display">Privacy</h2>
+                        <p className="text-muted-foreground leading-relaxed">
+                            Our collection and use of personal information is described in our{" "}
+                            <a href="/privacy" className="text-foreground/80 underline hover:text-foreground transition-colors">
+                                Privacy Policy
+                            </a>.
+                        </p>
+                    </section>
+
+                    <hr className="border-border/40" />
+
+                    <section>
+                        <h2 className="text-xl font-semibold mb-4 font-display">Fair Use</h2>
+                        <p className="text-muted-foreground leading-relaxed">
+                            We aim for summaries and commentary on {APP_NAME} to be educational, analytical, and transformative, and to complement rather than replace original works. If you are a copyright holder and have concerns about any content, please contact us and we will review the concern in good faith.
+                        </p>
+                    </section>
+
+                    <hr className="border-border/40" />
+
+                    <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Changes to Terms</h2>
                         <p className="text-muted-foreground leading-relaxed">
                             We reserve the right to modify these Terms at any time. Continued use of the Service after changes constitutes acceptance of the new Terms. We encourage you to review this page periodically.
@@ -129,18 +187,12 @@ export default function TermsPage() {
                     <hr className="border-border/40" />
 
                     <section>
-                        <h2 className="text-xl font-semibold mb-4 font-display">Fair Use</h2>
-                        <p className="text-muted-foreground leading-relaxed">
-                            Our summaries and commentary are created in good faith under principles of fair use for educational and transformative purposes. If you are a copyright holder and have concerns about any content, please contact us and we will address it promptly.
-                        </p>
-                    </section>
-
-                    <hr className="border-border/40" />
-
-                    <section>
                         <h2 className="text-xl font-semibold mb-4 font-display">Contact</h2>
                         <p className="text-muted-foreground leading-relaxed">
-                            For questions about these Terms, please reach out via the contact methods available on our platform.
+                            For questions about these Terms, contact us at{" "}
+                            <a href="mailto:javierseowww@gmail.com" className="text-foreground/80 underline hover:text-foreground transition-colors">
+                                javierseowww@gmail.com
+                            </a>.
                         </p>
                     </section>
                 </div>
