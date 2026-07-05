@@ -1,9 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { MessageCircleQuestion, BookOpen, ArrowRight, PartyPopper, BookmarkCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AuthorChat } from "./AuthorChat";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
 import Link from "next/link";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -11,6 +11,24 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useRecommendations } from "@/hooks/use-content-queries";
 import { buildReadPath } from "@/lib/content-paths";
 import { SignInLink } from "@/components/ui/SignInLink";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
+
+const AuthorChat = dynamic(
+    () => import("./AuthorChat").then((mod) => mod.AuthorChat),
+    {
+        loading: () => (
+            <div className={`fixed inset-0 ${OVERLAY_LAYER_CLASS.popover} flex items-center justify-center bg-background/95 backdrop-blur-md`}>
+                <div
+                    role="status"
+                    className="rounded-2xl border border-border/50 bg-card/70 px-5 py-3 text-sm font-medium text-muted-foreground"
+                >
+                    Opening chat...
+                </div>
+            </div>
+        ),
+        ssr: false,
+    }
+);
 
 interface CompletionCardProps {
     contentId: string;

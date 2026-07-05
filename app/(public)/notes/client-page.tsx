@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -34,7 +35,7 @@ import { cn } from "@/lib/utils";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
-import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
+import type { NotesChatScope } from "@/components/notes/NotesAskPanel";
 import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
@@ -66,6 +67,27 @@ const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
 const VIRTUAL_OVERSCAN_PX = 720;
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
+
+const NotesAskPanel = dynamic(
+    () => import("@/components/notes/NotesAskPanel").then((mod) => mod.NotesAskPanel),
+    {
+        loading: () => (
+            <div
+                role="status"
+                aria-label="Loading notes AI"
+                aria-busy="true"
+                className="min-h-[28rem] rounded-[28px] border border-border/50 bg-card/35 p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm"
+            >
+                <div className="h-4 w-28 rounded-full bg-muted/50" />
+                <div className="mt-5 space-y-3">
+                    <div className="h-24 rounded-2xl bg-muted/30" />
+                    <div className="h-20 rounded-2xl bg-muted/20" />
+                    <div className="h-20 rounded-2xl bg-muted/20" />
+                </div>
+            </div>
+        ),
+    }
+);
 
 function getValidTypeFilter(value: string | null): ItemTypeFilter {
     return value === "note" || value === "highlight" ? value : DEFAULT_SELECTED_TYPE;

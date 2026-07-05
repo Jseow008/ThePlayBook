@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -13,7 +14,6 @@ import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
 import { CompletionCard } from "./CompletionCard";
-import { AuthorChat } from "./AuthorChat";
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
 import { NotesDrawer } from "./NotesDrawer";
 import { useHighlights } from "@/hooks/useHighlights";
@@ -32,6 +32,7 @@ import {
     readScopedAudioResume,
     writeScopedAudioResume,
 } from "@/lib/local-user-storage";
+import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 /**
  * Reader View — Accordion Layout
@@ -46,6 +47,23 @@ interface ReaderViewProps {
 }
 
 type HighlightJumpTarget = "highlight" | "segment";
+
+const AuthorChat = dynamic(
+    () => import("./AuthorChat").then((mod) => mod.AuthorChat),
+    {
+        loading: () => (
+            <div className={`fixed inset-0 ${OVERLAY_LAYER_CLASS.popover} flex items-center justify-center bg-background/95 backdrop-blur-md`}>
+                <div
+                    role="status"
+                    className="rounded-2xl border border-border/50 bg-card/70 px-5 py-3 text-sm font-medium text-muted-foreground"
+                >
+                    Opening chat...
+                </div>
+            </div>
+        ),
+        ssr: false,
+    }
+);
 
 function escapeAttributeSelector(value: string) {
     return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
