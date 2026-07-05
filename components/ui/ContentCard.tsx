@@ -225,7 +225,7 @@ function BaseContentCard({
                         showCompletedBadge ? "right-10" : "right-2",
                         isBookmarked
                             ? "bg-primary text-primary-foreground opacity-100"
-                            : "content-card-hover-action bg-black/40 text-white opacity-100 hover:bg-black/70"
+                            : "content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
                     )}
                     title={isBookmarked ? "Remove from Library" : "Save to Library"}
                     aria-label={bookmarkLabel}
@@ -233,7 +233,7 @@ function BaseContentCard({
                     {isBookmarked ? (
                         <Bookmark className="size-5" fill="currentColor" />
                     ) : (
-                        <Bookmark className="size-5" />
+                        <Bookmark className="size-[18px]" />
                     )}
                 </button>
             ) : null}
@@ -242,8 +242,8 @@ function BaseContentCard({
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
                     <p
                         className={cn(
-                            "translate-z-0 break-words text-center font-medium uppercase leading-relaxed tracking-[0.12em] whitespace-normal text-white/90 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",
-                            isAppCompact ? "text-[10px]" : "text-[9px]"
+                            "translate-z-0 max-w-[82%] break-words text-center font-medium uppercase leading-relaxed tracking-[0.1em] whitespace-normal text-white/80 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",
+                            "text-[9px]"
                         )}
                     >
                         {item.author}
@@ -282,7 +282,7 @@ function BaseContentCard({
                             <p
                                 className={cn(
                                     "line-clamp-1 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest",
-                                    isAppCompact ? "text-[10px]" : "text-[9px]"
+                                    "text-[9px]"
                                 )}
                             >
                                 {item.category}
@@ -291,7 +291,7 @@ function BaseContentCard({
                         <p
                             className={cn(
                                 "flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest",
-                                isAppCompact ? "text-[10px]" : "text-[9px]"
+                                "text-[9px]"
                             )}
                         >
                             <span>{item.type}</span>
