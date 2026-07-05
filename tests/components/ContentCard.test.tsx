@@ -201,8 +201,8 @@ describe("ContentCard", () => {
     it("uses the compact title typography only when requested", () => {
         const { rerender } = render(<ContentCard item={item} titleDensity="app-compact" />);
 
-        expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("text-[0.88rem]");
-        expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("leading-[1.13]");
+        expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("text-[0.92rem]");
+        expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("leading-[1.16]");
 
         rerender(<ContentCard item={item} />);
 
