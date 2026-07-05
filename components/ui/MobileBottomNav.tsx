@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -30,6 +31,11 @@ const navItems = [
 export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
     const pathname = usePathname();
     const { totalLibraryItems, isLoaded } = useReadingProgress();
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     // Check if current path is in library section
     const isLibraryActive = pathname.startsWith("/library");
@@ -75,7 +81,7 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                 <div className="relative">
                                     <item.icon className="size-6" weight={isActive ? "fill" : "regular"} />
                                     {/* Badge for library items */}
-                                    {isLibrary && isLoaded && totalLibraryItems > 0 && (
+                                    {isLibrary && hasMounted && isLoaded && totalLibraryItems > 0 && (
                                         <span className="absolute -right-2 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                                             {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
                                         </span>

@@ -250,7 +250,7 @@ export function NetfluxSidebar() {
                             <div className="relative flex-shrink-0">
                                 <BooksIcon className="size-5" weight="duotone" />
                                 {/* Badge for total items when collapsed */}
-                                {isLoaded && totalLibraryItems > 0 && (
+                                {hasMounted && isLoaded && totalLibraryItems > 0 && (
                                     <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1">
                                         {totalLibraryItems > 9 ? "9+" : totalLibraryItems}
                                     </span>
