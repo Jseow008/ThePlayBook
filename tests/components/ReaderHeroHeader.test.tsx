@@ -11,12 +11,8 @@ vi.mock('@/components/reader/ReaderSettingsMenu', () => ({
     ReaderSettingsMenu: () => <button type="button">Reader settings</button>,
 }));
 
-vi.mock('@/components/ui/ShareButton', () => ({
-    ShareButton: () => <button type="button">Share</button>,
-}));
-
-vi.mock('@/components/ui/StoryShareButton', () => ({
-    StoryShareButton: () => <button type="button">Share story image</button>,
+vi.mock('@/components/ui/ContentShareMenu', () => ({
+    ContentShareMenu: () => <button type="button">Share</button>,
 }));
 
 vi.mock('@/components/ui/ResilientImage', () => ({
