@@ -25,7 +25,7 @@ export async function GET(request: Request) {
             return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
         }
 
-        const report = await getLaunchReadinessReport();
+        const report = await getLaunchReadinessReport(process.env, requestId);
         return NextResponse.json(report, { status: report.status === "ready" ? 200 : 503 });
     } catch (error) {
         logApiError({

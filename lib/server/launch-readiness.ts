@@ -1,7 +1,10 @@
-import { getAdminAiReadinessMap, getAdminAiReadinessWorkflow, summarizeAdminAiReadiness, type AdminAiReadinessSummary } from "@/lib/server/admin-ai-readiness";
+import { getAdminAiReadinessWorkflow, type AdminAiReadinessSummary } from "@/lib/server/admin-ai-readiness";
+import { logApiError } from "@/lib/server/api";
 import { getGeminiSegmentCoverage, type CoverageSummary } from "@/lib/server/gemini-segment-sync";
 import { getRuntimeReadiness, type RuntimeReadiness } from "@/lib/server/health";
 import { getAdminClient } from "@/lib/supabase/admin";
+
+const LAUNCH_READINESS_ROUTE = "/api/admin/launch-readiness";
 
 type BucketRow = {
     name?: string | null;
@@ -9,17 +12,10 @@ type BucketRow = {
 };
 
 type LaunchReadinessSupabaseClient = {
-    from: (table: string) => any;
-    rpc: (...args: any[]) => PromiseLike<{ data: unknown[] | null; error: unknown }>;
+    rpc: (...args: any[]) => PromiseLike<{ data: unknown | unknown[] | null; error: unknown }>;
     storage: {
         listBuckets: () => PromiseLike<{ data: BucketRow[] | null; error: unknown }>;
     };
-};
-
-type VerifiedContentRow = {
-    id: string;
-    status: string;
-    embedding: unknown;
 };
 
 export type LaunchReadinessBucketCheck = {
@@ -67,6 +63,43 @@ function uniqueIssues(issues: string[]) {
     return [...new Set(issues.filter((issue) => issue.trim().length > 0))];
 }
 
+function logLaunchReadinessCheckError(params: {
+    requestId?: string;
+    message: string;
+    error: unknown;
+}) {
+    if (params.requestId) {
+        logApiError({
+            requestId: params.requestId,
+            route: LAUNCH_READINESS_ROUTE,
+            message: params.message,
+            error: params.error,
+        });
+        return;
+    }
+
+    console.error({
+        route: LAUNCH_READINESS_ROUTE,
+        message: params.message,
+    }, { error: params.error });
+}
+
+function toAiReadinessSummary(data: unknown): AdminAiReadinessSummary {
+    const row = Array.isArray(data) ? data[0] : data;
+    const summary = row && typeof row === "object"
+        ? row as Partial<Record<keyof AdminAiReadinessSummary, unknown>>
+        : {};
+
+    return {
+        verified_items: Number(summary.verified_items ?? 0),
+        ai_ready_items: Number(summary.ai_ready_items ?? 0),
+        ai_stale_items: Number(summary.ai_stale_items ?? 0),
+        stale_content_embeddings: Number(summary.stale_content_embeddings ?? 0),
+        stale_segment_embeddings: Number(summary.stale_segment_embeddings ?? 0),
+        items_without_published_segments: Number(summary.items_without_published_segments ?? 0),
+    };
+}
+
 function buildBucketCheck(buckets: BucketRow[], name: string) {
     const bucket = buckets.find((row) => row.name === name);
 
@@ -103,7 +136,8 @@ function buildBucketCheck(buckets: BucketRow[], name: string) {
 }
 
 export async function getLaunchReadinessReport(
-    env: NodeJS.ProcessEnv = process.env
+    env: NodeJS.ProcessEnv = process.env,
+    requestId?: string
 ): Promise<LaunchReadinessReport> {
     const runtime = getRuntimeReadiness(env);
     const runtimeIssues = [...runtime.issues];
@@ -144,7 +178,12 @@ export async function getLaunchReadinessReport(
     if (runtime.checks.supabase_admin === "ready") {
         try {
             supabase = getAdminClient() as unknown as LaunchReadinessSupabaseClient;
-        } catch {
+        } catch (error) {
+            logLaunchReadinessCheckError({
+                requestId,
+                message: "Supabase admin client could not be created",
+                error,
+            });
             const issue = "Supabase admin client could not be created.";
             runtimeIssues.push(issue);
             aiReadiness.issues.push(issue);
@@ -160,29 +199,13 @@ export async function getLaunchReadinessReport(
 
     if (supabase) {
         try {
-            const { data: items, error } = await supabase
-                .from("content_item")
-                .select("id, status, embedding")
-                .eq("status", "verified")
-                .is("deleted_at", null);
+            const { data, error } = await supabase.rpc("get_admin_ai_readiness_summary");
 
             if (error) {
                 throw error;
             }
 
-            const verifiedItems: VerifiedContentRow[] = Array.isArray(items)
-                ? items.map((item: any) => ({
-                    id: item.id,
-                    status: item.status,
-                    embedding: item.embedding,
-                }))
-                : [];
-
-            const aiReadinessById = await getAdminAiReadinessMap(
-                supabase as any,
-                verifiedItems
-            );
-            const aiReadinessSummary = summarizeAdminAiReadiness(Object.values(aiReadinessById));
+            const aiReadinessSummary = toAiReadinessSummary(data);
 
             aiReadiness.summary = aiReadinessSummary;
             aiReadiness.status = aiReadinessSummary.verified_items > 0 && aiReadinessSummary.ai_stale_items === 0
@@ -210,7 +233,12 @@ export async function getLaunchReadinessReport(
                     `${aiReadinessSummary.items_without_published_segments} verified content item(s) have no published segments.`
                 );
             }
-        } catch {
+        } catch (error) {
+            logLaunchReadinessCheckError({
+                requestId,
+                message: "Failed to load AI readiness details",
+                error,
+            });
             aiReadiness.issues.push("Failed to load AI readiness details.");
         }
 
@@ -230,7 +258,12 @@ export async function getLaunchReadinessReport(
                     `${coverage.missing_segments} Gemini segment embedding(s) are still missing.`
                 );
             }
-        } catch {
+        } catch (error) {
+            logLaunchReadinessCheckError({
+                requestId,
+                message: "Failed to load Gemini segment coverage",
+                error,
+            });
             segmentCoverage.issues.push("Failed to load Gemini segment coverage.");
         }
 
@@ -253,7 +286,12 @@ export async function getLaunchReadinessReport(
             storage.status = media.check.status === "ready" && audio.check.status === "ready"
                 ? "ready"
                 : "degraded";
-        } catch {
+        } catch (error) {
+            logLaunchReadinessCheckError({
+                requestId,
+                message: "Failed to list Supabase storage buckets",
+                error,
+            });
             storage.issues.push("Failed to list Supabase storage buckets.");
         }
     }
