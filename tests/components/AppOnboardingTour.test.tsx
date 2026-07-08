@@ -5,11 +5,11 @@ import { APP_ONBOARDING_SLIDES } from "@/lib/onboarding";
 import { vi } from "vitest";
 
 vi.mock("next/image", () => ({
-    default: (props: ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean; priority?: boolean }) => {
-        const { alt, src, fill, priority, ...safeProps } = props;
+    default: (props: ImgHTMLAttributes<HTMLImageElement> & { fill?: boolean; priority?: boolean; unoptimized?: boolean }) => {
+        const { alt, src, fill, priority, unoptimized, ...safeProps } = props;
         void fill;
         void priority;
-        return <img alt={alt} src={src} {...safeProps} />;
+        return <img alt={alt} src={src} data-unoptimized={unoptimized ? "true" : undefined} {...safeProps} />;
     },
 }));
 
@@ -57,6 +57,21 @@ describe("AppOnboardingTour", () => {
         ]));
         expect(imageSources.some((src) => src?.includes("/_next/image"))).toBe(false);
         expect(APP_ONBOARDING_SLIDES[4]?.imageSrc).toBe("/images/notes.webp");
+    });
+
+    it("bypasses Next image optimization for local onboarding screenshots", () => {
+        render(<AppOnboardingTour isOpen isSaving={false} onFinish={vi.fn()} slides={APP_ONBOARDING_SLIDES} />);
+
+        const onboardingImages = Array.from(
+            document.body.querySelectorAll(
+                '[data-testid="app-onboarding-mobile-image"], [data-testid="app-onboarding-desktop-image"]'
+            )
+        );
+
+        expect(onboardingImages).toHaveLength(12);
+        onboardingImages.forEach((image) => {
+            expect(image).toHaveAttribute("data-unoptimized", "true");
+        });
     });
 
     it("uses screenshot-safe mobile image framing across slides", () => {

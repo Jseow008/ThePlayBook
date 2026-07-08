@@ -189,6 +189,7 @@ export function AppOnboardingTour({
                                                                     alt={slide.imageAlt}
                                                                     data-testid="app-onboarding-mobile-image"
                                                                     fill
+                                                                    unoptimized
                                                                     sizes="(min-width: 1024px) 0px, 100vw"
                                                                     fetchPriority={index === 0 ? "high" : "auto"}
                                                                     loading={index === 0 ? "eager" : "lazy"}
@@ -206,6 +207,7 @@ export function AppOnboardingTour({
                                                                     alt={slide.imageAlt}
                                                                     data-testid="app-onboarding-desktop-image"
                                                                     fill
+                                                                    unoptimized
                                                                     sizes="(min-width: 1024px) 32rem, 0px"
                                                                     fetchPriority={index === 0 ? "high" : "auto"}
                                                                     loading={index === 0 ? "eager" : "lazy"}
