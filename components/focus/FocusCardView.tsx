@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { BookOpen, Bookmark, ChevronDown, Info } from "lucide-react";
+import { BookOpen, ChevronDown, Info } from "lucide-react";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { LibrarySaveButton } from "@/components/ui/LibrarySaveButton";
 import { buildReadPath } from "@/lib/content-paths";
 import type { FocusCard } from "@/components/focus/focus-feed-utils";
 import {
@@ -366,19 +367,17 @@ export const FocusCardView = memo(function FocusCardView({
                                         )}
                                     </div>
                                     <div className="flex items-center justify-center gap-2 pt-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
+                                        <LibrarySaveButton
+                                            contentTitle={card.title}
+                                            isSaved={isSaved}
+                                            onToggle={() => {
                                                 onToggleSave(card);
                                             }}
-                                            className={`focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors touch-manipulation ${isSaved
-                                                ? "border-primary/30 bg-primary/10 text-primary"
-                                                : "border-border/45 bg-secondary/20 text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground"
-                                                }`}
-                                            aria-label={isSaved ? `Remove ${card.title} from Library` : `Save ${card.title} to Library`}
-                                        >
-                                            <Bookmark className="size-4" fill={isSaved ? "currentColor" : "none"} />
-                                        </button>
+                                            className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full border transition-colors touch-manipulation"
+                                            savedClassName="border-primary/30 bg-primary/10 text-primary"
+                                            unsavedClassName="border-border/45 bg-secondary/20 text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground"
+                                            iconClassName="size-4"
+                                        />
                                         <ShareButton
                                             path={`/preview/${card.id}`}
                                             title={card.title}
@@ -512,19 +511,17 @@ export const FocusCardView = memo(function FocusCardView({
                                     )}
                                 </div>
                                 <div className={`flex items-center justify-center pt-0 ${isCompactMobileLayout ? "gap-2.5" : "gap-3"}`}>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
+                                    <LibrarySaveButton
+                                        contentTitle={card.title}
+                                        isSaved={isSaved}
+                                        onToggle={() => {
                                             onToggleSave(card);
                                         }}
-                                        className={`focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors touch-manipulation ${isSaved
-                                            ? "bg-primary/10 text-primary"
-                                            : "text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
-                                            }`}
-                                        aria-label={isSaved ? `Remove ${card.title} from Library` : `Save ${card.title} to Library`}
-                                    >
-                                        <Bookmark className="size-4" fill={isSaved ? "currentColor" : "none"} />
-                                    </button>
+                                        className="focus-ring inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors touch-manipulation"
+                                        savedClassName="bg-primary/10 text-primary"
+                                        unsavedClassName="text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
+                                        iconClassName="size-4"
+                                    />
                                     <ShareButton
                                         path={`/preview/${card.id}`}
                                         title={card.title}

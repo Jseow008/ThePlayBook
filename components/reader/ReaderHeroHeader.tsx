@@ -7,6 +7,7 @@ import { APP_NAME } from "@/lib/brand";
 import { ShareButton } from "@/components/ui/ShareButton";
 import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
 import {
     READER_COVER_FRAME_CLASS,
     READER_COVER_IMAGE_SIZES,
@@ -151,6 +152,19 @@ export function ReaderHeroHeader({
                         {/* Display Settings */}
                         <ReaderSettingsMenu />
 
+                        {/* Save Button */}
+                        {contentId && (
+                            <SaveToLibraryButton
+                                contentId={contentId}
+                                contentTitle={title}
+                                className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait"
+                                loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
+                                savedClassName="border-primary/35 bg-primary/10 text-primary"
+                                unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                iconClassName="size-5"
+                            />
+                        )}
+
                         {/* Share Button */}
                         <ShareButton
                             url={shareUrl}
@@ -160,6 +174,7 @@ export function ReaderHeroHeader({
                             source="reader_header"
                             contentId={contentId}
                             contentType={type}
+                            className="focus-ring h-10 w-10 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                         />
                     </div>
                 </div>

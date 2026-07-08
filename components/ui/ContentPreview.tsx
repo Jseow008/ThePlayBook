@@ -3,15 +3,14 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Clock, BookOpen, Sparkles, ChevronDown, Bookmark } from "lucide-react";
+import { Clock, BookOpen, Sparkles, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { ContentItem } from "@/types/database";
 import type { QuickMode, SeriesContext } from "@/types/domain";
-import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { ShareButton } from "@/components/ui/ShareButton";
-import { toast } from "sonner";
+import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
 import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -46,10 +45,6 @@ export function ContentPreview({
     const [isTruncated, setIsTruncated] = useState(false);
     const [showAllTakeaways, setShowAllTakeaways] = useState(initialShowAllTakeaways);
     const [showFullHook, setShowFullHook] = useState(false);
-
-    // logic for "Save to Library"
-    const { isInMyList, toggleMyList, isLoaded: isReadingProgressLoaded } = useReadingProgress();
-    const isSaved = isReadingProgressLoaded && isInMyList(item.id);
 
     useEffect(() => {
         setHasMounted(true);
@@ -261,32 +256,15 @@ export function ContentPreview({
                                     <BookOpen className="size-5" />
                                     <span className="truncate">Read Summary</span>
                                 </Link>
-                                <button
-                                    type="button"
-                                    disabled={!isReadingProgressLoaded}
-                                    onClick={() => {
-                                        toggleMyList(item.id);
-                                        toast.success(isSaved ? "Removed from Library" : "Saved to Library");
-                                    }}
-                                    className={`focus-ring inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait ${!isReadingProgressLoaded
-                                        ? "border-border/35 bg-secondary/25 text-muted-foreground/60"
-                                        : isSaved
-                                        ? "border-primary/35 bg-primary/10 text-primary"
-                                        : "border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                                        }`}
-                                    title={isReadingProgressLoaded
-                                        ? isSaved
-                                            ? "Remove from Library"
-                                            : "Save to Library"
-                                        : "Loading Library state"}
-                                    aria-label={isReadingProgressLoaded
-                                        ? isSaved
-                                            ? `Remove ${item.title} from Library`
-                                            : `Save ${item.title} to Library`
-                                        : "Loading Library state"}
-                                >
-                                    <Bookmark className="size-5" fill={isSaved ? "currentColor" : "none"} />
-                                </button>
+                                <SaveToLibraryButton
+                                    contentId={item.id}
+                                    contentTitle={item.title}
+                                    className="focus-ring inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-colors disabled:cursor-wait"
+                                    loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
+                                    savedClassName="border-primary/35 bg-primary/10 text-primary"
+                                    unsavedClassName="border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                    iconClassName="size-5"
+                                />
                                 <ShareButton
                                     path={`/preview/${item.id}`}
                                     title={item.title}
@@ -423,27 +401,15 @@ export function ContentPreview({
                                 <span className="truncate">Read Summary</span>
                             </Link>
 
-                            <button
-                                type="button"
-                                disabled={!isReadingProgressLoaded}
-                                onClick={() => {
-                                    toggleMyList(item.id);
-                                    toast.success(isSaved ? "Removed from Library" : "Saved to Library");
-                                }}
-                                className={`focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:scale-95 disabled:cursor-wait disabled:active:scale-100 ${!isReadingProgressLoaded
-                                    ? "bg-secondary/25 border-border/35 text-muted-foreground/60"
-                                    : isSaved
-                                    ? "bg-secondary/55 border-primary/45 text-primary"
-                                    : "bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground"
-                                    }`}
-                                aria-label={isReadingProgressLoaded
-                                    ? isSaved
-                                        ? `Remove ${item.title} from Library`
-                                        : `Save ${item.title} to Library`
-                                    : "Loading Library state"}
-                            >
-                                <Bookmark className="size-5" fill={isSaved ? "currentColor" : "none"} />
-                            </button>
+                            <SaveToLibraryButton
+                                contentId={item.id}
+                                contentTitle={item.title}
+                                className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:scale-95 disabled:cursor-wait disabled:active:scale-100"
+                                loadingClassName="bg-secondary/25 border-border/35 text-muted-foreground/60"
+                                savedClassName="bg-secondary/55 border-primary/45 text-primary"
+                                unsavedClassName="bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground"
+                                iconClassName="size-5"
+                            />
 
                             {/* Mobile Share */}
                             <ShareButton

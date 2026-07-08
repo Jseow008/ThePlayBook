@@ -7,7 +7,6 @@ import {
     FileText,
     CheckCircle2,
     Trash2,
-    Bookmark,
     Video,
     Archive,
 } from "lucide-react";
@@ -17,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { buildReadPath } from "@/lib/content-paths";
 import { toast } from "sonner";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import { LibrarySaveButton } from "@/components/ui/LibrarySaveButton";
 import {
     CONTENT_CARD_ASPECT_CLASS,
     CONTENT_CARD_IMAGE_SIZES,
@@ -43,7 +43,7 @@ interface BaseContentCardProps extends ContentCardProps {
     isBookmarked?: boolean;
     progressPercentage?: number;
     showProgress?: boolean;
-    onToggleBookmark?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+    onToggleBookmark?: () => void;
     href?: string;
 }
 
@@ -122,10 +122,7 @@ function InteractiveContentCard(props: ContentCardProps) {
             progressPercentage={percentage}
             showProgress={showProgress}
             href={href}
-            onToggleBookmark={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-
+            onToggleBookmark={() => {
                 toggleMyList(item.id);
                 toast.success(isBookmarked ? "Removed from Library" : "Saved to Library");
             }}
@@ -166,9 +163,6 @@ function BaseContentCard({
     const renderNewBadge = isNew && !showCompletedBadge;
     const hasAudioSummary = Boolean(item.audio_url?.trim());
     const linkLabel = getContentCardLabel(href, item.title, hasAudioSummary);
-    const bookmarkLabel = isBookmarked
-        ? `Remove ${item.title} from Library`
-        : `Save ${item.title} to Library`;
     const showBookmarkButton = !hideBookmark && Boolean(onToggleBookmark);
     const contentHook = getContentCardHook(item);
     const isAppCompact = titleDensity === "app-compact";
@@ -218,24 +212,22 @@ function BaseContentCard({
             ) : null}
 
             {showBookmarkButton ? (
-                <button
-                    onClick={onToggleBookmark}
+                <LibrarySaveButton
+                    contentTitle={item.title}
+                    isSaved={isBookmarked}
+                    onToggle={() => {
+                        onToggleBookmark?.();
+                    }}
+                    stopPropagation
                     className={cn(
                         "content-card-motion-action focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
-                        showCompletedBadge ? "right-10" : "right-2",
-                        isBookmarked
-                            ? "bg-primary text-primary-foreground opacity-100"
-                            : "content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
+                        showCompletedBadge ? "right-10" : "right-2"
                     )}
-                    title={isBookmarked ? "Remove from Library" : "Save to Library"}
-                    aria-label={bookmarkLabel}
-                >
-                    {isBookmarked ? (
-                        <Bookmark className="size-5" fill="currentColor" />
-                    ) : (
-                        <Bookmark className="size-[18px]" />
-                    )}
-                </button>
+                    savedClassName="bg-primary text-primary-foreground opacity-100"
+                    unsavedClassName="content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
+                    savedIconClassName="size-5"
+                    unsavedIconClassName="size-[18px]"
+                />
             ) : null}
 
             {item.author ? (
