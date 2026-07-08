@@ -5,6 +5,7 @@ import { Clock, BookOpen } from "lucide-react";
 import { AudioPlayer } from "./AudioPlayer";
 import { APP_NAME } from "@/lib/brand";
 import { ShareButton } from "@/components/ui/ShareButton";
+import { StoryShareButton } from "@/components/ui/StoryShareButton";
 import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
@@ -176,6 +177,17 @@ export function ReaderHeroHeader({
                             contentType={type}
                             className="focus-ring h-10 w-10 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                         />
+
+                        {contentId && (
+                            <StoryShareButton
+                                contentId={contentId}
+                                url={shareUrl}
+                                title={title}
+                                source="reader_header"
+                                contentType={type}
+                                className="focus-ring h-10 w-10 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                            />
+                        )}
                     </div>
                 </div>
             </div>

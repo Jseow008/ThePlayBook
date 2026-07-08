@@ -15,6 +15,10 @@ vi.mock('@/components/ui/ShareButton', () => ({
     ShareButton: () => <button type="button">Share</button>,
 }));
 
+vi.mock('@/components/ui/StoryShareButton', () => ({
+    StoryShareButton: () => <button type="button">Share story image</button>,
+}));
+
 vi.mock('@/components/ui/ResilientImage', () => ({
     ResilientImage: ({ alt, sizes }: { alt: string; sizes?: string }) => (
         <img alt={alt} data-testid="mock-cover-image" sizes={sizes} />
