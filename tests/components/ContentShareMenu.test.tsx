@@ -53,13 +53,13 @@ describe("ContentShareMenu", () => {
         vi.unstubAllGlobals();
     });
 
-    it("opens a unified share menu with link and story actions", () => {
+    it("opens a unified share menu with link and image actions", () => {
         renderMenu();
 
         expect(screen.getByRole("menu", { name: "Share" })).toBeInTheDocument();
         expect(screen.getByRole("menuitem", { name: /Send link/ })).toBeInTheDocument();
         expect(screen.getByRole("menuitem", { name: /Copy link/ })).toBeInTheDocument();
-        expect(screen.getByRole("menuitem", { name: /Share as Story/ })).toBeInTheDocument();
+        expect(screen.getByRole("menuitem", { name: /Share image/ })).toBeInTheDocument();
     });
 
     it("uses native sharing for the send link action", async () => {
@@ -95,7 +95,36 @@ describe("ContentShareMenu", () => {
         await waitFor(() => expect(writeText).toHaveBeenCalledWith("https://netflux.test/read/cant-hurt-me"));
     });
 
-    it("downloads a story image when file sharing is unavailable", async () => {
+    it("shares image files with a file-only payload when supported", async () => {
+        mockSuccessfulImageFetch();
+        const writeText = mockClipboard();
+        const share = vi.fn().mockResolvedValue(undefined);
+        const canShare = vi.fn((shareData: ShareData) => Boolean(shareData.files?.length) && !shareData.text);
+
+        Object.defineProperty(navigator, "share", {
+            configurable: true,
+            value: share,
+        });
+        Object.defineProperty(navigator, "canShare", {
+            configurable: true,
+            value: canShare,
+        });
+
+        renderMenu();
+        fireEvent.click(screen.getByRole("menuitem", { name: /Share image/ }));
+
+        await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+
+        expect(canShare).toHaveBeenCalledWith({
+            files: expect.arrayContaining([expect.any(File)]),
+        });
+        expect(share).toHaveBeenCalledWith({
+            files: expect.arrayContaining([expect.any(File)]),
+        });
+        expect(writeText).toHaveBeenCalledWith("https://netflux.test/read/cant-hurt-me");
+    });
+
+    it("downloads an image when file sharing is unavailable", async () => {
         const fetchMock = mockSuccessfulImageFetch();
         const writeText = mockClipboard();
         const createObjectURL = vi.fn().mockReturnValue("blob:story-image");
@@ -116,7 +145,7 @@ describe("ContentShareMenu", () => {
         });
 
         renderMenu();
-        fireEvent.click(screen.getByRole("menuitem", { name: /Share as Story/ }));
+        fireEvent.click(screen.getByRole("menuitem", { name: /Share image/ }));
 
         await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
 

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy, Instagram, Loader2, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import { APP_NAME } from "@/lib/brand";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
@@ -57,11 +56,11 @@ async function copyShareLink(url: string) {
     }
 }
 
-function canShareFiles(shareData: ShareData) {
+function canShareFiles(files: File[]) {
     try {
         return typeof navigator.share === "function"
             && typeof navigator.canShare === "function"
-            && navigator.canShare(shareData);
+            && navigator.canShare({ files });
     } catch {
         return false;
     }
@@ -203,13 +202,9 @@ export function ContentShareMenu({
                 lastModified: Date.now(),
             });
             const copiedLink = await copyShareLink(resolvedUrl);
-            const shareData: ShareData = {
-                files: [file],
-                title,
-                text: `Reading "${title}" on ${APP_NAME}`,
-            };
+            const shareData: ShareData = { files: [file] };
 
-            if (canShareFiles(shareData)) {
+            if (canShareFiles([file])) {
                 try {
                     await navigator.share(shareData);
                     captureAnalyticsEvent("share_clicked", {

@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Check, Instagram } from "lucide-react";
 import { toast } from "sonner";
-import { APP_NAME } from "@/lib/brand";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -51,11 +50,11 @@ async function copyShareLink(url: string) {
     }
 }
 
-function canShareFiles(shareData: ShareData) {
+function canShareFiles(files: File[]) {
     try {
         return typeof navigator.share === "function"
             && typeof navigator.canShare === "function"
-            && navigator.canShare(shareData);
+            && navigator.canShare({ files });
     } catch {
         return false;
     }
@@ -109,13 +108,9 @@ export function StoryShareButton({
                 lastModified: Date.now(),
             });
             const copiedLink = await copyShareLink(resolvedUrl);
-            const shareData: ShareData = {
-                files: [file],
-                title,
-                text: `Reading "${title}" on ${APP_NAME}`,
-            };
+            const shareData: ShareData = { files: [file] };
 
-            if (canShareFiles(shareData)) {
+            if (canShareFiles([file])) {
                 try {
                     await navigator.share(shareData);
                     captureAnalyticsEvent("share_clicked", {

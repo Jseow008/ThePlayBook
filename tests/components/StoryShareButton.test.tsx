@@ -75,10 +75,9 @@ describe("StoryShareButton", () => {
         expect(canShare).toHaveBeenCalledWith(expect.objectContaining({
             files: expect.arrayContaining([expect.any(File)]),
         }));
-        expect(share).toHaveBeenCalledWith(expect.objectContaining({
+        expect(share).toHaveBeenCalledWith({
             files: expect.arrayContaining([expect.any(File)]),
-            title: "Can't Hurt Me",
-        }));
+        });
     });
 
     it("downloads the generated story image when file sharing is unavailable", async () => {
