@@ -236,7 +236,6 @@ export function buildPublicContentMetadata(
     route: "preview" | "read"
 ): Metadata {
     const title = content.title;
-    const previewTitle = `${title} | ${APP_NAME}`;
     const description = buildDescription(content);
     const ogImage = buildContentOgImageUrl(content.id);
     const path = route === "read" ? buildReadPath(content) : `/${route}/${content.id}`;
@@ -246,7 +245,7 @@ export function buildPublicContentMetadata(
         title,
         description,
         openGraph: {
-            title: previewTitle,
+            title,
             description,
             url,
             siteName: APP_NAME,
@@ -255,7 +254,7 @@ export function buildPublicContentMetadata(
         },
         twitter: {
             card: "summary_large_image",
-            title: previewTitle,
+            title,
             description,
             images: [ogImage],
         },
