@@ -125,55 +125,59 @@ export function ReaderHeroHeader({
                     )}
 
                     {/* Metadata Row */}
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
-                        {/* Duration Badge */}
-                        {durationSeconds && (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs font-medium text-muted-foreground border border-border">
-                                <Clock className="size-3.5" />
-                                {Math.round(durationSeconds / 60)} min
+                    <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-start sm:gap-2.5">
+                        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:justify-start">
+                            {/* Duration Badge */}
+                            {durationSeconds && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-xs font-medium text-muted-foreground border border-border">
+                                    <Clock className="size-3.5" />
+                                    {Math.round(durationSeconds / 60)} min
+                                </span>
+                            )}
+
+                            {/* Type Badge */}
+                            <span className="px-3 py-1.5 rounded-lg bg-secondary text-xs font-bold uppercase tracking-wider text-muted-foreground border border-border">
+                                {type}
                             </span>
-                        )}
 
-                        {/* Type Badge */}
-                        <span className="px-3 py-1.5 rounded-lg bg-secondary text-xs font-bold uppercase tracking-wider text-muted-foreground border border-border">
-                            {type}
-                        </span>
-
-                        {/* Time Spent Reading */}
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 text-xs font-medium text-muted-foreground border border-border/50">
-                            <span className="relative flex size-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
+                            {/* Time Spent Reading */}
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 text-xs font-medium text-muted-foreground border border-border/50">
+                                <span className="relative flex size-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
+                                </span>
+                                {formattedReadingTime} read
                             </span>
-                            {formattedReadingTime} read
-                        </span>
+                        </div>
 
-                        {/* Display Settings */}
-                        <ReaderSettingsMenu />
+                        <div className="flex items-center justify-center gap-2.5 sm:justify-start">
+                            {/* Display Settings */}
+                            <ReaderSettingsMenu />
 
-                        {/* Save Button */}
-                        {contentId && (
-                            <SaveToLibraryButton
+                            {/* Save Button */}
+                            {contentId && (
+                                <SaveToLibraryButton
+                                    contentId={contentId}
+                                    contentTitle={title}
+                                    className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait"
+                                    loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
+                                    savedClassName="border-primary/35 bg-primary/10 text-primary"
+                                    unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                    iconClassName="size-5"
+                                />
+                            )}
+
+                            {/* Share Menu */}
+                            <ContentShareMenu
+                                url={shareUrl}
+                                title={title}
+                                text={`Read "${title}" on ${APP_NAME}`}
+                                source="reader_header"
                                 contentId={contentId}
-                                contentTitle={title}
-                                className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait"
-                                loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
-                                savedClassName="border-primary/35 bg-primary/10 text-primary"
-                                unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                                iconClassName="size-5"
+                                contentType={type}
+                                className="focus-ring h-10 w-10 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                             />
-                        )}
-
-                        {/* Share Menu */}
-                        <ContentShareMenu
-                            url={shareUrl}
-                            title={title}
-                            text={`Read "${title}" on ${APP_NAME}`}
-                            source="reader_header"
-                            contentId={contentId}
-                            contentType={type}
-                            className="focus-ring h-10 w-10 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
-                        />
+                        </div>
                     </div>
                 </div>
             </div>

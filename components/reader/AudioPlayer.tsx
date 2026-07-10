@@ -396,16 +396,24 @@ export function AudioPlayer({
             )}
 
             {canShowMiniPlayer && createPortal(
-                <div
-                    className={cn(
-                        `reader-${readerTheme}`,
-                        "fixed inset-x-3 safe-area-bottom-sm z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]",
-                        "animate-in fade-in slide-in-from-bottom-3 duration-300 motion-reduce:animate-none"
-                    )}
-                    role="region"
-                    aria-label="Audio mini player"
-                >
-                    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_12px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                <>
+                    <div
+                        aria-hidden="true"
+                        className={cn(
+                            `reader-${readerTheme}`,
+                            "pointer-events-none fixed inset-x-0 bottom-0 z-[44] h-32 bg-gradient-to-t from-background via-background/90 to-transparent sm:left-1/2 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]"
+                        )}
+                    />
+                    <div
+                        className={cn(
+                            `reader-${readerTheme}`,
+                            "fixed inset-x-3 safe-area-bottom-sm z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]",
+                            "animate-in fade-in slide-in-from-bottom-3 duration-300 motion-reduce:animate-none"
+                        )}
+                        role="region"
+                        aria-label="Audio mini player"
+                    >
+                        <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_12px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur-xl">
                         <div className="h-0.5 bg-secondary">
                             <div
                                 className="h-full bg-primary transition-[width] duration-150"
@@ -494,8 +502,9 @@ export function AudioPlayer({
                                 </button>
                             </div>
                         </div>
+                        </div>
                     </div>
-                </div>,
+                </>,
                 document.body
             )}
         </div>
