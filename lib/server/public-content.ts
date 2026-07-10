@@ -5,6 +5,7 @@ import { buildReadPath } from "@/lib/content-paths";
 import { SITE_URL } from "@/lib/seo";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import type { ContentItem } from "@/types/database";
+import { QuickModeSchema } from "@/types/domain";
 import type {
     ArtifactSummary,
     ContentItemWithSegments,
@@ -32,6 +33,8 @@ interface MetadataSource {
     author: string | null;
     category: string | null;
     cover_image_url: string | null;
+    duration_seconds?: number | null;
+    quick_mode_json?: unknown;
 }
 
 interface PreviewPageData {
@@ -120,10 +123,33 @@ function buildContentKind(content: MetadataSource) {
     return "Summary";
 }
 
+function punctuateDescription(value: string) {
+    return /[.!?]$/.test(value) ? value : `${value}.`;
+}
+
+function buildHookDescription(value: unknown) {
+    const parsed = QuickModeSchema.safeParse(value);
+    if (!parsed.success) return null;
+
+    const hook = parsed.data.hook.replace(/\s+/g, " ").trim();
+    if (!hook) return null;
+
+    return punctuateDescription(hook);
+}
+
 function buildDescription(content: MetadataSource) {
+    const hookDescription = buildHookDescription(content.quick_mode_json);
+    if (hookDescription) return hookDescription;
+
+    const readingMinutes = content.duration_seconds
+        ? Math.max(1, Math.round(content.duration_seconds / 60))
+        : null;
+    const prefix = readingMinutes ? `A ${readingMinutes}-minute` : "A concise";
+    const kind = buildContentKind(content).toLowerCase();
+
     return content.author
-        ? `${content.author} · ${buildContentKind(content)}`
-        : `Read the key ideas on ${APP_NAME}`;
+        ? `${prefix} ${kind} featuring ${content.author}.`
+        : `Read the key ideas on ${APP_NAME}.`;
 }
 
 function buildContentOgImageUrl(contentId: string) {

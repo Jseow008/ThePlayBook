@@ -21,19 +21,19 @@ interface RouteContext {
 
 const size = { width: 1200, height: 630 };
 
-function buildMetadataLine(content: Awaited<ReturnType<typeof getContent>>) {
-    if (!content) return null;
-
-    const category = normalizeLabel(content.category ?? content.type);
+function buildMetadataLine(content: NonNullable<Awaited<ReturnType<typeof getContent>>>) {
+    const type = normalizeLabel(content.type);
+    const category = normalizeLabel(content.category);
     const readingMinutes = content.duration_seconds
         ? Math.max(1, Math.round(content.duration_seconds / 60))
         : null;
     const parts = [
-        category,
+        type,
+        category && category !== type ? category : null,
         readingMinutes ? `${readingMinutes} min read` : null,
     ].filter(Boolean);
 
-    return parts.length > 0 ? parts.join(" · ") : null;
+    return parts.join(" · ");
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
@@ -75,7 +75,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
             <div
                 style={{
                     background:
-                        "radial-gradient(circle at 84% 18%, rgba(250, 250, 250, 0.08) 0, transparent 28%), linear-gradient(135deg, #09090b 0%, #111113 62%, #151518 100%)",
+                        "radial-gradient(circle at 72% 24%, rgba(250, 250, 250, 0.12) 0, transparent 23%), radial-gradient(circle at 86% 18%, rgba(250, 250, 250, 0.06) 0, transparent 30%), linear-gradient(135deg, #09090b 0%, #111113 62%, #151518 100%)",
                     color: "#fafafa",
                     display: "flex",
                     fontFamily: uiFont,
@@ -128,7 +128,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
                             flexDirection: "column",
                             justifyContent: "space-between",
                             paddingLeft: 70,
-                            paddingTop: 34,
+                            paddingRight: 20,
+                            paddingTop: 58,
                         }}
                     >
                         <div
@@ -166,7 +167,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
                             {metadataLine && (
                                 <div
                                     style={{
-                                        color: "rgba(250, 250, 250, 0.46)",
+                                        color: "rgba(250, 250, 250, 0.55)",
                                         display: "flex",
                                         fontSize: 25,
                                         lineHeight: 1.2,
@@ -180,9 +181,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
                         <div
                             style={{
-                                alignItems: "center",
+                                alignItems: "flex-end",
                                 display: "flex",
-                                justifyContent: "flex-end",
+                                flexDirection: "column",
+                                marginBottom: 2,
                                 width: "100%",
                             }}
                         >
@@ -198,6 +200,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
                                 }}
                             >
                                 {APP_NAME.toUpperCase()}
+                            </div>
+                            <div
+                                style={{
+                                    color: "rgba(250, 250, 250, 0.42)",
+                                    display: "flex",
+                                    fontSize: 18,
+                                    letterSpacing: 0,
+                                    lineHeight: 1,
+                                    marginTop: 12,
+                                }}
+                            >
+                                netflux.blog
                             </div>
                         </div>
                     </div>
