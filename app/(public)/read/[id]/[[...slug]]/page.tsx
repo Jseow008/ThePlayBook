@@ -69,7 +69,7 @@ export default async function ReadPage({ params, searchParams }: PageProps) {
             id: content.id,
             title: content.title,
             author: content.author,
-            description: buildPublicContentDescription(content, "read"),
+            description: buildPublicContentDescription(content),
             cover_image_url: content.cover_image_url,
             created_at: content.created_at,
             updated_at: content.updated_at,

@@ -11,6 +11,7 @@ export interface OgContent {
     category: string | null;
     cover_image_url: string | null;
     type: string;
+    duration_seconds: number | null;
 }
 
 export type OgFont = {
@@ -149,7 +150,7 @@ export async function getContent(id: string): Promise<OgContent | null> {
     const supabase = createPublicServerClient();
     const { data, error } = await supabase
         .from("content_item")
-        .select("id, title, author, category, cover_image_url, type")
+        .select("id, title, author, category, cover_image_url, type, duration_seconds")
         .eq("id", id)
         .eq("status", "verified")
         .is("deleted_at", null)

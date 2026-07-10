@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Clock, BookOpen } from "lucide-react";
 import { AudioPlayer } from "./AudioPlayer";
 import { APP_NAME } from "@/lib/brand";
+import { ContentShareMenu } from "@/components/ui/ContentShareMenu";
 import { ReaderSettingsMenu } from "./ReaderSettingsMenu";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
@@ -77,6 +78,12 @@ export function ReaderHeroHeader({
             document.title = `${title} — ${APP_NAME}`;
         }
     }, [progressPercent, title]);
+
+    // Safe URL for sharing - avoids SSR hydration mismatch.
+    const [shareUrl, setShareUrl] = useState("");
+    useEffect(() => {
+        setShareUrl(window.location.href);
+    }, []);
 
     return (
         <header className="mb-8">
@@ -157,6 +164,16 @@ export function ReaderHeroHeader({
                             />
                         )}
 
+                        {/* Share Menu */}
+                        <ContentShareMenu
+                            url={shareUrl}
+                            title={title}
+                            text={`Read "${title}" on ${APP_NAME}`}
+                            source="reader_header"
+                            contentId={contentId}
+                            contentType={type}
+                            className="focus-ring h-10 w-10 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                        />
                     </div>
                 </div>
             </div>

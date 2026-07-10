@@ -4,7 +4,7 @@ import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { SITE_URL } from "@/lib/seo";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import type { ContentItem, Json } from "@/types/database";
+import type { ContentItem } from "@/types/database";
 import type {
     ArtifactSummary,
     ContentItemWithSegments,
@@ -27,20 +27,11 @@ const READ_SELECT = `
 
 interface MetadataSource {
     id: string;
+    type: string;
     title: string;
     author: string | null;
     category: string | null;
     cover_image_url: string | null;
-    quick_mode_json: Json | null;
-}
-
-function getQuickModeBigIdea(value: Json | null) {
-    if (!value || Array.isArray(value) || typeof value !== "object") {
-        return null;
-    }
-
-    const candidate = value as { big_idea?: unknown };
-    return typeof candidate.big_idea === "string" ? candidate.big_idea : null;
 }
 
 interface PreviewPageData {
@@ -106,13 +97,33 @@ interface AdjacentContentRow {
     series_order: number | null;
 }
 
-function buildDescription(content: MetadataSource, modeLabel: "Preview" | "Reading") {
-    return (
-        getQuickModeBigIdea(content.quick_mode_json)
-        ?? (content.author
-            ? `${content.author} · ${content.category ?? modeLabel}`
-            : content.category ?? `${modeLabel} on ${APP_NAME}`)
-    );
+function normalizeMetadataLabel(value: string | null | undefined) {
+    if (!value) return null;
+
+    const label = value
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (!label) return null;
+
+    return label.replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function buildContentKind(content: MetadataSource) {
+    const typeLabel = normalizeMetadataLabel(content.type);
+    if (typeLabel) return `${typeLabel} summary`;
+
+    const categoryLabel = normalizeMetadataLabel(content.category);
+    if (categoryLabel) return `${categoryLabel} summary`;
+
+    return "Summary";
+}
+
+function buildDescription(content: MetadataSource) {
+    return content.author
+        ? `${content.author} · ${buildContentKind(content)}`
+        : `Read the key ideas on ${APP_NAME}`;
 }
 
 function buildContentOgImageUrl(contentId: string) {
@@ -199,7 +210,8 @@ export function buildPublicContentMetadata(
     route: "preview" | "read"
 ): Metadata {
     const title = content.title;
-    const description = buildDescription(content, route === "preview" ? "Preview" : "Reading");
+    const previewTitle = `${title} | ${APP_NAME}`;
+    const description = buildDescription(content);
     const ogImage = buildContentOgImageUrl(content.id);
     const path = route === "read" ? buildReadPath(content) : `/${route}/${content.id}`;
     const url = `${siteUrl}${path}`;
@@ -208,7 +220,7 @@ export function buildPublicContentMetadata(
         title,
         description,
         openGraph: {
-            title,
+            title: previewTitle,
             description,
             url,
             siteName: APP_NAME,
@@ -217,7 +229,7 @@ export function buildPublicContentMetadata(
         },
         twitter: {
             card: "summary_large_image",
-            title,
+            title: previewTitle,
             description,
             images: [ogImage],
         },
@@ -229,8 +241,8 @@ export function buildPublicContentMetadata(
     };
 }
 
-export function buildPublicContentDescription(content: MetadataSource, route: "preview" | "read") {
-    return buildDescription(content, route === "preview" ? "Preview" : "Reading");
+export function buildPublicContentDescription(content: MetadataSource) {
+    return buildDescription(content);
 }
 
 export const getPreviewPageData = cache(async (id: string): Promise<PreviewPageData | null> => {

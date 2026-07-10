@@ -10,6 +10,7 @@ import {
     fontPromise,
     getContent,
     getImageDataUrl,
+    normalizeLabel,
 } from "./og-content-image-utils";
 
 export const runtime = "nodejs";
@@ -19,6 +20,21 @@ interface RouteContext {
 }
 
 const size = { width: 1200, height: 630 };
+
+function buildMetadataLine(content: Awaited<ReturnType<typeof getContent>>) {
+    if (!content) return null;
+
+    const category = normalizeLabel(content.category ?? content.type);
+    const readingMinutes = content.duration_seconds
+        ? Math.max(1, Math.round(content.duration_seconds / 60))
+        : null;
+    const parts = [
+        category,
+        readingMinutes ? `${readingMinutes} min read` : null,
+    ].filter(Boolean);
+
+    return parts.length > 0 ? parts.join(" · ") : null;
+}
 
 export async function GET(request: NextRequest, context: RouteContext) {
     const rateLimitResult = await strictPublicRateLimit(request, {
@@ -49,6 +65,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     const brandFont = fonts.some((font) => font.name === "Outfit") ? "Outfit" : uiFont;
     const title = clampText(content.title, 82);
     const author = content.author ? clampText(content.author, 52) : APP_TAGLINE;
+    const metadataLine = buildMetadataLine(content);
     const coverImageSrc = content.cover_image_url ? await getImageDataUrl(content.cover_image_url) : null;
     const hasCover = Boolean(coverImageSrc);
     const titleFontSize = title.length > 68 ? 50 : title.length > 44 ? 58 : 68;
@@ -146,6 +163,19 @@ export async function GET(request: NextRequest, context: RouteContext) {
                             >
                                 {author}
                             </div>
+                            {metadataLine && (
+                                <div
+                                    style={{
+                                        color: "rgba(250, 250, 250, 0.46)",
+                                        display: "flex",
+                                        fontSize: 25,
+                                        lineHeight: 1.2,
+                                        marginTop: 18,
+                                    }}
+                                >
+                                    {metadataLine}
+                                </div>
+                            )}
                         </div>
 
                         <div
