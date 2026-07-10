@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Instagram, Send, Share2 } from "lucide-react";
+import { Check, Copy, Instagram, Loader2, Send, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { APP_NAME } from "@/lib/brand";
 import { captureAnalyticsEvent } from "@/lib/analytics";
@@ -194,7 +194,7 @@ export function ContentShareMenu({
             });
 
             if (!response.ok) {
-                throw new Error(`Story image request failed with ${response.status}`);
+                throw new Error(`Share image request failed with ${response.status}`);
             }
 
             const blob = await response.blob();
@@ -219,7 +219,7 @@ export function ContentShareMenu({
                         share_method: "native",
                         share_target: "story_image",
                     });
-                    if (copiedLink) toast.success("Story image shared. Link copied for the sticker.");
+                    if (copiedLink) toast.success("Image shared. Link copied.");
                     didComplete = true;
                     setIsOpen(false);
                     return;
@@ -238,13 +238,13 @@ export function ContentShareMenu({
             });
             toast.success(
                 copiedLink
-                    ? "Story image downloaded. Link copied for the sticker."
-                    : "Story image downloaded."
+                    ? "Image downloaded. Link copied."
+                    : "Image downloaded."
             );
             didComplete = true;
             setIsOpen(false);
         } catch {
-            toast.error("Could not prepare the story image");
+            toast.error("Could not prepare the image");
         } finally {
             setIsBusy(false);
             if (didComplete) {
@@ -283,8 +283,12 @@ export function ContentShareMenu({
                     disabled={isBusy}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus:bg-secondary/70 focus:text-foreground focus:outline-none disabled:cursor-wait disabled:opacity-70"
                 >
-                    <Instagram className="size-4 shrink-0" />
-                    <span className="font-medium">Share as Story</span>
+                    {isBusy ? (
+                        <Loader2 className="size-4 shrink-0 animate-spin" />
+                    ) : (
+                        <Instagram className="size-4 shrink-0" />
+                    )}
+                    <span className="font-medium">{isBusy ? "Preparing image..." : "Share image"}</span>
                     {completedAction === "story" && <Check className="ml-auto size-4 text-primary" />}
                 </button>
             )}

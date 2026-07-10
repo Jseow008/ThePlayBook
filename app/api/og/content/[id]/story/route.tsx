@@ -10,7 +10,6 @@ import {
     fontPromise,
     getContent,
     getImageDataUrl,
-    logoPromise,
     normalizeLabel,
 } from "../og-content-image-utils";
 
@@ -21,6 +20,19 @@ interface RouteContext {
 }
 
 const size = { width: 1080, height: 1920 };
+
+function buildMetadataLine(content: NonNullable<Awaited<ReturnType<typeof getContent>>>) {
+    const category = normalizeLabel(content.category ?? content.type);
+    const readingMinutes = content.duration_seconds
+        ? Math.max(1, Math.round(content.duration_seconds / 60))
+        : null;
+    const parts = [
+        category,
+        readingMinutes ? `${readingMinutes} min read` : null,
+    ].filter(Boolean);
+
+    return parts.join(" · ");
+}
 
 export async function GET(request: NextRequest, context: RouteContext) {
     const rateLimitResult = await strictPublicRateLimit(request, {
@@ -46,15 +58,15 @@ export async function GET(request: NextRequest, context: RouteContext) {
         return new Response("Content not found", { status: 404 });
     }
 
-    const [fonts, logoSrc] = await Promise.all([fontPromise, logoPromise]);
+    const fonts = await fontPromise;
     const uiFont = fonts.some((font) => font.name === "Inter") ? "Inter" : "sans-serif";
     const brandFont = fonts.some((font) => font.name === "Outfit") ? "Outfit" : uiFont;
     const title = clampText(content.title, 76);
     const author = content.author ? clampText(content.author, 48) : APP_TAGLINE;
-    const badge = normalizeLabel(content.category ?? content.type);
+    const metadataLine = buildMetadataLine(content);
     const coverImageSrc = content.cover_image_url ? await getImageDataUrl(content.cover_image_url) : null;
     const hasCover = Boolean(coverImageSrc);
-    const titleFontSize = title.length > 58 ? 58 : title.length > 38 ? 68 : 78;
+    const titleFontSize = title.length > 58 ? 56 : title.length > 38 ? 66 : 76;
 
     const image = new ImageResponse(
         (
@@ -76,46 +88,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
                     style={{
                         alignItems: "center",
                         display: "flex",
-                        justifyContent: "space-between",
-                        width: "100%",
-                    }}
-                >
-                    <div
-                        style={{
-                            alignItems: "center",
-                            background: "rgba(250, 250, 250, 0.1)",
-                            border: "1px solid rgba(250, 250, 250, 0.14)",
-                            borderRadius: 999,
-                            color: "rgba(250, 250, 250, 0.78)",
-                            display: "flex",
-                            fontSize: 28,
-                            fontWeight: 700,
-                            padding: "16px 24px",
-                        }}
-                    >
-                        {badge}
-                    </div>
-
-                    {/* eslint-disable-next-line @next/next/no-img-element -- Satori OG image markup uses raw img elements, not next/image. */}
-                    <img
-                        alt={APP_NAME}
-                        src={logoSrc}
-                        style={{
-                            height: 72,
-                            objectFit: "contain",
-                            opacity: 0.92,
-                            width: 76,
-                        }}
-                    />
-                </div>
-
-                <div
-                    style={{
-                        alignItems: "center",
-                        display: "flex",
                         flex: 1,
                         flexDirection: "column",
-                        justifyContent: "center",
+                        justifyContent: "flex-start",
                         width: "100%",
                     }}
                 >
@@ -127,9 +102,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
                             borderRadius: 36,
                             boxShadow: "0 48px 120px rgba(0, 0, 0, 0.55)",
                             display: "flex",
-                            height: 858,
+                            height: 900,
+                            marginTop: 96,
                             overflow: "hidden",
-                            width: 572,
+                            width: 600,
                         }}
                     >
                         {hasCover ? (
@@ -153,23 +129,11 @@ export async function GET(request: NextRequest, context: RouteContext) {
                             alignItems: "center",
                             display: "flex",
                             flexDirection: "column",
-                            marginTop: 72,
+                            marginTop: 64,
                             textAlign: "center",
                             width: "100%",
                         }}
                     >
-                        <div
-                            style={{
-                                color: "rgba(250, 250, 250, 0.58)",
-                                display: "flex",
-                                fontSize: 30,
-                                fontWeight: 700,
-                                letterSpacing: 0,
-                                marginBottom: 22,
-                            }}
-                        >
-                            Reading on {APP_NAME}
-                        </div>
                         <div
                             style={{
                                 color: "#fafafa",
@@ -178,7 +142,8 @@ export async function GET(request: NextRequest, context: RouteContext) {
                                 fontWeight: 700,
                                 letterSpacing: 0,
                                 lineHeight: 1.02,
-                                maxHeight: 238,
+                                maxHeight: 232,
+                                maxWidth: 900,
                                 overflow: "hidden",
                             }}
                         >
@@ -190,33 +155,69 @@ export async function GET(request: NextRequest, context: RouteContext) {
                                 display: "flex",
                                 fontSize: 36,
                                 lineHeight: 1.24,
-                                marginTop: 28,
+                                marginTop: 26,
                             }}
                         >
-                            {content.author ? `By ${author}` : author}
+                            {author}
                         </div>
+                        {metadataLine && (
+                            <div
+                                style={{
+                                    color: "rgba(250, 250, 250, 0.56)",
+                                    display: "flex",
+                                    fontSize: 30,
+                                    lineHeight: 1.2,
+                                    marginTop: 20,
+                                }}
+                            >
+                                {metadataLine}
+                            </div>
+                        )}
                     </div>
                 </div>
 
                 <div
                     style={{
                         alignItems: "center",
-                        color: "rgba(250, 250, 250, 0.52)",
                         display: "flex",
-                        fontSize: 26,
-                        justifyContent: "space-between",
+                        flexDirection: "column",
+                        marginBottom: 96,
                         width: "100%",
                     }}
                 >
                     <div
                         style={{
-                            background: "rgba(250, 250, 250, 0.22)",
+                            background: "linear-gradient(90deg, rgba(59, 130, 246, 0), rgba(59, 130, 246, 0.86), rgba(250, 250, 250, 0.18), rgba(59, 130, 246, 0))",
                             display: "flex",
-                            height: 1,
-                            width: 220,
+                            height: 2,
+                            marginBottom: 30,
+                            width: 188,
                         }}
                     />
-                    <div style={{ display: "flex" }}>{APP_NAME}</div>
+                    <div
+                        style={{
+                            color: "rgba(250, 250, 250, 0.76)",
+                            display: "flex",
+                            fontFamily: brandFont,
+                            fontSize: 34,
+                            fontWeight: 700,
+                            letterSpacing: 0,
+                            lineHeight: 1,
+                        }}
+                    >
+                        {APP_NAME.toUpperCase()}
+                    </div>
+                    <div
+                        style={{
+                            color: "rgba(250, 250, 250, 0.48)",
+                            display: "flex",
+                            fontSize: 24,
+                            lineHeight: 1,
+                            marginTop: 14,
+                        }}
+                    >
+                        netflux.blog
+                    </div>
                 </div>
             </div>
         ),
