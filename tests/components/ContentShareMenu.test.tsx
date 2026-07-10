@@ -44,22 +44,33 @@ function renderMenu() {
     fireEvent.click(screen.getByRole("button", { name: "Share this content" }));
 }
 
+async function renderPreparedMenu() {
+    renderMenu();
+
+    const shareImage = await screen.findByRole("menuitem", { name: "Share image" });
+    await waitFor(() => expect(shareImage).toBeEnabled());
+    return shareImage;
+}
+
 describe("ContentShareMenu", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockSuccessfulImageFetch();
     });
 
     afterEach(() => {
         vi.unstubAllGlobals();
     });
 
-    it("opens a unified share menu with link and image actions", () => {
+    it("prepares the image when the share menu opens", async () => {
         renderMenu();
 
         expect(screen.getByRole("menu", { name: "Share" })).toBeInTheDocument();
         expect(screen.getByRole("menuitem", { name: /Send link/ })).toBeInTheDocument();
         expect(screen.getByRole("menuitem", { name: /Copy link/ })).toBeInTheDocument();
-        expect(screen.getByRole("menuitem", { name: /Share image/ })).toBeInTheDocument();
+        expect(screen.getByRole("menuitem", { name: "Preparing image..." })).toBeDisabled();
+
+        await screen.findByRole("menuitem", { name: "Share image" });
     });
 
     it("uses native sharing for the send link action", async () => {
@@ -75,7 +86,7 @@ describe("ContentShareMenu", () => {
             value: canShare,
         });
 
-        renderMenu();
+        await renderPreparedMenu();
         fireEvent.click(screen.getByRole("menuitem", { name: /Send link/ }));
 
         await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
@@ -89,7 +100,7 @@ describe("ContentShareMenu", () => {
     it("copies the link from the copy link action", async () => {
         const writeText = mockClipboard();
 
-        renderMenu();
+        await renderPreparedMenu();
         fireEvent.click(screen.getByRole("menuitem", { name: /Copy link/ }));
 
         await waitFor(() => expect(writeText).toHaveBeenCalledWith("https://netflux.test/read/cant-hurt-me"));
@@ -110,8 +121,8 @@ describe("ContentShareMenu", () => {
             value: canShare,
         });
 
-        renderMenu();
-        fireEvent.click(screen.getByRole("menuitem", { name: /Share image/ }));
+        const shareImage = await renderPreparedMenu();
+        fireEvent.click(shareImage);
 
         await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
 
@@ -122,6 +133,7 @@ describe("ContentShareMenu", () => {
             files: expect.arrayContaining([expect.any(File)]),
         });
         expect(writeText).toHaveBeenCalledWith("https://netflux.test/read/cant-hurt-me");
+        expect(share.mock.invocationCallOrder[0]).toBeLessThan(writeText.mock.invocationCallOrder[0]);
     });
 
     it("downloads an image when file sharing is unavailable", async () => {
@@ -144,8 +156,8 @@ describe("ContentShareMenu", () => {
             value: revokeObjectURL,
         });
 
-        renderMenu();
-        fireEvent.click(screen.getByRole("menuitem", { name: /Share image/ }));
+        const shareImage = await renderPreparedMenu();
+        fireEvent.click(shareImage);
 
         await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
 
@@ -155,6 +167,34 @@ describe("ContentShareMenu", () => {
         );
         expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
         expect(writeText).toHaveBeenCalledWith("https://netflux.test/read/cant-hurt-me");
+
+        click.mockRestore();
+    });
+
+    it("does not download when native sharing rejects", async () => {
+        const share = vi.fn().mockRejectedValue(Object.assign(new Error("Not allowed"), { name: "NotAllowedError" }));
+        const createObjectURL = vi.fn();
+        const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+
+        Object.defineProperty(navigator, "share", {
+            configurable: true,
+            value: share,
+        });
+        Object.defineProperty(navigator, "canShare", {
+            configurable: true,
+            value: vi.fn().mockReturnValue(true),
+        });
+        Object.defineProperty(URL, "createObjectURL", {
+            configurable: true,
+            value: createObjectURL,
+        });
+
+        const shareImage = await renderPreparedMenu();
+        fireEvent.click(shareImage);
+
+        await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
+        expect(createObjectURL).not.toHaveBeenCalled();
+        expect(click).not.toHaveBeenCalled();
 
         click.mockRestore();
     });

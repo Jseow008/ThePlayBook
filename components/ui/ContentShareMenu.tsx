@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { sharePreparedImage, usePreparedShareImage } from "@/hooks/usePreparedShareImage";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import { cn } from "@/lib/utils";
@@ -31,53 +32,6 @@ function buildResolvedUrl(url?: string, path?: string) {
     return path ?? "";
 }
 
-function buildStoryImageUrl(contentId: string) {
-    return new URL(`/api/og/content/${contentId}/story`, window.location.origin).toString();
-}
-
-function buildStoryFileName(title: string) {
-    const slug = title
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-        .slice(0, 48);
-
-    return `${slug || "netflux-read"}-story.png`;
-}
-
-async function copyShareLink(url: string) {
-    if (!url || !navigator.clipboard) return false;
-
-    try {
-        await navigator.clipboard.writeText(url);
-        return true;
-    } catch {
-        return false;
-    }
-}
-
-function canShareFiles(files: File[]) {
-    try {
-        return typeof navigator.share === "function"
-            && typeof navigator.canShare === "function"
-            && navigator.canShare({ files });
-    } catch {
-        return false;
-    }
-}
-
-function downloadBlob(blob: Blob, fileName: string) {
-    const objectUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = objectUrl;
-    link.download = fileName;
-    link.rel = "noopener";
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
-}
-
 export function ContentShareMenu({
     contentId,
     url,
@@ -97,6 +51,11 @@ export function ContentShareMenu({
     const triggerButtonRef = useRef<HTMLButtonElement>(null);
     const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const resolvedUrl = buildResolvedUrl(url, path);
+    const {
+        status: imagePreparationStatus,
+        prepare: prepareShareImage,
+        getPreparedImage,
+    } = usePreparedShareImage(contentId, title);
 
     useEffect(() => {
         setMounted(true);
@@ -131,6 +90,12 @@ export function ContentShareMenu({
             document.removeEventListener("touchstart", handleClickOutside);
         };
     }, [isOpen]);
+
+    useEffect(() => {
+        if (isOpen && contentId && imagePreparationStatus === "idle") {
+            void prepareShareImage();
+        }
+    }, [contentId, imagePreparationStatus, isOpen, prepareShareImage]);
 
     function markCompleted(action: "link" | "copy" | "story") {
         setCompletedAction(action);
@@ -179,67 +144,39 @@ export function ContentShareMenu({
         }
     }
 
-    async function handleShareStory() {
+    async function handleShareImage() {
         if (!contentId || isBusy) return;
 
-        const imageUrl = buildStoryImageUrl(contentId);
-        const fileName = buildStoryFileName(title);
+        const preparedImage = getPreparedImage();
+        if (!preparedImage) return;
+
         let didComplete = false;
         setIsBusy(true);
 
         try {
-            const response = await fetch(imageUrl, {
-                headers: { Accept: "image/png" },
-            });
+            const result = await sharePreparedImage(preparedImage, resolvedUrl);
 
-            if (!response.ok) {
-                throw new Error(`Share image request failed with ${response.status}`);
+            if (result.status === "cancelled") return;
+
+            if (result.status === "failed") {
+                toast.error("Could not open the share sheet");
+                return;
             }
 
-            const blob = await response.blob();
-            const file = new File([blob], fileName, {
-                type: blob.type || "image/png",
-                lastModified: Date.now(),
-            });
-            const copiedLink = await copyShareLink(resolvedUrl);
-            const shareData: ShareData = { files: [file] };
-
-            if (canShareFiles([file])) {
-                try {
-                    await navigator.share(shareData);
-                    captureAnalyticsEvent("share_clicked", {
-                        source,
-                        content_id: contentId,
-                        content_type: contentType,
-                        share_method: "native",
-                        share_target: "story_image",
-                    });
-                    if (copiedLink) toast.success("Image shared. Link copied.");
-                    didComplete = true;
-                    setIsOpen(false);
-                    return;
-                } catch (err) {
-                    if ((err as Error).name === "AbortError") return;
-                }
-            }
-
-            downloadBlob(blob, fileName);
             captureAnalyticsEvent("share_clicked", {
                 source,
                 content_id: contentId,
                 content_type: contentType,
-                share_method: "download",
+                share_method: result.status === "shared" ? "native" : "download",
                 share_target: "story_image",
             });
             toast.success(
-                copiedLink
-                    ? "Image downloaded. Link copied."
-                    : "Image downloaded."
+                result.status === "shared"
+                    ? result.copiedLink ? "Image shared. Link copied." : "Image shared."
+                    : result.copiedLink ? "Image downloaded. Link copied." : "Image downloaded."
             );
             didComplete = true;
             setIsOpen(false);
-        } catch {
-            toast.error("Could not prepare the image");
         } finally {
             setIsBusy(false);
             if (didComplete) {
@@ -274,16 +211,22 @@ export function ContentShareMenu({
                 <button
                     type="button"
                     role="menuitem"
-                    onClick={handleShareStory}
-                    disabled={isBusy}
+                    onClick={imagePreparationStatus === "failed" ? () => void prepareShareImage() : handleShareImage}
+                    disabled={isBusy || imagePreparationStatus === "idle" || imagePreparationStatus === "preparing"}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground focus:bg-secondary/70 focus:text-foreground focus:outline-none disabled:cursor-wait disabled:opacity-70"
                 >
-                    {isBusy ? (
+                    {isBusy || imagePreparationStatus === "idle" || imagePreparationStatus === "preparing" ? (
                         <Loader2 className="size-4 shrink-0 animate-spin" />
                     ) : (
                         <Instagram className="size-4 shrink-0" />
                     )}
-                    <span className="font-medium">{isBusy ? "Preparing image..." : "Share image"}</span>
+                    <span className="font-medium">
+                        {imagePreparationStatus === "failed"
+                            ? "Try again"
+                            : isBusy || imagePreparationStatus === "idle" || imagePreparationStatus === "preparing"
+                                ? "Preparing image..."
+                                : "Share image"}
+                    </span>
                     {completedAction === "story" && <Check className="ml-auto size-4 text-primary" />}
                 </button>
             )}

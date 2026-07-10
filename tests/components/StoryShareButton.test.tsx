@@ -40,6 +40,12 @@ describe("StoryShareButton", () => {
         vi.unstubAllGlobals();
     });
 
+    async function waitForPreparedButton() {
+        const button = screen.getByRole("button", { name: "Share story image" });
+        await waitFor(() => expect(button).toBeEnabled());
+        return button;
+    }
+
     it("shares the generated story image as a file when the browser supports it", async () => {
         const fetchMock = mockSuccessfulImageFetch();
         const writeText = mockClipboard();
@@ -63,7 +69,7 @@ describe("StoryShareButton", () => {
             />
         );
 
-        fireEvent.click(screen.getByRole("button", { name: "Share story image" }));
+        fireEvent.click(await waitForPreparedButton());
 
         await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
 
@@ -108,7 +114,7 @@ describe("StoryShareButton", () => {
             />
         );
 
-        fireEvent.click(screen.getByRole("button", { name: "Share story image" }));
+        fireEvent.click(await waitForPreparedButton());
 
         await waitFor(() => expect(click).toHaveBeenCalledTimes(1));
 
@@ -140,7 +146,7 @@ describe("StoryShareButton", () => {
             />
         );
 
-        const button = screen.getByRole("button", { name: "Share story image" });
+        const button = await waitForPreparedButton();
         fireEvent.click(button);
 
         await waitFor(() => expect(share).toHaveBeenCalledTimes(1));
