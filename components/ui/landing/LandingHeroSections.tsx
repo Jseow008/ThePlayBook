@@ -2,10 +2,8 @@
 
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { BackgroundScroll } from "@/components/ui/background-scroll-animation";
 import { Logo } from "@/components/ui/Logo";
 
 const HERO_WORKFLOW_STEPS = ["Discover", "Understand", "Save", "Recall"] as const;
@@ -50,67 +48,53 @@ export function LandingHeader() {
 
 export function HeroSection() {
   return (
-    <section className="landing-hero-section relative">
-      <BackgroundScroll
-        foregroundClassName="max-w-7xl"
-        foreground={
-          <>
-            <h1
-              className="landing-hero-reveal mx-auto max-w-full font-serif text-[1.8rem] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:text-6xl sm:leading-[1.05] md:text-[3.55rem] lg:text-[4.65rem]"
-              style={heroRevealStyle("80ms")}
-            >
-              <span className="sr-only">From passive consumption to knowledge that compounds.</span>
+    <section className="landing-hero-section relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-14 text-center lg:px-8">
+        <h1
+          className="landing-hero-reveal mx-auto max-w-full font-serif text-[1.8rem] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:text-6xl sm:leading-[1.05] md:text-[3.55rem] lg:text-[4.65rem]"
+          style={heroRevealStyle("80ms")}
+        >
+          <span className="sr-only">From passive consumption to knowledge that compounds.</span>
 
-              <span aria-hidden="true" className="block sm:hidden">
-                <span className="relative left-1/2 block w-fit max-w-none -translate-x-1/2 whitespace-nowrap">From passive consumption</span>
-                <span className="mx-auto mt-2 block w-fit max-w-none whitespace-nowrap">to knowledge that</span>
-                <span className="landing-hero-emphasis mx-auto mt-2 block w-fit max-w-full">
-                  compounds.
-                </span>
-              </span>
+          <span aria-hidden="true" className="block sm:hidden">
+            <span className="relative left-1/2 block w-fit max-w-none -translate-x-1/2 whitespace-nowrap">From passive consumption</span>
+            <span className="mx-auto mt-2 block w-fit max-w-none whitespace-nowrap">to knowledge that</span>
+            <span className="landing-hero-emphasis mx-auto mt-2 block w-fit max-w-full">
+              compounds.
+            </span>
+          </span>
 
-              <span aria-hidden="true" className="hidden sm:block">
-                <span className="mx-auto block w-fit max-w-full md:whitespace-nowrap">From passive consumption</span>
-                <span className="mx-auto mt-3 block w-fit max-w-full md:whitespace-nowrap">
-                  to knowledge that{" "}
-                  <span className="landing-hero-emphasis">compounds.</span>
-                </span>
-              </span>
-            </h1>
+          <span aria-hidden="true" className="hidden sm:block">
+            <span className="mx-auto block w-fit max-w-full md:whitespace-nowrap">From passive consumption</span>
+            <span className="mx-auto mt-3 block w-fit max-w-full md:whitespace-nowrap">
+              to knowledge that{" "}
+              <span className="landing-hero-emphasis">compounds.</span>
+            </span>
+          </span>
+        </h1>
 
-            <p
-              className="landing-hero-reveal landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]"
-              style={heroRevealStyle("260ms")}
-            >
-              Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search and revisit.
-            </p>
+        <p
+          className="landing-hero-reveal landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]"
+          style={heroRevealStyle("260ms")}
+        >
+          Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search and revisit.
+        </p>
 
-            <HeroWorkflow />
+        <HeroWorkflow />
 
-            <div
-              className="landing-hero-reveal mt-7 flex flex-col justify-center gap-4 sm:flex-row sm:items-center"
-              style={heroRevealStyle("560ms")}
-            >
-              <Link href="/browse" className={PRIMARY_CTA_CLASS}>
-                <span className="relative z-10">Explore the Library</span>
-                <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-              <Link href="/login" className={SECONDARY_CTA_CLASS}>
-                Sign Up Free
-              </Link>
-            </div>
-          </>
-        }
-      >
-        <Image
-          src="/images/landing-page-library.webp"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="landing-hero-background-image object-cover object-[42%_center] md:object-center"
-        />
-      </BackgroundScroll>
+        <div
+          className="landing-hero-reveal mt-7 flex flex-col justify-center gap-4 sm:flex-row sm:items-center"
+          style={heroRevealStyle("560ms")}
+        >
+          <Link href="/browse" className={PRIMARY_CTA_CLASS}>
+            <span className="relative z-10">Explore the Library</span>
+            <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
+          </Link>
+          <Link href="/login" className={SECONDARY_CTA_CLASS}>
+            Sign Up Free
+          </Link>
+        </div>
+      </div>
     </section>
   );
 }

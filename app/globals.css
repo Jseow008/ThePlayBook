@@ -736,10 +736,6 @@ mark[data-highlight-spotlight="true"] {
   text-wrap: pretty;
 }
 
-.landing-hero-background-image {
-  transform-origin: 50% 50%;
-}
-
 .landing-hero-reveal {
   opacity: 1;
   transform: translateY(0);
@@ -1019,11 +1015,6 @@ mark[data-highlight-spotlight="true"] {
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .landing-hero-background-image {
-    animation: landingHeroBackgroundDrift 18s ease-in-out 700ms infinite alternate;
-    will-change: transform;
-  }
-
   .landing-hero-reveal {
     opacity: 0;
     filter: blur(5px);
