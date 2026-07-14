@@ -51,6 +51,8 @@ const FOCUS_FEED_FETCH_TIMEOUT_MS = 10_000;
 const FOCUS_FEED_GESTURE_LOCK_MS = 420;
 const FOCUS_FEED_WHEEL_THRESHOLD_PX = 48;
 const FOCUS_FEED_TOUCH_THRESHOLD_PX = 44;
+const FOCUS_EXCLUSION_LIMIT = 500;
+const FOCUS_PERSONALIZATION_SEED_LIMIT = 12;
 const FocusItemIdSchema = z.string().uuid();
 
 type FocusFeedResponse = {
@@ -149,14 +151,14 @@ function shuffleItems<T>(items: T[]): T[] {
     return next;
 }
 
-function buildExcludeParam(ids: string[]) {
+function normalizeFocusItemIds(ids: string[], max = Number.POSITIVE_INFINITY) {
     return Array.from(
         new Set(
             ids
                 .map((id) => id.trim())
                 .filter((id) => FocusItemIdSchema.safeParse(id).success)
         )
-    ).join(",");
+    ).slice(0, max);
 }
 
 function createFocusSeed() {
@@ -564,28 +566,28 @@ export function FocusFeed() {
 
         try {
             const includeCompletedIds = options?.includeCompletedIds ?? isLoaded;
-            const excludedIds = [
-                ...Array.from(seenIdsRef.current),
+            const excludeIds = normalizeFocusItemIds([
                 ...(includeCompletedIds ? completedIds : []),
-            ];
-            const excludeIds = buildExcludeParam(excludedIds);
+                ...Array.from(seenIdsRef.current),
+            ], FOCUS_EXCLUSION_LIMIT);
             focusSeedRef.current = focusSeedRef.current ?? readOrCreateFocusSeed();
-
-            const params = new URLSearchParams({
-                limit: String(BATCH_SIZE),
-                seed: focusSeedRef.current,
-            });
-
-            if (excludeIds) {
-                params.set("excludeIds", excludeIds);
-            }
-
             const cursor = options?.resetCursor ? null : nextCursorRef.current;
-            if (cursor) {
-                params.set("cursor", cursor);
-            }
 
-            const response = await fetch(`/api/focus?${params.toString()}`, {
+            const response = await fetch("/api/focus", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    limit: BATCH_SIZE,
+                    seed: focusSeedRef.current,
+                    cursor: cursor ?? undefined,
+                    excludeIds,
+                    completedIds: includeCompletedIds
+                        ? normalizeFocusItemIds(completedIds, FOCUS_PERSONALIZATION_SEED_LIMIT)
+                        : [],
+                    savedIds: isLoaded
+                        ? normalizeFocusItemIds(myListIds, FOCUS_PERSONALIZATION_SEED_LIMIT)
+                        : [],
+                }),
                 signal: controller.signal,
             });
             if (!response.ok) {
@@ -627,7 +629,7 @@ export function FocusFeed() {
             isFetchingRef.current = false;
             setLoading(false);
         }
-    }, [completedIds, isLoaded]);
+    }, [completedIds, isLoaded, myListIds]);
 
     const retryFocusFeed = useCallback(() => {
         setError(null);
@@ -730,8 +732,8 @@ export function FocusFeed() {
         itemsRef.current = [];
         hasMoreRef.current = true;
         nextCursorRef.current = null;
-        void fetchBatch({ includeCompletedIds: false });
-    }, [fetchBatch]);
+        void fetchBatch({ includeCompletedIds: isLoaded });
+    }, [fetchBatch, isLoaded]);
 
     useOverlayInteractions({
         enabled: isTakeawaysSheetOpen,

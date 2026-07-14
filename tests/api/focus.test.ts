@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { GET } from "@/app/api/focus/route";
+import { GET, POST } from "@/app/api/focus/route";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 
@@ -31,6 +31,7 @@ vi.mock("@/lib/server/api", async () => {
 });
 
 describe("Focus API", () => {
+    const mockRpc = vi.fn();
     const mockLimit = vi.fn();
     const mockOrder = vi.fn(() => ({ limit: mockLimit }));
     const mockGt = vi.fn(() => ({ order: mockOrder }));
@@ -55,13 +56,16 @@ describe("Focus API", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockLimit.mockReset();
+        mockRpc.mockReset();
         mockCarryNot.mockClear();
         carryRequestedIds = [];
         carryRows = [];
         (createPublicServerClient as any).mockReturnValue({
             from: mockFrom,
+            rpc: mockRpc,
         });
         (strictPublicRateLimit as any).mockResolvedValue({ success: true });
+        mockRpc.mockResolvedValue({ data: [], error: null });
         mockLimit.mockResolvedValue({
             data: [
                 {
@@ -433,6 +437,115 @@ describe("Focus API", () => {
         expect(new Set(json.items.map((item: { type: string }) => item.type))).toEqual(
             new Set(["book", "podcast", "article"])
         );
+    });
+
+    it("uses completed and saved items as semantic seeds while reserving discovery space", async () => {
+        const completedId = "123e4567-e89b-12d3-a456-426614174901";
+        const savedId = "123e4567-e89b-12d3-a456-426614174902";
+        const personalizedItems = [
+            {
+                id: "123e4567-e89b-12d3-a456-426614174903",
+                title: "Personalized one",
+                type: "book",
+                author: "Author P1",
+                category: "Mindset",
+                cover_image_url: null,
+                duration_seconds: 180,
+                quick_mode_json: {
+                    hook: "A",
+                    big_idea: "B",
+                    key_takeaways: ["C"],
+                },
+                similarity: 0.98,
+            },
+            {
+                id: "123e4567-e89b-12d3-a456-426614174904",
+                title: "Personalized two",
+                type: "article",
+                author: "Author P2",
+                category: "Productivity",
+                cover_image_url: null,
+                duration_seconds: 180,
+                quick_mode_json: {
+                    hook: "A",
+                    big_idea: "B",
+                    key_takeaways: ["C"],
+                },
+                similarity: 0.94,
+            },
+        ];
+        mockRpc.mockResolvedValueOnce({ data: personalizedItems, error: null });
+
+        const response = await POST(new NextRequest(new URL("http://localhost/api/focus"), {
+            method: "POST",
+            body: JSON.stringify({
+                limit: 3,
+                completedIds: [completedId],
+                savedIds: [savedId],
+            }),
+        }));
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(mockRpc).toHaveBeenCalledWith("match_recommendations", {
+            seed_ids: [completedId, savedId],
+            exclude_ids: [completedId, savedId],
+            match_count: 12,
+        });
+        expect(json.items).toHaveLength(3);
+        expect(json.items.map((item: { id: string }) => item.id)).toEqual(expect.arrayContaining([
+            personalizedItems[0]!.id,
+            personalizedItems[1]!.id,
+        ]));
+        expect(json.items.some((item: { id: string }) => !new Set(
+            personalizedItems.map((personalizedItem) => personalizedItem.id)
+        ).has(item.id))).toBe(true);
+    });
+
+    it("falls back to generic discovery when personalization is unavailable", async () => {
+        const completedId = "123e4567-e89b-12d3-a456-426614174901";
+        mockRpc.mockResolvedValueOnce({ data: [], error: new Error("RPC unavailable") });
+
+        const response = await POST(new NextRequest(new URL("http://localhost/api/focus"), {
+            method: "POST",
+            body: JSON.stringify({
+                limit: 2,
+                completedIds: [completedId],
+            }),
+        }));
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(json.items).toHaveLength(2);
+        expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it("validates personalized request payloads before querying content", async () => {
+        const response = await POST(new NextRequest(new URL("http://localhost/api/focus"), {
+            method: "POST",
+            body: JSON.stringify({ completedIds: ["not-a-uuid"] }),
+        }));
+
+        expect(response.status).toBe(400);
+        expect(mockFrom).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("excludes completed IDs from discovery even when they are only supplied as personalization context", async () => {
+        const completedId = "123e4567-e89b-12d3-a456-426614174000";
+        const response = await POST(new NextRequest(new URL("http://localhost/api/focus"), {
+            method: "POST",
+            body: JSON.stringify({
+                limit: 1,
+                completedIds: [completedId],
+            }),
+        }));
+        const json = await response.json();
+
+        expect(response.status).toBe(200);
+        expect(json.items).toHaveLength(1);
+        expect(json.items[0]).not.toEqual(expect.objectContaining({ id: completedId }));
+        expect(mockRpc).not.toHaveBeenCalled();
     });
 
     it("fails closed before scanning content when strict rate limiting is unavailable", async () => {

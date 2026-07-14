@@ -199,6 +199,20 @@ describe("FocusFeed", () => {
         },
     ];
 
+    function getFocusRequestBody(callIndex: number) {
+        const requestOptions = fetchMock.mock.calls[callIndex]?.[1] as RequestInit | undefined;
+
+        expect(requestOptions).toEqual(expect.objectContaining({ method: "POST" }));
+        return JSON.parse(String(requestOptions?.body ?? "{}")) as {
+            limit?: number;
+            seed?: string;
+            cursor?: string;
+            excludeIds: string[];
+            completedIds: string[];
+            savedIds: string[];
+        };
+    }
+
     beforeAll(() => {
         Object.defineProperty(HTMLElement.prototype, "scrollIntoView", {
             configurable: true,
@@ -253,8 +267,13 @@ describe("FocusFeed", () => {
 
         const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0] ?? ""), "http://localhost");
         expect(requestUrl.pathname).toBe("/api/focus");
-        expect(requestUrl.searchParams.get("limit")).toBe("6");
-        expect(requestUrl.searchParams.get("seed")).toBe("zzzybj7u3b");
+        expect(getFocusRequestBody(0)).toEqual({
+            limit: 6,
+            seed: "zzzybj7u3b",
+            excludeIds: [],
+            completedIds: [],
+            savedIds: [],
+        });
         expect(window.sessionStorage.getItem(FOCUS_FEED_SEED_STORAGE_KEY)).toBe("zzzybj7u3b");
 
         expect(screen.queryByText("Focus Mode")).not.toBeInTheDocument();
@@ -300,6 +319,26 @@ describe("FocusFeed", () => {
             expect(firstCard).toHaveClass(className);
         }
         expect(firstCard).toHaveClass("py-4");
+    });
+
+    it("sends recent completed and saved IDs as Focus personalization context", async () => {
+        const savedId = "123e4567-e89b-12d3-a456-426614174555";
+        readingProgressState.value = {
+            completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
+            isLoaded: true,
+            myListIds: [savedId],
+        };
+
+        render(<FocusFeed />);
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        expect(getFocusRequestBody(0)).toMatchObject({
+            completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
+            savedIds: [savedId],
+        });
     });
 
     it("calculates a hook clamp that preserves viewport containment when the card would overflow", () => {
@@ -403,9 +442,11 @@ describe("FocusFeed", () => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
 
-        const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
-        expect(requestUrl).toContain(focusItems[2]!.id);
-        expect(requestUrl).not.toContain("not-a-uuid");
+        const requestBody = getFocusRequestBody(0);
+        expect(requestBody.excludeIds).toContain(focusItems[2]!.id);
+        expect(requestBody.completedIds).toContain(focusItems[2]!.id);
+        expect(requestBody.excludeIds).not.toContain("not-a-uuid");
+        expect(requestBody.completedIds).not.toContain("not-a-uuid");
     });
 
     it("prunes completed items after reading progress hydrates and fetches replacements", async () => {
@@ -517,10 +558,17 @@ describe("FocusFeed", () => {
         });
         expect(await screen.findByText("The One Thing")).toBeInTheDocument();
 
-        const replacementRequestUrl = String(fetchMock.mock.calls[1]?.[0] ?? "");
-        expect(replacementRequestUrl).toContain(`excludeIds=${focusItems[0]!.id}`);
-        expect(replacementRequestUrl).toContain(focusItems[1]!.id);
-        expect(replacementRequestUrl).toContain(focusItems[2]!.id);
+        const replacementRequestBody = getFocusRequestBody(1);
+        expect(replacementRequestBody.excludeIds).toEqual(expect.arrayContaining([
+            focusItems[0]!.id,
+            focusItems[1]!.id,
+            focusItems[2]!.id,
+        ]));
+        expect(replacementRequestBody.completedIds).toEqual([
+            focusItems[0]!.id,
+            focusItems[1]!.id,
+            focusItems[2]!.id,
+        ]);
     });
 
     it("saves a focus restore snapshot after the active card changes", async () => {
@@ -711,9 +759,9 @@ describe("FocusFeed", () => {
             expect(fetchMock).toHaveBeenCalledTimes(1);
         });
 
-        const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
-        expect(requestUrl).toContain(readingProgressState.value.completedIds[0]!);
-        expect(requestUrl).toContain(`cursor=${focusItems[2]!.id}`);
+        const requestBody = getFocusRequestBody(0);
+        expect(requestBody.completedIds).toContain(readingProgressState.value.completedIds[0]!);
+        expect(requestBody.cursor).toBe(focusItems[2]!.id);
     });
 
     it("fetches a fresh batch when restored cards are all pruned as completed", async () => {
@@ -758,9 +806,9 @@ describe("FocusFeed", () => {
         render(<FocusFeed />);
 
         expect(await screen.findByText("The One Thing")).toBeInTheDocument();
-        const requestUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
-        expect(requestUrl).not.toContain("cursor=");
-        expect(requestUrl).toContain(focusItems[0]!.id);
+        const requestBody = getFocusRequestBody(0);
+        expect(requestBody.cursor).toBeUndefined();
+        expect(requestBody.excludeIds).toContain(focusItems[0]!.id);
     });
 
     it("flushes the latest active card immediately on pagehide", async () => {

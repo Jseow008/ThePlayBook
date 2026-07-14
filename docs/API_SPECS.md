@@ -210,7 +210,7 @@ Delete request:
 | Route | Method | Auth | Purpose |
 | --- | --- | --- | --- |
 | `/api/content/batch` | `POST` | `public` | Fetch multiple verified content items by ID. |
-| `/api/focus` | `GET` | `public` | Return randomized quick-mode-ready focus feed items. |
+| `/api/focus` | `POST` | `public` | Return personalized, quick-mode-ready focus feed items with a discovery fallback. |
 | `/api/recommendations` | `POST` | `public` | RPC-backed recommendations based on completed IDs. |
 | `/api/health` | `GET` | `public liveness`; detailed via `HEALTH_CHECK_SECRET` | Deployment health checker. Anonymous callers receive only process liveness and never trigger DB checks; detailed env/database readiness requires `Authorization: Bearer <HEALTH_CHECK_SECRET>` or `x-health-check-secret` and uses cached, fail-fast DB probes. |
 | `/api/monitor/image-fallback` | `POST` | `public` | Diagnostic logging for image fallback events. |
@@ -227,12 +227,22 @@ Returns a JSON array of verified content rows.
 
 ### 4.2 `/api/focus`
 
-Query params:
+The app uses `POST` so personal reading context is not sent in URL query strings:
 
-- `limit` (1-12)
-- `excludeIds` as comma-separated UUIDs
+```json
+{
+  "limit": 6,
+  "seed": "session-seed",
+  "cursor": "optional-cursor",
+  "excludeIds": ["uuid"],
+  "completedIds": ["uuid"],
+  "savedIds": ["uuid"]
+}
+```
 
-Returns shuffled focus-feed items whose `quick_mode_json` passes validation.
+`completedIds` and `savedIds` are capped at 12 each and are used only to retrieve semantically related, Focus-eligible content. A six-card batch aims for up to four personalized cards and reserves the remaining cards for the existing diverse discovery feed. Completed and already-shown IDs are excluded. If no history or semantic matches are available, the route returns the generic diversified feed.
+
+The legacy `GET` variant remains available for generic callers and accepts `limit`, `excludeIds`, `cursor`, and `seed` as query parameters. It does not personalize results.
 
 ### 4.3 `/api/recommendations`
 

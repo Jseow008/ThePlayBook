@@ -4,12 +4,18 @@ import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { QuickModeSchema, type FocusFeedItem } from "@/types/domain";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/rate-limit";
+import type { Database } from "@/types/database";
 
-const QUERY_SCHEMA = z.object({
+const FOCUS_REQUEST_SCHEMA = z.object({
     limit: z.coerce.number().int().min(1).max(12).default(6),
-    excludeIds: z.array(z.string().uuid()).default([]),
+    excludeIds: z.array(z.string().uuid()).max(500).default([]),
     cursor: z.string().trim().min(1).max(4096).optional(),
     seed: z.string().trim().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).default("default"),
+});
+
+const FOCUS_PERSONALIZED_REQUEST_SCHEMA = FOCUS_REQUEST_SCHEMA.extend({
+    completedIds: z.array(z.string().uuid()).max(12).default([]),
+    savedIds: z.array(z.string().uuid()).max(12).default([]),
 });
 
 const FOCUS_SELECT =
@@ -17,6 +23,11 @@ const FOCUS_SELECT =
 const PAGE_SIZE = 48;
 const CANDIDATE_WINDOW_MULTIPLIER = 4;
 const FOCUS_CURSOR_PREFIX = "v1_";
+const PERSONALIZED_BATCH_RATIO = 2 / 3;
+const PERSONALIZED_CANDIDATE_MULTIPLIER = 4;
+
+type FocusRequest = z.infer<typeof FOCUS_REQUEST_SCHEMA>;
+type RecommendationItem = Database["public"]["Functions"]["match_recommendations"]["Returns"][number];
 
 const FocusCursorPayloadSchema = z.object({
     v: z.literal(1),
@@ -25,6 +36,10 @@ const FocusCursorPayloadSchema = z.object({
 });
 
 type FocusCursorPayload = z.infer<typeof FocusCursorPayloadSchema>;
+
+type FocusSelectionOptions = {
+    preferInputOrder?: boolean;
+};
 
 function hashString(value: string) {
     let hash = 2166136261;
@@ -98,12 +113,16 @@ function decodeFocusCursor(value: string | undefined) {
 function selectDiversifiedItems(
     candidates: FocusFeedItem[],
     limit: number,
-    seed: string
+    seed: string,
+    options?: FocusSelectionOptions,
 ) {
     const selected: FocusFeedItem[] = [];
-    const remaining = [...candidates].sort((first, second) => (
-        seededRank(seed, first.id) - seededRank(seed, second.id)
-    ));
+    const remaining = options?.preferInputOrder
+        ? [...candidates]
+        : [...candidates].sort((first, second) => (
+            seededRank(seed, first.id) - seededRank(seed, second.id)
+        ));
+    const inputRank = new Map(candidates.map((item, index) => [item.id, index]));
     const categoryCounts = new Map<string, number>();
     const typeCounts = new Map<string, number>();
 
@@ -116,7 +135,9 @@ function selectDiversifiedItems(
             const type = normalizeDiversityValue(item.type, "unknown");
             const categoryPenalty = categoryCounts.get(category) ?? 0;
             const typePenalty = typeCounts.get(type) ?? 0;
-            const rankPenalty = seededRank(seed, item.id) / 0xffffffff;
+            const rankPenalty = options?.preferInputOrder
+                ? (inputRank.get(item.id) ?? 0) / Math.max(candidates.length - 1, 1)
+                : seededRank(seed, item.id) / 0xffffffff;
             const score = categoryPenalty * 3 + typePenalty * 2 + rankPenalty;
 
             if (score < bestScore) {
@@ -148,6 +169,60 @@ function parseFocusItem(item: FocusFeedItem) {
 
     item.quick_mode_json = parsedQuickMode.data;
     return item;
+}
+
+function dedupeIds(ids: string[]) {
+    return Array.from(new Set(ids));
+}
+
+function getPersonalizedItemLimit(limit: number) {
+    return Math.floor(limit * PERSONALIZED_BATCH_RATIO);
+}
+
+async function loadPersonalizedFocusItems(params: {
+    supabase: ReturnType<typeof createPublicServerClient>;
+    requestId: string;
+    seedIds: string[];
+    excludeIds: string[];
+    limit: number;
+}) {
+    if (params.seedIds.length === 0 || params.limit === 0) {
+        return [] as FocusFeedItem[];
+    }
+
+    const candidateCount = Math.min(
+        Math.max(params.limit * PERSONALIZED_CANDIDATE_MULTIPLIER, 12),
+        40,
+    );
+    const { data, error } = await params.supabase.rpc("match_recommendations", {
+        seed_ids: params.seedIds,
+        exclude_ids: dedupeIds([...params.seedIds, ...params.excludeIds]),
+        match_count: candidateCount,
+    });
+
+    if (error) {
+        // Focus remains usable when the optional personalization query is unavailable.
+        logApiError({
+            requestId: params.requestId,
+            route: "/api/focus",
+            message: "Focus personalization lookup failed; using discovery fallback",
+            error,
+        });
+        return [];
+    }
+
+    const excluded = new Set(params.excludeIds);
+    const collectedIds = new Set<string>();
+
+    return ((data ?? []) as RecommendationItem[]).flatMap((candidate) => {
+        const item = parseFocusItem(candidate as unknown as FocusFeedItem);
+        if (!item || excluded.has(item.id) || collectedIds.has(item.id)) {
+            return [];
+        }
+
+        collectedIds.add(item.id);
+        return [item];
+    });
 }
 
 async function loadCarryItems(params: {
@@ -199,36 +274,20 @@ async function loadCarryItems(params: {
     };
 }
 
-export async function GET(request: NextRequest) {
-    const requestId = getRequestId();
-
-    const rateLimitResult = await strictPublicRateLimit(request, {
-        limit: 30,
-        windowMs: 60_000,
-        routeLabel: "/api/focus",
-    });
-    if (!rateLimitResult.success) {
-        return rateLimitFailureResponse(rateLimitResult, "Too many requests.");
-    }
-
-    const parsedQuery = QUERY_SCHEMA.safeParse({
-        limit: request.nextUrl.searchParams.get("limit") ?? undefined,
-        excludeIds: (request.nextUrl.searchParams.get("excludeIds") ?? "")
-            .split(",")
-            .map((value) => value.trim())
-            .filter(Boolean),
-        cursor: request.nextUrl.searchParams.get("cursor") ?? undefined,
-        seed: request.nextUrl.searchParams.get("seed") ?? undefined,
-    });
-
-    if (!parsedQuery.success) {
-        return apiError("VALIDATION_ERROR", "Invalid focus feed query.", 400, requestId);
-    }
-
-    const { limit, excludeIds, seed } = parsedQuery.data;
-    const decodedCursor = decodeFocusCursor(parsedQuery.data.cursor);
+async function buildFocusResponse(params: {
+    requestId: string;
+    request: FocusRequest;
+    completedIds?: string[];
+    savedIds?: string[];
+}) {
+    const { limit, seed } = params.request;
+    const excludeIds = dedupeIds([
+        ...params.request.excludeIds,
+        ...(params.completedIds ?? []),
+    ]);
+    const decodedCursor = decodeFocusCursor(params.request.cursor);
     if (!decodedCursor.success) {
-        return apiError("VALIDATION_ERROR", "Invalid focus feed cursor.", 400, requestId);
+        return apiError("VALIDATION_ERROR", "Invalid focus feed cursor.", 400, params.requestId);
     }
 
     const supabase = createPublicServerClient();
@@ -248,12 +307,12 @@ export async function GET(request: NextRequest) {
 
     if (carryResult.error) {
         logApiError({
-            requestId,
+            requestId: params.requestId,
             route: "/api/focus",
             message: "Failed to fetch carried focus feed content",
             error: carryResult.error,
         });
-        return apiError("INTERNAL_ERROR", "Failed to fetch focus feed.", 500, requestId);
+        return apiError("INTERNAL_ERROR", "Failed to fetch focus feed.", 500, params.requestId);
     }
 
     invalidRowCount += carryResult.invalidRowCount;
@@ -284,12 +343,12 @@ export async function GET(request: NextRequest) {
 
         if (error) {
             logApiError({
-                requestId,
+                requestId: params.requestId,
                 route: "/api/focus",
                 message: "Failed to fetch focus feed content",
                 error,
             });
-            return apiError("INTERNAL_ERROR", "Failed to fetch focus feed.", 500, requestId);
+            return apiError("INTERNAL_ERROR", "Failed to fetch focus feed.", 500, params.requestId);
         }
 
         const pageItems = (data ?? []) as FocusFeedItem[];
@@ -326,14 +385,38 @@ export async function GET(request: NextRequest) {
 
     if (invalidRowCount > 0) {
         console.warn({
-            requestId,
+            requestId: params.requestId,
             route: "/api/focus",
             message: "Dropped invalid focus feed rows",
             error: { invalid_row_count: invalidRowCount },
         });
     }
 
-    const items = selectDiversifiedItems(candidateItems, limit, seed);
+    const personalizationSeedIds = dedupeIds([
+        ...(params.completedIds ?? []),
+        ...(params.savedIds ?? []),
+    ]);
+    const personalizedLimit = getPersonalizedItemLimit(limit);
+    const personalizedCandidates = await loadPersonalizedFocusItems({
+        supabase,
+        requestId: params.requestId,
+        seedIds: personalizationSeedIds,
+        excludeIds: dedupeIds([...excludeIds, ...personalizationSeedIds]),
+        limit: personalizedLimit,
+    });
+    const personalizedItems = selectDiversifiedItems(
+        personalizedCandidates,
+        personalizedLimit,
+        seed,
+        { preferInputOrder: true },
+    );
+    const personalizedIds = new Set(personalizedItems.map((item) => item.id));
+    const discoveryItems = selectDiversifiedItems(
+        candidateItems.filter((item) => !personalizedIds.has(item.id)),
+        limit - personalizedItems.length,
+        seed,
+    );
+    const items = [...personalizedItems, ...discoveryItems];
     const selectedIds = new Set(items.map((item) => item.id));
     const remainingCarryIds = candidateItems
         .map((item) => item.id)
@@ -356,7 +439,82 @@ export async function GET(request: NextRequest) {
         },
     }, {
         headers: {
-            "Cache-Control": "private, max-age=0, must-revalidate",
+            "Cache-Control": "private, no-store",
         },
+    });
+}
+
+async function enforceFocusRateLimit(request: NextRequest) {
+    const rateLimitResult = await strictPublicRateLimit(request, {
+        limit: 30,
+        windowMs: 60_000,
+        routeLabel: "/api/focus",
+    });
+
+    return rateLimitResult.success
+        ? null
+        : rateLimitFailureResponse(rateLimitResult, "Too many requests.");
+}
+
+/**
+ * Legacy generic Focus endpoint. The app uses POST so reading history stays
+ * out of URLs, but retaining GET avoids breaking existing public callers.
+ */
+export async function GET(request: NextRequest) {
+    const rateLimitResponse = await enforceFocusRateLimit(request);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+
+    const requestId = getRequestId();
+    const parsedQuery = FOCUS_REQUEST_SCHEMA.safeParse({
+        limit: request.nextUrl.searchParams.get("limit") ?? undefined,
+        excludeIds: (request.nextUrl.searchParams.get("excludeIds") ?? "")
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean),
+        cursor: request.nextUrl.searchParams.get("cursor") ?? undefined,
+        seed: request.nextUrl.searchParams.get("seed") ?? undefined,
+    });
+
+    if (!parsedQuery.success) {
+        return apiError("VALIDATION_ERROR", "Invalid focus feed query.", 400, requestId);
+    }
+
+    return buildFocusResponse({ requestId, request: parsedQuery.data });
+}
+
+export async function POST(request: NextRequest) {
+    const rateLimitResponse = await enforceFocusRateLimit(request);
+    if (rateLimitResponse) {
+        return rateLimitResponse;
+    }
+
+    const requestId = getRequestId();
+    let body: unknown;
+
+    try {
+        body = await request.json();
+    } catch (error) {
+        logApiError({
+            requestId,
+            route: "/api/focus",
+            message: "Focus request parse error",
+            error,
+        });
+        return apiError("INVALID_JSON", "Invalid focus feed request.", 400, requestId);
+    }
+
+    const parsedBody = FOCUS_PERSONALIZED_REQUEST_SCHEMA.safeParse(body);
+    if (!parsedBody.success) {
+        return apiError("VALIDATION_ERROR", "Invalid focus feed request.", 400, requestId);
+    }
+
+    const { completedIds, savedIds, ...focusRequest } = parsedBody.data;
+    return buildFocusResponse({
+        requestId,
+        request: focusRequest,
+        completedIds,
+        savedIds,
     });
 }
