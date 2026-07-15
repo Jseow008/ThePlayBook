@@ -24,6 +24,7 @@ export const VIEWPORT_QUERIES = {
 
     readerInteractionDesktop: MEDIA_QUERIES.smUp,
     compactReaderControls: MEDIA_QUERIES.belowSm,
+    compactShareMenu: MEDIA_QUERIES.belowSm,
 
     askFullLayout: MEDIA_QUERIES.lgUp,
     appDesktopChrome: MEDIA_QUERIES.lgUp,

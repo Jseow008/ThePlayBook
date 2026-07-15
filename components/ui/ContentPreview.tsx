@@ -9,7 +9,7 @@ import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
 import type { ContentItem } from "@/types/database";
 import type { QuickMode, SeriesContext } from "@/types/domain";
-import { ShareButton } from "@/components/ui/ShareButton";
+import { ContentShareMenu } from "@/components/ui/ContentShareMenu";
 import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
 import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
@@ -265,11 +265,10 @@ export function ContentPreview({
                                     unsavedClassName="border-border/40 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
                                     iconClassName="size-5"
                                 />
-                                <ShareButton
+                                <ContentShareMenu
                                     path={`/preview/${item.id}`}
                                     title={item.title}
                                     text={`Check out "${item.title}" on ${APP_NAME}`}
-                                    variant="icon"
                                     source="content_preview"
                                     contentId={item.id}
                                     contentType={item.type}
@@ -412,11 +411,10 @@ export function ContentPreview({
                             />
 
                             {/* Mobile Share */}
-                            <ShareButton
+                            <ContentShareMenu
                                 path={`/preview/${item.id}`}
                                 title={item.title}
                                 text={`Check out "${item.title}" on ${APP_NAME}`}
-                                variant="icon"
                                 source="content_preview_mobile"
                                 contentId={item.id}
                                 contentType={item.type}

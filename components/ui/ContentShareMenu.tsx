@@ -49,7 +49,7 @@ export function ContentShareMenu({
     const menuRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const triggerButtonRef = useRef<HTMLButtonElement>(null);
-    const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
+    const isCompactShareMenu = useMediaQuery(VIEWPORT_QUERIES.compactShareMenu);
     const resolvedUrl = buildResolvedUrl(url, path);
     const {
         status: imagePreparationStatus,
@@ -66,7 +66,7 @@ export function ContentShareMenu({
         containerRef: panelRef,
         restoreFocusRef: triggerButtonRef,
         onEscape: () => setIsOpen(false),
-        scrollLock: isCompactReaderControls,
+        scrollLock: isCompactShareMenu,
     });
 
     useEffect(() => {
@@ -257,7 +257,7 @@ export function ContentShareMenu({
             </button>
 
             {isOpen && mounted && (
-                isCompactReaderControls ? createPortal(
+                isCompactShareMenu ? createPortal(
                     <>
                         <div
                             className={cn(
