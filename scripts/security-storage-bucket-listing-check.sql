@@ -2,17 +2,42 @@ DO $$
 DECLARE
   failures text;
 BEGIN
-  WITH expected_buckets(bucket_id) AS (
-    VALUES ('media'), ('audio')
+  WITH expected_buckets(bucket_id, file_size_limit, allowed_mime_types) AS (
+    VALUES
+      (
+        'media',
+        5 * 1024 * 1024::bigint,
+        ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']::text[]
+      ),
+      (
+        'audio',
+        50 * 1024 * 1024::bigint,
+        ARRAY['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-m4a', 'audio/m4a']::text[]
+      )
   ),
   bucket_violations AS (
     SELECT
-      format('storage_bucket_missing_or_not_public: %I', expected.bucket_id) AS failure
+      format('storage_bucket_configuration_drift: %I', expected.bucket_id) AS failure
     FROM expected_buckets expected
     LEFT JOIN storage.buckets bucket
       ON bucket.id = expected.bucket_id
     WHERE bucket.id IS NULL
        OR bucket.public IS NOT TRUE
+       OR bucket.file_size_limit IS DISTINCT FROM expected.file_size_limit
+       OR bucket.allowed_mime_types IS DISTINCT FROM expected.allowed_mime_types
+  ),
+  incompatible_objects AS (
+    SELECT
+      format('storage_object_outside_bucket_contract: %I (%s object(s))', object.bucket_id, count(*)) AS failure
+    FROM storage.objects object
+    JOIN expected_buckets expected
+      ON expected.bucket_id = object.bucket_id
+    WHERE coalesce((object.metadata ->> 'size')::bigint, 0) > expected.file_size_limit
+       OR NOT (
+         coalesce(object.metadata ->> 'mimetype', '')
+         = ANY(expected.allowed_mime_types)
+       )
+    GROUP BY object.bucket_id
   ),
   forbidden_named_policies AS (
     SELECT
@@ -59,6 +84,8 @@ BEGIN
   ),
   all_failures AS (
     SELECT failure FROM bucket_violations
+    UNION ALL
+    SELECT failure FROM incompatible_objects
     UNION ALL
     SELECT failure FROM forbidden_named_policies
     UNION ALL
