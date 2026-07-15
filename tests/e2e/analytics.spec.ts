@@ -76,13 +76,28 @@ async function installPostHogCapture(page: Page) {
         Object.defineProperty(Navigator.prototype, "webdriver", {
             get: () => false,
         });
+        Object.defineProperty(Navigator.prototype, "userAgentData", {
+            get: () => ({
+                brands: [
+                    { brand: "Chromium", version: "126" },
+                    { brand: "Google Chrome", version: "126" },
+                ],
+                mobile: false,
+                platform: "macOS",
+            }),
+        });
     });
 
     await page.route("**/flux/**", async (route) => {
         const request = route.request();
 
         if (request.method() === "GET") {
-            await route.continue();
+            const isScriptRequest = new URL(request.url()).pathname.endsWith(".js");
+            await route.fulfill({
+                status: 200,
+                contentType: isScriptRequest ? "application/javascript" : "application/json",
+                body: isScriptRequest ? "" : "{}",
+            });
             return;
         }
 
@@ -150,7 +165,7 @@ test.describe("PostHog analytics verification", () => {
             })
             .toBeGreaterThan(0);
 
-        const browseLink = page.locator('a[href="/browse"]').first();
+        const browseLink = page.locator('a[href="/browse"]:visible').first();
         await expect(browseLink).toBeVisible();
         await browseLink.click();
         await expect(page).toHaveURL(/\/browse$/);

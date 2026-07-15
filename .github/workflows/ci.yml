@@ -40,14 +40,41 @@ jobs:
       - name: Test (Unit)
         run: npm run test
 
+      - name: Setup local Supabase
+        run: npx supabase start
+
+      - name: Export local Supabase environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          status_output="$(
+            npx supabase status -o env \
+              --override-name api.url=NEXT_PUBLIC_SUPABASE_URL \
+              --override-name auth.anon_key=NEXT_PUBLIC_SUPABASE_ANON_KEY
+          )"
+          exported_environment="$(
+            printf '%s\n' "$status_output" \
+              | sed -nE 's/^(NEXT_PUBLIC_SUPABASE_(URL|ANON_KEY))="(.*)"$/\1=\3/p'
+          )"
+          test "$(printf '%s\n' "$exported_environment" | sed '/^$/d' | wc -l)" -eq 2
+          printf '%s\n' "$exported_environment" >> "$GITHUB_ENV"
+
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
+          NEXT_PUBLIC_POSTHOG_HOST: /flux
+          NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
       - name: Test (E2E)
         run: npx playwright test
+        env:
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
+          NEXT_PUBLIC_POSTHOG_HOST: /flux
+          NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"
 
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4

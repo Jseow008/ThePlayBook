@@ -31,12 +31,11 @@ test.describe('Critical User Journey', () => {
         await expect(page).toHaveURL(new RegExp('/preview/'), { timeout: 15000 });
 
         // Wait for preview content to load
-        // Expect a title and a "Start Reading" or "Read" CTA
+        // Expect a title and the current reader CTA
         const titleHeading = page.locator('h1').first();
         await expect(titleHeading).toBeVisible({ timeout: 15000 });
 
-        // The CTA might say "Read", "Start Reading", "Continue Reading", etc.
-        const readCta = page.getByRole('link', { name: /^Read$/i }).first();
+        const readCta = page.getByRole('link', { name: /read summary/i }).first();
         await expect(readCta).toBeVisible({ timeout: 15000 });
 
         const readHref = await readCta.getAttribute('href');
