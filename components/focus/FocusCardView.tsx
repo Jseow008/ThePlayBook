@@ -2,7 +2,7 @@ import Link from "next/link";
 import { memo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { BookOpen, ChevronDown, Info } from "lucide-react";
 import { ResilientImage } from "@/components/ui/ResilientImage";
-import { ShareButton } from "@/components/ui/ShareButton";
+import { ContentShareMenu } from "@/components/ui/ContentShareMenu";
 import { LibrarySaveButton } from "@/components/ui/LibrarySaveButton";
 import { buildReadPath } from "@/lib/content-paths";
 import type { FocusCard } from "@/components/focus/focus-feed-utils";
@@ -378,11 +378,10 @@ export const FocusCardView = memo(function FocusCardView({
                                             unsavedClassName="border-border/45 bg-secondary/20 text-muted-foreground/80 hover:bg-secondary/40 hover:text-foreground"
                                             iconClassName="size-4"
                                         />
-                                        <ShareButton
+                                        <ContentShareMenu
                                             path={`/preview/${card.id}`}
                                             title={card.title}
                                             text={`Check out "${card.title}" on Netflux`}
-                                            variant="icon"
                                             source="focus_feed"
                                             contentId={card.id}
                                             contentType={card.type}
@@ -522,11 +521,10 @@ export const FocusCardView = memo(function FocusCardView({
                                         unsavedClassName="text-muted-foreground/75 hover:bg-secondary/40 hover:text-foreground"
                                         iconClassName="size-4"
                                     />
-                                    <ShareButton
+                                    <ContentShareMenu
                                         path={`/preview/${card.id}`}
                                         title={card.title}
                                         text={`Check out "${card.title}" on Netflux`}
-                                        variant="icon"
                                         source="focus_feed"
                                         contentId={card.id}
                                         contentType={card.type}

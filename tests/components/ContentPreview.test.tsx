@@ -27,6 +27,18 @@ vi.mock('next/image', () => ({
     },
 }));
 
+vi.mock('@/components/ui/ContentShareMenu', () => ({
+    ContentShareMenu: ({ path, contentId, source }: { path?: string; contentId?: string; source?: string }) => (
+        <button
+            type="button"
+            aria-label="Share this content"
+            data-content-id={contentId}
+            data-path={path}
+            data-source={source}
+        />
+    ),
+}));
+
 describe('ContentPreview', () => {
     const mockItem: ContentItem = {
         id: 'test-item-1',
@@ -83,7 +95,15 @@ describe('ContentPreview', () => {
     it('keeps share available in the desktop hero and mobile bottom rail', () => {
         render(<ContentPreview {...defaultProps} />);
 
-        expect(screen.getAllByRole('button', { name: 'Share this content' })).toHaveLength(2);
+        const shareButtons = screen.getAllByRole('button', { name: 'Share this content' });
+
+        expect(shareButtons).toHaveLength(2);
+        for (const button of shareButtons) {
+            expect(button).toHaveAttribute('data-content-id', mockItem.id);
+            expect(button).toHaveAttribute('data-path', `/preview/${mockItem.id}`);
+        }
+        expect(shareButtons[0]).toHaveAttribute('data-source', 'content_preview');
+        expect(shareButtons[1]).toHaveAttribute('data-source', 'content_preview_mobile');
     });
 
     it('renders quick mode hook and takeaways', () => {
