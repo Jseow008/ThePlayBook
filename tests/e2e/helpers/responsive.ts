@@ -71,9 +71,7 @@ export async function expectNoDocumentHorizontalScroll(page: Page) {
 }
 
 export async function expectFocusedElementVisible(page: Page) {
-    await page.keyboard.press('Tab');
-
-    const focusedState = await page.evaluate(() => {
+    const readFocusedState = () => page.evaluate(() => {
         const element = document.activeElement;
         if (!element || element === document.body) {
             return { isVisible: false, tagName: null, rect: null };
@@ -105,7 +103,28 @@ export async function expectFocusedElementVisible(page: Page) {
         };
     });
 
-    expect(focusedState.isVisible, `Focused element is not visible: ${JSON.stringify(focusedState)}`).toBe(true);
+    const focusedStates: Awaited<ReturnType<typeof readFocusedState>>[] = [];
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+        await page.keyboard.press('Tab');
+
+        const focusedState = await readFocusedState();
+        focusedStates.push(focusedState);
+
+        // Streamed content can briefly leave a route without a focusable
+        // element. Only retry when focus never left the document body; a real
+        // invisible focus target must still fail this accessibility check.
+        if (focusedState.tagName !== null) break;
+
+        await page.waitForTimeout(250);
+    }
+
+    const focusedState = focusedStates[focusedStates.length - 1];
+
+    expect(
+        focusedState?.isVisible,
+        `Focused element is not visible after Tab attempts: ${JSON.stringify(focusedStates)}`
+    ).toBe(true);
 }
 
 export async function expectLocatorCenterNotCovered(locator: Locator) {
