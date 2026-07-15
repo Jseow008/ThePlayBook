@@ -1825,6 +1825,62 @@ describe("Admin content series support", () => {
         ]);
     });
 
+    it("returns a conflict when an update would remove a highlighted segment", async () => {
+        const rpc = vi.fn().mockResolvedValue({
+            error: {
+                code: "P0001",
+                message: "DB002_HIGHLIGHTED_SEGMENT_REMOVAL",
+                details: "The update omits 1 segment containing 2 saved highlights.",
+            },
+        });
+        const firstSingle = vi.fn().mockResolvedValue({
+            data: { series_id: seriesId },
+            error: null,
+        });
+
+        (getAdminClient as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            from: vi.fn((table: string) => {
+                if (table === "content_item") {
+                    return {
+                        select: vi.fn().mockReturnValue({
+                            eq: vi.fn().mockReturnValue({
+                                single: firstSingle,
+                            }),
+                        }),
+                    };
+                }
+
+                throw new Error(`Unexpected table ${table}`);
+            }),
+            rpc,
+        });
+
+        const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
+            method: "PUT",
+            body: JSON.stringify({
+                title: "Matthew 5-7: Sermon on the Mount",
+                series_id: seriesId,
+                series_order: 2,
+                segments: [],
+                artifacts: [],
+            }),
+        });
+
+        const res = await updateAdminContent(req, {
+            params: Promise.resolve({ id: "123e4567-e89b-12d3-a456-426614174000" }),
+        });
+        const json = await res.json();
+
+        expect(res.status).toBe(409);
+        expect(json.error.code).toBe("CONFLICT");
+        expect(json.error.details).toEqual([
+            {
+                path: ["segments"],
+                message: "Highlighted segments cannot be removed without an explicit retention workflow.",
+            },
+        ]);
+    });
+
     it("does not misclassify unrelated RPC unique violations as series-order conflicts", async () => {
         const rpc = vi.fn().mockResolvedValue({
             error: { code: "23505", constraint: "segment_item_id_order_index_key" },

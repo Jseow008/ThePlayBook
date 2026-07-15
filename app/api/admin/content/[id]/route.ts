@@ -130,6 +130,16 @@ function normalizeAudioUrl(audioUrl: string | null | undefined) {
     return audioUrl?.trim() || null;
 }
 
+function isHighlightedSegmentRemovalBlocked(error: unknown) {
+    if (!error || typeof error !== "object") {
+        return false;
+    }
+
+    const databaseError = error as { code?: unknown; message?: unknown };
+    return databaseError.code === "P0001"
+        && databaseError.message === "DB002_HIGHLIGHTED_SEGMENT_REMOVAL";
+}
+
 function buildStaleNarrationStateForExistingAudio(audioUrl: string | null | undefined) {
     if (!audioUrl) {
         return null;
@@ -513,6 +523,19 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const { error: updateGraphError } = await supabase.rpc("admin_update_content_graph", rpcArgs);
 
         if (updateGraphError) {
+            if (isHighlightedSegmentRemovalBlocked(updateGraphError)) {
+                return apiError(
+                    "CONFLICT",
+                    "This update would remove a segment containing saved highlights. Keep the highlighted segment and try again.",
+                    409,
+                    requestId,
+                    [{
+                        path: ["segments"],
+                        message: "Highlighted segments cannot be removed without an explicit retention workflow.",
+                    }]
+                );
+            }
+
             if (isUniqueConstraintViolation(updateGraphError, "idx_content_item_series_order_unique")) {
                 return apiError(
                     "VALIDATION_ERROR",
