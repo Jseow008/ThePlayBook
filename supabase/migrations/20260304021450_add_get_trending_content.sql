@@ -1,4 +1,4 @@
--- RPC: get_trending_content
+-- Production-recorded version 20260304021450: get_trending_content RPC
 -- Returns the most-read content items based on distinct user_library readers.
 -- Falls back to most recently created content if no library data exists.
 

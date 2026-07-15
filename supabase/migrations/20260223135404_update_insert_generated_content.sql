@@ -1,4 +1,4 @@
--- Migration: update insert_generated_content to accept category
+-- Migration 20260223135404: update insert_generated_content to accept category
 
 CREATE OR REPLACE FUNCTION public.insert_generated_content(
   p_title text, 

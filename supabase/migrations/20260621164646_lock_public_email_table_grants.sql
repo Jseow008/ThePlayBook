@@ -1,4 +1,4 @@
--- Keep public email flows behind narrow RPCs instead of direct table grants.
+-- Production-recorded version 20260621164646: keep email flows behind RPCs.
 
 REVOKE ALL ON TABLE public.email_subscription FROM anon, authenticated;
 GRANT ALL ON TABLE public.email_subscription TO service_role;

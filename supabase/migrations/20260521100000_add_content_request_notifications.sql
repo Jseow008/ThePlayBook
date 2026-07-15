@@ -26,7 +26,7 @@ $$;
 CREATE TABLE IF NOT EXISTS public.user_notification_preferences (
   user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   request_published_email_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-  unsubscribe_token TEXT NOT NULL DEFAULT encode(gen_random_bytes(32), 'hex'),
+  unsubscribe_token TEXT NOT NULL DEFAULT encode(extensions.gen_random_bytes(32), 'hex'),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT user_notification_preferences_unsubscribe_token_unique UNIQUE (unsubscribe_token),

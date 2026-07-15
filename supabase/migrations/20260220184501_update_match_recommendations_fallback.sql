@@ -3,10 +3,10 @@ CREATE OR REPLACE FUNCTION public.match_recommendations(completed_ids uuid[], ma
  LANGUAGE plpgsql
 AS $function$
 DECLARE
-    avg_embedding vector(768);
+    avg_embedding extensions.vector(768);
     completed_cats text[];
 BEGIN
-    SELECT AVG(ci.embedding)::vector(768) INTO avg_embedding
+    SELECT AVG(ci.embedding)::extensions.vector(768) INTO avg_embedding
     FROM public.content_item ci
     WHERE ci.id = ANY(completed_ids)
       AND ci.embedding IS NOT NULL;
@@ -70,13 +70,13 @@ BEGIN
         ci.created_at,
         ci.updated_at,
         ci.deleted_at,
-        1 - (ci.embedding <=> avg_embedding) AS similarity
+        1 - (ci.embedding OPERATOR(extensions.<=>) avg_embedding) AS similarity
     FROM public.content_item ci
     WHERE ci.id != ALL(completed_ids)
       AND ci.status = 'verified'
       AND ci.deleted_at IS NULL
       AND ci.embedding IS NOT NULL
-    ORDER BY ci.embedding <=> avg_embedding
+    ORDER BY ci.embedding OPERATOR(extensions.<=>) avg_embedding
     LIMIT match_count;
 END;
 $function$

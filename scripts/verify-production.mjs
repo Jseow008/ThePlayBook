@@ -74,7 +74,9 @@ function requireEnv(names, context) {
   const missing = names.filter((name) => !process.env[name]?.trim());
 
   if (missing.length > 0) {
-    console.error(`${context} is missing required environment variables: ${missing.join(", ")}`);
+    console.error(
+      `${context} is missing required environment variables: ${missing.join(", ")}`,
+    );
     process.exit(1);
   }
 }
@@ -145,12 +147,20 @@ if (!args.skipBrowser) {
   }
 
   requireEnv(
-    ["HEALTH_CHECK_SECRET", "SMOKE_ADMIN_EMAIL", "SMOKE_ADMIN_PASSWORD", "SMOKE_READ_PATH"],
+    [
+      "HEALTH_CHECK_SECRET",
+      "SMOKE_ADMIN_EMAIL",
+      "SMOKE_ADMIN_PASSWORD",
+      "SMOKE_READ_PATH",
+    ],
     "Production browser smoke verification",
   );
 }
 
-requireEnv(["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"], "Supabase advisor verification");
+requireEnv(
+  ["SUPABASE_ACCESS_TOKEN", "SUPABASE_PROJECT_REF"],
+  "Supabase advisor verification",
+);
 requireEnv(["SUPABASE_DB_URL"], "Production Supabase SQL verification");
 
 const npm = npmBin();
@@ -161,11 +171,23 @@ const launchEnvArgs = args.envFile
 
 runStep("Production dependency audit", npm, ["run", "security:audit"]);
 runStep("Launch environment validation", npm, launchEnvArgs);
-runStep("Supabase security advisors", npm, ["run", "security:supabase-advisors"]);
+runStep("Supabase security advisors", npm, [
+  "run",
+  "security:supabase-advisors",
+]);
 runStep("Admin RPC ACL SQL check", npm, ["run", "security:admin-rpc-acls"]);
-runStep("SECURITY DEFINER ACL SQL check", npm, ["run", "security:function-acls"]);
-runStep("Embedding table read SQL check", npm, ["run", "security:embedding-table-reads"]);
-runStep("Storage bucket listing SQL check", npm, ["run", "security:storage-bucket-listing"]);
+runStep("SECURITY DEFINER ACL SQL check", npm, [
+  "run",
+  "security:function-acls",
+]);
+runStep("Embedding table read SQL check", npm, [
+  "run",
+  "security:embedding-table-reads",
+]);
+runStep("Storage bucket listing SQL check", npm, [
+  "run",
+  "security:storage-bucket-listing",
+]);
 runStep("Analytics RLS SQL check", npm, ["run", "security:analytics-rls"]);
 runStep("Lint", npm, ["run", "lint"]);
 runStep("Typecheck", npm, ["run", "typecheck"]);
@@ -176,7 +198,12 @@ if (!args.skipBrowser) {
   runStep(
     "Production browser smoke tests",
     npx,
-    ["playwright", "test", "tests/e2e/production-smoke.spec.ts", "--project=chromium"],
+    [
+      "playwright",
+      "test",
+      "tests/e2e/production-smoke.spec.ts",
+      "--project=desktop-chromium",
+    ],
     {
       PLAYWRIGHT_BASE_URL: args.baseUrl,
       PRODUCTION_SMOKE_BASE_URL: args.baseUrl,

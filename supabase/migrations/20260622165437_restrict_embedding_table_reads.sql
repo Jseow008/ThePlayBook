@@ -46,7 +46,7 @@ BEGIN
                 SELECT
                     se.segment_id,
                     se.content_item_id,
-                    1 - (se.embedding <=> p_query_embedding) AS similarity
+                    1 - (se.embedding OPERATOR(extensions.<=>) p_query_embedding) AS similarity
                 FROM public.segment_embedding se
                 INNER JOIN public.user_library ul
                     ON ul.content_id = se.content_item_id
@@ -55,8 +55,8 @@ BEGIN
                     ON ci.id = se.content_item_id
                 WHERE ci.status = 'verified'
                   AND ci.deleted_at IS NULL
-                  AND 1 - (se.embedding <=> p_query_embedding) > p_match_threshold
-                ORDER BY se.embedding <=> p_query_embedding
+                  AND 1 - (se.embedding OPERATOR(extensions.<=>) p_query_embedding) > p_match_threshold
+                ORDER BY se.embedding OPERATOR(extensions.<=>) p_query_embedding
                 LIMIT LEAST(GREATEST(COALESCE(p_match_count, 3), 1), 50);
             END;
             $function$;
@@ -108,28 +108,6 @@ BEGIN
         )
         TO authenticated, service_role;
 
-        REVOKE EXECUTE ON FUNCTION public.match_library_segments(
-            extensions.vector(1536),
-            double precision,
-            integer,
-            uuid
-        )
-        FROM PUBLIC, anon, authenticated;
-
-        GRANT EXECUTE ON FUNCTION public.match_library_segments(
-            extensions.vector(1536),
-            double precision,
-            integer,
-            uuid
-        )
-        TO authenticated, service_role;
-    END IF;
-END;
-$$;
-
-DO $$
-BEGIN
-    IF to_regprocedure('public.match_library_segments(vector,double precision,integer,uuid)') IS NOT NULL THEN
         REVOKE EXECUTE ON FUNCTION public.match_library_segments(
             extensions.vector(1536),
             double precision,

@@ -1,4 +1,4 @@
--- Add synced onboarding state to profiles and expose a safe per-user updater.
+-- Reconciled unique version: add synced onboarding state and its safe updater.
 ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS onboarding_state jsonb NOT NULL DEFAULT '{}'::jsonb;
 

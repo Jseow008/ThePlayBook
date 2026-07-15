@@ -140,7 +140,7 @@ Implementation notes:
 
 - Added and applied `supabase/migrations/20260620171256_guard_admin_update_content_graph.sql`.
 - Verified `admin_update_content_graph` remains `SECURITY DEFINER`, has fixed `search_path`, is executable only by `service_role`, and now contains an internal `auth.role() <> 'service_role'` guard.
-- Added and applied `supabase/migrations/20260621161235_audit_admin_definer_runtime_guards.sql` after a live inventory of every `public` function.
+- Added and applied the migration now reconciled as `supabase/migrations/20260621162133_audit_admin_definer_runtime_guards.sql` after a live inventory of every `public` function. Its repository version was aligned with the production-recorded version during DB-001.
 - Added runtime `auth.role() <> 'service_role'` guards to service-only analytics definer RPCs:
   - `increment_reading_activity_for_user(date, integer, uuid)`
   - `log_reading_activity(date, integer, uuid)`
@@ -252,8 +252,7 @@ Acceptance criteria:
 
 Implementation notes:
 
-- Added `supabase/migrations/20260622120000_add_public_email_subscription_rpcs.sql`.
-- Added `supabase/migrations/20260622121500_lock_public_email_table_grants.sql`.
+- Added the migrations now reconciled as `supabase/migrations/20260621164335_add_public_email_subscription_rpcs.sql` and `supabase/migrations/20260621164646_lock_public_email_table_grants.sql`; DB-001 aligned their repository versions with production history.
 - Added three narrow public `SECURITY DEFINER` RPCs:
   - `subscribe_email_subscription(text, text, text, text, text, text, text)`
   - `unsubscribe_email_subscription_by_token(text)`
@@ -317,7 +316,7 @@ Acceptance criteria:
 
 Implementation notes:
 
-- Added `supabase/migrations/20260621170836_harden_anonymous_activity_analytics.sql`.
+- Added the migration now reconciled as `supabase/migrations/20260621171404_harden_anonymous_activity_analytics.sql`; DB-001 aligned its repository version with production history.
 - `log_anonymous_reading_activity`, `log_reading_activity_for_user`, and legacy `log_reading_activity` now reject content IDs unless the content item is `verified` and not deleted.
 - `/api/activity/log` verifies content status before calling content-level activity RPCs for both anonymous and authenticated readers.
 - Anonymous activity now requires a server-issued visitor token signed with `ANONYMOUS_ACTIVITY_SECRET` in production.

@@ -50,9 +50,9 @@ FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.increment_reading_activity(date, integer)
 TO authenticated, service_role;
 
-REVOKE EXECUTE ON FUNCTION public.match_library_segments(vector(1536), double precision, integer, uuid)
+REVOKE EXECUTE ON FUNCTION public.match_library_segments(extensions.vector(1536), double precision, integer, uuid)
 FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.match_library_segments(vector(1536), double precision, integer, uuid)
+GRANT EXECUTE ON FUNCTION public.match_library_segments(extensions.vector(1536), double precision, integer, uuid)
 TO authenticated, service_role;
 
 -- Utility helper should not be world-executable.

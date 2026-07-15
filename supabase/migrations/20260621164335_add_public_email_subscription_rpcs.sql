@@ -1,4 +1,4 @@
--- Replace service-role usage in public email routes with narrow public RPCs.
+-- Production-recorded version 20260621164335: narrow public email RPCs.
 -- Table access stays protected by RLS; these functions validate inputs and only
 -- perform the intended subscription or token-scoped unsubscribe mutation.
 

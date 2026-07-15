@@ -50,13 +50,13 @@ BEGIN
         ci.created_at,
         ci.updated_at,
         ci.deleted_at,
-        1 - (ci.embedding <=> avg_embedding) AS similarity
+        1 - (ci.embedding OPERATOR(extensions.<=>) avg_embedding) AS similarity
     FROM public.content_item ci
     WHERE ci.id != ALL(completed_ids)
       AND ci.status = 'verified'
       AND ci.deleted_at IS NULL
       AND ci.embedding IS NOT NULL
-    ORDER BY ci.embedding <=> avg_embedding
+    ORDER BY ci.embedding OPERATOR(extensions.<=>) avg_embedding
     LIMIT match_count;
 END;
 $function$

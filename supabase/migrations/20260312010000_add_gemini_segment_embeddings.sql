@@ -5,7 +5,7 @@ CREATE TABLE public.segment_embedding_gemini (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     segment_id UUID NOT NULL REFERENCES public.segment(id) ON DELETE CASCADE,
     content_item_id UUID NOT NULL REFERENCES public.content_item(id) ON DELETE CASCADE,
-    embedding vector(768) NOT NULL,
+    embedding extensions.vector(768) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -14,7 +14,7 @@ CREATE UNIQUE INDEX segment_embedding_gemini_segment_id_key
 
 CREATE INDEX segment_embedding_gemini_embedding_idx
     ON public.segment_embedding_gemini
-    USING hnsw (embedding vector_ip_ops);
+    USING hnsw (embedding extensions.vector_ip_ops);
 
 ALTER TABLE public.segment_embedding_gemini ENABLE ROW LEVEL SECURITY;
 
@@ -49,7 +49,7 @@ AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION public.match_library_segments_gemini(
-    query_embedding vector(768),
+    query_embedding extensions.vector(768),
     match_threshold double precision,
     match_count integer,
     p_user_id uuid
@@ -65,12 +65,12 @@ AS $$
     SELECT
         seg.segment_id,
         seg.content_item_id,
-        1 - (seg.embedding <=> query_embedding) AS similarity
+        1 - (seg.embedding OPERATOR(extensions.<=>) query_embedding) AS similarity
     FROM public.segment_embedding_gemini seg
     INNER JOIN public.user_library ul ON ul.content_id = seg.content_item_id
     WHERE ul.user_id = p_user_id
-      AND 1 - (seg.embedding <=> query_embedding) > match_threshold
-    ORDER BY seg.embedding <=> query_embedding
+      AND 1 - (seg.embedding OPERATOR(extensions.<=>) query_embedding) > match_threshold
+    ORDER BY seg.embedding OPERATOR(extensions.<=>) query_embedding
     LIMIT match_count;
 $$;
 
@@ -79,7 +79,7 @@ FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_segments_missing_gemini_embeddings(integer)
 TO service_role;
 
-REVOKE EXECUTE ON FUNCTION public.match_library_segments_gemini(vector(768), double precision, integer, uuid)
+REVOKE EXECUTE ON FUNCTION public.match_library_segments_gemini(extensions.vector(768), double precision, integer, uuid)
 FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.match_library_segments_gemini(vector(768), double precision, integer, uuid)
+GRANT EXECUTE ON FUNCTION public.match_library_segments_gemini(extensions.vector(768), double precision, integer, uuid)
 TO authenticated, service_role;

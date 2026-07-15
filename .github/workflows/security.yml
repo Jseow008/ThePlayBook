@@ -65,6 +65,9 @@ jobs:
       - name: Validate launch environment
         run: npm run validate:launch-env
 
+      - name: Validate unique migration versions
+        run: npm run check:migration-versions
+
       - name: Setup local Supabase
         run: |
           npx supabase start
@@ -77,6 +80,7 @@ jobs:
           npm run security:embedding-table-reads
           npm run security:storage-bucket-listing
           npm run security:analytics-rls
+          npm run database:highlight-preservation
 
       - name: Security route and static tests
         run: npm run test:security
@@ -132,6 +136,9 @@ jobs:
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
+
+      - name: Verify production migration parity
+        run: npm run check:migration-versions -- --remote
 
       - name: Run production verification checklist
         run: npm run verify:production -- --base-url "${{ inputs.base_url }}"

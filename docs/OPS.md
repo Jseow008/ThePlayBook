@@ -145,7 +145,88 @@ If any of the above fails, stop the launch and fix the underlying route or envir
 
 Category taxonomy note: Phase 1 keeps temporary aliases for old public search links. Before removing them, confirm old category URLs have no meaningful traffic, then follow the Phase 2 checklist in `docs/CATEGORY_TAXONOMY.md`.
 
-### 2.2 Email Subscription Operations
+### 2.2 Disposable Hosted Database Verification
+
+Run this gate before any database-facing production release. A [Supabase preview branch](https://supabase.com/docs/guides/deployment/branching) is preferred when the plan supports it. While production remains on the Free plan, use a separate short-lived hosted project as described below.
+
+Hard stops:
+
+- Use an isolated Supabase workdir. Never relink the repository workdir away from production.
+- Record both project refs and prove that the candidate ref is not the production ref before any destructive command.
+- Never run `db reset --linked` unless the isolated workdir's `.temp/project-ref` exactly matches the disposable candidate.
+- Do not copy production users, personal data, content, database secrets, or Storage objects. Create synthetic fixtures only after the schema replay succeeds.
+- Stop on any unexplained destructive diff, privilege expansion, schema mismatch, failing role test, advisor regression, type-contract mismatch, or application-smoke failure.
+
+Create and link the candidate:
+
+1. Create a temporary hosted project in the approved organization and region. Generate a unique database password and keep it only in a private temporary directory.
+2. Create an isolated workdir and copy `supabase/` into it without copying the repository's `supabase/.temp` link metadata.
+3. Link only that isolated workdir to the candidate project.
+4. Verify the guard before proceeding:
+
+```bash
+test "$CANDIDATE_PROJECT_REF" != "$PRODUCTION_PROJECT_REF"
+test "$(< "$CANDIDATE_WORKDIR/supabase/.temp/project-ref")" = "$CANDIDATE_PROJECT_REF"
+```
+
+Replay and compare:
+
+```bash
+npx supabase db push --linked --dry-run --workdir "$CANDIDATE_WORKDIR"
+npx supabase db push --linked --workdir "$CANDIDATE_WORKDIR" --yes
+
+# Destructive: permitted only after the candidate-ref guard above passes.
+npx supabase db reset --linked --no-seed --workdir "$CANDIDATE_WORKDIR" --yes
+npx supabase db push --linked --dry-run --workdir "$CANDIDATE_WORKDIR"
+
+node scripts/compare-supabase-schema.mjs --candidate-workdir "$CANDIDATE_WORKDIR"
+```
+
+The final dry-run must report the candidate up to date, and the schema comparison must match every category. The fingerprint currently covers relations, columns, constraints, indexes, functions, function ACLs, policies, relation ACLs, views, triggers, relation comments, required extensions, enum definitions, and Storage buckets.
+
+Generate fresh production and candidate database types into private temporary files. Compare them after normalizing only known platform metadata such as `__InternalSupabase.PostgrestVersion`; review every other difference. If the schema contract changed, update `types/database.ts`, remove obsolete casts or type-safety exceptions, and run `npm run typecheck`.
+
+Run all candidate security checks with `SUPABASE_DB_URL` set to the candidate's direct or session-pooler URL:
+
+```bash
+npm run security:function-acls
+npm run security:admin-rpc-acls
+npm run security:analytics-rls
+npm run security:embedding-table-reads
+npm run security:storage-bucket-listing
+```
+
+Run DB-002's transactional behavior proof on local or explicitly disposable databases only:
+
+```bash
+SUPABASE_LOCAL=1 npm run database:highlight-preservation
+DB002_TEST_DB_URL="$DISPOSABLE_DATABASE_URL" npm run database:highlight-preservation
+```
+
+The runner intentionally refuses the repository's normal linked database path. Never set `DB002_TEST_DB_URL` to production. The proof uses synthetic fixed fixtures, cleans them up in the same statement, and fails the release if edits, reorders, additions, removals, embeddings, artifacts, or highlights violate the DB-002 contract.
+
+Set `SUPABASE_PROJECT_REF` to the candidate ref and run `npm run security:supabase-advisors`. Retrieve and review the performance advisor as well. An empty candidate can report more unused indexes than production; the difference must be explained, while schema/RLS/index-design findings must still match the intended release.
+
+Application gate:
+
+1. Create a synthetic confirmed admin profile, one synthetic verified content item, and its synthetic segment in the candidate only.
+2. Build the application with candidate Supabase public and service credentials.
+3. Start the production build on an isolated port and run `tests/e2e/production-smoke.spec.ts` with all optional smoke variables present.
+4. Require all seven checks: login, missing-code callback, browse, public read, anonymous admin denial, authenticated admin RBAC, and shallow/detailed health.
+5. Run repository typecheck and targeted lint for any changed verification code.
+
+Production go/no-go:
+
+- Verify a fresh production backup appropriate to the planned mutation.
+- Confirm local/production migration parity and immutable recorded SQL.
+- Run `db push --linked --dry-run` against production and review the exact proposed list.
+- Obtain explicit production authorization for that exact list.
+- After the push, require parity, clean dry-run, schema comparison, role/security checks, advisors, and proportionate application smoke checks.
+- Treat the leaked-password-protection warning and other known launch controls as their owning readiness items; do not silently waive them as part of a migration replay.
+
+Cleanup is mandatory even after a failed gate: delete the disposable hosted project, confirm it no longer appears in the project list, stop isolated application processes, and securely remove temporary passwords, API keys, generated types, fixtures, and workdirs. Do not stop or modify unrelated developer servers.
+
+### 2.3 Email Subscription Operations
 
 Newsletter subscription is not the same as login. Do not automatically subscribe users when they sign in.
 

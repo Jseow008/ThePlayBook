@@ -1,4 +1,4 @@
--- Defense-in-depth for content activity analytics:
+-- Production-recorded version 20260621171404: analytics defense-in-depth.
 -- content-level activity RPCs must never mutate analytics for draft, deleted,
 -- or nonexistent content, even when called by the service role.
 

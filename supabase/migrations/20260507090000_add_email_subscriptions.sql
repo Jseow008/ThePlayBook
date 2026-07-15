@@ -19,7 +19,7 @@ create table if not exists public.email_subscription (
     consent_version text not null,
     subscribed_at timestamptz not null default now(),
     unsubscribed_at timestamptz null,
-    unsubscribe_token text not null default encode(gen_random_bytes(32), 'hex'),
+    unsubscribe_token text not null default encode(extensions.gen_random_bytes(32), 'hex'),
     metadata jsonb not null default '{}'::jsonb,
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now(),

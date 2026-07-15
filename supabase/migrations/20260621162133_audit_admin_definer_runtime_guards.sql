@@ -1,4 +1,4 @@
--- Full item 3 follow-up:
+-- Production-recorded version 20260621162133 — full item 3 follow-up:
 -- - Add runtime service-role guards to service-only SECURITY DEFINER RPCs
 --   discovered by live function inventory.
 -- - Lock trigger-only helpers against direct anon/authenticated execution
@@ -292,10 +292,10 @@ SET search_path = public;
 ALTER FUNCTION public.increment_reading_activity(date, integer)
 SET search_path = public;
 
-ALTER FUNCTION public.match_library_segments(vector, double precision, integer, uuid)
+ALTER FUNCTION public.match_library_segments(extensions.vector, double precision, integer, uuid)
 SET search_path = public, extensions;
 
-ALTER FUNCTION public.match_library_segments_gemini(vector, double precision, integer, uuid, boolean)
+ALTER FUNCTION public.match_library_segments_gemini(extensions.vector, double precision, integer, uuid, boolean)
 SET search_path = public, extensions;
 
 ALTER FUNCTION public.match_recommendations(uuid[], uuid[], integer)
