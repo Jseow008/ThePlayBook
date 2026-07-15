@@ -70,8 +70,29 @@ jobs:
 
       - name: Setup local Supabase
         run: |
-          npx supabase start
-          npx supabase db reset
+          set -o pipefail
+
+          run_with_transient_retry() {
+            local log_file
+            log_file="$(mktemp)"
+
+            if "$@" 2>&1 | tee "$log_file"; then
+              rm -f "$log_file"
+              return 0
+            fi
+
+            if ! grep -Eqi 'Error status 50[234]:.*upstream server|invalid response.*upstream server' "$log_file"; then
+              rm -f "$log_file"
+              return 1
+            fi
+
+            echo "::warning::Supabase returned a transient upstream error; retrying once."
+            rm -f "$log_file"
+            "$@"
+          }
+
+          run_with_transient_retry npx supabase start
+          run_with_transient_retry npx supabase db reset
 
       - name: Supabase SQL drift checks
         run: |
