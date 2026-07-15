@@ -17,7 +17,12 @@ const contentId = "11111111-1111-4111-8111-111111111111";
 
 function mockSuccessfulImageFetch() {
     const blob = new Blob(["png"], { type: "image/png" });
-    const fetchMock = vi.fn().mockResolvedValue(new Response(blob, { status: 200 }));
+    const response = {
+        ok: true,
+        status: 200,
+        blob: vi.fn().mockResolvedValue(blob),
+    } as Pick<Response, "ok" | "status" | "blob">;
+    const fetchMock = vi.fn().mockResolvedValue(response);
     vi.stubGlobal("fetch", fetchMock);
     return fetchMock;
 }

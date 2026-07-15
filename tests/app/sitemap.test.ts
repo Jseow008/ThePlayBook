@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
     logApiError: vi.fn(),
 }));
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.netflux.blog";
+
 vi.mock("@/lib/supabase/public-server", () => ({
     createPublicServerClient: mocks.createPublicServerClient,
 }));
@@ -96,10 +98,10 @@ describe("sitemap", () => {
         const routes = await sitemap();
         const urls = routes.map((route) => route.url);
 
-        expect(urls).toContain("https://www.netflux.blog/browse");
-        expect(urls).toContain("https://www.netflux.blog/search");
-        expect(urls).toContain("https://www.netflux.blog/series/matthew");
-        expect(urls).toContain("https://www.netflux.blog/read/read-1/read-title");
+        expect(urls).toContain(`${siteUrl}/browse`);
+        expect(urls).toContain(`${siteUrl}/search`);
+        expect(urls).toContain(`${siteUrl}/series/matthew`);
+        expect(urls).toContain(`${siteUrl}/read/read-1/read-title`);
         expect(seriesInMock).toHaveBeenCalledWith("id", ["series-1"]);
     });
 
@@ -119,7 +121,7 @@ describe("sitemap", () => {
         const routes = await sitemap();
         const urls = routes.map((route) => route.url);
 
-        expect(urls).not.toContain("https://www.netflux.blog/series/matthew");
+        expect(urls).not.toContain(`${siteUrl}/series/matthew`);
         expect(seriesInMock).not.toHaveBeenCalled();
         expect(fromMock).not.toHaveBeenCalledWith("content_series");
     });
@@ -144,7 +146,7 @@ describe("sitemap", () => {
         const routes = await sitemap();
         const urls = routes.map((route) => route.url);
 
-        expect(urls).toContain("https://www.netflux.blog/browse");
+        expect(urls).toContain(`${siteUrl}/browse`);
         expect(mocks.logApiError).toHaveBeenCalledWith({
             requestId: "sitemap-request-id",
             route: "/sitemap.xml",

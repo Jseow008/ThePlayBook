@@ -38,6 +38,7 @@ describe("Activity Log API", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.unstubAllEnvs();
+        vi.stubEnv("ANONYMOUS_ACTIVITY_SECRET", "");
         vi.useFakeTimers();
         vi.setSystemTime(new Date("2026-04-08T12:00:00.000Z"));
         (createClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockAuthClient);
