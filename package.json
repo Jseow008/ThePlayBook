@@ -26,6 +26,7 @@
     "check:route-shell-policy": "node scripts/check-route-shell-policy.mjs",
     "check:type-safety-ratchet": "node scripts/check-type-safety-ratchet.mjs",
     "database:highlight-preservation": "node scripts/check-database-highlight-preservation.mjs",
+    "database:published-at": "node scripts/check-database-published-at.mjs",
     "deps:outdated": "node scripts/check-dependency-posture.mjs --outdated",
     "supabase:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" > types/database.ts",
     "supabase:types:local": "supabase gen types typescript --local > types/database.ts",
