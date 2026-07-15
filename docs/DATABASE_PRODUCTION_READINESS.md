@@ -74,7 +74,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-001 | P0       | Reconcile migration history and establish a replayable schema            | Verified                                                        | Yes             |
 | DB-002 | P0       | Preserve highlights during segment and content updates                   | Verified                                                        | Yes             |
 | DB-003 | P0       | Establish production plan, backup, Storage backup, and restore readiness | In progress — restore proven; paid retention and alerts pending | Yes             |
-| DB-004 | P0       | Prove a staging or disposable-environment release workflow               | In progress — enforcement active; first live challenge pending  | Yes             |
+| DB-004 | P0       | Prove a staging or disposable-environment release workflow               | Verified                                                        | Yes             |
 | DB-101 | P1       | Correct the Gemini vector index/operator mismatch                        | Not started                                                     | Yes             |
 | DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | Not started                                                     | Yes             |
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Not started                                                     | Yes             |
@@ -437,7 +437,7 @@ The production environment has documented capacity, database recovery, Storage r
 
 ### DB-004: Prove a staging or disposable-environment release workflow
 
-Status: In progress — disposable hosted workflow and two-layer deployment enforcement configured and persisted on 2026-07-15; first live challenge remains
+Status: Verified — disposable hosted replay and two-layer deployment enforcement passed a normal gated production release on 2026-07-15
 
 #### Verified workflow evidence
 
@@ -451,7 +451,10 @@ Status: In progress — disposable hosted workflow and two-layer deployment enfo
 - Before enforcement was configured, Vercel created production deployment `dpl_DvWR7arw13fWwLyosk1A268wWHyE` for commit `f1ac98a` before `validate` completed. This proved that successful checks without an explicit promotion gate did not protect production traffic.
 - Repository ruleset `18984223` is active for `refs/heads/main`. It has no bypass actors, requires a pull request, requires both exact GitHub Actions checks with strict up-to-date evaluation, and blocks branch deletion and non-fast-forward updates. The active branch-rules endpoint returned the same four rules after creation.
 - Vercel Deployment Checks now import the exact GitHub checks `validate` and `Security Validation`, with Production behavior for both. Vercel confirmed that the checks take effect on the next production deployment, and a full page reload preserved both saved checks.
-- Remaining verification: on the next normal production release, record that production promotion remains pending until both checks pass. Separately challenge the GitHub rule with a deliberately failing test branch/PR; do not manufacture a failing production deployment. DB-004 remains In progress until that evidence is recorded.
+- Pull request [#14](https://github.com/Jseow008/ThePlayBook/pull/14) provided the safe protected-branch challenge. GitHub reported the PR blocked while the required checks were pending or failing, then reported it mergeable only after `validate` and `Security Validation` succeeded. The SHA-locked squash merge completed at `2026-07-15T13:23:51Z`; no failing production deployment was manufactured.
+- The resulting production build, Vercel deployment `dpl_FC63uQEfQTb3q2rsVT3CwiSf6EaJ` for commit `b6f5f424cd1fae790a46b0c4ca167db3c84ea8b2`, reached build state `READY` at `2026-07-15T13:25:41.259Z` while both live domains remained assigned to the prior deployment.
+- `Security Validation` completed successfully at `2026-07-15T13:27:21Z`. The first `validate` run failed at `2026-07-15T13:40:17Z`, and Vercel continued withholding `netflux.blog`, `www.netflux.blog`, and `netflux-zeta.vercel.app` from the new build. This proves the production failure path remained closed even though the build itself was ready.
+- The single failed-job rerun of `validate` completed successfully at `2026-07-15T13:57:16Z`. At `2026-07-15T13:57:30.141Z`, the first post-success observation showed all three production aliases on the new deployment. `netflux.blog`, `www.netflux.blog`, and `/api/health` then returned HTTP 200, and resolving `netflux.blog` through Vercel identified the expected deployment and commit.
 
 #### Required outcome
 
@@ -466,7 +469,7 @@ Every migration and database-facing release can be tested without using producti
 - [x] Database types are regenerated and typechecked when schema contracts change.
 - [x] Public, authenticated, admin, and service-only access paths are smoke-tested.
 - [x] The production deployment is configured to require both `validate` and `Security Validation` before production promotion.
-- [ ] The next normal production release proves promotion waits for both checks, and a deliberately failing test PR proves the protected branch cannot be merged.
+- [x] A normal production release proved promotion waits for both checks, including withholding promotion after a failed required check; the same PR proved the protected branch remains blocked until required checks pass.
 
 ## P1 — Required hardening
 
@@ -705,6 +708,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-15 | DB-004                                | Audited enforcement after CI returned green. No GitHub ruleset exists, and Vercel assigned production for commit `f1ac98a` before `validate` completed. Recorded the exact required check contexts and the two-layer source-control/production-alias enforcement design. Dashboard mutation remains pending an authenticated management session.                                                                                                                                                                                                                                                    | GitHub check-runs and ruleset APIs; Vercel deployment `dpl_DvWR7arw13fWwLyosk1A268wWHyE` and deployment-check documentation                                                                                               |
 | 2026-07-15 | DB-004                                | Created and verified active repository ruleset `18984223` for `main`: no bypass actors, pull requests required, strict `validate` and `Security Validation` GitHub Actions checks required, and deletion/force pushes blocked. Vercel production-alias enforcement and the combined failing-branch challenge remain.                                                                                                                                                                                                                                                                                | Authenticated ruleset creation, full ruleset readback, and active `main` branch-rules query                                                                                                                               |
 | 2026-07-15 | DB-004                                | Added Vercel Deployment Checks for the exact GitHub contexts `validate` and `Security Validation`, both with Production behavior. Vercel confirmed they apply to the next production deployment, and a full settings-page reload preserved both checks. No deployment or production-database mutation was used for this configuration step. DB-004 remains In progress pending observation of the next normal promotion and a safe failing-PR challenge of the GitHub rule.                                                                                                                         | Authenticated Vercel settings mutation, success confirmation, and post-reload configuration readback                                                                                                                      |
+| 2026-07-15 | DB-004                                | Completed the first normal two-layer gated release through PR #14. GitHub kept the PR blocked while required checks were pending or failing and allowed the merge only after both passed. Vercel built commit `b6f5f42` but withheld all production aliases through the initial failed `validate` run and its rerun; the aliases appeared only after the rerun succeeded. The live domains and health endpoint then returned HTTP 200 from the expected deployment. DB-004 is Verified.                                                                                                             | PR #14 check and merge timestamps; ruleset `18984223`; Vercel deployment `dpl_FC63uQEfQTb3q2rsVT3CwiSf6EaJ`; pre- and post-check alias observations; live HTTP smoke                                                      |
 
 ## Execution model
 
@@ -750,7 +754,7 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-15: DB-001 and DB-002 are Verified, including the DB-002 application rollout. DB-004's disposable hosted workflow, GitHub `main` ruleset, and Vercel production-promotion checks are configured and persisted. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 now has verified independent Storage and local restore evidence, but the paid plan, hosted retention/PITR, bucket controls, and alerts remain launch gates. DB-004 still requires evidence from the next normal production promotion plus a safe failing-PR challenge before it is marked Verified. The next schema-critical work is DB-101/DB-102 while those operational gates continue in parallel.
+Current position on 2026-07-15: DB-001, DB-002, and DB-004 are Verified. DB-004 now includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but the paid plan, hosted retention/PITR, production deployment of the prepared bucket controls, and alerts remain launch gates. The next schema-critical work is DB-101/DB-102 while DB-003 continues in parallel.
 
 ### Parallel launch gates
 

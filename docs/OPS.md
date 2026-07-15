@@ -521,7 +521,9 @@ Enforcement was configured and read back on 2026-07-15:
 - GitHub ruleset `18984223` applies to `main`, has no bypass actors, requires a pull request and strict up-to-date `validate` and `Security Validation` checks, and blocks deletion and force pushes.
 - Vercel Deployment Checks import those exact two GitHub check names with Production behavior. Vercel must not promote the deployment to production until both have passed.
 
-For the first normal production release after this configuration, record the check completion and production-promotion timestamps in [`DATABASE_PRODUCTION_READINESS.md`](./DATABASE_PRODUCTION_READINESS.md). Use a deliberately failing test branch/PR to challenge the GitHub rule; do not create a failing production deployment solely to test the Vercel gate.
+The first normal gated release completed on 2026-07-15. Pull request #14 remained blocked while required checks were pending or failing, and Vercel withheld the ready build from all production aliases after the first `validate` failure. The aliases moved only after the failed-job rerun succeeded. Exact check, merge, build-readiness, and first-observed promotion timestamps are recorded under DB-004 in [`DATABASE_PRODUCTION_READINESS.md`](./DATABASE_PRODUCTION_READINESS.md).
+
+For every later production release, investigate rather than bypass a missing or failed required check. Do not manually assign production aliases before both checks pass. If either required check is renamed, update and reverify the GitHub ruleset and Vercel Deployment Checks together before merging the workflow change.
 
 The PR/push security gate runs without production database credentials:
 
