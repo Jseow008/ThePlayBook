@@ -514,7 +514,14 @@ Then trigger one handled server error and one browser error in preview/staging a
 
 #### CI Security Gates
 
-Production deploys should require the GitHub Actions `Security Validation` job from `.github/workflows/security.yml`.
+Production deploys require the GitHub Actions `Security Validation` job from `.github/workflows/security.yml` and the `validate` job from `.github/workflows/ci.yml`.
+
+Enforcement was configured and read back on 2026-07-15:
+
+- GitHub ruleset `18984223` applies to `main`, has no bypass actors, requires a pull request and strict up-to-date `validate` and `Security Validation` checks, and blocks deletion and force pushes.
+- Vercel Deployment Checks import those exact two GitHub check names with Production behavior. Vercel must not promote the deployment to production until both have passed.
+
+For the first normal production release after this configuration, record the check completion and production-promotion timestamps in [`DATABASE_PRODUCTION_READINESS.md`](./DATABASE_PRODUCTION_READINESS.md). Use a deliberately failing test branch/PR to challenge the GitHub rule; do not create a failing production deployment solely to test the Vercel gate.
 
 The PR/push security gate runs without production database credentials:
 
@@ -693,3 +700,16 @@ Record:
 - where it was restored
 - who ran the drill
 - what failed, if anything
+
+#### 2026-07-15 restore drill record
+
+- **Source:** DB-002 production logical backup created at `2026-07-15T06:13:25Z` in `~/.codex/backups/Lifebook/db002-production-20260715T061325Z` plus the independent Storage copy in `~/Backups/Netflux/2026-07-14-db001-pre-repair/storage`.
+- **Destination:** isolated local Supabase stack created from the repository in the clean CI worktree; no production service was mutated.
+- **Operator:** Codex, acting under repository-owner authorization.
+- **Integrity:** the recorded SHA-256 values for `roles.sql`, `schema.sql`, and `data.sql` matched. All 981 Storage object hashes passed, and the copy matched production at 246 `audio` files, 735 `media` files, and 1,146,837,837 total bytes.
+- **Restore method:** replay current repository migrations with Supabase CLI `2.109.1`, clear only data tables in the disposable database while preserving platform migration metadata, restore `roles.sql` and `data.sql` as the local platform administrator, then compare recovery invariants with the backup and live production baseline.
+- **Recovered invariants:** 422 visible content items, 4,088 embeddings with zero orphaned segment references, 79 highlights across 43 segment IDs with zero orphans, nine Auth users, one admin profile, and 981 Storage metadata rows totaling 1,146,837,837 bytes. The backup was approximately four hours old when tested, so current production had ten additional content rows and 115 additional segment rows; visible-content, highlight, embedding, Auth, role, and Storage invariants matched.
+- **Application proof:** created a synthetic local admin, ran the production smoke suite serially against the restored database, and received six passes: login page, missing-code rejection, public browse, representative public read, unauthenticated admin denial, and authenticated admin dashboard access. The optional detailed-health check was skipped because third-party production health dependencies were deliberately absent.
+- **Storage accommodation:** recovered asset URLs correctly referenced the production Storage hostname while the isolated app trusted the local Storage hostname. After recording database invariants, URL fields were cleared only in the disposable copy for UI smoke. Underlying object recovery was proven separately by the exact independent-copy count, byte, and checksum verification above.
+- **Cleanup:** deleted the synthetic admin, stopped the application, and destroyed the disposable Supabase stack without retaining its local database volume.
+- **Initial failure and correction:** the first attempt used an older local CLI image whose Auth schema lacked a production column and whose `postgres` role could not truncate newer Storage vector tables. No restore was claimed. Repeating from empty with CLI `2.109.1` and the local `supabase_admin` role completed without errors.
