@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 };
 
 const LANDING_SELECT =
-  "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, audio_url, created_at, is_featured";
+  "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, audio_url, created_at, published_at, is_featured";
 
 export default async function LandingPageRoute() {
   const landingContent = await LandingPageData();
@@ -62,7 +62,7 @@ async function LandingPageData() {
         .eq("status", "verified")
         .is("deleted_at", null)
         .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false })
+        .order("published_at", { ascending: false })
         .limit(16),
       publicSupabase.rpc("get_category_stats"),
       publicSupabase

@@ -13,7 +13,7 @@ const CategoryQuerySchema = z.object({
 });
 
 const LANDING_CATEGORY_SELECT =
-    "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, audio_url, created_at, is_featured";
+    "id, type, title, author, cover_image_url, hero_image_url, category, duration_seconds, audio_url, created_at, published_at, is_featured";
 
 export async function GET(request: NextRequest) {
     const rl = await strictPublicRateLimit(request, {
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         .eq("status", "verified")
         .is("deleted_at", null)
         .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false })
+        .order("published_at", { ascending: false })
         .limit(16);
 
     if (error) {
