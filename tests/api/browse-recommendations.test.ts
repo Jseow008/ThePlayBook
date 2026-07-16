@@ -25,7 +25,12 @@ const RECENT_SEED_ID = "123e4567-e89b-12d3-a456-426614174000";
 const LIBRARY_SEED_ID = "123e4567-e89b-12d3-a456-426614174001";
 const KNOWN_ID = "123e4567-e89b-12d3-a456-426614174002";
 
-function createRecommendation(id: string, title: string, similarity = 0.9) {
+function createRecommendation(
+    id: string,
+    title: string,
+    similarity = 0.9,
+    timestamps: { createdAt?: string; publishedAt?: string } = {},
+) {
     return {
         id,
         title,
@@ -40,7 +45,8 @@ function createRecommendation(id: string, title: string, similarity = 0.9) {
         category: "Business",
         is_featured: false,
         audio_url: null,
-        created_at: "2026-04-01T00:00:00.000Z",
+        created_at: timestamps.createdAt ?? "2026-04-01T00:00:00.000Z",
+        published_at: timestamps.publishedAt ?? "2026-04-01T00:00:00.000Z",
         updated_at: "2026-04-01T00:00:00.000Z",
         deleted_at: null,
         similarity,
@@ -128,6 +134,8 @@ describe("Browse recommendations API", () => {
             match_count: 24,
         });
         expect(latestQuery.limit).toHaveBeenCalledWith(2);
+        expect(latestQuery.order).toHaveBeenNthCalledWith(1, "is_featured", { ascending: false });
+        expect(latestQuery.order).toHaveBeenNthCalledWith(2, "published_at", { ascending: false });
         expect(latestQuery.not).toHaveBeenCalledWith(
             "id",
             "in",
@@ -188,5 +196,41 @@ describe("Browse recommendations API", () => {
         });
         expect(mockRpc).not.toHaveBeenCalled();
         expect(mockFrom).not.toHaveBeenCalled();
+    });
+
+    it("ranks a newly published long-lived draft as fresh", async () => {
+        const oldDraftReleasedToday = createRecommendation(
+            "123e4567-e89b-12d3-a456-426614174120",
+            "Long-lived draft",
+            0.9,
+            {
+                createdAt: "2025-01-01T00:00:00.000Z",
+                publishedAt: new Date().toISOString(),
+            },
+        );
+        const recentlyCreatedButOldRelease = createRecommendation(
+            "123e4567-e89b-12d3-a456-426614174121",
+            "Recently created legacy release",
+            0.9,
+            {
+                createdAt: new Date().toISOString(),
+                publishedAt: "2025-01-01T00:00:00.000Z",
+            },
+        );
+
+        mockRpc.mockResolvedValueOnce({
+            data: [recentlyCreatedButOldRelease, oldDraftReleasedToday],
+            error: null,
+        });
+
+        const response = await POST(createRequest({
+            recentSeedId: RECENT_SEED_ID,
+            librarySeedIds: [],
+            targetCount: 1,
+        }));
+
+        await expect(response.json()).resolves.toMatchObject({
+            recentItems: [expect.objectContaining({ id: oldDraftReleasedToday.id })],
+        });
     });
 });

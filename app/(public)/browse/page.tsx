@@ -50,9 +50,9 @@ export const metadata: Metadata = {
 };
 
 const FEED_CARD_SELECT =
-    "id, type, title, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at";
+    "id, type, title, quick_mode_json, duration_seconds, author, cover_image_url, category, audio_url, created_at, published_at";
 const HERO_CARD_SELECT =
-    "id, type, title, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, audio_url, created_at";
+    "id, type, title, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, audio_url, created_at, published_at";
 type HomepageSectionsRpcRow = Database["public"]["Functions"]["get_homepage_sections_with_items"]["Returns"][number];
 
 export default function BrowsePage() {
@@ -120,14 +120,14 @@ async function HomeFeedServer() {
             .eq("status", "verified")
             .eq("is_featured", true)
             .is("deleted_at", null)
-            .order("created_at", { ascending: false })
+            .order("published_at", { ascending: false })
             .limit(5),
         supabase
             .from("content_item")
             .select(FEED_CARD_SELECT)
             .eq("status", "verified")
             .is("deleted_at", null)
-            .order("created_at", { ascending: false })
+            .order("published_at", { ascending: false })
             .limit(10),
         supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 }),
     ]);

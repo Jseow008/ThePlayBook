@@ -13,7 +13,7 @@ const BrowseRecommendationsRequestSchema = z.object({
 });
 
 const BROWSE_RECOMMENDATION_SELECT =
-    "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, is_featured, audio_url, created_at, updated_at, deleted_at";
+    "id, type, title, source_url, status, quick_mode_json, duration_seconds, author, cover_image_url, hero_image_url, category, is_featured, audio_url, created_at, published_at, updated_at, deleted_at";
 
 type RecommendationItem = Database["public"]["Functions"]["match_recommendations"]["Returns"][number];
 
@@ -35,8 +35,8 @@ function dedupeItems<T extends { id: string }>(items: T[]) {
     return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
-function getFreshnessBoost(createdAt: string | null | undefined, fallbackScore: number) {
-    const parsed = createdAt ? Date.parse(createdAt) : Number.NaN;
+function getFreshnessBoost(publishedAt: string | null | undefined, fallbackScore: number) {
+    const parsed = publishedAt ? Date.parse(publishedAt) : Number.NaN;
     if (!Number.isFinite(parsed)) {
         return fallbackScore;
     }
@@ -57,7 +57,7 @@ function rerankRecommendations(candidates: RecommendationItem[], matchCount: num
             const similarityScore = Number.isFinite(candidate.similarity)
                 ? Math.max(candidate.similarity, 0)
                 : 0;
-            const freshnessBoost = getFreshnessBoost(candidate.created_at, 0.15);
+            const freshnessBoost = getFreshnessBoost(candidate.published_at, 0.15);
             const hasAuthorCollision = Boolean(
                 candidate.author
                 && selected.some((item) => item.author && item.author === candidate.author),
@@ -127,7 +127,7 @@ async function loadLatestFill(params: {
         .eq("status", "verified")
         .is("deleted_at", null)
         .order("is_featured", { ascending: false })
-        .order("created_at", { ascending: false })
+        .order("published_at", { ascending: false })
         .limit(params.limit);
 
     const excludeIds = dedupeIds(params.excludeIds);

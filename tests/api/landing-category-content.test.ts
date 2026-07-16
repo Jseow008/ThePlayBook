@@ -65,6 +65,8 @@ describe("Landing category content API", () => {
         ]);
         expect(query.eq).toHaveBeenCalledWith("status", "verified");
         expect(query.is).toHaveBeenCalledWith("deleted_at", null);
+        expect(query.order).toHaveBeenNthCalledWith(1, "is_featured", { ascending: false });
+        expect(query.order).toHaveBeenNthCalledWith(2, "published_at", { ascending: false });
         expect(query.limit).toHaveBeenCalledWith(16);
         await expect(response.json()).resolves.toEqual({
             items: [{ id: "content-1", category: "Finance" }],

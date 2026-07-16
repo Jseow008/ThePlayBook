@@ -18,8 +18,8 @@ function dedupeIds(ids: string[]) {
     return Array.from(new Set(ids));
 }
 
-function getFreshnessBoost(createdAt: string | null | undefined, fallbackScore: number) {
-    const parsed = createdAt ? Date.parse(createdAt) : Number.NaN;
+function getFreshnessBoost(publishedAt: string | null | undefined, fallbackScore: number) {
+    const parsed = publishedAt ? Date.parse(publishedAt) : Number.NaN;
     if (!Number.isFinite(parsed)) {
         return fallbackScore;
     }
@@ -40,7 +40,7 @@ function rerankRecommendations(candidates: RecommendationItem[], matchCount: num
             const similarityScore = Number.isFinite(candidate.similarity)
                 ? Math.max(candidate.similarity, 0)
                 : 0;
-            const freshnessBoost = getFreshnessBoost(candidate.created_at, 0.15);
+            const freshnessBoost = getFreshnessBoost(candidate.published_at, 0.15);
             const hasAuthorCollision = Boolean(
                 candidate.author
                 && selected.some((item) => item.author && item.author === candidate.author),
