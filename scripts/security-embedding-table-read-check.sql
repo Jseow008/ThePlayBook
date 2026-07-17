@@ -5,33 +5,24 @@ BEGIN
   WITH expected_checks(check_name, passed) AS (
     VALUES
       (
-        'anon_segment_embedding_select_revoked',
-        COALESCE(
-          NOT has_table_privilege('anon', to_regclass('public.segment_embedding'), 'select'),
-          true
-        )
+        'legacy_segment_embedding_absent',
+        to_regclass('public.segment_embedding') IS NULL
+      ),
+      (
+        'legacy_segment_embedding_index_absent',
+        to_regclass('public.segment_embedding_embedding_idx') IS NULL
+      ),
+      (
+        'legacy_segment_embedding_unique_index_absent',
+        to_regclass('public.segment_embedding_segment_id_key') IS NULL
       ),
       (
         'anon_segment_embedding_gemini_select_revoked',
         NOT has_table_privilege('anon', to_regclass('public.segment_embedding_gemini'), 'select')
       ),
       (
-        'authenticated_segment_embedding_select_revoked',
-        COALESCE(
-          NOT has_table_privilege('authenticated', to_regclass('public.segment_embedding'), 'select'),
-          true
-        )
-      ),
-      (
         'authenticated_segment_embedding_gemini_select_revoked',
         NOT has_table_privilege('authenticated', to_regclass('public.segment_embedding_gemini'), 'select')
-      ),
-      (
-        'service_role_segment_embedding_select_available',
-        COALESCE(
-          has_table_privilege('service_role', to_regclass('public.segment_embedding'), 'select'),
-          true
-        )
       ),
       (
         'service_role_segment_embedding_gemini_select_available',
@@ -66,9 +57,6 @@ BEGIN
   ),
   expected_private_helpers(function_name) AS (
     SELECT 'match_library_segments_gemini_internal'
-    UNION ALL
-    SELECT 'match_library_segments_internal'
-    WHERE to_regclass('public.segment_embedding') IS NOT NULL
   ),
   private_helpers AS (
     SELECT
@@ -174,15 +162,31 @@ BEGIN
     INNER JOIN pg_namespace n
       ON n.oid = p.pronamespace
     WHERE n.nspname = 'public'
-      AND p.proname IN ('match_library_segments', 'match_library_segments_gemini')
+      AND p.proname = 'match_library_segments_gemini'
       AND has_function_privilege('anon', p.oid, 'EXECUTE')
+  ),
+  forbidden_legacy_rpcs AS (
+    SELECT
+      format(
+        'forbidden_legacy_embedding_rpc_exists: %I.%I(%s)',
+        n.nspname,
+        p.proname,
+        pg_get_function_identity_arguments(p.oid)
+      ) AS failure
+    FROM pg_proc p
+    INNER JOIN pg_namespace n
+      ON n.oid = p.pronamespace
+    WHERE n.nspname IN ('public', 'private')
+      AND p.proname IN (
+        'get_segments_missing_embeddings',
+        'match_library_segments',
+        'match_library_segments_internal'
+      )
   ),
   expected_embedding_rpcs(function_name, pronargs, access_model, required) AS (
     VALUES
-      ('get_segments_missing_embeddings', 1, 'service_only', false),
       ('get_segments_missing_gemini_embeddings', 1, 'service_only', true),
       ('get_gemini_segment_embedding_coverage', 0, 'service_only', true),
-      ('match_library_segments', 4, 'user_match', false),
       ('match_library_segments_gemini', 5, 'user_match', true)
   ),
   embedding_rpcs AS (
@@ -305,6 +309,11 @@ BEGIN
 
     SELECT failure
     FROM public_rpc_violations
+
+    UNION ALL
+
+    SELECT failure
+    FROM forbidden_legacy_rpcs
 
     UNION ALL
 

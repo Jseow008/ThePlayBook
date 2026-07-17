@@ -1058,14 +1058,6 @@ export type Database = {
           type: Database["public"]["Enums"]["content_type"]
         }[]
       }
-      get_segments_missing_embeddings: {
-        Args: { p_limit?: number }
-        Returns: {
-          content_item_id: string
-          id: string
-          markdown_body: string
-        }[]
-      }
       get_segments_missing_gemini_embeddings: {
         Args: { p_limit?: number }
         Returns: {
@@ -1142,19 +1134,6 @@ export type Database = {
           p_user_id: string
         }
         Returns: undefined
-      }
-      match_library_segments: {
-        Args: {
-          match_count: number
-          match_threshold: number
-          p_user_id: string
-          query_embedding: string
-        }
-        Returns: {
-          content_item_id: string
-          segment_id: string
-          similarity: number
-        }[]
       }
       match_library_segments_gemini: {
         Args: {

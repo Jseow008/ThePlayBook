@@ -75,8 +75,8 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-002 | P0       | Preserve highlights during segment and content updates                   | Verified                                                        | Yes             |
 | DB-003 | P0       | Establish production plan, backup, Storage backup, and restore readiness | In progress — restore proven; paid retention and alerts pending | Yes             |
 | DB-004 | P0       | Prove a staging or disposable-environment release workflow               | Verified                                                        | Yes             |
-| DB-101 | P1       | Correct the Gemini vector index/operator mismatch                        | Not started                                                     | Yes             |
-| DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | Not started                                                     | Yes             |
+| DB-101 | P1       | Correct the Gemini vector index/operator mismatch                        | Verified                                                        | Yes             |
+| DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | In progress — hosted verification complete                     | Yes             |
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Not started                                                     | Yes             |
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Not started                                                     | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Not started                                                     | Yes             |
@@ -531,23 +531,33 @@ Design, migration authoring, and staging benchmarks may proceed in parallel with
 
 ### DB-102: Retire or redirect broken legacy embedding RPCs
 
-Status: Not started
+Status: In progress — local and hosted verification complete; gated production rollout pending
 
 #### Evidence
 
 - A live `to_regclass('public.segment_embedding')` check confirms that `segment_embedding` does not exist in production.
-- Historical migrations create `segment_embedding` and do not record its removal. A clean replay may therefore produce a different legacy-table state from production, which is additional DB-001 drift evidence.
+- Before DB-102, historical migrations created `segment_embedding` without a final explicit retirement migration. Migration `20260717152805_retire_legacy_embedding_rpcs.sql` now records the intended end state and fails closed if an unexpected environment contains legacy rows.
 - `match_library_segments` and `get_segments_missing_embeddings` still reference it.
 - `match_library_segments` remains executable by authenticated users and fails at runtime.
+- The application stopped calling `get_segments_missing_embeddings` on 2026-03-13 when the admin sync workflow moved to `get_segments_missing_gemini_embeddings`, 768-dimensional Gemini embeddings, and `segment_embedding_gemini`.
+- Current application code and scripts contain no callers of either legacy RPC. Production contains no dependent routines, triggers, Cron jobs, or Edge Functions, and recent API/Postgres logs contain no legacy invocation.
+- Retained `pg_stat_statements` history since project creation contains seven old PostgREST calls to `get_segments_missing_embeddings` and no call to `match_library_segments`; those calls are consistent with the retired pre-Gemini admin workflow.
+- The selected end state is removal rather than compatibility redirection: forwarding a 1536-dimensional matching contract to the 768-dimensional Gemini function would be misleading and unsafe, while the maintenance caller already has a direct Gemini replacement.
+- All 81 migrations replay from empty locally. The final schema contains neither the legacy table/indexes nor the two public RPCs, while the Gemini table and RPCs remain available.
+- Generated database types contain only the Gemini contracts. The authenticated Gemini matching path and both service-role maintenance/coverage paths pass direct local role smoke tests.
+- All nine local SQL security/database suites, 853 application tests, typecheck, lint, and migration-version validation pass.
+- A short-lived $0 Supabase project in `ap-south-1` replayed all 81 migrations in order on PostgreSQL 17.6. The same nine SQL suites passed, generated hosted types contained no legacy RPC contract, and the project remained `ACTIVE_HEALTHY`.
+- Hosted security advisors reported only the six intentional public email/token RPC warnings. Empty-project performance findings were confined to later roadmap work and unused indexes without traffic; DB-102 introduced no new security finding.
+- The disposable project was deleted after verification, returning the organization to its production-only state.
 
 #### Acceptance criteria
 
-- [ ] Application, scripts, and external clients are audited for both legacy RPC names.
+- [x] Application, scripts, database dependencies, scheduled jobs, Edge Functions, retained statement statistics, and recent logs are audited for both legacy RPC names.
 - [ ] Unused RPCs are dropped and their execute grants disappear.
-- [ ] Required compatibility RPCs delegate safely to the Gemini implementation with correct dimensions and authorization.
+- [x] No compatibility RPC is required; active callers already use the dimensionally correct Gemini APIs.
 - [ ] A clean rebuild and production agree on whether the legacy table and its indexes exist; the preferred end state contains neither if all legacy consumers are retired.
-- [ ] Generated database types no longer advertise broken contracts.
-- [ ] Authenticated and service-role smoke tests pass.
+- [x] Generated database types no longer advertise broken contracts.
+- [x] Authenticated and service-role smoke tests pass locally and in the disposable hosted gate.
 
 ### DB-103: Optimize and simplify RLS policies
 

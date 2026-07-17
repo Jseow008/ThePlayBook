@@ -102,6 +102,7 @@ jobs:
           npm run security:storage-bucket-listing
           npm run security:analytics-rls
           npm run database:gemini-vector-index
+          npm run database:legacy-embedding-retirement
           npm run database:highlight-preservation
           npm run database:published-at
 
