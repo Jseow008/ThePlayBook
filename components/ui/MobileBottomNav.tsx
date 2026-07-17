@@ -48,19 +48,14 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
         >
             <div
                 aria-hidden="true"
-                className={cn(
-                    "pointer-events-none fixed inset-x-0 bottom-0 bg-background",
-                    compact
-                        ? "h-[calc(var(--mobile-bottom-nav-compact-height)+max(0.75rem,var(--safe-area-bottom)))]"
-                        : "h-[calc(var(--mobile-bottom-nav-height)+max(0.75rem,var(--safe-area-bottom)))]"
-                )}
+                className="pointer-events-none fixed inset-x-0 bottom-0 h-[max(0.75rem,var(--safe-area-bottom))] bg-background"
             />
             <div className={cn(
                 "relative z-10 mx-auto flex w-full max-w-md items-center justify-center",
                 compact ? "mobile-bottom-nav-compact-height" : "mobile-bottom-nav-height"
             )}>
                 <div className={cn(
-                    "grid w-full grid-cols-5 items-center gap-1 rounded-full border border-white/10 bg-zinc-950/90 p-1 shadow-[0_18px_48px_-20px_rgba(0,0,0,0.9)] backdrop-blur-xl",
+                    "grid w-full grid-cols-5 items-center gap-1 rounded-full border border-white/15 bg-zinc-950/70 p-1 shadow-[0_18px_42px_-24px_rgba(0,0,0,0.9)] backdrop-blur-2xl",
                     compact ? "h-16" : "h-[4.25rem]"
                 )}>
                     {navItems.map((item) => {
@@ -79,8 +74,8 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
                                 className={cn(
                                     "focus-ring relative flex h-full min-w-0 flex-col items-center justify-center gap-1 rounded-full px-1 transition-[background-color,color,box-shadow] duration-200",
                                     isActive
-                                        ? "bg-white/[0.14] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
-                                        : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground"
+                                        ? "bg-white/[0.11] text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_10px_24px_-18px_rgba(0,0,0,0.85)]"
+                                        : "text-muted-foreground hover:bg-white/[0.08] hover:text-foreground"
                                 )}
                             >
                                 <div className="relative">
