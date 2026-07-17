@@ -3,19 +3,21 @@ import { LandingPage } from "@/components/ui/LandingPage";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { LandingRedirectGuard } from "@/components/ui/LandingRedirectGuard";
 import type { ContentItem } from "@/types/database";
-import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
+import { APP_NAME } from "@/lib/brand";
 import { ROOT_OG_IMAGE, ROOT_OG_IMAGE_ALT, SITE_DESCRIPTION, SITE_URL } from "@/lib/seo";
 
 export const revalidate = 3600;
 
+const SOCIAL_TITLE = "Discover the ideas you didn’t know you needed.";
+
 export const metadata: Metadata = {
-  title: `${APP_NAME} | ${APP_TAGLINE}`,
+  title: `${APP_NAME} | ${SOCIAL_TITLE}`,
   description: SITE_DESCRIPTION,
   alternates: {
     canonical: SITE_URL,
   },
   openGraph: {
-    title: `${APP_NAME} | ${APP_TAGLINE}`,
+    title: SOCIAL_TITLE,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: APP_NAME,
@@ -31,7 +33,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${APP_NAME} | ${APP_TAGLINE}`,
+    title: SOCIAL_TITLE,
     description: SITE_DESCRIPTION,
     images: [ROOT_OG_IMAGE],
   },
