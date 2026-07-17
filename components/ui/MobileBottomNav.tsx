@@ -48,7 +48,12 @@ export function MobileBottomNav({ compact = false }: { compact?: boolean }) {
         >
             <div
                 aria-hidden="true"
-                className="pointer-events-none fixed inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background via-background/90 to-transparent"
+                className={cn(
+                    "pointer-events-none fixed inset-x-0 bottom-0 bg-background",
+                    compact
+                        ? "h-[calc(var(--mobile-bottom-nav-compact-height)+max(0.75rem,var(--safe-area-bottom)))]"
+                        : "h-[calc(var(--mobile-bottom-nav-height)+max(0.75rem,var(--safe-area-bottom)))]"
+                )}
             />
             <div className={cn(
                 "relative z-10 mx-auto flex w-full max-w-md items-center justify-center",
