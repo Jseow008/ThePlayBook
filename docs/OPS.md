@@ -715,3 +715,10 @@ Record:
 - **Storage accommodation:** recovered asset URLs correctly referenced the production Storage hostname while the isolated app trusted the local Storage hostname. After recording database invariants, URL fields were cleared only in the disposable copy for UI smoke. Underlying object recovery was proven separately by the exact independent-copy count, byte, and checksum verification above.
 - **Cleanup:** deleted the synthetic admin, stopped the application, and destroyed the disposable Supabase stack without retaining its local database volume.
 - **Initial failure and correction:** the first attempt used an older local CLI image whose Auth schema lacked a production column and whose `postgres` role could not truncate newer Storage vector tables. No restore was claimed. Repeating from empty with CLI `2.109.1` and the local `supabase_admin` role completed without errors.
+
+#### 2026-07-17 recovery-point refresh
+
+- **Database:** `~/.codex/backups/Lifebook/db003-production-20260717T085243Z` contains role, schema, and data dumps created read-only from production. The data dump contains 49 `COPY` sections. All SQL files and the manifest are mode `0600`, and `shasum -a 256 -c SHA256SUMS` passed.
+- **Storage:** `~/Backups/Netflux/2026-07-17-db003-recovery/storage` contains 246 `audio` objects and 735 `media` objects. The 981-object, 1,146,837,837-byte inventory matches production exactly, and all entries in `storage.sha256` passed.
+- **Scope:** this refresh did not run a second restore drill because the 2026-07-15 drill already proved the current restore procedure. It did not mutate production data, schema, migration history, bucket configuration, or Storage objects.
+- **Remaining launch gate:** manual recovery points are safeguards, not the required operating posture. Upgrade to an approved paid plan, enable the approved backup/PITR retention, automate database and Storage recovery points, and configure cost and capacity monitoring before marking DB-003 Verified.
