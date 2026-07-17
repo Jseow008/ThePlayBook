@@ -101,6 +101,7 @@ jobs:
           npm run security:embedding-table-reads
           npm run security:storage-bucket-listing
           npm run security:analytics-rls
+          npm run database:gemini-vector-index
           npm run database:highlight-preservation
           npm run database:published-at
 
