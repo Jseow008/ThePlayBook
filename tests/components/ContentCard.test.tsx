@@ -140,6 +140,9 @@ describe("ContentCard", () => {
         const removeButton = screen.getByRole("button", { name: "Archive from List" });
         const secondaryRemoveButton = screen.getByRole("button", { name: "Delete from List" });
 
+        expect(bookmarkButton.className).toContain("after:-inset-[5px]");
+        expect(bookmarkButton.className).toContain("md:after:inset-0");
+
         for (const action of [bookmarkButton, removeButton, secondaryRemoveButton]) {
             expect(action).toHaveClass("content-card-hover-action");
             expect(action.className).not.toContain("lg:opacity-0");
@@ -199,16 +202,18 @@ describe("ContentCard", () => {
         expect(onRemove).toHaveBeenCalledWith(item.id);
     });
 
-    it("uses the compact title typography only when requested", () => {
+    it("uses the compact mobile typography only when requested", () => {
         const { rerender } = render(<ContentCard item={item} titleDensity="app-compact" />);
 
-        expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("text-[0.92rem]");
+        expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("text-[14px]");
         expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("leading-[1.16]");
+        expect(screen.getByText("Cal Newport").className).toContain("text-[10px]");
 
         rerender(<ContentCard item={item} />);
 
         expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("text-[0.95rem]");
         expect(screen.getByRole("heading", { name: "Deep Work" }).className).toContain("leading-[1.18]");
+        expect(screen.getByText("Cal Newport").className).toContain("text-[9px]");
     });
 
     it("renders a desktop hover hook without changing the primary link", () => {

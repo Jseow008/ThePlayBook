@@ -220,7 +220,7 @@ function BaseContentCard({
                     }}
                     stopPropagation
                     className={cn(
-                        "content-card-motion-action focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
+                        "content-card-motion-action focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300 after:absolute after:-inset-[5px] after:content-[''] md:after:inset-0 motion-reduce:transition-none",
                         showCompletedBadge ? "right-10" : "right-2"
                     )}
                     savedClassName="bg-primary text-primary-foreground opacity-100"
@@ -235,7 +235,7 @@ function BaseContentCard({
                     <p
                         className={cn(
                             "translate-z-0 max-w-[82%] break-words text-center font-medium uppercase leading-relaxed tracking-[0.1em] whitespace-normal text-white/80 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",
-                            "text-[9px]"
+                            isAppCompact ? "text-[10px]" : "text-[9px]"
                         )}
                     >
                         {item.author}
@@ -260,7 +260,7 @@ function BaseContentCard({
                         className={cn(
                             "w-full line-clamp-3 font-serif font-medium text-white/95 transition-colors group-hover:text-white md:text-base md:leading-snug",
                             isAppCompact
-                                ? "text-[0.92rem] leading-[1.16]"
+                                ? "text-[14px] leading-[1.16]"
                                 : "text-[0.95rem] leading-[1.18]"
                         )}
                     >
