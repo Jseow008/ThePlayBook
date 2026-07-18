@@ -1,7 +1,7 @@
 # Netflux Database Production Readiness
 
 Status: Active
-Last verified: 2026-07-15
+Last verified: 2026-07-18
 Scope: Supabase Postgres, Auth, Storage, database-facing application paths, migrations, backup, recovery, and operational readiness.
 
 This document is the single implementation tracker for making the Netflux database reproducible, recoverable, secure, and safe to evolve. It does not replace:
@@ -50,7 +50,7 @@ Netflux is database-production-ready only when all of the following are true:
 
 ## Verified baseline
 
-The operational data snapshot was collected read-only on 2026-07-14; migration parity and advisor counts were reverified on 2026-07-15. Counts will change over time.
+The operational data snapshot was collected read-only on 2026-07-14; migration parity and advisor counts were reverified on 2026-07-18. Counts will change over time.
 
 | Area                | Verified state                                                                                                                                  |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -64,8 +64,8 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | User annotations    | 79 highlights                                                                                                                                   |
 | Storage             | 981 objects: 246 `audio` and 735 `media`, approximately 1.15 GB                                                                                 |
 | Security advisor    | 7 warnings: 6 intentional public email/token RPC warnings and leaked-password protection disabled                                               |
-| Performance advisor | 76 findings: 7 unindexed foreign keys, 32 RLS initialization-plan warnings, 27 multiple-permissive-policy warnings, and 10 unused-index notices |
-| Migration parity    | 77 matching local/remote versions, no duplicates, and production/local schema fingerprints match across all 14 tracked categories               |
+| Performance advisor | 75 findings: 7 unindexed foreign keys, 32 RLS initialization-plan warnings, 27 multiple-permissive-policy warnings, and 9 unused-index notices  |
+| Migration parity    | 81 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
 
 ## Master work tracker
 
@@ -76,7 +76,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-003 | P0       | Establish production plan, backup, Storage backup, and restore readiness | In progress — restore proven; paid retention and alerts pending | Yes             |
 | DB-004 | P0       | Prove a staging or disposable-environment release workflow               | Verified                                                        | Yes             |
 | DB-101 | P1       | Correct the Gemini vector index/operator mismatch                        | Verified                                                        | Yes             |
-| DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | In progress — hosted verification complete                     | Yes             |
+| DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | Verified                                                        | Yes             |
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Not started                                                     | Yes             |
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Not started                                                     | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Not started                                                     | Yes             |
@@ -531,14 +531,13 @@ Design, migration authoring, and staging benchmarks may proceed in parallel with
 
 ### DB-102: Retire or redirect broken legacy embedding RPCs
 
-Status: In progress — local and hosted verification complete; gated production rollout pending
+Status: Verified — migration `20260717152805_retire_legacy_embedding_rpcs.sql` deployed and verified in production on 2026-07-18
 
 #### Evidence
 
 - A live `to_regclass('public.segment_embedding')` check confirms that `segment_embedding` does not exist in production.
 - Before DB-102, historical migrations created `segment_embedding` without a final explicit retirement migration. Migration `20260717152805_retire_legacy_embedding_rpcs.sql` now records the intended end state and fails closed if an unexpected environment contains legacy rows.
-- `match_library_segments` and `get_segments_missing_embeddings` still reference it.
-- `match_library_segments` remains executable by authenticated users and fails at runtime.
+- Before deployment, `match_library_segments` and `get_segments_missing_embeddings` still referenced the absent table, and `match_library_segments` remained executable by authenticated users despite failing at runtime.
 - The application stopped calling `get_segments_missing_embeddings` on 2026-03-13 when the admin sync workflow moved to `get_segments_missing_gemini_embeddings`, 768-dimensional Gemini embeddings, and `segment_embedding_gemini`.
 - Current application code and scripts contain no callers of either legacy RPC. Production contains no dependent routines, triggers, Cron jobs, or Edge Functions, and recent API/Postgres logs contain no legacy invocation.
 - Retained `pg_stat_statements` history since project creation contains seven old PostgREST calls to `get_segments_missing_embeddings` and no call to `match_library_segments`; those calls are consistent with the retired pre-Gemini admin workflow.
@@ -549,13 +548,19 @@ Status: In progress — local and hosted verification complete; gated production
 - A short-lived $0 Supabase project in `ap-south-1` replayed all 81 migrations in order on PostgreSQL 17.6. The same nine SQL suites passed, generated hosted types contained no legacy RPC contract, and the project remained `ACTIVE_HEALTHY`.
 - Hosted security advisors reported only the six intentional public email/token RPC warnings. Empty-project performance findings were confined to later roadmap work and unused indexes without traffic; DB-102 introduced no new security finding.
 - The disposable project was deleted after verification, returning the organization to its production-only state.
+- Immediately before production deployment, a schema, roles, and migration-history metadata snapshot was written to `/Users/j/.codex/backups/Lifebook/db102-production-20260718T054021Z`, including SHA-256 checksums. The production dry-run proposed exactly `20260717152805_retire_legacy_embedding_rpcs.sql`.
+- The gated migration was applied successfully. Production now has 81 matching local/remote migration versions, and the post-deployment dry-run reports `Remote database is up to date`.
+- Production catalog verification finds no legacy table, indexes, or RPCs. The four active Gemini functions retain their intended authenticated/service-role ACLs; neither anonymous role access nor the retired execute grants remain.
+- All 4,088 Gemini embeddings retained the same pre/post fingerprint (`4703328d326c04c8af08e4a69c739e96`). Immediate pre/post checks also retained 238 library rows and 524 content rows.
+- Production remained `ACTIVE_HEALTHY`; the homepage, health endpoint, Browse, Ask, and canonical `www` URL all returned HTTP 200. Post-deployment Postgres and API logs contained no errors.
+- Production security advisors remained unchanged at 7 known warnings and performance advisors remained unchanged at 75 existing findings. Remote lint surfaced only the pre-existing, unrelated enum/text error in `queue_content_request_published_notifications`.
 
 #### Acceptance criteria
 
 - [x] Application, scripts, database dependencies, scheduled jobs, Edge Functions, retained statement statistics, and recent logs are audited for both legacy RPC names.
-- [ ] Unused RPCs are dropped and their execute grants disappear.
+- [x] Unused RPCs are dropped and their execute grants disappear.
 - [x] No compatibility RPC is required; active callers already use the dimensionally correct Gemini APIs.
-- [ ] A clean rebuild and production agree on whether the legacy table and its indexes exist; the preferred end state contains neither if all legacy consumers are retired.
+- [x] A clean rebuild and production agree on whether the legacy table and its indexes exist; both contain neither.
 - [x] Generated database types no longer advertise broken contracts.
 - [x] Authenticated and service-role smoke tests pass locally and in the disposable hosted gate.
 
@@ -800,7 +805,7 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-15: DB-001, DB-002, and DB-004 are Verified. DB-004 now includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but the paid plan, hosted retention/PITR, production deployment of the prepared bucket controls, and alerts remain launch gates. The next schema-critical work is DB-101/DB-102 while DB-003 continues in parallel.
+Current position on 2026-07-18: DB-001, DB-002, DB-004, DB-101, and DB-102 are Verified. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. The next schema-critical work is DB-103 through DB-105 while DB-003 continues in parallel.
 
 ### Parallel launch gates
 
