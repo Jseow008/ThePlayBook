@@ -2,12 +2,18 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MobileHeader } from "@/components/ui/MobileHeader";
 
-const { pathnameState } = vi.hoisted(() => ({
+const { pathnameState, routerBack, routerPush } = vi.hoisted(() => ({
     pathnameState: { value: "/browse" },
+    routerBack: vi.fn(),
+    routerPush: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
     usePathname: () => pathnameState.value,
+    useRouter: () => ({
+        back: routerBack,
+        push: routerPush,
+    }),
 }));
 
 vi.mock("next/link", () => ({
@@ -36,6 +42,8 @@ vi.mock("@/components/ui/Logo", () => ({
 describe("MobileHeader", () => {
     beforeEach(() => {
         pathnameState.value = "/browse";
+        routerBack.mockReset();
+        routerPush.mockReset();
         Object.defineProperty(window, "scrollY", {
             value: 0,
             writable: true,
@@ -62,12 +70,30 @@ describe("MobileHeader", () => {
         expect(container.firstChild).toHaveStyle({ transform: "translateY(0)" });
     });
 
-    it("keeps rendering on read routes", () => {
+    it("replaces the logo with a labeled back button on read routes", () => {
         pathnameState.value = "/read/test-item-1";
 
         const { container } = render(<MobileHeader />);
 
         expect(container.firstChild).not.toBeNull();
+        expect(screen.getByRole("button", { name: "Go back" })).toHaveTextContent("Back");
+        expect(screen.queryByTestId("logo")).not.toBeInTheDocument();
         expect(screen.getByTestId("user-nav")).toBeInTheDocument();
+    });
+
+    it("shows the labeled back button on preview routes", () => {
+        pathnameState.value = "/preview/test-item-1";
+
+        render(<MobileHeader />);
+
+        expect(screen.getByRole("button", { name: "Go back" })).toHaveTextContent("Back");
+        expect(screen.queryByTestId("logo")).not.toBeInTheDocument();
+    });
+
+    it("keeps the logo on standard routes", () => {
+        render(<MobileHeader />);
+
+        expect(screen.getByTestId("logo")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Go back" })).not.toBeInTheDocument();
     });
 });
