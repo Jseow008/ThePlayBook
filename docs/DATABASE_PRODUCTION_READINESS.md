@@ -566,7 +566,7 @@ Status: Verified — migration `20260717152805_retire_legacy_embedding_rpcs.sql`
 
 ### DB-103: Optimize and simplify RLS policies
 
-Status: In progress — local migration and role-matrix verification complete; disposable hosted verification pending
+Status: In progress — local and disposable hosted verification complete; production rollout pending
 
 #### Evidence
 
@@ -585,6 +585,11 @@ Status: In progress — local migration and role-matrix verification complete; d
 - The transactional role matrix passes for anonymous, authenticated owner, authenticated non-owner, admin, and service-role behavior, including ownership-reassignment denial and service-role access after removal of allow-all policies. The transaction rolls back all fixtures.
 - Local security advisors report no finding. The 32 Auth RLS init-plan and 27 multiple-permissive-policy findings are absent; the remaining local performance findings are the 7 DB-104 foreign-key findings and data-less unused-index notices.
 - Ten existing database/security SQL suites, 858 application tests, typecheck, lint, migration-version validation, and database lint pass. Database lint still reports only the pre-existing notification enum/text error.
+- A short-lived $0 Supabase project in `ap-south-1` replayed all 82 migrations in order on PostgreSQL 17.6. Migration parity was exact, the final dry-run reported `Remote database is up to date`, and the project remained `ACTIVE_HEALTHY` throughout verification.
+- The hosted transactional role matrix passed for anonymous, authenticated owner, authenticated non-owner, admin, and service-role behavior. All five existing security suites and all four existing database regression suites also passed sequentially against the hosted schema.
+- Hosted security advisors reported only the six intentional public email/token RPC warnings tracked by DB-106. Hosted performance advisors contained no Auth RLS init-plan or multiple-permissive-policy finding; the remaining findings were the seven DB-104 foreign-key findings and unused-index notices expected on a new database without traffic.
+- Hosted database lint reported only the pre-existing, unrelated enum/text error in `queue_content_request_published_notifications`. DB-103 introduced no new lint issue.
+- The disposable project was deleted after verification, returning the organization to its production-only state. Production was not changed during local or hosted verification.
 
 Historical migration text contains additional `auth.role()` policies, including permissive homepage administration in `004_homepage_section.sql`. Those homepage policies were replaced by `20260210_fix_admin_sections_rls.sql`, and live insert, update, and delete policies currently require `profiles.role = 'admin'`. They are migration-history context, not a current homepage authorization vulnerability.
 
@@ -599,7 +604,7 @@ Policies remain least-privilege, understandable, and efficient as tables grow.
 - [x] Deprecated `auth.role()` policy checks are removed.
 - [x] UPDATE policies contain explicit `USING` and `WITH CHECK` clauses.
 - [x] Redundant service-role policies are removed where bypass behavior already supplies the required access.
-- [ ] Anonymous, authenticated-owner, authenticated-non-owner, admin, and service-role tests pass.
+- [x] Anonymous, authenticated-owner, authenticated-non-owner, admin, and service-role tests pass locally and in a disposable hosted project.
 - [ ] Advisor warnings are reduced to an approved, documented set.
 
 ### DB-104: Add missing foreign-key indexes
