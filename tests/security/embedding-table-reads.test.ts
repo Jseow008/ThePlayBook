@@ -10,6 +10,10 @@ describe("embedding table read remediation", () => {
         join(process.cwd(), "supabase/migrations/20260624083713_lock_down_embedding_rpc_exposure.sql"),
         "utf8",
     );
+    const retirementMigration = readFileSync(
+        join(process.cwd(), "supabase/migrations/20260717152805_retire_legacy_embedding_rpcs.sql"),
+        "utf8",
+    );
     const driftCheck = readFileSync(
         join(process.cwd(), "scripts/security-embedding-table-read-check.sql"),
         "utf8",
@@ -21,7 +25,7 @@ describe("embedding table read remediation", () => {
         expect(migration).toContain("REVOKE SELECT ON public.segment_embedding");
         expect(migration).toContain("FROM PUBLIC, anon, authenticated");
         expect(migration).toContain("REVOKE SELECT ON public.segment_embedding_gemini");
-        expect(driftCheck).toContain("anon_segment_embedding_select_revoked");
+        expect(driftCheck).toContain("legacy_segment_embedding_absent");
         expect(driftCheck).toContain("authenticated_segment_embedding_gemini_select_revoked");
     });
 
@@ -52,5 +56,15 @@ describe("embedding table read remediation", () => {
         expect(driftCheck).toContain("service_only_embedding_rpc_executable_by_authenticated");
         expect(driftCheck).toContain("user_match_embedding_rpc_missing_authenticated_execute");
         expect(driftCheck).toContain("embedding_rpc_missing_fixed_search_path");
+    });
+
+    it("retires the unused pre-Gemini table and RPC contracts", () => {
+        expect(retirementMigration).toContain("Refusing to retire non-empty public.segment_embedding");
+        expect(retirementMigration).toContain("DROP FUNCTION IF EXISTS public.match_library_segments");
+        expect(retirementMigration).toContain("DROP FUNCTION IF EXISTS private.match_library_segments_internal");
+        expect(retirementMigration).toContain("DROP FUNCTION IF EXISTS public.get_segments_missing_embeddings(integer)");
+        expect(retirementMigration).toContain("DROP TABLE IF EXISTS public.segment_embedding RESTRICT");
+        expect(driftCheck).toContain("forbidden_legacy_embedding_rpc_exists");
+        expect(driftCheck).toContain("legacy_segment_embedding_index_absent");
     });
 });
