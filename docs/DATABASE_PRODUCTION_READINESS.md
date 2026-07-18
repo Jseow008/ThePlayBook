@@ -77,7 +77,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-004 | P0       | Prove a staging or disposable-environment release workflow               | Verified                                                        | Yes             |
 | DB-101 | P1       | Correct the Gemini vector index/operator mismatch                        | Verified                                                        | Yes             |
 | DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | Verified                                                        | Yes             |
-| DB-103 | P1       | Optimize and simplify RLS policies                                       | Not started                                                     | Yes             |
+| DB-103 | P1       | Optimize and simplify RLS policies                                       | In progress — production read-only audit complete              | Yes             |
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Not started                                                     | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Not started                                                     | Yes             |
 | DB-106 | P1       | Review public email/token RPC risk acceptance                            | Not started                                                     | Yes             |
@@ -566,14 +566,19 @@ Status: Verified — migration `20260717152805_retire_legacy_embedding_rpcs.sql`
 
 ### DB-103: Optimize and simplify RLS policies
 
-Status: Not started
+Status: In progress — production read-only audit complete; migration design and role-matrix tests pending
 
 #### Evidence
 
-- 32 policies trigger Auth RLS initialization-plan warnings.
-- 27 multiple-permissive-policy warnings exist.
-- Several policies target `PUBLIC` more broadly than necessary.
-- Exactly four live policies still call `auth.role()`; all four are redundant service-role policies on request/notification tables.
+- The 2026-07-18 production catalog audit found 20 public tables and 48 policies. RLS is enabled on all 20 tables, and every table has at least one policy.
+- 32 policies across 11 tables trigger Auth RLS initialization-plan warnings because `auth.uid()` or `auth.role()` is evaluated per row rather than through an init plan.
+- 27 multiple-permissive-policy warnings affect `content_request_votes`, `content_requests`, and `user_notification_preferences`. Every warning includes one of the redundant service-role policies that currently targets `PUBLIC`.
+- Exactly four live policies still call deprecated `auth.role()`. All four are redundant service-role policies on request/notification tables, and production confirms that `service_role` has `BYPASSRLS`.
+- Six additional policies explicitly grant unconditional access to `service_role`. These are also redundant because that role bypasses RLS, bringing the removable service-role-policy total to 10.
+- 28 policies target `PUBLIC`: 6 intended public-read policies, 18 authenticated ownership/admin policies, and the 4 redundant `auth.role()` service policies. The intended end state gives public reads explicitly to `anon, authenticated`, ownership/admin policies explicitly to `authenticated`, and removes the 4 redundant service policies.
+- Five UPDATE policies have `USING` but omit an explicit `WITH CHECK`: `content_feedback`, `homepage_section`, `reading_activity`, `user_highlights`, and `user_library`. PostgreSQL currently derives the check from `USING`, so the audit found no present ownership bypass; DB-103 will make the invariant explicit.
+- The service-only `admin_content_workbench_readiness` view is owned by `postgres` and is not a security-invoker view, but neither `anon` nor `authenticated` can select it. It is not currently readable by the Data API roles; defense-in-depth treatment remains part of migration review.
+- If the migration produces no new finding, removing the 10 redundant service-role policies and rewriting the remaining 28 auth-function policies should reduce performance-advisor findings from 75 to 16: the 7 DB-104 foreign-key findings and 9 unused-index notices.
 
 Historical migration text contains additional `auth.role()` policies, including permissive homepage administration in `004_homepage_section.sql`. Those homepage policies were replaced by `20260210_fix_admin_sections_rls.sql`, and live insert, update, and delete policies currently require `profiles.role = 'admin'`. They are migration-history context, not a current homepage authorization vulnerability.
 
