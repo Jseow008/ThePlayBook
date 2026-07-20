@@ -103,6 +103,7 @@ jobs:
           npm run security:analytics-rls
           npm run database:gemini-vector-index
           npm run database:foreign-key-indexes
+          npm run database:content-invariants
           npm run database:legacy-embedding-retirement
           npm run database:highlight-preservation
           npm run database:published-at

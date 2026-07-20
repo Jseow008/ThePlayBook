@@ -76,6 +76,17 @@ function validateSegmentTimingRanges(
     ctx: z.RefinementCtx
 ) {
     value.segments?.forEach((segment, index) => {
+        const hasStart = typeof segment.start_time_sec === "number";
+        const hasEnd = typeof segment.end_time_sec === "number";
+
+        if (hasStart !== hasEnd) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["segments", index, hasStart ? "end_time_sec" : "start_time_sec"],
+                message: "Start and end times must be provided together.",
+            });
+        }
+
         if (typeof segment.start_time_sec === "number" && segment.start_time_sec < 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -221,10 +232,10 @@ function mergeNarrationSegmentTimings(
 
 // Zod schema for updating content
 const UpdateContentSchema = z.object({
-    title: z.string().min(1).optional(),
+    title: z.string().trim().min(1).max(300).optional(),
     author: z.string().optional().nullable(),
     type: z.enum(["podcast", "book", "article", "video"]).optional(),
-    category: z.string().optional().nullable(),
+    category: z.string().trim().max(120).optional().nullable(),
     source_url: z.string().url().optional().nullable().or(z.literal("")),
     cover_image_url: z.string().url().optional().nullable().or(z.literal("")),
     hero_image_url: z.string().url().optional().nullable().or(z.literal("")),
@@ -241,7 +252,7 @@ const UpdateContentSchema = z.object({
     series_order: z.number().int().positive().optional().nullable(),
     segments: z.array(z.object({
         id: z.string().uuid().optional(), // Existing segment ID for update
-        order_index: z.number().int(),
+        order_index: z.number().int().nonnegative(),
         title: z.string().optional().nullable(),
         markdown_body: z.string(),
         start_time_sec: z.number().int().optional().nullable(),
