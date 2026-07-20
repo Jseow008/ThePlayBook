@@ -61,11 +61,11 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | Content             | 474 items, including 406 active verified items and 67 active drafts                                                                             |
 | Segments            | 4,813                                                                                                                                           |
 | Gemini embeddings   | 4,088 segment embeddings; no missing embeddings for eligible active verified segments                                                           |
-| User annotations    | 79 highlights                                                                                                                                   |
+| User annotations    | 80 highlights                                                                                                                                   |
 | Storage             | 981 objects: 246 `audio` and 735 `media`, approximately 1.15 GB                                                                                 |
 | Security advisor    | 7 warnings: 6 intentional public email/token RPC warnings and leaked-password protection disabled                                               |
-| Performance advisor | 16 findings: 7 unindexed foreign keys and 9 unused-index notices; no RLS initialization-plan or multiple-permissive-policy warning        |
-| Migration parity    | 82 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
+| Performance advisor | 16 unused-index notices; no unindexed foreign key, RLS initialization-plan, or multiple-permissive-policy warning                         |
+| Migration parity    | 83 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
 
 ## Master work tracker
 
@@ -78,7 +78,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-101 | P1       | Correct the Gemini vector index/operator mismatch                        | Verified                                                        | Yes             |
 | DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | Verified                                                        | Yes             |
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Verified                                                        | Yes             |
-| DB-104 | P1       | Add missing foreign-key indexes                                          | In progress — local and hosted verification complete; production rollout pending | Yes             |
+| DB-104 | P1       | Add missing foreign-key indexes                                          | Verified                                                        | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Not started                                                     | Yes             |
 | DB-106 | P1       | Review public email/token RPC risk acceptance                            | Not started                                                     | Yes             |
 | DB-107 | P1       | Configure production Auth, database, and network controls                | Not started                                                     | Yes             |
@@ -616,7 +616,7 @@ Policies remain least-privilege, understandable, and efficient as tables grow.
 
 ### DB-104: Add missing foreign-key indexes
 
-Status: In progress — local and disposable-hosted verification complete; production rollout pending
+Status: Verified — production migration and post-deployment verification completed on 2026-07-20
 
 The current advisor identifies missing covering indexes for:
 
@@ -649,12 +649,23 @@ The current advisor identifies missing covering indexes for:
 - The sampled PostgreSQL log contained no unexplained error. The only error was the deliberate cleanup assertion used to identify those migration-seeded rows.
 - The disposable project was deleted after verification, and the project inventory again contained only the healthy production project. Production was not modified.
 
+#### Production release — 2026-07-20
+
+- Green PR #30 was squash-merged as `47a2cb4` before deployment.
+- A fresh private logical backup captured roles, schema, and 51,139,472 bytes of data. All three SHA-256 checks passed, and the backup directory and files are owner-only.
+- The final production dry-run proposed exactly `20260719151322_add_missing_foreign_key_indexes.sql`, whose SHA-256 was `4dd3ca273fe9a7acdd558eefa6a64ff755a6826c861e059c90c2e2cecef06090`.
+- Preflight confirmed all seven expected foreign keys, no pre-existing DB-104 index, and no transaction older than 60 seconds. The reviewed migration then completed within its five-second lock timeout.
+- Production reached 83/83 migration parity with a clean dry-run. All seven indexes are valid, ready, non-partial, and match the reviewed key and include-column contracts; all seven forced index-eligibility plans passed.
+- Counts on every affected table were unchanged across deployment: 0 `content_reader_daily`, 0 `content_request_notifications`, 4 `content_requests`, 4,088 `segment_embedding_gemini`, and 80 `user_highlights` rows.
+- Performance advisors now contain no unindexed-foreign-key finding. The 16 remaining notices are unused-index notices, including the seven newly created indexes before they have accumulated production scans. Security advisors remain at the seven documented DB-106/DB-107 warnings.
+- Database lint retained only the pre-existing `queue_content_request_published_notifications` enum/text issue. Post-deployment logs contained no PostgreSQL error or API 5xx, five public application probes returned HTTP 200 or the expected login redirect, and the Supabase project remained `ACTIVE_HEALTHY`.
+
 #### Acceptance criteria
 
 - [x] Each targeted foreign key has a useful covering index in the reviewed migration.
 - [x] Duplicate or redundant indexes are avoided.
 - [x] Delete, cascade, join, and common filter plans are inspected.
-- [ ] The unindexed-foreign-key advisor reports no unaccepted findings.
+- [x] The unindexed-foreign-key advisor reports no unaccepted findings.
 
 ### DB-105: Add core database constraints and invariants
 
@@ -803,6 +814,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-18 | DB-103, production release            | Applied the single reviewed RLS optimization migration after green PR #28, a hash-verified private logical backup, exact one-migration dry-run, and explicit authorization. Production reached 82/82 with a clean dry-run. All 20 public tables retain RLS and at least one policy; 40 intentional policies remain with explicit role targets and UPDATE checks; role-matrix and regression suites passed; data fingerprints were unchanged; performance findings fell from 75 to the expected 16; and production remained healthy with no sampled post-migration database error or API 5xx. | PR #28 and merge `a659522`; backup `~/.codex/backups/Lifebook/db103-production-20260718T075221Z`; migration checksum `f38e0367084c8a005e959dba0ca07964ec1d17b5f24bafaebe3758c74a0a704d`; pre/post catalog and data fingerprints; parity and dry-run; role matrix; regression suites; advisors; lint; logs; HTTP smoke |
 | 2026-07-19 | DB-104                                | Audited all seven production foreign-key findings, existing indexes, referential actions, retained query patterns, table sizes, and current plans. Authored a fail-closed seven-index migration and a required catalog/plan regression check. All 83 migrations replayed from empty locally; all seven plan checks passed; local advisors contain no unindexed-foreign-key or security finding; typecheck, lint, migration validation, 147 security-focused tests, and the complete 862-test suite pass. Production remains unchanged. | Read-only production catalogs, aggregate statistics and `EXPLAIN`; `20260719151322_add_missing_foreign_key_indexes.sql`; empty local replay; DB-104 SQL check; local advisors; focused and full test suites; typecheck; lint |
 | 2026-07-20 | DB-104, hosted verification           | Replayed all 83 migrations in order in a $0 disposable hosted project. Eleven SQL suites passed; all seven DB-104 indexes were valid, ready, and plan-eligible; the unindexed-foreign-key advisor returned no finding; generated schema and 13 unchanged fingerprint categories matched production; the index fingerprint differed by exactly the seven intended definitions; and no new security warning or unexplained database error appeared. Cleanup left only three intentional migration-seeded rows. The project was deleted and production remained unchanged. | Hosted migration-name parity; DB-104 catalog and plan checks; ten existing SQL suites; generated-schema comparison; 14-category fingerprint; advisors; cleanup and PostgreSQL-log audits; CLI deletion and project inventory |
+| 2026-07-20 | DB-104, production release            | Applied the single reviewed foreign-key-index migration after green PR #30, a hash-verified private logical backup, an exact dry-run, and explicit authorization. Production reached 83/83 with a clean dry-run. All seven indexes are valid, ready, and plan-eligible; affected-table counts were unchanged; the unindexed-foreign-key findings are gone; security advisors did not regress; the known lint issue remained unchanged; public application probes passed; and production remained healthy with no sampled database error or API 5xx. DB-104 is Verified. | PR #30 and merge `47a2cb4`; backup `~/.codex/backups/Lifebook/db104-production-20260720T044533Z`; migration checksum `4dd3ca273fe9a7acdd558eefa6a64ff755a6826c861e059c90c2e2cecef06090`; pre/post row counts; migration parity and dry-run; DB-104 catalog/plan check; advisors; lint; logs; HTTP smoke |
 | 2026-07-15 | DB-004                                | Audited enforcement after CI returned green. No GitHub ruleset exists, and Vercel assigned production for commit `f1ac98a` before `validate` completed. Recorded the exact required check contexts and the two-layer source-control/production-alias enforcement design. Dashboard mutation remains pending an authenticated management session.                                                                                                                                                                                                                                                    | GitHub check-runs and ruleset APIs; Vercel deployment `dpl_DvWR7arw13fWwLyosk1A268wWHyE` and deployment-check documentation                                                                                               |
 | 2026-07-15 | DB-004                                | Created and verified active repository ruleset `18984223` for `main`: no bypass actors, pull requests required, strict `validate` and `Security Validation` GitHub Actions checks required, and deletion/force pushes blocked. Vercel production-alias enforcement and the combined failing-branch challenge remain.                                                                                                                                                                                                                                                                                | Authenticated ruleset creation, full ruleset readback, and active `main` branch-rules query                                                                                                                               |
 | 2026-07-15 | DB-004                                | Added Vercel Deployment Checks for the exact GitHub contexts `validate` and `Security Validation`, both with Production behavior. Vercel confirmed they apply to the next production deployment, and a full settings-page reload preserved both checks. No deployment or production-database mutation was used for this configuration step. DB-004 remains In progress pending observation of the next normal promotion and a safe failing-PR challenge of the GitHub rule.                                                                                                                         | Authenticated Vercel settings mutation, success confirmation, and post-reload configuration readback                                                                                                                      |
@@ -852,7 +864,7 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-20: DB-001, DB-002, DB-004, and DB-101 through DB-103 are Verified. DB-104 has passed local and disposable-hosted verification and awaits its controlled production rollout. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-105 is the next schema-critical design work after DB-104, while DB-003 continues in parallel.
+Current position on 2026-07-20: DB-001, DB-002, DB-004, and DB-101 through DB-104 are Verified. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-105 is the next schema-critical design work, while DB-003 continues in parallel.
 
 ### Parallel launch gates
 
