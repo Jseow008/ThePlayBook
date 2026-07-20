@@ -79,7 +79,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | Verified                                                        | Yes             |
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Verified                                                        | Yes             |
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Verified                                                        | Yes             |
-| DB-105 | P1       | Add core database constraints and invariants                             | Not started                                                     | Yes             |
+| DB-105 | P1       | Add core database constraints and invariants                             | In progress — local verification complete; hosted proof pending | Yes             |
 | DB-106 | P1       | Review public email/token RPC risk acceptance                            | Not started                                                     | Yes             |
 | DB-107 | P1       | Configure production Auth, database, and network controls                | Not started                                                     | Yes             |
 | DB-201 | P2       | Repair minor data inconsistencies                                        | Not started                                                     | No              |
@@ -669,27 +669,49 @@ The current advisor identifies missing covering indexes for:
 
 ### DB-105: Add core database constraints and invariants
 
-Status: Not started
+Status: In progress — production audit and local verification complete; disposable hosted verification pending
 
-#### Candidate invariants
+#### Read-only production audit — 2026-07-20
 
-- non-empty, bounded content titles;
-- nonnegative durations and segment ordering;
-- valid segment start/end time pairs;
-- consistent `series_id` and `series_order` pairing;
-- supported `quick_mode_json` shape or version;
-- controlled category values;
-- valid content lifecycle transitions where practical;
-- intentional content uniqueness rules.
+- Audited 524 `content_item` rows, 5,371 `segment` rows, and the current `content_series` row before writing the migration. No row violates any of the selected first-tranche rules.
+- Titles are nonblank and at most 82 characters; all non-null durations are positive; category values are nonblank, trimmed, and at most 120 characters; series identifiers and orders are consistently paired; and all verified items have `published_at`.
+- Segment timing values contain no partial, negative, zero-length, or reversed pair. Zero-based ordering is intentional: 520 segments currently use `order_index = 0`.
+- All current `quick_mode_json` values satisfy the core object shape. Existing extension keys are legitimate, and the retained `insert_generated_content` service RPC defaults this field to `{}` and uses zero-based segment ordering. Available statement statistics recorded 1,065 calls across its current PostgREST query shapes, so these compatibility contracts must not be removed casually.
+
+#### Selected first tranche
+
+The database migration owns enforcement for all direct SQL and service-role writes. The admin content APIs own matching early validation and user-facing errors.
+
+| Table | Business rule |
+| --- | --- |
+| `content_item` | A title contains non-whitespace content and is no longer than 300 characters. Existing harmless surrounding whitespace remains compatible; API writes trim it. |
+| `content_item` | A supplied duration is greater than zero. |
+| `content_item` | A supplied category is trimmed, nonblank, and no longer than 120 characters. |
+| `content_item` | `quick_mode_json` is null, `{}`, or an object with string `hook` and `big_idea` values plus a string-array `key_takeaways`; additional keys remain supported. |
+| `content_item` | `series_id` and `series_order` are both null or both present, and a present order is positive. |
+| `content_item` | Verified content has an immutable publication timestamp. |
+| `segment` | Start and end times are both null or both present; a present start is nonnegative and the end is greater than the start. |
+| `content_series` | Titles are nonblank and at most 120 characters; slugs are lowercase URL-safe identifiers; descriptions are at most 500 characters. |
+
+The migration adds ten named checks with a five-second lock timeout. It adds each check as `NOT VALID`, validates it separately, and fails closed if either the catalog or the audited data differs from expectations.
+
+#### Deliberately deferred rules
+
+- A database `segment.order_index >= 0` check is deferred. The current atomic reorder function temporarily stages rows at negative indexes to avoid uniqueness collisions. The API now rejects incoming negative indexes, but the function must be redesigned before the database can enforce this rule without breaking working edits.
+- A strict category allowlist is deferred until the active generator and editorial contracts have a single versioned taxonomy. The first tranche enforces only safe category shape.
+- Exact `quick_mode_json` keys are not enforced because existing extension keys and the service RPC's `{}` draft default are supported contracts. The first tranche validates the required core shape when populated.
+- Cross-table timing-versus-duration checks, nonblank draft segment bodies, stricter lifecycle transitions, and new uniqueness rules remain design items because current product semantics do not establish them as universally valid invariants.
 
 #### Acceptance criteria
 
-- [ ] Each invariant has a documented business rule and owner.
-- [ ] Existing data is audited before adding a validated constraint.
-- [ ] Constraints are introduced with a low-lock rollout where table size or traffic requires it.
-- [ ] Eligible check and foreign-key constraints use `NOT VALID` followed by `VALIDATE CONSTRAINT` when that materially reduces rollout risk; unique, exclusion, and not-null changes use their appropriate low-lock patterns rather than assuming this technique applies universally.
-- [ ] API validation and database constraints agree.
-- [ ] Invalid direct SQL and service-role writes fail safely.
+- [x] Each implemented invariant has a documented business rule and enforcement owner.
+- [x] Existing production data is audited before adding a validated constraint.
+- [x] Constraints use a bounded-lock rollout appropriate to the current table sizes and traffic.
+- [x] Eligible checks use `NOT VALID` followed by `VALIDATE CONSTRAINT`; unsupported low-lock assumptions are not applied to other constraint types.
+- [x] API validation and database constraints agree for the implemented write paths.
+- [x] Invalid direct SQL and service-role writes fail safely in the local regression suite.
+- [ ] The migration and regression suite pass in a disposable hosted project before production consideration.
+- [ ] A post-merge production dry-run lists exactly the reviewed DB-105 migration, followed by a fresh backup and explicit rollout authorization.
 
 ### DB-106: Review public email/token RPC risk acceptance
 
@@ -815,6 +837,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-19 | DB-104                                | Audited all seven production foreign-key findings, existing indexes, referential actions, retained query patterns, table sizes, and current plans. Authored a fail-closed seven-index migration and a required catalog/plan regression check. All 83 migrations replayed from empty locally; all seven plan checks passed; local advisors contain no unindexed-foreign-key or security finding; typecheck, lint, migration validation, 147 security-focused tests, and the complete 862-test suite pass. Production remains unchanged. | Read-only production catalogs, aggregate statistics and `EXPLAIN`; `20260719151322_add_missing_foreign_key_indexes.sql`; empty local replay; DB-104 SQL check; local advisors; focused and full test suites; typecheck; lint |
 | 2026-07-20 | DB-104, hosted verification           | Replayed all 83 migrations in order in a $0 disposable hosted project. Eleven SQL suites passed; all seven DB-104 indexes were valid, ready, and plan-eligible; the unindexed-foreign-key advisor returned no finding; generated schema and 13 unchanged fingerprint categories matched production; the index fingerprint differed by exactly the seven intended definitions; and no new security warning or unexplained database error appeared. Cleanup left only three intentional migration-seeded rows. The project was deleted and production remained unchanged. | Hosted migration-name parity; DB-104 catalog and plan checks; ten existing SQL suites; generated-schema comparison; 14-category fingerprint; advisors; cleanup and PostgreSQL-log audits; CLI deletion and project inventory |
 | 2026-07-20 | DB-104, production release            | Applied the single reviewed foreign-key-index migration after green PR #30, a hash-verified private logical backup, an exact dry-run, and explicit authorization. Production reached 83/83 with a clean dry-run. All seven indexes are valid, ready, and plan-eligible; affected-table counts were unchanged; the unindexed-foreign-key findings are gone; security advisors did not regress; the known lint issue remained unchanged; public application probes passed; and production remained healthy with no sampled database error or API 5xx. DB-104 is Verified. | PR #30 and merge `47a2cb4`; backup `~/.codex/backups/Lifebook/db104-production-20260720T044533Z`; migration checksum `4dd3ca273fe9a7acdd558eefa6a64ff755a6826c861e059c90c2e2cecef06090`; pre/post row counts; migration parity and dry-run; DB-104 catalog/plan check; advisors; lint; logs; HTTP smoke |
+| 2026-07-20 | DB-105                                | Audited the current production content, segment, series, generated-content RPC, and caller contracts read-only. Authored ten fail-closed core checks plus matching admin API validation while preserving zero-based segment ordering, temporary negative reorder staging, `{}` quick-mode drafts, and legitimate JSON extension keys. All 84 migrations replayed from empty locally; direct SQL and service-role rejection checks, existing database suites, local advisors, typecheck, lint, migration validation, 154 security tests, and the complete 869-test suite passed. Production remains unchanged. | Read-only production data/catalog/statement audit; `20260720145630_enforce_core_content_invariants.sql`; `database-content-invariants-check.sql`; empty local replay; database suites; local advisors and lint; focused and full application tests |
 | 2026-07-15 | DB-004                                | Audited enforcement after CI returned green. No GitHub ruleset exists, and Vercel assigned production for commit `f1ac98a` before `validate` completed. Recorded the exact required check contexts and the two-layer source-control/production-alias enforcement design. Dashboard mutation remains pending an authenticated management session.                                                                                                                                                                                                                                                    | GitHub check-runs and ruleset APIs; Vercel deployment `dpl_DvWR7arw13fWwLyosk1A268wWHyE` and deployment-check documentation                                                                                               |
 | 2026-07-15 | DB-004                                | Created and verified active repository ruleset `18984223` for `main`: no bypass actors, pull requests required, strict `validate` and `Security Validation` GitHub Actions checks required, and deletion/force pushes blocked. Vercel production-alias enforcement and the combined failing-branch challenge remain.                                                                                                                                                                                                                                                                                | Authenticated ruleset creation, full ruleset readback, and active `main` branch-rules query                                                                                                                               |
 | 2026-07-15 | DB-004                                | Added Vercel Deployment Checks for the exact GitHub contexts `validate` and `Security Validation`, both with Production behavior. Vercel confirmed they apply to the next production deployment, and a full settings-page reload preserved both checks. No deployment or production-database mutation was used for this configuration step. DB-004 remains In progress pending observation of the next normal promotion and a safe failing-PR challenge of the GitHub rule.                                                                                                                         | Authenticated Vercel settings mutation, success confirmation, and post-reload configuration readback                                                                                                                      |
@@ -864,7 +887,7 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-20: DB-001, DB-002, DB-004, and DB-101 through DB-104 are Verified. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-105 is the next schema-critical design work, while DB-003 continues in parallel.
+Current position on 2026-07-20: DB-001, DB-002, DB-004, and DB-101 through DB-104 are Verified. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-105 production discovery and local verification are complete; its disposable hosted proof and controlled production workflow remain. DB-003 continues in parallel.
 
 ### Parallel launch gates
 

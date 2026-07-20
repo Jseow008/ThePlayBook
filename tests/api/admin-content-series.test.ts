@@ -1967,6 +1967,80 @@ describe("Admin content series support", () => {
         ]);
     });
 
+    it("rejects partial segment timing pairs when creating content", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/admin/content"), {
+            method: "POST",
+            body: JSON.stringify({
+                title: "Timing Pair Validation",
+                type: "article",
+                segments: [
+                    {
+                        order_index: 0,
+                        markdown_body: "Body",
+                        start_time_sec: 12,
+                    },
+                ],
+            }),
+        });
+
+        const res = await createAdminContent(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(400);
+        expect(json.error.code).toBe("VALIDATION_ERROR");
+        expect(json.error.details).toEqual([
+            expect.objectContaining({
+                path: ["segments", 0, "end_time_sec"],
+                message: "Start and end times must be provided together.",
+            }),
+        ]);
+    });
+
+    it("rejects negative segment ordering", async () => {
+        const req = new NextRequest(new URL("http://localhost/api/admin/content"), {
+            method: "POST",
+            body: JSON.stringify({
+                title: "Segment Ordering Validation",
+                type: "article",
+                segments: [
+                    {
+                        order_index: -1,
+                        markdown_body: "Body",
+                    },
+                ],
+            }),
+        });
+
+        const res = await createAdminContent(req);
+        const json = await res.json();
+
+        expect(res.status).toBe(400);
+        expect(json.error.code).toBe("VALIDATION_ERROR");
+        expect(json.error.details).toEqual([
+            expect.objectContaining({
+                path: ["segments", 0, "order_index"],
+            }),
+        ]);
+    });
+
+    it("rejects whitespace-only and overlong content titles", async () => {
+        for (const title of ["   ", "x".repeat(301)]) {
+            const req = new NextRequest(new URL("http://localhost/api/admin/content"), {
+                method: "POST",
+                body: JSON.stringify({ title, type: "article" }),
+            });
+
+            const res = await createAdminContent(req);
+            const json = await res.json();
+
+            expect(res.status).toBe(400);
+            expect(json.error.code).toBe("VALIDATION_ERROR");
+            expect(json.error.details).toEqual([
+                expect.objectContaining({ path: ["title"] }),
+            ]);
+        }
+    });
+
     it("rejects segment timing ranges whose end time is not after the start time", async () => {
         const req = new NextRequest(new URL("http://localhost/api/admin/content/123e4567-e89b-12d3-a456-426614174000"), {
             method: "PUT",

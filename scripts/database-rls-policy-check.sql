@@ -170,10 +170,10 @@ VALUES (
     'DB-103 Role Matrix Series'
 );
 
-INSERT INTO public.content_item (id, type, title, status, series_id)
+INSERT INTO public.content_item (id, type, title, status, series_id, series_order)
 VALUES
-    ('00000000-0000-4000-8000-000000000211', 'book', 'DB-103 Verified Fixture', 'verified', '00000000-0000-4000-8000-000000000201'),
-    ('00000000-0000-4000-8000-000000000212', 'book', 'DB-103 Draft Fixture', 'draft', '00000000-0000-4000-8000-000000000201');
+    ('00000000-0000-4000-8000-000000000211', 'book', 'DB-103 Verified Fixture', 'verified', '00000000-0000-4000-8000-000000000201', 1),
+    ('00000000-0000-4000-8000-000000000212', 'book', 'DB-103 Draft Fixture', 'draft', '00000000-0000-4000-8000-000000000201', 2);
 
 INSERT INTO public.segment (id, item_id, order_index, title, markdown_body)
 VALUES
