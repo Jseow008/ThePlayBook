@@ -79,7 +79,6 @@ async function LandingPageData() {
       featuredItems={(popularItems || []) as ContentItem[]}
       categories={(categoryStats as { category: string; count: number }[] | null) || []}
       totalContentCount={totalContent || 0}
-      totalCategoryCount={categoryStats?.length || 0}
     />
   );
 }
