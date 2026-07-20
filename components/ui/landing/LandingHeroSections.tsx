@@ -1,19 +1,36 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { Fragment, useEffect, useState } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
-const HERO_WORKFLOW_STEPS = ["Discover", "Understand", "Save", "Recall"] as const;
-const HERO_WORKFLOW_INTERVAL_MS = 2800;
 const heroRevealStyle = (delay: string) =>
   ({ "--hero-reveal-delay": delay } as CSSProperties);
+const heroProofStyle = (delay: string) =>
+  ({ "--hero-proof-delay": delay } as CSSProperties);
 const PRIMARY_CTA_CLASS =
-  "focus-ring landing-primary-cta group relative inline-flex w-full min-w-0 items-center justify-center gap-3 overflow-hidden rounded-full bg-solar-gold px-8 py-4 text-base font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 sm:w-auto";
+  "focus-ring landing-primary-cta landing-hero-primary-cta group relative inline-flex min-h-11 min-w-0 items-center justify-center gap-2.5 overflow-hidden rounded-full bg-solar-gold px-6 py-3 text-sm font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] sm:px-7 sm:text-base";
 const SECONDARY_CTA_CLASS =
-  "focus-ring landing-secondary-cta inline-flex w-full min-w-0 items-center justify-center rounded-full border border-white/[0.18] bg-white/[0.07] px-8 py-4 text-base font-medium text-white/90 transition-[border-color,background-color,color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.11] hover:text-white sm:w-auto";
+  "focus-ring landing-secondary-cta inline-flex min-h-11 items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.025] px-5 text-sm font-semibold text-zinc-300 transition-[border-color,background-color,color,transform] duration-200 hover:-translate-y-px hover:border-white/25 hover:bg-white/[0.055] hover:text-white active:translate-y-0 active:scale-[0.985]";
+
+function getHeroSummaryCount(totalContentCount: number) {
+  const roundedContentCount = Math.floor(totalContentCount / 100) * 100;
+
+  return roundedContentCount >= 100
+    ? `${roundedContentCount}+ summaries`
+    : "Curated summaries";
+}
+
+function getHeroTopicCount(totalTopicCount: number) {
+  if (totalTopicCount <= 0) return "Topics across the library";
+
+  const roundedTopicCount = Math.floor(totalTopicCount / 5) * 5;
+  if (roundedTopicCount >= 10) return `${roundedTopicCount}+ topics`;
+
+  return `${totalTopicCount} ${totalTopicCount === 1 ? "topic" : "topics"}`;
+}
 
 export function LandingHeader() {
   return (
@@ -46,49 +63,149 @@ export function LandingHeader() {
   );
 }
 
-export function HeroSection() {
+export function HeroSection({
+  totalContentCount,
+  totalTopicCount,
+}: {
+  totalContentCount: number;
+  totalTopicCount: number;
+}) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const pointerFrameRef = useRef<number | null>(null);
+  const scrollFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || typeof window.matchMedia !== "function") return;
+
+    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const updateScrollTransition = () => {
+      if (scrollFrameRef.current !== null) return;
+
+      scrollFrameRef.current = window.requestAnimationFrame(() => {
+        scrollFrameRef.current = null;
+
+        if (reducedMotionQuery.matches) {
+          section.style.setProperty("--hero-scroll-offset", "0px");
+          section.style.setProperty("--hero-scroll-opacity", "1");
+          return;
+        }
+
+        const transitionDistance = Math.max(window.innerHeight * 0.42, 240);
+        const progress = Math.min(Math.max(window.scrollY / transitionDistance, 0), 1);
+        section.style.setProperty("--hero-scroll-offset", `${progress * -12}px`);
+        section.style.setProperty("--hero-scroll-opacity", `${1 - progress * 0.12}`);
+      });
+    };
+
+    const syncMotionPreference = () => {
+      if (reducedMotionQuery.matches) {
+        delete section.dataset.pointerActive;
+      }
+
+      updateScrollTransition();
+    };
+
+    updateScrollTransition();
+    window.addEventListener("scroll", updateScrollTransition, { passive: true });
+    reducedMotionQuery.addEventListener("change", syncMotionPreference);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollTransition);
+      reducedMotionQuery.removeEventListener("change", syncMotionPreference);
+
+      if (pointerFrameRef.current !== null) {
+        window.cancelAnimationFrame(pointerFrameRef.current);
+      }
+      if (scrollFrameRef.current !== null) {
+        window.cancelAnimationFrame(scrollFrameRef.current);
+      }
+    };
+  }, []);
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLElement>) {
+    const section = sectionRef.current;
+    if (!section || typeof window.matchMedia !== "function") return;
+
+    const hasFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!hasFinePointer || prefersReducedMotion) return;
+
+    const { clientX, clientY } = event;
+
+    if (pointerFrameRef.current !== null) {
+      window.cancelAnimationFrame(pointerFrameRef.current);
+    }
+
+    pointerFrameRef.current = window.requestAnimationFrame(() => {
+      pointerFrameRef.current = null;
+      const rect = section.getBoundingClientRect();
+      section.style.setProperty("--hero-pointer-x", `${clientX - rect.left}px`);
+      section.style.setProperty("--hero-pointer-y", `${clientY - rect.top}px`);
+      section.dataset.pointerActive = "true";
+    });
+  }
+
+  function handlePointerLeave() {
+    if (sectionRef.current) {
+      delete sectionRef.current.dataset.pointerActive;
+    }
+  }
+
   return (
-    <section className="landing-hero-section relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden">
-      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 py-14 text-center lg:px-8">
+    <section
+      ref={sectionRef}
+      className="landing-hero-section relative flex min-h-[calc(100svh-4rem)] items-center overflow-hidden"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={handlePointerLeave}
+    >
+      <div aria-hidden="true" className="landing-hero-pointer-glow pointer-events-none absolute inset-0 z-[1]" />
+      <div className="landing-hero-motion-content relative z-10 mx-auto w-full max-w-7xl px-4 py-16 text-center min-[360px]:px-6 sm:py-20 lg:px-8">
         <h1
-          className="landing-hero-reveal mx-auto max-w-full font-serif text-[1.8rem] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:text-6xl sm:leading-[1.05] md:text-[3.55rem] lg:text-[4.65rem]"
+          className="landing-hero-reveal mx-auto max-w-5xl font-serif text-[clamp(1.3rem,6.55vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:leading-[1.05] lg:text-[4.65rem]"
           style={heroRevealStyle("80ms")}
         >
-          <span className="sr-only">From passive consumption to knowledge that compounds.</span>
-
-          <span aria-hidden="true" className="block sm:hidden">
-            <span className="relative left-1/2 block w-fit max-w-none -translate-x-1/2 whitespace-nowrap">From passive consumption</span>
-            <span className="mx-auto mt-2 block w-fit max-w-none whitespace-nowrap">to knowledge that</span>
-            <span className="landing-hero-emphasis mx-auto mt-2 block w-fit max-w-full">
-              compounds.
-            </span>
-          </span>
-
-          <span aria-hidden="true" className="hidden sm:block">
-            <span className="mx-auto block w-fit max-w-full md:whitespace-nowrap">From passive consumption</span>
-            <span className="mx-auto mt-3 block w-fit max-w-full md:whitespace-nowrap">
-              to knowledge that{" "}
-              <span className="landing-hero-emphasis">compounds.</span>
-            </span>
-          </span>
+          Discover the ideas you didn’t
+          <br />{" "}
+          know you{" "}
+          <span className="landing-hero-emphasis">needed.</span>
         </h1>
 
         <p
-          className="landing-hero-reveal landing-hero-copy mx-auto mt-10 max-w-2xl text-lg leading-8 text-zinc-300 sm:text-[1.18rem]"
+          className="landing-hero-reveal landing-hero-copy mx-auto mt-8 max-w-xl text-[0.9375rem] leading-7 text-zinc-300 max-[359px]:-mx-2 min-[360px]:text-base sm:mt-9 sm:text-lg sm:leading-8"
           style={heroRevealStyle("260ms")}
         >
-          Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search and revisit.
+          Turn books, podcasts, articles,
+          <br className="sm:hidden" />{" "}
+          and videos
+          <br className="hidden sm:block" />{" "}
+          into knowledge that compounds.
         </p>
 
-        <HeroWorkflow />
+        <ul
+          className="landing-hero-reveal mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-center text-[0.72rem] font-medium leading-5 text-zinc-400 sm:mt-7 sm:text-xs"
+          style={heroRevealStyle("410ms")}
+          aria-label="Netflux product capabilities"
+        >
+          <li className="landing-hero-proof-item text-zinc-300" style={heroProofStyle("620ms")}>
+            {getHeroSummaryCount(totalContentCount)}
+          </li>
+          <li className="landing-hero-proof-item flex items-center" style={heroProofStyle("710ms")}>
+            <span aria-hidden="true" className="mx-2.5 text-white/20 sm:mx-3">
+              &bull;
+            </span>
+            {getHeroTopicCount(totalTopicCount)}
+          </li>
+        </ul>
 
         <div
-          className="landing-hero-reveal mt-7 flex flex-col justify-center gap-4 sm:flex-row sm:items-center"
+          className="landing-hero-reveal mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:mt-7 sm:gap-x-4"
           style={heroRevealStyle("560ms")}
         >
           <Link href="/browse" className={PRIMARY_CTA_CLASS}>
             <span className="relative z-10">Explore the Library</span>
-            <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="landing-hero-cta-arrow relative z-10 size-4" />
           </Link>
           <Link href="/login" className={SECONDARY_CTA_CLASS}>
             Sign Up Free
@@ -96,92 +213,5 @@ export function HeroSection() {
         </div>
       </div>
     </section>
-  );
-}
-
-function HeroWorkflow() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let intervalId: number | null = null;
-
-    const stopProgression = () => {
-      if (intervalId !== null) {
-        window.clearInterval(intervalId);
-        intervalId = null;
-      }
-    };
-
-    const startProgression = () => {
-      if (motionQuery.matches || document.hidden || intervalId !== null) return;
-
-      intervalId = window.setInterval(() => {
-        setActiveIndex((currentIndex) => (currentIndex + 1) % HERO_WORKFLOW_STEPS.length);
-      }, HERO_WORKFLOW_INTERVAL_MS);
-    };
-
-    const syncProgression = () => {
-      if (motionQuery.matches || document.hidden) {
-        stopProgression();
-        return;
-      }
-
-      startProgression();
-    };
-
-    syncProgression();
-    motionQuery.addEventListener("change", syncProgression);
-    document.addEventListener("visibilitychange", syncProgression);
-
-    return () => {
-      motionQuery.removeEventListener("change", syncProgression);
-      document.removeEventListener("visibilitychange", syncProgression);
-      stopProgression();
-    };
-  }, []);
-
-  return (
-    <div
-      className="landing-hero-reveal landing-hero-workflow mx-auto mt-7 sm:mt-8"
-      style={heroRevealStyle("410ms")}
-      aria-label="Netflux workflow: Discover, Understand, Save, Recall"
-    >
-      <div className="flex flex-nowrap items-center justify-center gap-2 sm:gap-4" aria-hidden="true">
-        {HERO_WORKFLOW_STEPS.map((step, index) => (
-          <Fragment key={step}>
-            <HeroWorkflowStep step={step} isActive={index === activeIndex} />
-            {index < HERO_WORKFLOW_STEPS.length - 1 ? (
-              <HeroWorkflowConnector isActive={index === activeIndex} />
-            ) : null}
-          </Fragment>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function HeroWorkflowStep({
-  step,
-  isActive,
-}: {
-  step: (typeof HERO_WORKFLOW_STEPS)[number];
-  isActive: boolean;
-}) {
-  return (
-    <div className="landing-hero-workflow-step flex shrink-0 items-center gap-1.5 sm:gap-2.5" data-active={isActive}>
-      <span className="landing-hero-workflow-marker" />
-      <span className="text-[0.56rem] font-semibold uppercase tracking-[0.08em] sm:text-[0.72rem] sm:tracking-[0.13em]">
-        {step}
-      </span>
-    </div>
-  );
-}
-
-function HeroWorkflowConnector({ isActive }: { isActive: boolean }) {
-  return (
-    <span className="landing-hero-workflow-connector" data-active={isActive} />
   );
 }
