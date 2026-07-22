@@ -396,6 +396,33 @@ describe("AskClientPage", () => {
         expect(screen.getByText("Fallback for non-text parts")).toBeInTheDocument();
     });
 
+    it("does not render an empty assistant bubble or follow-up actions", () => {
+        (useChat as any).mockReturnValue({
+            messages: [
+                {
+                    id: "u1",
+                    role: "user",
+                    content: "Summarize my library",
+                },
+                {
+                    id: "a1",
+                    role: "assistant",
+                    parts: [],
+                },
+            ],
+            sendMessage: vi.fn(),
+            status: "error",
+            error: new Error("Something went wrong. Please try asking again."),
+        });
+
+        const { container } = render(<AskClientPage />);
+
+        expect(screen.getByText("Summarize my library")).toBeInTheDocument();
+        expect(screen.getByText("Something went wrong. Please try asking again.")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Which source says this?" })).not.toBeInTheDocument();
+        expect(container.querySelectorAll(".prose")).toHaveLength(1);
+    });
+
     it("renders follow-up actions only for the latest assistant message", () => {
         (useChat as any).mockReturnValue({
             messages: [

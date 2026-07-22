@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useEffect, useState, type FormEvent } from "react";
 import { useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport } from "ai";
+import { DefaultChatTransport } from "ai";
 import { Bot, User, Send, Loader2, ArrowLeft } from "lucide-react";
 import { BooksIcon, NotebookIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
@@ -17,7 +17,7 @@ import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
 import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
-const chatTransport = new TextStreamChatTransport({ api: "/api/chat" });
+const chatTransport = new DefaultChatTransport({ api: "/api/chat" });
 
 const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
 
@@ -176,11 +176,13 @@ export function AskClientPage({
         await sendPrompt(input);
     };
 
-    const displayMessages: Array<{ id: string; role: string; content: string }> = messages.map((message) => ({
-        id: message.id,
-        role: message.role,
-        content: getMessageText(message as { parts?: Array<{ type: string; text?: string }>; content?: unknown }),
-    }));
+    const displayMessages: Array<{ id: string; role: string; content: string }> = messages
+        .map((message) => ({
+            id: message.id,
+            role: message.role,
+            content: getMessageText(message as { parts?: Array<{ type: string; text?: string }>; content?: unknown }),
+        }))
+        .filter((message) => message.role === "user" || message.content.trim().length > 0);
     const lastDisplayMessage = displayMessages[displayMessages.length - 1];
     const {
         containerRef: messagesContainerRef,

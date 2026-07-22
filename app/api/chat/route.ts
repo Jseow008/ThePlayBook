@@ -33,7 +33,11 @@ const MAX_OUTPUT_TOKENS = {
     reading_advisor: 550,
 } as const;
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-const DEFAULT_COMPLEX_ASK_MODEL = "claude-sonnet-4-20250514";
+const DEFAULT_COMPLEX_ASK_MODEL = "claude-sonnet-4-6";
+const RETIRED_ANTHROPIC_MODEL_REPLACEMENTS: Record<string, string> = {
+    "claude-sonnet-4-20250514": DEFAULT_COMPLEX_ASK_MODEL,
+};
+const CHAT_STREAM_ERROR_MESSAGE = "Something went wrong. Please try asking again.";
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
 const PRIMARY_MATCH_THRESHOLD = 0.65;
@@ -56,11 +60,11 @@ function shouldUseComplexAskModel(intent: AskIntent) {
 }
 
 function getAnthropicModelName(intent: AskIntent) {
-    if (shouldUseComplexAskModel(intent)) {
-        return process.env.AI_COMPLEX_MODEL || DEFAULT_COMPLEX_ASK_MODEL;
-    }
+    const configuredModel = shouldUseComplexAskModel(intent)
+        ? process.env.AI_COMPLEX_MODEL || DEFAULT_COMPLEX_ASK_MODEL
+        : process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
 
-    return process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
+    return RETIRED_ANTHROPIC_MODEL_REPLACEMENTS[configuredModel] || configuredModel;
 }
 
 function getMessageText(message: Record<string, unknown>): string {
@@ -585,7 +589,12 @@ Rules:
             },
         });
 
-        return result.toTextStreamResponse();
+        return result.toUIMessageStreamResponse({
+            onError: (error) => {
+                logApiError({ requestId, route: "/api/chat", message: "AI generation stream failed", error });
+                return CHAT_STREAM_ERROR_MESSAGE;
+            },
+        });
     } catch (error: unknown) {
         logApiError({
             requestId,
