@@ -107,6 +107,7 @@ jobs:
           npm run database:legacy-embedding-retirement
           npm run database:highlight-preservation
           npm run database:published-at
+          npm run database:email-rpc-security
 
       - name: Security route and static tests
         run: npm run test:security

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { subscribeEmailSubscription } from "@/lib/server/email-subscription-rpcs";
 import { rateLimit } from "@/lib/server/rate-limit";
-import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 const EMAIL_SUBSCRIPTION_CONSENT_VERSION = "weekly-ideas-v1";
 const EMAIL_SUBSCRIPTION_CONSENT_TEXT =
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
         const pagePath = cleanOptionalText(parsed.data.page_path);
         const referrer = cleanOptionalText(parsed.data.referrer);
-        const { error } = await createPublicServerClient().rpc("subscribe_email_subscription", {
+        const { error } = await subscribeEmailSubscription({
             p_email: parsed.data.email,
             p_source: parsed.data.source,
             p_page_path: pagePath,

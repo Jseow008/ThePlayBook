@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { unsubscribeEmailSubscriptionByToken } from "@/lib/server/email-subscription-rpcs";
 import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordInvalidUnsubscribeToken } from "@/lib/server/security-telemetry";
-import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 const UnsubscribeSchema = z.object({
     token: z.string().trim().min(32).max(128).regex(/^[a-f0-9]+$/i),
 });
 
 async function unsubscribeByToken(token: string) {
-    return createPublicServerClient().rpc("unsubscribe_email_subscription_by_token", {
+    return unsubscribeEmailSubscriptionByToken({
         p_token: token,
     });
 }

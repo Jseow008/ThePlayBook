@@ -25,6 +25,19 @@ describe("security gate CI configuration", () => {
         join(process.cwd(), "scripts/supabase-security-advisor-allowlist.json"),
         "utf8",
     );
+    const emailRpcMigration = readFileSync(
+        join(process.cwd(), "supabase/migrations/20260722124111_restrict_public_email_rpcs.sql"),
+        "utf8",
+    );
+    const emailRpcWrapper = readFileSync(
+        join(process.cwd(), "lib/server/email-subscription-rpcs.ts"),
+        "utf8",
+    );
+    const emailRouteSources = [
+        "app/api/email-subscriptions/route.ts",
+        "app/api/email-subscriptions/unsubscribe/route.ts",
+        "app/api/notification-preferences/request-published/unsubscribe/route.ts",
+    ].map((path) => readFileSync(join(process.cwd(), path), "utf8"));
 
     it("adds explicit npm security scripts", () => {
         expect(packageJson.scripts?.["security:audit"]).toBe(
@@ -94,9 +107,24 @@ describe("security gate CI configuration", () => {
         expect(advisorScript).toContain("SUPABASE_ACCESS_TOKEN");
         expect(advisorScript).toContain("SUPABASE_PROJECT_REF");
         expect(advisorScript).toContain('level === "ERROR" || level === "WARN"');
-        expect(advisorAllowlist).toContain("subscribe_email_subscription");
-        expect(advisorAllowlist).toContain("unsubscribe_email_subscription_by_token");
-        expect(advisorAllowlist).toContain("unsubscribe_request_published_notifications_by_token");
+        expect(advisorAllowlist).not.toContain("subscribe_email_subscription");
+        expect(advisorAllowlist).not.toContain("unsubscribe_email_subscription_by_token");
+        expect(advisorAllowlist).not.toContain("unsubscribe_request_published_notifications_by_token");
         expect(advisorAllowlist).not.toContain("auth_leaked_password_protection");
+    });
+
+    it("keeps public email RPCs behind server-side rate limits and telemetry", () => {
+        expect(emailRpcMigration).toContain("FROM PUBLIC, anon, authenticated");
+        expect(emailRpcMigration.match(/TO service_role/g)).toHaveLength(3);
+        expect(emailRpcWrapper).toContain('import { getAdminClient } from "@/lib/supabase/admin"');
+        expect(emailRpcWrapper).toContain('getAdminClient().rpc("subscribe_email_subscription"');
+        expect(emailRpcWrapper).toContain('getAdminClient().rpc("unsubscribe_email_subscription_by_token"');
+        expect(emailRpcWrapper).toContain('"unsubscribe_request_published_notifications_by_token"');
+
+        for (const routeSource of emailRouteSources) {
+            expect(routeSource).toContain("@/lib/server/email-subscription-rpcs");
+            expect(routeSource).not.toContain("@/lib/supabase/public-server");
+            expect(routeSource).not.toContain("@/lib/supabase/admin");
+        }
     });
 });
