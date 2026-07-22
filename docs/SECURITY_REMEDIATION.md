@@ -153,9 +153,9 @@ Implementation notes:
   - `authenticated` cannot call `admin_update_content_graph`.
   - `service_role` reaches the function's normal `p_content_id is required` validation path.
 - Added `npm run security:function-acls` as the CI-ready ACL drift check. It runs `scripts/security-function-acl-check.sql` through the Supabase CLI and fails if:
-  - any public `SECURITY DEFINER` function is executable by `anon` or `authenticated`, except the exact token/email-scoped item 6 allowlist
+  - any public `SECURITY DEFINER` function is executable by `anon` or `authenticated`
   - any public `SECURITY DEFINER` function lacks fixed `search_path`
-  - any non-trigger public `SECURITY DEFINER` RPC lacks an internal service-role guard
+  - any non-trigger public `SECURITY DEFINER` RPC lacks an internal service-role guard, except the exact server-controlled token/email functions that are separately required to be service-role-only
   - any trigger-backed helper is directly executable by `anon` or `authenticated`
 - Verified smoke tests:
   - `authenticated` cannot call guarded activity definer RPCs.
@@ -170,7 +170,7 @@ Function classification summary:
 | Service-only/admin definer RPCs | `admin_update_content_graph`, `admin_finalize_narration_generation`, `insert_generated_content`, `queue_content_request_published_notifications`, `claim_content_request_notifications`, `submit_content_request`, `increment_reading_activity_for_user`, `log_reading_activity`, `log_anonymous_reading_activity`, `log_reading_activity_for_user` | `SECURITY DEFINER`, fixed `search_path`, service-role-only execute grant, internal service-role guard |
 | Trigger-only helpers | `handle_new_user`, `invalidate_gemini_segment_embedding_on_body_change`, `update_content_request_vote_count`, `update_updated_at_column` | fixed `search_path`, no direct `anon`/`authenticated` execute grant, no runtime service-role guard |
 | Public read/recommendation RPCs | `get_category_stats`, `get_homepage_sections_with_items`, `get_random_verified_content`, `get_trending_content`, `match_recommendations` | `SECURITY INVOKER`, fixed `search_path`, intentionally public |
-| Public token/email RPCs | `subscribe_email_subscription`, `unsubscribe_email_subscription_by_token`, `unsubscribe_request_published_notifications_by_token` | `SECURITY DEFINER`, fixed `search_path`, exact allowlist in `npm run security:function-acls`, no broad table grants |
+| Server-controlled token/email RPCs | `subscribe_email_subscription`, `unsubscribe_email_subscription_by_token`, `unsubscribe_request_published_notifications_by_token` | `SECURITY DEFINER`, fixed `search_path`, service-role-only execute grant, no broad table grants or direct Data API access |
 | Authenticated user RPCs | `is_admin`, `set_onboarding_state`, `match_library_segments_gemini` | `SECURITY INVOKER`, fixed `search_path`, authenticated-only or user-scoped filtering |
 | Service-only maintenance RPCs | `get_segments_missing_gemini_embeddings`, `get_gemini_segment_embedding_coverage`, `increment_reading_activity` | fixed `search_path`, no `anon`/`authenticated` execute grant |
 | Legacy embedding maintenance gap | `get_segments_missing_embeddings` | fixed `search_path`; execute grant lockdown remains tracked in item 13 |
@@ -229,9 +229,9 @@ Implementation notes:
 
 ### 6. Constrain public email subscription mutations
 
-Status: Complete on 2026-06-22.
+Status: Initial remediation completed on 2026-06-22; DB-106 hardening deployed and verified on 2026-07-22.
 
-Issue: Public unauthenticated email routes use `getAdminClient()`. A handler bug would bypass RLS with service-role power.
+Issue: The initial public token/email RPC design let direct Data API callers bypass the application routes' validation, rate limits, and security telemetry. The remediation must keep privileged access narrow even though the server-side wrapper uses the service role.
 
 Affected routes:
 
@@ -265,9 +265,9 @@ Implementation notes:
 - Subscription writes are constrained by database-side email/source/length validation and idempotent `ON CONFLICT (email_normalized)` resubscribe behavior.
 - Unsubscribe writes are token-scoped, validate hex tokens, and intentionally return generic success without revealing whether a token matched a row.
 - The initial June posture used exact public-definer allowlist entries. The DB-106 review on 2026-07-22 found that direct Data API calls could bypass application rate limits and telemetry, so that exception is being retired rather than renewed.
-- The DB-106 candidate moves the three fixed calls behind `lib/server/email-subscription-rpcs.ts`, revokes RPC execution from `PUBLIC`, `anon`, and `authenticated`, and grants only `service_role`. The handlers still never receive a generic database client.
+- DB-106 moved the three fixed calls behind `lib/server/email-subscription-rpcs.ts`, revoked RPC execution from `PUBLIC`, `anon`, and `authenticated`, and retained only `service_role`. The handlers still never receive a generic database client.
 - Added route tests for valid token, invalid token, duplicate subscription behavior through the idempotent RPC, malformed payloads, RPC failure handling, and rate limiting on the request-published unsubscribe endpoint.
-- Production continues to report the six `anon_security_definer_function_executable` and `authenticated_security_definer_function_executable` warnings until the reviewed DB-106 migration is deployed. The candidate removes those exceptions from the advisor allowlist and keeps admin/service-only definer drift blocked by `npm run security:function-acls`.
+- Production migration `20260722124111_restrict_public_email_rpcs.sql` removed all six `anon_security_definer_function_executable` and `authenticated_security_definer_function_executable` warnings. A direct anonymous Data API call is rejected, the server-controlled unsubscribe paths return generic HTTP 200 for a well-formed no-match token, and `npm run security:function-acls` blocks future public-definer drift.
 
 ### 7. Enforce production admin IP allowlist configuration
 
@@ -709,7 +709,7 @@ Implementation notes:
   - Supabase advisors are treated as scheduled/manual audit because advisor results can lag behind schema changes.
   - The advisor script fails on unallowlisted `WARN`/`ERROR` findings when run.
   - Exact allowlisted findings live in `scripts/supabase-security-advisor-allowlist.json` with owner and review date.
-  - Current allowlist covers only the intentional token/email public `SECURITY DEFINER` RPC warnings already guarded by `npm run security:function-acls`.
+  - The advisor allowlist is empty after DB-106 removed direct public execution of the token/email `SECURITY DEFINER` RPCs.
   - `auth_leaked_password_protection` is not allowlisted.
 - Added static regression coverage in `tests/security/security-gates.test.ts`.
 

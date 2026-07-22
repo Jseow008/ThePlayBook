@@ -50,7 +50,7 @@ Netflux is database-production-ready only when all of the following are true:
 
 ## Verified baseline
 
-The operational data snapshot was collected read-only on 2026-07-14; migration parity and advisor counts were reverified on 2026-07-18. Counts will change over time.
+The operational data snapshot was collected read-only on 2026-07-14; migration parity and security-advisor counts were reverified on 2026-07-22. Counts will change over time.
 
 | Area                | Verified state                                                                                                                                  |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,9 +63,9 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | Gemini embeddings   | 4,088 segment embeddings; no missing embeddings for eligible active verified segments                                                           |
 | User annotations    | 80 highlights                                                                                                                                   |
 | Storage             | 981 objects: 246 `audio` and 735 `media`, approximately 1.15 GB                                                                                 |
-| Security advisor    | 7 warnings: 6 intentional public email/token RPC warnings and leaked-password protection disabled                                               |
+| Security advisor    | 1 warning: leaked-password protection disabled; the 6 public email/token RPC warnings were closed by DB-106                                   |
 | Performance advisor | 16 unused-index notices; no unindexed foreign key, RLS initialization-plan, or multiple-permissive-policy warning                         |
-| Migration parity    | 83 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
+| Migration parity    | 85 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
 
 ## Master work tracker
 
@@ -80,7 +80,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Verified                                                        | Yes             |
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Verified                                                        | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Verified                                                        | Yes             |
-| DB-106 | P1       | Review public email/token RPC risk acceptance                            | In progress — hosted verified; production rollout pending       | Yes             |
+| DB-106 | P1       | Review public email/token RPC risk acceptance                            | Verified                                                        | Yes             |
 | DB-107 | P1       | Configure production Auth, database, and network controls                | Not started                                                     | Yes             |
 | DB-201 | P2       | Repair minor data inconsistencies                                        | Not started                                                     | No              |
 | DB-202 | P2       | Decide long-term content revision and taxonomy models                    | Not started                                                     | No              |
@@ -725,13 +725,13 @@ The migration adds ten named checks with a five-second lock timeout. It adds eac
 
 ### DB-106: Review public email/token RPC risk acceptance
 
-Status: In progress — the review is complete and the service-role-only remediation is verified locally and in a disposable hosted project; production remains unchanged
+Status: Verified on 2026-07-22
 
-Review due: 2026-07-31. Treat this as a near-term review deadline, not an indefinite allowlist.
+Review due: 2026-07-31. Completed before the deadline; the temporary allowlist was removed rather than renewed.
 
 #### Current state
 
-Six security-advisor warnings correspond to three `SECURITY DEFINER` email/token functions currently executable by `anon` and `authenticated`. Their application routes validate input, rate-limit requests, and record security telemetry, but direct Data API callers can bypass those route controls. The temporary allowlist therefore must not be renewed.
+The three `SECURITY DEFINER` email/token functions are executable only by `service_role`. Their application routes validate input, use the production Upstash-backed rate limiter with analytics enabled, and record malformed-token and rate-limit security telemetry. Direct Data API callers can no longer bypass those controls.
 
 The read-only production review on 2026-07-22 confirmed fixed `search_path` values, exact signatures, no public table grants, two email-subscription rows, zero notification-preference rows, 64-character hexadecimal tokens with no duplicates or malformed values, and no matching RPC entry in the available 24-hour API or Postgres log window. Each function returns `void`, so a syntactically valid missing token and a matching token have the same external result shape.
 
@@ -740,10 +740,10 @@ The approved design keeps the browser-facing application routes unchanged while 
 #### Acceptance criteria
 
 - [x] The allowlist review is completed before its review date.
-- [ ] Function grants remain limited to the intended roles.
+- [x] Function grants remain limited to the intended roles.
 - [x] Functions disclose no subscription or notification data.
 - [x] High-entropy token behavior is tested.
-- [ ] Abuse monitoring is confirmed in production.
+- [x] Abuse monitoring is confirmed in production.
 - [x] CAPTCHA is added or explicitly deemed unnecessary based on observed abuse and rate-limit behavior.
 
 #### Pre-production verification — 2026-07-22
@@ -751,10 +751,18 @@ The approved design keeps the browser-facing application routes unchanged while 
 - All 85 migrations replayed from empty locally, including the ACL-only DB-106 migration.
 - The recurring function-ACL check passes with no public `SECURITY DEFINER` exception.
 - The DB-106 role and behavior proof confirms no `anon` or `authenticated` execution, explicit `service_role` execution, fixed search paths, 32-byte random-token defaults, valid unsubscribe behavior, and generic no-match behavior. Its synthetic row is deleted in the same statement.
-- Focused API and security tests, the full 874-test unit suite, the 158-test security suite, repository lint, typecheck, and production build pass.
+- Focused API and security tests, the post-rebase 877-test unit suite, the 158-test security suite, repository lint, typecheck, and production build pass.
 - A Supabase-quoted `$0/month` disposable project in the production region replayed all 85 repository migrations. All 12 recurring database/security checks passed there, the DB-106 ACL state matched the intended roles, no synthetic row remained, and the hosted security advisor returned zero findings. The project was deleted immediately after the evidence was captured.
 - Definition-level comparison with production matched constraints, indexes, policies, functions, triggers, RLS state, and Storage bucket configuration. Public columns and definitions also matched; only the non-semantic physical order of existing `profiles.is_internal` and `profiles.onboarding_state` columns differed because they entered the historical environments in different order.
-- Production remains unchanged pending green PR checks, merge, and an exact production dry-run with explicit rollout authorization.
+- PR #38 passed `validate`, `Security Validation`, and Vercel checks, merged as `140e8a1`, and deployed successfully before the database permission change.
+
+#### Production rollout verification — 2026-07-22
+
+- The final production dry-run proposed exactly `20260722124111_restrict_public_email_rpcs.sql`; it was applied only after explicit authorization. The post-deployment dry-run reports the remote database is up to date and migration history contains exactly one `20260722124111` row.
+- All three functions remain `SECURITY DEFINER` with fixed `search_path=public`; `anon` and `authenticated` have no execute privilege, while `service_role` retains execute privilege. A direct anonymous Data API call now returns HTTP 401.
+- The deployed application health endpoint and both well-formed no-match unsubscribe routes return HTTP 200 through the server-controlled wrapper. Subscriber counts remained unchanged at two email subscriptions and zero notification-preference rows.
+- The six DB-106 security-advisor warnings are gone. The only remaining security-advisor warning is leaked-password protection, tracked by DB-107.
+- The production routes retain Upstash sliding-window analytics and Sentry-backed security telemetry. CAPTCHA remains unnecessary at the current traffic and abuse level, subject to review if telemetry changes.
 
 ### DB-107: Configure production Auth, database, and network controls
 
@@ -864,6 +872,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-20 | DB-105                                | Audited the current production content, segment, series, generated-content RPC, and caller contracts read-only. Authored ten fail-closed core checks plus matching admin API validation while preserving zero-based segment ordering, temporary negative reorder staging, `{}` quick-mode drafts, and legitimate JSON extension keys. All 84 migrations replayed from empty locally; direct SQL and service-role rejection checks, existing database suites, local advisors, typecheck, lint, migration validation, 154 security tests, and the complete 869-test suite passed. Production remains unchanged. | Read-only production data/catalog/statement audit; `20260720145630_enforce_core_content_invariants.sql`; `database-content-invariants-check.sql`; empty local replay; database suites; local advisors and lint; focused and full application tests |
 | 2026-07-20 | DB-105, hosted verification           | Replayed all 84 migrations in order in a $0 disposable hosted project through the IPv4-compatible session pooler. Eleven database security and behavior suites passed, including direct SQL and `service_role` rejection of invalid DB-105 writes. All ten constraints were present and validated, and hosted generated types matched the exact local replay. The project was deleted and production remained unchanged. | Hosted migration count and replay; ten existing SQL suites plus `database-content-invariants-check.sql`; constraint catalog query; hosted/local generated-type comparison; CLI project deletion |
 | 2026-07-22 | DB-105, production release            | Applied the single reviewed constraint migration after green PR #32, successful post-merge checks, a fresh hash-verified logical backup, an exact dry-run, a zero-violation preflight, and explicit authorization. Production reached 84/84 with all ten checks validated and a clean dry-run. Content, segment, and series counts and invariant fingerprints were unchanged; all violation counts remain zero; advisors and lint did not regress; and three public application probes returned HTTP 200. DB-105 is Verified. | PR #32 and merge `e194558`; backup `~/.codex/backups/Lifebook/db105-production-20260722T071552Z`; migration checksum `d3eda9943a70b96d7a10f32186b3de50417df69b8775b4d6e32c1b5973fa3866`; pre/post fingerprints; constraint catalog; parity and dry-run; advisors; lint; HTTP smoke |
+| 2026-07-22 | DB-106, production release            | Reviewed and removed direct Data API execution of the three email/token `SECURITY DEFINER` RPCs. After green PR #38, a complete 85-migration disposable hosted replay, an exact production dry-run, and explicit authorization, production now grants execution only to `service_role`. The post-deployment dry-run is clean, direct anonymous RPC access returns HTTP 401, the server-controlled health and no-match unsubscribe paths return HTTP 200, subscriber counts are unchanged, and all six DB-106 advisor warnings are gone. DB-106 is Verified. | PR #38 and merge `140e8a1`; migration `20260722124111_restrict_public_email_rpcs.sql`; local and hosted 12-suite verification; production migration parity and ACL catalog; direct anonymous denial; application HTTP smoke; advisor audit |
 | 2026-07-15 | DB-004                                | Audited enforcement after CI returned green. No GitHub ruleset exists, and Vercel assigned production for commit `f1ac98a` before `validate` completed. Recorded the exact required check contexts and the two-layer source-control/production-alias enforcement design. Dashboard mutation remains pending an authenticated management session.                                                                                                                                                                                                                                                    | GitHub check-runs and ruleset APIs; Vercel deployment `dpl_DvWR7arw13fWwLyosk1A268wWHyE` and deployment-check documentation                                                                                               |
 | 2026-07-15 | DB-004                                | Created and verified active repository ruleset `18984223` for `main`: no bypass actors, pull requests required, strict `validate` and `Security Validation` GitHub Actions checks required, and deletion/force pushes blocked. Vercel production-alias enforcement and the combined failing-branch challenge remain.                                                                                                                                                                                                                                                                                | Authenticated ruleset creation, full ruleset readback, and active `main` branch-rules query                                                                                                                               |
 | 2026-07-15 | DB-004                                | Added Vercel Deployment Checks for the exact GitHub contexts `validate` and `Security Validation`, both with Production behavior. Vercel confirmed they apply to the next production deployment, and a full settings-page reload preserved both checks. No deployment or production-database mutation was used for this configuration step. DB-004 remains In progress pending observation of the next normal promotion and a safe failing-PR challenge of the GitHub rule.                                                                                                                         | Authenticated Vercel settings mutation, success confirmation, and post-reload configuration readback                                                                                                                      |
@@ -883,9 +892,9 @@ Complete these safeguards before changing production schema or migration history
 - [x] Copy `audio` and `media` Storage objects to an independent location.
 - [x] Record the export time, Storage copy time, operator, source, destination, and restore instructions.
 - [ ] Begin the approved paid-plan upgrade and capacity review from DB-003.
-- [ ] Assign an owner for DB-106 and schedule its review before 2026-07-31.
+- [x] Assign an owner for DB-106 and schedule its review before 2026-07-31. The review and rollout completed on 2026-07-22.
 
-Phase 0 is a containment and recovery prerequisite. It does not mark DB-002, DB-003, or DB-106 fully complete.
+Phase 0 is a containment and recovery prerequisite. It does not by itself mark DB-002 or DB-003 fully complete; DB-106 subsequently completed its full verification workflow.
 
 ### Critical path
 
@@ -913,14 +922,14 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-22: DB-001, DB-002, DB-004, and DB-101 through DB-105 are Verified, completing the planned schema-hardening critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-106 is now in progress: its time-bounded public-RPC review is complete and the service-role-only candidate is locally and hosted verified, with only the production rollout gates pending. DB-107 and DB-203 follow while DB-003 continues in parallel.
+Current position on 2026-07-22: DB-001, DB-002, DB-004, and DB-101 through DB-106 are Verified, completing the planned schema-hardening and public-RPC critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on normal production releases. The remaining authenticated DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-107 and DB-203 are the next security and operational workstreams while DB-003 continues in parallel.
 
 ### Parallel launch gates
 
 Start these alongside the critical path. All must be complete before production launch even though they do not all block one another:
 
 - **DB-003 — Production plan, backup, Storage recovery, RPO, and RTO.**
-- **DB-106 — Public email/token RPC review by 2026-07-31.**
+- [x] **DB-106 — Public email/token RPC review completed on 2026-07-22.**
 - **DB-107 — Auth, SSL, network, SMTP, connection, and secret-rotation controls.**
 - **DB-203 — Capacity, query, worker, security, backup, and restore monitoring.**
 
