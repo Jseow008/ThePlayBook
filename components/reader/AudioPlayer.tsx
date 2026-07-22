@@ -405,6 +405,13 @@ export function AudioPlayer({
                         )}
                     />
                     <div
+                        aria-hidden="true"
+                        className={cn(
+                            `reader-${readerTheme}`,
+                            "pointer-events-none fixed inset-x-0 bottom-0 z-[44] h-[max(0.75rem,var(--safe-area-bottom))] bg-background sm:left-1/2 sm:h-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]"
+                        )}
+                    />
+                    <div
                         className={cn(
                             `reader-${readerTheme}`,
                             "fixed inset-x-3 safe-area-bottom-sm z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]",
