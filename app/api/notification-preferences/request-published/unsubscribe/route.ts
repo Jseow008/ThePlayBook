@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { unsubscribeRequestPublishedNotificationsByToken } from "@/lib/server/email-subscription-rpcs";
 import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordInvalidUnsubscribeToken } from "@/lib/server/security-telemetry";
-import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 const UnsubscribeSchema = z.object({
     token: z.string().trim().min(32).max(128).regex(/^[a-f0-9]+$/i),
@@ -67,10 +67,9 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const { error } = await createPublicServerClient().rpc(
-            "unsubscribe_request_published_notifications_by_token",
-            { p_token: parsed.data.token }
-        );
+        const { error } = await unsubscribeRequestPublishedNotificationsByToken({
+            p_token: parsed.data.token,
+        });
 
         if (error) {
             throw error;

@@ -227,7 +227,7 @@ Implementation notes:
 - `scripts/validate-launch-env.mjs` now requires `HEALTH_CHECK_SECRET` for production validation.
 - Tests cover anonymous liveness output, anonymous no-DB behavior, authorized detailed output, authorized DB readiness caching, concurrent request collapsing, timeout/abort behavior, and deployment-health secret forwarding.
 
-### 6. Remove service-role usage from public email subscription routes
+### 6. Constrain public email subscription mutations
 
 Status: Complete on 2026-06-22.
 
@@ -241,31 +241,33 @@ Affected routes:
 
 Preferred outcome:
 
-- Add narrow RLS policies and use a non-admin Supabase client.
-- For unsubscribe flows, use token-scoped RPCs with strict validation and no broad table access.
+- Keep public handlers behind application input validation, shared rate limiting, and security telemetry.
+- Expose only fixed token/email-scoped operations to the handlers; do not grant browser-facing roles direct table or RPC access.
 
 Acceptance criteria:
 
-- Public handlers no longer import `getAdminClient()`.
-- RLS policies constrain operations to exactly the intended row/token.
+- Public handlers do not directly import `getAdminClient()` or expose a generic privileged client.
+- A narrow server-only wrapper exposes only the three intended RPC calls.
+- `PUBLIC`, `anon`, and `authenticated` cannot execute those RPCs directly.
 - Tests cover invalid token, valid token, duplicate subscription, and malformed payload.
 
 Implementation notes:
 
 - Added the migrations now reconciled as `supabase/migrations/20260621164335_add_public_email_subscription_rpcs.sql` and `supabase/migrations/20260621164646_lock_public_email_table_grants.sql`; DB-001 aligned their repository versions with production history.
-- Added three narrow public `SECURITY DEFINER` RPCs:
+- Added three narrow `SECURITY DEFINER` RPCs:
   - `subscribe_email_subscription(text, text, text, text, text, text, text)`
   - `unsubscribe_email_subscription_by_token(text)`
   - `unsubscribe_request_published_notifications_by_token(text)`
-- The public unsubscribe/subscription routes now use `createPublicServerClient()` with the anon key instead of `getAdminClient()`.
+- The public unsubscribe/subscription routes call the three fixed operations through a narrow server-only wrapper; they do not receive a generic privileged client.
 - The authenticated `/api/notification-preferences` route now uses the user-scoped Supabase server client and authenticated RLS instead of `getAdminClient()`.
 - Anonymous direct table privileges were removed from `email_subscription` and `user_notification_preferences`.
 - Authenticated direct table privileges were removed from `email_subscription`; authenticated `user_notification_preferences` access is limited to own-row `SELECT`, `INSERT`, and `UPDATE`.
 - Subscription writes are constrained by database-side email/source/length validation and idempotent `ON CONFLICT (email_normalized)` resubscribe behavior.
 - Unsubscribe writes are token-scoped, validate hex tokens, and intentionally return generic success without revealing whether a token matched a row.
-- Added exact public definer allowlist entries to `scripts/security-function-acl-check.sql`; all other public `SECURITY DEFINER` functions remain blocked from anon/authenticated execution.
+- The initial June posture used exact public-definer allowlist entries. The DB-106 review on 2026-07-22 found that direct Data API calls could bypass application rate limits and telemetry, so that exception is being retired rather than renewed.
+- The DB-106 candidate moves the three fixed calls behind `lib/server/email-subscription-rpcs.ts`, revokes RPC execution from `PUBLIC`, `anon`, and `authenticated`, and grants only `service_role`. The handlers still never receive a generic database client.
 - Added route tests for valid token, invalid token, duplicate subscription behavior through the idempotent RPC, malformed payloads, RPC failure handling, and rate limiting on the request-published unsubscribe endpoint.
-- Supabase security advisor reports expected `anon_security_definer_function_executable` and `authenticated_security_definer_function_executable` warnings for the three item 6 RPCs. These are intentional public token/email-scoped exceptions; admin/service-only definer findings remain unexpected and blocked by `npm run security:function-acls`.
+- Production continues to report the six `anon_security_definer_function_executable` and `authenticated_security_definer_function_executable` warnings until the reviewed DB-106 migration is deployed. The candidate removes those exceptions from the advisor allowlist and keeps admin/service-only definer drift blocked by `npm run security:function-acls`.
 
 ### 7. Enforce production admin IP allowlist configuration
 

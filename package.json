@@ -32,6 +32,7 @@
     "database:legacy-embedding-retirement": "node scripts/check-database-legacy-embedding-retirement.mjs",
     "database:published-at": "node scripts/check-database-published-at.mjs",
     "database:rls-policies": "node scripts/check-database-rls-policies.mjs",
+    "database:email-rpc-security": "node scripts/check-database-email-rpc-security.mjs",
     "deps:outdated": "node scripts/check-dependency-posture.mjs --outdated",
     "supabase:types": "supabase gen types typescript --project-id \"$SUPABASE_PROJECT_REF\" > types/database.ts",
     "supabase:types:local": "supabase gen types typescript --local > types/database.ts",
