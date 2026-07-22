@@ -173,7 +173,7 @@ Reader themes are scoped separately from the browse UI:
 
 - Default chat provider is Anthropic via `AI_PROVIDER=anthropic`
 - Default chat model is Haiku via `AI_MODEL=claude-haiku-4-5-20251001`
-- Ask My Library synthesis and hybrid requests can use Sonnet via `AI_COMPLEX_MODEL=claude-sonnet-4-20250514`
+- Ask My Library synthesis and hybrid requests can use Sonnet via `AI_COMPLEX_MODEL=claude-sonnet-4-6`
 - OpenAI is supported as fallback for chat routes that allow it
 - AI responses are streamed through the AI SDK
 

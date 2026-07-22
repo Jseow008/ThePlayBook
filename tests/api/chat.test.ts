@@ -7,8 +7,12 @@ import { recordAiRouteAbuse } from '@/lib/server/security-telemetry';
 import { checkAiUsageQuota, recordGeneratedAiMessage } from '@/lib/server/ai-usage-quota';
 import { streamText } from 'ai';
 
-const { anthropicMock } = vi.hoisted(() => ({
+const { anthropicMock, toUIMessageStreamResponseMock } = vi.hoisted(() => ({
     anthropicMock: vi.fn().mockReturnValue('mock-anthropic-model'),
+    toUIMessageStreamResponseMock: vi.fn((options?: { onError?: (error: unknown) => string }) => {
+        void options;
+        return new Response('mocked-stream');
+    }),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -42,7 +46,7 @@ vi.mock('@/lib/server/ai-usage-quota', () => ({
 vi.mock('ai', () => ({
     smoothStream: vi.fn().mockReturnValue('mock-smooth-transform'),
     streamText: vi.fn().mockImplementation(() => ({
-        toTextStreamResponse: () => new Response('mocked-stream')
+        toUIMessageStreamResponse: toUIMessageStreamResponseMock,
     })),
 }));
 
@@ -343,7 +347,7 @@ describe('Chat API', () => {
     });
 
     it('uses hybrid context for source ranking questions', async () => {
-        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-6';
         mockRpc.mockResolvedValueOnce({
             data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.82 }],
             error: null,
@@ -380,11 +384,45 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 450,
         }));
-        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-20250514');
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
+    });
+
+    it('replaces the retired Sonnet 4 override with the supported synthesis model', async () => {
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
+
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: 'Summarize the themes across my library.' }],
+            }),
+        });
+
+        const res = await POST(req);
+
+        expect(res.status).toBe(200);
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
+    });
+
+    it('uses the UI message stream protocol and returns a safe provider error', async () => {
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: 'What have I completed in my library?' }],
+            }),
+        });
+
+        const res = await POST(req);
+        const streamOptions = toUIMessageStreamResponseMock.mock.calls.at(-1)?.[0];
+        const onError = streamOptions?.onError;
+
+        expect(res.status).toBe(200);
+        expect(onError).toEqual(expect.any(Function));
+        if (!onError) throw new Error('Expected UI stream error handler');
+        expect(onError(new Error('provider details'))).toBe('Something went wrong. Please try asking again.');
     });
 
     it('uses reading advisor mode for next-read recommendations from completed items', async () => {
-        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-6';
         mockRpc.mockResolvedValueOnce({
             data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.9 }],
             error: null,
@@ -425,7 +463,7 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('UNDER NO CIRCUMSTANCES recommend a book, article, author, or source that is not explicitly listed'),
         }));
-        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-20250514');
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
     });
 
     it('can answer reading advisor questions from metadata when Gemini retrieval is unavailable', async () => {
