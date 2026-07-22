@@ -884,11 +884,6 @@ mark[data-highlight-spotlight="true"] {
   transform: translateX(0.16rem);
 }
 
-.landing-hero-proof-item {
-  opacity: 1;
-  transform: translateY(0);
-}
-
 .landing-reveal {
   opacity: 0;
   transform: translateY(14px);
@@ -953,18 +948,6 @@ mark[data-highlight-spotlight="true"] {
   }
 }
 
-@keyframes landingHeroProofReveal {
-  from {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @keyframes landingHeroBackgroundDrift {
   from {
     transform: translate3d(-0.32%, -0.18%, 0) scale(1.01);
@@ -1003,13 +986,6 @@ mark[data-highlight-spotlight="true"] {
 
   .landing-hero-emphasis::after {
     animation: landingHeroUnderlineReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 940ms both;
-  }
-
-  .landing-hero-proof-item {
-    opacity: 0;
-    transform: translateY(5px);
-    animation: landingHeroProofReveal 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-    animation-delay: var(--hero-proof-delay, 620ms);
   }
 
   .landing-primary-cta::after {
@@ -1382,7 +1358,6 @@ mark[data-highlight-spotlight="true"] {
   .landing-hero-emphasis,
   .landing-hero-motion-content,
   .landing-hero-pointer-glow,
-  .landing-hero-proof-item,
   .landing-hero-cta-arrow,
   .landing-primary-cta,
   .landing-secondary-cta,
@@ -1407,10 +1382,6 @@ mark[data-highlight-spotlight="true"] {
 
   .landing-hero-pointer-glow {
     opacity: 0;
-  }
-
-  .landing-hero-proof-item {
-    opacity: 1;
   }
 
   .landing-hero-emphasis::after {

@@ -8,29 +8,10 @@ import { Logo } from "@/components/ui/Logo";
 
 const heroRevealStyle = (delay: string) =>
   ({ "--hero-reveal-delay": delay } as CSSProperties);
-const heroProofStyle = (delay: string) =>
-  ({ "--hero-proof-delay": delay } as CSSProperties);
 const PRIMARY_CTA_CLASS =
   "focus-ring landing-primary-cta landing-hero-primary-cta group relative inline-flex min-h-11 min-w-0 items-center justify-center gap-2.5 overflow-hidden rounded-full bg-solar-gold px-6 py-3 text-sm font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.985] sm:px-7 sm:text-base";
 const SECONDARY_CTA_CLASS =
   "focus-ring landing-secondary-cta inline-flex min-h-11 items-center justify-center rounded-full border border-white/[0.14] bg-white/[0.025] px-5 text-sm font-semibold text-zinc-300 transition-[border-color,background-color,color,transform] duration-200 hover:-translate-y-px hover:border-white/25 hover:bg-white/[0.055] hover:text-white active:translate-y-0 active:scale-[0.985]";
-
-function getHeroSummaryCount(totalContentCount: number) {
-  const roundedContentCount = Math.floor(totalContentCount / 100) * 100;
-
-  return roundedContentCount >= 100
-    ? `${roundedContentCount}+ summaries`
-    : "Curated summaries";
-}
-
-function getHeroTopicCount(totalTopicCount: number) {
-  if (totalTopicCount <= 0) return "Topics across the library";
-
-  const roundedTopicCount = Math.floor(totalTopicCount / 5) * 5;
-  if (roundedTopicCount >= 10) return `${roundedTopicCount}+ topics`;
-
-  return `${totalTopicCount} ${totalTopicCount === 1 ? "topic" : "topics"}`;
-}
 
 export function LandingHeader() {
   return (
@@ -63,13 +44,7 @@ export function LandingHeader() {
   );
 }
 
-export function HeroSection({
-  totalContentCount,
-  totalTopicCount,
-}: {
-  totalContentCount: number;
-  totalTopicCount: number;
-}) {
+export function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const pointerFrameRef = useRef<number | null>(null);
   const scrollFrameRef = useRef<number | null>(null);
@@ -182,22 +157,6 @@ export function HeroSection({
           <br className="hidden sm:block" />{" "}
           into knowledge that compounds.
         </p>
-
-        <ul
-          className="landing-hero-reveal mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-center text-[0.72rem] font-medium leading-5 text-zinc-400 sm:mt-7 sm:text-xs"
-          style={heroRevealStyle("410ms")}
-          aria-label="Netflux product capabilities"
-        >
-          <li className="landing-hero-proof-item text-zinc-300" style={heroProofStyle("620ms")}>
-            {getHeroSummaryCount(totalContentCount)}
-          </li>
-          <li className="landing-hero-proof-item flex items-center" style={heroProofStyle("710ms")}>
-            <span aria-hidden="true" className="mx-2.5 text-white/20 sm:mx-3">
-              &bull;
-            </span>
-            {getHeroTopicCount(totalTopicCount)}
-          </li>
-        </ul>
 
         <div
           className="landing-hero-reveal mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:mt-7 sm:gap-x-4"
