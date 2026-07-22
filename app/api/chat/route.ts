@@ -33,9 +33,17 @@ const MAX_OUTPUT_TOKENS = {
     reading_advisor: 550,
 } as const;
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-const DEFAULT_COMPLEX_ASK_MODEL = "claude-sonnet-4-20250514";
+const DEFAULT_COMPLEX_ASK_MODEL = "claude-sonnet-4-6";
+const RETIRED_ANTHROPIC_MODEL_REPLACEMENTS: Record<string, string> = {
+    "claude-sonnet-4-20250514": DEFAULT_COMPLEX_ASK_MODEL,
+};
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
+const EMBEDDING_TIMEOUT_MS = 8_000;
+const GENERATION_TIMEOUT = {
+    totalMs: 30_000,
+    chunkMs: 10_000,
+} as const;
 const PRIMARY_MATCH_THRESHOLD = 0.65;
 const FALLBACK_MATCH_THRESHOLD = 0.55;
 const MATCH_COUNT = 3;
@@ -56,11 +64,11 @@ function shouldUseComplexAskModel(intent: AskIntent) {
 }
 
 function getAnthropicModelName(intent: AskIntent) {
-    if (shouldUseComplexAskModel(intent)) {
-        return process.env.AI_COMPLEX_MODEL || DEFAULT_COMPLEX_ASK_MODEL;
-    }
+    const configuredModel = shouldUseComplexAskModel(intent)
+        ? process.env.AI_COMPLEX_MODEL || DEFAULT_COMPLEX_ASK_MODEL
+        : process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
 
-    return process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
+    return RETIRED_ANTHROPIC_MODEL_REPLACEMENTS[configuredModel] || configuredModel;
 }
 
 function getMessageText(message: Record<string, unknown>): string {
@@ -485,7 +493,13 @@ export async function POST(req: NextRequest) {
                 const embeddingResponse = await ai.models.embedContent({
                     model: EMBEDDING_MODEL,
                     contents: userQuery,
-                    config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+                    config: {
+                        outputDimensionality: EMBEDDING_DIMENSIONS,
+                        httpOptions: {
+                            timeout: EMBEDDING_TIMEOUT_MS,
+                            retryOptions: { attempts: 1 },
+                        },
+                    },
                 });
 
                 queryEmbedding = embeddingResponse.embeddings?.[0]?.values;
@@ -561,7 +575,12 @@ Rules:
             system: systemPrompt,
             messages: trimmedMessages,
             maxOutputTokens: getOutputTokenCap(intent),
+            maxRetries: 1,
+            timeout: GENERATION_TIMEOUT,
             experimental_transform: smoothStream({ delayInMs: 6 }),
+            onError: ({ error }) => {
+                logApiError({ requestId, route: "/api/chat", message: "AI generation stream failed", error });
+            },
             onFinish: async () => {
                 try {
                     await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });

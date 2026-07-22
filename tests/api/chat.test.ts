@@ -270,6 +270,14 @@ describe('Chat API', () => {
         const res = await POST(req);
 
         expect(embedContentMock).toHaveBeenCalled();
+        expect(embedContentMock).toHaveBeenCalledWith(expect.objectContaining({
+            config: expect.objectContaining({
+                httpOptions: {
+                    timeout: 8_000,
+                    retryOptions: { attempts: 1 },
+                },
+            }),
+        }));
 
         // Ensure vector search RPC was called
         expect(mockRpc).toHaveBeenCalledWith('match_library_segments_gemini', expect.objectContaining({
@@ -343,7 +351,7 @@ describe('Chat API', () => {
     });
 
     it('uses hybrid context for source ranking questions', async () => {
-        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-6';
         mockRpc.mockResolvedValueOnce({
             data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.82 }],
             error: null,
@@ -380,11 +388,31 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 450,
         }));
-        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-20250514');
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
+            maxRetries: 1,
+            timeout: { totalMs: 30_000, chunkMs: 10_000 },
+        }));
+    });
+
+    it('replaces the retired Sonnet 4 production override with a supported model', async () => {
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
+
+        const req = new NextRequest(new URL('http://localhost/api/chat'), {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{ role: 'user', content: 'Summarize the themes across my library.' }],
+            }),
+        });
+
+        const res = await POST(req);
+
+        expect(res.status).toBe(200);
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
     });
 
     it('uses reading advisor mode for next-read recommendations from completed items', async () => {
-        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
+        process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-6';
         mockRpc.mockResolvedValueOnce({
             data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.9 }],
             error: null,
@@ -425,7 +453,7 @@ describe('Chat API', () => {
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('UNDER NO CIRCUMSTANCES recommend a book, article, author, or source that is not explicitly listed'),
         }));
-        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-20250514');
+        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
     });
 
     it('can answer reading advisor questions from metadata when Gemini retrieval is unavailable', async () => {
