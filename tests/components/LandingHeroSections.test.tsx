@@ -18,8 +18,8 @@ vi.mock("next/link", () => ({
 }));
 
 describe("Landing hero", () => {
-  it("shows concrete library proof and keeps the CTA hierarchy", () => {
-    render(<HeroSection totalContentCount={487} totalTopicCount={23} />);
+  it("shows the landing proposition and keeps the CTA hierarchy", () => {
+    render(<HeroSection />);
 
     expect(
       screen.getByRole("heading", {
@@ -32,8 +32,8 @@ describe("Landing hero", () => {
         "Turn books, podcasts, articles, and videos into knowledge that compounds."
       )
     ).toBeInTheDocument();
-    expect(screen.getByText("400+ summaries")).toBeInTheDocument();
-    expect(screen.getByText("20+ topics")).toBeInTheDocument();
+    expect(screen.queryByText(/summaries$/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/topics$/i)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Explore the Library" })).toHaveAttribute(
       "href",
       "/browse"
@@ -42,18 +42,5 @@ describe("Landing hero", () => {
       "href",
       "/login"
     );
-  });
-
-  it("uses conservative proof copy for a small library", () => {
-    render(<HeroSection totalContentCount={72} totalTopicCount={7} />);
-
-    expect(screen.getByText("Curated summaries")).toBeInTheDocument();
-    expect(screen.getByText("7 topics")).toBeInTheDocument();
-  });
-
-  it("uses neutral topic proof when category data is unavailable", () => {
-    render(<HeroSection totalContentCount={487} totalTopicCount={0} />);
-
-    expect(screen.getByText("Topics across the library")).toBeInTheDocument();
   });
 });
