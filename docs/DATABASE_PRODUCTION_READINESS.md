@@ -80,7 +80,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Verified                                                        | Yes             |
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Verified                                                        | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Verified                                                        | Yes             |
-| DB-106 | P1       | Review public email/token RPC risk acceptance                            | In progress — review complete; service-only rollout pending     | Yes             |
+| DB-106 | P1       | Review public email/token RPC risk acceptance                            | In progress — hosted verified; production rollout pending       | Yes             |
 | DB-107 | P1       | Configure production Auth, database, and network controls                | Not started                                                     | Yes             |
 | DB-201 | P2       | Repair minor data inconsistencies                                        | Not started                                                     | No              |
 | DB-202 | P2       | Decide long-term content revision and taxonomy models                    | Not started                                                     | No              |
@@ -725,7 +725,7 @@ The migration adds ten named checks with a five-second lock timeout. It adds eac
 
 ### DB-106: Review public email/token RPC risk acceptance
 
-Status: In progress — the review is complete and a service-role-only remediation is verified locally; production remains unchanged
+Status: In progress — the review is complete and the service-role-only remediation is verified locally and in a disposable hosted project; production remains unchanged
 
 Review due: 2026-07-31. Treat this as a near-term review deadline, not an indefinite allowlist.
 
@@ -751,7 +751,10 @@ The approved design keeps the browser-facing application routes unchanged while 
 - All 85 migrations replayed from empty locally, including the ACL-only DB-106 migration.
 - The recurring function-ACL check passes with no public `SECURITY DEFINER` exception.
 - The DB-106 role and behavior proof confirms no `anon` or `authenticated` execution, explicit `service_role` execution, fixed search paths, 32-byte random-token defaults, valid unsubscribe behavior, and generic no-match behavior. Its synthetic row is deleted in the same statement.
-- Focused API and security tests and repository typecheck pass. Production remains unchanged pending full verification, a focused PR, disposable hosted replay, and an exact production dry-run.
+- Focused API and security tests, the full 874-test unit suite, the 158-test security suite, repository lint, typecheck, and production build pass.
+- A Supabase-quoted `$0/month` disposable project in the production region replayed all 85 repository migrations. All 12 recurring database/security checks passed there, the DB-106 ACL state matched the intended roles, no synthetic row remained, and the hosted security advisor returned zero findings. The project was deleted immediately after the evidence was captured.
+- Definition-level comparison with production matched constraints, indexes, policies, functions, triggers, RLS state, and Storage bucket configuration. Public columns and definitions also matched; only the non-semantic physical order of existing `profiles.is_internal` and `profiles.onboarding_state` columns differed because they entered the historical environments in different order.
+- Production remains unchanged pending green PR checks, merge, and an exact production dry-run with explicit rollout authorization.
 
 ### DB-107: Configure production Auth, database, and network controls
 
@@ -910,7 +913,7 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-22: DB-001, DB-002, DB-004, and DB-101 through DB-105 are Verified, completing the planned schema-hardening critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-106 is now in progress: its time-bounded public-RPC review is complete and the service-role-only candidate is locally verified, with hosted and production rollout gates still pending. DB-107 and DB-203 follow while DB-003 continues in parallel.
+Current position on 2026-07-22: DB-001, DB-002, DB-004, and DB-101 through DB-105 are Verified, completing the planned schema-hardening critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-106 is now in progress: its time-bounded public-RPC review is complete and the service-role-only candidate is locally and hosted verified, with only the production rollout gates pending. DB-107 and DB-203 follow while DB-003 continues in parallel.
 
 ### Parallel launch gates
 
