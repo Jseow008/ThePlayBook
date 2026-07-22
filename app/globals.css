@@ -701,7 +701,32 @@ mark[data-highlight-spotlight="true"] {
 }
 
 .landing-hero-section {
+  --hero-pointer-x: 50%;
+  --hero-pointer-y: 42%;
+  --hero-scroll-offset: 0px;
+  --hero-scroll-opacity: 1;
   isolation: isolate;
+}
+
+.landing-hero-motion-content {
+  opacity: var(--hero-scroll-opacity);
+  transform: translate3d(0, var(--hero-scroll-offset), 0);
+  will-change: opacity, transform;
+}
+
+.landing-hero-pointer-glow {
+  background: radial-gradient(
+    circle 360px at var(--hero-pointer-x) var(--hero-pointer-y),
+    color-mix(in srgb, var(--solar-gold-300) 11%, transparent),
+    rgba(255, 255, 255, 0.018) 34%,
+    transparent 72%
+  );
+  opacity: 0;
+  transition: opacity 420ms ease-out;
+}
+
+.landing-hero-section[data-pointer-active="true"] .landing-hero-pointer-glow {
+  opacity: 0.72;
 }
 
 .landing-hero-section::before,
@@ -829,16 +854,34 @@ mark[data-highlight-spotlight="true"] {
   transform: translateX(360%) skewX(-18deg);
 }
 
-.landing-secondary-cta {
+.landing-hero-primary-cta {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.045),
-    0 16px 42px -28px rgba(0, 0, 0, 0.92);
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 14px 32px -22px color-mix(in srgb, var(--solar-gold-500) 48%, transparent);
 }
 
-.landing-secondary-cta:hover {
+.landing-hero-primary-cta::after {
+  display: none;
+}
+
+.landing-hero-primary-cta:hover {
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 18px 48px -30px rgba(255, 255, 255, 0.26);
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+    0 17px 38px -22px color-mix(in srgb, var(--solar-gold-500) 56%, transparent);
+}
+
+.landing-hero-cta-arrow {
+  transition: transform 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.landing-hero-primary-cta:hover .landing-hero-cta-arrow {
+  transform: translateX(0.28rem);
+}
+
+.landing-hero-primary-cta:active .landing-hero-cta-arrow {
+  transform: translateX(0.16rem);
 }
 
 .landing-reveal {
@@ -879,69 +922,6 @@ mark[data-highlight-spotlight="true"] {
   will-change: opacity, transform;
 }
 
-.landing-hero-workflow {
-  color: rgba(212, 212, 216, 0.82);
-}
-
-.landing-hero-workflow-step {
-  min-height: 1.75rem;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.72);
-  transition: color 420ms ease;
-}
-
-.landing-hero-workflow-connector {
-  position: relative;
-  overflow: hidden;
-  width: 0.6rem;
-  height: 1px;
-  flex: none;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), color-mix(in srgb, var(--solar-gold-300) 42%, transparent));
-}
-
-.landing-hero-workflow-connector::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, transparent, rgba(255, 247, 224, 0.86), transparent);
-  opacity: 0;
-  transform: translateX(-115%);
-}
-
-.landing-hero-workflow-step[data-active="true"] {
-  color: var(--solar-gold-50);
-}
-
-.landing-hero-workflow-marker {
-  width: 0.36rem;
-  height: 0.36rem;
-  flex: none;
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.11);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--solar-gold-300) 0%, transparent);
-  transition:
-    border-color 420ms ease,
-    background-color 420ms ease,
-    box-shadow 420ms ease;
-}
-
-.landing-hero-workflow-step[data-active="true"] .landing-hero-workflow-marker {
-  border-color: color-mix(in srgb, var(--solar-gold-300) 90%, transparent);
-  background: var(--solar-gold-300);
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--solar-gold-300) 10%, transparent), 0 0 18px color-mix(in srgb, var(--solar-gold-300) 28%, transparent);
-}
-
-@media (min-width: 640px) {
-  .landing-hero-workflow-connector {
-    width: 1.5rem;
-  }
-
-  .landing-hero-workflow-marker {
-    width: 0.48rem;
-    height: 0.48rem;
-  }
-}
-
 @keyframes landingHeroUnderlineReveal {
   from {
     opacity: 0;
@@ -978,26 +958,6 @@ mark[data-highlight-spotlight="true"] {
   }
 }
 
-@keyframes landingWorkflowConnectorSweep {
-  0% {
-    opacity: 0;
-    transform: translateX(-115%);
-  }
-
-  16% {
-    opacity: 0.82;
-  }
-
-  82% {
-    opacity: 0.62;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(115%);
-  }
-}
-
 @keyframes landingCtaSheenOnce {
   0% {
     opacity: 0;
@@ -1026,10 +986,6 @@ mark[data-highlight-spotlight="true"] {
 
   .landing-hero-emphasis::after {
     animation: landingHeroUnderlineReveal 680ms cubic-bezier(0.22, 1, 0.36, 1) 940ms both;
-  }
-
-  .landing-hero-workflow-connector[data-active="true"]::after {
-    animation: landingWorkflowConnectorSweep 2800ms linear both;
   }
 
   .landing-primary-cta::after {
@@ -1400,8 +1356,9 @@ mark[data-highlight-spotlight="true"] {
   .landing-reveal,
   .landing-reveal.is-visible,
   .landing-hero-emphasis,
-  .landing-hero-workflow-step,
-  .landing-hero-workflow-marker,
+  .landing-hero-motion-content,
+  .landing-hero-pointer-glow,
+  .landing-hero-cta-arrow,
   .landing-primary-cta,
   .landing-secondary-cta,
     .landing-soft-action,
@@ -1423,21 +1380,14 @@ mark[data-highlight-spotlight="true"] {
     transform: none;
   }
 
+  .landing-hero-pointer-glow {
+    opacity: 0;
+  }
+
   .landing-hero-emphasis::after {
     opacity: 0.58;
     transform: translateX(-50%) scaleX(1);
     animation: none;
-  }
-
-  .landing-hero-workflow-step {
-    color: rgba(255, 247, 224, 0.9);
-  }
-
-  .landing-hero-workflow-marker,
-  .landing-hero-workflow-step[data-active="true"] .landing-hero-workflow-marker {
-    border-color: rgba(231, 189, 114, 0.72);
-    background: #e7bd72;
-    box-shadow: none;
   }
 
   .landing-reveal {

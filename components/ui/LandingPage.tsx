@@ -15,7 +15,6 @@ interface LandingPageProps {
   featuredItems: ContentItem[];
   categories: { category: string; count: number }[];
   totalContentCount: number;
-  totalCategoryCount?: number;
 }
 
 export function LandingPage({ featuredItems, categories, totalContentCount }: LandingPageProps) {
