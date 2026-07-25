@@ -1,7 +1,7 @@
 # Netflux Database Production Readiness
 
 Status: Active
-Last verified: 2026-07-18
+Last verified: 2026-07-25
 Scope: Supabase Postgres, Auth, Storage, database-facing application paths, migrations, backup, recovery, and operational readiness.
 
 This document is the single implementation tracker for making the Netflux database reproducible, recoverable, secure, and safe to evolve. It does not replace:
@@ -50,22 +50,22 @@ Netflux is database-production-ready only when all of the following are true:
 
 ## Verified baseline
 
-The operational data snapshot was collected read-only on 2026-07-14; migration parity and advisor counts were reverified on 2026-07-18. Counts will change over time.
+The core data snapshot was collected read-only on 2026-07-14; migration parity and security-advisor counts were reverified on 2026-07-22; database size and Storage inventory were reverified during the 2026-07-25 recovery-point refresh. Counts will change over time.
 
 | Area                | Verified state                                                                                                                                  |
 | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | Project             | Active and healthy, PostgreSQL 17.6, `ap-south-1`                                                                                               |
 | Plan                | Free                                                                                                                                            |
-| Database            | Approximately 59 MB                                                                                                                             |
+| Database            | 64,474,259 bytes (approximately 64.5 MB)                                                                                                        |
 | Public schema       | 20 tables; RLS enabled on all 20                                                                                                                |
 | Content             | 474 items, including 406 active verified items and 67 active drafts                                                                             |
 | Segments            | 4,813                                                                                                                                           |
 | Gemini embeddings   | 4,088 segment embeddings; no missing embeddings for eligible active verified segments                                                           |
 | User annotations    | 80 highlights                                                                                                                                   |
-| Storage             | 981 objects: 246 `audio` and 735 `media`, approximately 1.15 GB                                                                                 |
-| Security advisor    | 7 warnings: 6 intentional public email/token RPC warnings and leaked-password protection disabled                                               |
+| Storage             | 1,013 objects: 261 `audio` and 752 `media`, totaling 1,222,139,218 bytes (approximately 1.22 GB)                                                |
+| Security advisor    | 1 warning: leaked-password protection disabled; the 6 public email/token RPC warnings were closed by DB-106                                   |
 | Performance advisor | 16 unused-index notices; no unindexed foreign key, RLS initialization-plan, or multiple-permissive-policy warning                         |
-| Migration parity    | 83 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
+| Migration parity    | 85 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
 
 ## Master work tracker
 
@@ -80,7 +80,7 @@ The operational data snapshot was collected read-only on 2026-07-14; migration p
 | DB-103 | P1       | Optimize and simplify RLS policies                                       | Verified                                                        | Yes             |
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Verified                                                        | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Verified                                                        | Yes             |
-| DB-106 | P1       | Review public email/token RPC risk acceptance                            | In progress — hosted verified; production rollout pending       | Yes             |
+| DB-106 | P1       | Review public email/token RPC risk acceptance                            | Verified                                                        | Yes             |
 | DB-107 | P1       | Configure production Auth, database, and network controls                | Not started                                                     | Yes             |
 | DB-201 | P2       | Repair minor data inconsistencies                                        | Not started                                                     | No              |
 | DB-202 | P2       | Decide long-term content revision and taxonomy models                    | Not started                                                     | No              |
@@ -389,12 +389,12 @@ The existing embedding-preservation code is useful evidence for identifying stab
 
 ### DB-003: Establish production plan, backup, Storage backup, and restore readiness
 
-Status: In progress — recovery targets, independent Storage verification, a local restore drill, production bucket controls, and a fresh 2026-07-17 manual recovery point are complete; paid-plan retention, PITR, automated cadence, and alerts remain
+Status: In progress — recovery targets, independent Storage verification, a local restore drill, production bucket controls, and a fresh 2026-07-25 manual recovery point are complete; paid-plan retention, PITR, automated cadence, and alerts remain
 
 #### Evidence
 
 - The linked organization is on the Free plan.
-- Production contains 981 Storage objects: 246 in `audio` and 735 in `media`, totaling 1,146,837,837 bytes (approximately 1.15 GB).
+- Production contains 1,013 Storage objects: 261 in `audio` and 752 in `media`, totaling 1,222,139,218 bytes (approximately 1.22 GB) as of the 2026-07-25 recovery-point refresh.
 - Free projects do not provide the production availability and automatic-backup posture required by this project.
 - Database backups contain Storage metadata, not the underlying Storage objects.
 - `supabase backups list` again reported no retained physical backups visible to the project, `pitr_enabled: false`, and `walg_enabled: true` on 2026-07-17. WAL archiving capability without a retained, restorable backup or PITR window does not satisfy the launch RPO.
@@ -404,18 +404,19 @@ Status: In progress — recovery targets, independent Storage verification, a lo
 - The independent Storage copy at `~/Backups/Netflux/2026-07-14-db001-pre-repair/storage` contains the same 981 objects and 1,146,837,837 bytes as production. All 981 entries in `storage.sha256` passed SHA-256 verification on 2026-07-15.
 - The DB-002 logical backup at `~/.codex/backups/Lifebook/db002-production-20260715T061325Z` passed its recorded SHA-256 checks and was restored into an isolated local Supabase stack using current platform images. Recovered highlight, embedding, Auth, role, and Storage-metadata invariants passed; six application smoke checks passed, including synthetic-admin login, and the fixture and stack were destroyed afterward. [`OPS.md`](./OPS.md) records the drill and its local-only asset-host accommodation.
 - A fresh manual recovery point completed on 2026-07-17 without production mutation. `~/.codex/backups/Lifebook/db003-production-20260717T085243Z` contains mode-`0600` role, schema, and 49-section data dumps plus a passing SHA-256 manifest. `~/Backups/Netflux/2026-07-17-db003-recovery/storage` contains all 246 `audio` and 735 `media` objects. Its 981-entry SHA-256 manifest passed, and the counts and 1,146,837,837-byte total match the live production inventory exactly. This refresh restores a current manual recovery point but does not satisfy the required automated cadence or hosted retention.
+- A second manual recovery-point refresh completed on 2026-07-25 without production mutation. `~/.codex/backups/Lifebook/db003-production-20260725T042740Z` contains owner-only role, schema, and 49-section data dumps; all three SHA-256 checks passed. `~/Backups/Netflux/2026-07-25-db003-recovery/storage` contains 261 `audio` and 752 `media` objects. Production inventories taken before and after the copy matched the local 1,013-object, 1,222,139,218-byte inventory exactly, and all 1,013 object hashes passed. This refresh re-establishes a current manual recovery point but still does not satisfy the automated cadence, hosted-retention, or alerting gates.
 
 #### Recovery objectives and retention policy
 
 - **Database RPO:** no more than 24 hours of committed data loss before public launch. Move to one hour or better through PITR only when revenue, meaningful usage, write volume, or the cost of losing up to 24 hours of data justifies the additional recurring spend.
 - **Storage RPO:** no more than 24 hours of new or changed object loss before public launch.
 - **Service RTO:** restore database access, required Storage objects, public browse/read, and admin access within four hours of declaring a recoverable incident.
-- **Retention:** retain at least 30 daily database and independent Storage recovery points plus 12 monthly recovery points. Keep the 2026-07-14, 2026-07-15, 2026-07-16, and 2026-07-17 recovery points until this automated policy has operated successfully for 30 days.
+- **Retention:** retain at least 30 daily database and independent Storage recovery points plus 12 monthly recovery points. Keep the 2026-07-14, 2026-07-15, 2026-07-16, 2026-07-17, and 2026-07-25 recovery points until this automated policy has operated successfully for 30 days.
 - The current manual-only database export cadence and disabled PITR do **not** meet the launch RPO. The gap is accepted temporarily while the product remains pre-revenue with minimal usage, but DB-003 must remain In progress and the project must not be represented as launch-ready under this posture.
 
 #### Proportionate staged posture
 
-- **Current pre-revenue stage:** remain on Free and spend USD 0 on PITR. Keep verified manual recovery points, refresh them before database-facing releases and other risky operations, and explicitly accept that this does not provide the launch RPO or production availability. Production Storage currently totals approximately 1.15 GB against the documented 1 GB Free quota, so reduce usage below quota or upgrade before service restrictions become a risk.
+- **Current pre-revenue stage:** remain on Free and spend USD 0 on PITR. Keep verified manual recovery points, refresh them before database-facing releases and other risky operations, and explicitly accept that this does not provide the launch RPO or production availability. Production Storage currently totals approximately 1.22 GB against the documented 1 GB Free quota, so reduce usage below quota or upgrade before service restrictions become a risk.
 - **Public-launch stage:** upgrade to Pro with the Spend Cap enabled and retain the default Micro compute unless measured load requires more. Current Supabase documentation lists Pro at USD 25 per month, includes USD 10 of compute credit for one default Micro project, provides seven days of automatic daily backups, and includes 100 GB of Storage. Confirm the checkout total and applicable tax before purchase because pricing can change.
 - Continue daily off-platform logical database and Storage recovery points at launch, retaining 30 daily and 12 monthly recovery points. Hosted daily backups provide rapid platform recovery; independent copies protect against project deletion and Storage-object loss.
 - **Scale trigger:** add Small compute and seven-day PITR only when losing up to 24 hours of writes becomes commercially or operationally unacceptable. Current documentation prices this combined posture at approximately USD 130 per month after compute credit and describes a worst-case PITR RPO of two minutes.
@@ -725,13 +726,13 @@ The migration adds ten named checks with a five-second lock timeout. It adds eac
 
 ### DB-106: Review public email/token RPC risk acceptance
 
-Status: In progress — the review is complete and the service-role-only remediation is verified locally and in a disposable hosted project; production remains unchanged
+Status: Verified on 2026-07-22
 
-Review due: 2026-07-31. Treat this as a near-term review deadline, not an indefinite allowlist.
+Review due: 2026-07-31. Completed before the deadline; the temporary allowlist was removed rather than renewed.
 
 #### Current state
 
-Six security-advisor warnings correspond to three `SECURITY DEFINER` email/token functions currently executable by `anon` and `authenticated`. Their application routes validate input, rate-limit requests, and record security telemetry, but direct Data API callers can bypass those route controls. The temporary allowlist therefore must not be renewed.
+The three `SECURITY DEFINER` email/token functions are executable only by `service_role`. Their application routes validate input, use the production Upstash-backed rate limiter with analytics enabled, and record malformed-token and rate-limit security telemetry. Direct Data API callers can no longer bypass those controls.
 
 The read-only production review on 2026-07-22 confirmed fixed `search_path` values, exact signatures, no public table grants, two email-subscription rows, zero notification-preference rows, 64-character hexadecimal tokens with no duplicates or malformed values, and no matching RPC entry in the available 24-hour API or Postgres log window. Each function returns `void`, so a syntactically valid missing token and a matching token have the same external result shape.
 
@@ -740,10 +741,10 @@ The approved design keeps the browser-facing application routes unchanged while 
 #### Acceptance criteria
 
 - [x] The allowlist review is completed before its review date.
-- [ ] Function grants remain limited to the intended roles.
+- [x] Function grants remain limited to the intended roles.
 - [x] Functions disclose no subscription or notification data.
 - [x] High-entropy token behavior is tested.
-- [ ] Abuse monitoring is confirmed in production.
+- [x] Abuse monitoring is confirmed in production.
 - [x] CAPTCHA is added or explicitly deemed unnecessary based on observed abuse and rate-limit behavior.
 
 #### Pre-production verification — 2026-07-22
@@ -751,14 +752,43 @@ The approved design keeps the browser-facing application routes unchanged while 
 - All 85 migrations replayed from empty locally, including the ACL-only DB-106 migration.
 - The recurring function-ACL check passes with no public `SECURITY DEFINER` exception.
 - The DB-106 role and behavior proof confirms no `anon` or `authenticated` execution, explicit `service_role` execution, fixed search paths, 32-byte random-token defaults, valid unsubscribe behavior, and generic no-match behavior. Its synthetic row is deleted in the same statement.
-- Focused API and security tests, the full 874-test unit suite, the 158-test security suite, repository lint, typecheck, and production build pass.
+- Focused API and security tests, the post-rebase 877-test unit suite, the 158-test security suite, repository lint, typecheck, and production build pass.
 - A Supabase-quoted `$0/month` disposable project in the production region replayed all 85 repository migrations. All 12 recurring database/security checks passed there, the DB-106 ACL state matched the intended roles, no synthetic row remained, and the hosted security advisor returned zero findings. The project was deleted immediately after the evidence was captured.
 - Definition-level comparison with production matched constraints, indexes, policies, functions, triggers, RLS state, and Storage bucket configuration. Public columns and definitions also matched; only the non-semantic physical order of existing `profiles.is_internal` and `profiles.onboarding_state` columns differed because they entered the historical environments in different order.
-- Production remains unchanged pending green PR checks, merge, and an exact production dry-run with explicit rollout authorization.
+- PR #38 passed `validate`, `Security Validation`, and Vercel checks, merged as `140e8a1`, and deployed successfully before the database permission change.
+
+#### Production rollout verification — 2026-07-22
+
+- The final production dry-run proposed exactly `20260722124111_restrict_public_email_rpcs.sql`; it was applied only after explicit authorization. The post-deployment dry-run reports the remote database is up to date and migration history contains exactly one `20260722124111` row.
+- All three functions remain `SECURITY DEFINER` with fixed `search_path=public`; `anon` and `authenticated` have no execute privilege, while `service_role` retains execute privilege. A direct anonymous Data API call now returns HTTP 401.
+- The deployed application health endpoint and both well-formed no-match unsubscribe routes return HTTP 200 through the server-controlled wrapper. Subscriber counts remained unchanged at two email subscriptions and zero notification-preference rows.
+- The six DB-106 security-advisor warnings are gone. The only remaining security-advisor warning is leaked-password protection, tracked by DB-107.
+- The production routes retain Upstash sliding-window analytics and Sentry-backed security telemetry. CAPTCHA remains unnecessary at the current traffic and abuse level, subject to review if telemetry changes.
 
 ### DB-107: Configure production Auth, database, and network controls
 
-Status: Not started
+Status: In progress
+
+#### Current verified state (2026-07-25)
+
+- Production Auth no longer automatically confirms direct email sign-ups. `mailer_autoconfirm` was changed from `true` to `false` through the Management API and verified through the public Auth settings endpoint. Existing users, Google sign-in, email magic-link sign-in, and admin password sign-in remain enabled; the application health endpoint returned HTTP 200 after the Auth reload.
+- Email ownership confirmation is therefore required for any direct email sign-up that bypasses the application's `shouldCreateUser: false` magic-link flow. No Auth user was created or modified by the configuration change; production remains at nine confirmed users and zero unconfirmed users.
+- Email OTP expiry is 3,600 seconds and OTP length is eight digits. Redirects are restricted to the production Netflux origins plus the intentional localhost development callbacks. Secure email change and refresh-token rotation are enabled.
+- Password minimum length remains six and no character-class requirement is configured. Do not strengthen this blindly: Supabase can reject sign-in for an existing weak password, and the production admin uses password authentication. Verify or rotate the admin credential before changing the policy.
+- Leaked-password protection remains unavailable on the Free plan. This is the only current Supabase security-advisor warning and is accepted until a paid plan is justified.
+- Custom SMTP and Auth security-notification emails remain disabled. The application already uses a separate server-side email provider, but Supabase Auth SMTP credentials and delivery behavior must be tested before enabling Auth email delivery for users.
+- User-level TOTP is available, but dashboard-account MFA enrollment and recovery-code custody require an interactive owner action. Organization-wide MFA enforcement is paid-only.
+- SSL enforcement is currently disabled. Database network restrictions are technically applied as `0.0.0.0/0` and `::/0`, which is effectively unrestricted. The Vercel application uses Supabase's HTTPS APIs and is unaffected by database-IP restrictions, but operator and GitHub production-verification SQL connections must be mapped before tightening the database allowlist.
+- The application does not use a runtime direct Postgres connection. Hosted disposable verification intentionally uses the IPv4-compatible session pooler; serverless transaction pooling is not currently part of the application runtime.
+- All 20 public tables have RLS enabled and at least one policy. The live security advisor reports no exposed-table or function warning. Current function ACL and sensitive-table checks run in the required security workflow, but a generic fail-closed new-object grant check remains to be added.
+
+#### Deferred controls and safety gates
+
+- Do not enable SSL enforcement without verifying every operational connection string and scheduling the short database restart documented by Supabase.
+- Do not enable restrictive database CIDRs until the production-verification runner and operator recovery paths have stable, tested source addresses.
+- Do not enable CAPTCHA until the browser Auth flow passes the provider token; enabling only the server setting would break sign-in and sign-up requests.
+- Do not enable password reauthentication requirements until the application implements and tests the corresponding nonce/current-password flow.
+- Do not enable paid leaked-password protection or organization-wide MFA enforcement while the project remains intentionally on the Free plan.
 
 #### Acceptance criteria
 
@@ -854,6 +884,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-16 | DB-003, release gate                  | Verified the ordered 79-migration repository state, including `20260715070000_add_content_published_at.sql` followed by the bucket-limit migration, in a short-lived empty hosted project. Seven SQL security and behavior suites passed; generated types differed from production only by the four expected `published_at` declarations; the 14-category fingerprint differed only in the intended column, functions and ACL, index, trigger, and two bucket configurations; public table/RPC probes returned HTTP 200; advisors introduced no security regression. Synthetic rows were removed and the disposable project was deleted. Production remained unchanged. | Local empty replay and idempotency replay, hosted migration-name parity, schema inventory diff, generated-type diff, seven SQL suites, advisor comparison, three public REST/RPC probes, and confirmed disposable-project deletion |
 | 2026-07-16 | DB-003, production release            | Applied the reviewed `published_at` and Storage bucket-limit migrations as one production batch after a fresh private roles/schema/data backup, pre-change content fingerprint, bucket configuration snapshot, zero-incompatible-object audit, exact dry-run, and explicit authorization. Production is now 79/79 with recorded-SQL parity and a clean dry-run; all 14 schema categories match local replay; 423 verified items were backfilled to their original creation times while 101 drafts remained unpublished and the verified-row `updated_at` fingerprint did not change. The bucket contracts are live, all 981 Storage objects and total bytes are unchanged, five security suites passed, anonymous RPC smoke passed, and seven public application routes returned HTTP 200. Advisors reported only the existing DB-103/DB-106/DB-107 findings, and lint reported only the pre-existing notification enum-cast error. | Private backup `~/.codex/backups/Lifebook/published-at-storage-production-20260716T094053Z`, migration parity and dry-run, 14-category schema fingerprint, content and Storage invariants, production security suites, advisors, lint, anonymous RPC smoke, and public HTTP smoke |
 | 2026-07-17 | DB-003, recovery-point refresh        | Reconfirmed the organization remains on the Free plan with no retained physical backup and PITR disabled, measured the production database at 64,228,499 bytes, and created a fresh read-only logical database export plus complete independent Storage copy. All three database dump hashes and all 981 Storage hashes passed; Storage counts and 1,146,837,837 total bytes match production exactly. This restores a current manual recovery point but does not close the paid-plan, PITR, automated-retention, or alerting gates. | `supabase backups list`, read-only database/Storage inventory, private database backup `~/.codex/backups/Lifebook/db003-production-20260717T085243Z`, independent Storage backup `~/Backups/Netflux/2026-07-17-db003-recovery`, and SHA-256 manifests |
+| 2026-07-25 | DB-003, recovery-point refresh        | Created a fresh read-only logical database export and complete independent Storage copy. All three database dump hashes and all 1,013 Storage hashes passed; production inventories before and after the copy matched the local 261-audio, 752-media, 1,222,139,218-byte backup exactly. The database measured 64,474,259 bytes. No production database row, schema object, migration record, bucket setting, or Storage object was changed. This restores a current manual recovery point but does not close the automated-retention, alerting, Free-plan availability, or launch-RPO gates. | Private database backup `~/.codex/backups/Lifebook/db003-production-20260725T042740Z`, independent Storage backup `~/Backups/Netflux/2026-07-25-db003-recovery`, pre/post live Storage inventories, and SHA-256 manifests |
 | 2026-07-17 | DB-101                                | Confirmed cosine must remain the Gemini retrieval metric, authored the cosine HNSW swap and index-eligible normal query path, preserved exact completion-boosted reranking, and added a fail-closed local/disposable regression check to the required Security Validation workflow. An empty replay passed. On the isolated production recovery snapshot, 97 real query vectors across all five libraries achieved exact top-12 set and order agreement at `ef_search = 200`; 20 representative normal searches improved from approximately 420.5 ms to 66.9 ms total. Production remained read-only and unchanged. | Live catalog/norm/distribution audit, `20260717101501_align_gemini_cosine_index.sql`, `database-gemini-vector-index-check.sql`, empty local reset, restored-snapshot relevance comparison, function-scoped index statistics, and comparative `EXPLAIN (ANALYZE, BUFFERS)` |
 | 2026-07-17 | DB-101, hosted verification           | Created a $0 short-lived project in the production region, replayed all 80 migration names in repository order, verified the cosine index and function settings on PostgreSQL 17.6/pgvector 0.8.2, passed eight database security and behavior suites, generated types, and confirmed no DB-101 fixtures remained. Advisors introduced no security finding and no unused Gemini HNSW warning. The disposable project was deleted and production remained unchanged. | Hosted migration-name parity, catalog verification, eight SQL suites, generated types, advisor comparison with production, fixture cleanup query, CLI deletion, and post-deletion project inventory |
 | 2026-07-17 | DB-101, production release            | Squash-merged green PR #21, created and hash-verified a fresh private logical backup, confirmed an exact one-migration dry-run, and applied the cosine HNSW migration with explicit authorization. Production reached 80/80 and a clean dry-run. All 4,088 embedding rows and their fingerprint remained unchanged; 97 normal-query ordered results matched the pre-deployment fingerprint; 25 boosted queries matched exact reranking; the valid cosine index recorded 97 scans; five security suites and seven public-route checks passed; security advisors did not regress; the obsolete unused-index finding disappeared; and the project remained healthy. | PR #21 and merge `1f852a6`; backup `~/.codex/backups/Lifebook/db101-production-20260717T143148Z`; migration checksum `82956decf8d46b001dec9732a08abee51332680f11083e1607867e903777e6e8`; pre/post data and relevance fingerprints; index catalog/statistics; parity and dry-run; security suites; advisor comparison; lint; Postgres logs; HTTP smoke |
@@ -864,6 +895,8 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-20 | DB-105                                | Audited the current production content, segment, series, generated-content RPC, and caller contracts read-only. Authored ten fail-closed core checks plus matching admin API validation while preserving zero-based segment ordering, temporary negative reorder staging, `{}` quick-mode drafts, and legitimate JSON extension keys. All 84 migrations replayed from empty locally; direct SQL and service-role rejection checks, existing database suites, local advisors, typecheck, lint, migration validation, 154 security tests, and the complete 869-test suite passed. Production remains unchanged. | Read-only production data/catalog/statement audit; `20260720145630_enforce_core_content_invariants.sql`; `database-content-invariants-check.sql`; empty local replay; database suites; local advisors and lint; focused and full application tests |
 | 2026-07-20 | DB-105, hosted verification           | Replayed all 84 migrations in order in a $0 disposable hosted project through the IPv4-compatible session pooler. Eleven database security and behavior suites passed, including direct SQL and `service_role` rejection of invalid DB-105 writes. All ten constraints were present and validated, and hosted generated types matched the exact local replay. The project was deleted and production remained unchanged. | Hosted migration count and replay; ten existing SQL suites plus `database-content-invariants-check.sql`; constraint catalog query; hosted/local generated-type comparison; CLI project deletion |
 | 2026-07-22 | DB-105, production release            | Applied the single reviewed constraint migration after green PR #32, successful post-merge checks, a fresh hash-verified logical backup, an exact dry-run, a zero-violation preflight, and explicit authorization. Production reached 84/84 with all ten checks validated and a clean dry-run. Content, segment, and series counts and invariant fingerprints were unchanged; all violation counts remain zero; advisors and lint did not regress; and three public application probes returned HTTP 200. DB-105 is Verified. | PR #32 and merge `e194558`; backup `~/.codex/backups/Lifebook/db105-production-20260722T071552Z`; migration checksum `d3eda9943a70b96d7a10f32186b3de50417df69b8775b4d6e32c1b5973fa3866`; pre/post fingerprints; constraint catalog; parity and dry-run; advisors; lint; HTTP smoke |
+| 2026-07-22 | DB-106, production release            | Reviewed and removed direct Data API execution of the three email/token `SECURITY DEFINER` RPCs. After green PR #38, a complete 85-migration disposable hosted replay, an exact production dry-run, and explicit authorization, production now grants execution only to `service_role`. The post-deployment dry-run is clean, direct anonymous RPC access returns HTTP 401, the server-controlled health and no-match unsubscribe paths return HTTP 200, subscriber counts are unchanged, and all six DB-106 advisor warnings are gone. DB-106 is Verified. | PR #38 and merge `140e8a1`; migration `20260722124111_restrict_public_email_rpcs.sql`; local and hosted 12-suite verification; production migration parity and ACL catalog; direct anonymous denial; application HTTP smoke; advisor audit |
+| 2026-07-25 | DB-107, Auth configuration            | Completed the production Auth, connection, network, Data API, and application-compatibility audit. Disabled automatic confirmation for direct email sign-ups as a narrowly scoped, reversible Free-plan control. The public Auth settings now report confirmation required while Google and email providers remain enabled; the Auth service reloaded cleanly, application health returned HTTP 200, and all nine existing users remain confirmed. Password hardening, SMTP, dashboard MFA, SSL enforcement, and restrictive database CIDRs remain behind their documented compatibility or owner-action gates. | Management API and public Auth settings; Auth logs; production health probe; network-restriction and SSL-enforcement status; live RLS, grant, and security-advisor catalogs |
 | 2026-07-15 | DB-004                                | Audited enforcement after CI returned green. No GitHub ruleset exists, and Vercel assigned production for commit `f1ac98a` before `validate` completed. Recorded the exact required check contexts and the two-layer source-control/production-alias enforcement design. Dashboard mutation remains pending an authenticated management session.                                                                                                                                                                                                                                                    | GitHub check-runs and ruleset APIs; Vercel deployment `dpl_DvWR7arw13fWwLyosk1A268wWHyE` and deployment-check documentation                                                                                               |
 | 2026-07-15 | DB-004                                | Created and verified active repository ruleset `18984223` for `main`: no bypass actors, pull requests required, strict `validate` and `Security Validation` GitHub Actions checks required, and deletion/force pushes blocked. Vercel production-alias enforcement and the combined failing-branch challenge remain.                                                                                                                                                                                                                                                                                | Authenticated ruleset creation, full ruleset readback, and active `main` branch-rules query                                                                                                                               |
 | 2026-07-15 | DB-004                                | Added Vercel Deployment Checks for the exact GitHub contexts `validate` and `Security Validation`, both with Production behavior. Vercel confirmed they apply to the next production deployment, and a full settings-page reload preserved both checks. No deployment or production-database mutation was used for this configuration step. DB-004 remains In progress pending observation of the next normal promotion and a safe failing-PR challenge of the GitHub rule.                                                                                                                         | Authenticated Vercel settings mutation, success confirmation, and post-reload configuration readback                                                                                                                      |
@@ -883,9 +916,9 @@ Complete these safeguards before changing production schema or migration history
 - [x] Copy `audio` and `media` Storage objects to an independent location.
 - [x] Record the export time, Storage copy time, operator, source, destination, and restore instructions.
 - [ ] Begin the approved paid-plan upgrade and capacity review from DB-003.
-- [ ] Assign an owner for DB-106 and schedule its review before 2026-07-31.
+- [x] Assign an owner for DB-106 and schedule its review before 2026-07-31. The review and rollout completed on 2026-07-22.
 
-Phase 0 is a containment and recovery prerequisite. It does not mark DB-002, DB-003, or DB-106 fully complete.
+Phase 0 is a containment and recovery prerequisite. It does not by itself mark DB-002 or DB-003 fully complete; DB-106 subsequently completed its full verification workflow.
 
 ### Critical path
 
@@ -913,14 +946,14 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-22: DB-001, DB-002, DB-004, and DB-101 through DB-105 are Verified, completing the planned schema-hardening critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on a normal production release. The remaining authenticated allowlisted DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-106 is now in progress: its time-bounded public-RPC review is complete and the service-role-only candidate is locally and hosted verified, with only the production rollout gates pending. DB-107 and DB-203 follow while DB-003 continues in parallel.
+Current position on 2026-07-22: DB-001, DB-002, DB-004, and DB-101 through DB-106 are Verified, completing the planned schema-hardening and public-RPC critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on normal production releases. The remaining authenticated DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-107 and DB-203 are the next security and operational workstreams while DB-003 continues in parallel.
 
 ### Parallel launch gates
 
 Start these alongside the critical path. All must be complete before production launch even though they do not all block one another:
 
 - **DB-003 — Production plan, backup, Storage recovery, RPO, and RTO.**
-- **DB-106 — Public email/token RPC review by 2026-07-31.**
+- [x] **DB-106 — Public email/token RPC review completed on 2026-07-22.**
 - **DB-107 — Auth, SSL, network, SMTP, connection, and secret-rotation controls.**
 - **DB-203 — Capacity, query, worker, security, backup, and restore monitoring.**
 

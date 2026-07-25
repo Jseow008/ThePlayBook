@@ -3,6 +3,7 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const isProduction = process.env.NODE_ENV === "production";
+const isPlaywrightTest = process.env.PLAYWRIGHT_TEST === "1";
 const productionScriptSrc = "script-src 'self' 'unsafe-inline';";
 const developmentScriptSrc = "script-src 'self' 'unsafe-eval' 'unsafe-inline';";
 const strictReportOnlyScriptSrc = "script-src 'self';";
@@ -122,6 +123,8 @@ function getPostHogProxyRewrites(proxyPath: string) {
 }
 
 const nextConfig: NextConfig = {
+  devIndicators: isPlaywrightTest ? false : undefined,
+  distDir: isPlaywrightTest ? ".next-playwright" : ".next",
   outputFileTracingIncludes: {
     "/api/admin/content": ffmpegTraceIncludes,
     "/api/admin/content/[id]": ffmpegTraceIncludes,
