@@ -722,3 +722,10 @@ Record:
 - **Storage:** `~/Backups/Netflux/2026-07-17-db003-recovery/storage` contains 246 `audio` objects and 735 `media` objects. The 981-object, 1,146,837,837-byte inventory matches production exactly, and all entries in `storage.sha256` passed.
 - **Scope:** this refresh did not run a second restore drill because the 2026-07-15 drill already proved the current restore procedure. It did not mutate production data, schema, migration history, bucket configuration, or Storage objects.
 - **Remaining launch gate:** manual recovery points are safeguards, not the required operating posture. Upgrade to an approved paid plan, enable the approved backup/PITR retention, automate database and Storage recovery points, and configure cost and capacity monitoring before marking DB-003 Verified.
+
+#### 2026-07-25 recovery-point refresh
+
+- **Database:** `~/.codex/backups/Lifebook/db003-production-20260725T042740Z` contains owner-only role, schema, and data dumps created read-only from production. The data dump contains 49 `COPY` sections. All three SQL files are mode `0600`, and `shasum -a 256 -c SHA256SUMS` passed.
+- **Storage:** `~/Backups/Netflux/2026-07-25-db003-recovery/storage` contains 261 `audio` objects and 752 `media` objects. Production inventories captured before and after the copy matched the local 1,013-object, 1,222,139,218-byte inventory exactly, and all 1,013 entries in `storage.sha256` passed.
+- **Scope:** this refresh did not run another restore drill because the 2026-07-15 drill already proved the current logical restore procedure. It did not mutate production data, schema, migration history, bucket configuration, Auth configuration, or Storage objects.
+- **Remaining launch gate:** this verified manual recovery point is current but does not establish the required recurring cadence. Automated database and Storage recovery points, freshness/failure alerts, approved retention, and a launch-stage plan decision remain required before marking DB-003 Verified.
