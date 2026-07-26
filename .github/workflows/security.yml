@@ -97,10 +97,12 @@ jobs:
       - name: Supabase SQL drift checks
         run: |
           npm run security:function-acls
+          npm run security:new-object-access
           npm run security:admin-rpc-acls
           npm run security:embedding-table-reads
           npm run security:storage-bucket-listing
           npm run security:analytics-rls
+          npm run database:rls-policies
           npm run database:gemini-vector-index
           npm run database:foreign-key-indexes
           npm run database:content-invariants
