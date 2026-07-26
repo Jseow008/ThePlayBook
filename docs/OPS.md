@@ -643,6 +643,103 @@ These routes/files are generated from runtime configuration:
 - `app/robots.ts`
 - `app/sitemap.ts`
 
+### 4.5 Supabase Elevated-Key Rotation and Emergency Recovery
+
+This procedure covers the server-only Supabase credential stored as `SUPABASE_SERVICE_KEY`. The application keeps that environment-variable name for compatibility, but its value should be a named `sb_secret_...` API key rather than the legacy JWT-based `service_role` key. Supabase supports both concurrently, so routine migration and rotation can be completed without changing database schema or interrupting valid user sessions.
+
+Do not confuse these independent credentials:
+
+| Credential | Repository name | Purpose | Rotation path |
+| --- | --- | --- | --- |
+| Supabase secret API key | `SUPABASE_SERVICE_KEY` | Server-side Data API, Auth admin, RPC, and Storage access with `service_role` privileges and RLS bypass | Create a replacement named `sb_secret_...`, update every backend consumer, verify, then delete the old secret or disable the legacy key |
+| Public API key | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser and user-scoped server clients governed by RLS | Migrate separately from legacy `anon` to a publishable key; requires a new frontend build |
+| Management API token | `SUPABASE_ACCESS_TOKEN` | CLI/advisor and project-management operations | Create a replacement personal access token, update CI/operator custody, verify, then revoke the old token |
+| Database connection credential | `SUPABASE_DB_URL` | Direct SQL production verification | Reset or replace the database password/connection credential, update only approved operator/CI consumers, and retest direct plus pooler paths |
+| Auth JWT signing key | Not stored by this application | Signs user access tokens | Follow the separate Supabase signing-key standby, rotation, expiry, and revocation workflow; never rotate it as part of a routine API-secret change |
+
+Current consumer inventory, verified without reading values on 2026-07-26:
+
+- `lib/supabase/admin.ts` is the single application constructor for elevated access. It reads `SUPABASE_SERVICE_KEY` only in server code and disables session persistence and refresh behavior.
+- Vercel project `netflux` currently defines `SUPABASE_SERVICE_KEY` for Production, Preview, and Development. This shared scope must be split: the production key belongs only in Production; Preview and Development must use a non-production project key or omit elevated access and fail closed.
+- The trusted local `.env.local` contains the required Supabase variable names. Local copies must be updated manually on each approved operator machine and must never be committed.
+- `.github/workflows/security.yml` references `SUPABASE_SERVICE_KEY`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, and `SUPABASE_DB_URL` for manual production verification. No matching repository, Preview-environment, or Production-environment GitHub secrets were listed on 2026-07-26, so that job must not be considered credential-ready until custody and environment binding are deliberately configured.
+- The repository contains no Supabase Edge Function implementation. Before every rotation, still inspect the Supabase Dashboard for externally configured Edge Functions, Database Webhooks, Vault entries, and integrations that are not represented in Git.
+
+Official references:
+
+- [Supabase API keys](https://supabase.com/docs/guides/api/api-keys)
+- [Migrating to publishable and secret API keys](https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys)
+- [Supabase JWT signing keys](https://supabase.com/docs/guides/auth/signing-keys)
+- [Vercel environment variables](https://vercel.com/docs/environment-variables)
+
+#### Routine zero-downtime rotation
+
+Use this sequence for planned migration from the legacy `service_role` key or rotation of a non-compromised `sb_secret_...` key:
+
+1. Assign an operator and reviewer, choose a low-traffic window, and record the current production deployment SHA, shallow/detailed health status, key **name or identifier only**, and consumer inventory. Never record the key value or a recoverable fingerprint.
+2. In Supabase **Settings > API Keys**, create a named secret key such as `vercel-production-YYYYMMDD`. Do not disable or delete the old working key yet. Prefer one key per backend component so later compromise has a smaller rotation scope.
+3. Validate the new key from a trusted workstation against a read-only or no-match service-role path. Do not paste it into a command argument, shell history, issue, chat, log, screenshot, or repository file.
+4. In Vercel, replace `SUPABASE_SERVICE_KEY` for **Production only** and keep it marked sensitive. The Dashboard is preferred. If the CLI is used, allow its secure interactive prompt rather than passing `--value`:
+
+   ```bash
+   npx vercel env add SUPABASE_SERVICE_KEY production --force --sensitive
+   ```
+
+5. Remove the production credential from Preview and Development only after those scopes have a non-production replacement or the team has accepted that elevated preview/development operations will fail closed:
+
+   ```bash
+   npx vercel env rm SUPABASE_SERVICE_KEY preview
+   npx vercel env rm SUPABASE_SERVICE_KEY development
+   ```
+
+6. If manual GitHub production verification is enabled, update the approved GitHub secret through an interactive secret prompt. The current workflow does not bind its production job to a GitHub Environment; fix that ownership boundary before relying on environment-scoped secrets. Do not add production credentials to pull-request jobs.
+
+   ```bash
+   gh secret set SUPABASE_SERVICE_KEY --repo Jseow008/ThePlayBook
+   ```
+
+7. Update approved local/operator copies. Never use `vercel env pull` without first preserving unrelated local-only values because it replaces the destination file.
+8. Rebuild/redeploy the current known-good production commit so the new environment value reaches a new deployment. Confirm that the commit already passed `validate` and `Security Validation`; do not promote an unchecked commit merely to rotate a key.
+9. Complete the verification checklist below. Keep the old key active while diagnosing any failure and roll back the deployment environment if necessary.
+10. After every consumer passes and monitoring is clean, delete the superseded `sb_secret_...` key. For a completed legacy migration, use the Dashboard last-use information and consumer inventory before disabling the legacy `service_role` key. Deletion is irreversible.
+11. Record the deployment SHA, new key identifier, consumer update times, verification evidence, old-key deletion/disable time, operator, and reviewer. Never record secret values.
+
+#### Verification checklist
+
+Require all of the following before retiring the previous key:
+
+- `npx vercel env ls production` shows the expected variable and Production scope without exposing its value.
+- The new Vercel deployment uses the previously approved commit SHA and has passed the required GitHub/Vercel gates.
+- Shallow `/api/health` returns HTTP 200, and detailed health reports `supabase_admin: "ready"` with no new issue.
+- A genuinely allowlisted admin session loads `/admin` and `/api/admin/launch-readiness`; this is the primary proof that the elevated client can query production.
+- A syntactically valid no-match newsletter/request-notification unsubscribe call returns its normal generic response. This exercises the server-controlled service-role RPC without creating a subscription or disclosing whether a token exists.
+- If narration or request-notification workers are enabled, perform one controlled no-work invocation and confirm there is no authentication error or unintended write.
+- Vercel logs, Supabase API/Auth/Postgres logs, and Sentry show no new `401`, `403`, `Invalid JWT`, elevated RPC failure, or unexplained 5xx pattern.
+- Run the proportionate production verification checklist. If GitHub credentials are not configured, run it from an approved operator environment rather than weakening the workflow or copying production secrets into a PR context.
+
+The detailed health endpoint validates that the elevated variable is present but its database connectivity probe uses the public client. It is therefore necessary but not sufficient; the authenticated admin/readiness or no-match RPC proof is required.
+
+#### Emergency compromise procedure
+
+Treat a leaked secret API key or legacy `service_role` key as full production-data access because the credential bypasses RLS.
+
+1. Declare an incident, stop nonessential deployments, record when and where exposure was discovered, and identify the affected key by name only. Preserve relevant logs without copying the secret.
+2. If active abuse is occurring or data integrity is at immediate risk, delete the compromised `sb_secret_...` key first and accept temporary privileged-route/worker failure. Otherwise create and deploy the replacement first, then delete the compromised key immediately after the minimum verification succeeds.
+3. Replace the credential in Vercel Production, approved CI/operator custody, and any Dashboard-only Edge Function, webhook, Vault, or integration consumer. Remove it from Preview/Development rather than propagating the production key.
+4. Redeploy the last known-good production SHA, run the verification checklist, and monitor privileged endpoints and background workers.
+5. Review Supabase API/Auth/Postgres logs, Vercel logs, Storage activity, admin mutations, Auth user changes, and security telemetry from the earliest possible exposure through revocation. If integrity is uncertain, compare against the latest verified database and independent Storage recovery point before repairing anything.
+6. Rotate any other credential that shared the same file, machine, log, screenshot, or deployment surface. Revoke lost Supabase Management API tokens and reset exposed database credentials through their separate procedures.
+7. If the legacy JWT secret itself may be compromised, escalate to a separate Auth signing-key incident. Migrating or revoking signing keys can affect user JWT trust; follow the standby/rotate/expiry/revoke process and the documented emergency-revocation behavior rather than improvising a service-role-only rotation.
+8. Record the incident timeline, affected components, revoked key identifier, evidence reviewed, recovery actions, and any unexplained data change. Keep values and raw authorization material out of the record.
+
+#### Rollback and hard stops
+
+- Before deletion, a non-compromised previous key is the rollback point: restore it to the affected backend scope, redeploy the same known-good SHA, and diagnose the replacement offline.
+- After a key is deleted, it cannot be restored. Recovery means creating another secret key, updating consumers, and redeploying.
+- Never restore a known-compromised key merely to recover availability.
+- Stop if the new deployment cannot complete an elevated admin/RPC proof, an unexpected consumer still uses the old key, Preview/Development would retain the production key, or logs show unexplained privileged activity.
+- Do not rotate the legacy JWT secret, Auth signing keys, database password, public API key, and secret API key as one batch. Their blast radii and rollback mechanisms differ.
+
 ## 5. Troubleshooting
 
 ### 5.1 `Missing Supabase environment variables`
