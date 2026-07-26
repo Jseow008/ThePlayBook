@@ -39,6 +39,7 @@
     "security:audit": "npm audit --omit=dev --audit-level=high",
     "security:admin-rpc-acls": "node scripts/check-supabase-admin-rpc-acls.mjs",
     "security:function-acls": "node scripts/check-supabase-function-acls.mjs",
+    "security:new-object-access": "node scripts/check-supabase-new-object-access.mjs",
     "security:supabase-advisors": "node scripts/check-supabase-security-advisors.mjs",
     "security:analytics-rls": "node scripts/check-supabase-analytics-rls.mjs",
     "security:embedding-table-reads": "node scripts/check-supabase-embedding-table-reads.mjs",
