@@ -657,13 +657,14 @@ Do not confuse these independent credentials:
 | Database connection credential | `SUPABASE_DB_URL` | Direct SQL production verification | Reset or replace the database password/connection credential, update only approved operator/CI consumers, and retest direct plus pooler paths |
 | Auth JWT signing key | Not stored by this application | Signs user access tokens | Follow the separate Supabase signing-key standby, rotation, expiry, and revocation workflow; never rotate it as part of a routine API-secret change |
 
-Current consumer inventory, verified without reading values on 2026-07-26:
+Current consumer inventory and rollout state, verified without recording values on 2026-07-27:
 
 - `lib/supabase/admin.ts` is the single application constructor for elevated access. It reads `SUPABASE_SERVICE_KEY` only in server code and disables session persistence and refresh behavior.
-- Vercel project `netflux` currently defines `SUPABASE_SERVICE_KEY` for Production, Preview, and Development. This shared scope must be split: the production key belongs only in Production; Preview and Development must use a non-production project key or omit elevated access and fail closed.
+- Vercel project `netflux` defines `SUPABASE_SERVICE_KEY` only for Production. Production uses the dedicated Supabase secret key `vercel_production_20260727`; Preview and Development omit elevated access and fail closed. The production deployment for reviewed main commit `0947254` was rebuilt as `dpl_DXv2HThaTF4rmftnKGeGd4zTja2q`, reached `READY`, received the public aliases, and passed shallow health, detailed readiness, database-connectivity, and no-match privileged-RPC probes.
 - The trusted local `.env.local` contains the required Supabase variable names. Local copies must be updated manually on each approved operator machine and must never be committed.
 - `.github/workflows/security.yml` references `SUPABASE_SERVICE_KEY`, `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, and `SUPABASE_DB_URL` for manual production verification. No matching repository, Preview-environment, or Production-environment GitHub secrets were listed on 2026-07-26, so that job must not be considered credential-ready until custody and environment binding are deliberately configured.
 - The repository contains no Supabase Edge Function implementation. Before every rotation, still inspect the Supabase Dashboard for externally configured Edge Functions, Database Webhooks, Vault entries, and integrations that are not represented in Git.
+- The legacy JWT-based `service_role` key remains enabled as a rollback and approved-local-consumer safeguard. Do not disable it until local/operator copies, immutable older deployments, and any Dashboard-only consumers have been audited or migrated. Its continued availability does not restore the Vercel Preview/Development environment-variable scopes removed on 2026-07-27.
 
 Official references:
 
