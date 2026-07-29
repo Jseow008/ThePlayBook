@@ -597,8 +597,12 @@ The daily/manual `Supabase Production Monitoring` job is the DB-203 operational 
 
 Required GitHub secrets:
 
-- `SUPABASE_ACCESS_TOKEN`: a dedicated least-privilege Management API token with only the project/database read, advisor read, analytics-log read, and backup-inventory read permissions needed by the monitor
+- `SUPABASE_ACCESS_TOKEN`: a Supabase Management API access token that is limited to the project/database read, advisor read, analytics-log read, and backup-inventory read permissions needed by the monitor
 - `SUPABASE_PROJECT_REF`: the production project reference
+
+Supabase Personal Access Tokens inherit the permissions of the issuing user and must not be used here when that user is an organization Owner. On the Free plan, the organization cannot assign Supabase's persistent Read-Only member role. A scoped OAuth application was verified on 2026-07-29 with only `projects:read`, `database:read`, and `analytics:read`; it could access every endpoint used by this monitor. Its access token was issued with a 24-hour lifetime, however, and its refresh token rotated on first use, so it cannot be maintained as a static GitHub secret. The test authorization was revoked and its access token returned HTTP 401 afterward.
+
+Until a durable least-privilege credential mechanism is approved, keep the scheduled job uncredentialed and treat it as implemented but not activated. Do not substitute an Owner PAT, service-role/secret key, database password, or a GitHub token capable of rewriting repository secrets. A short-lived scoped OAuth access token may be used for a supervised manual proof only if it is removed from GitHub immediately afterward; it is not a recurring-monitoring solution.
 
 Required GitHub repository variables:
 
