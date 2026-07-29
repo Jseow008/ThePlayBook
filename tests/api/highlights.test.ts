@@ -15,19 +15,52 @@ vi.mock('@/lib/server/rate-limit', () => ({
 describe('Highlights API', () => {
     const mockUser = { id: 'user-123' };
     const mockAuthUser = vi.fn();
-
-    const mockBuilder: any = {
+    const currentHighlight = {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        user_id: mockUser.id,
+        content_item_id: '123e4567-e89b-12d3-a456-426614174001',
+        segment_id: '123e4567-e89b-12d3-a456-426614174002',
+        highlighted_text: 'Existing highlight',
+        note_body: null,
+        color: 'yellow',
+        anchor_start: 0,
+        anchor_end: 18,
+        created_at: '2026-07-29T00:00:00.000Z',
+        updated_at: null,
+    };
+    const deleteBuilder: any = {
+        eq: vi.fn().mockReturnThis(),
+        then: vi.fn((resolve) => resolve({ data: null, error: null })),
+    };
+    const updateBuilder: any = {
         eq: vi.fn().mockReturnThis(),
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockReturnThis(),
-        then: vi.fn((resolve) => resolve({ data: null, error: null })),
+        then: vi.fn((resolve) => resolve({ data: currentHighlight, error: null })),
+    };
+    const currentBuilder: any = {
+        eq: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn(),
+    };
+    const overlapBuilder: any = {
+        eq: vi.fn().mockReturnThis(),
+        neq: vi.fn().mockReturnThis(),
+        lt: vi.fn().mockReturnThis(),
+        gt: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        maybeSingle: vi.fn(),
     };
 
+    const deleteMock = vi.fn().mockReturnValue(deleteBuilder);
+    const updateMock = vi.fn().mockReturnValue(updateBuilder);
+    const selectMock = vi.fn();
     const mockSupabaseClient = {
         auth: { getUser: mockAuthUser },
         from: vi.fn().mockReturnValue({
-            delete: vi.fn().mockReturnValue(mockBuilder),
-            update: vi.fn().mockReturnValue(mockBuilder),
+            delete: deleteMock,
+            update: updateMock,
+            select: selectMock,
         })
     };
 
@@ -38,8 +71,12 @@ describe('Highlights API', () => {
         (rateLimit as any).mockResolvedValue({ success: true });
         mockAuthUser.mockResolvedValue({ data: { user: mockUser } });
 
-        // Reset builder `then` to default successful resolve
-        mockBuilder.then.mockImplementation((resolve: any) => resolve({ data: null, error: null }));
+        deleteBuilder.then.mockImplementation((resolve: any) => resolve({ data: null, error: null }));
+        updateBuilder.then.mockImplementation((resolve: any) => resolve({ data: currentHighlight, error: null }));
+        currentBuilder.maybeSingle.mockResolvedValue({ data: currentHighlight, error: null });
+        overlapBuilder.maybeSingle.mockResolvedValue({ data: null, error: null });
+        selectMock.mockReset();
+        selectMock.mockReturnValueOnce(currentBuilder).mockReturnValue(overlapBuilder);
     });
 
     describe('DELETE /[id]', () => {
@@ -62,7 +99,7 @@ describe('Highlights API', () => {
 
             expect(res.status).toBe(200);
             expect(mockSupabaseClient.from).toHaveBeenCalledWith('user_highlights');
-            expect(mockSupabaseClient.from().delete).toHaveBeenCalled();
+            expect(deleteMock).toHaveBeenCalled();
         });
     });
 
@@ -77,8 +114,6 @@ describe('Highlights API', () => {
         });
 
         it('updates highlight color and note', async () => {
-            mockBuilder.then.mockImplementationOnce((resolve: any) => resolve({ data: { id: '123', color: 'blue' }, error: null }));
-
             const req = new NextRequest(new URL('http://localhost/api/library/highlights/123e4567-e89b-12d3-a456-426614174000'), {
                 method: 'PATCH',
                 body: JSON.stringify({ color: 'blue', note_body: 'Testing note' })
@@ -88,6 +123,36 @@ describe('Highlights API', () => {
 
             expect(res.status).toBe(200);
             expect(mockSupabaseClient.from).toHaveBeenCalledWith('user_highlights');
+        });
+
+        it('updates highlight text and anchors together', async () => {
+            const req = new NextRequest(new URL('http://localhost/api/library/highlights/123e4567-e89b-12d3-a456-426614174000'), {
+                method: 'PATCH',
+                body: JSON.stringify({
+                    highlighted_text: 'Replacement passage',
+                    anchor_start: 20,
+                    anchor_end: 39,
+                })
+            });
+
+            const res = await PATCH(req, { params: Promise.resolve({ id: '123e4567-e89b-12d3-a456-426614174000' }) });
+
+            expect(res.status).toBe(200);
+            expect(updateMock).toHaveBeenCalledWith(expect.objectContaining({
+                highlighted_text: 'Replacement passage',
+                anchor_start: 20,
+                anchor_end: 39,
+            }));
+        });
+
+        it('rejects partial range replacement payloads', async () => {
+            const req = new NextRequest(new URL('http://localhost/api/library/highlights/123e4567-e89b-12d3-a456-426614174000'), {
+                method: 'PATCH',
+                body: JSON.stringify({ highlighted_text: 'Missing anchors' })
+            });
+
+            const res = await PATCH(req, { params: Promise.resolve({ id: '123e4567-e89b-12d3-a456-426614174000' }) });
+            expect(res.status).toBe(400);
         });
     });
 });

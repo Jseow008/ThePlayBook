@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import type { UserHighlight } from "@/types/database";
+import type { HighlightRangeRelationship } from "@/lib/highlight-ranges";
 
 // Type for the API response which includes joined content item data
 export type HighlightWithContent = UserHighlight & {
@@ -113,11 +114,70 @@ interface CreateHighlightArgs {
     anchor_end?: number;
 }
 
+export interface HighlightConflictDetails {
+    existingHighlightId: string;
+    relationship: Exclude<HighlightRangeRelationship, "distinct" | "exact">;
+}
+
+export class HighlightConflictError extends Error {
+    readonly details: HighlightConflictDetails;
+
+    constructor(message: string, details: HighlightConflictDetails) {
+        super(message);
+        this.name = "HighlightConflictError";
+        this.details = details;
+    }
+}
+
+interface CreateHighlightResult {
+    highlight: UserHighlight;
+    disposition: "created" | "existing";
+}
+
+function getHighlightMutationError(errorData: unknown, fallbackMessage: string): Error {
+    const response = errorData && typeof errorData === "object"
+        ? errorData as {
+            error?: {
+                code?: unknown;
+                message?: unknown;
+                details?: {
+                    existing_highlight_id?: unknown;
+                    relationship?: unknown;
+                };
+            };
+        }
+        : {};
+    const details = response.error?.details;
+    const relationship = details?.relationship;
+
+    if (
+        response.error?.code === "CONFLICT"
+        && typeof details?.existing_highlight_id === "string"
+        && (
+            relationship === "contained"
+            || relationship === "contains"
+            || relationship === "partial-overlap"
+        )
+    ) {
+        return new HighlightConflictError(
+            typeof response.error?.message === "string" ? response.error.message : fallbackMessage,
+            {
+                existingHighlightId: details.existing_highlight_id,
+                relationship,
+            }
+        );
+    }
+
+    return new Error(
+        typeof response.error?.message === "string" ? response.error.message : fallbackMessage
+    );
+}
+
 export function useCreateHighlight() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (args: CreateHighlightArgs) => {
+        mutationFn: async (args: CreateHighlightArgs): Promise<CreateHighlightResult> => {
             const res = await fetch("/api/library/highlights", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -126,11 +186,14 @@ export function useCreateHighlight() {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData?.error?.message || "Failed to create highlight");
+                throw getHighlightMutationError(errorData, "Failed to create highlight");
             }
 
-            const { data } = await res.json();
-            return data as UserHighlight;
+            const { data, disposition } = await res.json();
+            return {
+                highlight: data as UserHighlight,
+                disposition: disposition === "existing" ? "existing" : "created",
+            };
         },
         onMutate: async (newArgs) => {
             await queryClient.cancelQueries({ queryKey: ["highlights"] });
@@ -254,6 +317,9 @@ interface UpdateHighlightArgs {
     id: string;
     note_body?: string | null;
     color?: string;
+    highlighted_text?: string;
+    anchor_start?: number;
+    anchor_end?: number;
 }
 
 export function useUpdateHighlight() {
@@ -267,12 +333,15 @@ export function useUpdateHighlight() {
                 body: JSON.stringify({
                     note_body: args.note_body,
                     color: args.color,
+                    highlighted_text: args.highlighted_text,
+                    anchor_start: args.anchor_start,
+                    anchor_end: args.anchor_end,
                 }),
             });
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData?.error?.message || "Failed to update highlight");
+                throw getHighlightMutationError(errorData, "Failed to update highlight");
             }
 
             const { data } = await res.json();
@@ -293,6 +362,15 @@ export function useUpdateHighlight() {
                             ...h,
                             note_body: updatedArgs.note_body !== undefined ? updatedArgs.note_body : h.note_body,
                             color: updatedArgs.color !== undefined ? updatedArgs.color : h.color,
+                            highlighted_text: updatedArgs.highlighted_text !== undefined
+                                ? updatedArgs.highlighted_text
+                                : h.highlighted_text,
+                            anchor_start: updatedArgs.anchor_start !== undefined
+                                ? updatedArgs.anchor_start
+                                : h.anchor_start,
+                            anchor_end: updatedArgs.anchor_end !== undefined
+                                ? updatedArgs.anchor_end
+                                : h.anchor_end,
                             updated_at: new Date().toISOString(),
                         };
                     }
