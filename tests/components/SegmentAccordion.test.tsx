@@ -266,6 +266,94 @@ describe('SegmentAccordion', () => {
         expect(paragraphHtml).toMatch(/Alpha Beta <mark[^>]*>Alpha<\/mark>/);
     });
 
+    it('repairs DOM anchor drift introduced by markdown block boundaries', () => {
+        const segments: SegmentFull[] = [
+            {
+                id: 'seg-blocks',
+                item_id: 'item-1',
+                order_index: 0,
+                title: 'Block boundaries',
+                markdown_body: '## Heading\n\nFirst sentence.\n\nAnother full sentence.',
+                start_time_sec: null,
+                end_time_sec: null,
+            },
+        ];
+
+        const { container } = render(
+            <SegmentAccordion
+                {...defaultProps}
+                segments={segments}
+                highlights={[
+                    {
+                        id: 'highlight-blocks',
+                        user_id: 'user-1',
+                        content_item_id: 'item-1',
+                        segment_id: 'seg-blocks',
+                        highlighted_text: 'First sentence.',
+                        note_body: null,
+                        color: 'yellow',
+                        // DOM text contains a newline after the heading; the Markdown text-node
+                        // index does not, so the stored range is one character too far forward.
+                        anchor_start: 8,
+                        anchor_end: 23,
+                        created_at: '2026-03-10T00:00:00.000Z',
+                        updated_at: null,
+                        content_item: null,
+                        segment: null,
+                    },
+                ]}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Block boundaries').closest('button')!);
+
+        const marks = Array.from(container.querySelectorAll('mark[data-id="highlight-blocks"]'));
+        expect(marks.map((mark) => mark.textContent).join('')).toBe('First sentence.');
+    });
+
+    it('uses the stored anchor as a proximity hint when repairing repeated text', () => {
+        const segments: SegmentFull[] = [
+            {
+                id: 'seg-repeated-blocks',
+                item_id: 'item-1',
+                order_index: 0,
+                title: 'Repeated block text',
+                markdown_body: '## Heading\n\nAlpha Beta Alpha',
+                start_time_sec: null,
+                end_time_sec: null,
+            },
+        ];
+
+        const { container } = render(
+            <SegmentAccordion
+                {...defaultProps}
+                segments={segments}
+                highlights={[
+                    {
+                        id: 'highlight-repeated-blocks',
+                        user_id: 'user-1',
+                        content_item_id: 'item-1',
+                        segment_id: 'seg-repeated-blocks',
+                        highlighted_text: 'Alpha',
+                        note_body: null,
+                        color: 'yellow',
+                        anchor_start: 19,
+                        anchor_end: 24,
+                        created_at: '2026-03-10T00:00:00.000Z',
+                        updated_at: null,
+                        content_item: null,
+                        segment: null,
+                    },
+                ]}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Repeated block text').closest('button')!);
+
+        const paragraphHtml = container.querySelector('[data-segment-id="seg-repeated-blocks"] p')?.innerHTML ?? '';
+        expect(paragraphHtml).toMatch(/Alpha Beta <mark[^>]*>Alpha<\/mark>/);
+    });
+
     it('renders anchor-based highlights across markdown node boundaries', () => {
         const { container } = render(
             <SegmentAccordion

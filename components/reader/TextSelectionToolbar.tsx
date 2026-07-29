@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Highlighter, Edit3, X, Check } from "lucide-react";
-import { useCreateHighlight } from "@/hooks/useHighlights";
+import {
+    HighlightConflictError,
+    useCreateHighlight,
+    useUpdateHighlight,
+} from "@/hooks/useHighlights";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { findSegmentElement, getTrimmedSelection } from "./selection-utils";
@@ -27,6 +31,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
     const [mounted, setMounted] = useState(false);
 
     const createHighlight = useCreateHighlight();
+    const updateHighlight = useUpdateHighlight();
 
     // Prevent hydration errors by only rendering on client
     useEffect(() => {
@@ -97,17 +102,58 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
 
     if (!selectionInfo) return null;
 
+    const clearSelection = () => {
+        window.getSelection()?.removeAllRanges();
+        setSelectionInfo(null);
+    };
+
+    const offerHighlightReplacement = (
+        error: HighlightConflictError,
+        selected: NonNullable<typeof selectionInfo>,
+        updates?: { note_body?: string | null; color?: string }
+    ) => {
+        toast.warning("This selection overlaps an existing highlight", {
+            description: "Replace the existing passage with this selection?",
+            action: {
+                label: "Replace",
+                onClick: () => {
+                    void (async () => {
+                        try {
+                            await updateHighlight.mutateAsync({
+                                id: error.details.existingHighlightId,
+                                highlighted_text: selected.text,
+                                anchor_start: selected.anchorStart,
+                                anchor_end: selected.anchorEnd,
+                                ...updates,
+                            });
+                            toast.success("Highlight replaced");
+                            clearSelection();
+                            setNoteText("");
+                            setIsAddingNote(false);
+                        } catch (replacementError: any) {
+                            toast.error(replacementError.message || "Failed to replace highlight");
+                        }
+                    })();
+                },
+            },
+        });
+    };
+
     const handleHighlight = async () => {
+        const selected = selectionInfo;
+
         try {
-            await createHighlight.mutateAsync({
+            const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
-                segment_id: selectionInfo.segmentId,
-                highlighted_text: selectionInfo.text,
-                anchor_start: selectionInfo.anchorStart,
-                anchor_end: selectionInfo.anchorEnd,
+                segment_id: selected.segmentId,
+                highlighted_text: selected.text,
+                anchor_start: selected.anchorStart,
+                anchor_end: selected.anchorEnd,
             });
 
-            if (localStorage.getItem('netflux_notes_fab_dismissed') === 'true') {
+            if (result.disposition === "existing") {
+                toast.info("Already highlighted");
+            } else if (localStorage.getItem('netflux_notes_fab_dismissed') === 'true') {
                 toast.success("Highlight saved", {
                     action: {
                         label: "Show Notes Button",
@@ -121,25 +167,38 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
                 toast.success("Highlight saved");
             }
 
-            // Clear selection
-            window.getSelection()?.removeAllRanges();
-            setSelectionInfo(null);
+            clearSelection();
         } catch (error: any) {
+            if (error instanceof HighlightConflictError) {
+                offerHighlightReplacement(error, selected);
+                return;
+            }
+
             toast.error(error.message || "Failed to save highlight");
         }
     };
 
     const handleSaveNote = async () => {
         if (!noteText.trim()) return;
+        const selected = selectionInfo;
+        const trimmedNote = noteText.trim();
+
         try {
-            await createHighlight.mutateAsync({
+            const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
-                segment_id: selectionInfo.segmentId,
-                highlighted_text: selectionInfo.text,
-                note_body: noteText.trim(),
-                anchor_start: selectionInfo.anchorStart,
-                anchor_end: selectionInfo.anchorEnd,
+                segment_id: selected.segmentId,
+                highlighted_text: selected.text,
+                note_body: trimmedNote,
+                anchor_start: selected.anchorStart,
+                anchor_end: selected.anchorEnd,
             });
+
+            if (result.disposition === "existing") {
+                await updateHighlight.mutateAsync({
+                    id: result.highlight.id,
+                    note_body: trimmedNote,
+                });
+            }
 
             if (localStorage.getItem('netflux_notes_fab_dismissed') === 'true') {
                 toast.success("Highlight & Note saved", {
@@ -158,9 +217,13 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
             // Cleanup
             setNoteText("");
             setIsAddingNote(false);
-            window.getSelection()?.removeAllRanges();
-            setSelectionInfo(null);
+            clearSelection();
         } catch (error: any) {
+            if (error instanceof HighlightConflictError) {
+                offerHighlightReplacement(error, selected, { note_body: trimmedNote });
+                return;
+            }
+
             toast.error(error.message || "Failed to save note");
         }
     };
@@ -168,8 +231,7 @@ export function TextSelectionToolbar({ contentItemId }: TextSelectionToolbarProp
     const handleCancelNote = () => {
         setIsAddingNote(false);
         setNoteText("");
-        setSelectionInfo(null);
-        window.getSelection()?.removeAllRanges();
+        clearSelection();
     };
 
     // Calculate position: centered above the selection rect

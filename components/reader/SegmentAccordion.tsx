@@ -29,6 +29,69 @@ interface HighlightRenderRange {
     color: ReturnType<typeof normalizeHighlightColor>;
 }
 
+interface AnchoredHighlightRenderRange extends HighlightRenderRange {
+    highlightedText: string;
+}
+
+function collectHighlightableText(node: any): string {
+    if (!node.children) return "";
+
+    return node.children.reduce((text: string, child: any) => {
+        if (child.type === "text") {
+            return text + (child.value ?? "");
+        }
+
+        return text + collectHighlightableText(child);
+    }, "");
+}
+
+function findClosestTextMatch(text: string, matchText: string, preferredStart: number): number {
+    let closestIndex = -1;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    let searchFrom = 0;
+
+    while (searchFrom <= text.length - matchText.length) {
+        const matchIndex = text.indexOf(matchText, searchFrom);
+        if (matchIndex === -1) break;
+
+        const distance = Math.abs(matchIndex - preferredStart);
+        if (distance < closestDistance) {
+            closestIndex = matchIndex;
+            closestDistance = distance;
+        }
+
+        searchFrom = matchIndex + 1;
+    }
+
+    return closestIndex;
+}
+
+function resolveHighlightRange(
+    range: AnchoredHighlightRenderRange,
+    canonicalText: string
+): HighlightRenderRange {
+    if (canonicalText.slice(range.start, range.end) === range.highlightedText) {
+        return range;
+    }
+
+    const resolvedStart = findClosestTextMatch(
+        canonicalText,
+        range.highlightedText,
+        range.start
+    );
+
+    if (resolvedStart === -1) {
+        return range;
+    }
+
+    return {
+        id: range.id,
+        start: resolvedStart,
+        end: resolvedStart + range.highlightedText.length,
+        color: range.color,
+    };
+}
+
 function createMarkHtml(id: string, text: string, color: string, interactive: boolean) {
     const bgClass = HIGHLIGHT_COLOR_CLASSES[normalizeHighlightColor(color)].bg;
     const cursorClass = interactive ? "cursor-pointer" : "cursor-text";
@@ -174,7 +237,7 @@ function wrapTextNodesWithHighlights(
 }
 
 function createRemarkHighlightPlugin(highlights: HighlightWithContent[], interactive: boolean = true) {
-    const anchorRanges = highlights
+    const anchoredHighlights = highlights
         .filter(
             (highlight) =>
                 typeof highlight.anchor_start === "number"
@@ -186,11 +249,8 @@ function createRemarkHighlightPlugin(highlights: HighlightWithContent[], interac
             start: highlight.anchor_start as number,
             end: highlight.anchor_end as number,
             color: normalizeHighlightColor(highlight.color),
-        }))
-        .sort((a, b) => {
-            if (a.start !== b.start) return a.start - b.start;
-            return (b.end - b.start) - (a.end - a.start);
-        });
+            highlightedText: highlight.highlighted_text,
+        }));
 
     const legacyHighlights = highlights.filter(
         (highlight) =>
@@ -200,7 +260,15 @@ function createRemarkHighlightPlugin(highlights: HighlightWithContent[], interac
     );
 
     return () => (tree: any) => {
-        if (anchorRanges.length === 0 && legacyHighlights.length === 0) return;
+        if (anchoredHighlights.length === 0 && legacyHighlights.length === 0) return;
+
+        const canonicalText = collectHighlightableText(tree);
+        const anchorRanges = anchoredHighlights
+            .map((highlight) => resolveHighlightRange(highlight, canonicalText))
+            .sort((a, b) => {
+                if (a.start !== b.start) return a.start - b.start;
+                return (b.end - b.start) - (a.end - a.start);
+            });
 
         wrapTextNodesWithHighlights(
             tree,

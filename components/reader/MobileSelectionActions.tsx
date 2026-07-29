@@ -3,7 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Edit3, Highlighter, Loader2, X } from "lucide-react";
-import { useCreateHighlight } from "@/hooks/useHighlights";
+import {
+    HighlightConflictError,
+    useCreateHighlight,
+    useUpdateHighlight,
+} from "@/hooks/useHighlights";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { toast } from "sonner";
 import { type HighlightColor } from "@/lib/highlight-utils";
@@ -38,6 +42,7 @@ export function MobileSelectionActions({
     const [draftNote, setDraftNote] = useState("");
     const [draftColor, setDraftColor] = useState<HighlightColor>("blue");
     const createHighlight = useCreateHighlight();
+    const updateHighlight = useUpdateHighlight();
     const { readerTheme } = useReaderSettings();
 
     useEffect(() => {
@@ -126,23 +131,60 @@ export function MobileSelectionActions({
         setDraftColor("blue");
     };
 
+    const offerHighlightReplacement = (
+        error: HighlightConflictError,
+        selected: SelectionInfo,
+        updates?: { note_body?: string | null; color?: string }
+    ) => {
+        toast.warning("This selection overlaps an existing highlight", {
+            description: "Replace the existing passage with this selection?",
+            action: {
+                label: "Replace",
+                onClick: () => {
+                    void (async () => {
+                        try {
+                            await updateHighlight.mutateAsync({
+                                id: error.details.existingHighlightId,
+                                highlighted_text: selected.text,
+                                anchor_start: selected.anchorStart,
+                                anchor_end: selected.anchorEnd,
+                                ...updates,
+                            });
+                            toast.success("Highlight replaced");
+                            clearSelectionState();
+                        } catch (replacementError: any) {
+                            toast.error(replacementError.message || "Failed to replace highlight");
+                        }
+                    })();
+                },
+            },
+        });
+    };
+
     const handleSaveHighlight = async () => {
         if (!selectionInfo) {
             return;
         }
 
+        const selected = selectionInfo;
+
         try {
-            await createHighlight.mutateAsync({
+            const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
-                segment_id: selectionInfo.segmentId,
-                highlighted_text: selectionInfo.text,
-                anchor_start: selectionInfo.anchorStart,
-                anchor_end: selectionInfo.anchorEnd,
+                segment_id: selected.segmentId,
+                highlighted_text: selected.text,
+                anchor_start: selected.anchorStart,
+                anchor_end: selected.anchorEnd,
             });
 
-            toast.success("Highlight saved");
+            toast.success(result.disposition === "existing" ? "Already highlighted" : "Highlight saved");
             clearSelectionState();
         } catch (error: any) {
+            if (error instanceof HighlightConflictError) {
+                offerHighlightReplacement(error, selected);
+                return;
+            }
+
             toast.error(error.message || "Failed to save highlight");
         }
     };
@@ -171,20 +213,39 @@ export function MobileSelectionActions({
             return;
         }
 
+        const selected = selectionInfo;
+        const trimmedNote = draftNote.trim();
+
         try {
-            await createHighlight.mutateAsync({
+            const result = await createHighlight.mutateAsync({
                 content_item_id: contentItemId,
-                segment_id: selectionInfo.segmentId,
-                highlighted_text: selectionInfo.text,
-                note_body: draftNote.trim(),
+                segment_id: selected.segmentId,
+                highlighted_text: selected.text,
+                note_body: trimmedNote,
                 color: draftColor,
-                anchor_start: selectionInfo.anchorStart,
-                anchor_end: selectionInfo.anchorEnd,
+                anchor_start: selected.anchorStart,
+                anchor_end: selected.anchorEnd,
             });
+
+            if (result.disposition === "existing") {
+                await updateHighlight.mutateAsync({
+                    id: result.highlight.id,
+                    note_body: trimmedNote,
+                    color: draftColor,
+                });
+            }
 
             toast.success("Highlight & note saved");
             clearSelectionState();
         } catch (error: any) {
+            if (error instanceof HighlightConflictError) {
+                offerHighlightReplacement(error, selected, {
+                    note_body: trimmedNote,
+                    color: draftColor,
+                });
+                return;
+            }
+
             toast.error(error.message || "Failed to save note");
         }
     };

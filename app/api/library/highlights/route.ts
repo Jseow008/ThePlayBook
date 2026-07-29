@@ -4,6 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
+import {
+    findHighlightOverlap,
+    isHighlightOverlapConstraintError,
+    type HighlightOverlap,
+} from "@/lib/server/highlight-overlaps";
 import type { Database } from "@/types/database";
 
 const HIGHLIGHT_LIMIT = 50; // max highlights per content item
@@ -12,6 +17,29 @@ const NOTE_BODY_MAX = 4_000;
 const HighlightColorSchema = z.enum(["yellow", "blue", "green", "pink", "purple", "red"]);
 type HighlightInsert = Database["public"]["Tables"]["user_highlights"]["Insert"];
 type HighlightRow = Database["public"]["Tables"]["user_highlights"]["Row"];
+
+function highlightOverlapResponse(
+    overlap: HighlightOverlap,
+    requestId: string
+) {
+    if (overlap.relationship === "exact") {
+        return NextResponse.json({
+            data: overlap.highlight,
+            disposition: "existing",
+        });
+    }
+
+    return apiError(
+        "CONFLICT",
+        "This selection overlaps an existing highlight.",
+        409,
+        requestId,
+        {
+            existing_highlight_id: overlap.highlight.id,
+            relationship: overlap.relationship,
+        }
+    );
+}
 
 const CreateHighlightSchema = z.object({
     content_item_id: z.string().uuid(),
@@ -68,6 +96,36 @@ export async function POST(request: NextRequest) {
 
         const { content_item_id, segment_id, highlighted_text, note_body, color, anchor_start, anchor_end } = parsed.data;
 
+        if (
+            segment_id
+            && anchor_start !== undefined
+            && anchor_end !== undefined
+        ) {
+            const { overlap, error: overlapError } = await findHighlightOverlap({
+                supabase,
+                userId: user.id,
+                contentItemId: content_item_id,
+                segmentId: segment_id,
+                anchorStart: anchor_start,
+                anchorEnd: anchor_end,
+            });
+
+            if (overlapError) {
+                logApiError({
+                    requestId,
+                    route: "POST /api/library/highlights",
+                    message: "Error checking highlight overlap",
+                    error: overlapError,
+                    userId: user.id,
+                });
+                return apiError("INTERNAL_ERROR", "Failed to validate highlight selection.", 500, requestId);
+            }
+
+            if (overlap) {
+                return highlightOverlapResponse(overlap, requestId);
+            }
+        }
+
         // Optional: Check quota per item to prevent massive abuse
         const { count } = await supabase
             .from("user_highlights")
@@ -98,6 +156,26 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (error) {
+            if (
+                isHighlightOverlapConstraintError(error)
+                && segment_id
+                && anchor_start !== undefined
+                && anchor_end !== undefined
+            ) {
+                const { overlap } = await findHighlightOverlap({
+                    supabase,
+                    userId: user.id,
+                    contentItemId: content_item_id,
+                    segmentId: segment_id,
+                    anchorStart: anchor_start,
+                    anchorEnd: anchor_end,
+                });
+
+                if (overlap) {
+                    return highlightOverlapResponse(overlap, requestId);
+                }
+            }
+
             logApiError({ requestId, route: "POST /api/library/highlights", message: "Error inserting highlight", error });
             return apiError("INTERNAL_ERROR", "Failed to save highlight.", 500, requestId);
         }
@@ -134,7 +212,7 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        return NextResponse.json({ data });
+        return NextResponse.json({ data, disposition: "created" });
     } catch (error) {
         logApiError({ requestId, route: "POST /api/library/highlights", message: "Unexpected error", error });
         return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);
