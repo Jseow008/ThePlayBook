@@ -582,6 +582,31 @@ mark[data-highlight-spotlight="true"] {
   padding-top: max(1rem, var(--safe-area-top));
 }
 
+@media (max-height: 500px) and (max-width: 900px) {
+  .author-chat-header {
+    padding-top: max(0.5rem, var(--safe-area-top));
+    padding-bottom: 0.5rem;
+  }
+
+  .author-chat-persona-meta,
+  .author-chat-disclaimer {
+    display: none;
+  }
+
+  .author-chat-main-content {
+    padding-top: 0.5rem;
+  }
+
+  .author-chat-intro {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .author-chat-composer-shell {
+    padding-top: 0.25rem;
+  }
+}
+
 :where(.safe-area-bottom-sm) {
   bottom: max(0.75rem, var(--safe-area-bottom));
 }

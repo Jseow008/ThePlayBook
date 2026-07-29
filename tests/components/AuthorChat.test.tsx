@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AuthorChat } from "@/components/reader/AuthorChat";
 import { useChat } from "@ai-sdk/react";
 import { vi } from "vitest";
@@ -6,6 +6,23 @@ import { vi } from "vitest";
 vi.mock("@ai-sdk/react", () => ({
     useChat: vi.fn(),
 }));
+
+function mockInteractionMedia({ desktop, coarse = false }: { desktop: boolean; coarse?: boolean }) {
+    Object.defineProperty(window, "matchMedia", {
+        configurable: true,
+        writable: true,
+        value: vi.fn().mockImplementation((query: string) => ({
+            matches: query === "(pointer: coarse)" ? coarse : desktop,
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+        })),
+    });
+}
 
 describe("AuthorChat", () => {
     const mockOnClose = vi.fn();
@@ -26,11 +43,79 @@ describe("AuthorChat", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockInteractionMedia({ desktop: false });
         (useChat as any).mockReturnValue({
             messages: [],
             sendMessage: vi.fn(),
             status: "ready",
             error: null,
+        });
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("keeps mobile focus on the themed dialog until the composer is tapped", async () => {
+        render(<AuthorChat {...defaultProps} readerTheme="sepia" />);
+
+        const dialog = screen.getByTestId("author-chat-dialog");
+        const input = screen.getByRole("textbox", { name: /Ask Test Author a question/i });
+        const closeButton = screen.getByRole("button", { name: /close chat/i });
+        const sendButton = screen.getByRole("button", { name: /send message/i });
+
+        await waitFor(() => expect(dialog).toHaveFocus());
+
+        expect(input).not.toHaveFocus();
+        expect(dialog).toHaveClass("reader-sepia", "h-[100dvh]");
+        expect(input).toHaveClass("text-base");
+        expect(closeButton).toHaveClass("size-11");
+        expect(sendButton).toHaveClass("size-11");
+        expect(document.body).toHaveStyle({ overflow: "hidden" });
+        expect(document.documentElement).toHaveStyle({ overflow: "hidden" });
+    });
+
+    it("preserves immediate composer focus on reader-interaction desktop widths", async () => {
+        mockInteractionMedia({ desktop: true });
+
+        render(<AuthorChat {...defaultProps} />);
+
+        const input = screen.getByRole("textbox", { name: /Ask Test Author a question/i });
+        await waitFor(() => expect(input).toHaveFocus());
+    });
+
+    it("keeps touch-safe interaction sizing in landscape mobile widths", async () => {
+        mockInteractionMedia({ desktop: true, coarse: true });
+
+        render(<AuthorChat {...defaultProps} />);
+
+        const dialog = screen.getByTestId("author-chat-dialog");
+        const input = screen.getByRole("textbox", { name: /Ask Test Author a question/i });
+
+        await waitFor(() => expect(dialog).toHaveFocus());
+        expect(input).not.toHaveFocus();
+        expect(input).toHaveClass("text-base");
+        expect(screen.getByRole("button", { name: /close chat/i })).toHaveClass("size-11");
+        expect(screen.getByRole("button", { name: /send message/i })).toHaveClass("size-11");
+    });
+
+    it("tracks the visible viewport while the software keyboard changes its geometry", async () => {
+        vi.stubGlobal("innerHeight", 800);
+        vi.stubGlobal("visualViewport", {
+            height: 504,
+            offsetTop: 12,
+            scale: 1,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        });
+
+        render(<AuthorChat {...defaultProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByTestId("author-chat-dialog")).toHaveStyle({
+                height: "504px",
+                top: "12px",
+            });
         });
     });
 
