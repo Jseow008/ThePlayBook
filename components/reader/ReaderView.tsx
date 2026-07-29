@@ -98,6 +98,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const [isAudioFollowEnabled, setIsAudioFollowEnabled] = useState(true);
     const [isAudioPlaying, setIsAudioPlaying] = useState(false);
     const [isAudioMiniPlayerVisible, setIsAudioMiniPlayerVisible] = useState(false);
+    const [audioMiniPlayerBottomInset, setAudioMiniPlayerBottomInset] = useState(0);
     const [hasCompletedAudioPlayback, setHasCompletedAudioPlayback] = useState(false);
     const [hasPendingProgressSave, setHasPendingProgressSave] = useState(false);
     const [segmentScrollRequest, setSegmentScrollRequest] = useState<{
@@ -821,9 +822,12 @@ export function ReaderView({ content }: ReaderViewProps) {
                 className={cn(
                     "max-w-3xl mx-auto px-5 sm:px-6 pt-8 transition-[padding-bottom] duration-300 sm:pt-12",
                     isAudioMiniPlayerVisible
-                        ? "pb-32 sm:pb-36 lg:pb-36"
+                        ? "reader-audio-content-clearance"
                         : "pb-8 sm:pb-8 lg:pb-24"
                 )}
+                style={{
+                    "--reader-audio-viewport-bottom": `${audioMiniPlayerBottomInset}px`,
+                } as React.CSSProperties}
             >
                 {/* Hero Header */}
                 <ReaderHeroHeader
@@ -841,6 +845,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     showResumeAudioFollow={hasSyncedAudioPosition && !isAudioFollowEnabled && Boolean(activeNarrationSegmentId)}
                     isNotesDrawerOpen={isNotesDrawerOpen}
                     onMiniPlayerVisibilityChange={setIsAudioMiniPlayerVisible}
+                    onMiniPlayerBottomInsetChange={setAudioMiniPlayerBottomInset}
                     onResumeAudioFollow={resumeAudioFollow}
                     initialAudioTimeSec={initialAudioTimeSec}
                     onAudioTimeChange={handleAudioTimeChange}

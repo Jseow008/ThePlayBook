@@ -36,6 +36,7 @@ interface ReaderHeroHeaderProps {
     showResumeAudioFollow?: boolean;
     isNotesDrawerOpen?: boolean;
     onMiniPlayerVisibilityChange?: (isVisible: boolean) => void;
+    onMiniPlayerBottomInsetChange?: (bottomInsetPx: number) => void;
     onResumeAudioFollow?: () => void;
     initialAudioTimeSec?: number;
     onAudioTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
@@ -57,6 +58,7 @@ export function ReaderHeroHeader({
     showResumeAudioFollow = false,
     isNotesDrawerOpen = false,
     onMiniPlayerVisibilityChange,
+    onMiniPlayerBottomInsetChange,
     onResumeAudioFollow,
     initialAudioTimeSec = 0,
     onAudioTimeChange,
@@ -195,6 +197,7 @@ export function ReaderHeroHeader({
                         showResumeAudioFollow={showResumeAudioFollow}
                         isNotesDrawerOpen={isNotesDrawerOpen}
                         onMiniPlayerVisibilityChange={onMiniPlayerVisibilityChange}
+                        onMiniPlayerBottomInsetChange={onMiniPlayerBottomInsetChange}
                         onResumeAudioFollow={onResumeAudioFollow}
                         onTimeChange={onAudioTimeChange}
                         onPlaybackStateChange={onAudioPlaybackStateChange}

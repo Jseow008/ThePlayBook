@@ -586,6 +586,36 @@ mark[data-highlight-spotlight="true"] {
   bottom: max(0.75rem, var(--safe-area-bottom));
 }
 
+/* Reader audio dock: keep its lower edge opaque beneath iOS browser chrome. */
+.reader-audio-mini-dock {
+  padding-bottom: max(
+    0.75rem,
+    var(--safe-area-bottom),
+    var(--reader-audio-viewport-bottom, 0px)
+  );
+  background: hsl(var(--background));
+}
+
+.reader-audio-content-clearance {
+  padding-bottom: calc(
+    5.5rem + max(
+      0.75rem,
+      var(--safe-area-bottom),
+      var(--reader-audio-viewport-bottom, 0px)
+    )
+  );
+}
+
+@media (min-width: 640px) {
+  .reader-audio-mini-dock {
+    padding-bottom: 1.25rem;
+  }
+
+  .reader-audio-content-clearance {
+    padding-bottom: 9rem;
+  }
+}
+
 :where(.mobile-header-height) {
   height: var(--mobile-header-height);
 }

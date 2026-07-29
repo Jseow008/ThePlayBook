@@ -652,11 +652,16 @@ describe('ReaderView', () => {
 
         act(() => {
             readerHeroHeaderSpy.mock.lastCall?.[0]?.onMiniPlayerVisibilityChange(true);
+            readerHeroHeaderSpy.mock.lastCall?.[0]?.onMiniPlayerBottomInsetChange(72);
         });
 
         await waitFor(() => {
             expect(notesDrawerSpy.mock.lastCall?.[0]?.isAudioMiniPlayerVisible).toBe(true);
         });
+
+        const readerContent = screen.getByTestId('mock-hero-header').parentElement;
+        expect(readerContent).toHaveClass('reader-audio-content-clearance');
+        expect(readerContent).toHaveStyle('--reader-audio-viewport-bottom: 72px');
     });
 
     it('consumes a highlightId URL param and clears it after jumping', async () => {

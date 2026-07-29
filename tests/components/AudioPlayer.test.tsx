@@ -185,6 +185,61 @@ describe("AudioPlayer", () => {
         expect(onMiniPlayerVisibilityChange).toHaveBeenLastCalledWith(true);
     });
 
+    it("uses the visual viewport bottom inset in one opaque mini-player dock", async () => {
+        mockIntersectionObserver();
+        const onMiniPlayerBottomInsetChange = vi.fn();
+        vi.stubGlobal("innerHeight", 800);
+        vi.stubGlobal("visualViewport", {
+            height: 704,
+            offsetTop: 0,
+            scale: 1,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+        });
+
+        const { container } = render(
+            <AudioPlayer
+                src="https://example.com/audio.mp3"
+                readerTheme="sepia"
+                onMiniPlayerBottomInsetChange={onMiniPlayerBottomInsetChange}
+            />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        Object.defineProperty(audio, "duration", {
+            configurable: true,
+            value: 120,
+        });
+        Object.defineProperty(audio, "currentTime", {
+            configurable: true,
+            writable: true,
+            value: 24,
+        });
+
+        fireEvent(audio, new Event("loadedmetadata"));
+        fireEvent(audio, new Event("timeupdate"));
+        fireEvent(audio, new Event("play"));
+
+        await act(async () => {
+            intersectionCallback?.(
+                [{ isIntersecting: false } as IntersectionObserverEntry],
+                {} as IntersectionObserver
+            );
+        });
+
+        const miniPlayer = screen.getByRole("region", { name: "Audio mini player" });
+        expect(miniPlayer).toHaveClass("reader-audio-mini-dock", "reader-sepia");
+        await waitFor(() => {
+            expect(miniPlayer).toHaveStyle("--reader-audio-viewport-bottom: 96px");
+            expect(onMiniPlayerBottomInsetChange).toHaveBeenLastCalledWith(96);
+        });
+    });
+
     it("supports compact mini-player transport controls", async () => {
         mockIntersectionObserver();
         const onTimeChange = vi.fn();
