@@ -22,6 +22,7 @@ interface AudioPlayerProps {
     showResumeAudioFollow?: boolean;
     isNotesDrawerOpen?: boolean;
     onMiniPlayerVisibilityChange?: (isVisible: boolean) => void;
+    onMiniPlayerBottomInsetChange?: (bottomInsetPx: number) => void;
     onTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
     onPlaybackStateChange?: (isPlaying: boolean) => void;
     onResumeAudioFollow?: () => void;
@@ -37,6 +38,7 @@ export function AudioPlayer({
     showResumeAudioFollow = false,
     isNotesDrawerOpen = false,
     onMiniPlayerVisibilityChange,
+    onMiniPlayerBottomInsetChange,
     onTimeChange,
     onPlaybackStateChange,
     onResumeAudioFollow,
@@ -54,9 +56,66 @@ export function AudioPlayer({
     const [isHeroPlayerVisible, setIsHeroPlayerVisible] = useState(true);
     const [isMiniPlayerDismissed, setIsMiniPlayerDismissed] = useState(false);
     const [hasEnded, setHasEnded] = useState(false);
+    const [miniPlayerBottomInset, setMiniPlayerBottomInset] = useState(0);
 
     useEffect(() => {
         setMounted(true);
+    }, []);
+
+    useEffect(() => {
+        const visualViewport = window.visualViewport;
+
+        if (!visualViewport) {
+            return;
+        }
+
+        let animationFrame: number | null = null;
+
+        const updateBottomInset = () => {
+            animationFrame = null;
+
+            // Ignore pinch-zoom geometry. The mini-player should keep its normal
+            // page scale instead of growing a large dock while the user zooms.
+            if (Math.abs(visualViewport.scale - 1) > 0.01) {
+                setMiniPlayerBottomInset(0);
+                return;
+            }
+
+            const layoutViewportHeight = Math.max(
+                window.innerHeight,
+                document.documentElement.clientHeight,
+            );
+            const visibleViewportBottom = visualViewport.offsetTop + visualViewport.height;
+            const nextInset = Math.max(0, Math.ceil(layoutViewportHeight - visibleViewportBottom));
+
+            setMiniPlayerBottomInset((currentInset) =>
+                currentInset === nextInset ? currentInset : nextInset
+            );
+        };
+
+        const scheduleUpdate = () => {
+            if (animationFrame !== null) {
+                return;
+            }
+
+            animationFrame = window.requestAnimationFrame(updateBottomInset);
+        };
+
+        updateBottomInset();
+        visualViewport.addEventListener("resize", scheduleUpdate);
+        visualViewport.addEventListener("scroll", scheduleUpdate, { passive: true });
+        window.addEventListener("resize", scheduleUpdate);
+        window.addEventListener("orientationchange", scheduleUpdate);
+
+        return () => {
+            if (animationFrame !== null) {
+                window.cancelAnimationFrame(animationFrame);
+            }
+            visualViewport.removeEventListener("resize", scheduleUpdate);
+            visualViewport.removeEventListener("scroll", scheduleUpdate);
+            window.removeEventListener("resize", scheduleUpdate);
+            window.removeEventListener("orientationchange", scheduleUpdate);
+        };
     }, []);
 
     useEffect(() => {
@@ -303,6 +362,10 @@ export function AudioPlayer({
         onMiniPlayerVisibilityChange?.(canShowMiniPlayer);
     }, [canShowMiniPlayer, onMiniPlayerVisibilityChange]);
 
+    useEffect(() => {
+        onMiniPlayerBottomInsetChange?.(miniPlayerBottomInset);
+    }, [miniPlayerBottomInset, onMiniPlayerBottomInsetChange]);
+
     return (
         <div ref={playerContainerRef} className="relative overflow-hidden rounded-2xl bg-card/95 backdrop-blur-sm border border-border shadow-xl">
             <audio ref={audioRef} src={src} preload="metadata" />
@@ -396,122 +459,118 @@ export function AudioPlayer({
             )}
 
             {canShowMiniPlayer && createPortal(
-                <>
+                <div
+                    className={cn(
+                        `reader-${readerTheme}`,
+                        "reader-audio-mini-dock fixed inset-x-0 bottom-0 z-[45] px-3 sm:inset-x-auto sm:left-1/2 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 sm:px-0 lg:left-[calc(50%+2rem)]"
+                    )}
+                    style={{
+                        "--reader-audio-viewport-bottom": `${miniPlayerBottomInset}px`,
+                    } as React.CSSProperties}
+                    role="region"
+                    aria-label="Audio mini player"
+                >
                     <div
                         aria-hidden="true"
-                        className={cn(
-                            `reader-${readerTheme}`,
-                            "pointer-events-none fixed inset-x-0 bottom-0 z-[44] h-32 bg-gradient-to-t from-background via-background/90 to-transparent sm:left-1/2 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]"
-                        )}
-                    />
-                    <div
-                        aria-hidden="true"
-                        className={cn(
-                            `reader-${readerTheme}`,
-                            "pointer-events-none fixed inset-x-0 bottom-0 z-[44] h-[max(0.75rem,var(--safe-area-bottom))] bg-background sm:left-1/2 sm:h-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]"
-                        )}
+                        className="pointer-events-none absolute inset-x-0 bottom-full h-16 bg-gradient-to-t from-background to-transparent"
                     />
                     <div
                         className={cn(
-                            `reader-${readerTheme}`,
-                            "fixed inset-x-3 safe-area-bottom-sm z-[45] sm:inset-x-auto sm:left-1/2 sm:bottom-5 sm:w-[min(56rem,calc(100vw-8rem))] sm:-translate-x-1/2 lg:left-[calc(50%+2rem)]",
                             "animate-in fade-in slide-in-from-bottom-3 duration-300 motion-reduce:animate-none"
                         )}
-                        role="region"
-                        aria-label="Audio mini player"
                     >
                         <div className="overflow-hidden rounded-2xl border border-border/70 bg-card/95 shadow-[0_12px_32px_-18px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-                        <div className="h-0.5 bg-secondary">
-                            <div
-                                className="h-full bg-primary transition-[width] duration-150"
-                                style={{ width: `${progress}%` }}
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:gap-4 sm:px-5 lg:px-6">
-                            <button
-                                type="button"
-                                onClick={togglePlay}
-                                className="focus-ring flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
-                                aria-label={isPlaying ? "Pause mini player" : "Play mini player"}
-                            >
-                                {isPlaying ? <Pause className="size-4" /> : <Play className="ml-0.5 size-4" />}
-                            </button>
-
-                            <div className="min-w-0 flex-1">
-                                <p className="truncate text-xs font-semibold text-foreground" title={miniPlayerLabel}>
-                                    {miniPlayerLabel}
-                                </p>
-                                <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                                    <span className="w-9 flex-shrink-0 font-mono text-[11px] text-muted-foreground">
-                                        {formatTime(currentTime)}
-                                    </span>
-                                    <input
-                                        type="range"
-                                        min="0"
-                                        max={duration || 0}
-                                        value={currentTime}
-                                        onChange={handleSeek}
-                                        className="h-1.5 min-w-16 flex-1 cursor-pointer accent-primary"
-                                        aria-label="Seek mini player timeline"
-                                    />
-                                </div>
+                            <div className="h-0.5 bg-secondary">
+                                <div
+                                    className="h-full bg-primary transition-[width] duration-150"
+                                    style={{ width: `${progress}%` }}
+                                />
                             </div>
 
-                            <div className="flex flex-shrink-0 items-center gap-1 self-end">
+                            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:gap-4 sm:px-5 lg:px-6">
                                 <button
                                     type="button"
-                                    onClick={() => skipBy(-10)}
-                                    className="focus-ring inline-flex size-7 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                    aria-label="Rewind 10 seconds"
+                                    onClick={togglePlay}
+                                    className="focus-ring flex size-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+                                    aria-label={isPlaying ? "Pause mini player" : "Play mini player"}
                                 >
-                                    <span className="relative inline-flex size-5 items-center justify-center">
-                                        <RotateCcw className="absolute inset-0 size-5" strokeWidth={2.2} />
-                                        <span className="text-[9px] font-bold leading-none">10</span>
-                                    </span>
+                                    {isPlaying ? <Pause className="size-4" /> : <Play className="ml-0.5 size-4" />}
                                 </button>
-                                <button
-                                    type="button"
-                                    onClick={() => skipBy(10)}
-                                    className="focus-ring inline-flex size-7 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                    aria-label="Forward 10 seconds"
-                                >
-                                    <span className="relative inline-flex size-5 items-center justify-center">
-                                        <RotateCw className="absolute inset-0 size-5" strokeWidth={2.2} />
-                                        <span className="text-[9px] font-bold leading-none">10</span>
-                                    </span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={cyclePlaybackRate}
-                                    className="focus-ring min-w-9 flex-shrink-0 rounded-md bg-secondary/70 px-1.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                    aria-label="Change mini player playback speed"
-                                    title="Change playback speed"
-                                >
-                                    {playbackRate}x
-                                </button>
-                                {showResumeAudioFollow && onResumeAudioFollow && (
+
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-xs font-semibold text-foreground" title={miniPlayerLabel}>
+                                        {miniPlayerLabel}
+                                    </p>
+                                    <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                                        <span className="w-9 flex-shrink-0 font-mono text-[11px] text-muted-foreground">
+                                            {formatTime(currentTime)}
+                                        </span>
+                                        <input
+                                            type="range"
+                                            min="0"
+                                            max={duration || 0}
+                                            value={currentTime}
+                                            onChange={handleSeek}
+                                            className="h-1.5 min-w-16 flex-1 cursor-pointer accent-primary"
+                                            aria-label="Seek mini player timeline"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-shrink-0 items-center gap-1 self-end">
                                     <button
                                         type="button"
-                                        onClick={onResumeAudioFollow}
-                                        className="focus-ring rounded-full border border-border/70 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45"
+                                        onClick={() => skipBy(-10)}
+                                        className="focus-ring inline-flex size-7 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                        aria-label="Rewind 10 seconds"
                                     >
-                                        Follow audio
+                                        <span className="relative inline-flex size-5 items-center justify-center">
+                                            <RotateCcw className="absolute inset-0 size-5" strokeWidth={2.2} />
+                                            <span className="text-[9px] font-bold leading-none">10</span>
+                                        </span>
                                     </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={dismissMiniPlayer}
-                                    className="focus-ring rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                                    aria-label="Close audio mini player"
-                                >
-                                    <X className="size-4" />
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => skipBy(10)}
+                                        className="focus-ring inline-flex size-7 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                        aria-label="Forward 10 seconds"
+                                    >
+                                        <span className="relative inline-flex size-5 items-center justify-center">
+                                            <RotateCw className="absolute inset-0 size-5" strokeWidth={2.2} />
+                                            <span className="text-[9px] font-bold leading-none">10</span>
+                                        </span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={cyclePlaybackRate}
+                                        className="focus-ring min-w-9 flex-shrink-0 rounded-md bg-secondary/70 px-1.5 py-1 text-[11px] font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                        aria-label="Change mini player playback speed"
+                                        title="Change playback speed"
+                                    >
+                                        {playbackRate}x
+                                    </button>
+                                    {showResumeAudioFollow && onResumeAudioFollow && (
+                                        <button
+                                            type="button"
+                                            onClick={onResumeAudioFollow}
+                                            className="focus-ring rounded-full border border-border/70 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45"
+                                        >
+                                            Follow audio
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={dismissMiniPlayer}
+                                        className="focus-ring rounded-full p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                        aria-label="Close audio mini player"
+                                    >
+                                        <X className="size-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        </div>
                     </div>
-                </>,
+                </div>,
                 document.body
             )}
         </div>
