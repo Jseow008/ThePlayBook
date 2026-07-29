@@ -997,6 +997,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                         title={content.title}
                         author={content.author}
                         segmentCount={content.segments.length}
+                        readerTheme={readerTheme}
                     />
                 ) : (
                     <ContentFeedback contentId={content.id} />
@@ -1047,6 +1048,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     authorName={authorName}
                     contentTitle={content.title}
                     hasCompletedReading={isBookCompleted}
+                    readerTheme={readerTheme}
                     onClose={() => setShowAuthorChat(false)}
                 />
             )}

@@ -12,6 +12,7 @@ import { useRecommendations } from "@/hooks/use-content-queries";
 import { buildReadPath } from "@/lib/content-paths";
 import { SignInLink } from "@/components/ui/SignInLink";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
+import type { ReaderTheme } from "@/hooks/useReaderSettings";
 
 const AuthorChat = dynamic(
     () => import("./AuthorChat").then((mod) => mod.AuthorChat),
@@ -35,9 +36,10 @@ interface CompletionCardProps {
     title: string;
     author: string | null;
     segmentCount: number;
+    readerTheme?: ReaderTheme;
 }
 
-export function CompletionCard({ contentId, title, author, segmentCount }: CompletionCardProps) {
+export function CompletionCard({ contentId, title, author, segmentCount, readerTheme = "dark" }: CompletionCardProps) {
     const { completedIds, inProgressIds, myListIds, isLoaded, user } = useReadingProgress();
     const [showChat, setShowChat] = useState(false);
     const { data: recommendationItems = [], isLoading: loadingRec } = useRecommendations(
@@ -206,6 +208,7 @@ export function CompletionCard({ contentId, title, author, segmentCount }: Compl
                     contentId={contentId}
                     authorName={authorName}
                     contentTitle={title}
+                    readerTheme={readerTheme}
                     onClose={() => setShowChat(false)}
                 />
             )}

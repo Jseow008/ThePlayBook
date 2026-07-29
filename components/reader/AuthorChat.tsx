@@ -10,6 +10,10 @@ import ReactMarkdown from "react-markdown";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { ChatExportButton } from "@/components/chat/ChatExportButton";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { useVisualViewportGeometry } from "@/hooks/useVisualViewportGeometry";
+import type { ReaderTheme } from "@/hooks/useReaderSettings";
+import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
 interface AuthorChatProps {
@@ -17,6 +21,7 @@ interface AuthorChatProps {
     authorName: string;
     contentTitle: string;
     hasCompletedReading?: boolean;
+    readerTheme?: ReaderTheme;
     onClose: () => void;
 }
 
@@ -71,7 +76,14 @@ function getDisplayErrorMessage(error: unknown): string {
     return FALLBACK_CHAT_ERROR;
 }
 
-export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedReading = true, onClose }: AuthorChatProps) {
+export function AuthorChat({
+    contentId,
+    authorName,
+    contentTitle,
+    hasCompletedReading = true,
+    readerTheme = "dark",
+    onClose,
+}: AuthorChatProps) {
     const transport = useMemo(
         () =>
             new TextStreamChatTransport({
@@ -84,14 +96,18 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
     const [mounted, setMounted] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const isReaderInteractionDesktop = useMediaQuery(VIEWPORT_QUERIES.readerInteractionDesktop);
+    const hasCoarsePointer = useMediaQuery("(pointer: coarse)");
+    const usesMobileInteraction = !isReaderInteractionDesktop || hasCoarsePointer;
+    const { height: visualViewportHeight, offsetTop: visualViewportOffsetTop } = useVisualViewportGeometry();
     useEffect(() => setMounted(true), []);
 
     useOverlayInteractions({
         enabled: mounted,
         containerRef: dialogRef,
-        initialFocusRef: textareaRef,
+        initialFocusRef: usesMobileInteraction ? dialogRef : textareaRef,
         onEscape: onClose,
-        scrollLock: true,
+        scrollLock: { lockDocumentElement: true },
     });
 
     const {
@@ -176,9 +192,19 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
             aria-modal="true"
             aria-label={`Chat with ${authorName} persona`}
             tabIndex={-1}
-            className={`fixed inset-0 ${OVERLAY_LAYER_CLASS.popover} flex flex-col bg-background/95 backdrop-blur-md animate-in fade-in duration-300`}
+            data-testid="author-chat-dialog"
+            className={cn(
+                `reader-${readerTheme}`,
+                `fixed inset-x-0 top-0 ${OVERLAY_LAYER_CLASS.popover} flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background/95 text-foreground backdrop-blur-md focus:outline-none animate-in fade-in duration-300 motion-reduce:animate-none motion-reduce:transition-none`,
+            )}
+            style={visualViewportHeight === null
+                ? undefined
+                : {
+                    height: `${visualViewportHeight}px`,
+                    top: `${visualViewportOffsetTop}px`,
+                }}
         >
-            <header className="flex-shrink-0 border-b border-border/50 px-4 py-3 sm:px-6">
+            <header className="author-chat-header flex-shrink-0 border-b border-border/50 px-4 pb-2.5 pt-[max(0.75rem,var(--safe-area-top))] sm:px-6 sm:pb-3 sm:pt-3">
                 <div className="mx-auto flex w-full max-w-4xl items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
                         <div className="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10">
@@ -187,7 +213,7 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                         <div className="min-w-0">
                             <h2 className="truncate text-sm font-bold leading-tight text-foreground sm:text-base">{authorName}</h2>
                             <p className="truncate text-xs text-foreground/80">{contentTitle}</p>
-                            <p className="mt-0.5 truncate text-[0.65rem] leading-none text-muted-foreground">Author Persona &middot; AI</p>
+                            <p className="author-chat-persona-meta mt-0.5 truncate text-[0.7rem] leading-none text-muted-foreground sm:text-[0.65rem]">Author Persona &middot; AI</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -203,7 +229,10 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                         )}
                         <button
                             onClick={onClose}
-                            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/60 hover:bg-muted transition-colors"
+                            className={cn(
+                                "flex shrink-0 items-center justify-center rounded-xl bg-muted/60 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/55",
+                                usesMobileInteraction ? "size-11" : "size-9",
+                            )}
                             aria-label="Close chat"
                         >
                             <X className="size-4 text-muted-foreground" />
@@ -214,16 +243,16 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
 
             <main
                 ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto overscroll-contain [overflow-anchor:none]"
+                className="min-h-0 flex-1 overflow-y-auto overscroll-contain [overflow-anchor:none]"
             >
-                <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 pt-6 pb-3 sm:px-6">
-                    <div className="flex-1 rounded-[28px] border border-border/50 bg-card/35 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur-sm">
-                        <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 sm:py-7">
+                <div className="author-chat-main-content mx-auto flex w-full max-w-5xl flex-col px-4 pb-2 pt-4 sm:min-h-full sm:px-6 sm:pb-3 sm:pt-6">
+                    <div className="sm:flex-1 sm:rounded-[28px] sm:border sm:border-border/50 sm:bg-card/35 sm:shadow-[0_0_0_1px_rgba(255,255,255,0.02)] sm:backdrop-blur-sm">
+                        <div className="mx-auto w-full max-w-4xl sm:px-6 sm:py-7">
                             <div className="space-y-5">
                                 {isEmptyState && (
-                                    <section className="rounded-[24px] border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-5 py-5 shadow-sm sm:px-6 sm:py-6">
-                                        <div className="flex items-start gap-4">
-                                            <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                    <section className="author-chat-intro rounded-2xl border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-4 py-4 shadow-sm sm:rounded-[24px] sm:px-6 sm:py-6">
+                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+                                            <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:mt-0.5 sm:size-10">
                                                 <Sparkles className="size-4" />
                                             </div>
                                             <div className="min-w-0">
@@ -245,12 +274,12 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                                                     <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
                                                         Good places to start
                                                     </p>
-                                                    <div className="flex flex-wrap gap-2.5">
+                                                    <div className="grid gap-2.5 sm:flex sm:flex-wrap">
                                                         {STARTER_PROMPTS.map((prompt) => (
                                                             <button
                                                                 key={prompt}
                                                                 onClick={() => void sendPrompt(prompt)}
-                                                                className="rounded-full border border-border/70 bg-background/75 px-3.5 py-2 text-xs text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                                                className="min-h-11 w-full rounded-2xl border border-border/70 bg-background/75 px-4 py-2.5 text-left text-sm text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:rounded-full sm:px-3.5 sm:py-2 sm:text-center sm:text-xs"
                                                                 disabled={isStreaming}
                                                             >
                                                                 {prompt}
@@ -270,7 +299,7 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                                         <div key={m.id} className="space-y-3">
                                             <div
                                                 className={cn(
-                                                    "flex w-full gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
+                                                    "flex w-full gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:animate-none motion-reduce:transition-none",
                                                     m.role === "user" ? "justify-end pr-1 sm:pr-2" : "justify-start"
                                                 )}
                                             >
@@ -358,7 +387,7 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                 </div>
             </main>
 
-            <div className="flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-4 pt-2 safe-area-pb-lg sm:px-6">
+            <div className="author-chat-composer-shell flex-shrink-0 bg-gradient-to-b from-transparent via-background/90 to-background/95 px-4 pt-2 safe-area-pb-lg sm:px-6">
                 <div className="mx-auto w-full max-w-5xl">
                     <div className="mx-auto w-full max-w-4xl rounded-[24px] border border-border/45 bg-card/30 px-3 pt-3 pb-2 shadow-[0_-1px_0_rgba(255,255,255,0.02)] backdrop-blur-sm">
                         <form
@@ -370,7 +399,10 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 placeholder={`Ask ${authorName} anything...`}
-                                className="flex-1 max-h-40 min-h-[52px] w-full resize-none bg-transparent px-4 py-3.5 text-[0.95rem] outline-none placeholder:text-muted-foreground/70 overflow-y-auto"
+                                className={cn(
+                                    "max-h-40 w-full flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3.5 outline-none placeholder:text-muted-foreground/70",
+                                    usesMobileInteraction ? "min-h-14 text-base" : "min-h-[52px] text-[0.95rem]",
+                                )}
                                 rows={1}
                                 onKeyDown={(e) => {
                                     if (e.key === "Enter" && !e.shiftKey) {
@@ -384,7 +416,10 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                                 <button
                                     type="submit"
                                     disabled={!input.trim() || isStreaming}
-                                    className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed hover:bg-primary/90 transition-colors"
+                                    className={cn(
+                                        "flex items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-not-allowed disabled:opacity-50",
+                                        usesMobileInteraction ? "size-11" : "size-10",
+                                    )}
                                     aria-label="Send message"
                                 >
                                     {isStreaming ? (
@@ -395,7 +430,7 @@ export function AuthorChat({ contentId, authorName, contentTitle, hasCompletedRe
                                 </button>
                             </div>
                         </form>
-                        <p className="mt-2 text-center text-[0.6rem] text-muted-foreground opacity-50">
+                        <p className="author-chat-disclaimer mt-2 text-center text-xs text-muted-foreground/70 sm:text-[0.6rem] sm:text-muted-foreground sm:opacity-50">
                             AI persona · Responses are generated, not from the actual author
                         </p>
                     </div>

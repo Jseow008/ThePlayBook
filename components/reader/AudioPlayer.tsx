@@ -11,6 +11,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Headphones, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useVisualViewportGeometry } from "@/hooks/useVisualViewportGeometry";
 
 interface AudioPlayerProps {
     src: string;
@@ -56,66 +57,10 @@ export function AudioPlayer({
     const [isHeroPlayerVisible, setIsHeroPlayerVisible] = useState(true);
     const [isMiniPlayerDismissed, setIsMiniPlayerDismissed] = useState(false);
     const [hasEnded, setHasEnded] = useState(false);
-    const [miniPlayerBottomInset, setMiniPlayerBottomInset] = useState(0);
+    const { bottomInset: miniPlayerBottomInset } = useVisualViewportGeometry();
 
     useEffect(() => {
         setMounted(true);
-    }, []);
-
-    useEffect(() => {
-        const visualViewport = window.visualViewport;
-
-        if (!visualViewport) {
-            return;
-        }
-
-        let animationFrame: number | null = null;
-
-        const updateBottomInset = () => {
-            animationFrame = null;
-
-            // Ignore pinch-zoom geometry. The mini-player should keep its normal
-            // page scale instead of growing a large dock while the user zooms.
-            if (Math.abs(visualViewport.scale - 1) > 0.01) {
-                setMiniPlayerBottomInset(0);
-                return;
-            }
-
-            const layoutViewportHeight = Math.max(
-                window.innerHeight,
-                document.documentElement.clientHeight,
-            );
-            const visibleViewportBottom = visualViewport.offsetTop + visualViewport.height;
-            const nextInset = Math.max(0, Math.ceil(layoutViewportHeight - visibleViewportBottom));
-
-            setMiniPlayerBottomInset((currentInset) =>
-                currentInset === nextInset ? currentInset : nextInset
-            );
-        };
-
-        const scheduleUpdate = () => {
-            if (animationFrame !== null) {
-                return;
-            }
-
-            animationFrame = window.requestAnimationFrame(updateBottomInset);
-        };
-
-        updateBottomInset();
-        visualViewport.addEventListener("resize", scheduleUpdate);
-        visualViewport.addEventListener("scroll", scheduleUpdate, { passive: true });
-        window.addEventListener("resize", scheduleUpdate);
-        window.addEventListener("orientationchange", scheduleUpdate);
-
-        return () => {
-            if (animationFrame !== null) {
-                window.cancelAnimationFrame(animationFrame);
-            }
-            visualViewport.removeEventListener("resize", scheduleUpdate);
-            visualViewport.removeEventListener("scroll", scheduleUpdate);
-            window.removeEventListener("resize", scheduleUpdate);
-            window.removeEventListener("orientationchange", scheduleUpdate);
-        };
     }, []);
 
     useEffect(() => {

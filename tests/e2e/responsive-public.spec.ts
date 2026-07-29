@@ -3,6 +3,7 @@ import {
     completeGuestOnboarding,
     expectMobileChromeDoesNotCoverTarget,
     expectMobileHeaderVisibilityAtScrollPositions,
+    expectFocusedInputVisibleAfterKeyboard,
     expectNoDocumentHorizontalScroll,
     expectResponsiveRouteHealth,
     installResponsiveErrorGuard,
@@ -132,6 +133,67 @@ test.describe('responsive public routes', () => {
         await expect(page.getByTestId('mobile-bottom-nav')).toHaveCount(0);
         await expectMobileHeaderVisibilityAtScrollPositions(page, { assertAutoHide: false });
         await expectNoDocumentHorizontalScroll(page);
+
+        const libraryStateButton = page.getByRole('button', { name: /^Save .* to Library$/ });
+        await expect(libraryStateButton).toBeEnabled({ timeout: 20_000 });
+        const discussButton = page.getByRole('button', { name: 'Discuss ideas', exact: true });
+        await expect(discussButton).toBeVisible();
+        await discussButton.scrollIntoViewIfNeeded();
+        await discussButton.focus();
+        const scrollYBeforeChat = await page.evaluate(() => window.scrollY);
+        await discussButton.click();
+
+        const authorChat = page.getByTestId('author-chat-dialog');
+        const authorChatInput = authorChat.getByRole('textbox');
+        const closeChatButton = authorChat.getByRole('button', { name: 'Close chat', exact: true });
+        const sendMessageButton = authorChat.getByRole('button', { name: 'Send message', exact: true });
+        await expect(authorChat).toBeVisible({ timeout: 20_000 });
+
+        const viewport = page.viewportSize();
+        const chatState = await authorChat.evaluate((dialog) => {
+            const input = dialog.querySelector('textarea');
+            const dialogRect = dialog.getBoundingClientRect();
+            const inputFontSize = input ? Number.parseFloat(window.getComputedStyle(input).fontSize) : 0;
+
+            return {
+                activeElementIsDialog: document.activeElement === dialog,
+                activeElementIsInput: document.activeElement === input,
+                dialogBottom: dialogRect.bottom,
+                dialogLeft: dialogRect.left,
+                dialogRight: dialogRect.right,
+                dialogTop: dialogRect.top,
+                inputFontSize,
+            };
+        });
+
+        expect(chatState.dialogLeft).toBeGreaterThanOrEqual(-1);
+        expect(chatState.dialogTop).toBeGreaterThanOrEqual(-1);
+        expect(chatState.dialogRight).toBeLessThanOrEqual((viewport?.width ?? 0) + 1);
+        expect(chatState.dialogBottom).toBeLessThanOrEqual((viewport?.height ?? 0) + 1);
+
+        const usesMobileInteraction = (viewport?.width ?? 0) < 640
+            || await page.evaluate(() => window.matchMedia('(pointer: coarse)').matches);
+
+        if (usesMobileInteraction) {
+            expect(chatState.activeElementIsDialog).toBe(true);
+            expect(chatState.activeElementIsInput).toBe(false);
+            expect(chatState.inputFontSize).toBeGreaterThanOrEqual(16);
+
+            for (const control of [closeChatButton, sendMessageButton]) {
+                const box = await control.boundingBox();
+                expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+                expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+            }
+        } else {
+            expect(chatState.activeElementIsInput).toBe(true);
+        }
+
+        await expectFocusedInputVisibleAfterKeyboard(page, authorChatInput);
+        await expectNoDocumentHorizontalScroll(page);
+        await closeChatButton.click();
+        await expect(authorChat).toHaveCount(0);
+        await expect(discussButton).toBeFocused();
+        expect(Math.abs((await page.evaluate(() => window.scrollY)) - scrollYBeforeChat)).toBeLessThanOrEqual(4);
 
         guard.assertNoCriticalErrors();
     });
