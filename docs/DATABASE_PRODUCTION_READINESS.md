@@ -1,7 +1,7 @@
 # Netflux Database Production Readiness
 
 Status: Active
-Last verified: 2026-07-25
+Last verified: 2026-07-29
 Scope: Supabase Postgres, Auth, Storage, database-facing application paths, migrations, backup, recovery, and operational readiness.
 
 This document is the single implementation tracker for making the Netflux database reproducible, recoverable, secure, and safe to evolve. It does not replace:
@@ -64,7 +64,7 @@ The core data snapshot was collected read-only on 2026-07-14; migration parity a
 | User annotations    | 80 highlights                                                                                                                                   |
 | Storage             | 1,013 objects: 261 `audio` and 752 `media`, totaling 1,222,139,218 bytes (approximately 1.22 GB)                                                |
 | Security advisor    | 1 warning: leaked-password protection disabled; the 6 public email/token RPC warnings were closed by DB-106                                   |
-| Performance advisor | 16 unused-index notices; no unindexed foreign key, RLS initialization-plan, or multiple-permissive-policy warning                         |
+| Performance advisor | 13 informational unused-index notices; no unindexed foreign key, RLS initialization-plan, or multiple-permissive-policy warning           |
 | Migration parity    | 85 matching local/remote versions, no duplicates, and a clean production dry-run with no pending migrations                              |
 
 ## Master work tracker
@@ -81,10 +81,10 @@ The core data snapshot was collected read-only on 2026-07-14; migration parity a
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Verified                                                        | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Verified                                                        | Yes             |
 | DB-106 | P1       | Review public email/token RPC risk acceptance                            | Verified                                                        | Yes             |
-| DB-107 | P1       | Configure production Auth, database, and network controls                | Not started                                                     | Yes             |
+| DB-107 | P1       | Configure production Auth, database, and network controls                | In progress                                                     | Yes             |
 | DB-201 | P2       | Repair minor data inconsistencies                                        | Not started                                                     | No              |
 | DB-202 | P2       | Decide long-term content revision and taxonomy models                    | Not started                                                     | No              |
-| DB-203 | P2       | Add capacity, query, and recovery monitoring                             | Not started                                                     | Yes             |
+| DB-203 | P2       | Add capacity, query, and recovery monitoring                             | In progress — implementation complete; activation and launch proof pending | Yes             |
 
 ## P0 — Production blockers
 
@@ -844,18 +844,53 @@ These are not reasons to redesign the current schema immediately. Each change sh
 
 ### DB-203: Add capacity, query, and recovery monitoring
 
-Status: Not started
+Status: In progress — the fail-closed scheduled monitor and documented thresholds are implemented; credential activation, alert-delivery proof, current capacity remediation, and launch-load testing remain
+
+#### Read-only baseline and implementation — 2026-07-29
+
+- Production remains `ACTIVE_HEALTHY` on PostgreSQL 17.6. The database is 64,490,643 bytes against the configured 500 MB Free-plan database quota, with 15 of 60 connections used, one active connection, zero lock waiters, zero transactions older than five minutes, and zero recurring query fingerprints averaging at least one second across 20 or more calls.
+- Storage contains 1,013 objects totaling 1,222,139,218 bytes. This exceeds the configured 1 GB Free-plan threshold and is intentionally a blocking monitoring result rather than an allowlisted success.
+- Request-notification processing has no queued, processing, or failed row. The existing GitHub worker is therefore healthy at the database boundary.
+- Narration has one job queued since 2026-07-22 and no failure in the last 24 hours. Narration is not currently scheduled; the monitor emits a warning requiring manual review. If a recurring narration worker is enabled, `DB203_NARRATION_WORKER_ENABLED=true` converts any stale or recently failed narration work into a blocking result.
+- [`check-supabase-production-health.mjs`](../scripts/check-supabase-production-health.mjs) uses only the Supabase Management API's read-only database-query endpoint, the current ClickHouse-backed unified logs endpoint, project health, and backup inventory. It does not return query text, log messages, user content, object names, credentials, or other sensitive payloads.
+- The daily/manual `Supabase Production Monitoring` GitHub job fails closed when its credential or recovery timestamps are missing. It checks database and Storage capacity, connection saturation, lock waits, long transactions, aggregate slow-query fingerprints, worker queues and recent failures, API 5xx/database error aggregates, hosted backup/PITR state, independent recovery-point freshness, and restore-drill freshness. It also runs both Supabase security and performance advisors.
+- The monitor follows the 2026-07-23 Supabase logs API migration and uses `/analytics/endpoints/logs` with ClickHouse SQL; it does not depend on the retiring `logs.all` endpoint.
+
+#### Thresholds and operating policy
+
+| Signal | Warning | Blocking |
+| --- | --- | --- |
+| Database or Storage capacity | 80% of configured quota | 100% of configured quota |
+| Connections | 80% of `max_connections` | 90% of `max_connections` |
+| Locks / long transactions | — | any lock waiter or transaction older than five minutes |
+| Recurring slow queries | 1–5 fingerprints with 20+ calls and mean execution time of at least one second | more than 5 fingerprints |
+| Supabase API/database logs | aggregate observation | more than 5 API 5xx or database errors in 24 hours; any `FATAL`/`PANIC` |
+| Request notifications | — | any row queued/processing over 15 minutes or failed in 24 hours |
+| Narration | stale work when no scheduler exists | stale/recently failed work when a scheduler is enabled |
+| Independent database/Storage recovery point | — | older than 24 hours or timestamp missing/invalid |
+| Restore drill | — | older than 90 days or timestamp missing/invalid |
+| Hosted backup/PITR | warning while the documented Free-plan risk acceptance remains | blocking after `DB203_REQUIRE_HOSTED_BACKUP=true` at launch |
+
+Thresholds are configurable through documented `DB203_*` environment values, but they must not be raised merely to make a failing run green. Update a threshold only after recording the capacity, traffic, or operating-model evidence that justifies it.
+
+#### Remaining activation and launch proof
+
+- Provision a least-privilege Supabase Management API token for GitHub with project/database read, advisor read, analytics-log read, and backup-inventory read access. Do not place the current broad operator token or a database/service-role credential in the scheduled job.
+- Configure `SUPABASE_ACCESS_TOKEN` and `SUPABASE_PROJECT_REF` as GitHub secrets, plus `DB203_DATABASE_RECOVERY_POINT_AT`, `DB203_STORAGE_RECOVERY_POINT_AT`, and `DB203_RESTORE_DRILL_AT` as repository variables.
+- Run the workflow manually, confirm that the current Storage and recovery-point breaches produce a failed job, and verify the repository owner receives the GitHub Actions failure notification.
+- Refresh both independent recovery points, update their timestamps, and rerun. Storage must be reduced below the approved threshold or the plan decision revisited before the monitor can pass.
+- Run and record representative launch traffic in the established disposable hosted environment before changing DB-203 to Verified.
 
 #### Acceptance criteria
 
-- [ ] Alerts exist for database and Storage capacity thresholds.
-- [ ] Connection saturation, slow queries, lock waits, failed jobs, and API/database error rates are monitored.
-- [ ] Narration processing and request-notification worker freshness, failure, retry, and backlog signals are monitored wherever those workers are scheduled.
-- [ ] Do not introduce `pg_cron` or Supabase Edge Functions solely for monitoring; the live project currently uses neither, so monitoring should follow the actual worker runtime unless the architecture changes.
-- [ ] `pg_stat_statements` or equivalent query diagnostics are reviewed regularly.
-- [ ] Advisor audits run on a schedule and after database changes.
-- [ ] Backup freshness and independent Storage-copy freshness are monitored.
-- [ ] Restore drills run on a documented cadence.
+- [ ] Alerts exist for database and Storage capacity thresholds. The checks are implemented; activate the credential and prove notification delivery.
+- [ ] Connection saturation, slow queries, lock waits, failed jobs, and API/database error rates are monitored. The checks are implemented; prove the first scheduled run.
+- [ ] Narration processing and request-notification worker freshness, failure, retry, and backlog signals are monitored wherever those workers are scheduled. Database signals are implemented; clear or deliberately cancel the stale narration job and prove the enabled request-notification worker run.
+- [x] Do not introduce `pg_cron` or Supabase Edge Functions solely for monitoring; the implementation follows the existing GitHub Actions worker runtime.
+- [ ] `pg_stat_statements` or equivalent query diagnostics are reviewed regularly. The aggregate check is implemented; prove the first scheduled run and record the review owner.
+- [ ] Advisor audits run on a schedule and after database changes. The daily/manual workflow and production-release checks exist; activate the scheduled credential and prove a run.
+- [ ] Backup freshness and independent Storage-copy freshness are monitored. Fail-closed timestamps are implemented; activate them and connect updates to the backup procedure.
+- [x] Restore drills run on a documented 90-day cadence, with the last successful drill recorded on 2026-07-15.
 - [ ] Expected launch traffic is tested in staging with documented results.
 
 ## Decision log
@@ -904,6 +939,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-26 | DB-107, new-object security gate      | Added a required fail-closed catalog check for the reviewed Data API surface. It rejects public tables without RLS or policies, unreviewed browser table/function access, unsafe public views, public materialized views, and browser-accessible sequences. A transactional negative proof confirms unsafe fixtures are detected and removes them before completion. The empty 85-migration replay, all recurring database suites, security tests, unit tests, lint, typecheck, dependency audit, and migration validation passed. Production remained unchanged. | `security-new-object-access-check.sql`; empty local replay; 14 database/security suites; 158 security tests; 877 unit tests; lint; typecheck; production dependency audit; migration-version validation |
 | 2026-07-26 | DB-107, credential recovery runbook   | Documented a staged migration from legacy `service_role` to independently rotatable named secret keys, routine and emergency procedures, consumer inventory, validation, rollback, forensic review, and separate handling for public keys, Management API tokens, database credentials, and Auth signing keys. Read-only name/scope inspection found the elevated Vercel variable in all three deployment scopes and no matching GitHub repository/environment secrets; no value was read, created, replaced, disabled, or revoked. | Official Supabase API-key, migration, and signing-key guidance; Vercel environment-name/scope listing; GitHub repository/environment secret-name listing; repository consumer search; [`OPS.md`](./OPS.md) section 4.5 |
 | 2026-07-27 | DB-107, production secret rollout     | Created the dedicated Supabase secret `vercel_production_20260727`, replaced the legacy JWT value in Vercel Production through a guarded no-log handoff, and rebuilt the already reviewed main commit `0947254`. Deployment `dpl_DXv2HThaTF4rmftnKGeGd4zTja2q` reached `READY` and received all public aliases. Shallow and detailed health, database connectivity, and a real no-match privileged RPC returned HTTP 200. Preview and Development no longer define `SUPABASE_SERVICE_KEY`. The legacy Supabase key remains enabled as rollback protection until approved local/operator and Dashboard-only consumers are audited. | Supabase key name/type inventory; Vercel environment-scope inventory; green commit check-runs; production deployment metadata and aliases; shallow/detailed health; no-match privileged-RPC probe |
+| 2026-07-29 | DB-203                                | Audited production health and implemented a fail-closed, read-only scheduled monitor for capacity, connections, locks, long transactions, aggregate slow-query fingerprints, worker backlogs/failures, aggregate API/database errors, backup and recovery freshness, project health, and both advisor classes. Current database health is good, but Storage is above the Free quota, one unscheduled narration job is stale, and the 24-hour independent-recovery target is not current. Activation requires a least-privilege GitHub Management API token and proof that a failed run reaches the owner; no production schema, data, Auth, Storage, or configuration was changed. | Live read-only Supabase catalogs/advisors; current Management API and ClickHouse logs documentation; `check-supabase-production-health.mjs`; scheduled workflow and unit/static tests |
 | 2026-07-15 | DB-004                                | Audited enforcement after CI returned green. No GitHub ruleset exists, and Vercel assigned production for commit `f1ac98a` before `validate` completed. Recorded the exact required check contexts and the two-layer source-control/production-alias enforcement design. Dashboard mutation remains pending an authenticated management session.                                                                                                                                                                                                                                                    | GitHub check-runs and ruleset APIs; Vercel deployment `dpl_DvWR7arw13fWwLyosk1A268wWHyE` and deployment-check documentation                                                                                               |
 | 2026-07-15 | DB-004                                | Created and verified active repository ruleset `18984223` for `main`: no bypass actors, pull requests required, strict `validate` and `Security Validation` GitHub Actions checks required, and deletion/force pushes blocked. Vercel production-alias enforcement and the combined failing-branch challenge remain.                                                                                                                                                                                                                                                                                | Authenticated ruleset creation, full ruleset readback, and active `main` branch-rules query                                                                                                                               |
 | 2026-07-15 | DB-004                                | Added Vercel Deployment Checks for the exact GitHub contexts `validate` and `Security Validation`, both with Production behavior. Vercel confirmed they apply to the next production deployment, and a full settings-page reload preserved both checks. No deployment or production-database mutation was used for this configuration step. DB-004 remains In progress pending observation of the next normal promotion and a safe failing-PR challenge of the GitHub rule.                                                                                                                         | Authenticated Vercel settings mutation, success confirmation, and post-reload configuration readback                                                                                                                      |

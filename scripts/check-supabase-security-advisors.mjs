@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const allowlistPath = join(root, "scripts", "supabase-security-advisor-allowlist.json");
+const advisorType = process.argv.includes("--performance") ? "performance" : "security";
 
 function readAllowlist() {
   return JSON.parse(readFileSync(allowlistPath, "utf8"));
@@ -59,7 +60,7 @@ if (!token || !projectRef) {
 
 const controller = new AbortController();
 const timeout = setTimeout(() => controller.abort(), 30_000);
-const endpoint = `https://api.supabase.com/v1/projects/${encodeURIComponent(projectRef)}/advisors/security`;
+const endpoint = `https://api.supabase.com/v1/projects/${encodeURIComponent(projectRef)}/advisors/${advisorType}`;
 
 try {
   const response = await fetch(endpoint, {
@@ -73,12 +74,12 @@ try {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    console.error(`Supabase security advisor request failed: ${response.status} ${response.statusText}`);
+    console.error(`Supabase ${advisorType} advisor request failed: ${response.status} ${response.statusText}`);
     console.error(JSON.stringify(payload, null, 2));
     process.exit(1);
   }
 
-  const allowlist = readAllowlist();
+  const allowlist = advisorType === "security" ? readAllowlist() : [];
   const lints = normalizeAdvisorPayload(payload);
   const accepted = [];
   const blocking = [];
@@ -96,7 +97,7 @@ try {
     }
   }
 
-  console.log(`Supabase security advisors returned ${lints.length} finding(s).`);
+  console.log(`Supabase ${advisorType} advisors returned ${lints.length} finding(s).`);
 
   if (accepted.length > 0) {
     console.log("");

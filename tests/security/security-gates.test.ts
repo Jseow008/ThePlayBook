@@ -25,6 +25,10 @@ describe("security gate CI configuration", () => {
         join(process.cwd(), "scripts/supabase-security-advisor-allowlist.json"),
         "utf8",
     );
+    const productionHealthScript = readFileSync(
+        join(process.cwd(), "scripts/check-supabase-production-health.mjs"),
+        "utf8",
+    );
     const emailRpcMigration = readFileSync(
         join(process.cwd(), "supabase/migrations/20260722124111_restrict_public_email_rpcs.sql"),
         "utf8",
@@ -45,6 +49,12 @@ describe("security gate CI configuration", () => {
         );
         expect(packageJson.scripts?.["security:supabase-advisors"]).toBe(
             "node scripts/check-supabase-security-advisors.mjs",
+        );
+        expect(packageJson.scripts?.["monitor:supabase-performance-advisors"]).toBe(
+            "node scripts/check-supabase-security-advisors.mjs --performance",
+        );
+        expect(packageJson.scripts?.["monitor:supabase-production-health"]).toBe(
+            "node scripts/check-supabase-production-health.mjs",
         );
         expect(packageJson.scripts?.["security:admin-rpc-acls"]).toBe(
             "node scripts/check-supabase-admin-rpc-acls.mjs",
@@ -99,14 +109,23 @@ describe("security gate CI configuration", () => {
         expect(gitleaksConfig).not.toContain("docs/.*");
     });
 
-    it("treats Supabase advisors as scheduled/manual audit with exact allowlists", () => {
-        expect(workflow).toContain("supabase-advisor-audit");
+    it("runs fail-closed scheduled production health and advisor monitoring", () => {
+        expect(workflow).toContain("supabase-production-monitoring");
         expect(workflow).toContain("github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'");
+        expect(workflow).toContain("Require production monitoring configuration");
+        expect(workflow).not.toContain("Skip advisor audit without credentials");
+        expect(workflow).toContain("npm run monitor:supabase-production-health");
         expect(workflow).toContain("npm run security:supabase-advisors");
+        expect(workflow).toContain("npm run monitor:supabase-performance-advisors");
         expect(advisorScript).toContain("https://api.supabase.com/v1/projects/");
+        expect(advisorScript).toContain('process.argv.includes("--performance")');
         expect(advisorScript).toContain("SUPABASE_ACCESS_TOKEN");
         expect(advisorScript).toContain("SUPABASE_PROJECT_REF");
         expect(advisorScript).toContain('level === "ERROR" || level === "WARN"');
+        expect(productionHealthScript).toContain("/database/query/read-only");
+        expect(productionHealthScript).toContain("/analytics/endpoints/logs");
+        expect(productionHealthScript).toContain("extensions.pg_stat_statements");
+        expect(productionHealthScript).not.toContain("event_message");
         expect(advisorAllowlist).not.toContain("subscribe_email_subscription");
         expect(advisorAllowlist).not.toContain("unsubscribe_email_subscription_by_token");
         expect(advisorAllowlist).not.toContain("unsubscribe_request_published_notifications_by_token");
