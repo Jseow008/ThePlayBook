@@ -124,12 +124,20 @@ describe("AuthorChat", () => {
 
         expect(screen.getByText("Test Author")).toBeInTheDocument();
         expect(screen.getAllByText("Test Source").length).toBeGreaterThan(0);
-        expect(screen.getByText("Keep the conversation going")).toBeInTheDocument();
-        expect(screen.getByText("Good places to start")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "What's the core argument I should walk away with?" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "What would a skeptic say about this?" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "How would you apply this in real life?" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Which idea in this source matters most?" })).toBeInTheDocument();
+        expect(screen.getByText("Explore the ideas")).toBeInTheDocument();
+        expect(screen.getByText("Test the book's arguments, challenge a point, or explore what matters most.")).toBeInTheDocument();
+        expect(screen.getByText("Try asking")).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "What's the core argument?" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "What would a skeptic say?" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "How can I apply this in real life?" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Which idea matters most?" })).toBeInTheDocument();
+        expect(document.querySelector(".lucide-sparkles")).not.toBeInTheDocument();
+    });
+
+    it("uses reading-progress-aware empty-state guidance", () => {
+        render(<AuthorChat {...defaultProps} hasCompletedReading={false} />);
+
+        expect(screen.getByText("Clarify an idea, challenge an argument, or go deeper as you read.")).toBeInTheDocument();
     });
 
     it("calls onClose when close button is clicked", () => {
@@ -172,9 +180,9 @@ describe("AuthorChat", () => {
 
         render(<AuthorChat {...defaultProps} />);
 
-        fireEvent.click(screen.getByRole("button", { name: "What would a skeptic say about this?" }));
+        fireEvent.click(screen.getByRole("button", { name: "What would a skeptic say?" }));
 
-        expect(mockSendMessage).toHaveBeenCalledWith({ text: "What would a skeptic say about this?" });
+        expect(mockSendMessage).toHaveBeenCalledWith({ text: "What would a skeptic say?" });
     });
 
     it("shows the transcript after chat starts instead of the intro panel", () => {
