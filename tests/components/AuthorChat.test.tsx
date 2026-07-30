@@ -27,6 +27,7 @@ function mockInteractionMedia({ desktop, coarse = false }: { desktop: boolean; c
 describe("AuthorChat", () => {
     const mockOnClose = vi.fn();
     const scrollToMock = vi.fn();
+    const windowScrollToMock = vi.fn();
     const defaultProps = {
         contentId: "123",
         authorName: "Test Author",
@@ -38,6 +39,10 @@ describe("AuthorChat", () => {
         Object.defineProperty(HTMLElement.prototype, "scrollTo", {
             configurable: true,
             value: scrollToMock,
+        });
+        Object.defineProperty(window, "scrollTo", {
+            configurable: true,
+            value: windowScrollToMock,
         });
     });
 
@@ -57,7 +62,7 @@ describe("AuthorChat", () => {
     });
 
     it("keeps mobile focus on the themed dialog until the composer is tapped", async () => {
-        render(<AuthorChat {...defaultProps} readerTheme="sepia" />);
+        const { container } = render(<AuthorChat {...defaultProps} readerTheme="sepia" />);
 
         const dialog = screen.getByTestId("author-chat-dialog");
         const input = screen.getByRole("textbox", { name: /Ask Test Author a question/i });
@@ -73,7 +78,11 @@ describe("AuthorChat", () => {
         expect(closeButton).toHaveClass("size-11");
         expect(sendButton).toHaveClass("size-11");
         expect(document.body).toHaveStyle({ overflow: "hidden" });
+        expect(document.body).toHaveStyle({ position: "fixed" });
         expect(document.documentElement).toHaveStyle({ overflow: "hidden" });
+        expect(container).toHaveAttribute("aria-hidden", "true");
+        expect(container.inert).toBe(true);
+        expect(container).toHaveStyle({ pointerEvents: "none" });
     });
 
     it("preserves immediate composer focus on reader-interaction desktop widths", async () => {

@@ -4,12 +4,24 @@ import { useBodyScrollLock } from "@/hooks/useBodyScrollLock";
 describe("useBodyScrollLock", () => {
     beforeEach(() => {
         document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
         document.documentElement.style.overflow = "";
     });
 
     afterEach(() => {
         document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.left = "";
+        document.body.style.right = "";
+        document.body.style.width = "";
         document.documentElement.style.overflow = "";
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
     });
 
     it("locks and restores body overflow", () => {
@@ -118,5 +130,55 @@ describe("useBodyScrollLock", () => {
         persistentLock.unmount();
 
         expect(document.body.style.overflow).toBe("");
+    });
+
+    it("freezes the body at the current scroll position and restores it", () => {
+        vi.stubGlobal("scrollX", 12);
+        vi.stubGlobal("scrollY", 640);
+        const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+        document.body.style.position = "relative";
+        document.body.style.top = "2px";
+        document.body.style.left = "3px";
+        document.body.style.right = "4px";
+        document.body.style.width = "90%";
+
+        const { unmount } = renderHook(() =>
+            useBodyScrollLock(true, { freezePosition: true, lockDocumentElement: true })
+        );
+
+        expect(document.body.style.position).toBe("fixed");
+        expect(document.body.style.top).toBe("-640px");
+        expect(document.body.style.left).toBe("0px");
+        expect(document.body.style.right).toBe("0px");
+        expect(document.body.style.width).toBe("100%");
+
+        unmount();
+
+        expect(document.body.style.position).toBe("relative");
+        expect(document.body.style.top).toBe("2px");
+        expect(document.body.style.left).toBe("3px");
+        expect(document.body.style.right).toBe("4px");
+        expect(document.body.style.width).toBe("90%");
+        expect(scrollTo).toHaveBeenCalledWith(12, 640);
+    });
+
+    it("keeps the body frozen until every position lock is released", () => {
+        vi.stubGlobal("scrollX", 0);
+        vi.stubGlobal("scrollY", 320);
+        const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
+
+        const first = renderHook(() => useBodyScrollLock(true, { freezePosition: true }));
+        const second = renderHook(() => useBodyScrollLock(true, { freezePosition: true }));
+
+        first.unmount();
+
+        expect(document.body.style.position).toBe("fixed");
+        expect(scrollTo).not.toHaveBeenCalled();
+
+        second.unmount();
+
+        expect(document.body.style.position).toBe("");
+        expect(scrollTo).toHaveBeenCalledTimes(1);
+        expect(scrollTo).toHaveBeenCalledWith(0, 320);
     });
 });

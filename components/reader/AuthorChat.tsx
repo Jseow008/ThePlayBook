@@ -107,7 +107,8 @@ export function AuthorChat({
         containerRef: dialogRef,
         initialFocusRef: usesMobileInteraction ? dialogRef : textareaRef,
         onEscape: onClose,
-        scrollLock: { lockDocumentElement: true },
+        isolateBackground: true,
+        scrollLock: { freezePosition: true, lockDocumentElement: true },
     });
 
     const {
@@ -195,7 +196,7 @@ export function AuthorChat({
             data-testid="author-chat-dialog"
             className={cn(
                 `reader-${readerTheme}`,
-                `fixed inset-x-0 top-0 ${OVERLAY_LAYER_CLASS.popover} flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background/95 text-foreground backdrop-blur-md focus:outline-none animate-in fade-in duration-300 motion-reduce:animate-none motion-reduce:transition-none`,
+                `fixed inset-x-0 top-0 ${OVERLAY_LAYER_CLASS.popover} flex h-[100dvh] min-h-0 flex-col overflow-hidden overscroll-none bg-background/95 text-foreground backdrop-blur-md focus:outline-none animate-in fade-in duration-300 motion-reduce:animate-none motion-reduce:transition-none`,
             )}
             style={visualViewportHeight === null
                 ? undefined
@@ -243,7 +244,7 @@ export function AuthorChat({
 
             <main
                 ref={messagesContainerRef}
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain [overflow-anchor:none]"
+                className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [overflow-anchor:none]"
             >
                 <div className="author-chat-main-content mx-auto flex w-full max-w-5xl flex-col px-4 pb-2 pt-4 sm:min-h-full sm:px-6 sm:pb-3 sm:pt-6">
                     <div className="sm:flex-1 sm:rounded-[28px] sm:border sm:border-border/50 sm:bg-card/35 sm:shadow-[0_0_0_1px_rgba(255,255,255,0.02)] sm:backdrop-blur-sm">
