@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChatCircleDotsIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, ChatCircleDotsIcon } from "@phosphor-icons/react";
 import { UserNav } from "@/components/ui/UserNav";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
@@ -14,9 +14,23 @@ export function MobileHeader({
     compact?: boolean;
 }) {
     const pathname = usePathname();
+    const router = useRouter();
     const [isVisible, setIsVisible] = useState(true);
     const lastScrollYRef = useRef(0);
     const frameRef = useRef<number | null>(null);
+    const showBackButton = pathname === "/preview"
+        || pathname.startsWith("/preview/")
+        || pathname === "/read"
+        || pathname.startsWith("/read/");
+
+    const handleBack = () => {
+        if (window.history.length > 1) {
+            router.back();
+            return;
+        }
+
+        router.push("/browse");
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -63,9 +77,21 @@ export function MobileHeader({
                 compact ? "mobile-header-compact-height" : "mobile-header-height"
             )}
         >
-            <Link href="/browse">
-                <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} priority />
-            </Link>
+            {showBackButton ? (
+                <button
+                    type="button"
+                    onClick={handleBack}
+                    aria-label="Go back"
+                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-foreground transition-colors hover:bg-secondary/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                >
+                    <ArrowLeftIcon className="size-5" aria-hidden="true" />
+                    <span>Back</span>
+                </button>
+            ) : (
+                <Link href="/browse">
+                    <Logo width={compact ? 74 : 80} height={compact ? 22 : 24} priority />
+                </Link>
+            )}
             <div className="flex items-center gap-3">
                 <Link
                     href="/ask"
