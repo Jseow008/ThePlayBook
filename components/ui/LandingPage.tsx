@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import type { ContentItem } from "@/types/database";
+import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { HeroSection, LandingHeader } from "@/components/ui/landing/LandingHeroSections";
 import { getCuratedCategories } from "@/components/ui/landing/landingCategories";
 
@@ -22,6 +23,7 @@ export function LandingPage({ featuredItems, categories, totalContentCount }: La
 
   return (
     <>
+      <AmbientBackground />
       <LandingHeader />
 
       <main className="landing-page-shell relative min-h-screen overflow-x-clip text-foreground">
