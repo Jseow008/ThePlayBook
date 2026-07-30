@@ -70,6 +70,12 @@ describe("app navigation", () => {
     beforeEach(() => {
         pathnameState.value = "/browse";
         searchParamsState.value = "";
+        authUserState.value = {
+            email: "reader@example.com",
+            user_metadata: {
+                full_name: "Reader",
+            },
+        };
         readingProgressState.value = {
             totalLibraryItems: 6,
             inProgressCount: 2,
@@ -77,6 +83,14 @@ describe("app navigation", () => {
             myListCount: 1,
             isLoaded: true,
         };
+    });
+
+    it("expands the signed-out header link touch target", () => {
+        authUserState.value = null;
+
+        render(<UserNav />);
+
+        expect(screen.getByRole("link", { name: "Sign In" })).toHaveClass("touch-target-44");
     });
 
     it("removes Ask My Library from the profile menu", () => {

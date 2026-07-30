@@ -84,7 +84,7 @@ export function UserNav() {
     if (!user) {
         return (
             <SignInLink
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="touch-target-44 inline-flex items-center text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
                 Sign In
             </SignInLink>
@@ -96,7 +96,7 @@ export function UserNav() {
             <button
                 ref={triggerRef}
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 outline-none rounded-full ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all hover:ring-2 hover:ring-ring/50"
+                className="touch-target-44 flex items-center gap-2 rounded-full outline-none ring-offset-background transition-all hover:ring-2 hover:ring-ring/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 aria-label="Open user menu"
                 aria-haspopup="true"
                 aria-expanded={isOpen}

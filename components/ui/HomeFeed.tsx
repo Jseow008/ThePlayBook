@@ -77,7 +77,7 @@ export function HomeFeed({
             <footer className="mt-8 border-t border-border bg-card/10 px-4 py-8 backdrop-blur-sm md:mt-12 md:px-6 lg:px-16 lg:py-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-3 md:items-start">
-                        <Link href="/" className="focus-ring inline-flex rounded-sm">
+                        <Link href="/" className="focus-ring touch-target-44 inline-flex rounded-sm">
                             <Logo
                                 width={96}
                                 height={26}
@@ -90,11 +90,11 @@ export function HomeFeed({
                         </div>
                     </div>
                     <nav aria-label="Footer navigation" className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-                        <Link href="/browse" className="focus-ring rounded-sm hover:text-foreground transition-colors">Browse</Link>
-                        <Link href="/about" className="focus-ring rounded-sm hover:text-foreground transition-colors">About</Link>
-                        <Link href="mailto:javierseowww@gmail.com" className="focus-ring rounded-sm hover:text-foreground transition-colors">Contact</Link>
-                        <Link href="/privacy" className="focus-ring rounded-sm hover:text-foreground transition-colors">Privacy</Link>
-                        <Link href="/terms" className="focus-ring rounded-sm hover:text-foreground transition-colors">Terms</Link>
+                        <Link href="/browse" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors hover:text-foreground">Browse</Link>
+                        <Link href="/about" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors hover:text-foreground">About</Link>
+                        <Link href="mailto:javierseowww@gmail.com" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors hover:text-foreground">Contact</Link>
+                        <Link href="/privacy" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors hover:text-foreground">Privacy</Link>
+                        <Link href="/terms" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors hover:text-foreground">Terms</Link>
                     </nav>
                 </div>
             </footer>

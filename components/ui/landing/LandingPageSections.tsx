@@ -389,7 +389,7 @@ export function FeaturedReadsSection({
               aria-selected={activeCategory === null}
               onClick={showAllItems}
               className={cn(
-                "focus-ring landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                "focus-ring touch-target-44 landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
                 activeCategory === null
                   ? "landing-domain-chip-active"
                   : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
@@ -406,7 +406,7 @@ export function FeaturedReadsSection({
                 aria-label={`${category.category}, ${category.count} reads`}
                 onClick={() => void showCategory(category.category)}
                 className={cn(
-                  "focus-ring landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
+                  "focus-ring touch-target-44 landing-domain-chip shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition-colors",
                   activeCategory === category.category
                     ? "landing-domain-chip-active"
                     : "border-white/10 bg-white/[0.025] text-zinc-400 hover:border-white/20 hover:text-white"
@@ -1074,7 +1074,7 @@ export function CorePlatformFeaturesSection() {
                           type="button"
                           onClick={() => setActiveStoryboardSlide(index)}
                           className={cn(
-                            "focus-ring landing-storyboard-tab inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[0.64rem] font-semibold uppercase tracking-[0.14em] transition-all duration-300",
+                            "focus-ring touch-target-44 landing-storyboard-tab inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[0.64rem] font-semibold uppercase tracking-[0.14em] transition-all duration-300",
                             isActive
                               ? "landing-storyboard-tab-active border-white/30 bg-white/[0.1] text-white"
                               : "landing-storyboard-tab-idle border-white/10 bg-white/[0.025] text-zinc-500 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"
@@ -1295,7 +1295,7 @@ export function LandingFooter() {
     <footer className="border-t border-white/[0.04] py-12">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-8 px-6 text-center sm:flex-row sm:text-left lg:px-8">
         <div className="flex flex-col items-center gap-3 sm:items-start">
-          <Link href="/" className="focus-ring inline-flex rounded-sm">
+          <Link href="/" className="focus-ring touch-target-44 inline-flex rounded-sm">
             <Logo
               width={96}
               height={26}
@@ -1309,19 +1309,19 @@ export function LandingFooter() {
         </div>
 
         <nav aria-label="Footer navigation" className="flex items-center gap-6 text-sm text-muted-foreground/60">
-          <Link href="/browse" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link href="/browse" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Browse
           </Link>
-          <Link href="/about" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link href="/about" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             About
           </Link>
-          <Link href="mailto:javierseowww@gmail.com" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link href="mailto:javierseowww@gmail.com" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Contact
           </Link>
-          <Link href="/privacy" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link href="/privacy" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Privacy
           </Link>
-          <Link href="/terms" className="focus-ring rounded-sm transition-colors duration-300 hover:text-foreground">
+          <Link href="/terms" className="focus-ring touch-target-44 inline-flex rounded-sm transition-colors duration-300 hover:text-foreground">
             Terms
           </Link>
         </nav>

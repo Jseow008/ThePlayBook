@@ -110,4 +110,19 @@ describe("HomeFeed", () => {
         expect(newOnNetfluxLane).toHaveTextContent("New on Netflux");
         expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "");
     });
+
+    it("expands footer link touch targets without changing their labels", () => {
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[]}
+                sectionItems={{}}
+            />
+        );
+
+        for (const label of ["Browse", "About", "Contact", "Privacy", "Terms"]) {
+            expect(screen.getByRole("link", { name: label })).toHaveClass("touch-target-44");
+        }
+    });
 });
