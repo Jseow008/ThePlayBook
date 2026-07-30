@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Instrument_Serif, Inter, Outfit, Playfair_Display } from "next/font/google";
 import "./globals.css";
-import { AmbientBackground } from "@/components/ui/AmbientBackground";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { AppToaster } from "@/components/providers/AppToaster";
@@ -117,7 +116,6 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLdGraph(siteJsonLd) }}
         />
-        <AmbientBackground />
         <QueryProvider>{children}</QueryProvider>
         <Suspense fallback={null}>
           <PostHogPageviewTracker />

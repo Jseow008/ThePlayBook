@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-07-01T11:19:13.505Z",
-  "totalClientFiles": 102,
+  "totalClientFiles": 101,
   "files": [
     "app/(public)/ask/client-page.tsx",
     "app/(public)/error.tsx",
@@ -61,7 +61,6 @@
     "components/reader/SegmentAccordion.tsx",
     "components/reader/TextSelectionToolbar.tsx",
     "components/requests/RequestBoard.tsx",
-    "components/ui/AmbientBackground.tsx",
     "components/ui/AppOnboardingGate.tsx",
     "components/ui/AppOnboardingTour.tsx",
     "components/ui/AuthForm.tsx",
