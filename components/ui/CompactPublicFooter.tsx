@@ -16,7 +16,7 @@ export function CompactPublicFooter() {
             <span>&copy; {new Date().getFullYear()} {APP_NAME}</span>
             <nav aria-label="Footer navigation" className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
                 {FOOTER_LINKS.map((link) => (
-                    <Link key={link.href} href={link.href} className="hover:text-foreground transition-colors">
+                    <Link key={link.href} href={link.href} className="touch-target-44 inline-flex transition-colors hover:text-foreground">
                         {link.label}
                     </Link>
                 ))}

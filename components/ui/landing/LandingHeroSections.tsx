@@ -17,7 +17,7 @@ export function LandingHeader() {
   return (
     <header className="landing-header sticky top-0 z-50 border-b border-white/[0.08] bg-background/95 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="focus-ring inline-flex items-center gap-2 rounded-sm">
+        <Link href="/" className="focus-ring touch-target-44 inline-flex items-center gap-2 rounded-sm">
           <Logo
             width={104}
             height={28}
@@ -28,13 +28,13 @@ export function LandingHeader() {
         <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/browse"
-            className="focus-ring hidden rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+            className="focus-ring touch-target-44 hidden rounded-sm text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
           >
             Browse
           </Link>
           <Link
             href="/login"
-            className="focus-ring inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_10px_24px_-16px_rgba(255,255,255,0.5)] sm:px-4 sm:py-2 sm:text-sm"
+            className="focus-ring touch-target-44 inline-flex items-center rounded-full border border-white/[0.08] bg-white/[0.02] px-3 py-1.5 text-xs font-semibold text-foreground transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-[0_10px_24px_-16px_rgba(255,255,255,0.5)] sm:px-4 sm:py-2 sm:text-sm"
           >
             Sign In
           </Link>

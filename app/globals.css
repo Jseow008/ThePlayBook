@@ -535,6 +535,27 @@ mark[data-highlight-spotlight="true"] {
   @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
 }
 
+/* Expand compact mobile controls without changing their visible dimensions. */
+@media (pointer: coarse), (max-width: 767px) {
+  .touch-target-44:not(.absolute):not(.fixed):not(.sticky) {
+    position: relative;
+  }
+
+  .touch-target-44 {
+    touch-action: manipulation;
+  }
+
+  .touch-target-44::before {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 2.75rem);
+    height: max(100%, 2.75rem);
+    content: "";
+    transform: translate(-50%, -50%);
+  }
+}
+
 /* Card hover animation */
 .card-hover {
   @apply transition-transform duration-300 hover:-translate-y-1;

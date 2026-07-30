@@ -104,7 +104,8 @@ describe("ContentCard", () => {
     it("uses item-specific bookmark labels", () => {
         render(<ContentCard item={item} />);
 
-        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Save Deep Work to Library" }))
+            .toHaveClass("touch-target-44");
     });
 
     it("uses the shared catalog card frame and image sizing contract", () => {

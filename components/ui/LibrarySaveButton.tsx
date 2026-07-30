@@ -58,6 +58,7 @@ export function LibrarySaveButton({
             disabled={isLoading}
             onClick={handleClick}
             className={cn(
+                "touch-target-44",
                 className,
                 isLoading ? loadingClassName : isSaved ? savedClassName : unsavedClassName
             )}

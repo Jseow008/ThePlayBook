@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { HeroSection } from "@/components/ui/landing/LandingHeroSections";
+import { HeroSection, LandingHeader } from "@/components/ui/landing/LandingHeroSections";
 
 vi.mock("next/link", () => ({
   default: ({
@@ -17,7 +17,19 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+vi.mock("@/components/ui/Logo", () => ({
+  Logo: () => <span>Netflux</span>,
+}));
+
 describe("Landing hero", () => {
+  it("expands the compact header controls without changing their visible sizing classes", () => {
+    render(<LandingHeader />);
+
+    expect(screen.getByRole("link", { name: "Netflux" })).toHaveClass("touch-target-44");
+    expect(screen.getByRole("link", { name: "Sign In" })).toHaveClass("touch-target-44");
+    expect(screen.getByRole("link", { name: "Sign In" })).toHaveClass("px-3", "py-1.5");
+  });
+
   it("shows the landing proposition and keeps the CTA hierarchy", () => {
     render(<HeroSection />);
 
