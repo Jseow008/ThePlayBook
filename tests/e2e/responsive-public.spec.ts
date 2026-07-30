@@ -57,6 +57,46 @@ test.describe('responsive public routes', () => {
         await completeGuestOnboarding(page);
     });
 
+    test('global typography tokens resolve to their intended Next fonts', async ({ page }) => {
+        await page.goto('/');
+
+        const typography = await page.evaluate(async () => {
+            const createProbe = (className: string) => {
+                const element = document.createElement('span');
+                element.className = `${className} pointer-events-none absolute opacity-0`;
+                element.textContent = 'Netflux typography probe';
+                document.body.append(element);
+                return element;
+            };
+
+            const brandProbe = createProbe('font-brand');
+            const serifProbe = createProbe('font-serif');
+
+            await document.fonts.ready;
+
+            const result = {
+                body: window.getComputedStyle(document.body).fontFamily,
+                brand: window.getComputedStyle(brandProbe).fontFamily,
+                serif: window.getComputedStyle(serifProbe).fontFamily,
+                interLoaded: document.fonts.check('16px "Inter"', 'Netflux'),
+                outfitLoaded: document.fonts.check('16px "Outfit"', 'Netflux'),
+                playfairLoaded: document.fonts.check('16px "Playfair Display"', 'Netflux'),
+            };
+
+            brandProbe.remove();
+            serifProbe.remove();
+
+            return result;
+        });
+
+        expect(typography.body).toContain('Inter');
+        expect(typography.brand).toContain('Outfit');
+        expect(typography.serif).toContain('Playfair Display');
+        expect(typography.interLoaded).toBe(true);
+        expect(typography.outfitLoaded).toBe(true);
+        expect(typography.playfairLoaded).toBe(true);
+    });
+
     for (const route of publicResponsiveRoutes) {
         test(`${route.path} has no unintended document overflow`, async ({ page }) => {
             const guard = installResponsiveErrorGuard(page);

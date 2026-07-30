@@ -32,7 +32,7 @@ const outfit = Outfit({
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-serif",
+  variable: "--font-playfair",
   display: "swap",
 });
 
@@ -108,10 +108,11 @@ export default function RootLayout({
   const siteJsonLd = [buildOrganizationJsonLd(), buildWebsiteJsonLd()];
 
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`${inter.variable} ${outfit.variable} ${playfair.variable} ${landingHeroSerif.variable} font-sans antialiased isolate`}
-      >
+    <html
+      lang="en"
+      className={`dark ${inter.variable} ${outfit.variable} ${playfair.variable} ${landingHeroSerif.variable}`}
+    >
+      <body className="font-sans antialiased isolate">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: serializeJsonLdGraph(siteJsonLd) }}
