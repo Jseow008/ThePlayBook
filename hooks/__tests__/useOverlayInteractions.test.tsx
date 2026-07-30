@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { useRef, useState, type RefObject } from "react";
+import { createPortal } from "react-dom";
 import { vi } from "vitest";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 
@@ -9,12 +10,14 @@ function TestOverlay({
     onEscape,
     restoreFocusRef,
     scrollLock = false,
+    isolateBackground = false,
 }: {
     label: string;
     open: boolean;
     onEscape: () => void;
     restoreFocusRef?: RefObject<HTMLElement | null>;
     scrollLock?: boolean;
+    isolateBackground?: boolean;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const firstButtonRef = useRef<HTMLButtonElement>(null);
@@ -25,6 +28,7 @@ function TestOverlay({
         initialFocusRef: firstButtonRef,
         restoreFocusRef,
         onEscape,
+        isolateBackground,
         scrollLock,
     });
 
@@ -32,11 +36,12 @@ function TestOverlay({
         return null;
     }
 
-    return (
+    return createPortal(
         <div ref={containerRef} role="dialog" aria-label={label} tabIndex={-1}>
             <button ref={firstButtonRef}>First {label}</button>
             <button>Last {label}</button>
-        </div>
+        </div>,
+        document.body,
     );
 }
 
@@ -130,5 +135,41 @@ describe("useOverlayInteractions", () => {
         await waitFor(() => expect(screen.queryByRole("dialog", { name: "Restoring" })).not.toBeInTheDocument());
         await waitFor(() => expect(opener).toHaveFocus());
         expect(document.body.style.overflow).toBe("");
+    });
+
+    it("makes background siblings inert and restores their interaction state", async () => {
+        function Harness() {
+            const [open, setOpen] = useState(false);
+
+            return (
+                <>
+                    <button onClick={() => setOpen(true)}>Open isolated modal</button>
+                    <TestOverlay
+                        label="Isolated"
+                        open={open}
+                        onEscape={() => setOpen(false)}
+                        isolateBackground
+                    />
+                </>
+            );
+        }
+
+        const { container } = render(<Harness />);
+        const opener = screen.getByRole("button", { name: "Open isolated modal" });
+        const initialInert = container.inert;
+
+        fireEvent.click(opener);
+        await screen.findByRole("dialog", { name: "Isolated" });
+
+        expect(container).toHaveAttribute("aria-hidden", "true");
+        expect(container.inert).toBe(true);
+        expect(container.style.pointerEvents).toBe("none");
+
+        fireEvent.keyDown(document, { key: "Escape" });
+
+        await waitFor(() => expect(screen.queryByRole("dialog", { name: "Isolated" })).not.toBeInTheDocument());
+        expect(container).not.toHaveAttribute("aria-hidden");
+        expect(container.inert).toBe(initialInert);
+        expect(container.style.pointerEvents).toBe("");
     });
 });

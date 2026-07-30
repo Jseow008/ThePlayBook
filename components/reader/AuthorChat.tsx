@@ -4,7 +4,7 @@ import { useRef, useEffect, useState, useMemo, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useChat } from "@ai-sdk/react";
 import { TextStreamChatTransport } from "ai";
-import { Bot, User, Send, Loader2, X, BotMessageSquare, Sparkles } from "lucide-react";
+import { Bot, User, Send, Loader2, X, BotMessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
@@ -28,10 +28,10 @@ interface AuthorChatProps {
 const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
 
 const STARTER_PROMPTS = [
-    "What's the core argument I should walk away with?",
-    "What would a skeptic say about this?",
-    "How would you apply this in real life?",
-    "Which idea in this source matters most?",
+    "What's the core argument?",
+    "What would a skeptic say?",
+    "How can I apply this in real life?",
+    "Which idea matters most?",
 ] as const;
 
 const FOLLOW_UP_ACTIONS = [
@@ -107,7 +107,8 @@ export function AuthorChat({
         containerRef: dialogRef,
         initialFocusRef: usesMobileInteraction ? dialogRef : textareaRef,
         onEscape: onClose,
-        scrollLock: { lockDocumentElement: true },
+        isolateBackground: true,
+        scrollLock: { freezePosition: true, lockDocumentElement: true },
     });
 
     const {
@@ -195,7 +196,7 @@ export function AuthorChat({
             data-testid="author-chat-dialog"
             className={cn(
                 `reader-${readerTheme}`,
-                `fixed inset-x-0 top-0 ${OVERLAY_LAYER_CLASS.popover} flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-background/95 text-foreground backdrop-blur-md focus:outline-none animate-in fade-in duration-300 motion-reduce:animate-none motion-reduce:transition-none`,
+                `fixed inset-x-0 top-0 ${OVERLAY_LAYER_CLASS.popover} flex h-[100dvh] min-h-0 flex-col overflow-hidden overscroll-none bg-background/95 text-foreground backdrop-blur-md focus:outline-none animate-in fade-in duration-300 motion-reduce:animate-none motion-reduce:transition-none`,
             )}
             style={visualViewportHeight === null
                 ? undefined
@@ -243,7 +244,7 @@ export function AuthorChat({
 
             <main
                 ref={messagesContainerRef}
-                className="min-h-0 flex-1 overflow-y-auto overscroll-contain [overflow-anchor:none]"
+                className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [overflow-anchor:none]"
             >
                 <div className="author-chat-main-content mx-auto flex w-full max-w-5xl flex-col px-4 pb-2 pt-4 sm:min-h-full sm:px-6 sm:pb-3 sm:pt-6">
                     <div className="sm:flex-1 sm:rounded-[28px] sm:border sm:border-border/50 sm:bg-card/35 sm:shadow-[0_0_0_1px_rgba(255,255,255,0.02)] sm:backdrop-blur-sm">
@@ -251,41 +252,30 @@ export function AuthorChat({
                             <div className="space-y-5">
                                 {isEmptyState && (
                                     <section className="author-chat-intro rounded-2xl border border-primary/15 bg-gradient-to-br from-card via-card to-primary/5 px-4 py-4 shadow-sm sm:rounded-[24px] sm:px-6 sm:py-6">
-                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-                                            <div className="flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary sm:mt-0.5 sm:size-10">
-                                                <Sparkles className="size-4" />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-semibold text-foreground sm:text-[0.95rem]">
-                                                    Keep the conversation going
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-semibold text-foreground sm:text-[0.95rem]">
+                                                Explore the ideas
+                                            </p>
+                                            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
+                                                {hasCompletedReading
+                                                    ? "Test the book's arguments, challenge a point, or explore what matters most."
+                                                    : "Clarify an idea, challenge an argument, or go deeper as you read."}
+                                            </p>
+                                            <div className="mt-5">
+                                                <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
+                                                    Try asking
                                                 </p>
-                                                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-[0.95rem]">
-                                                    {hasCompletedReading ? (
-                                                        <>
-                                                            You&apos;ve completed <span className="font-medium text-foreground">{contentTitle}</span>. Use this space to test the ideas, pressure the arguments, or pull out the point that matters most.
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            You&apos;re partway through <span className="font-medium text-foreground">{contentTitle}</span>. Use this space to clarify an idea, challenge an argument, or go deeper before you finish.
-                                                        </>
-                                                    )}
-                                                </p>
-                                                <div className="mt-5">
-                                                    <p className="mb-2 text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">
-                                                        Good places to start
-                                                    </p>
-                                                    <div className="grid gap-2.5 sm:flex sm:flex-wrap">
-                                                        {STARTER_PROMPTS.map((prompt) => (
-                                                            <button
-                                                                key={prompt}
-                                                                onClick={() => void sendPrompt(prompt)}
-                                                                className="min-h-11 w-full rounded-2xl border border-border/70 bg-background/75 px-4 py-2.5 text-left text-sm text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:rounded-full sm:px-3.5 sm:py-2 sm:text-center sm:text-xs"
-                                                                disabled={isStreaming}
-                                                            >
-                                                                {prompt}
-                                                            </button>
-                                                        ))}
-                                                    </div>
+                                                <div className="grid gap-2.5 sm:flex sm:flex-wrap">
+                                                    {STARTER_PROMPTS.map((prompt) => (
+                                                        <button
+                                                            key={prompt}
+                                                            onClick={() => void sendPrompt(prompt)}
+                                                            className="min-h-11 w-full rounded-2xl border border-border/70 bg-background/75 px-4 py-2.5 text-left text-sm text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/55 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:w-auto sm:rounded-full sm:px-3.5 sm:py-2 sm:text-center sm:text-xs"
+                                                            disabled={isStreaming}
+                                                        >
+                                                            {prompt}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                             </div>
                                         </div>
@@ -398,7 +388,7 @@ export function AuthorChat({
                                 ref={textareaRef}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder={`Ask ${authorName} anything...`}
+                                placeholder="Ask a question…"
                                 className={cn(
                                     "max-h-40 w-full flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3.5 outline-none placeholder:text-muted-foreground/70",
                                     usesMobileInteraction ? "min-h-14 text-base" : "min-h-[52px] text-[0.95rem]",

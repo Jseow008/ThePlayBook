@@ -54,6 +54,7 @@ export function getOverlayFocusableElements(container: HTMLElement | null) {
 }
 
 interface OverlayScrollLockOptions {
+    freezePosition?: boolean;
     lockDocumentElement?: boolean;
 }
 
@@ -65,6 +66,7 @@ interface UseOverlayInteractionsOptions {
     restoreFocusRef?: RefObject<HTMLElement | null>;
     trapFocus?: boolean;
     restoreFocus?: boolean;
+    isolateBackground?: boolean;
     scrollLock?: boolean | OverlayScrollLockOptions;
 }
 
@@ -76,6 +78,7 @@ export function useOverlayInteractions({
     restoreFocusRef,
     trapFocus = true,
     restoreFocus = true,
+    isolateBackground = false,
     scrollLock = false,
 }: UseOverlayInteractionsOptions) {
     const tokenRef = useRef(Symbol("overlay-interactions"));
@@ -85,10 +88,56 @@ export function useOverlayInteractions({
     onEscapeRef.current = onEscape;
 
     const shouldLockScroll = Boolean(scrollLock);
+    const freezePosition = typeof scrollLock === "object"
+        ? scrollLock.freezePosition ?? false
+        : false;
     const lockDocumentElement = typeof scrollLock === "object"
         ? scrollLock.lockDocumentElement ?? false
         : false;
-    useBodyScrollLock(enabled && shouldLockScroll, { lockDocumentElement });
+    useBodyScrollLock(enabled && shouldLockScroll, { freezePosition, lockDocumentElement });
+
+    useEffect(() => {
+        if (!enabled || !isolateBackground) {
+            return;
+        }
+
+        const container = containerRef.current;
+        if (!container) {
+            return;
+        }
+
+        const backgroundElements = Array.from(document.body.children)
+            .filter((element): element is HTMLElement =>
+                element instanceof HTMLElement
+                && element !== container
+                && !element.contains(container)
+            )
+            .map((element) => ({
+                element,
+                ariaHidden: element.getAttribute("aria-hidden"),
+                inert: element.inert,
+                pointerEvents: element.style.pointerEvents,
+            }));
+
+        for (const { element } of backgroundElements) {
+            element.inert = true;
+            element.setAttribute("aria-hidden", "true");
+            element.style.pointerEvents = "none";
+        }
+
+        return () => {
+            for (const { element, ariaHidden, inert, pointerEvents } of backgroundElements) {
+                element.inert = inert;
+                element.style.pointerEvents = pointerEvents;
+
+                if (ariaHidden === null) {
+                    element.removeAttribute("aria-hidden");
+                } else {
+                    element.setAttribute("aria-hidden", ariaHidden);
+                }
+            }
+        };
+    }, [containerRef, enabled, isolateBackground]);
 
     useEffect(() => {
         const token = tokenRef.current;

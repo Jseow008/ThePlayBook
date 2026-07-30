@@ -1074,6 +1074,7 @@ describe("FocusFeed", () => {
         render(<FocusFeed />);
 
         await screen.findByText("Deep Work");
+        await act(async () => {});
 
         const list = screen.getByTestId("focus-feed-list");
         const cards = screen.getAllByTestId("focus-feed-card");

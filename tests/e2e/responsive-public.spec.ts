@@ -194,10 +194,19 @@ test.describe('responsive public routes', () => {
             const input = dialog.querySelector('textarea');
             const dialogRect = dialog.getBoundingClientRect();
             const inputFontSize = input ? Number.parseFloat(window.getComputedStyle(input).fontSize) : 0;
+            const readerMain = document.querySelector('main');
+            const backgroundRoot = Array.from(document.body.children)
+                .find((element) => readerMain && element.contains(readerMain));
 
             return {
                 activeElementIsDialog: document.activeElement === dialog,
                 activeElementIsInput: document.activeElement === input,
+                backgroundAriaHidden: backgroundRoot?.getAttribute('aria-hidden'),
+                backgroundInert: backgroundRoot instanceof HTMLElement ? backgroundRoot.inert : false,
+                backgroundPointerEvents: backgroundRoot instanceof HTMLElement
+                    ? backgroundRoot.style.pointerEvents
+                    : '',
+                bodyPosition: document.body.style.position,
                 dialogBottom: dialogRect.bottom,
                 dialogLeft: dialogRect.left,
                 dialogRight: dialogRect.right,
@@ -210,6 +219,10 @@ test.describe('responsive public routes', () => {
         expect(chatState.dialogTop).toBeGreaterThanOrEqual(-1);
         expect(chatState.dialogRight).toBeLessThanOrEqual((viewport?.width ?? 0) + 1);
         expect(chatState.dialogBottom).toBeLessThanOrEqual((viewport?.height ?? 0) + 1);
+        expect(chatState.bodyPosition).toBe('fixed');
+        expect(chatState.backgroundAriaHidden).toBe('true');
+        expect(chatState.backgroundInert).toBe(true);
+        expect(chatState.backgroundPointerEvents).toBe('none');
 
         const usesMobileInteraction = (viewport?.width ?? 0) < 640
             || await page.evaluate(() => window.matchMedia('(pointer: coarse)').matches);
@@ -233,6 +246,7 @@ test.describe('responsive public routes', () => {
         await closeChatButton.click();
         await expect(authorChat).toHaveCount(0);
         await expect(discussButton).toBeFocused();
+        expect(await page.evaluate(() => document.body.style.position)).not.toBe('fixed');
         expect(Math.abs((await page.evaluate(() => window.scrollY)) - scrollYBeforeChat)).toBeLessThanOrEqual(4);
 
         guard.assertNoCriticalErrors();
