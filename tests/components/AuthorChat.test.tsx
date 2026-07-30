@@ -67,6 +67,7 @@ describe("AuthorChat", () => {
         await waitFor(() => expect(dialog).toHaveFocus());
 
         expect(input).not.toHaveFocus();
+        expect(input).toHaveAttribute("placeholder", "Ask a question…");
         expect(dialog).toHaveClass("reader-sepia", "h-[100dvh]");
         expect(input).toHaveClass("text-base");
         expect(closeButton).toHaveClass("size-11");

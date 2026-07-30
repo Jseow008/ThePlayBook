@@ -387,7 +387,7 @@ export function AuthorChat({
                                 ref={textareaRef}
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
-                                placeholder={`Ask ${authorName} anything...`}
+                                placeholder="Ask a question…"
                                 className={cn(
                                     "max-h-40 w-full flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3.5 outline-none placeholder:text-muted-foreground/70",
                                     usesMobileInteraction ? "min-h-14 text-base" : "min-h-[52px] text-[0.95rem]",
