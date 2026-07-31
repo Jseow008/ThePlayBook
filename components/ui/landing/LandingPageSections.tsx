@@ -26,24 +26,24 @@ const STORYBOARD_SLIDES = [
     label: "Distill",
     title: "Distill before committing time",
     eyebrow: "Understand before you commit",
-    heading: "Find the ideas worth your attention.",
-    body: "See the central argument and key takeaways before deciding what deserves more of your time.",
+    heading: "Find the essential ideas faster.",
+    body: "Start with a concise summary of the central argument and key takeaways before deciding what deserves more of your time.",
     image: "/images/netflux-workflow-distill-square.png",
   },
   {
     label: "Library",
     title: "Build your personal library",
-    eyebrow: "Keep what matters",
-    heading: "Turn useful ideas into a lasting library.",
-    body: "Save summaries, highlights, and notes in one place you can return to when they become useful.",
+    eyebrow: "Build your knowledge library",
+    heading: "Keep what matters, with its context attached.",
+    body: "Save summaries, highlights, and notes in one organized library instead of scattering useful ideas across bookmarks and apps.",
     image: "/images/netflux-workflow-library-square.png",
   },
   {
     label: "Ask",
     title: "Think with your notes",
-    eyebrow: "Think across your knowledge",
-    heading: "Ask better questions of what you have learned.",
-    body: "Clarify an argument, challenge an idea, or search your saved knowledge for a useful answer.",
+    eyebrow: "Retrieve ideas when they matter",
+    heading: "Ask your library—not the entire internet.",
+    body: "Search your saved knowledge or ask questions grounded in the summaries, highlights, and notes you chose to keep.",
     image: "/images/netflux-workflow-ask-square.png",
   },
 ] as const;
@@ -1272,14 +1272,14 @@ export function FinalCTASection() {
               </h2>
 
               <p className="mx-auto mt-7 max-w-xl text-base leading-7 text-zinc-300 sm:text-lg">
-                Build a library of ideas you can return to.
+                Start building a library of ideas you can understand, keep, and actually use.
               </p>
 
               <Link
                 href="/login"
                 className="focus-ring landing-primary-cta group relative mt-10 inline-flex items-center justify-center gap-3 overflow-hidden rounded-full bg-solar-gold px-8 py-4 text-base font-semibold text-solar-gold-foreground transition-[transform,box-shadow,background-color] duration-300 hover:-translate-y-0.5"
               >
-                <span className="relative z-10">Sign Up Free</span>
+                <span className="relative z-10">Build Your Library Free</span>
                 <ArrowRight className="relative z-10 size-4 transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
