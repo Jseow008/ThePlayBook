@@ -38,7 +38,7 @@ test.describe('responsive public high-risk surfaces', () => {
 
         await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-        const heroCta = page.getByRole('link', { name: /explore the library/i });
+        const heroCta = page.getByRole('link', { name: /explore a summary/i });
         await expect(heroCta).toBeVisible({ timeout: 20_000 });
         await heroCta.click({ trial: true });
         await expectNoDocumentHorizontalScroll(page);
