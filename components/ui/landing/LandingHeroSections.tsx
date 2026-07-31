@@ -163,11 +163,11 @@ export function HeroSection() {
           style={heroRevealStyle("560ms")}
         >
           <Link href="/browse" className={PRIMARY_CTA_CLASS}>
-            <span className="relative z-10">Explore the Library</span>
+            <span className="relative z-10">Explore a Summary</span>
             <ArrowRight className="landing-hero-cta-arrow relative z-10 size-4" />
           </Link>
           <Link href="/login" className={SECONDARY_CTA_CLASS}>
-            Sign Up Free
+            Build Your Library Free
           </Link>
         </div>
       </div>
