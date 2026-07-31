@@ -23,7 +23,7 @@ import type { ContentItem } from "@/types/database";
 
 const STORYBOARD_SLIDES = [
   {
-    label: "Distill",
+    label: "Understand",
     title: "Distill before committing time",
     eyebrow: "Understand before you commit",
     heading: "Find the essential ideas faster.",
@@ -31,7 +31,7 @@ const STORYBOARD_SLIDES = [
     image: "/images/netflux-workflow-distill-square.png",
   },
   {
-    label: "Library",
+    label: "Keep",
     title: "Build your personal library",
     eyebrow: "Build your knowledge library",
     heading: "Keep what matters, with its context attached.",
@@ -39,7 +39,7 @@ const STORYBOARD_SLIDES = [
     image: "/images/netflux-workflow-library-square.png",
   },
   {
-    label: "Ask",
+    label: "Use",
     title: "Think with your notes",
     eyebrow: "Retrieve ideas when they matter",
     heading: "Ask your library—not the entire internet.",
@@ -1064,7 +1064,7 @@ export function CorePlatformFeaturesSection() {
             <FadeIn className="mx-auto mt-8 max-w-6xl sm:mt-10" delayMs={100}>
               <div className="grid min-h-[32rem] items-center gap-8 rounded-[1.5rem] bg-black/20 p-5 sm:p-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-x-10 lg:gap-y-8 lg:p-10">
                 <div className="mx-auto max-w-sm text-center lg:mx-0 lg:text-left">
-                  <div className="mb-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                  <div className="mb-6 flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 lg:justify-start">
                     {STORYBOARD_SLIDES.map((slide, index) => {
                       const isActive = index === activeStoryboardSlide;
 
@@ -1074,7 +1074,7 @@ export function CorePlatformFeaturesSection() {
                           type="button"
                           onClick={() => setActiveStoryboardSlide(index)}
                           className={cn(
-                            "focus-ring touch-target-44 landing-storyboard-tab inline-flex min-h-9 items-center justify-center rounded-full border px-4 text-[0.64rem] font-semibold uppercase tracking-[0.14em] transition-all duration-300",
+                            "focus-ring touch-target-44 landing-storyboard-tab inline-flex min-h-9 items-center justify-center rounded-full border px-2 text-[0.58rem] font-semibold uppercase tracking-[0.08em] transition-all duration-300 sm:px-4 sm:text-[0.64rem] sm:tracking-[0.14em]",
                             isActive
                               ? "landing-storyboard-tab-active border-white/30 bg-white/[0.1] text-white"
                               : "landing-storyboard-tab-idle border-white/10 bg-white/[0.025] text-zinc-500 hover:border-white/20 hover:bg-white/[0.06] hover:text-white"

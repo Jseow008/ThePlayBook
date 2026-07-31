@@ -31,14 +31,16 @@ describe("landing positioning sections", () => {
     expect(screen.getByRole("heading", { name: "Find the essential ideas faster." }))
       .toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Show Library storyboard" }));
+    expect(screen.getByRole("button", { name: "Show Understand storyboard" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Show Keep storyboard" }));
     expect(
       screen.getByRole("heading", {
         name: "Keep what matters, with its context attached.",
       })
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Show Ask storyboard" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show Use storyboard" }));
     expect(
       screen.getByRole("heading", {
         name: "Ask your library—not the entire internet.",
