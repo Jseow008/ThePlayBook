@@ -46,11 +46,11 @@ describe("Landing hero", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/summaries$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/topics$/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Explore the Library" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Explore a Summary" })).toHaveAttribute(
       "href",
       "/browse"
     );
-    expect(screen.getByRole("link", { name: "Sign Up Free" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Build Your Library Free" })).toHaveAttribute(
       "href",
       "/login"
     );
