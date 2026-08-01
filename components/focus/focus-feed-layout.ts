@@ -14,7 +14,6 @@ export type SheetTouchPoint = { y: number; time: number };
 export type DesktopCompactLevel = 0 | 1 | 2 | 3;
 
 const MOBILE_CARD_FIT_BUFFER_PX = 10;
-export const MOBILE_MIN_READABLE_HOOK_HEIGHT_PX = 72;
 const DESKTOP_VISIBLE_TAKEAWAY_COUNT = 3;
 export const FOCUS_COVER_WIDTHS = {
     default: 132,
@@ -41,25 +40,14 @@ export function getMobileAvailableContentHeight({
     return Math.max(mobileCardTargetHeight - verticalPadding - MOBILE_CARD_FIT_BUFFER_PX, 0);
 }
 
-export function getMobileHookMaxHeight({
+export function shouldHideMobileHook({
     availableContentHeight,
     requiredContentHeight,
-    currentHookHeight,
 }: {
     availableContentHeight: number;
     requiredContentHeight: number;
-    currentHookHeight: number;
 }) {
-    if (requiredContentHeight <= availableContentHeight) {
-        return null;
-    }
-
-    const nonHookContentHeight = requiredContentHeight - currentHookHeight;
-    const minimumReadableHookHeight = Math.min(currentHookHeight, MOBILE_MIN_READABLE_HOOK_HEIGHT_PX);
-    const unclampedHookMaxHeight = availableContentHeight - nonHookContentHeight;
-
-    // Preserve a readable excerpt instead of collapsing the hook entirely on short mobile viewports.
-    return Math.min(currentHookHeight, Math.max(minimumReadableHookHeight, unclampedHookMaxHeight));
+    return requiredContentHeight > availableContentHeight;
 }
 
 export function getDesktopAvailableContentHeight(viewportHeight: number) {
