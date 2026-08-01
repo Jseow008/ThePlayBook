@@ -6,7 +6,7 @@ import {
     getDesktopAvailableContentHeight,
     getDesktopCoverWidth,
     getDesktopVisibleTakeawayCount,
-    getMobileHookMaxHeight,
+    shouldHideMobileHook,
 } from "@/components/focus/FocusFeed";
 import {
     FEED_CARD_HEIGHT_CLASS,
@@ -312,6 +312,8 @@ describe("FocusFeed", () => {
         expect(within(firstCard).getByText("15 min")).toBeInTheDocument();
         expect(screen.getByText("Do less, but better.")).toHaveClass("text-[1.0625rem]");
         expect(screen.getByText("Do less, but better.")).toHaveClass("sm:text-[1.1rem]");
+        expect(within(firstCard).getByTestId("focus-mobile-hook-body")).not.toHaveClass("overflow-hidden");
+        expect(within(firstCard).getByTestId("focus-mobile-hook-body")).not.toHaveAttribute("style");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("border");
         expect(within(firstCard).getByText("Do less, but better.").closest("section")).toHaveClass("bg-secondary/20");
         expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toHaveAttribute("src", "https://example.com/essentialism.jpg");
@@ -341,30 +343,27 @@ describe("FocusFeed", () => {
         });
     });
 
-    it("calculates a hook clamp that preserves viewport containment when the card would overflow", () => {
+    it("omits the mobile hook when the complete card would overflow", () => {
         expect(
-            getMobileHookMaxHeight({
+            shouldHideMobileHook({
                 availableContentHeight: 438,
                 requiredContentHeight: 520,
-                currentHookHeight: 220,
             })
-        ).toBe(138);
+        ).toBe(true);
 
         expect(
-            getMobileHookMaxHeight({
+            shouldHideMobileHook({
                 availableContentHeight: 438,
                 requiredContentHeight: 420,
-                currentHookHeight: 220,
             })
-        ).toBeNull();
+        ).toBe(false);
 
         expect(
-            getMobileHookMaxHeight({
+            shouldHideMobileHook({
                 availableContentHeight: 300,
                 requiredContentHeight: 560,
-                currentHookHeight: 260,
             })
-        ).toBe(72);
+        ).toBe(true);
     });
 
     it("calculates desktop presentation rules for varying heights", () => {
@@ -903,7 +902,7 @@ describe("FocusFeed", () => {
         expect(screen.getByText("Essentialism")).toBeInTheDocument();
     });
 
-    it("clamps long mobile hooks at render time while keeping preview visible", async () => {
+    it("omits overflowing mobile hooks while keeping the image and preview visible", async () => {
         const originalScrollHeight = Object.getOwnPropertyDescriptor(HTMLDivElement.prototype, "scrollHeight");
         const originalGetComputedStyle = window.getComputedStyle;
         const rectSpy = vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
@@ -913,17 +912,13 @@ describe("FocusFeed", () => {
                 return createMockRect({ width: 360, height: 310 });
             }
 
-            if (testId === "focus-mobile-hook-body") {
-                return createMockRect({ width: 320, height: 260 });
-            }
-
             return createMockRect({ width: 320, height: 0 });
         });
 
         Object.defineProperty(HTMLDivElement.prototype, "scrollHeight", {
             configurable: true,
             get() {
-                return (this as HTMLElement).getAttribute("data-testid") === "focus-card-content" ? 620 : 0;
+                return (this as HTMLElement).getAttribute("data-testid") === "focus-mobile-content" ? 620 : 0;
             },
         });
         const getComputedStyleSpy = vi.spyOn(window, "getComputedStyle").mockImplementation((element) => {
@@ -957,15 +952,15 @@ describe("FocusFeed", () => {
             render(<FocusFeed />);
 
             const firstCard = (await screen.findAllByTestId("focus-feed-card"))[0]!;
-            const cardContent = within(firstCard).getByTestId("focus-card-content");
-            const hookBody = within(firstCard).getByTestId("focus-mobile-hook-body");
+            const mobileContent = within(firstCard).getByTestId("focus-mobile-content");
 
             await waitFor(() => {
-                expect(cardContent.scrollHeight).toBe(620);
-                expect(hookBody.style.maxHeight).toBe("72px");
+                expect(mobileContent.scrollHeight).toBe(620);
+                expect(within(firstCard).queryByTestId("focus-mobile-hook-body")).not.toBeInTheDocument();
             });
 
-            expect(within(firstCard).queryByTestId("focus-mobile-hook-fade")).not.toBeInTheDocument();
+            expect(within(firstCard).getByRole("img", { name: "Essentialism" })).toBeInTheDocument();
+            expect(within(firstCard).getByTestId("focus-mobile-content")).toHaveClass("justify-center");
             expect(within(firstCard).getByRole("button", { name: "Preview Essentialism" })).toBeInTheDocument();
         } finally {
             rectSpy.mockRestore();
