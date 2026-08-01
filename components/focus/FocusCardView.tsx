@@ -9,6 +9,7 @@ import type { FocusCard } from "@/components/focus/focus-feed-utils";
 import {
     MAX_DESKTOP_COMPACT_LEVEL,
     FEED_CARD_HEIGHT_CLASS,
+    MOBILE_MIN_READABLE_HOOK_HEIGHT_PX,
     type DesktopCompactLevel,
     formatDuration,
     getDesktopAvailableContentHeight,
@@ -16,7 +17,7 @@ import {
     getInitialDesktopCompactLevel,
     getDesktopVisibleTakeawayCount,
     getMobileAvailableContentHeight,
-    shouldHideMobileHook,
+    getMobileHookMaxHeight,
 } from "@/components/focus/focus-feed-layout";
 
 const DESKTOP_COMPACT_CLASSES = [
@@ -112,10 +113,10 @@ export const FocusCardView = memo(function FocusCardView({
     onToggleSave: (card: FocusCard) => void;
 }) {
     const duration = formatDuration(card.duration_seconds);
-    const [isMobileHookHidden, setIsMobileHookHidden] = useState(false);
+    const [mobileHookMaxHeight, setMobileHookMaxHeight] = useState<number | null>(null);
     const cardRef = useRef<HTMLElement | null>(null);
     const cardContentRef = useRef<HTMLDivElement | null>(null);
-    const mobileContentRef = useRef<HTMLDivElement | null>(null);
+    const hookBodyRef = useRef<HTMLDivElement | null>(null);
     const mobileHookFitKeyRef = useRef<string | null>(null);
     const [cardWidth, setCardWidth] = useState(0);
     const desktopAvailableContentHeight = mobileCardTargetHeight === null || mobileCardTargetHeight <= 0
@@ -157,7 +158,8 @@ export const FocusCardView = memo(function FocusCardView({
         && (desktopVisibleTakeawayCount > 0 || card.takeaways.length === 0);
     const isCompactMobileLayout =
         !isFocusDesktop
-        && isMobileHookHidden;
+        && mobileHookMaxHeight !== null
+        && mobileHookMaxHeight <= MOBILE_MIN_READABLE_HOOK_HEIGHT_PX;
     const isDesktopTakeawaysTruncated =
         isFocusDesktop
         && desktopVisibleTakeawayCount < card.takeaways.length;
@@ -188,6 +190,15 @@ export const FocusCardView = memo(function FocusCardView({
         return () => observer.disconnect();
     }, []);
 
+    useEffect(() => {
+        if (isFocusDesktop) {
+            setMobileHookMaxHeight(null);
+            return;
+        }
+
+        setMobileHookMaxHeight(null);
+    }, [card.id, isFocusDesktop]);
+
     useLayoutEffect(() => {
         if (isFocusDesktop || mobileCardTargetHeight === null) {
             mobileHookFitKeyRef.current = null;
@@ -195,8 +206,8 @@ export const FocusCardView = memo(function FocusCardView({
         }
 
         const cardElement = cardRef.current;
-        const mobileContentElement = mobileContentRef.current;
-        if (!cardElement || !mobileContentElement) {
+        const cardContentElement = cardContentRef.current;
+        if (!cardElement || !cardContentElement) {
             return;
         }
 
@@ -204,8 +215,8 @@ export const FocusCardView = memo(function FocusCardView({
         const didFitInputsChange = mobileHookFitKeyRef.current !== fitKey;
         mobileHookFitKeyRef.current = fitKey;
 
-        if (didFitInputsChange && isMobileHookHidden) {
-            setIsMobileHookHidden(false);
+        if (didFitInputsChange && mobileHookMaxHeight !== null) {
+            setMobileHookMaxHeight(null);
             return;
         }
 
@@ -216,23 +227,36 @@ export const FocusCardView = memo(function FocusCardView({
             mobileCardTargetHeight,
             verticalPadding,
         });
-        const requiredContentHeight = Math.ceil(mobileContentElement.scrollHeight);
-        const shouldHideHook = shouldHideMobileHook({
-            availableContentHeight,
-            requiredContentHeight,
-        });
+        const requiredContentHeight = Math.ceil(cardContentElement.scrollHeight);
+        const cardFits = requiredContentHeight <= availableContentHeight;
 
-        if (!shouldHideHook || isMobileHookHidden) {
+        if (cardFits) {
             return;
         }
 
-        setIsMobileHookHidden(true);
+        const hookBodyElement = hookBodyRef.current;
+        if (!hookBodyElement) {
+            return;
+        }
+
+        const currentHookHeight = Math.ceil(hookBodyElement.getBoundingClientRect().height);
+        const nextHookMaxHeight = getMobileHookMaxHeight({
+            availableContentHeight,
+            requiredContentHeight,
+            currentHookHeight,
+        });
+
+        if (nextHookMaxHeight === null || mobileHookMaxHeight === nextHookMaxHeight) {
+            return;
+        }
+
+        setMobileHookMaxHeight(nextHookMaxHeight);
     }, [
         card.id,
         cardWidth,
         isFocusDesktop,
         mobileCardTargetHeight,
-        isMobileHookHidden,
+        mobileHookMaxHeight,
     ]);
 
     useLayoutEffect(() => {
@@ -278,9 +302,9 @@ export const FocusCardView = memo(function FocusCardView({
             data-focus-card-index={cardIndex}
             data-testid="focus-feed-card"
             ref={cardRef}
-            className={`${FEED_CARD_HEIGHT_CLASS} relative flex snap-start flex-col overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
+            className={`${FEED_CARD_HEIGHT_CLASS} relative snap-start overflow-hidden rounded-[2rem] border border-border/60 bg-card/70 px-5 py-4 shadow-sm backdrop-blur sm:px-6 sm:py-5`}
         >
-            <div ref={cardContentRef} data-testid="focus-card-content" className="flex min-h-0 flex-1 flex-col">
+            <div ref={cardContentRef} data-testid="focus-card-content" className="flex h-full min-h-0 flex-col">
                 {isFocusDesktop ? (
                     <div className={`flex h-full min-h-0 flex-col ${desktopCompactClasses.layoutGap}`}>
                         <div className={`shrink-0 ${desktopCompactClasses.headerSpacing} text-center`}>
@@ -433,23 +457,17 @@ export const FocusCardView = memo(function FocusCardView({
                         </div>
                     </div>
                 ) : (
-                    <div
-                        ref={mobileContentRef}
-                        data-testid="focus-mobile-content"
-                        className={isCompactMobileLayout
-                            ? "flex flex-1 flex-col justify-center space-y-2.5"
-                            : "space-y-3"}
-                    >
+                    <div className={isCompactMobileLayout ? "space-y-2.5" : "space-y-3"}>
                         <div className="flex flex-col items-center text-center">
                             <div className="relative">
                                 <div className="pointer-events-none absolute inset-[-1.1rem] rounded-[2rem] bg-primary/8 blur-2xl" aria-hidden="true" />
                                 {card.cover_image_url ? (
-                                    <div className={`relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[112px] sm:w-[124px]" : "w-[128px] sm:w-[140px]"}`}>
+                                    <div className={`relative aspect-[2/3] overflow-hidden rounded-[1.35rem] border border-white/10 bg-secondary/50 shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[112px] sm:w-[124px]" : "w-[140px]"}`}>
                                         <ResilientImage
                                             src={card.cover_image_url}
                                             alt={card.title}
                                             fill
-                                            sizes={isCompactMobileLayout ? "(max-width: 640px) 112px, 124px" : "(max-width: 640px) 128px, 140px"}
+                                            sizes={isCompactMobileLayout ? "(max-width: 640px) 112px, 124px" : "140px"}
                                             surface="content-preview"
                                             className="object-cover"
                                             fallback={
@@ -460,7 +478,7 @@ export const FocusCardView = memo(function FocusCardView({
                                         />
                                     </div>
                                 ) : (
-                                    <div className={`relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[112px] sm:w-[124px]" : "w-[128px] sm:w-[140px]"}`}>
+                                    <div className={`relative flex aspect-[2/3] items-center justify-center rounded-[1.35rem] border border-white/10 bg-gradient-to-br from-secondary via-card to-background shadow-[0_22px_50px_-24px_rgba(0,0,0,0.85)] ${isCompactMobileLayout ? "w-[112px] sm:w-[124px]" : "w-[140px]"}`}>
                                         <BookOpen className="size-10 text-muted-foreground" />
                                     </div>
                                 )}
@@ -468,12 +486,12 @@ export const FocusCardView = memo(function FocusCardView({
                         </div>
 
                         <div className={`${isCompactMobileLayout ? "space-y-2.5" : "space-y-3"} text-center`}>
-                            <h2 className={`mx-auto max-w-[22rem] font-semibold leading-[1.12] tracking-tight text-foreground sm:max-w-[30rem] sm:leading-[1.1] ${isCompactMobileLayout ? "text-[1.18rem] sm:text-[1.45rem]" : "text-[1.32rem] sm:text-[1.6rem]"}`}>
+                            <h2 className={`mx-auto max-w-[22rem] font-semibold tracking-tight text-foreground sm:max-w-[30rem] ${isCompactMobileLayout ? "text-[1.18rem] leading-[1.12] sm:text-[1.45rem] sm:leading-[1.1]" : "text-[1.25rem] leading-[1.375rem]"}`}>
                                 {card.title}
                             </h2>
                             <div className="space-y-1">
                                 {card.author && (
-                                    <p className={`line-clamp-1 font-medium text-muted-foreground/80 ${isCompactMobileLayout ? "text-[0.95rem] sm:text-base" : "text-base sm:text-[1.0625rem]"}`}>
+                                    <p className={`line-clamp-1 font-medium text-muted-foreground/80 ${isCompactMobileLayout ? "text-[0.95rem] sm:text-base" : "text-[0.9375rem]"}`}>
                                         {card.author}
                                     </p>
                                 )}
@@ -518,15 +536,18 @@ export const FocusCardView = memo(function FocusCardView({
                             </div>
                         </div>
 
-                        {!isMobileHookHidden ? (
-                            <section className="relative rounded-[1.4rem] border border-border/35 bg-secondary/20 px-4 py-4 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:px-5">
-                                <div data-testid="focus-mobile-hook-body">
-                                    <p className="text-[1.0625rem] leading-[1.62] text-foreground/92 sm:text-[1.1rem]">
-                                        {card.hook}
-                                    </p>
-                                </div>
-                            </section>
-                        ) : null}
+                        <section className="relative rounded-[1.4rem] border border-border/35 bg-secondary/20 px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:px-5">
+                            <div
+                                ref={hookBodyRef}
+                                data-testid="focus-mobile-hook-body"
+                                className="overflow-hidden"
+                                style={mobileHookMaxHeight !== null ? { maxHeight: `${mobileHookMaxHeight}px` } : undefined}
+                            >
+                                <p className="text-base leading-[1.4375rem] text-foreground/92">
+                                    {card.hook}
+                                </p>
+                            </div>
+                        </section>
 
                         <div className={`flex flex-col items-center pt-0.5 ${isCompactMobileLayout ? "gap-1.5" : "gap-2"}`}>
                             <button

@@ -28,7 +28,7 @@ import {
     getDesktopAvailableContentHeight,
     getDesktopCoverWidth,
     getDesktopVisibleTakeawayCount,
-    shouldHideMobileHook,
+    getMobileHookMaxHeight,
     type SheetTouchPoint,
     type TakeawaysSheetPhase,
 } from "@/components/focus/focus-feed-layout";
@@ -37,7 +37,7 @@ export {
     getDesktopAvailableContentHeight,
     getDesktopCoverWidth,
     getDesktopVisibleTakeawayCount,
-    shouldHideMobileHook,
+    getMobileHookMaxHeight,
 };
 
 const BATCH_SIZE = 6;
