@@ -10,6 +10,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Headphones, Pause, Play, RotateCcw, RotateCw, Volume2, VolumeX, X } from "lucide-react";
+import { APP_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { useVisualViewportGeometry } from "@/hooks/useVisualViewportGeometry";
 
@@ -18,6 +19,7 @@ interface AudioPlayerProps {
     title?: string;
     mediaTitle?: string;
     mediaAuthor?: string | null;
+    mediaArtworkUrl?: string | null;
     initialTimeSec?: number;
     readerTheme?: string;
     showResumeAudioFollow?: boolean;
@@ -34,6 +36,7 @@ export function AudioPlayer({
     title,
     mediaTitle,
     mediaAuthor,
+    mediaArtworkUrl,
     initialTimeSec = 0,
     readerTheme = "dark",
     showResumeAudioFollow = false,
@@ -62,6 +65,38 @@ export function AudioPlayer({
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useEffect(() => {
+        if (!("mediaSession" in navigator) || typeof MediaMetadata === "undefined") {
+            return;
+        }
+
+        const artworkUrl = mediaArtworkUrl?.trim();
+        let artwork: MediaImage[] | undefined;
+
+        if (artworkUrl) {
+            try {
+                artwork = [{ src: new URL(artworkUrl, window.location.href).href }];
+            } catch {
+                artwork = undefined;
+            }
+        }
+
+        const metadata = new MediaMetadata({
+            title: mediaTitle?.trim() || title || "Audio",
+            artist: mediaAuthor?.trim() || APP_NAME,
+            album: APP_NAME,
+            artwork,
+        });
+
+        navigator.mediaSession.metadata = metadata;
+
+        return () => {
+            if (navigator.mediaSession.metadata === metadata) {
+                navigator.mediaSession.metadata = null;
+            }
+        };
+    }, [mediaArtworkUrl, mediaAuthor, mediaTitle, title]);
 
     useEffect(() => {
         hasAppliedInitialTimeRef.current = false;

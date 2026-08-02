@@ -192,6 +192,7 @@ export function ReaderHeroHeader({
                         title="Listen to this summary"
                         mediaTitle={title}
                         mediaAuthor={author}
+                        mediaArtworkUrl={coverImageUrl}
                         initialTimeSec={initialAudioTimeSec}
                         readerTheme={readerTheme}
                         showResumeAudioFollow={showResumeAudioFollow}
