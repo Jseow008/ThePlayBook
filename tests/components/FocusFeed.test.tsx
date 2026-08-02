@@ -252,6 +252,23 @@ describe("FocusFeed", () => {
         mathRandomSpy.mockRestore();
     });
 
+    it("shows a content-shaped skeleton while the initial focus batch is loading", async () => {
+        fetchMock.mockImplementation(() => new Promise(() => {}));
+
+        render(<FocusFeed />);
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        const loadingState = screen.getByTestId("focus-loading-state");
+        expect(loadingState).toHaveAttribute("aria-busy", "true");
+        expect(loadingState).toHaveTextContent("Loading focus mode");
+        expect(screen.getByTestId("focus-loading-cover")).toHaveClass("aspect-[2/3]");
+        expect(screen.getByTestId("focus-loading-hook")).toHaveClass("rounded-[1.4rem]");
+        expect(loadingState.querySelector("article")).toHaveClass("motion-safe:animate-pulse");
+    });
+
     it("loads focus items immediately before reading progress hydration and renders the updated mobile focus card", async () => {
         readingProgressState.value = {
             completedIds: ["123e4567-e89b-12d3-a456-426614174111"],
