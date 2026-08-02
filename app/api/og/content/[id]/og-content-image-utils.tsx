@@ -26,6 +26,16 @@ export const ContentIdSchema = z.string().uuid();
 export const cacheControl = "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400";
 const ogRouteAssetDir = path.join(process.cwd(), "app/api/og/content/[id]");
 
+export async function bufferImageResponse(image: Response) {
+    const body = await image.arrayBuffer();
+
+    return new Response(body, {
+        status: image.status,
+        statusText: image.statusText,
+        headers: image.headers,
+    });
+}
+
 export const fontPromise = loadOgFonts();
 export const logoPromise = loadLocalImageDataUrl(
     path.join(process.cwd(), "public/icons/netflux-icon-borderless.png"),
