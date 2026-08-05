@@ -289,8 +289,10 @@ export function AuthorChat({
                                         <div key={m.id} className="space-y-3">
                                             <div
                                                 className={cn(
-                                                    "flex w-full gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:animate-none motion-reduce:transition-none",
-                                                    m.role === "user" ? "justify-end pr-1 sm:pr-2" : "justify-start"
+                                                    "flex w-full gap-3 motion-reduce:animate-none motion-reduce:transition-none",
+                                                    m.role === "user"
+                                                        ? "justify-end pr-1 animate-in fade-in slide-in-from-bottom-2 duration-300 sm:pr-2"
+                                                        : "justify-start"
                                                 )}
                                             >
                                                 {m.role === "assistant" && (
