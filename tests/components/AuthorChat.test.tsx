@@ -355,6 +355,31 @@ describe("AuthorChat", () => {
         expect(screen.getByText("Thinking...")).toBeInTheDocument();
     });
 
+    it("keeps user entrance motion without masking a streaming assistant response", () => {
+        (useChat as any).mockReturnValue({
+            messages: [
+                {
+                    id: "u1",
+                    role: "user",
+                    content: "Explain the core idea",
+                },
+                {
+                    id: "a1",
+                    role: "assistant",
+                    content: "The response is still arriving",
+                },
+            ],
+            sendMessage: vi.fn(),
+            status: "streaming",
+            error: null,
+        });
+
+        render(<AuthorChat {...defaultProps} />);
+
+        expect(screen.getByText("Explain the core idea").closest(".justify-end")).toHaveClass("animate-in");
+        expect(screen.getByText("The response is still arriving").closest(".justify-start")).not.toHaveClass("animate-in");
+    });
+
     it("displays error state when error occurs", () => {
         (useChat as any).mockReturnValue({
             messages: [],
