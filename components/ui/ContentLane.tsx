@@ -111,7 +111,7 @@ export function ContentLane({
         >
             {/* Header */}
             <div className="mb-1.5 flex items-center justify-between px-4 md:mb-2 md:px-6 lg:px-16">
-                <h2 className="flex items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground md:text-2xl">
+                <h2 className="flex min-w-0 items-center gap-2 font-display text-lg font-semibold tracking-tight text-foreground md:text-2xl">
                     {title}
                     {viewAllHref && (
                         <Link
@@ -124,6 +124,14 @@ export function ContentLane({
                         </Link>
                     )}
                 </h2>
+                {viewAllHref ? (
+                    <Link
+                        href={viewAllHref}
+                        className="focus-ring touch-target-44 ml-3 inline-flex shrink-0 items-center gap-0.5 rounded-sm text-xs font-medium text-muted-foreground transition-colors active:text-foreground md:hidden"
+                    >
+                        See all <ChevronRight className="size-3.5" aria-hidden="true" />
+                    </Link>
+                ) : null}
             </div>
 
             {/* Carousel */}

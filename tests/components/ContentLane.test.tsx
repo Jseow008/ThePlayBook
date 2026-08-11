@@ -147,12 +147,22 @@ describe("ContentLane", () => {
         expect(screen.getByText("preview:default:false:true:Two")).toBeInTheDocument();
     });
 
-    it("keeps Explore All beside the header and desktop-only", () => {
+    it("shows responsive lane links only when a complete collection exists", () => {
         render(<ContentLane title="Topic Lane" items={items} viewAllHref="/search?category=Productivity" />);
 
-        const link = screen.getByRole("link", { name: "Explore All" });
+        const desktopLink = screen.getByRole("link", { name: "Explore All" });
+        const mobileLink = screen.getByRole("link", { name: "See all" });
 
-        expect(link).toHaveAttribute("href", "/search?category=Productivity");
-        expect(link).toHaveClass("hidden", "md:inline-flex", "md:group-hover/lane:opacity-100");
+        expect(desktopLink).toHaveAttribute("href", "/search?category=Productivity");
+        expect(desktopLink).toHaveClass("hidden", "md:inline-flex", "md:group-hover/lane:opacity-100");
+        expect(mobileLink).toHaveAttribute("href", "/search?category=Productivity");
+        expect(mobileLink).toHaveClass("inline-flex", "md:hidden", "touch-target-44");
+    });
+
+    it("omits responsive lane links when every matching item is already shown", () => {
+        render(<ContentLane title="Complete Lane" items={items} />);
+
+        expect(screen.queryByRole("link", { name: "Explore All" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "See all" })).not.toBeInTheDocument();
     });
 });
