@@ -4,11 +4,16 @@ import { READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards
 import { vi } from 'vitest';
 import type { ContentItem } from '@/types/database';
 
+const { mockGetProgress } = vi.hoisted(() => ({
+    mockGetProgress: vi.fn(),
+}));
+
 vi.mock('@/hooks/useReadingProgress', () => ({
     useReadingProgress: () => ({
         isLoaded: true,
         isInMyList: vi.fn(() => false),
         toggleMyList: vi.fn(),
+        getProgress: mockGetProgress,
     }),
 }));
 
@@ -67,6 +72,45 @@ describe('ContentPreview', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetProgress.mockReturnValue(null);
+    });
+
+    it.each([
+        {
+            progress: null,
+            label: 'Read Summary',
+            href: '/read/test-item-1/test-title',
+        },
+        {
+            progress: {
+                itemId: 'test-item-1',
+                completed: ['segment-1'],
+                lastSegmentIndex: 0,
+                lastReadAt: '2026-08-11T00:00:00.000Z',
+                isCompleted: false,
+            },
+            label: 'Continue Reading',
+            href: '/read/test-item-1/test-title',
+        },
+        {
+            progress: {
+                itemId: 'test-item-1',
+                completed: ['segment-1'],
+                lastSegmentIndex: 0,
+                lastReadAt: '2026-08-11T00:00:00.000Z',
+                isCompleted: true,
+            },
+            label: 'Read Again',
+            href: '/read/test-item-1/test-title',
+        },
+    ])('uses "$label" for the desktop and mobile CTAs', ({ progress, label, href }) => {
+        mockGetProgress.mockReturnValue(progress);
+
+        render(<ContentPreview {...defaultProps} />);
+
+        const links = screen.getAllByRole('link', { name: label });
+        expect(links).toHaveLength(2);
+        links.forEach((link) => expect(link).toHaveAttribute('href', href));
     });
 
     it('renders the content metadata', () => {
@@ -132,7 +176,69 @@ describe('ContentPreview', () => {
 
         expect(screen.getByText('Takeaway 4')).toBeInTheDocument();
         expect(screen.getByText('Takeaway 5')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /Show less/i })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Show less/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Back to top' })).toBeInTheDocument();
+    });
+
+    it('replaces the reveal control with Back to top after expansion', () => {
+        render(
+            <ContentPreview
+                {...defaultProps}
+                item={{
+                    ...mockItem,
+                    quick_mode_json: {
+                        ...(mockItem.quick_mode_json as Record<string, unknown>),
+                        key_takeaways: [
+                            'Takeaway 1',
+                            'Takeaway 2',
+                            'Takeaway 3',
+                            'Takeaway 4',
+                            'Takeaway 5',
+                        ],
+                    },
+                } as ContentItem}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Show all 5 takeaways' }));
+
+        expect(screen.queryByRole('button', { name: /Show all/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /Show less/i })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Back to top' })).toBeInTheDocument();
+        expect(screen.getByText('Takeaway 5')).toBeInTheDocument();
+    });
+
+    it('returns focus and scroll to the preview heading from the expanded takeaways', () => {
+        const scrollIntoView = vi.fn();
+        Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+            configurable: true,
+            value: scrollIntoView,
+        });
+
+        render(
+            <ContentPreview
+                {...defaultProps}
+                initialShowAllTakeaways
+                item={{
+                    ...mockItem,
+                    quick_mode_json: {
+                        ...(mockItem.quick_mode_json as Record<string, unknown>),
+                        key_takeaways: [
+                            'Takeaway 1',
+                            'Takeaway 2',
+                            'Takeaway 3',
+                            'Takeaway 4',
+                            'Takeaway 5',
+                        ],
+                    },
+                } as ContentItem}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Back to top' }));
+
+        expect(screen.getByRole('heading', { name: 'Test Title' })).toHaveFocus();
+        expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
     });
 
     it('shows exactly four takeaways without a low-value reveal toggle', () => {
