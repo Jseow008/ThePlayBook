@@ -267,7 +267,9 @@ describe("ContentCard", () => {
 
         rerender(<ContentCard item={item} showUserCompletionBadge />);
 
-        expect(screen.getByRole("img", { name: "Deep Work completed" })).toBeInTheDocument();
+        const completedBadge = screen.getByRole("img", { name: "Deep Work completed" });
+        expect(completedBadge).toHaveClass("size-7", "bg-emerald-900/95");
+        expect(completedBadge.querySelector("svg")).toHaveClass("size-4", "text-white");
         expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toHaveClass("right-10");
         expect(document.querySelector(".content-card-motion-progress")).not.toBeInTheDocument();
     });

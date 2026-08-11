@@ -5,7 +5,7 @@ import {
     BookOpen,
     Headphones,
     FileText,
-    CheckCircle2,
+    Check,
     Info,
     Trash2,
     Video,
@@ -219,9 +219,9 @@ function BaseContentCard({
                 <div
                     role="img"
                     aria-label={`${item.title} completed`}
-                    className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-emerald-500 p-1.5 shadow-lg"
+                    className="pointer-events-none absolute right-2 top-2 z-20 flex size-7 items-center justify-center rounded-full border border-white/15 bg-emerald-900/95 shadow-[0_3px_10px_rgba(0,0,0,0.45)] backdrop-blur-sm"
                 >
-                    <CheckCircle2 className="size-4 text-white" />
+                    <Check aria-hidden="true" className="size-4 text-white" strokeWidth={2.5} />
                 </div>
             ) : null}
 
