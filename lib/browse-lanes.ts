@@ -8,15 +8,20 @@ export function hasMoreBrowseItems(items: ContentItem[]) {
 }
 
 export function getBrowseSectionViewAllHref(section: HomepageSection) {
-    if (section.filter_type !== "category") {
+    const filterValue = section.filter_value.trim();
+    if (!filterValue) {
         return undefined;
     }
 
-    const category = section.filter_value.trim();
-    if (!category) {
+    const params = new URLSearchParams();
+
+    if (section.filter_type === "category") {
+        params.set("category", filterValue);
+    } else if (section.filter_type === "author" || section.filter_type === "title") {
+        params.set("q", filterValue);
+    } else {
         return undefined;
     }
 
-    const params = new URLSearchParams({ category });
     return `/search?${params.toString()}`;
 }

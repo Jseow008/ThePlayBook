@@ -154,25 +154,49 @@ describe("HomeFeed", () => {
         );
     });
 
-    it("does not link unsupported shelf filters to broader search results", () => {
-        const authorSection = {
+    it.each([
+        ["author", "Steven Bartlett", "/search?q=Steven+Bartlett"],
+        ["title", "Diary of a CEO", "/search?q=Diary+of+a+CEO"],
+    ])("links %s shelves to keyword search results", (filterType, filterValue, expectedHref) => {
+        const keywordSection = {
             ...section,
-            filter_type: "author",
-            filter_value: "Cal Newport",
+            filter_type: filterType,
+            filter_value: filterValue,
         };
 
         render(
             <HomeFeed
                 items={[item]}
                 featuredItems={[item]}
-                sections={[authorSection]}
-                sectionItems={{ [authorSection.id]: buildItems(11) }}
+                sections={[keywordSection]}
+                sectionItems={{ [keywordSection.id]: buildItems(11) }}
             />
         );
 
-        const authorLane = screen.getAllByTestId("content-lane")[1];
+        const keywordLane = screen.getAllByTestId("content-lane")[1];
 
-        expect(authorLane).toHaveAttribute("data-view-all-href", "");
+        expect(keywordLane).toHaveAttribute("data-view-all-href", expectedHref);
+    });
+
+    it("does not link featured shelves without an equivalent Search filter", () => {
+        const featuredSection = {
+            ...section,
+            filter_type: "featured",
+            filter_value: "true",
+        };
+
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[featuredSection]}
+                sectionItems={{ [featuredSection.id]: buildItems(11) }}
+            />
+        );
+
+        const featuredLane = screen.getAllByTestId("content-lane")[1];
+
+        expect(featuredLane).toHaveAttribute("data-view-all-href", "");
     });
 
     it("expands footer link touch targets without changing their labels", () => {
