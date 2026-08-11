@@ -20,15 +20,18 @@ vi.mock("@/components/ui/ContentLane", () => ({
         title,
         enableCardUserState,
         viewAllHref,
+        showCardDesktopQuickActions,
     }: {
         title: React.ReactNode;
         enableCardUserState?: boolean;
         viewAllHref?: string;
+        showCardDesktopQuickActions?: boolean;
     }) => (
         <div
             data-testid="content-lane"
             data-enable-card-user-state={String(enableCardUserState)}
             data-view-all-href={viewAllHref ?? ""}
+            data-desktop-quick-actions={String(showCardDesktopQuickActions)}
         >
             {title}
         </div>
@@ -92,6 +95,7 @@ describe("HomeFeed", () => {
 
         for (const lane of screen.getAllByTestId("content-lane")) {
             expect(lane).toHaveAttribute("data-enable-card-user-state", "undefined");
+            expect(lane).toHaveAttribute("data-desktop-quick-actions", "true");
         }
     });
 

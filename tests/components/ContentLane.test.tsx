@@ -15,12 +15,14 @@ vi.mock("@/components/ui/ContentCard", () => ({
         item,
         navigationMode,
         titleDensity,
+        showDesktopQuickActions,
     }: {
         item: ContentItem;
         navigationMode?: "preview" | "resume";
         titleDensity?: "default" | "app-compact";
+        showDesktopQuickActions?: boolean;
     }) => (
-        <div>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${item.title}`}</div>
+        <div>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${String(showDesktopQuickActions)}:${item.title}`}</div>
     ),
 }));
 
@@ -111,8 +113,8 @@ describe("ContentLane", () => {
     it("passes through the requested card navigation mode", () => {
         render(<ContentLane title="Resume Lane" items={items} cardNavigationMode="resume" />);
 
-        expect(screen.getByText("resume:default:One")).toBeInTheDocument();
-        expect(screen.getByText("resume:default:Two")).toBeInTheDocument();
+        expect(screen.getByText("resume:default:false:One")).toBeInTheDocument();
+        expect(screen.getByText("resume:default:false:Two")).toBeInTheDocument();
     });
 
     it("renders lane cards with the compact shelf sizing standard", () => {
@@ -125,7 +127,14 @@ describe("ContentLane", () => {
     it("passes through the requested card title density", () => {
         render(<ContentLane title="Compact Lane" items={items} cardTitleDensity="app-compact" />);
 
-        expect(screen.getByText("preview:app-compact:One")).toBeInTheDocument();
-        expect(screen.getByText("preview:app-compact:Two")).toBeInTheDocument();
+        expect(screen.getByText("preview:app-compact:false:One")).toBeInTheDocument();
+        expect(screen.getByText("preview:app-compact:false:Two")).toBeInTheDocument();
+    });
+
+    it("passes through desktop quick actions when requested", () => {
+        render(<ContentLane title="Action Lane" items={items} showCardDesktopQuickActions />);
+
+        expect(screen.getByText("preview:default:true:One")).toBeInTheDocument();
+        expect(screen.getByText("preview:default:true:Two")).toBeInTheDocument();
     });
 });

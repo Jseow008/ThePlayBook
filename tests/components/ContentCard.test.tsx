@@ -233,6 +233,23 @@ describe("ContentCard", () => {
         );
     });
 
+    it("renders opt-in desktop read and preview actions without changing the card destination", () => {
+        render(<ContentCard item={item} showDesktopQuickActions />);
+
+        expect(screen.getByRole("link", { name: "Preview Deep Work" })).toHaveAttribute(
+            "href",
+            "/preview/11111111-1111-1111-1111-111111111111"
+        );
+        expect(screen.getByRole("link", { name: "Read summary: Deep Work" })).toHaveAttribute(
+            "href",
+            "/read/11111111-1111-1111-1111-111111111111/deep-work"
+        );
+        expect(screen.getByRole("link", { name: "Preview takeaways for Deep Work" })).toHaveAttribute(
+            "href",
+            "/preview/11111111-1111-1111-1111-111111111111"
+        );
+    });
+
     it("falls back to the non-image artwork treatment after the direct retry fails", () => {
         const itemWithCover = {
             ...item,

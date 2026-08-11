@@ -6,6 +6,7 @@ import {
     Headphones,
     FileText,
     CheckCircle2,
+    Info,
     Trash2,
     Video,
     Archive,
@@ -37,6 +38,7 @@ interface ContentCardProps {
     navigationMode?: "preview" | "resume";
     titleDensity?: "default" | "app-compact";
     priority?: boolean;
+    showDesktopQuickActions?: boolean;
 }
 
 interface BaseContentCardProps extends ContentCardProps {
@@ -147,6 +149,7 @@ function BaseContentCard({
     href = `/preview/${item.id}`,
     titleDensity = "default",
     priority = false,
+    showDesktopQuickActions = false,
 }: BaseContentCardProps) {
     const typeIcon: Record<ContentItem["type"], React.ComponentType<{ className?: string }>> = {
         podcast: Headphones,
@@ -268,46 +271,78 @@ function BaseContentCard({
                     </h3>
 
                     <div
-                        className="w-full max-h-14 space-y-0.5 overflow-hidden md:max-h-12"
+                        className={cn(
+                            "relative w-full max-h-14 overflow-hidden md:max-h-12",
+                            showDesktopQuickActions && "md:min-h-7",
+                        )}
                     >
-                        {item.category ? (
+                        <div
+                            className={cn(
+                                "space-y-0.5 transition-opacity duration-200 motion-reduce:transition-none",
+                                showDesktopQuickActions
+                                    && "md:group-hover:opacity-0 md:group-focus-within:opacity-0",
+                            )}
+                        >
+                            {item.category ? (
+                                <p
+                                    className={cn(
+                                        "line-clamp-1 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest",
+                                        "text-[9px]"
+                                    )}
+                                >
+                                    {item.category}
+                                </p>
+                            ) : null}
                             <p
                                 className={cn(
-                                    "line-clamp-1 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest",
+                                    "flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest",
                                     "text-[9px]"
                                 )}
                             >
-                                {item.category}
-                            </p>
-                        ) : null}
-                        <p
-                            className={cn(
-                                "flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest",
-                                "text-[9px]"
-                            )}
-                        >
-                            <span>{item.type}</span>
-                            {item.duration_seconds ? (
-                                <span className="flex items-center gap-1.5 whitespace-nowrap">
-                                    <span className="opacity-40">•</span>
-                                    <span>
-                                        {Math.round(item.duration_seconds / 60) < 60
-                                            ? `${Math.round(item.duration_seconds / 60)} min`
-                                            : `${Math.floor(Math.round(item.duration_seconds / 60) / 60)}h ${Math.round(item.duration_seconds / 60) % 60 > 0
-                                                ? `${Math.round(item.duration_seconds / 60) % 60}m`
-                                                : ""
-                                            }`}
+                                <span>{item.type}</span>
+                                {item.duration_seconds ? (
+                                    <span className="flex items-center gap-1.5 whitespace-nowrap">
+                                        <span className="opacity-40">•</span>
+                                        <span>
+                                            {Math.round(item.duration_seconds / 60) < 60
+                                                ? `${Math.round(item.duration_seconds / 60)} min`
+                                                : `${Math.floor(Math.round(item.duration_seconds / 60) / 60)}h ${Math.round(item.duration_seconds / 60) % 60 > 0
+                                                    ? `${Math.round(item.duration_seconds / 60) % 60}m`
+                                                    : ""
+                                                }`}
+                                        </span>
                                     </span>
-                                </span>
-                            ) : null}
-                            {hasAudioSummary ? (
-                                <span className="flex items-center gap-1.5 whitespace-nowrap">
-                                    <span className="opacity-40">•</span>
-                                    <Headphones className="size-3 text-white/70" aria-hidden="true" />
-                                    <span className="sr-only">Audio summary available</span>
-                                </span>
-                            ) : null}
-                        </p>
+                                ) : null}
+                                {hasAudioSummary ? (
+                                    <span className="flex items-center gap-1.5 whitespace-nowrap">
+                                        <span className="opacity-40">•</span>
+                                        <Headphones className="size-3 text-white/70" aria-hidden="true" />
+                                        <span className="sr-only">Audio summary available</span>
+                                    </span>
+                                ) : null}
+                            </p>
+                        </div>
+
+                        {showDesktopQuickActions ? (
+                            <div className="pointer-events-auto absolute inset-0 hidden items-end gap-1.5 opacity-0 transition-opacity duration-200 md:flex md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none">
+                                <Link
+                                    href={buildReadPath(item)}
+                                    aria-label={`Read summary: ${item.title}`}
+                                    className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm bg-white px-2 text-[10px] font-bold text-black shadow-sm transition-colors hover:bg-white/90 motion-reduce:transition-none"
+                                >
+                                    <BookOpen className="size-3" aria-hidden="true" />
+                                    <span>Read</span>
+                                </Link>
+                                <Link
+                                    href={`/preview/${item.id}`}
+                                    aria-label={`Preview takeaways for ${item.title}`}
+                                    className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm border border-white/25 bg-black/45 px-2 text-[10px] font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:border-white/45 hover:bg-black/65 motion-reduce:transition-none"
+                                >
+                                    <Info className="size-3" aria-hidden="true" />
+                                    <span>Preview</span>
+                                </Link>
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </div>

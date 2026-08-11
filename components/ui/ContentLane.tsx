@@ -15,6 +15,7 @@ interface ContentLaneProps {
     cardNavigationMode?: "preview" | "resume";
     cardTitleDensity?: "default" | "app-compact";
     enableCardUserState?: boolean;
+    showCardDesktopQuickActions?: boolean;
 }
 
 const LANE_CARD_SELECTOR = "[data-content-lane-card]";
@@ -26,6 +27,7 @@ export function ContentLane({
     cardNavigationMode = "preview",
     cardTitleDensity = "default",
     enableCardUserState = true,
+    showCardDesktopQuickActions = false,
 }: ContentLaneProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -159,6 +161,7 @@ export function ContentLane({
                                         enableUserState={enableCardUserState}
                                         navigationMode={cardNavigationMode}
                                         titleDensity={cardTitleDensity}
+                                        showDesktopQuickActions={showCardDesktopQuickActions}
                                     />
                                 </div>
                             ))}
