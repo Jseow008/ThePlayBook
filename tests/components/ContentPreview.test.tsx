@@ -136,7 +136,7 @@ describe('ContentPreview', () => {
         expect(screen.getAllByText('Productivity')).toHaveLength(2);
     });
 
-    it('shows mobile audio availability only when the content has audio', () => {
+    it('shows mobile and desktop audio availability only when the content has audio', () => {
         const { rerender } = render(<ContentPreview {...defaultProps} />);
 
         expect(screen.queryByLabelText('Audio available')).not.toBeInTheDocument();
@@ -148,7 +148,9 @@ describe('ContentPreview', () => {
             />
         );
 
-        expect(screen.getByLabelText('Audio available')).toHaveTextContent('Audio');
+        expect(screen.getByTestId('mobile-audio-availability')).toHaveTextContent('Audio');
+        expect(screen.getByTestId('desktop-audio-availability')).toHaveTextContent('Audio');
+        expect(screen.getAllByLabelText('Audio available')).toHaveLength(2);
     });
 
     it('keeps share available in the desktop hero and mobile bottom rail', () => {
