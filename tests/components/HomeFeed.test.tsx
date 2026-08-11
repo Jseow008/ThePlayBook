@@ -8,7 +8,12 @@ vi.mock("@/components/ui/HeroCarousel", () => ({
 }));
 
 vi.mock("@/components/ui/RecommendationsRow", () => ({
-    RecommendationsRow: () => <div data-testid="recommendations-row" />,
+    RecommendationsRow: ({ showUserCompletionBadge }: { showUserCompletionBadge?: boolean }) => (
+        <div
+            data-testid="recommendations-row"
+            data-user-completion-badge={String(showUserCompletionBadge)}
+        />
+    ),
 }));
 
 vi.mock("@/components/ui/Logo", () => ({
@@ -21,17 +26,20 @@ vi.mock("@/components/ui/ContentLane", () => ({
         enableCardUserState,
         viewAllHref,
         showCardDesktopQuickActions,
+        showCardUserCompletionBadge,
     }: {
         title: React.ReactNode;
         enableCardUserState?: boolean;
         viewAllHref?: string;
         showCardDesktopQuickActions?: boolean;
+        showCardUserCompletionBadge?: boolean;
     }) => (
         <div
             data-testid="content-lane"
             data-enable-card-user-state={String(enableCardUserState)}
             data-view-all-href={viewAllHref ?? ""}
             data-desktop-quick-actions={String(showCardDesktopQuickActions)}
+            data-user-completion-badge={String(showCardUserCompletionBadge)}
         >
             {title}
         </div>
@@ -102,7 +110,12 @@ describe("HomeFeed", () => {
         for (const lane of screen.getAllByTestId("content-lane")) {
             expect(lane).toHaveAttribute("data-enable-card-user-state", "undefined");
             expect(lane).toHaveAttribute("data-desktop-quick-actions", "true");
+            expect(lane).toHaveAttribute("data-user-completion-badge", "true");
         }
+        expect(screen.getByTestId("recommendations-row")).toHaveAttribute(
+            "data-user-completion-badge",
+            "true",
+        );
     });
 
     it("does not show Explore All when the newest shelf contains every matching item", () => {

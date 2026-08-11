@@ -16,13 +16,15 @@ vi.mock("@/components/ui/ContentCard", () => ({
         navigationMode,
         titleDensity,
         showDesktopQuickActions,
+        showUserCompletionBadge,
     }: {
         item: ContentItem;
         navigationMode?: "preview" | "resume";
         titleDensity?: "default" | "app-compact";
         showDesktopQuickActions?: boolean;
+        showUserCompletionBadge?: boolean;
     }) => (
-        <div>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${String(showDesktopQuickActions)}:${item.title}`}</div>
+        <div>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${String(showDesktopQuickActions)}:${String(showUserCompletionBadge)}:${item.title}`}</div>
     ),
 }));
 
@@ -113,8 +115,8 @@ describe("ContentLane", () => {
     it("passes through the requested card navigation mode", () => {
         render(<ContentLane title="Resume Lane" items={items} cardNavigationMode="resume" />);
 
-        expect(screen.getByText("resume:default:false:One")).toBeInTheDocument();
-        expect(screen.getByText("resume:default:false:Two")).toBeInTheDocument();
+        expect(screen.getByText("resume:default:false:false:One")).toBeInTheDocument();
+        expect(screen.getByText("resume:default:false:false:Two")).toBeInTheDocument();
     });
 
     it("renders lane cards with the compact shelf sizing standard", () => {
@@ -127,15 +129,22 @@ describe("ContentLane", () => {
     it("passes through the requested card title density", () => {
         render(<ContentLane title="Compact Lane" items={items} cardTitleDensity="app-compact" />);
 
-        expect(screen.getByText("preview:app-compact:false:One")).toBeInTheDocument();
-        expect(screen.getByText("preview:app-compact:false:Two")).toBeInTheDocument();
+        expect(screen.getByText("preview:app-compact:false:false:One")).toBeInTheDocument();
+        expect(screen.getByText("preview:app-compact:false:false:Two")).toBeInTheDocument();
     });
 
     it("passes through desktop quick actions when requested", () => {
         render(<ContentLane title="Action Lane" items={items} showCardDesktopQuickActions />);
 
-        expect(screen.getByText("preview:default:true:One")).toBeInTheDocument();
-        expect(screen.getByText("preview:default:true:Two")).toBeInTheDocument();
+        expect(screen.getByText("preview:default:true:false:One")).toBeInTheDocument();
+        expect(screen.getByText("preview:default:true:false:Two")).toBeInTheDocument();
+    });
+
+    it("passes through user completion badges when requested", () => {
+        render(<ContentLane title="Completed Lane" items={items} showCardUserCompletionBadge />);
+
+        expect(screen.getByText("preview:default:false:true:One")).toBeInTheDocument();
+        expect(screen.getByText("preview:default:false:true:Two")).toBeInTheDocument();
     });
 
     it("keeps Explore All beside the header and desktop-only", () => {

@@ -57,6 +57,7 @@ export function HomeFeed({
                             viewAllHref={hasMoreBrowseItems(items) ? "/search" : undefined}
                             cardTitleDensity="app-compact"
                             showCardDesktopQuickActions
+                            showCardUserCompletionBadge
                         />
 
                         {/* Dynamic Sections from Admin */}
@@ -74,6 +75,7 @@ export function HomeFeed({
                                         : undefined}
                                     cardTitleDensity="app-compact"
                                     showCardDesktopQuickActions
+                                    showCardUserCompletionBadge
                                 />
                             );
                         })}
@@ -82,6 +84,7 @@ export function HomeFeed({
                         <RecommendationsRow
                             cardTitleDensity="app-compact"
                             showDesktopQuickActions
+                            showUserCompletionBadge
                         />
                     </div>
                 </div>

@@ -10,9 +10,11 @@ const BROWSE_LIBRARY_SEED_LIMIT = 20;
 export function RecommendationsRow({
     cardTitleDensity = "default",
     showDesktopQuickActions = false,
+    showUserCompletionBadge = false,
 }: {
     cardTitleDensity?: "default" | "app-compact";
     showDesktopQuickActions?: boolean;
+    showUserCompletionBadge?: boolean;
 }) {
     const { completedIds, inProgressIds, myListIds, isLoaded } = useReadingProgress();
     const mostRecentId = completedIds[0] || inProgressIds[0] || null;
@@ -59,6 +61,7 @@ export function RecommendationsRow({
                     items={recentItems}
                     cardTitleDensity={cardTitleDensity}
                     showCardDesktopQuickActions={showDesktopQuickActions}
+                    showCardUserCompletionBadge={showUserCompletionBadge}
                 />
             )}
 
@@ -69,6 +72,7 @@ export function RecommendationsRow({
                     items={libraryItems}
                     cardTitleDensity={cardTitleDensity}
                     showCardDesktopQuickActions={showDesktopQuickActions}
+                    showCardUserCompletionBadge={showUserCompletionBadge}
                 />
             )}
         </>

@@ -250,6 +250,28 @@ describe("ContentCard", () => {
         );
     });
 
+    it("shows the completed badge from user progress only when requested", () => {
+        mockGetProgress.mockReturnValue({
+            itemId: item.id,
+            completed: ["segment-1", "segment-2"],
+            lastSegmentIndex: 1,
+            maxSegmentIndex: 1,
+            lastReadAt: "2026-03-10T00:00:00Z",
+            isCompleted: true,
+            totalSegments: 2,
+        });
+
+        const { rerender } = render(<ContentCard item={item} />);
+
+        expect(screen.queryByRole("img", { name: "Deep Work completed" })).not.toBeInTheDocument();
+
+        rerender(<ContentCard item={item} showUserCompletionBadge />);
+
+        expect(screen.getByRole("img", { name: "Deep Work completed" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toHaveClass("right-10");
+        expect(document.querySelector(".content-card-motion-progress")).not.toBeInTheDocument();
+    });
+
     it("falls back to the non-image artwork treatment after the direct retry fails", () => {
         const itemWithCover = {
             ...item,

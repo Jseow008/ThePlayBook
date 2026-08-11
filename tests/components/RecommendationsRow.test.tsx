@@ -19,11 +19,13 @@ vi.mock("@/components/ui/ContentLane", () => ({
     ContentLane: ({
         title,
         items,
+        showCardUserCompletionBadge,
     }: {
         title: ReactNode;
         items: ContentItem[];
+        showCardUserCompletionBadge?: boolean;
     }) => (
-        <section>
+        <section data-user-completion-badge={String(showCardUserCompletionBadge)}>
             <h2>{title}</h2>
             <div>{items.map((item) => item.title).join(", ")}</div>
         </section>
@@ -134,6 +136,24 @@ describe("RecommendationsRow", () => {
                 targetCount: 10,
             }),
         );
+    });
+
+    it("passes the Browse completion status option to recommendation lanes", () => {
+        useReadingProgressMock.mockReturnValue({
+            completedIds: [recommendation.id],
+            inProgressIds: [],
+            myListIds: [],
+            isLoaded: true,
+        });
+        useBrowseRecommendationsMock.mockReturnValueOnce({
+            data: { recentItems: [recommendation], libraryItems: [] },
+            isLoading: false,
+        });
+
+        render(<RecommendationsRow showUserCompletionBadge />);
+
+        expect(screen.getByRole("heading", { name: "Based on your recent reading" }).closest("section"))
+            .toHaveAttribute("data-user-completion-badge", "true");
     });
 
     it("renders the server-deduped library lane", () => {
