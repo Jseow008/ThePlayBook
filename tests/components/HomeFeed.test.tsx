@@ -78,6 +78,12 @@ describe("HomeFeed", () => {
         updated_at: "2026-03-01T00:00:00Z",
     };
 
+    const buildItems = (count: number) => Array.from({ length: count }, (_, index) => ({
+        ...item,
+        id: `${String(index + 1).padStart(8, "0")}-1111-1111-1111-111111111111`,
+        title: `Item ${index + 1}`,
+    }));
+
     it("leaves browse feed cards interactive so bookmark buttons can save to Library", () => {
         render(
             <HomeFeed
@@ -99,7 +105,7 @@ describe("HomeFeed", () => {
         }
     });
 
-    it("does not show a generic view-all link for the new-on-netflux lane", () => {
+    it("does not show Explore All when the newest shelf contains every matching item", () => {
         render(
             <HomeFeed
                 items={[item]}
@@ -113,6 +119,60 @@ describe("HomeFeed", () => {
 
         expect(newOnNetfluxLane).toHaveTextContent("New on Netflux");
         expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "");
+    });
+
+    it("links the newest shelf to the full catalog when an additional item exists", () => {
+        render(
+            <HomeFeed
+                items={buildItems(11)}
+                featuredItems={[item]}
+                sections={[]}
+                sectionItems={{}}
+            />
+        );
+
+        const [newOnNetfluxLane] = screen.getAllByTestId("content-lane");
+
+        expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "/search");
+    });
+
+    it("links category shelves to their exact catalog when an additional item exists", () => {
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[section]}
+                sectionItems={{ [section.id]: buildItems(11) }}
+            />
+        );
+
+        const categoryLane = screen.getAllByTestId("content-lane")[1];
+
+        expect(categoryLane).toHaveAttribute(
+            "data-view-all-href",
+            "/search?category=Productivity",
+        );
+    });
+
+    it("does not link unsupported shelf filters to broader search results", () => {
+        const authorSection = {
+            ...section,
+            filter_type: "author",
+            filter_value: "Cal Newport",
+        };
+
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[authorSection]}
+                sectionItems={{ [authorSection.id]: buildItems(11) }}
+            />
+        );
+
+        const authorLane = screen.getAllByTestId("content-lane")[1];
+
+        expect(authorLane).toHaveAttribute("data-view-all-href", "");
     });
 
     it("expands footer link touch targets without changing their labels", () => {

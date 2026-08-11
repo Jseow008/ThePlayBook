@@ -10,6 +10,11 @@ import { Logo } from "@/components/ui/Logo";
 import type { ContentItem, HomepageSection } from "@/types/database";
 import { cn } from "@/lib/utils";
 import { APP_NAME } from "@/lib/brand";
+import {
+    BROWSE_LANE_ITEM_LIMIT,
+    getBrowseSectionViewAllHref,
+    hasMoreBrowseItems,
+} from "@/lib/browse-lanes";
 
 interface HomeFeedProps {
     items: ContentItem[];
@@ -48,7 +53,8 @@ export function HomeFeed({
                                     </span>
                                 </div>
                             }
-                            items={items.slice(0, 10)}
+                            items={items.slice(0, BROWSE_LANE_ITEM_LIMIT)}
+                            viewAllHref={hasMoreBrowseItems(items) ? "/search" : undefined}
                             cardTitleDensity="app-compact"
                             showCardDesktopQuickActions
                         />
@@ -62,7 +68,10 @@ export function HomeFeed({
                                 <ContentLane
                                     key={section.id}
                                     title={section.title}
-                                    items={sectionContent}
+                                    items={sectionContent.slice(0, BROWSE_LANE_ITEM_LIMIT)}
+                                    viewAllHref={hasMoreBrowseItems(sectionContent)
+                                        ? getBrowseSectionViewAllHref(section)
+                                        : undefined}
                                     cardTitleDensity="app-compact"
                                     showCardDesktopQuickActions
                                 />
