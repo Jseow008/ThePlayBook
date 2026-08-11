@@ -50,6 +50,7 @@ export function HomeFeed({
                             }
                             items={items.slice(0, 10)}
                             cardTitleDensity="app-compact"
+                            showCardDesktopQuickActions
                         />
 
                         {/* Dynamic Sections from Admin */}
@@ -63,12 +64,16 @@ export function HomeFeed({
                                     title={section.title}
                                     items={sectionContent}
                                     cardTitleDensity="app-compact"
+                                    showCardDesktopQuickActions
                                 />
                             );
                         })}
 
                         {/* Personalized Recommendations */}
-                        <RecommendationsRow cardTitleDensity="app-compact" />
+                        <RecommendationsRow
+                            cardTitleDensity="app-compact"
+                            showDesktopQuickActions
+                        />
                     </div>
                 </div>
             </div>
