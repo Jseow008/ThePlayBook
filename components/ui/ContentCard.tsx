@@ -179,7 +179,7 @@ function BaseContentCard({
 
     return (
         <div className={cn(
-            "content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:transition-none",
+            "content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 max-md:active:scale-[0.98] max-md:active:ring-white/30 max-md:active:shadow-[0_8px_20px_rgba(0,0,0,0.38)] max-md:duration-150 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:active:scale-100 motion-reduce:transition-none",
             CONTENT_CARD_ASPECT_CLASS
         )}>
             <Link href={href} className="absolute inset-0 z-10 rounded-md focus-ring">
@@ -257,7 +257,7 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
+            <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 max-md:group-active:opacity-25 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/72 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
                 <div className="flex h-full flex-col justify-end gap-1">
@@ -403,7 +403,7 @@ function BaseContentCard({
                 </button>
             ) : null}
 
-            <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border border-white/15 transition-colors motion-reduce:transition-none" />
+            <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border border-white/15 transition-colors max-md:group-active:border-white/40 motion-reduce:transition-none" />
             <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border-2 border-transparent transition-colors group-hover:border-primary/75 motion-reduce:transition-none" />
         </div>
     );
