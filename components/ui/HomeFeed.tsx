@@ -38,7 +38,7 @@ export function HomeFeed({
                 <HeroCarousel items={featuredItems} />
 
                 <div className={cn(
-                    "relative z-10 pb-3 md:pb-4 lg:pb-8 space-y-3 md:space-y-8 transition-all duration-500",
+                    "relative z-10 space-y-3 pb-3 transition-all duration-500 md:space-y-8 md:pb-0",
                     featuredItems.length > 0 ? "-mt-5 md:-mt-8 pt-0" : "pt-16 md:pt-24"
                 )}>
                     {/* Standard Feed View */}
@@ -87,11 +87,45 @@ export function HomeFeed({
                             showUserCompletionBadge
                         />
                     </div>
+
+                    <section
+                        aria-labelledby="browse-recovery-title"
+                        className="hidden px-6 pt-2 md:block lg:px-16"
+                    >
+                        <div className="flex items-center justify-between gap-8 border-t border-border py-6 lg:py-8">
+                            <div>
+                                <h2
+                                    id="browse-recovery-title"
+                                    className="font-display text-lg font-semibold tracking-tight text-foreground"
+                                >
+                                    Haven&apos;t found the right summary?
+                                </h2>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                    Search the full catalog or ask Netflux for a recommendation.
+                                </p>
+                            </div>
+
+                            <div className="flex shrink-0 items-center gap-3">
+                                <Link
+                                    href="/search"
+                                    className="focus-ring touch-target-44 inline-flex min-h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+                                >
+                                    Search all summaries
+                                </Link>
+                                <Link
+                                    href="/ask"
+                                    className="focus-ring touch-target-44 inline-flex min-h-10 items-center justify-center rounded-full border border-border bg-transparent px-5 text-sm font-semibold text-foreground transition-colors hover:bg-muted/50"
+                                >
+                                    Ask Netflux
+                                </Link>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </div>
 
             {/* Footer */}
-            <footer className="mt-8 border-t border-border bg-card/10 px-4 py-8 backdrop-blur-sm md:mt-12 md:px-6 lg:px-16 lg:py-8">
+            <footer className="mt-8 border-t border-border bg-card/10 px-4 py-8 backdrop-blur-sm md:mt-0 md:px-6 lg:px-16 lg:py-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-3 md:items-start">
                         <Link href="/" className="focus-ring touch-target-44 inline-flex rounded-sm">

@@ -212,6 +212,38 @@ describe("HomeFeed", () => {
         expect(featuredLane).toHaveAttribute("data-view-all-href", "");
     });
 
+    it("offers desktop-only recovery actions after the final lane and before the footer", () => {
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[]}
+                sectionItems={{}}
+            />
+        );
+
+        const recoveryTitle = screen.getByRole("heading", {
+            name: "Haven't found the right summary?",
+        });
+        const recoverySection = recoveryTitle.closest("section");
+        const recommendations = screen.getByTestId("recommendations-row");
+        const footer = screen.getByRole("contentinfo");
+
+        expect(recoverySection).not.toBeNull();
+        expect(recoverySection).toHaveClass("hidden", "md:block");
+        const searchLink = screen.getByRole("link", { name: "Search all summaries" });
+        const askLink = screen.getByRole("link", { name: "Ask Netflux" });
+
+        expect(searchLink).toHaveAttribute("href", "/search");
+        expect(searchLink).toHaveClass("min-h-10");
+        expect(askLink).toHaveAttribute("href", "/ask");
+        expect(askLink).toHaveClass("min-h-10");
+        expect(recommendations.compareDocumentPosition(recoverySection!) & Node.DOCUMENT_POSITION_FOLLOWING)
+            .toBeTruthy();
+        expect(recoverySection!.compareDocumentPosition(footer) & Node.DOCUMENT_POSITION_FOLLOWING)
+            .toBeTruthy();
+    });
+
     it("expands footer link touch targets without changing their labels", () => {
         render(
             <HomeFeed
