@@ -137,4 +137,13 @@ describe("ContentLane", () => {
         expect(screen.getByText("preview:default:true:One")).toBeInTheDocument();
         expect(screen.getByText("preview:default:true:Two")).toBeInTheDocument();
     });
+
+    it("keeps Explore All beside the header and desktop-only", () => {
+        render(<ContentLane title="Topic Lane" items={items} viewAllHref="/search?category=Productivity" />);
+
+        const link = screen.getByRole("link", { name: "Explore All" });
+
+        expect(link).toHaveAttribute("href", "/search?category=Productivity");
+        expect(link).toHaveClass("hidden", "md:inline-flex", "md:group-hover/lane:opacity-100");
+    });
 });

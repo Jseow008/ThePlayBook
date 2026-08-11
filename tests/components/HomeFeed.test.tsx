@@ -78,6 +78,12 @@ describe("HomeFeed", () => {
         updated_at: "2026-03-01T00:00:00Z",
     };
 
+    const buildItems = (count: number) => Array.from({ length: count }, (_, index) => ({
+        ...item,
+        id: `${String(index + 1).padStart(8, "0")}-1111-1111-1111-111111111111`,
+        title: `Item ${index + 1}`,
+    }));
+
     it("leaves browse feed cards interactive so bookmark buttons can save to Library", () => {
         render(
             <HomeFeed
@@ -99,7 +105,7 @@ describe("HomeFeed", () => {
         }
     });
 
-    it("does not show a generic view-all link for the new-on-netflux lane", () => {
+    it("does not show Explore All when the newest shelf contains every matching item", () => {
         render(
             <HomeFeed
                 items={[item]}
@@ -113,6 +119,84 @@ describe("HomeFeed", () => {
 
         expect(newOnNetfluxLane).toHaveTextContent("New on Netflux");
         expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "");
+    });
+
+    it("links the newest shelf to the full catalog when an additional item exists", () => {
+        render(
+            <HomeFeed
+                items={buildItems(11)}
+                featuredItems={[item]}
+                sections={[]}
+                sectionItems={{}}
+            />
+        );
+
+        const [newOnNetfluxLane] = screen.getAllByTestId("content-lane");
+
+        expect(newOnNetfluxLane).toHaveAttribute("data-view-all-href", "/search");
+    });
+
+    it("links category shelves to their exact catalog when an additional item exists", () => {
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[section]}
+                sectionItems={{ [section.id]: buildItems(11) }}
+            />
+        );
+
+        const categoryLane = screen.getAllByTestId("content-lane")[1];
+
+        expect(categoryLane).toHaveAttribute(
+            "data-view-all-href",
+            "/search?category=Productivity",
+        );
+    });
+
+    it.each([
+        ["author", "Steven Bartlett", "/search?q=Steven+Bartlett"],
+        ["title", "Diary of a CEO", "/search?q=Diary+of+a+CEO"],
+    ])("links %s shelves to keyword search results", (filterType, filterValue, expectedHref) => {
+        const keywordSection = {
+            ...section,
+            filter_type: filterType,
+            filter_value: filterValue,
+        };
+
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[keywordSection]}
+                sectionItems={{ [keywordSection.id]: buildItems(11) }}
+            />
+        );
+
+        const keywordLane = screen.getAllByTestId("content-lane")[1];
+
+        expect(keywordLane).toHaveAttribute("data-view-all-href", expectedHref);
+    });
+
+    it("does not link featured shelves without an equivalent Search filter", () => {
+        const featuredSection = {
+            ...section,
+            filter_type: "featured",
+            filter_value: "true",
+        };
+
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[featuredSection]}
+                sectionItems={{ [featuredSection.id]: buildItems(11) }}
+            />
+        );
+
+        const featuredLane = screen.getAllByTestId("content-lane")[1];
+
+        expect(featuredLane).toHaveAttribute("data-view-all-href", "");
     });
 
     it("expands footer link touch targets without changing their labels", () => {

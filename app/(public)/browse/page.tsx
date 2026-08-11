@@ -13,6 +13,7 @@ import {
     ROOT_OG_IMAGE_ALT,
     serializeJsonLdGraph,
 } from "@/lib/seo";
+import { BROWSE_LANE_FETCH_LIMIT } from "@/lib/browse-lanes";
 
 /**
  * Browse Page (Content Dashboard)
@@ -128,8 +129,8 @@ async function HomeFeedServer() {
             .eq("status", "verified")
             .is("deleted_at", null)
             .order("published_at", { ascending: false })
-            .limit(10),
-        supabase.rpc("get_homepage_sections_with_items", { p_limit: 10 }),
+            .limit(BROWSE_LANE_FETCH_LIMIT),
+        supabase.rpc("get_homepage_sections_with_items", { p_limit: BROWSE_LANE_FETCH_LIMIT }),
     ]);
 
     if (featuredResult.error) {

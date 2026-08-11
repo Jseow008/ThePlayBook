@@ -114,7 +114,7 @@ export function ContentLane({
                     {viewAllHref && (
                         <Link
                             href={viewAllHref}
-                            className="focus-ring rounded-sm text-sm font-normal text-muted-foreground transition-all hover:translate-x-1 hover:text-primary md:opacity-0 md:group-hover/lane:opacity-100 md:focus-visible:opacity-100"
+                            className="focus-ring hidden items-center rounded-sm text-sm font-normal text-muted-foreground transition-all hover:translate-x-1 hover:text-primary motion-reduce:transition-none md:inline-flex md:opacity-0 md:group-hover/lane:opacity-100 md:focus-visible:opacity-100"
                         >
                             <span className="flex items-center gap-1">
                                 Explore All <ChevronRight className="size-4" />
