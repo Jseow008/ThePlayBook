@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Clock, BookOpen, Sparkles, ChevronDown } from "lucide-react";
+import { Clock, BookOpen, Sparkles, ChevronDown, Headphones } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -51,14 +50,9 @@ export function ContentPreview({
     const readCtaHref = buildReadPath(item);
     const titleRef = useRef<HTMLHeadingElement>(null);
     const hookRef = useRef<HTMLDivElement>(null);
-    const [hasMounted, setHasMounted] = useState(false);
     const [isTruncated, setIsTruncated] = useState(false);
     const [showAllTakeaways, setShowAllTakeaways] = useState(initialShowAllTakeaways);
     const [showFullHook, setShowFullHook] = useState(false);
-
-    useEffect(() => {
-        setHasMounted(true);
-    }, []);
 
     useEffect(() => {
         setShowFullHook(false);
@@ -118,7 +112,7 @@ export function ContentPreview({
     };
 
     return (
-        // Mobile padding keeps the final content clear of the portalled CTA rail.
+        // Mobile padding keeps the final content clear of the fixed CTA rail.
         <div className="min-h-screen bg-background text-foreground pb-[calc(5.75rem+var(--safe-area-bottom))] sm:pb-10 lg:pb-8">
             {/* Container */}
             <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-3 sm:py-12">
@@ -159,7 +153,7 @@ export function ContentPreview({
                             {item.title}
                         </h1>
                         {item.author && (
-                            <p className="text-lg text-muted-foreground font-medium mb-4 truncate text-center sm:text-left">
+                            <p className="mb-4 line-clamp-2 text-balance text-center text-lg font-medium text-muted-foreground sm:block sm:truncate sm:text-left">
                                 {item.author}
                             </p>
                         )}
@@ -180,7 +174,8 @@ export function ContentPreview({
                             {(item.duration_seconds ||
                                 (segmentCount !== undefined &&
                                     segmentCount !== null &&
-                                    segmentCount > 0)) && (
+                                    segmentCount > 0) ||
+                                item.audio_url) && (
                                 <div className="flex flex-wrap items-center justify-center gap-2">
                                     {item.duration_seconds && (
                                         <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-secondary/60 text-muted-foreground border border-border/50">
@@ -195,6 +190,15 @@ export function ContentPreview({
                                                 {segmentCount} sections
                                             </span>
                                         )}
+                                    {item.audio_url && (
+                                        <span
+                                            aria-label="Audio available"
+                                            className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-secondary/60 px-2.5 py-1 text-xs font-medium text-muted-foreground"
+                                        >
+                                            <Headphones aria-hidden="true" className="size-3" />
+                                            Audio
+                                        </span>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -389,7 +393,7 @@ export function ContentPreview({
                                             <button
                                                 type="button"
                                                 onClick={handleBackToTop}
-                                                className="focus-ring inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+                                                className="focus-ring inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground sm:min-h-0"
                                             >
                                                 <span>Back to top</span>
                                                 <span aria-hidden="true">↑</span>
@@ -398,7 +402,7 @@ export function ContentPreview({
                                             <button
                                                 type="button"
                                                 onClick={() => setShowAllTakeaways(true)}
-                                                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-full hover:bg-secondary/50"
+                                                className="flex min-h-11 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground sm:min-h-0"
                                             >
                                                 <span>{`Show all ${activeTakeaways.length} takeaways`}</span>
                                                 <ChevronDown className="size-4" />
@@ -419,58 +423,56 @@ export function ContentPreview({
                 )}
             </div>
 
-            {hasMounted
-                ? createPortal(
-                    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex h-20 items-end px-3 safe-area-pb-sm sm:hidden">
-                        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/70 to-transparent" />
-                        <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
-                            <Link
-                                href={readCtaHref}
-                                className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95"
-                            >
-                                <BookOpen className="size-4 shrink-0" />
-                                <span className="truncate">{readCtaLabel}</span>
-                            </Link>
+            <div
+                data-testid="mobile-preview-action-rail"
+                className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex h-20 items-end px-3 safe-area-pb-sm sm:hidden"
+            >
+                <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/70 to-transparent" />
+                <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+                    <Link
+                        href={readCtaHref}
+                        className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95"
+                    >
+                        <BookOpen className="size-4 shrink-0" />
+                        <span className="truncate">{readCtaLabel}</span>
+                    </Link>
 
-                            <SaveToLibraryButton
-                                contentId={item.id}
-                                contentTitle={item.title}
-                                className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:scale-95 disabled:cursor-wait disabled:active:scale-100"
-                                loadingClassName="bg-secondary/25 border-border/35 text-muted-foreground/60"
-                                savedClassName="bg-secondary/55 border-primary/45 text-primary"
-                                unsavedClassName="bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground"
-                                iconClassName="size-5"
+                    <SaveToLibraryButton
+                        contentId={item.id}
+                        contentTitle={item.title}
+                        className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors active:scale-95 disabled:cursor-wait disabled:active:scale-100"
+                        loadingClassName="bg-secondary/25 border-border/35 text-muted-foreground/60"
+                        savedClassName="bg-secondary/55 border-primary/45 text-primary"
+                        unsavedClassName="bg-secondary/30 border-border/40 text-muted-foreground hover:text-foreground"
+                        iconClassName="size-5"
+                    />
+
+                    {/* Mobile Share */}
+                    <ShareButton
+                        path={`/preview/${item.id}`}
+                        title={item.title}
+                        text={`Check out "${item.title}" on ${APP_NAME}`}
+                        variant="icon"
+                        source="content_preview_mobile"
+                        contentId={item.id}
+                        contentType={item.type}
+                        className="focus-ring h-11 w-11 shrink-0 rounded-xl border border-border/40 bg-secondary/30"
+                    />
+
+                    {onSpinAgain && (
+                        <button
+                            type="button"
+                            onClick={onSpinAgain}
+                            disabled={isSpinning}
+                            className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-secondary/30 text-foreground transition-colors active:scale-95"
+                        >
+                            <CtaIcon
+                                className={`size-5 ${isSpinning ? "animate-spin" : ""}`}
                             />
-
-                            {/* Mobile Share */}
-                            <ShareButton
-                                path={`/preview/${item.id}`}
-                                title={item.title}
-                                text={`Check out "${item.title}" on ${APP_NAME}`}
-                                variant="icon"
-                                source="content_preview_mobile"
-                                contentId={item.id}
-                                contentType={item.type}
-                                className="focus-ring h-11 w-11 shrink-0 rounded-xl border border-border/40 bg-secondary/30"
-                            />
-
-                            {onSpinAgain && (
-                                <button
-                                    type="button"
-                                    onClick={onSpinAgain}
-                                    disabled={isSpinning}
-                                    className="focus-ring flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/40 bg-secondary/30 text-foreground transition-colors active:scale-95"
-                                >
-                                    <CtaIcon
-                                        className={`size-5 ${isSpinning ? "animate-spin" : ""}`}
-                                    />
-                                </button>
-                            )}
-                        </div>
-                    </div>,
-                    document.body
-                )
-                : null}
+                        </button>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }
