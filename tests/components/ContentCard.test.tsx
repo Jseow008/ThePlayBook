@@ -120,6 +120,16 @@ describe("ContentCard", () => {
 
         const link = screen.getByRole("link", { name: "Preview Deep Work" });
         expect(link.parentElement).toHaveClass(CONTENT_CARD_ASPECT_CLASS);
+        expect(link.parentElement).toHaveClass(
+            "max-md:active:scale-[0.98]",
+            "motion-reduce:active:scale-100",
+        );
+        expect(link.parentElement?.querySelector(".content-card-motion-overlay")).toHaveClass(
+            "max-md:group-active:opacity-25",
+        );
+        expect(link.parentElement?.querySelector(".content-card-motion-border")).toHaveClass(
+            "max-md:group-active:border-white/40",
+        );
         expect(screen.getByAltText("Deep Work")).toHaveAttribute("sizes", CONTENT_CARD_IMAGE_SIZES);
     });
 
