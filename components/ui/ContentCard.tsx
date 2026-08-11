@@ -26,6 +26,7 @@ import {
 interface ContentCardProps {
     item: ContentItem;
     showCompletedBadge?: boolean;
+    showUserCompletionBadge?: boolean;
     onRemove?: (id: string) => void;
     removeLabel?: string;
     removeIcon?: "archive" | "trash";
@@ -101,7 +102,12 @@ export function ContentCard({
 }
 
 function InteractiveContentCard(props: ContentCardProps) {
-    const { item, hideProgressBar = false, navigationMode = "preview" } = props;
+    const {
+        item,
+        hideProgressBar = false,
+        navigationMode = "preview",
+        showUserCompletionBadge = false,
+    } = props;
     const { isInMyList, toggleMyList, getProgress } = useReadingProgress();
     const isBookmarked = isInMyList(item.id);
     const progress = getProgress(item.id);
@@ -123,6 +129,7 @@ function InteractiveContentCard(props: ContentCardProps) {
             isBookmarked={isBookmarked}
             progressPercentage={percentage}
             showProgress={showProgress}
+            showCompletedBadge={props.showCompletedBadge || (showUserCompletionBadge && progress?.isCompleted)}
             href={href}
             onToggleBookmark={() => {
                 toggleMyList(item.id);
@@ -209,7 +216,11 @@ function BaseContentCard({
             ) : null}
 
             {showCompletedBadge ? (
-                <div className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-emerald-500 p-1.5 shadow-lg">
+                <div
+                    role="img"
+                    aria-label={`${item.title} completed`}
+                    className="pointer-events-none absolute right-2 top-2 z-20 rounded-full bg-emerald-500 p-1.5 shadow-lg"
+                >
                     <CheckCircle2 className="size-4 text-white" />
                 </div>
             ) : null}
