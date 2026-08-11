@@ -24,7 +24,7 @@ const {
     localStorageState: new Map<string, string>(),
     notesDrawerSpy: vi.fn(),
     progressState: {
-        value: null as { completed?: string[]; maxSegmentIndex?: number; lastSegmentIndex?: number } | null,
+        value: null as { completed?: string[]; maxSegmentIndex?: number; lastSegmentIndex?: number; isCompleted?: boolean } | null,
     },
     readerHeroHeaderSpy: vi.fn(),
     removeFromProgressMock: vi.fn(),
@@ -404,6 +404,117 @@ describe('ReaderView', () => {
         });
     });
 
+    it('automatically resumes at the earliest unfinished segment and cues its audio without autoplaying', async () => {
+        progressState.value = {
+            completed: ['seg-1', 'seg-3'],
+            maxSegmentIndex: 2,
+            lastSegmentIndex: 2,
+            isCompleted: true,
+        };
+
+        const resumableContent = {
+            ...mockContent,
+            audio_url: 'https://example.com/audio.mp3',
+            segments: [
+                {
+                    id: 'seg-1',
+                    item_id: 'item-1',
+                    order_index: 0,
+                    title: 'Segment 1',
+                    markdown_body: 'Body 1',
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                },
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: 30,
+                    end_time_sec: 60,
+                },
+                {
+                    id: 'seg-3',
+                    item_id: 'item-1',
+                    order_index: 2,
+                    title: 'Segment 3',
+                    markdown_body: 'Body 3',
+                    start_time_sec: 60,
+                    end_time_sec: 90,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        localStorage.setItem(audioResumeKey('guest', 'test-item-1'), JSON.stringify({
+            currentTimeSec: 65,
+            lastUpdatedAt: '2026-08-11T00:00:00.000Z',
+            audioSource: 'https://example.com/audio.mp3',
+        }));
+
+        const { rerender } = render(<ReaderView content={resumableContent} />);
+
+        await waitFor(() => {
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestAccordionProps?.expandedSegmentId).toBe('seg-2');
+            expect(latestAccordionProps?.scrollRequest).toEqual(expect.objectContaining({
+                segmentId: 'seg-2',
+                focusAfterScroll: true,
+            }));
+            expect(latestAccordionProps?.activeNarratedSegmentId).toBeNull();
+            expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+                initialAudioTimeSec: 30,
+            }));
+        });
+
+        expect(routerReplaceMock).not.toHaveBeenCalled();
+
+        searchParamsState.value = '';
+        storageScopeState.value = 'user:user-a';
+        rerender(<ReaderView content={resumableContent} />);
+
+        await waitFor(() => {
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-2');
+            expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+                initialAudioTimeSec: 30,
+            }));
+        });
+    });
+
+    it('starts completed content at the top for rereading', async () => {
+        progressState.value = {
+            completed: ['seg-1', 'seg-2'],
+            maxSegmentIndex: 1,
+            lastSegmentIndex: 1,
+            isCompleted: true,
+        };
+
+        const multiSegmentContent = {
+            ...mockContent,
+            segments: [
+                ...mockContent.segments,
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: null,
+                    end_time_sec: null,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={multiSegmentContent} />);
+
+        await waitFor(() => {
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.completedSegments.has('seg-1')).toBe(true);
+        });
+
+        expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBeNull();
+        expect(routerReplaceMock).not.toHaveBeenCalled();
+    });
+
     it('finishes all segments and lets undo restore the prior reading state', async () => {
         progressState.value = {
             completed: ['seg-1'],
@@ -666,6 +777,12 @@ describe('ReaderView', () => {
 
     it('consumes a highlightId URL param and clears it after jumping', async () => {
         searchParamsState.value = 'highlightId=highlight-1';
+        progressState.value = {
+            completed: ['seg-1'],
+            maxSegmentIndex: 0,
+            lastSegmentIndex: 0,
+            isCompleted: false,
+        };
         highlightsState.value = [
             {
                 id: 'highlight-1',
@@ -684,7 +801,23 @@ describe('ReaderView', () => {
             },
         ];
 
-        render(<ReaderView content={mockContent} />);
+        const contentWithAnotherUnfinishedSegment = {
+            ...mockContent,
+            segments: [
+                ...mockContent.segments,
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: null,
+                    end_time_sec: null,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        render(<ReaderView content={contentWithAnotherUnfinishedSegment} />);
 
         await waitFor(() => {
             expect(notesDrawerSpy).toHaveBeenCalledWith(
@@ -697,6 +830,8 @@ describe('ReaderView', () => {
         await waitFor(() => {
             expect(routerReplaceMock).toHaveBeenCalledWith('/read/test-item-1', { scroll: false });
         });
+
+        expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
     });
 
     it('waits for the target segment to expand before scrolling drawer jumps to the segment top', async () => {

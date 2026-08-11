@@ -109,6 +109,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     } | null>(null);
     const latestAudioStateRef = useRef({ timeSec: 0, durationSec: 0 });
     const openedContentIdRef = useRef<string | null>(null);
+    const handledReaderEntryRef = useRef<string | null>(null);
     const lastPersistedAudioTimeRef = useRef<number | null>(null);
     const pendingProgressSaveRef = useRef(false);
     const progressSnapshotRef = useRef<ReadingProgressData | null>(null);
@@ -126,6 +127,7 @@ export function ReaderView({ content }: ReaderViewProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const readerEntryKey = `${content.id}:${content.audio_url ?? ""}`;
     const popoverHighlight = popoverHighlightId
         ? highlights.find((highlight) => highlight.id === popoverHighlightId) ?? null
         : null;
@@ -312,24 +314,82 @@ export function ReaderView({ content }: ReaderViewProps) {
     }, [content.segments.length, savedProgress, segmentIdSet]);
 
     useEffect(() => {
-        setAudioCurrentTimeSec(0);
-        setAudioDurationSec(0);
-        setInitialAudioTimeSec(0);
-        setHasSyncedAudioPosition(false);
-        setHasCompletedAudioPlayback(false);
-        setIsAudioFollowEnabled(true);
-        setIsAudioPlaying(false);
-        lastPersistedAudioTimeRef.current = null;
+        const shouldPreserveEntryDecision = handledReaderEntryRef.current === readerEntryKey;
+
+        if (!shouldPreserveEntryDecision) {
+            setAudioCurrentTimeSec(0);
+            setAudioDurationSec(0);
+            setInitialAudioTimeSec(0);
+            setHasSyncedAudioPosition(false);
+            setHasCompletedAudioPlayback(false);
+            setIsAudioFollowEnabled(true);
+            setIsAudioPlaying(false);
+            lastPersistedAudioTimeRef.current = null;
+            latestAudioStateRef.current = { timeSec: 0, durationSec: 0 };
+            setExpandedSegmentId(null);
+            setSegmentScrollRequest(null);
+        }
+
         previousStorageScopeRef.current = storageScope;
-        latestAudioStateRef.current = { timeSec: 0, durationSec: 0 };
-        setExpandedSegmentId(null);
-        setSegmentScrollRequest(null);
         setHasPendingProgressSave(false);
-    }, [content.audio_url, content.id, storageScope]);
+    }, [readerEntryKey, storageScope]);
+
+    useEffect(() => {
+        if (!readingProgressLoaded || handledReaderEntryRef.current === readerEntryKey) {
+            return;
+        }
+
+        if (searchParams.get("highlightId")) {
+            handledReaderEntryRef.current = readerEntryKey;
+            return;
+        }
+
+        if (!savedProgress) {
+            return;
+        }
+
+        handledReaderEntryRef.current = readerEntryKey;
+
+        const completedSegmentIds = new Set(
+            (savedProgress.completed ?? []).filter((segmentId) => segmentIdSet.has(segmentId))
+        );
+        const resumeSegment = content.segments.find((segment) => !completedSegmentIds.has(segment.id));
+
+        if (!resumeSegment) {
+            return;
+        }
+
+        const initialScrollY = window.scrollY;
+        setExpandedSegmentId(resumeSegment.id);
+        requestSegmentScroll(resumeSegment.id, initialScrollY, { focusAfterScroll: true });
+
+        if (content.audio_url) {
+            const segmentAudioStart = Math.max(0, resumeSegment.start_time_sec ?? 0);
+            setInitialAudioTimeSec(segmentAudioStart);
+            setAudioCurrentTimeSec(segmentAudioStart);
+            latestAudioStateRef.current = { timeSec: segmentAudioStart, durationSec: 0 };
+            setHasCompletedAudioPlayback(false);
+            setIsAudioFollowEnabled(true);
+        }
+    }, [
+        content.audio_url,
+        content.id,
+        content.segments,
+        readingProgressLoaded,
+        requestSegmentScroll,
+        readerEntryKey,
+        savedProgress,
+        searchParams,
+        segmentIdSet,
+    ]);
 
     useEffect(() => {
         if (typeof window === "undefined" || !content.audio_url) {
             previousStorageScopeRef.current = storageScope;
+            return;
+        }
+
+        if (handledReaderEntryRef.current === readerEntryKey) {
             return;
         }
 
@@ -379,6 +439,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         content.segments,
         hasSyncedAudioPosition,
         persistAudioResume,
+        readerEntryKey,
         storageScope,
     ]);
 

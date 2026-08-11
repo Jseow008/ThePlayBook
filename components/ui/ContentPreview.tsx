@@ -14,6 +14,7 @@ import { SaveToLibraryButton } from "@/components/ui/SaveToLibraryButton";
 import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { ResilientImage } from "@/components/ui/ResilientImage";
+import { useReadingProgress } from "@/hooks/useReadingProgress";
 import {
     READER_COVER_FRAME_CLASS,
     READER_COVER_IMAGE_SIZES,
@@ -40,6 +41,15 @@ export function ContentPreview({
     initialShowAllTakeaways = false,
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
+    const { getProgress } = useReadingProgress();
+    const progress = getProgress(item.id);
+    const readCtaLabel = progress?.isCompleted
+        ? "Read Again"
+        : progress
+            ? "Continue Reading"
+            : "Read Summary";
+    const readCtaHref = buildReadPath(item);
+    const titleRef = useRef<HTMLHeadingElement>(null);
     const hookRef = useRef<HTMLDivElement>(null);
     const [hasMounted, setHasMounted] = useState(false);
     const [isTruncated, setIsTruncated] = useState(false);
@@ -95,6 +105,18 @@ export function ContentPreview({
         : activeTakeaways.slice(0, collapsedTakeawayCount);
     const hasHidden = activeTakeaways.length > collapsedTakeawayCount;
 
+    const handleBackToTop = () => {
+        const title = titleRef.current;
+        if (!title) return;
+
+        const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+        title.focus({ preventScroll: true });
+        title.scrollIntoView({
+            behavior: prefersReducedMotion ? "auto" : "smooth",
+            block: "start",
+        });
+    };
+
     return (
         // Mobile padding keeps the final content clear of the portalled CTA rail.
         <div className="min-h-screen bg-background text-foreground pb-[calc(5.75rem+var(--safe-area-bottom))] sm:pb-10 lg:pb-8">
@@ -129,7 +151,11 @@ export function ContentPreview({
 
                     {/* Title, Author & CTA */}
                     <div className="flex-1 flex flex-col justify-center min-w-0">
-                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold font-display text-foreground tracking-tight md:tracking-[-0.02em] leading-[1.15] mb-2 text-center sm:text-left">
+                        <h1
+                            ref={titleRef}
+                            tabIndex={-1}
+                            className="scroll-mt-24 text-2xl sm:text-3xl md:text-4xl font-bold font-display text-foreground tracking-tight md:tracking-[-0.02em] leading-[1.15] mb-2 text-center sm:text-left"
+                        >
                             {item.title}
                         </h1>
                         {item.author && (
@@ -250,11 +276,11 @@ export function ContentPreview({
                         <div className="order-3 hidden sm:flex flex-col gap-3 sm:order-2">
                             <div className="flex items-center gap-2.5">
                                 <Link
-                                    href={buildReadPath(item)}
+                                    href={readCtaHref}
                                     className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary text-primary-foreground text-base font-bold hover:bg-primary/90 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-primary/15"
                                 >
                                     <BookOpen className="size-5" />
-                                    <span className="truncate">Read Summary</span>
+                                    <span className="truncate">{readCtaLabel}</span>
                                 </Link>
                                 <SaveToLibraryButton
                                     contentId={item.id}
@@ -356,24 +382,29 @@ export function ContentPreview({
                                     ))}
                                 </div>
 
-                                {/* Show All / Show Less Toggle */}
+                                {/* Reveal / Return Control */}
                                 {hasHidden && (
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            setShowAllTakeaways(!showAllTakeaways)
-                                        }
-                                        className="flex items-center gap-1.5 mx-auto text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-full hover:bg-secondary/50"
-                                    >
-                                        <span>
-                                            {showAllTakeaways
-                                                ? "Show less"
-                                                : `Show all ${activeTakeaways.length} takeaways`}
-                                        </span>
-                                        <ChevronDown
-                                            className={`size-4 transition-transform ${showAllTakeaways ? "rotate-180" : ""}`}
-                                        />
-                                    </button>
+                                    <div className="flex flex-col items-center">
+                                        {showAllTakeaways ? (
+                                            <button
+                                                type="button"
+                                                onClick={handleBackToTop}
+                                                className="focus-ring inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/50 hover:text-foreground"
+                                            >
+                                                <span>Back to top</span>
+                                                <span aria-hidden="true">↑</span>
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAllTakeaways(true)}
+                                                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-full hover:bg-secondary/50"
+                                            >
+                                                <span>{`Show all ${activeTakeaways.length} takeaways`}</span>
+                                                <ChevronDown className="size-4" />
+                                            </button>
+                                        )}
+                                    </div>
                                 )}
                             </div>
                         )}
@@ -394,11 +425,11 @@ export function ContentPreview({
                         <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/70 to-transparent" />
                         <div className="pointer-events-auto relative mx-auto flex w-full max-w-3xl gap-2 rounded-2xl border border-border/45 bg-background/75 p-2 shadow-[0_12px_32px_rgba(0,0,0,0.32)] backdrop-blur-xl">
                             <Link
-                                href={buildReadPath(item)}
+                                href={readCtaHref}
                                 className="focus-ring inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 active:scale-95"
                             >
                                 <BookOpen className="size-4 shrink-0" />
-                                <span className="truncate">Read Summary</span>
+                                <span className="truncate">{readCtaLabel}</span>
                             </Link>
 
                             <SaveToLibraryButton
