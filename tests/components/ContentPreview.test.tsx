@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { ContentPreview } from '@/components/ui/ContentPreview';
 import { READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards';
 import { vi } from 'vitest';
@@ -113,15 +114,43 @@ describe('ContentPreview', () => {
         links.forEach((link) => expect(link).toHaveAttribute('href', href));
     });
 
+    it('includes the mobile action rail in the initial render', () => {
+        const html = renderToString(<ContentPreview {...defaultProps} />);
+
+        expect(html).toContain('data-testid="mobile-preview-action-rail"');
+        expect(html.match(/href="\/read\/test-item-1\/test-title"/g)).toHaveLength(2);
+    });
+
     it('renders the content metadata', () => {
         render(<ContentPreview {...defaultProps} />);
 
         expect(screen.getByText('Test Title')).toBeInTheDocument();
-        expect(screen.getByText('Test Author')).toBeInTheDocument();
+        expect(screen.getByText('Test Author')).toHaveClass(
+            'line-clamp-2',
+            'text-balance',
+            'sm:truncate'
+        );
         expect(screen.getAllByText(/10\s+min read/)).toHaveLength(2);
         expect(screen.getAllByText('5 sections')).toHaveLength(2);
         expect(screen.getAllByText('article')).toHaveLength(2);
         expect(screen.getAllByText('Productivity')).toHaveLength(2);
+    });
+
+    it('shows mobile and desktop audio availability only when the content has audio', () => {
+        const { rerender } = render(<ContentPreview {...defaultProps} />);
+
+        expect(screen.queryByLabelText('Audio available')).not.toBeInTheDocument();
+
+        rerender(
+            <ContentPreview
+                {...defaultProps}
+                item={{ ...mockItem, audio_url: 'https://example.com/audio.mp3' }}
+            />
+        );
+
+        expect(screen.getByTestId('mobile-audio-availability')).toHaveTextContent('Audio');
+        expect(screen.getByTestId('desktop-audio-availability')).toHaveTextContent('Audio');
+        expect(screen.getAllByLabelText('Audio available')).toHaveLength(2);
     });
 
     it('keeps share available in the desktop hero and mobile bottom rail', () => {
@@ -200,11 +229,16 @@ describe('ContentPreview', () => {
             />
         );
 
-        fireEvent.click(screen.getByRole('button', { name: 'Show all 5 takeaways' }));
+        const revealButton = screen.getByRole('button', { name: 'Show all 5 takeaways' });
+        expect(revealButton).toHaveClass('min-h-11', 'sm:min-h-0');
+        fireEvent.click(revealButton);
 
         expect(screen.queryByRole('button', { name: /Show all/i })).not.toBeInTheDocument();
         expect(screen.queryByRole('button', { name: /Show less/i })).not.toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Back to top' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Back to top' })).toHaveClass(
+            'min-h-11',
+            'sm:min-h-0'
+        );
         expect(screen.getByText('Takeaway 5')).toBeInTheDocument();
     });
 
