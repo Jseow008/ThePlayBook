@@ -257,7 +257,7 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 max-md:group-active:opacity-25 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
+            <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/25 opacity-0 transition-opacity duration-300 max-md:group-active:opacity-25 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
 
             <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/92 via-black/62 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
                 <div className="flex h-full flex-col justify-end gap-1">
@@ -297,7 +297,7 @@ function BaseContentCard({
                             {item.category ? (
                                 <p
                                     className={cn(
-                                        "line-clamp-1 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:text-[10px] md:tracking-widest",
+                                        "line-clamp-1 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/76 drop-shadow-md md:text-[10px] md:tracking-widest",
                                         "text-[9px]"
                                     )}
                                 >
@@ -306,7 +306,7 @@ function BaseContentCard({
                             ) : null}
                             <p
                                 className={cn(
-                                    "flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/62 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest",
+                                    "flex w-full flex-wrap items-center gap-x-1 gap-y-0.5 font-medium uppercase leading-relaxed tracking-[0.1em] text-white/70 drop-shadow-md md:gap-x-1.5 md:text-[10px] md:tracking-widest",
                                     "text-[9px]"
                                 )}
                             >
@@ -403,7 +403,7 @@ function BaseContentCard({
                 </button>
             ) : null}
 
-            <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border border-white/15 transition-colors max-md:group-active:border-white/40 motion-reduce:transition-none" />
+            <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border border-white/20 transition-colors max-md:group-active:border-white/40 motion-reduce:transition-none" />
             <div className="content-card-motion-border pointer-events-none absolute inset-0 z-30 rounded-md border-2 border-transparent transition-colors group-hover:border-primary/75 motion-reduce:transition-none" />
         </div>
     );
