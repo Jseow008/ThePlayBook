@@ -193,7 +193,7 @@ function BaseContentCard({
                         alt={item.title}
                         fill
                         surface="content-card"
-                        className="content-card-motion-image object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none"
+                        className="content-card-motion-image brightness-[1.08] object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none"
                         sizes={CONTENT_CARD_IMAGE_SIZES}
                         priority={priority}
                         fallback={
@@ -245,10 +245,10 @@ function BaseContentCard({
             ) : null}
 
             {item.author ? (
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/80 via-black/35 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/70 via-black/25 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
                     <p
                         className={cn(
-                            "translate-z-0 max-w-[82%] break-words text-center font-medium uppercase leading-relaxed tracking-[0.1em] whitespace-normal text-white/80 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",
+                            "translate-z-0 max-w-[82%] break-words text-center font-medium uppercase leading-relaxed tracking-[0.1em] whitespace-normal text-white/86 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",
                             "text-[9px]"
                         )}
                     >
@@ -259,7 +259,7 @@ function BaseContentCard({
 
             <div className="content-card-motion-overlay pointer-events-none absolute inset-0 rounded-md bg-black/40 opacity-0 transition-opacity duration-300 max-md:group-active:opacity-25 md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none" />
 
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/95 via-black/72 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 bg-gradient-to-t from-black/92 via-black/62 to-transparent px-3.5 pb-3.5 pt-14 md:p-4 md:pb-5 md:pt-20">
                 <div className="flex h-full flex-col justify-end gap-1">
                     {contentHook ? (
                         <p
