@@ -195,7 +195,7 @@ export default function ContinueReadingPage() {
                                         titleDensity="app-compact"
                                         showDesktopQuickActions
                                         removeIcon="archive"
-                                        removeLabel="Archive from List"
+                                        removeLabel="Hide from Continue Reading"
                                         onRemove={(id) => {
                                             archiveFromProgressList(id, "reading");
                                             toast.success("Archived from List", {

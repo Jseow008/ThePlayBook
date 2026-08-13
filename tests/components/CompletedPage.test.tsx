@@ -143,8 +143,8 @@ describe("CompletedPage", () => {
             expect.objectContaining({
                 item,
                 removeIcon: "archive",
-                removeLabel: "Archive from List",
-                secondaryRemoveLabel: "Remove from history",
+                removeLabel: "Hide from Completed",
+                secondaryRemoveLabel: "Remove from reading history",
                 showCompletedBadge: true,
                 showDesktopQuickActions: true,
                 titleDensity: "app-compact",
@@ -171,7 +171,7 @@ describe("CompletedPage", () => {
 
         render(<CompletedPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Archive from List" }));
+        fireEvent.click(screen.getByRole("button", { name: "Hide from Completed" }));
 
         expect(archiveFromProgressList).toHaveBeenCalledWith(item.id, "completed");
         expect(removeFromProgress).not.toHaveBeenCalled();
@@ -206,7 +206,7 @@ describe("CompletedPage", () => {
 
         render(<CompletedPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Remove from history" }));
+        fireEvent.click(screen.getByRole("button", { name: "Remove from reading history" }));
         const dialog = screen.getByRole("dialog", { name: "Remove from history?" });
         expect(dialog).toBeInTheDocument();
 
@@ -237,7 +237,7 @@ describe("CompletedPage", () => {
 
         render(<CompletedPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Remove from history" }));
+        fireEvent.click(screen.getByRole("button", { name: "Remove from reading history" }));
         const dialog = screen.getByRole("dialog", { name: "Remove from history?" });
         fireEvent.click(within(dialog).getByRole("checkbox", { name: /Also delete notes and highlights/ }));
         fireEvent.click(within(dialog).getByRole("button", { name: "Remove from history" }));

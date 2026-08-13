@@ -128,7 +128,7 @@ describe("ContinueReadingPage", () => {
                 item,
                 navigationMode: "resume",
                 removeIcon: "archive",
-                removeLabel: "Archive from List",
+                removeLabel: "Hide from Continue Reading",
                 showDesktopQuickActions: true,
                 titleDensity: "app-compact",
             })
@@ -152,7 +152,7 @@ describe("ContinueReadingPage", () => {
 
         render(<ContinueReadingPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Archive from List" }));
+        fireEvent.click(screen.getByRole("button", { name: "Hide from Continue Reading" }));
 
         expect(archiveFromProgressList).toHaveBeenCalledWith(item.id, "reading");
         expect(removeFromProgress).not.toHaveBeenCalled();

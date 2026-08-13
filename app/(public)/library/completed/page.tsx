@@ -351,8 +351,8 @@ export default function CompletedPage() {
                                         showCompletedBadge
                                         showDesktopQuickActions
                                         removeIcon="archive"
-                                        removeLabel="Archive from List"
-                                        secondaryRemoveLabel="Remove from history"
+                                        removeLabel="Hide from Completed"
+                                        secondaryRemoveLabel="Remove from reading history"
                                         onSecondaryRemove={(id) => {
                                             setPendingHistoryRemoval(id);
                                             setShouldDeleteNotes(false);
