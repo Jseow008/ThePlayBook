@@ -15,6 +15,7 @@ const mockContentCard = vi.fn(
         secondaryRemoveLabel,
         onSecondaryRemove,
         showCompletedBadge,
+        showDesktopQuickActions,
         titleDensity,
     }: {
         item: ContentItem;
@@ -24,10 +25,11 @@ const mockContentCard = vi.fn(
         secondaryRemoveLabel?: string;
         onSecondaryRemove?: (id: string) => void;
         showCompletedBadge?: boolean;
+        showDesktopQuickActions?: boolean;
         titleDensity?: "default" | "app-compact";
     }) => (
         <div>
-            <span>{`${showCompletedBadge ? "completed" : "plain"}:${titleDensity ?? "default"}:${item.title}`}</span>
+            <span>{`${showCompletedBadge ? "completed" : "plain"}:${titleDensity ?? "default"}:${showDesktopQuickActions ? "quick-actions" : "no-quick-actions"}:${item.title}`}</span>
             {onRemove ? (
                 <button onClick={() => onRemove(item.id)}>
                     {removeLabel ?? "Remove"}
@@ -67,6 +69,7 @@ vi.mock("@/components/ui/ContentCard", () => ({
         secondaryRemoveLabel?: string;
         onSecondaryRemove?: (id: string) => void;
         showCompletedBadge?: boolean;
+        showDesktopQuickActions?: boolean;
         titleDensity?: "default" | "app-compact";
     }) => mockContentCard(props),
 }));
@@ -134,7 +137,8 @@ describe("CompletedPage", () => {
     it("renders completed cards with the archive action label", () => {
         render(<CompletedPage />);
 
-        expect(screen.getByText("completed:app-compact:Atomic Habits")).toBeInTheDocument();
+        expect(screen.getByText("completed:app-compact:quick-actions:Atomic Habits")).toBeInTheDocument();
+        expect(screen.getByText("Completed Item")).toBeInTheDocument();
         expect(mockContentCard).toHaveBeenCalledWith(
             expect.objectContaining({
                 item,
@@ -142,6 +146,7 @@ describe("CompletedPage", () => {
                 removeLabel: "Archive from List",
                 secondaryRemoveLabel: "Remove from history",
                 showCompletedBadge: true,
+                showDesktopQuickActions: true,
                 titleDensity: "app-compact",
             })
         );

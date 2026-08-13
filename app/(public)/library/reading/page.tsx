@@ -98,7 +98,7 @@ export default function ContinueReadingPage() {
                         {shouldShowLibraryControls && (
                             <LibraryStatBadge
                                 count={allItems.length}
-                                label="In Progress"
+                                label={allItems.length === 1 ? "Item in Progress" : "Items in Progress"}
                                 isLoading={isPageLoading}
                             />
                         )}
@@ -121,6 +121,8 @@ export default function ContinueReadingPage() {
                                 onFilterChange={setActiveFilter}
                                 activeSort={activeSort}
                                 onSortChange={setActiveSort}
+                                searchLabel="Search in-progress items"
+                                searchPlaceholder="Search in-progress items…"
                                 className="w-full"
                             />
                         )}
@@ -191,6 +193,7 @@ export default function ContinueReadingPage() {
                                         item={item}
                                         navigationMode="resume"
                                         titleDensity="app-compact"
+                                        showDesktopQuickActions
                                         removeIcon="archive"
                                         removeLabel="Archive from List"
                                         onRemove={(id) => {

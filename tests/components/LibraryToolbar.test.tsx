@@ -29,7 +29,13 @@ describe("LibraryToolbar", () => {
         expect(filters).toHaveClass("lg:rounded-full");
 
         expect(sort).toHaveClass("shrink-0");
+        expect(screen.getByRole("textbox", { name: "Search library items" })).toHaveAttribute(
+            "placeholder",
+            "Search library items…"
+        );
         expect(screen.getByRole("combobox", { name: "Sort library items" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "all" })).toHaveAttribute("aria-pressed", "true");
+        expect(screen.getByRole("button", { name: "video" })).toHaveAttribute("aria-pressed", "false");
     });
 
     it("keeps filter and sort interactions working", () => {
@@ -52,5 +58,26 @@ describe("LibraryToolbar", () => {
 
         expect(onFilterChange).toHaveBeenCalledWith("podcast");
         expect(onSortChange).toHaveBeenCalledWith("title");
+    });
+
+    it("supports contextual search copy", () => {
+        render(
+            <LibraryToolbar
+                searchQuery=""
+                onSearchChange={vi.fn()}
+                activeFilter="video"
+                onFilterChange={vi.fn()}
+                activeSort="newest"
+                onSortChange={vi.fn()}
+                searchLabel="Search saved items"
+                searchPlaceholder="Search saved items…"
+            />
+        );
+
+        expect(screen.getByRole("textbox", { name: "Search saved items" })).toHaveAttribute(
+            "placeholder",
+            "Search saved items…"
+        );
+        expect(screen.getByRole("button", { name: "video" })).toHaveAttribute("aria-pressed", "true");
     });
 });
