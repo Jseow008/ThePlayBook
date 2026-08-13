@@ -214,12 +214,37 @@ describe("AudioPlayer", () => {
         expect(screen.getByRole("region", { name: "Audio mini player" })).toHaveClass("reader-sepia");
         expect(screen.getByText("Competence Versus Power Dynamics by Jordan Peterson")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Pause mini player" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Pause mini player" })).toHaveClass("size-11", "sm:size-9");
-        expect(screen.getByRole("button", { name: "Rewind 10 seconds" })).toHaveClass("size-11", "sm:size-7");
-        expect(screen.getByRole("button", { name: "Forward 10 seconds" })).toHaveClass("size-11", "sm:size-7");
-        expect(screen.getByRole("button", { name: "Change mini player playback speed" })).toHaveClass("size-11");
+        expect(screen.getByRole("button", { name: "Pause mini player" })).toHaveClass(
+            "col-start-3",
+            "row-start-2",
+            "size-11",
+            "sm:col-auto",
+            "sm:row-auto",
+            "sm:size-9"
+        );
+        expect(screen.getByRole("button", { name: "Rewind 10 seconds" })).toHaveClass(
+            "col-start-2",
+            "row-start-2",
+            "size-11",
+            "sm:size-7"
+        );
+        expect(screen.getByRole("button", { name: "Forward 10 seconds" })).toHaveClass(
+            "col-start-4",
+            "row-start-2",
+            "size-11",
+            "sm:size-7"
+        );
+        expect(screen.getByRole("button", { name: "Change mini player playback speed" })).toHaveClass(
+            "col-start-5",
+            "row-start-2",
+            "size-11"
+        );
         expect(screen.getByRole("button", { name: "Change mini player playback speed" })).toHaveTextContent("1x");
-        expect(screen.getByRole("button", { name: "Close audio mini player" })).toHaveClass("size-11");
+        expect(screen.getByRole("button", { name: "Close audio mini player" })).toHaveClass(
+            "col-start-5",
+            "row-start-1",
+            "size-11"
+        );
         expect(onMiniPlayerVisibilityChange).toHaveBeenLastCalledWith(true);
     });
 
