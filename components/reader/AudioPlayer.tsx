@@ -475,17 +475,17 @@ export function AudioPlayer({
                                 />
                             </div>
 
-                            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2 sm:gap-4 sm:px-5 lg:px-6">
+                            <div className="grid grid-cols-[minmax(0,1fr)_auto_auto_auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1 px-3 py-2 sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:gap-4 sm:px-5 lg:px-6">
                                 <button
                                     type="button"
                                     onClick={togglePlay}
-                                    className="focus-ring flex size-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 sm:size-9"
+                                    className="focus-ring col-start-3 row-start-2 flex size-11 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 sm:col-auto sm:row-auto sm:size-9"
                                     aria-label={isPlaying ? "Pause mini player" : "Play mini player"}
                                 >
                                     {isPlaying ? <Pause className="size-4" /> : <Play className="ml-0.5 size-4" />}
                                 </button>
 
-                                <div className="min-w-0 flex-1">
+                                <div className="col-span-4 col-start-1 row-start-1 min-w-0 flex-1 sm:col-auto sm:row-auto">
                                     <p className="truncate text-xs font-semibold text-foreground" title={miniPlayerLabel}>
                                         {miniPlayerLabel}
                                     </p>
@@ -509,7 +509,7 @@ export function AudioPlayer({
                                     <button
                                         type="button"
                                         onClick={dismissMiniPlayer}
-                                        className="focus-ring inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:order-last sm:size-auto sm:p-2"
+                                        className="focus-ring col-start-5 row-start-1 inline-flex size-11 items-center justify-center justify-self-end rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:order-last sm:size-auto sm:p-2"
                                         aria-label="Close audio mini player"
                                     >
                                         <X className="size-4" />
@@ -517,7 +517,7 @@ export function AudioPlayer({
                                     <button
                                         type="button"
                                         onClick={() => skipBy(-10)}
-                                        className="focus-ring inline-flex size-11 flex-shrink-0 items-center justify-center justify-self-start rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-7 sm:justify-self-auto"
+                                        className="focus-ring col-start-2 row-start-2 inline-flex size-11 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-7"
                                         aria-label="Rewind 10 seconds"
                                     >
                                         <span className="relative inline-flex size-5 items-center justify-center">
@@ -528,7 +528,7 @@ export function AudioPlayer({
                                     <button
                                         type="button"
                                         onClick={() => skipBy(10)}
-                                        className="focus-ring inline-flex size-11 flex-shrink-0 items-center justify-center justify-self-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-7 sm:justify-self-auto"
+                                        className="focus-ring col-start-4 row-start-2 inline-flex size-11 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-7"
                                         aria-label="Forward 10 seconds"
                                     >
                                         <span className="relative inline-flex size-5 items-center justify-center">
@@ -539,7 +539,7 @@ export function AudioPlayer({
                                     <button
                                         type="button"
                                         onClick={cyclePlaybackRate}
-                                        className="focus-ring group inline-flex size-11 flex-shrink-0 items-center justify-center justify-self-end text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground sm:h-auto sm:w-auto sm:min-w-9 sm:justify-self-auto"
+                                        className="focus-ring group col-start-5 row-start-2 inline-flex size-11 flex-shrink-0 items-center justify-center justify-self-end text-[11px] font-semibold text-muted-foreground transition-colors hover:text-foreground sm:h-auto sm:w-auto sm:min-w-9"
                                         aria-label="Change mini player playback speed"
                                         title="Change playback speed"
                                     >
@@ -551,7 +551,7 @@ export function AudioPlayer({
                                         <button
                                             type="button"
                                             onClick={onResumeAudioFollow}
-                                            className="focus-ring col-span-3 min-h-11 justify-self-end rounded-full border border-border/70 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45 sm:col-span-1 sm:min-h-0 sm:justify-self-auto"
+                                            className="focus-ring col-span-5 row-start-3 min-h-11 justify-self-end rounded-full border border-border/70 bg-background/60 px-2.5 py-1.5 text-xs font-semibold text-foreground transition-colors hover:border-primary/30 hover:bg-accent/45 sm:col-span-1 sm:row-auto sm:min-h-0 sm:justify-self-auto"
                                         >
                                             Follow audio
                                         </button>
