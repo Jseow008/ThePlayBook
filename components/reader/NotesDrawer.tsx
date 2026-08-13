@@ -228,7 +228,7 @@ export function NotesDrawer({
                     OVERLAY_LAYER_CLASS.shell,
                     // The larger offset clears the audio mini-player when it is visible.
                     isAudioMiniPlayerVisible
-                        ? "bottom-[calc(5.25rem+var(--safe-area-bottom))] sm:bottom-24"
+                        ? "bottom-[calc(8.5rem+var(--safe-area-bottom))] sm:bottom-24"
                         : "bottom-[calc(2rem+var(--safe-area-bottom))] sm:bottom-6"
                 )}
             >
@@ -287,7 +287,7 @@ export function NotesDrawer({
                     <button
                         ref={closeButtonRef}
                         onClick={() => onOpenChange(false)}
-                        className="p-2 -mr-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full transition-colors"
+                        className="-mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:size-9"
                         aria-label="Close notes drawer"
                     >
                         <X className="size-5" />

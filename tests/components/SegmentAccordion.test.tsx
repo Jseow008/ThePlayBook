@@ -57,6 +57,8 @@ describe('SegmentAccordion', () => {
 
     it('renders all segment titles', () => {
         render(<SegmentAccordion {...defaultProps} />);
+        expect(screen.getByRole('heading', { level: 2, name: 'Sections' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 3, name: 'Introduction' })).toBeInTheDocument();
         expect(screen.getByText('Introduction')).toBeInTheDocument();
         expect(screen.getByText('Chapter 1')).toBeInTheDocument();
     });
@@ -99,7 +101,11 @@ describe('SegmentAccordion', () => {
     it('labels the continue action as completing the current section', () => {
         render(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
 
-        expect(screen.getByRole('button', { name: 'Mark complete and continue' })).toBeInTheDocument();
+        const completeButton = screen.getByRole('button', { name: 'Mark complete and continue' });
+        expect(completeButton).toBeInTheDocument();
+        expect(completeButton).toHaveClass('border-primary/35', 'bg-primary/10', 'text-primary');
+        expect(completeButton).toHaveClass('min-h-11', 'sm:min-h-0');
+        expect(completeButton.querySelector('svg')).toBeInTheDocument();
     });
 
     it('uses Finish Reading on the final section until every section is complete', () => {
@@ -130,6 +136,12 @@ describe('SegmentAccordion', () => {
 
         expect(screen.getByText('Chapter 1').closest('button')).toHaveAttribute('aria-expanded', 'true');
         expect(screen.getByText('Introduction').closest('button')).toHaveAttribute('aria-expanded', 'false');
+
+        const panels = container.querySelectorAll('[data-reader-segment-panel="true"]');
+        expect(panels[0]).toHaveAttribute('aria-hidden', 'true');
+        expect(panels[0]).toHaveAttribute('inert');
+        expect(panels[1]).toHaveAttribute('aria-hidden', 'false');
+        expect(panels[1]).not.toHaveAttribute('inert');
         expect(container.querySelector('.reading-copy.reading-copy-prose.reading-copy-strong')).not.toBeNull();
         expect(container.querySelector('.dark\\:prose-invert')).toBeNull();
     });

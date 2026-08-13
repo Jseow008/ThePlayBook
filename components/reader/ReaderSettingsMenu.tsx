@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { createPortal } from "react-dom";
-import { Minus, Plus, Sun, Moon, BookOpen, Maximize, Minimize, Rows4, Rows3, Rows2 } from "lucide-react";
+import { Minus, Plus, Sun, Moon, BookOpen, Maximize, Minimize, Rows4, Rows3, Rows2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReaderSettings, type ReaderTheme } from "@/hooks/useReaderSettings";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
@@ -22,9 +22,16 @@ export function ReaderSettingsMenu() {
     const menuRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const triggerButtonRef = useRef<HTMLButtonElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
     const { fontSize, fontFamily, readerTheme, lineHeight, setFontSize, setFontFamily, setReaderTheme, setLineHeight } = useReaderSettings();
     const isCompactReaderControls = useMediaQuery(VIEWPORT_QUERIES.compactReaderControls);
     const [mounted, setMounted] = useState(false);
+    const settingsId = useId();
+    const themeLabelId = `${settingsId}-theme`;
+    const fontLabelId = `${settingsId}-font`;
+    const sizeLabelId = `${settingsId}-size`;
+    const spacingLabelId = `${settingsId}-spacing`;
+    const sheetTitleId = `${settingsId}-sheet-title`;
 
     useEffect(() => {
         setMounted(true);
@@ -42,6 +49,7 @@ export function ReaderSettingsMenu() {
     useOverlayInteractions({
         enabled: isOpen && mounted,
         containerRef: panelRef,
+        initialFocusRef: closeButtonRef,
         restoreFocusRef: triggerButtonRef,
         onEscape: () => setIsOpen(false),
         scrollLock: isCompactReaderControls,
@@ -92,14 +100,15 @@ export function ReaderSettingsMenu() {
         <div className="space-y-4">
             {/* Theme Selection */}
             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <span id={themeLabelId} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Theme
                 </span>
-                <div className="grid grid-cols-3 gap-2">
+                <div role="group" aria-labelledby={themeLabelId} className="grid grid-cols-3 gap-2">
                     {themeOptions.map((option) => (
                         <button
                             key={option.value}
                             onClick={() => setReaderTheme(option.value)}
+                            aria-pressed={readerTheme === option.value}
                             className={cn(
                                 "flex flex-col items-center gap-1.5 py-2 px-2 rounded-lg text-xs font-medium border transition-all",
                                 readerTheme === option.value
@@ -116,14 +125,15 @@ export function ReaderSettingsMenu() {
 
             {/* Font Family Selection */}
             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <span id={fontLabelId} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Font
                 </span>
-                <div className="grid grid-cols-2 gap-2">
+                <div role="group" aria-labelledby={fontLabelId} className="grid grid-cols-2 gap-2">
                     <button
                         onClick={() => setFontFamily("sans")}
+                        aria-pressed={fontFamily === "sans"}
                         className={cn(
-                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
+                                "min-h-11 px-3 py-2 rounded-lg text-sm font-medium border transition-all sm:min-h-0",
                             fontFamily === "sans"
                                 ? "bg-primary/10 border-primary text-primary"
                                 : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -133,8 +143,9 @@ export function ReaderSettingsMenu() {
                     </button>
                     <button
                         onClick={() => setFontFamily("serif")}
+                        aria-pressed={fontFamily === "serif"}
                         className={cn(
-                            "py-2 px-3 rounded-lg text-sm font-medium border transition-all",
+                                "min-h-11 px-3 py-2 rounded-lg text-sm font-medium border transition-all sm:min-h-0",
                             fontFamily === "serif"
                                 ? "bg-primary/10 border-primary text-primary"
                                 : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -147,14 +158,14 @@ export function ReaderSettingsMenu() {
 
             {/* Font Size Selection */}
             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <span id={sizeLabelId} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Size
                 </span>
-                <div className="flex items-center justify-between bg-secondary/50 rounded-lg border border-border/50 p-1">
+                <div role="group" aria-labelledby={sizeLabelId} className="flex items-center justify-between bg-secondary/50 rounded-lg border border-border/50 p-1">
                     <button
                         onClick={handleDecreaseSize}
                         disabled={fontSize === "small"}
-                        className="p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="min-h-11 min-w-11 rounded-md p-2.5 text-muted-foreground transition-all hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:min-w-0"
                         aria-label="Decrease font size"
                     >
                         <Minus className="size-4" />
@@ -165,7 +176,7 @@ export function ReaderSettingsMenu() {
                     <button
                         onClick={handleIncreaseSize}
                         disabled={fontSize === "large"}
-                        className="p-2.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        className="min-h-11 min-w-11 rounded-md p-2.5 text-muted-foreground transition-all hover:bg-accent hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 sm:min-w-0"
                         aria-label="Increase font size"
                     >
                         <Plus className="size-4" />
@@ -175,14 +186,16 @@ export function ReaderSettingsMenu() {
 
             {/* Line Height Selection */}
             <div className="space-y-2">
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <span id={spacingLabelId} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Spacing
                 </span>
-                <div className="grid grid-cols-3 gap-2">
+                <div role="group" aria-labelledby={spacingLabelId} className="grid grid-cols-3 gap-2">
                     <button
                         onClick={() => setLineHeight("compact")}
+                        aria-label="Compact line spacing"
+                        aria-pressed={lineHeight === "compact"}
                         className={cn(
-                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                            "flex min-h-11 items-center justify-center rounded-lg border px-2 py-2 font-medium transition-all sm:min-h-0",
                             lineHeight === "compact"
                                 ? "bg-primary/10 border-primary text-primary text-secondary-foreground"
                                 : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -193,8 +206,10 @@ export function ReaderSettingsMenu() {
                     </button>
                     <button
                         onClick={() => setLineHeight("default")}
+                        aria-label="Default line spacing"
+                        aria-pressed={lineHeight === "default"}
                         className={cn(
-                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                            "flex min-h-11 items-center justify-center rounded-lg border px-2 py-2 font-medium transition-all sm:min-h-0",
                             lineHeight === "default"
                                 ? "bg-primary/10 border-primary text-primary"
                                 : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -205,8 +220,10 @@ export function ReaderSettingsMenu() {
                     </button>
                     <button
                         onClick={() => setLineHeight("relaxed")}
+                        aria-label="Relaxed line spacing"
+                        aria-pressed={lineHeight === "relaxed"}
                         className={cn(
-                            "py-2 px-2 rounded-lg flex justify-center items-center font-medium border transition-all",
+                            "flex min-h-11 items-center justify-center rounded-lg border px-2 py-2 font-medium transition-all sm:min-h-0",
                             lineHeight === "relaxed"
                                 ? "bg-primary/10 border-primary text-primary"
                                 : "bg-secondary/50 border-transparent text-muted-foreground hover:bg-secondary hover:text-foreground"
@@ -238,7 +255,7 @@ export function ReaderSettingsMenu() {
                 ref={triggerButtonRef}
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "inline-flex items-center justify-center p-2 rounded-lg bg-secondary text-muted-foreground border border-border transition-colors hover:text-foreground hover:bg-secondary/80",
+                    "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-secondary p-0 text-muted-foreground transition-colors hover:bg-secondary/80 hover:text-foreground sm:h-10 sm:w-10",
                     isOpen && "bg-secondary/80 text-foreground ring-2 ring-ring"
                 )}
                 aria-label="Display Settings"
@@ -262,13 +279,27 @@ export function ReaderSettingsMenu() {
                             ref={panelRef}
                             role="dialog"
                             aria-modal="true"
-                            aria-label="Reader Settings"
+                            aria-labelledby={sheetTitleId}
                             tabIndex={-1}
                             className={cn(
                                 "reader-settings-motion-sheet fixed inset-x-0 bottom-0 w-full rounded-t-2xl border-t border-border bg-card p-4 shadow-[0_-8px_30px_rgb(0,0,0,0.12)] animate-in slide-in-from-bottom-full duration-300 motion-reduce:animate-none motion-reduce:transition-none",
                                 OVERLAY_LAYER_CLASS.sheetRaised
                             )}
                         >
+                            <div className="-mt-1 mb-4 flex items-center justify-between border-b border-border/50 pb-3">
+                                <h2 id={sheetTitleId} className="text-base font-semibold text-foreground">
+                                    Reader settings
+                                </h2>
+                                <button
+                                    ref={closeButtonRef}
+                                    type="button"
+                                    onClick={() => setIsOpen(false)}
+                                    className="focus-ring -mr-2 inline-flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                                    aria-label="Close reader settings"
+                                >
+                                    <X className="size-5" aria-hidden="true" />
+                                </button>
+                            </div>
                             {menuContent}
                         </div>
                     </>,

@@ -129,7 +129,7 @@ describe("NotesDrawer", () => {
         );
 
         expect(toggle.parentElement).toHaveClass(
-            "bottom-[calc(5.25rem+var(--safe-area-bottom))]"
+            "bottom-[calc(8.5rem+var(--safe-area-bottom))]"
         );
     });
 

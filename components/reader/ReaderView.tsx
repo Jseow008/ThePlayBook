@@ -207,8 +207,8 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
     }, [activeNarrationSegmentId, requestSegmentScroll]);
 
-    // Track reading time once at the reader level and pass display text down.
-    const { formattedTime } = useReadingTimer(content.id);
+    // Continue tracking reading activity for analytics without displaying a live timer.
+    useReadingTimer(content.id);
 
     const savedProgress = getProgress(content.id);
     const buildProgressSnapshot = useCallback((
@@ -345,6 +345,10 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
 
         if (!savedProgress) {
+            if (!content.audio_url) {
+                handledReaderEntryRef.current = readerEntryKey;
+                setExpandedSegmentId(content.segments[0]?.id ?? null);
+            }
             return;
         }
 
@@ -414,7 +418,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         if (hydratedResume && hydratedResume.audioSource !== content.audio_url) {
             clearScopedAudioResume(localStorage, storageScope, content.id);
-            setExpandedSegmentId(null);
+            setExpandedSegmentId(content.segments[0]?.id ?? null);
             return;
         }
 
@@ -422,7 +426,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         setInitialAudioTimeSec(resumeTimeSec);
 
         if (resumeTimeSec <= 0) {
-            setExpandedSegmentId(null);
+            setExpandedSegmentId(content.segments[0]?.id ?? null);
             return;
         }
 
@@ -901,7 +905,6 @@ export function ReaderView({ content }: ReaderViewProps) {
                     durationSeconds={content.duration_seconds}
                     segmentsTotal={content.segments.length}
                     segmentsCompleted={completedSegments.size}
-                    formattedReadingTime={formattedTime}
                     readerTheme={readerTheme}
                     showResumeAudioFollow={hasSyncedAudioPosition && !isAudioFollowEnabled && Boolean(activeNarrationSegmentId)}
                     isNotesDrawerOpen={isNotesDrawerOpen}
@@ -986,9 +989,9 @@ export function ReaderView({ content }: ReaderViewProps) {
                 {/* Big Idea - Context before segments */}
                 {quickMode?.big_idea && (
                     <div className="bg-card/40 rounded-xl p-6 sm:p-8 border border-border/40 mb-8">
-                        <h3 className="text-sm font-bold text-primary uppercase tracking-[0.2em] mb-3">
+                        <h2 className="text-sm font-bold text-primary uppercase tracking-[0.2em] mb-3">
                             The Big Idea
-                        </h3>
+                        </h2>
                         <div className={`reader-size-${fontSize} reading-copy reading-copy-default font-medium`}>
                             {quickMode.big_idea}
                         </div>

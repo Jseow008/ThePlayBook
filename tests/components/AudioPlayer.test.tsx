@@ -31,6 +31,41 @@ describe("AudioPlayer", () => {
         vi.unstubAllGlobals();
     });
 
+    it("provides mobile-sized touch targets for the full player controls", () => {
+        render(<AudioPlayer src="https://example.com/audio.mp3" />);
+
+        expect(screen.getByTitle("Change playback speed")).toHaveClass("size-11");
+        expect(screen.getByRole("button", { name: "Mute" })).toHaveClass("size-11", "sm:size-auto");
+    });
+
+    it("shows an unavailable duration and disables seeking until metadata loads", async () => {
+        const { container } = render(
+            <AudioPlayer src="https://example.com/audio.mp3" />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        const seekInput = screen.getByLabelText("Seek timeline");
+        expect(screen.getByText("--:--")).toBeInTheDocument();
+        expect(seekInput).toBeDisabled();
+
+        Object.defineProperty(audio, "duration", {
+            configurable: true,
+            value: 120,
+        });
+
+        fireEvent(audio, new Event("loadedmetadata"));
+
+        await waitFor(() => {
+            expect(screen.getByText("2:00")).toBeInTheDocument();
+            expect(seekInput).toBeEnabled();
+        });
+    });
+
     it("restores the provided initial playback time after metadata loads", async () => {
         const onTimeChange = vi.fn();
         const { container } = render(
@@ -179,9 +214,12 @@ describe("AudioPlayer", () => {
         expect(screen.getByRole("region", { name: "Audio mini player" })).toHaveClass("reader-sepia");
         expect(screen.getByText("Competence Versus Power Dynamics by Jordan Peterson")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Pause mini player" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Rewind 10 seconds" })).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Forward 10 seconds" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Pause mini player" })).toHaveClass("size-11", "sm:size-9");
+        expect(screen.getByRole("button", { name: "Rewind 10 seconds" })).toHaveClass("size-11", "sm:size-7");
+        expect(screen.getByRole("button", { name: "Forward 10 seconds" })).toHaveClass("size-11", "sm:size-7");
+        expect(screen.getByRole("button", { name: "Change mini player playback speed" })).toHaveClass("size-11");
         expect(screen.getByRole("button", { name: "Change mini player playback speed" })).toHaveTextContent("1x");
+        expect(screen.getByRole("button", { name: "Close audio mini player" })).toHaveClass("size-11");
         expect(onMiniPlayerVisibilityChange).toHaveBeenLastCalledWith(true);
     });
 
