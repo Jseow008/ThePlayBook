@@ -329,7 +329,7 @@ export function ResultsSkeleton() {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6">
             {[...Array(12)].map((_, i) => (
-                <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-lg animate-pulse" />
+                <div key={i} className="aspect-[2/3] bg-secondary/50 rounded-md animate-pulse" />
             ))}
         </div>
     );

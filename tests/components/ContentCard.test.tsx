@@ -153,6 +153,7 @@ describe("ContentCard", () => {
 
         for (const action of [bookmarkButton, removeButton, secondaryRemoveButton]) {
             expect(action).toHaveClass("content-card-hover-action");
+            expect(action).toHaveClass("touch-target-44");
             expect(action.className).not.toContain("lg:opacity-0");
             expect(action.className).not.toContain("lg:group-hover:opacity-100");
         }

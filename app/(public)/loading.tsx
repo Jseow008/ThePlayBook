@@ -8,7 +8,7 @@ import { ROUTE_LOADING_SHELF_SKELETON_CARD_CLASS } from "@/components/ui/content
  */
 export default function Loading() {
     return (
-        <div className="lg:pl-16 pb-20 lg:pb-0 animate-pulse">
+        <div className="pb-20 lg:pb-0 animate-pulse">
             {/* Hero Skeleton */}
             <div className="relative w-full aspect-[16/9] sm:h-[55vh] bg-secondary/50 rounded-b-xl" />
 
