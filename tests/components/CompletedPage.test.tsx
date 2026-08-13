@@ -15,6 +15,7 @@ const mockContentCard = vi.fn(
         secondaryRemoveLabel,
         onSecondaryRemove,
         showCompletedBadge,
+        showDesktopQuickActions,
         titleDensity,
     }: {
         item: ContentItem;
@@ -24,10 +25,11 @@ const mockContentCard = vi.fn(
         secondaryRemoveLabel?: string;
         onSecondaryRemove?: (id: string) => void;
         showCompletedBadge?: boolean;
+        showDesktopQuickActions?: boolean;
         titleDensity?: "default" | "app-compact";
     }) => (
         <div>
-            <span>{`${showCompletedBadge ? "completed" : "plain"}:${titleDensity ?? "default"}:${item.title}`}</span>
+            <span>{`${showCompletedBadge ? "completed" : "plain"}:${titleDensity ?? "default"}:${showDesktopQuickActions ? "quick-actions" : "no-quick-actions"}:${item.title}`}</span>
             {onRemove ? (
                 <button onClick={() => onRemove(item.id)}>
                     {removeLabel ?? "Remove"}
@@ -67,6 +69,7 @@ vi.mock("@/components/ui/ContentCard", () => ({
         secondaryRemoveLabel?: string;
         onSecondaryRemove?: (id: string) => void;
         showCompletedBadge?: boolean;
+        showDesktopQuickActions?: boolean;
         titleDensity?: "default" | "app-compact";
     }) => mockContentCard(props),
 }));
@@ -134,14 +137,16 @@ describe("CompletedPage", () => {
     it("renders completed cards with the archive action label", () => {
         render(<CompletedPage />);
 
-        expect(screen.getByText("completed:app-compact:Atomic Habits")).toBeInTheDocument();
+        expect(screen.getByText("completed:app-compact:quick-actions:Atomic Habits")).toBeInTheDocument();
+        expect(screen.getByText("Completed Item")).toBeInTheDocument();
         expect(mockContentCard).toHaveBeenCalledWith(
             expect.objectContaining({
                 item,
                 removeIcon: "archive",
-                removeLabel: "Archive from List",
-                secondaryRemoveLabel: "Remove from history",
+                removeLabel: "Hide from Completed",
+                secondaryRemoveLabel: "Remove from reading history",
                 showCompletedBadge: true,
+                showDesktopQuickActions: true,
                 titleDensity: "app-compact",
             })
         );
@@ -166,7 +171,7 @@ describe("CompletedPage", () => {
 
         render(<CompletedPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Archive from List" }));
+        fireEvent.click(screen.getByRole("button", { name: "Hide from Completed" }));
 
         expect(archiveFromProgressList).toHaveBeenCalledWith(item.id, "completed");
         expect(removeFromProgress).not.toHaveBeenCalled();
@@ -201,7 +206,7 @@ describe("CompletedPage", () => {
 
         render(<CompletedPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Remove from history" }));
+        fireEvent.click(screen.getByRole("button", { name: "Remove from reading history" }));
         const dialog = screen.getByRole("dialog", { name: "Remove from history?" });
         expect(dialog).toBeInTheDocument();
 
@@ -232,7 +237,7 @@ describe("CompletedPage", () => {
 
         render(<CompletedPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Remove from history" }));
+        fireEvent.click(screen.getByRole("button", { name: "Remove from reading history" }));
         const dialog = screen.getByRole("dialog", { name: "Remove from history?" });
         fireEvent.click(within(dialog).getByRole("checkbox", { name: /Also delete notes and highlights/ }));
         fireEvent.click(within(dialog).getByRole("button", { name: "Remove from history" }));

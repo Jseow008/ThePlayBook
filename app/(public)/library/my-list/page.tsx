@@ -103,7 +103,7 @@ export default function MyListPage() {
                         {shouldShowLibraryControls && (
                             <LibraryStatBadge
                                 count={allItems.length}
-                                label="Saved Items"
+                                label={allItems.length === 1 ? "Saved Item" : "Saved Items"}
                                 isLoading={isPageLoading}
                             />
                         )}
@@ -126,6 +126,8 @@ export default function MyListPage() {
                                 onFilterChange={setActiveFilter}
                                 activeSort={activeSort}
                                 onSortChange={setActiveSort}
+                                searchLabel="Search saved items"
+                                searchPlaceholder="Search saved items…"
                                 className="w-full"
                             />
                         )}
@@ -195,8 +197,7 @@ export default function MyListPage() {
                                         key={item.id}
                                         item={item}
                                         titleDensity="app-compact"
-                                        removeLabel="Remove from Library"
-                                        onRemove={(id) => removeFromMyList(id)}
+                                        showDesktopQuickActions
                                     />
                                 ))}
                             </div>

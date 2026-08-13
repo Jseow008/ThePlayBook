@@ -253,7 +253,7 @@ export default function CompletedPage() {
                         {shouldShowLibraryControls && (
                             <LibraryStatBadge
                                 count={allItems.length}
-                                label="Total Items"
+                                label={allItems.length === 1 ? "Completed Item" : "Completed Items"}
                                 isLoading={isPageLoading}
                             />
                         )}
@@ -276,6 +276,8 @@ export default function CompletedPage() {
                                 onFilterChange={setActiveFilter}
                                 activeSort={activeSort}
                                 onSortChange={setActiveSort}
+                                searchLabel="Search completed items"
+                                searchPlaceholder="Search completed items…"
                                 className="w-full"
                             />
                         )}
@@ -347,9 +349,10 @@ export default function CompletedPage() {
                                         item={item}
                                         titleDensity="app-compact"
                                         showCompletedBadge
+                                        showDesktopQuickActions
                                         removeIcon="archive"
-                                        removeLabel="Archive from List"
-                                        secondaryRemoveLabel="Remove from history"
+                                        removeLabel="Hide from Completed"
+                                        secondaryRemoveLabel="Remove from reading history"
                                         onSecondaryRemove={(id) => {
                                             setPendingHistoryRemoval(id);
                                             setShouldDeleteNotes(false);

@@ -10,6 +10,8 @@ interface LibraryToolbarProps {
     onFilterChange: (filter: string) => void;
     activeSort: "newest" | "oldest" | "title";
     onSortChange: (sort: "newest" | "oldest" | "title") => void;
+    searchLabel?: string;
+    searchPlaceholder?: string;
     className?: string;
 }
 
@@ -20,9 +22,11 @@ export function LibraryToolbar({
     onFilterChange,
     activeSort,
     onSortChange,
+    searchLabel = "Search library items",
+    searchPlaceholder = "Search library items…",
     className,
 }: LibraryToolbarProps) {
-    const filters = ["all", "book", "podcast", "article"] as const;
+    const filters = ["all", "book", "podcast", "article", "video"] as const;
 
     return (
         <div className={cn("flex flex-col gap-2.5 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-3", className)}>
@@ -31,7 +35,8 @@ export function LibraryToolbar({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground group-focus-within:text-foreground transition-colors" />
                 <input
                     type="text"
-                    placeholder="Search..."
+                    aria-label={searchLabel}
+                    placeholder={searchPlaceholder}
                     value={searchQuery}
                     onChange={(e) => onSearchChange(e.target.value)}
                     className="w-full h-10 pl-10 pr-4 rounded-full bg-secondary/40 border border-border/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-all text-sm placeholder:text-muted-foreground/80"
@@ -50,6 +55,8 @@ export function LibraryToolbar({
                     {filters.map((filter) => (
                         <button
                             key={filter}
+                            type="button"
+                            aria-pressed={activeFilter === filter}
                             onClick={() => onFilterChange(filter)}
                             className={cn(
                                 "inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-medium capitalize transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-3.5 lg:h-8 lg:border-transparent lg:px-4",

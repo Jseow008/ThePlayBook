@@ -34,6 +34,7 @@ These routes live under `app/(public)` and are rendered by `PublicLayoutShell`.
 | `/ask` | Public shell | None | None | `lg:pl-16` | None | `immersive` | Authenticated |
 | `/browse` | Public shell | Compact | Compact | `lg:pl-16` | Compact safe-area | `standard` | Public |
 | `/focus` | Public shell | None | Default | `lg:pl-16` | None | `immersive` | Public |
+| `/library` | Public shell | Default | Default | `lg:pl-16` | Default safe-area | `standard` | Redirects to `/library/reading` |
 | `/library/completed` | Public shell | Default | Default | `lg:pl-16` | Default safe-area | `standard` | Authenticated |
 | `/library/my-list` | Public shell | Default | Default | `lg:pl-16` | Default safe-area | `standard` | Authenticated |
 | `/library/reading` | Public shell | Default | Default | `lg:pl-16` | Default safe-area | `standard` | Authenticated |

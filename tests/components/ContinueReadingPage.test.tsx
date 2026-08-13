@@ -11,18 +11,20 @@ const mockContentCard = vi.fn(
         item,
         navigationMode,
         titleDensity,
+        showDesktopQuickActions,
         removeLabel,
         onRemove,
     }: {
         item: ContentItem;
         navigationMode?: "preview" | "resume";
         titleDensity?: "default" | "app-compact";
+        showDesktopQuickActions?: boolean;
         removeIcon?: "archive" | "trash";
         removeLabel?: string;
         onRemove?: (id: string) => void;
     }) => (
         <div>
-            <span>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${item.title}`}</span>
+            <span>{`${navigationMode ?? "preview"}:${titleDensity ?? "default"}:${showDesktopQuickActions ? "quick-actions" : "no-quick-actions"}:${item.title}`}</span>
             {onRemove ? (
                 <button onClick={() => onRemove(item.id)}>
                     {removeLabel ?? "Remove"}
@@ -53,6 +55,7 @@ vi.mock("@/components/ui/ContentCard", () => ({
         item: ContentItem;
         navigationMode?: "preview" | "resume";
         titleDensity?: "default" | "app-compact";
+        showDesktopQuickActions?: boolean;
         removeIcon?: "archive" | "trash";
         removeLabel?: string;
         onRemove?: (id: string) => void;
@@ -118,13 +121,15 @@ describe("ContinueReadingPage", () => {
     it("renders in-progress cards with resume navigation and compact title density", () => {
         render(<ContinueReadingPage />);
 
-        expect(screen.getByText("resume:app-compact:Deep Work")).toBeInTheDocument();
+        expect(screen.getByText("resume:app-compact:quick-actions:Deep Work")).toBeInTheDocument();
+        expect(screen.getByText("Item in Progress")).toBeInTheDocument();
         expect(mockContentCard).toHaveBeenCalledWith(
             expect.objectContaining({
                 item,
                 navigationMode: "resume",
                 removeIcon: "archive",
-                removeLabel: "Archive from List",
+                removeLabel: "Hide from Continue Reading",
+                showDesktopQuickActions: true,
                 titleDensity: "app-compact",
             })
         );
@@ -147,7 +152,7 @@ describe("ContinueReadingPage", () => {
 
         render(<ContinueReadingPage />);
 
-        fireEvent.click(screen.getByRole("button", { name: "Archive from List" }));
+        fireEvent.click(screen.getByRole("button", { name: "Hide from Continue Reading" }));
 
         expect(archiveFromProgressList).toHaveBeenCalledWith(item.id, "reading");
         expect(removeFromProgress).not.toHaveBeenCalled();
@@ -212,7 +217,7 @@ describe("ContinueReadingPage", () => {
         render(<ContinueReadingPage />);
 
         expect(removeFromProgress).not.toHaveBeenCalled();
-        expect(screen.getByText("resume:app-compact:Deep Work")).toBeInTheDocument();
+        expect(screen.getByText("resume:app-compact:quick-actions:Deep Work")).toBeInTheDocument();
     });
 
     it("shows a retry state when loading progress fails before any cards are available", () => {

@@ -146,7 +146,7 @@ function BaseContentCard({
     removeLabel = "Remove from list",
     removeIcon = "trash",
     onSecondaryRemove,
-    secondaryRemoveLabel = "Remove from history",
+    secondaryRemoveLabel = "Remove from reading history",
     secondaryRemoveIcon = "trash",
     hideBookmark = false,
     isBookmarked = false,
