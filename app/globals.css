@@ -644,7 +644,7 @@ mark[data-highlight-spotlight="true"] {
 
 .reader-audio-content-clearance {
   padding-bottom: calc(
-    5.5rem + max(
+    8.75rem + max(
       0.75rem,
       var(--safe-area-bottom),
       var(--reader-audio-viewport-bottom, 0px)

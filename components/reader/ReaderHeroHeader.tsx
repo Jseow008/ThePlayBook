@@ -31,7 +31,6 @@ interface ReaderHeroHeaderProps {
     durationSeconds: number | null;
     segmentsTotal: number;
     segmentsCompleted: number;
-    formattedReadingTime: string;
     readerTheme?: string;
     showResumeAudioFollow?: boolean;
     isNotesDrawerOpen?: boolean;
@@ -53,7 +52,6 @@ export function ReaderHeroHeader({
     durationSeconds,
     segmentsTotal,
     segmentsCompleted,
-    formattedReadingTime,
     readerTheme = "dark",
     showResumeAudioFollow = false,
     isNotesDrawerOpen = false,
@@ -142,14 +140,6 @@ export function ReaderHeroHeader({
                                 {type}
                             </span>
 
-                            {/* Time Spent Reading */}
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary/50 text-xs font-medium text-muted-foreground border border-border/50">
-                                <span className="relative flex size-2">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75"></span>
-                                    <span className="relative inline-flex rounded-full size-2 bg-primary"></span>
-                                </span>
-                                {formattedReadingTime} read
-                            </span>
                         </div>
 
                         <div className="flex items-center justify-center gap-2.5 sm:justify-start">
@@ -161,7 +151,7 @@ export function ReaderHeroHeader({
                                 <SaveToLibraryButton
                                     contentId={contentId}
                                     contentTitle={title}
-                                    className="focus-ring inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait"
+                                    className="focus-ring inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-colors disabled:cursor-wait sm:h-10 sm:w-10"
                                     loadingClassName="border-border/35 bg-secondary/25 text-muted-foreground/60"
                                     savedClassName="border-primary/35 bg-primary/10 text-primary"
                                     unsavedClassName="border-border/45 bg-secondary/30 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
@@ -177,7 +167,7 @@ export function ReaderHeroHeader({
                                 source="reader_header"
                                 contentId={contentId}
                                 contentType={type}
-                                className="focus-ring h-10 w-10 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground"
+                                className="focus-ring h-11 w-11 shrink-0 border border-border/45 bg-secondary/30 p-0 text-muted-foreground hover:bg-secondary/50 hover:text-foreground sm:h-10 sm:w-10"
                             />
                         </div>
                     </div>

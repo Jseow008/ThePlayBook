@@ -404,6 +404,25 @@ describe('ReaderView', () => {
         });
     });
 
+    it.each([
+        { label: 'without narration', audioUrl: null },
+        { label: 'with narration', audioUrl: 'https://example.com/audio.mp3' },
+    ])('opens the first section for a new reader $label without scrolling or starting audio', async ({ audioUrl }) => {
+        render(<ReaderView content={{ ...mockContent, audio_url: audioUrl }} />);
+
+        await waitFor(() => {
+            const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestAccordionProps?.expandedSegmentId).toBe('seg-1');
+            expect(latestAccordionProps?.scrollRequest).toBeNull();
+            expect(latestAccordionProps?.activeNarratedSegmentId).toBeNull();
+            expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+                initialAudioTimeSec: 0,
+            }));
+        });
+
+        expect(window.scrollTo).not.toHaveBeenCalled();
+    });
+
     it('automatically resumes at the earliest unfinished segment and cues its audio without autoplaying', async () => {
         progressState.value = {
             completed: ['seg-1', 'seg-3'],
@@ -629,7 +648,7 @@ describe('ReaderView', () => {
     it('renders the big idea if available', () => {
         const { container } = render(<ReaderView content={mockContent} />);
         expect(screen.getByText('The giant idea')).toBeInTheDocument();
-        expect(screen.getByText('The Big Idea')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 2, name: 'The Big Idea' })).toBeInTheDocument();
         expect(container.querySelector('.reading-copy.reading-copy-default')).not.toBeNull();
     });
 
@@ -788,8 +807,8 @@ describe('ReaderView', () => {
                 id: 'highlight-1',
                 user_id: 'user-1',
                 content_item_id: 'test-item-1',
-                segment_id: 'seg-1',
-                highlighted_text: 'Body 1',
+                segment_id: 'seg-2',
+                highlighted_text: 'Body 2',
                 note_body: null,
                 color: 'yellow',
                 anchor_start: 0,
@@ -831,7 +850,7 @@ describe('ReaderView', () => {
             expect(routerReplaceMock).toHaveBeenCalledWith('/read/test-item-1', { scroll: false });
         });
 
-        expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
+        expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-2');
     });
 
     it('waits for the target segment to expand before scrolling drawer jumps to the segment top', async () => {
@@ -840,8 +859,8 @@ describe('ReaderView', () => {
                 id: 'highlight-1',
                 user_id: 'user-1',
                 content_item_id: 'test-item-1',
-                segment_id: 'seg-1',
-                highlighted_text: 'Body 1',
+                segment_id: 'seg-2',
+                highlighted_text: 'Body 2',
                 note_body: null,
                 color: 'yellow',
                 anchor_start: 0,
@@ -856,7 +875,27 @@ describe('ReaderView', () => {
         const scrollToSpy = vi.fn();
         window.scrollTo = scrollToSpy;
 
-        const { container } = render(<ReaderView content={mockContent} />);
+        const contentWithSecondSegment = {
+            ...mockContent,
+            segments: [
+                ...mockContent.segments,
+                {
+                    id: 'seg-2',
+                    item_id: 'item-1',
+                    order_index: 1,
+                    title: 'Segment 2',
+                    markdown_body: 'Body 2',
+                    start_time_sec: null,
+                    end_time_sec: null,
+                },
+            ],
+        } as ContentItemWithSegments;
+
+        const { container } = render(<ReaderView content={contentWithSecondSegment} />);
+
+        await waitFor(() => {
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
+        });
 
         let jumpPromise: Promise<void> | undefined;
         act(() => {
@@ -864,10 +903,10 @@ describe('ReaderView', () => {
         });
 
         await waitFor(() => {
-            expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-2');
         });
 
-        const segmentNode = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-1"]');
+        const segmentNode = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-2"]');
         expect(segmentNode).not.toBeNull();
         segmentNode!.getBoundingClientRect = vi.fn(() => ({
             x: 0,
@@ -897,7 +936,7 @@ describe('ReaderView', () => {
 
         expect(scrollToSpy).not.toHaveBeenCalled();
 
-        const panel = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-1"] [data-reader-segment-panel="true"]');
+        const panel = container.querySelector<HTMLElement>('[data-reader-segment-id="seg-2"] [data-reader-segment-panel="true"]');
         expect(panel).not.toBeNull();
 
         act(() => {
@@ -987,7 +1026,7 @@ describe('ReaderView', () => {
 
         render(<ReaderView content={timedContent} />);
 
-        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
 
         fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
 
@@ -1270,7 +1309,7 @@ describe('ReaderView', () => {
         render(<ReaderView content={timedContent} />);
 
         await waitFor(() => {
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
             expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
             expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
                 initialAudioTimeSec: 0,
@@ -1463,13 +1502,13 @@ describe('ReaderView', () => {
         });
     });
 
-    it('does not auto-expand a segment when narration timings are unavailable', async () => {
+    it('keeps the first section open when narration timings are unavailable', async () => {
         render(<ReaderView content={{ ...mockContent, audio_url: 'https://example.com/audio.mp3' }} />);
 
         fireEvent.click(screen.getByTestId('sync-audio-seg-1'));
 
         await waitFor(() => {
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
         });
     });
 
@@ -1708,7 +1747,7 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
         });
     });
 });

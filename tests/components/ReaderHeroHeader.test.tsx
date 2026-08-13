@@ -22,6 +22,24 @@ vi.mock('@/components/ui/ResilientImage', () => ({
 }));
 
 describe('ReaderHeroHeader', () => {
+    it('keeps reading activity tracking out of the visible metadata', () => {
+        const { container } = render(
+            <ReaderHeroHeader
+                title="Test Title"
+                author="Test Author"
+                type="article"
+                coverImageUrl={null}
+                audioUrl={null}
+                durationSeconds={600}
+                segmentsTotal={4}
+                segmentsCompleted={0}
+            />
+        );
+
+        expect(screen.queryByText(/read$/i)).not.toBeInTheDocument();
+        expect(container.querySelector('.animate-ping')).not.toBeInTheDocument();
+    });
+
     it('exposes completed-section progress to assistive technology', () => {
         render(
             <ReaderHeroHeader
@@ -33,7 +51,6 @@ describe('ReaderHeroHeader', () => {
                 durationSeconds={600}
                 segmentsTotal={4}
                 segmentsCompleted={2}
-                formattedReadingTime="1:23"
             />
         );
 
@@ -58,7 +75,6 @@ describe('ReaderHeroHeader', () => {
                 durationSeconds={600}
                 segmentsTotal={4}
                 segmentsCompleted={2}
-                formattedReadingTime="1:23"
             />
         );
 

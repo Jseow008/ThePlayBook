@@ -531,9 +531,9 @@ export function SegmentAccordion({
 
     return (
         <div className="space-y-2">
-            <h3 className="text-sm font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4 px-1">
+            <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4 px-1">
                 Sections
-            </h3>
+            </h2>
             {segments.map((segment, index) => {
                 const isExpanded = currentExpandedId === segment.id;
                 const isCompleted = completedSegments.has(segment.id);
@@ -624,6 +624,8 @@ export function SegmentAccordion({
 
                         <div
                             data-reader-segment-panel="true"
+                            aria-hidden={!isExpanded}
+                            inert={!isExpanded}
                             ref={(el) => {
                                 if (el) {
                                     contentRefs.current.set(segment.id, el);
@@ -684,9 +686,9 @@ export function SegmentAccordion({
                                                 handleToggle(nextSegment, index + 1);
                                             }}
                                             className={cn(
-                                                "focus-ring inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors",
+                                                "focus-ring inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors sm:min-h-0 sm:px-5",
                                                 !isLastSegment
-                                                    ? "border-border/70 bg-background/60 text-foreground/90 hover:border-primary/30 hover:bg-accent/35 hover:text-foreground"
+                                                    ? "border-primary/35 bg-primary/10 text-primary hover:border-primary/50 hover:bg-primary/15"
                                                     : isContentCompleted
                                                     ? "border-border/65 bg-background/55 text-muted-foreground hover:border-border hover:bg-accent/25 hover:text-foreground"
                                                     : "border-border/70 bg-background/60 text-foreground/90 hover:border-primary/30 hover:bg-accent/35 hover:text-foreground"
@@ -694,6 +696,7 @@ export function SegmentAccordion({
                                         >
                                             {!isLastSegment ? (
                                                 <>
+                                                    <CheckCircle2 className="size-4" aria-hidden="true" />
                                                     <span>Mark complete and continue</span>
                                                 </>
                                             ) : isContentCompleted ? (
