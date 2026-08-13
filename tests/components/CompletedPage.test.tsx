@@ -209,6 +209,8 @@ describe("CompletedPage", () => {
         fireEvent.click(screen.getByRole("button", { name: "Remove from reading history" }));
         const dialog = screen.getByRole("dialog", { name: "Remove from history?" });
         expect(dialog).toBeInTheDocument();
+        expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveClass("touch-target-44");
+        expect(within(dialog).getByRole("button", { name: "Remove from history" })).toHaveClass("touch-target-44");
 
         fireEvent.click(within(dialog).getByRole("button", { name: "Remove from history" }));
 
@@ -273,5 +275,31 @@ describe("CompletedPage", () => {
 
         expect(screen.queryByText("No completed content yet")).not.toBeInTheDocument();
         expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    });
+
+    it("uses content-type-neutral copy when Completed is empty", () => {
+        mockUseReadingProgress.mockReturnValue({
+            archiveFromProgressList: vi.fn(),
+            completedIds: [],
+            getProgress: vi.fn(() => null),
+            isLoaded: true,
+            removeFromHistory: vi.fn(() => Promise.resolve(true)),
+            refresh: vi.fn(),
+            removeFromProgress: vi.fn(),
+            restoreProgressListArchive: vi.fn(),
+            storageScope: "guest",
+        });
+        mockUseBatchContentItems.mockReturnValue({
+            data: [],
+            isError: false,
+            isLoading: false,
+            isSuccess: true,
+            refetch: vi.fn(),
+        });
+
+        render(<CompletedPage />);
+
+        expect(screen.getByText("Finish your first summary to see it appear here.")).toBeInTheDocument();
+        expect(screen.queryByText(/book summary or podcast/i)).not.toBeInTheDocument();
     });
 });
