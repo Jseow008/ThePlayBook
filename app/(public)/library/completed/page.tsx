@@ -218,7 +218,7 @@ export default function CompletedPage() {
                             type="button"
                             onClick={closeHistoryRemovalDialog}
                             disabled={isRemovingHistory}
-                            className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="touch-target-44 inline-flex h-10 items-center justify-center rounded-full border border-border/70 bg-secondary/30 px-4 text-sm font-medium text-foreground transition-colors hover:bg-secondary/50 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             Cancel
                         </button>
@@ -226,7 +226,7 @@ export default function CompletedPage() {
                             type="button"
                             onClick={confirmHistoryRemoval}
                             disabled={isRemovingHistory}
-                            className="inline-flex h-10 items-center justify-center rounded-full bg-red-600 px-4 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="touch-target-44 inline-flex h-10 items-center justify-center rounded-full bg-red-600 px-4 text-sm font-medium text-white transition-colors hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                             {isRemovingHistory ? "Removing..." : "Remove from history"}
                         </button>
@@ -315,7 +315,7 @@ export default function CompletedPage() {
                                 No completed content yet
                             </h2>
                             <p className="text-muted-foreground mb-8 max-w-sm">
-                                Finish reading your first book summary or podcast to see it appear here.
+                                Finish your first summary to see it appear here.
                             </p>
                             <Link
                                 href="/browse"

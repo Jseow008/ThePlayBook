@@ -10,10 +10,11 @@ import {
 
 describe("content card responsive standards", () => {
     it("uses the compact shelf standard for public route loading skeletons", () => {
-        render(<Loading />);
+        const { container } = render(<Loading />);
 
         const firstCard = screen.getAllByTestId("route-loading-shelf-skeleton-card")[0];
         expect(firstCard).toHaveClass(...ROUTE_LOADING_SHELF_SKELETON_CARD_CLASS.split(" "));
+        expect(container.firstElementChild).not.toHaveClass("lg:pl-16");
     });
 
     it("keeps the browse page fallback linked to the compact shelf skeleton standard", () => {
@@ -25,6 +26,8 @@ describe("content card responsive standards", () => {
         );
 
         expect(browsePageSource).toContain("COMPACT_SHELF_SKELETON_CARD_CLASS");
+        expect(browsePageSource).toContain('className="browse-hero-shell w-full bg-card/20"');
+        expect(browsePageSource).toContain("bg-card/30 rounded-md");
         expect(COMPACT_SHELF_SKELETON_CARD_CLASS).toContain("w-[176px]");
         expect(COMPACT_SHELF_SKELETON_CARD_CLASS).toContain("md:w-[240px]");
     });

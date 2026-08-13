@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
 export const LIBRARY_CARD_GRID_CLASS = "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4 md:gap-6";
+const LIBRARY_FILTER_SKELETON_WIDTHS = ["w-10", "w-14", "w-[4.5rem]", "w-16", "w-14"] as const;
 
 export function LibraryStatBadge({
     count,
@@ -37,14 +38,17 @@ export function LibraryToolbarSkeleton({ className }: { className?: string }) {
             <div className="h-10 w-full animate-pulse rounded-full border border-border/60 bg-secondary/40 lg:w-64" />
             <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:gap-3">
                 <div className="flex flex-wrap gap-2 lg:rounded-full lg:border lg:border-border/60 lg:bg-secondary/25 lg:p-1">
-                    {[...Array(4)].map((_, index) => (
+                    {LIBRARY_FILTER_SKELETON_WIDTHS.map((width, index) => (
                         <div
-                            key={index}
-                            className="h-8 w-16 animate-pulse rounded-full border border-border/60 bg-secondary/25 lg:w-20"
+                            key={`${width}-${index}`}
+                            data-testid="library-filter-skeleton"
+                            className={cn("h-8 animate-pulse rounded-full border border-border/60 bg-secondary/25", width)}
                         />
                     ))}
                 </div>
-                <div className="h-8 w-28 shrink-0 animate-pulse rounded-full border border-border/60 bg-secondary/25 lg:h-9" />
+                <div className="flex h-11 w-28 shrink-0 items-center lg:h-9">
+                    <div className="h-8 w-full animate-pulse rounded-full border border-border/60 bg-secondary/25 lg:h-9" />
+                </div>
             </div>
         </div>
     );
@@ -56,7 +60,7 @@ export function LibraryGridSkeleton({ count = 8 }: { count?: number }) {
             {[...Array(count)].map((_, index) => (
                 <div
                     key={index}
-                    className="aspect-[2/3] animate-pulse rounded-lg bg-secondary/50"
+                    className="aspect-[2/3] animate-pulse rounded-md bg-secondary/50"
                 />
             ))}
         </div>

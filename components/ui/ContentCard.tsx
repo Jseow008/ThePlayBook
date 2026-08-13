@@ -375,7 +375,7 @@ function BaseContentCard({
                         onRemove(item.id);
                     }}
                     className={cn(
-                        "content-card-hover-action focus-ring absolute left-2 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
+                        "content-card-hover-action focus-ring touch-target-44 absolute left-2 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
                         removeIcon === "archive" ? "hover:bg-white/20" : "hover:bg-red-500/80",
                     )}
                     title={removeLabel}
@@ -393,7 +393,7 @@ function BaseContentCard({
                         onSecondaryRemove(item.id);
                     }}
                     className={cn(
-                        "content-card-hover-action focus-ring absolute left-10 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
+                        "content-card-hover-action focus-ring touch-target-44 absolute left-10 top-2 z-20 rounded-full bg-black/50 p-1.5 opacity-100 backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
                         secondaryRemoveIcon === "archive" ? "hover:bg-white/20" : "hover:bg-red-500/80",
                     )}
                     title={secondaryRemoveLabel}

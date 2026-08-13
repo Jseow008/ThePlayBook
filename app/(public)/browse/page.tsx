@@ -91,7 +91,7 @@ export default function BrowsePage() {
 function HomeFeedSkeleton() {
     return (
         <div className="min-h-screen bg-background animate-pulse">
-            <div className="h-[60vh] md:h-[80vh] w-full bg-card/20" />
+            <div className="browse-hero-shell w-full bg-card/20" />
             <div className="-mt-8 relative z-10 px-4 md:px-8 lg:px-16 space-y-8">
                 <div className="space-y-4">
                     <div className="h-8 w-48 bg-card/30 rounded" />
@@ -100,7 +100,7 @@ function HomeFeedSkeleton() {
                             <div
                                 key={i}
                                 data-testid="browse-shelf-skeleton-card"
-                                className={`${COMPACT_SHELF_SKELETON_CARD_CLASS} bg-card/30 rounded-lg`}
+                                className={`${COMPACT_SHELF_SKELETON_CARD_CLASS} bg-card/30 rounded-md`}
                             />
                         ))}
                     </div>

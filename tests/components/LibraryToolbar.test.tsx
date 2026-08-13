@@ -28,12 +28,16 @@ describe("LibraryToolbar", () => {
         expect(filters).toHaveClass("gap-2");
         expect(filters).toHaveClass("lg:rounded-full");
 
-        expect(sort).toHaveClass("shrink-0");
+        for (const label of ["all", "book", "podcast", "article", "video"]) {
+            expect(screen.getByRole("button", { name: label })).toHaveClass("touch-target-44");
+        }
+
+        expect(sort).toHaveClass("h-11", "lg:h-9", "shrink-0");
         expect(screen.getByRole("textbox", { name: "Search library items" })).toHaveAttribute(
             "placeholder",
             "Search library items…"
         );
-        expect(screen.getByRole("combobox", { name: "Sort library items" })).toBeInTheDocument();
+        expect(screen.getByRole("combobox", { name: "Sort library items" })).toHaveClass("h-11", "lg:h-9");
         expect(screen.getByRole("button", { name: "all" })).toHaveAttribute("aria-pressed", "true");
         expect(screen.getByRole("button", { name: "video" })).toHaveAttribute("aria-pressed", "false");
     });

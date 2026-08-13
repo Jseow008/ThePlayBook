@@ -59,7 +59,7 @@ export function LibraryToolbar({
                             aria-pressed={activeFilter === filter}
                             onClick={() => onFilterChange(filter)}
                             className={cn(
-                                "inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-medium capitalize transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-3.5 lg:h-8 lg:border-transparent lg:px-4",
+                                "touch-target-44 inline-flex h-8 items-center justify-center rounded-full border px-3 text-xs font-medium capitalize transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-3.5 lg:h-8 lg:border-transparent lg:px-4",
                                 activeFilter === filter
                                     ? "border-border/70 bg-secondary/50 text-foreground shadow-sm lg:bg-background"
                                     : "border-border/60 bg-transparent text-muted-foreground hover:border-border/80 hover:text-foreground hover:bg-secondary/30 lg:hover:bg-secondary/50"
@@ -73,13 +73,17 @@ export function LibraryToolbar({
                 {/* Sort */}
                 <div
                     data-testid="library-toolbar-sort"
-                    className="relative shrink-0"
+                    className="relative h-11 shrink-0 lg:h-9"
                 >
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-x-0 top-1.5 h-8 rounded-full border border-border/60 bg-background/40 lg:top-0 lg:h-9 lg:bg-secondary/25"
+                    />
                     <select
                         value={activeSort}
                         onChange={(e) => onSortChange(e.target.value as any)}
                         aria-label="Sort library items"
-                        className="h-8 min-w-28 rounded-full border border-border/60 bg-background/40 pl-3 pr-8 text-xs font-medium text-muted-foreground transition-colors appearance-none hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer lg:h-9 lg:bg-secondary/25"
+                        className="relative h-11 min-w-28 cursor-pointer appearance-none rounded-full border border-transparent bg-transparent pl-3 pr-8 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background lg:h-9"
                     >
                         <option value="newest">Newest</option>
                         <option value="oldest">Oldest</option>

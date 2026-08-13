@@ -6,13 +6,19 @@ import {
 const TAKEAWAY_LINE_WIDTHS = ["w-11/12", "w-4/5", "w-2/3"] as const;
 const SEGMENT_LINE_WIDTHS = ["w-2/3", "w-3/4", "w-1/2", "w-4/5"] as const;
 
-function ContentHeroSkeleton({ showPrimaryAction }: { showPrimaryAction: boolean }) {
+function ContentHeroSkeleton({
+    showPrimaryAction,
+    coverRadiusClass = "rounded-2xl",
+}: {
+    showPrimaryAction: boolean;
+    coverRadiusClass?: "rounded-xl" | "rounded-2xl";
+}) {
     return (
         <div className="mb-6 flex flex-col gap-6 sm:flex-row sm:gap-8">
             <div className={READER_COVER_WRAPPER_CLASS}>
                 <div
                     data-testid="content-detail-loading-cover"
-                    className={`${READER_COVER_FRAME_CLASS} mx-auto rounded-2xl border border-border bg-secondary/45 shadow-2xl shadow-black/20 sm:mx-0`}
+                    className={`${READER_COVER_FRAME_CLASS} ${coverRadiusClass} mx-auto border border-border bg-secondary/45 shadow-2xl shadow-black/20 sm:mx-0`}
                 />
             </div>
 
@@ -112,7 +118,7 @@ export function ReaderLoadingState() {
                 aria-hidden="true"
                 className="mx-auto max-w-3xl px-5 pb-8 pt-8 motion-safe:animate-pulse sm:px-6 sm:pt-12 lg:pb-24"
             >
-                <ContentHeroSkeleton showPrimaryAction={false} />
+                <ContentHeroSkeleton showPrimaryAction={false} coverRadiusClass="rounded-xl" />
 
                 <div className="mb-8">
                     <div className="mb-2 flex justify-between">
