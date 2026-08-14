@@ -212,7 +212,17 @@ describe("AudioPlayer", () => {
 
         expect(screen.getByRole("region", { name: "Audio mini player" })).toBeInTheDocument();
         expect(screen.getByRole("region", { name: "Audio mini player" })).toHaveClass("reader-sepia");
-        expect(screen.getByText("Competence Versus Power Dynamics by Jordan Peterson")).toBeInTheDocument();
+        const miniPlayerTitle = screen.getByText("Competence Versus Power Dynamics by Jordan Peterson");
+        expect(miniPlayerTitle).toBeInTheDocument();
+        expect(miniPlayerTitle.parentElement).toHaveClass(
+            "col-span-5",
+            "col-start-1",
+            "row-start-1",
+            "pr-12",
+            "sm:col-auto",
+            "sm:row-auto",
+            "sm:pr-0"
+        );
         expect(screen.getByRole("button", { name: "Pause mini player" })).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Pause mini player" })).toHaveClass(
             "col-start-3",

@@ -485,7 +485,7 @@ export function AudioPlayer({
                                     {isPlaying ? <Pause className="size-4" /> : <Play className="ml-0.5 size-4" />}
                                 </button>
 
-                                <div className="col-span-4 col-start-1 row-start-1 min-w-0 flex-1 sm:col-auto sm:row-auto">
+                                <div className="col-span-5 col-start-1 row-start-1 min-w-0 flex-1 pr-12 sm:col-auto sm:row-auto sm:pr-0">
                                     <p className="truncate text-xs font-semibold text-foreground" title={miniPlayerLabel}>
                                         {miniPlayerLabel}
                                     </p>
