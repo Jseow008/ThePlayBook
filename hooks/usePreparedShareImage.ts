@@ -26,7 +26,7 @@ function buildStoryFileName(title: string) {
         .replace(/^-+|-+$/g, "")
         .slice(0, 48);
 
-    return `${slug || "netflux-read"}-story.png`;
+    return `${slug || "netflux-read"}-story.jpg`;
 }
 
 async function copyShareLink(url: string) {
@@ -124,7 +124,7 @@ export function usePreparedShareImage(contentId: string | undefined, title: stri
         const preparation = (async () => {
             try {
                 const response = await fetch(buildStoryImageUrl(contentId), {
-                    headers: { Accept: "image/png" },
+                    headers: { Accept: "image/jpeg" },
                 });
 
                 if (!response.ok) {
@@ -135,7 +135,7 @@ export function usePreparedShareImage(contentId: string | undefined, title: stri
                 const preparedImage = {
                     blob,
                     file: new File([blob], buildStoryFileName(title), {
-                        type: blob.type || "image/png",
+                        type: blob.type || "image/jpeg",
                         lastModified: Date.now(),
                     }),
                     fileName: buildStoryFileName(title),

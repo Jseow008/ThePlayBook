@@ -25,7 +25,7 @@ function mockClipboard() {
 }
 
 function mockSuccessfulImageFetch() {
-    const blob = new Blob(["png"], { type: "image/png" });
+    const blob = new Blob(["jpeg"], { type: "image/jpeg" });
     const response = {
         ok: true,
         status: 200,
@@ -168,7 +168,7 @@ describe("ContentShareMenu", () => {
 
         expect(fetchMock).toHaveBeenCalledWith(
             expect.stringContaining(`/api/og/content/${contentId}/story`),
-            { headers: { Accept: "image/png" } }
+            { headers: { Accept: "image/jpeg" } }
         );
         expect(createObjectURL).toHaveBeenCalledWith(expect.any(Blob));
         expect(writeText).toHaveBeenCalledWith("https://netflux.test/read/cant-hurt-me");

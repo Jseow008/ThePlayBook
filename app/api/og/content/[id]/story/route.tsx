@@ -3,11 +3,11 @@ import type { NextRequest } from "next/server";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/rate-limit";
 import {
-    bufferImageResponse,
     buildCoverFallback,
     cacheControl,
     clampText,
     ContentIdSchema,
+    encodeJpegImageResponse,
     fontPromise,
     getContent,
     getImageDataUrl,
@@ -21,6 +21,7 @@ interface RouteContext {
 }
 
 const size = { width: 1080, height: 1920 };
+const jpegQuality = 85;
 
 function buildMetadataLine(content: NonNullable<Awaited<ReturnType<typeof getContent>>>) {
     const category = normalizeLabel(content.category ?? content.type);
@@ -229,6 +230,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     );
 
     image.headers.set("Cache-Control", cacheControl);
-    image.headers.set("Content-Disposition", `inline; filename="${content.id}-story.png"`);
-    return bufferImageResponse(image);
+    image.headers.set("Content-Disposition", `inline; filename="${content.id}-story.jpg"`);
+    return encodeJpegImageResponse(image, jpegQuality);
 }
