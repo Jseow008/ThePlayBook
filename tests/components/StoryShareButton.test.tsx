@@ -16,7 +16,7 @@ vi.mock("@/lib/analytics", () => ({
 const contentId = "11111111-1111-4111-8111-111111111111";
 
 function mockSuccessfulImageFetch() {
-    const blob = new Blob(["png"], { type: "image/png" });
+    const blob = new Blob(["jpeg"], { type: "image/jpeg" });
     const response = {
         ok: true,
         status: 200,
@@ -80,8 +80,11 @@ describe("StoryShareButton", () => {
 
         expect(fetchMock).toHaveBeenCalledWith(
             expect.stringContaining(`/api/og/content/${contentId}/story`),
-            { headers: { Accept: "image/png" } }
+            { headers: { Accept: "image/jpeg" } }
         );
+        const sharedFile = share.mock.calls[0][0].files[0] as File;
+        expect(sharedFile.name).toBe("can-t-hurt-me-story.jpg");
+        expect(sharedFile.type).toBe("image/jpeg");
         expect(writeText).toHaveBeenCalledWith("https://netflux.test/read/cant-hurt-me");
         expect(canShare).toHaveBeenCalledWith(expect.objectContaining({
             files: expect.arrayContaining([expect.any(File)]),

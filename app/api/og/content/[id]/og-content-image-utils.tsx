@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import sharp from "sharp";
 import { z } from "zod";
 import { APP_NAME } from "@/lib/brand";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
@@ -33,6 +34,21 @@ export async function bufferImageResponse(image: Response) {
         status: image.status,
         statusText: image.statusText,
         headers: image.headers,
+    });
+}
+
+export async function encodeJpegImageResponse(image: Response, quality = 85) {
+    const jpegBody = await sharp(Buffer.from(await image.arrayBuffer()))
+        .jpeg({ quality })
+        .toBuffer();
+    const headers = new Headers(image.headers);
+    headers.set("Content-Type", "image/jpeg");
+    headers.set("Content-Length", jpegBody.byteLength.toString());
+
+    return new Response(jpegBody, {
+        status: image.status,
+        statusText: image.statusText,
+        headers,
     });
 }
 
