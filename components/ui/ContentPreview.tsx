@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Clock, BookOpen, Sparkles, ChevronDown, Headphones } from "lucide-react";
+import { Clock, BookOpen, ChevronDown, Headphones } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize from "rehype-sanitize";
@@ -36,7 +36,7 @@ export function ContentPreview({
     seriesContext = null,
     onSpinAgain,
     isSpinning = false,
-    ctaIcon: CtaIcon = Sparkles,
+    ctaIcon: CtaIcon = BookOpen,
     initialShowAllTakeaways = false,
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;

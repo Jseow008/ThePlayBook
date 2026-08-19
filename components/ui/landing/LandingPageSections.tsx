@@ -8,9 +8,9 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  BookOpen,
   Headphones,
   Maximize2,
-  Sparkles,
   X,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
@@ -212,7 +212,7 @@ function FeaturedReadCard({
         />
       ) : (
         <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
-          <Sparkles className="size-12 text-muted-foreground" />
+          <BookOpen className="size-12 text-muted-foreground" />
         </div>
       )}
 

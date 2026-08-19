@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, FileText, Plus, Sparkles } from "lucide-react";
+import { ArrowRight, BadgeCheck, BookOpen, FileText, Plus } from "lucide-react";
 import { getAdminClient } from "@/lib/supabase/admin";
 import { LaunchReadinessPanel } from "@/components/admin/LaunchReadinessPanel";
 import { ContentStatusBadge } from "@/components/admin/ContentStatusBadge";
@@ -73,7 +73,7 @@ export default async function AdminDashboardPage({
             label: "Published",
             value: publishedItems,
             accent: "text-emerald-600",
-            Icon: Sparkles,
+            Icon: BadgeCheck,
             href: "/admin/content?status=verified",
         },
         {
