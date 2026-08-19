@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, CirclePlay } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
@@ -17,6 +18,7 @@ import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-ca
 export default function SettingsPage() {
     const supabase = createClient();
     const { refresh, storageScope } = useReadingProgress();
+    const queryClient = useQueryClient();
 
     const [user, setUser] = useState<User | null>(null);
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -30,6 +32,9 @@ export default function SettingsPage() {
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
     const [confirmClear, setConfirmClear] = useState(false);
+    const [isDeletingNotes, setIsDeletingNotes] = useState(false);
+    const [isConfirmingNotesDeletion, setIsConfirmingNotesDeletion] = useState(false);
+    const [notesDeletionConfirmation, setNotesDeletionConfirmation] = useState("");
 
     useEffect(() => {
         let mounted = true;
@@ -99,13 +104,14 @@ export default function SettingsPage() {
         if (!user) return;
         setIsExporting(true);
         try {
-            const [libraryRes, activityRes, feedbackRes] = await Promise.all([
+            const [libraryRes, activityRes, feedbackRes, highlightsRes] = await Promise.all([
                 supabase.from("user_library").select("*").eq("user_id", user.id),
                 supabase.from("reading_activity").select("*").eq("user_id", user.id),
                 supabase.from("content_feedback").select("*").eq("user_id", user.id),
+                supabase.from("user_highlights").select("*").eq("user_id", user.id),
             ]);
 
-            const exportError = libraryRes.error ?? activityRes.error ?? feedbackRes.error;
+            const exportError = libraryRes.error ?? activityRes.error ?? feedbackRes.error ?? highlightsRes.error;
             if (exportError) {
                 throw exportError;
             }
@@ -116,6 +122,7 @@ export default function SettingsPage() {
                 library: libraryRes.data || [],
                 activity: activityRes.data || [],
                 feedback: feedbackRes.data || [],
+                notes_and_highlights: highlightsRes.data || [],
             };
 
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
@@ -222,6 +229,49 @@ export default function SettingsPage() {
         } finally {
             setIsClearing(false);
         }
+    };
+
+    const handleDeleteNotesAndHighlights = async () => {
+        if (!isConfirmingNotesDeletion) {
+            setIsConfirmingNotesDeletion(true);
+            return;
+        }
+
+        if (notesDeletionConfirmation !== "DELETE") return;
+
+        setIsDeletingNotes(true);
+        try {
+            const response = await fetch("/api/library/highlights", { method: "DELETE" });
+            const payload = await response.json() as {
+                deletedCount?: number;
+                error?: { message?: string };
+            };
+
+            if (!response.ok) {
+                throw new Error(payload.error?.message || "Failed to delete notes and highlights");
+            }
+
+            await queryClient.invalidateQueries({ queryKey: ["highlights"] });
+            setIsConfirmingNotesDeletion(false);
+            setNotesDeletionConfirmation("");
+
+            const deletedCount = payload.deletedCount ?? 0;
+            toast.success(
+                deletedCount === 1
+                    ? "Deleted 1 note or highlight"
+                    : `Deleted ${deletedCount} notes and highlights`
+            );
+        } catch (err: any) {
+            toast.error(err?.message || "Failed to delete notes and highlights");
+        } finally {
+            setIsDeletingNotes(false);
+        }
+    };
+
+    const cancelNotesAndHighlightsDeletion = () => {
+        if (isDeletingNotes) return;
+        setIsConfirmingNotesDeletion(false);
+        setNotesDeletionConfirmation("");
     };
 
     return (
@@ -375,7 +425,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                     <p className="font-medium text-foreground">Download My Data</p>
-                                    <p className="text-sm text-muted-foreground">Export your reading history and library to a JSON file</p>
+                                    <p className="text-sm text-muted-foreground">Export your reading history, library, notes, and highlights to a JSON file</p>
                                 </div>
                             </div>
                         </button>
@@ -390,14 +440,64 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                     <p className={`font-medium transition-colors ${confirmClear ? "text-red-500" : "text-foreground"}`}>
-                                        {confirmClear ? "Click again to confirm" : "Clear Reading History"}
+                                        {confirmClear ? "Click again to confirm" : "Clear Reading History & Library"}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                        {confirmClear ? "This action cannot be undone" : "Remove all progress and saved items from your account"}
+                                        {confirmClear ? "This action cannot be undone; notes and highlights are kept" : "Remove all progress and saved library items. Notes and highlights are kept."}
                                     </p>
                                 </div>
                             </div>
                         </button>
+                        <button
+                            onClick={handleDeleteNotesAndHighlights}
+                            disabled={isDeletingNotes || isLoadingAuth || !user}
+                            className="w-full flex items-center justify-between p-4 hover:bg-red-500/5 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
+                                    {isDeletingNotes ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-red-500">Delete All Notes & Highlights</p>
+                                    <p className="text-sm text-muted-foreground">Permanently delete every saved highlight and written note</p>
+                                </div>
+                            </div>
+                        </button>
+                        {isConfirmingNotesDeletion && (
+                            <div className="space-y-3 bg-red-500/5 p-4">
+                                <p className="text-sm text-foreground">
+                                    This permanently deletes all notes and highlights. Type <span className="font-semibold">DELETE</span> to confirm.
+                                </p>
+                                <label className="sr-only" htmlFor="notes-deletion-confirmation">Type DELETE to confirm</label>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                    <input
+                                        id="notes-deletion-confirmation"
+                                        type="text"
+                                        value={notesDeletionConfirmation}
+                                        onChange={(event) => setNotesDeletionConfirmation(event.target.value)}
+                                        placeholder="Type DELETE"
+                                        autoComplete="off"
+                                        className="h-10 flex-1 rounded-md border border-input bg-background px-3 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleDeleteNotesAndHighlights}
+                                        disabled={isDeletingNotes || notesDeletionConfirmation !== "DELETE"}
+                                        className="h-10 rounded-md bg-red-500 px-4 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {isDeletingNotes ? "Deleting..." : "Delete permanently"}
+                                    </button>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={cancelNotesAndHighlightsDeletion}
+                                    disabled={isDeletingNotes}
+                                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </section>
 
