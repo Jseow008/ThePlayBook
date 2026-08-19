@@ -451,14 +451,14 @@ export default function SettingsPage() {
                         <button
                             onClick={handleDeleteNotesAndHighlights}
                             disabled={isDeletingNotes || isLoadingAuth || !user}
-                            className="w-full flex items-center justify-between p-4 hover:bg-red-500/5 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50"
+                            className={`w-full flex items-center justify-between p-4 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50 ${isConfirmingNotesDeletion ? "hover:bg-red-500/5" : "hover:bg-accent/50"}`}
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-red-500/10 text-red-500">
+                                <div className={`p-2 rounded-lg transition-colors ${isConfirmingNotesDeletion ? "bg-red-500/10 text-red-500" : "bg-secondary text-muted-foreground"}`}>
                                     {isDeletingNotes ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
                                 </div>
                                 <div>
-                                    <p className="font-medium text-red-500">Delete All Notes & Highlights</p>
+                                    <p className={`font-medium transition-colors ${isConfirmingNotesDeletion ? "text-red-500" : "text-foreground"}`}>Delete All Notes & Highlights</p>
                                     <p className="text-sm text-muted-foreground">Permanently delete every saved highlight and written note</p>
                                 </div>
                             </div>
