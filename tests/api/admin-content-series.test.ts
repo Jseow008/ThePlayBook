@@ -38,6 +38,14 @@ vi.mock("@/lib/server/rate-limit", () => ({
     rateLimit: vi.fn(),
 }));
 
+vi.mock("@/lib/server/story-image-processor", () => ({
+    processNextStoryImageJob: vi.fn(),
+}));
+
+vi.mock("@/lib/server/story-image-queue", () => ({
+    requestStoryImageGeneration: vi.fn().mockResolvedValue({ queued: false }),
+}));
+
 vi.mock("next/cache", () => ({
     revalidatePath: vi.fn(),
 }));

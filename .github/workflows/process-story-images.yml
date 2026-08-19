@@ -1,0 +1,23 @@
+name: Process Story Image Queue
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: process-story-image-queue
+  cancel-in-progress: false
+
+jobs:
+  process-story-image-queue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+
+    steps:
+      - name: Trigger story image worker
+        run: |
+          curl --fail --show-error --silent \
+            --max-time 290 \
+            -X GET "https://www.netflux.blog/api/admin/story-images/process" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

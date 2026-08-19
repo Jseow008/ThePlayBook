@@ -26,11 +26,15 @@ import {
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
+import { processNextStoryImageJob } from "@/lib/server/story-image-processor";
+import { requestStoryImageGeneration } from "@/lib/server/story-image-queue";
 import {
     getSeriesSlugsByIds,
     revalidateContentDeleted,
     revalidateContentUpdated,
 } from "@/lib/server/revalidation";
+
+export const maxDuration = 300;
 
 type QuickModeValue = {
     hook?: string | null;
@@ -616,6 +620,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         });
 
         let narrationWarning: string | null = null;
+        let storyImageWarning: string | null = null;
 
         if (shouldAutoQueueNarration) {
             const resultingAudioUrl = isManualAudioOverride ? nextAudioUrl : existingAudioUrl;
@@ -660,12 +665,45 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
             }
         }
 
+        if (nextStatus === "verified") {
+            try {
+                const { queued } = await requestStoryImageGeneration({
+                    supabase,
+                    contentId: id,
+                });
+
+                if (queued) {
+                    after(async () => {
+                        try {
+                            await processNextStoryImageJob(`${requestId}:story-image`);
+                        } catch (backgroundError) {
+                            logApiError({
+                                requestId,
+                                route: "/api/admin/content/[id]",
+                                message: "Background story image processor failed after content update",
+                                error: backgroundError,
+                            });
+                        }
+                    });
+                }
+            } catch (queueError) {
+                storyImageWarning = "Content was updated, but its share image could not be prepared automatically.";
+                logApiError({
+                    requestId,
+                    route: "/api/admin/content/[id]",
+                    message: "Failed to queue story image after verified content update",
+                    error: queueError,
+                });
+            }
+        }
+
         return NextResponse.json({
             success: true,
             data: {
                 id,
                 message: "Content updated successfully",
                 narration_warning: narrationWarning,
+                story_image_warning: storyImageWarning,
             },
         });
     } catch (error) {

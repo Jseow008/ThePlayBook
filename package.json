@@ -45,6 +45,7 @@
     "security:embedding-table-reads": "node scripts/check-supabase-embedding-table-reads.mjs",
     "security:storage-bucket-listing": "node scripts/check-supabase-storage-bucket-listing.mjs",
     "embeddings:sync-segments": "tsx scripts/sync-segment-embeddings.ts",
+    "story-images:backfill": "tsx scripts/backfill-story-images.ts",
     "validate:launch-env": "node scripts/validate-launch-env.mjs",
     "verify:production": "node scripts/verify-production.mjs",
     "check:deployment-health": "node scripts/check-deployment-health.mjs",
