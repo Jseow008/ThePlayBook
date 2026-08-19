@@ -395,11 +395,11 @@ export default function SettingsPage() {
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-red-500/10 rounded-lg text-red-500">
+                                <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
                                     <LogOut className="w-5 h-5" />
                                 </div>
                                 <div>
-                                    <p className="font-medium text-red-500">Sign Out</p>
+                                    <p className="font-medium text-foreground">Sign Out</p>
                                     <p className="text-sm text-muted-foreground">Log out of your account</p>
                                 </div>
                             </div>
