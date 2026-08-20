@@ -13,6 +13,8 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
+import { processNextStoryImageJob } from "@/lib/server/story-image-processor";
+import { requestStoryImageGeneration } from "@/lib/server/story-image-queue";
 import {
     ADMIN_CONTENT_SORT_OPTIONS,
     getAdminContentSortOrder,
@@ -31,6 +33,8 @@ import {
     getSeriesSlugsByIds,
     revalidateContentCreated,
 } from "@/lib/server/revalidation";
+
+export const maxDuration = 300;
 
 const AdminContentListQuerySchema = z.object({
     status: z.enum(["draft", "verified", "deleted"]).optional(),
@@ -518,6 +522,7 @@ export async function POST(request: NextRequest) {
         });
 
         let narrationWarning: string | null = null;
+        let storyImageWarning: string | null = null;
 
         if (contentData.status === "verified" && !contentData.audio_url) {
             try {
@@ -559,12 +564,45 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        if (contentData.status === "verified") {
+            try {
+                const { queued } = await requestStoryImageGeneration({
+                    supabase,
+                    contentId: contentItem.id,
+                });
+
+                if (queued) {
+                    after(async () => {
+                        try {
+                            await processNextStoryImageJob(`${requestId}:story-image`);
+                        } catch (backgroundError) {
+                            logApiError({
+                                requestId,
+                                route: "/api/admin/content",
+                                message: "Background story image processor failed after content creation",
+                                error: backgroundError,
+                            });
+                        }
+                    });
+                }
+            } catch (queueError) {
+                storyImageWarning = "Content was published, but its share image could not be prepared automatically.";
+                logApiError({
+                    requestId,
+                    route: "/api/admin/content",
+                    message: "Failed to queue story image after verified content creation",
+                    error: queueError,
+                });
+            }
+        }
+
         return NextResponse.json({
             success: true,
             data: {
                 id: contentItem.id,
                 message: "Content created successfully",
                 narration_warning: narrationWarning,
+                story_image_warning: storyImageWarning,
             },
         }, { status: 201 });
     } catch (error) {

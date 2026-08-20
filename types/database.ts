@@ -793,6 +793,69 @@ export type Database = {
           },
         ]
       }
+      story_image_job: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          content_id: string
+          error: string | null
+          id: number
+          max_attempts: number
+          next_attempt_at: string
+          render_version: string
+          requested_at: string
+          started_at: string | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          content_id: string
+          error?: string | null
+          id?: never
+          max_attempts?: number
+          next_attempt_at?: string
+          render_version: string
+          requested_at?: string
+          started_at?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          content_id?: string
+          error?: string | null
+          id?: never
+          max_attempts?: number
+          next_attempt_at?: string
+          render_version?: string
+          requested_at?: string
+          started_at?: string | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_image_job_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_image_job_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_highlights: {
         Row: {
           anchor_end: number | null

@@ -140,6 +140,7 @@ Use this checklist after the validation sequence above:
 - Refresh `/browse`, `/search`, `/preview/[id]`, and `/read/[id]` after publish
 - Run content embedding sync for new or edited verified content
 - Check Gemini segment coverage for verified items before using Ask My Library
+- Confirm a published item returns a stored JPEG from `/api/og/content/<id>/story` after background generation completes
 
 If any of the above fails, stop the launch and fix the underlying route or environment issue before retrying.
 
@@ -226,7 +227,22 @@ Production go/no-go:
 
 Cleanup is mandatory even after a failed gate: delete the disposable hosted project, confirm it no longer appears in the project list, stop isolated application processes, and securely remove temporary passwords, API keys, generated types, fixtures, and workdirs. Do not stop or modify unrelated developer servers.
 
-### 2.3 Email Subscription Operations
+### 2.3 Story Share Image Operations
+
+Publishing or editing verified content creates a versioned story-image job. The request finishes normally while `after()` wakes one worker attempt. The worker stores an immutable JPEG under `media/story-images/<content-id>/<render-version>.jpg`; the public story route redirects to that object and retains dynamic rendering as a write-through fallback.
+
+Retry processing can be invoked by an authenticated admin with `POST /api/admin/story-images/process`, or by a scheduler with `GET /api/admin/story-images/process` and `Authorization: Bearer <CRON_SECRET>`. Failed jobs use bounded exponential backoff and stop after three attempts. Stale processing claims are reset after ten minutes.
+
+After the migration is applied, preview the backfill without writes and then generate missing assets sequentially:
+
+```bash
+npm run story-images:backfill -- --dry-run
+npm run story-images:backfill
+```
+
+Add `--limit <n>` for a small batch. Add `--cleanup` only when old immutable versions should be removed; cleanup keeps the current and immediately previous image version so cached redirects remain valid during rollout.
+
+### 2.4 Email Subscription Operations
 
 Newsletter subscription is not the same as login. Do not automatically subscribe users when they sign in.
 

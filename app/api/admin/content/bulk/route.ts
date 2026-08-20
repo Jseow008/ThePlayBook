@@ -7,12 +7,16 @@ import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
+import { processNextStoryImageJob } from "@/lib/server/story-image-processor";
+import { requestStoryImageGeneration } from "@/lib/server/story-image-queue";
 import {
     getSeriesSlugsByIds,
     revalidateContentBulkChanged,
     revalidateContentFeaturedChanged,
     revalidateNarrationContentChanged,
 } from "@/lib/server/revalidation";
+
+export const maxDuration = 300;
 
 const BulkActionSchema = z.object({
     ids: z.array(z.string().uuid()).min(1).max(100),
@@ -122,6 +126,7 @@ export async function POST(request: NextRequest) {
 
         let updatedIds: string[] = [];
         let queuedCount = 0;
+        let queuedStoryImageCount = 0;
 
         if (action === "publish") {
             const segmentsByItem = new Map<string, Array<{ markdown_body: string | null }>>();
@@ -217,6 +222,26 @@ export async function POST(request: NextRequest) {
                             requestId,
                             route: "/api/admin/content/bulk",
                             message: "Failed to auto-queue narration during bulk publish",
+                            error: queueError,
+                        });
+                    }
+
+                    try {
+                        const { queued } = await requestStoryImageGeneration({
+                            supabase,
+                            contentId: item.id,
+                        });
+                        if (queued) queuedStoryImageCount += 1;
+                    } catch (queueError) {
+                        skipped.push({
+                            id: item.id,
+                            title: item.title,
+                            reason: "Published, but the share image could not be prepared automatically.",
+                        });
+                        logApiError({
+                            requestId,
+                            route: "/api/admin/content/bulk",
+                            message: "Failed to queue story image during bulk publish",
                             error: queueError,
                         });
                     }
@@ -368,6 +393,22 @@ export async function POST(request: NextRequest) {
             });
         }
 
+
+        if (queuedStoryImageCount > 0) {
+            after(async () => {
+                try {
+                    await processNextStoryImageJob(`${requestId}:story-image`);
+                } catch (backgroundError) {
+                    logApiError({
+                        requestId,
+                        route: "/api/admin/content/bulk",
+                        message: "Background story image processor failed after bulk publish",
+                        error: backgroundError,
+                    });
+                }
+            });
+        }
+
         const seriesSlugs = await getSeriesSlugsByIds(supabase, Array.from(touchedSeriesIds));
         const updatedIdSet = new Set(updatedIds);
         const updatedItems = availableItems.filter((item) => updatedIdSet.has(item.id));
@@ -391,6 +432,7 @@ export async function POST(request: NextRequest) {
                 updated_ids: updatedIds,
                 updated_count: updatedIds.length,
                 queued_count: queuedCount,
+                queued_story_image_count: queuedStoryImageCount,
                 skipped,
                 skipped_count: skipped.length,
                 message: summarizeResults({
