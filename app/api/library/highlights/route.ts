@@ -288,3 +288,49 @@ export async function GET(request: NextRequest) {
         return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);
     }
 }
+
+export async function DELETE(request: NextRequest) {
+    const requestId = getRequestId();
+
+    const rl = await rateLimit(request, { limit: 5, windowMs: 60_000, key: "delete-all" });
+    if (!rl.success) {
+        return NextResponse.json(
+            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
+            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
+        );
+    }
+
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            return apiError("UNAUTHORIZED", "Must be logged in to delete notes and highlights.", 401, requestId);
+        }
+
+        const { count, error: countError } = await supabase
+            .from("user_highlights")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id);
+
+        if (countError) {
+            logApiError({ requestId, route: "DELETE /api/library/highlights", message: "Error counting notes and highlights", error: countError, userId: user.id });
+            return apiError("INTERNAL_ERROR", "Failed to delete notes and highlights.", 500, requestId);
+        }
+
+        const { error: deleteError } = await supabase
+            .from("user_highlights")
+            .delete()
+            .eq("user_id", user.id);
+
+        if (deleteError) {
+            logApiError({ requestId, route: "DELETE /api/library/highlights", message: "Error deleting notes and highlights", error: deleteError, userId: user.id });
+            return apiError("INTERNAL_ERROR", "Failed to delete notes and highlights.", 500, requestId);
+        }
+
+        return NextResponse.json({ success: true, deletedCount: count ?? 0 });
+    } catch (error) {
+        logApiError({ requestId, route: "DELETE /api/library/highlights", message: "Unexpected error", error });
+        return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);
+    }
+}

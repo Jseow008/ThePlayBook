@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { AnchorHTMLAttributes } from "react";
 import SettingsPage from "@/app/(public)/settings/page";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -75,6 +76,20 @@ vi.mock("sonner", () => ({
     },
 }));
 
+function renderSettingsPage() {
+    const queryClient = new QueryClient({
+        defaultOptions: {
+            queries: { retry: false },
+        },
+    });
+
+    return render(
+        <QueryClientProvider client={queryClient}>
+            <SettingsPage />
+        </QueryClientProvider>
+    );
+}
+
 describe("SettingsPage", () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -86,7 +101,7 @@ describe("SettingsPage", () => {
     });
 
     it("includes a replay app tour link", async () => {
-        render(<SettingsPage />);
+        renderSettingsPage();
 
         expect(screen.getByRole("button", { name: /clear reading history/i })).toBeDisabled();
         expect(await screen.findByText("Not signed in.")).toBeInTheDocument();
@@ -97,7 +112,7 @@ describe("SettingsPage", () => {
     });
 
     it("clears local history and recommendation memory when clearing reading history as a guest", async () => {
-        render(<SettingsPage />);
+        renderSettingsPage();
 
         await screen.findByText("Not signed in.");
 
@@ -130,7 +145,7 @@ describe("SettingsPage", () => {
             user_metadata: { full_name: "Reader" },
         };
 
-        render(<SettingsPage />);
+        renderSettingsPage();
 
         await screen.findByDisplayValue("reader@example.com");
 
@@ -160,7 +175,7 @@ describe("SettingsPage", () => {
         };
         deleteEqMock.mockResolvedValue({ error: { message: "Delete failed" } });
 
-        render(<SettingsPage />);
+        renderSettingsPage();
 
         await screen.findByDisplayValue("reader2@example.com");
 
@@ -193,7 +208,7 @@ describe("SettingsPage", () => {
             return Promise.resolve({ data: [], error: null });
         });
 
-        render(<SettingsPage />);
+        renderSettingsPage();
 
         await screen.findByDisplayValue("reader3@example.com");
 
@@ -212,7 +227,7 @@ describe("SettingsPage", () => {
         };
         signOutActionMock.mockRejectedValue(new Error("Sign out failed"));
 
-        render(<SettingsPage />);
+        renderSettingsPage();
 
         await screen.findByDisplayValue("reader4@example.com");
 
