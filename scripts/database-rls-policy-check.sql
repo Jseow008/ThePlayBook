@@ -119,7 +119,7 @@ BEGIN
             SELECT count(*)
             FROM pg_policies
             WHERE schemaname = 'public'
-        ) <> 40
+        ) <> 41
 
         UNION ALL
 
