@@ -20,6 +20,10 @@ describe("durable story image job migration", () => {
         expect(migration).toContain("ENABLE ROW LEVEL SECURITY");
         expect(migration).toContain("REVOKE ALL ON TABLE public.story_image_job FROM anon, authenticated");
         expect(migration).toContain("GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.story_image_job TO service_role");
+        expect(migration).toContain("Service-only story image jobs: deny public access");
+        expect(migration).toContain("TO anon, authenticated");
+        expect(migration).toContain("USING (false)");
+        expect(migration).toContain("WITH CHECK (false)");
     });
 
     it("constrains immutable JPEG storage paths", () => {

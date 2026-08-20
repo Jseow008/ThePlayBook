@@ -49,6 +49,13 @@ REVOKE ALL ON SEQUENCE public.story_image_job_id_seq FROM anon, authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.story_image_job TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE public.story_image_job_id_seq TO service_role;
 
+CREATE POLICY "Service-only story image jobs: deny public access"
+    ON public.story_image_job
+    FOR ALL
+    TO anon, authenticated
+    USING (false)
+    WITH CHECK (false);
+
 COMMENT ON TABLE public.story_image_job IS
     'Server-only durable queue and manifest for immutable story share image generations.';
 COMMENT ON COLUMN public.story_image_job.render_version IS
