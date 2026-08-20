@@ -39,6 +39,15 @@ const ffmpegTraceIncludes = [
     : "./node_modules/ffmpeg-static/ffmpeg",
   "./node_modules/ffmpeg-static/package.json",
 ];
+const sharpTraceIncludes = [
+  "./node_modules/sharp/**/*",
+  "./node_modules/@img/sharp-linux-x64/**/*",
+  "./node_modules/@img/sharp-libvips-linux-x64/**/*",
+];
+const contentProcessingTraceIncludes = [
+  ...ffmpegTraceIncludes,
+  ...sharpTraceIncludes,
+];
 
 type CspOptions = {
   production?: boolean;
@@ -126,12 +135,15 @@ const nextConfig: NextConfig = {
   devIndicators: isPlaywrightTest ? false : undefined,
   distDir: isPlaywrightTest ? ".next-playwright" : ".next",
   outputFileTracingIncludes: {
-    "/api/admin/content": ffmpegTraceIncludes,
-    "/api/admin/content/[id]": ffmpegTraceIncludes,
-    "/api/admin/content/bulk": ffmpegTraceIncludes,
+    "/api/admin/content": contentProcessingTraceIncludes,
+    "/api/admin/content/[id]": contentProcessingTraceIncludes,
+    "/api/admin/content/bulk": contentProcessingTraceIncludes,
     "/api/admin/content/[id]/narration": ffmpegTraceIncludes,
     "/api/admin/narration/process": ffmpegTraceIncludes,
+    "/api/og/content/[id]/story": sharpTraceIncludes,
+    "/api/admin/story-images/process": sharpTraceIncludes,
   },
+  serverExternalPackages: ["sharp"],
   images: {
     deviceSizes: [640, 768, 1024, 1280],
     dangerouslyAllowSVG: true,
