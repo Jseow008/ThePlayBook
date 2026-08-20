@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { Bell, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, Sparkles } from "lucide-react";
+import { Bell, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, CirclePlay } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -435,7 +435,7 @@ export default function SettingsPage() {
                         >
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
-                                    <Sparkles className="w-5 h-5" />
+                                    <CirclePlay className="w-5 h-5" />
                                 </div>
                                 <div>
                                     <p className="font-medium">Replay app tour</p>

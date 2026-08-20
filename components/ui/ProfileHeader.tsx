@@ -1,7 +1,7 @@
 "use client";
 
 import { AuthUser as User } from "@supabase/supabase-js";
-import { Calendar, Award, Book, BookOpen, Sparkles, Edit2, Check } from "lucide-react";
+import { Calendar, Award, Book, BookOpen, Medal, GraduationCap, Edit2, Check } from "lucide-react";
 import { format } from "date-fns";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useMemo, useState } from "react";
@@ -28,8 +28,8 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
     // Determine badge and progress
     const { badge, progress, nextThreshold } = useMemo(() => {
         const levels = [
-            { threshold: 700, title: "Grandmaster", color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20", icon: Sparkles, barColor: "bg-rose-400" },
-            { threshold: 250, title: "Sage", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", icon: Sparkles, barColor: "bg-purple-400" },
+            { threshold: 700, title: "Grandmaster", color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20", icon: Medal, barColor: "bg-rose-400" },
+            { threshold: 250, title: "Sage", color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/20", icon: GraduationCap, barColor: "bg-purple-400" },
             { threshold: 50, title: "Scholar", color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", icon: BookOpen, barColor: "bg-blue-400" },
             { threshold: 20, title: "Dedicated Reader", color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", icon: Book, barColor: "bg-emerald-400" },
             { threshold: 0, title: "Knowledge Seeker", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", icon: Award, barColor: "bg-amber-400" },

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
     BookOpen,
+    CheckCircle2,
     Eye,
     FileText,
     Headphones,
@@ -12,10 +13,10 @@ import {
     Loader2,
     Pencil,
     Plus,
-    Sparkles,
     Star,
     StarOff,
     Trash2,
+    Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminSearch } from "@/components/admin/AdminSearch";
@@ -54,7 +55,7 @@ const typeIcons = {
     podcast: Headphones,
     book: BookOpen,
     article: FileText,
-    video: Sparkles,
+    video: Video,
 };
 
 function formatAdminDate(value: string | null | undefined) {
@@ -129,7 +130,7 @@ export function ContentWorkbenchClient({
     }, [someSelected]);
 
     const bulkActions = useMemo(() => ([
-        { action: "publish", label: "Publish", icon: Sparkles },
+        { action: "publish", label: "Publish", icon: CheckCircle2 },
         { action: "draft", label: "Move to Draft", icon: FileText },
         { action: "feature", label: "Feature", icon: Star },
         { action: "unfeature", label: "Unfeature", icon: StarOff },
