@@ -92,7 +92,8 @@ function getTraceRoutes(nextConfigSource) {
   }
 
   const routes = [];
-  const routePattern = /["'](?<route>\/api\/[^"']+)["']\s*:\s*ffmpegTraceIncludes/g;
+  const routePattern =
+    /["'](?<route>\/api\/[^"']+)["']\s*:\s*(?:ffmpegTraceIncludes|contentProcessingTraceIncludes)/g;
 
   for (const match of outputFileTracingIncludesMatch.groups.body.matchAll(routePattern)) {
     if (match.groups?.route) {
