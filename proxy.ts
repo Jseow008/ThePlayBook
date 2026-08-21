@@ -109,7 +109,8 @@ function isProtectedAdminPath(pathname: string): boolean {
 
 function isCronProcessorPath(pathname: string): boolean {
     return pathname === "/api/admin/narration/process"
-        || pathname === "/api/admin/request-notifications/process";
+        || pathname === "/api/admin/request-notifications/process"
+        || pathname === "/api/admin/story-images/process";
 }
 
 function hasValidCronSecret(request: NextRequest): boolean {
