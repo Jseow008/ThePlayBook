@@ -190,6 +190,19 @@ describe("proxy auth routing", () => {
         expect(updateSession).not.toHaveBeenCalled();
     });
 
+    it("lets the authorized story image processor bypass the admin IP gate", async () => {
+        vi.stubEnv("NODE_ENV", "production");
+        process.env.CRON_SECRET = "cron-secret";
+
+        const response = await proxy(new NextRequest("http://localhost/api/admin/story-images/process", {
+            headers: { authorization: "Bearer cron-secret" },
+        }));
+
+        expect(response.status).toBe(200);
+        expect(getUserMock).not.toHaveBeenCalled();
+        expect(updateSession).not.toHaveBeenCalled();
+    });
+
     it("refreshes sessions on read routes after legacy redirect checks", async () => {
         const response = await proxy(new NextRequest("http://localhost/read/current-story/slug"));
 
