@@ -138,7 +138,7 @@ export function HeroSection() {
       <div aria-hidden="true" className="landing-hero-pointer-glow pointer-events-none absolute inset-0 z-[1]" />
       <div className="landing-hero-motion-content relative z-10 mx-auto w-full max-w-7xl px-4 py-16 text-center min-[360px]:px-6 sm:py-20 lg:px-8">
         <h1
-          className="landing-hero-reveal mx-auto max-w-6xl font-serif text-[clamp(1.3rem,6.55vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:leading-[1.05] lg:text-[4.25rem]"
+          className="landing-hero-reveal mx-auto max-w-6xl font-serif text-[clamp(1.3rem,6vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:leading-[1.05] lg:text-[3.75rem] xl:text-[4.25rem]"
           style={heroRevealStyle("80ms")}
         >
           Know what’s worth your time.
