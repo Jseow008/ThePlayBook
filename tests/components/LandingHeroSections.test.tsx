@@ -36,12 +36,12 @@ describe("Landing hero", () => {
     expect(
       screen.getByRole("heading", {
         level: 1,
-        name: "Discover the ideas you didn’t know you needed.",
+        name: "Know what’s worth your time. Keep what’s worth remembering.",
       })
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Turn books, podcasts, articles, and videos into knowledge that compounds."
+        "Explore structured breakdowns of books, podcasts, articles, and videos. Decide where to go deeper, capture key insights, and retrieve them when life makes them relevant."
       )
     ).toBeInTheDocument();
     expect(screen.queryByText(/summaries$/i)).not.toBeInTheDocument();
