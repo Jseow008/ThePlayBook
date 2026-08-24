@@ -1112,8 +1112,10 @@ export function CorePlatformFeaturesSection() {
                     <div
                       key={slide.title}
                       className={cn(
-                        "absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none",
-                        index === activeStoryboardSlide ? "opacity-100" : "pointer-events-none opacity-0"
+                        "absolute inset-0 origin-center will-change-[opacity,transform] transition-[opacity,transform] duration-300 ease-out motion-reduce:transform-none motion-reduce:transition-none",
+                        index === activeStoryboardSlide
+                          ? "opacity-100 scale-100"
+                          : "pointer-events-none opacity-0 scale-[1.012]"
                       )}
                     >
                       <Image
