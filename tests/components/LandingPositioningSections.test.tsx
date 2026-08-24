@@ -25,25 +25,25 @@ vi.mock("next/image", () => ({
 }));
 
 describe("landing positioning sections", () => {
-  it("presents the understand, keep, and use knowledge loop", () => {
+  it("presents the explore, capture, and retrieve knowledge loop", () => {
     render(<CorePlatformFeaturesSection />);
 
-    expect(screen.getByRole("heading", { name: "Find the essential ideas faster." }))
+    expect(screen.getByRole("heading", { name: "See the argument before you invest the hours." }))
       .toBeInTheDocument();
 
-    expect(screen.getByRole("button", { name: "Show Understand storyboard" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Show Explore storyboard" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Show Keep storyboard" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show Capture storyboard" }));
     expect(
       screen.getByRole("heading", {
-        name: "Keep what matters, with its context attached.",
+        name: "Keep the insights and context that matter to you.",
       })
     ).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Show Use storyboard" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show Retrieve storyboard" }));
     expect(
       screen.getByRole("heading", {
-        name: "Ask your library—not the entire internet.",
+        name: "Find the exact idea when it becomes useful again.",
       })
     ).toBeInTheDocument();
     expect(

@@ -23,26 +23,26 @@ import type { ContentItem } from "@/types/database";
 
 const STORYBOARD_SLIDES = [
   {
-    label: "Understand",
-    title: "Distill before committing time",
-    eyebrow: "Understand before you commit",
-    heading: "Find the essential ideas faster.",
-    body: "Start with a concise summary of the central argument and key takeaways before deciding what deserves more of your time.",
+    label: "Explore",
+    title: "Before",
+    eyebrow: "Before you commit",
+    heading: "See the argument before you invest the hours.",
+    body: "Start with a clear map of the central argument and key takeaways before deciding what deserves more of your time.",
     image: "/images/netflux-workflow-distill-square.png",
   },
   {
-    label: "Keep",
-    title: "Build your personal library",
-    eyebrow: "Build your knowledge library",
-    heading: "Keep what matters, with its context attached.",
+    label: "Capture",
+    title: "While learning",
+    eyebrow: "Keep the ideas that matter",
+    heading: "Keep the insights and context that matter to you.",
     body: "Save summaries, highlights, and notes in one organized library instead of scattering useful ideas across bookmarks and apps.",
     image: "/images/netflux-workflow-library-square.png",
   },
   {
-    label: "Use",
-    title: "Think with your notes",
-    eyebrow: "Retrieve ideas when they matter",
-    heading: "Ask your library—not the entire internet.",
+    label: "Retrieve",
+    title: "After",
+    eyebrow: "When it becomes useful",
+    heading: "Find the exact idea when it becomes useful again.",
     body: "Search your saved knowledge or ask questions grounded in the summaries, highlights, and notes you chose to keep.",
     image: "/images/netflux-workflow-ask-square.png",
   },
@@ -1056,8 +1056,8 @@ export function CorePlatformFeaturesSection() {
           <div className="relative z-10">
             <SectionIntro
               label="How Netflux works"
-              title="Understand it. Keep it. Use it."
-              body="Distill essential ideas, build your personal knowledge library, and find useful answers whenever you need them."
+              title="Explore it. Capture it. Retrieve it."
+              body="See the argument before you invest the hours, keep the insights and context that matter, and find the exact idea when it becomes useful again."
               compact
             />
 

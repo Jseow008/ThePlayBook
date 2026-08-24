@@ -138,24 +138,19 @@ export function HeroSection() {
       <div aria-hidden="true" className="landing-hero-pointer-glow pointer-events-none absolute inset-0 z-[1]" />
       <div className="landing-hero-motion-content relative z-10 mx-auto w-full max-w-7xl px-4 py-16 text-center min-[360px]:px-6 sm:py-20 lg:px-8">
         <h1
-          className="landing-hero-reveal mx-auto max-w-5xl font-serif text-[clamp(1.3rem,6.55vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:leading-[1.05] lg:text-[4.65rem]"
+          className="landing-hero-reveal mx-auto max-w-6xl font-serif text-[clamp(1.3rem,6.55vw,3.4rem)] font-normal leading-[1.08] tracking-[-0.045em] text-white sm:leading-[1.05] lg:text-[4.25rem]"
           style={heroRevealStyle("80ms")}
         >
-          Discover the ideas you didn’t
+          Know what’s worth your time.
           <br />{" "}
-          know you{" "}
-          <span className="landing-hero-emphasis">needed.</span>
+          <span className="landing-hero-emphasis">Keep what’s worth remembering.</span>
         </h1>
 
         <p
           className="landing-hero-reveal landing-hero-copy mx-auto mt-8 max-w-xl text-[0.9375rem] leading-7 text-zinc-300 max-[359px]:-mx-2 min-[360px]:text-base sm:mt-9 sm:text-lg sm:leading-8"
           style={heroRevealStyle("260ms")}
         >
-          Turn books, podcasts, articles,
-          <br className="sm:hidden" />{" "}
-          and videos
-          <br className="hidden sm:block" />{" "}
-          into knowledge that compounds.
+          Explore structured breakdowns of books, podcasts, articles, and videos. Decide where to go deeper, capture key insights, and retrieve them when life makes them relevant.
         </p>
 
         <div
