@@ -861,3 +861,11 @@ Record:
 - **Database backups:** a read-only `supabase backups list --project-ref xmuqsgfxuaaophxnwure` returned seven consecutive `COMPLETED` physical backups from 2026-08-18 through 2026-08-24. The latest completed at `2026-08-24T23:44:11.294Z` (2026-08-25 07:44 Singapore time). PITR is disabled by the approved early-stage cost/risk decision.
 - **Scope:** no database, Storage, backup, or project configuration was changed. The July 2026 independent database and Storage copies remain historical recovery points; no recurring off-platform copy is currently approved.
 - **Remaining proof:** restore one retained Pro backup into a safe temporary environment and record the database, Auth, Storage-metadata, and application smoke results. Configure proportionate capacity/cost alert delivery. Do not enable PITR solely to complete this record.
+
+#### 2026-08-25 Pro capacity and cost baseline
+
+- **Cadence:** review the Supabase Usage and Upcoming Invoice pages monthly and after every database-facing production release. Review the daily backup inventory and database advisors after those releases. The organization billing-notification recipient must be monitored.
+- **Thresholds:** database disk 6.4 GB review / 7.2 GB action; Storage 80 GB review / 90 GB action; monthly egress 200 GB review / 225 GB action. Any missing expected daily backup is a review; two consecutive missing backups or no restorable backup is an action condition.
+- **Response:** investigate the largest tables, indexes, or files for capacity; pause unexpected uploads; investigate media delivery or abusive traffic for egress; and postpone destructive database work while backup availability is unresolved. Review Usage and the invoice before approving any paid add-on or Spend Cap change.
+- **Limits of this baseline:** it uses Supabase quota notifications and human review. It does not claim custom threshold alerts, continuous external monitoring, or automated metric collection. Those require a later least-privilege credential decision. PITR remains deliberately disabled.
+- **Pending dashboard verification:** confirm the Spend Cap state, billing-recipient monitoring, and billing-cycle end date in the authenticated Supabase dashboard before closing this part of DB-203.
