@@ -10,8 +10,8 @@ import { APP_NAME } from "@/lib/brand";
 import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-    title: `Sign in - ${APP_NAME}`,
-    description: "Sign in to Netflux to access your library, saved summaries, notes, highlights, and personalized content.",
+    title: `Sign in or create an account - ${APP_NAME}`,
+    description: "Sign in or create a Netflux account to access your library, saved summaries, notes, highlights, and personalized content.",
     alternates: {
         canonical: absoluteUrl("/login"),
     },
@@ -54,9 +54,9 @@ export default async function LoginPage({
                         className="h-14 w-14 bg-contain bg-center bg-no-repeat"
                         style={{ backgroundImage: "url('/icons/netflux-icon-borderless.png')" }}
                     />
-                    <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+                    <h1 className="text-3xl font-bold tracking-tight">Start your library</h1>
                     <p className="text-muted-foreground">
-                        Sign in to access your library and personalized content.
+                        Sign in or create an account with email or Google.
                     </p>
                 </div>
 

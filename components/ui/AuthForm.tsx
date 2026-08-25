@@ -13,7 +13,7 @@ interface AuthFormProps {
     nextUrl?: string;
 }
 
-function isMissingMagicLinkAccountError(error: { message?: string; code?: string; status?: number }) {
+function isEmailSignupUnavailableError(error: { message?: string; code?: string; status?: number }) {
     const message = error.message?.toLowerCase() ?? "";
 
     return (
@@ -89,15 +89,15 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
                 email: normalizedEmail,
                 options: {
                     emailRedirectTo: buildCallbackUrl(),
-                    shouldCreateUser: false,
+                    shouldCreateUser: true,
                 },
             });
 
             if (error) {
                 console.error("Magic link failed:", error);
                 toast.error(
-                    isMissingMagicLinkAccountError(error)
-                        ? "No account found for that email. Ask for an invite or sign in with Google."
+                    isEmailSignupUnavailableError(error)
+                        ? "Email sign-up is unavailable right now. Please try Google or try again later."
                         : error.message || "Failed to send magic link"
                 );
             } else {

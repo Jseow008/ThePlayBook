@@ -32,7 +32,7 @@ describe("AuthForm", () => {
         signInWithOtpMock.mockResolvedValue({ error: null });
     });
 
-    it("does not create a new Supabase user when requesting an email magic link", async () => {
+    it("creates a new Supabase user when requesting an email magic link", async () => {
         render(<AuthForm nextUrl="/notes?ask=1" />);
 
         await userEvent.type(screen.getByLabelText(/email address/i), " reader@example.com ");
@@ -43,7 +43,7 @@ describe("AuthForm", () => {
                 email: "reader@example.com",
                 options: {
                     emailRedirectTo: "http://localhost:3000/auth/callback?next=%2Fnotes%3Fask%3D1",
-                    shouldCreateUser: false,
+                    shouldCreateUser: true,
                 },
             });
         });
@@ -56,7 +56,7 @@ describe("AuthForm", () => {
         expect(screen.getByRole("button", { name: /sign in with google/i })).toBeVisible();
     });
 
-    it("shows a clear message when magic link login is blocked for a missing account", async () => {
+    it("shows a clear message when email signup is unavailable", async () => {
         signInWithOtpMock.mockResolvedValue({
             error: {
                 status: 422,
@@ -71,7 +71,7 @@ describe("AuthForm", () => {
 
         await waitFor(() => {
             expect(toastErrorMock).toHaveBeenCalledWith(
-                "No account found for that email. Ask for an invite or sign in with Google."
+                "Email sign-up is unavailable right now. Please try Google or try again later."
             );
         });
     });
