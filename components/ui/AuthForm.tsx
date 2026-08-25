@@ -30,6 +30,7 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
     const [isLoading, setIsLoading] = useState<"google" | "email" | null>(null);
     const [email, setEmail] = useState("");
     const [emailSent, setEmailSent] = useState(false);
+    const [code, setCode] = useState("");
 
     const buildCallbackUrl = () => {
         const callbackUrl = new URL("/auth/callback", window.location.origin);
@@ -66,7 +67,7 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
         }
     };
 
-    const handleMagicLinkLogin = async (e: React.FormEvent) => {
+    const handleEmailCodeRequest = async (e: React.SyntheticEvent) => {
         e.preventDefault();
 
         const normalizedEmail = email.trim();
@@ -87,26 +88,57 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
         try {
             const { error } = await supabase.auth.signInWithOtp({
                 email: normalizedEmail,
-                options: {
-                    emailRedirectTo: buildCallbackUrl(),
-                    shouldCreateUser: true,
-                },
+                options: { shouldCreateUser: true },
             });
 
             if (error) {
-                console.error("Magic link failed:", error);
+                console.error("Email code request failed:", error);
                 toast.error(
                     isEmailSignupUnavailableError(error)
                         ? "Email sign-up is unavailable right now. Please try Google or try again later."
-                        : error.message || "Failed to send magic link"
+                        : error.message || "Failed to send verification code"
                 );
             } else {
                 setEmailSent(true);
                 setEmail(normalizedEmail);
-                toast.success("Magic link sent! Check your email.");
+                toast.success("Verification code sent! Check your email.");
             }
         } catch (err) {
-            console.error("Magic link error:", err);
+            console.error("Email code request error:", err);
+            toast.error("An unexpected error occurred");
+        } finally {
+            setIsLoading(null);
+        }
+    };
+
+    const handleCodeVerification = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        const normalizedCode = code.trim();
+
+        if (!normalizedCode) {
+            toast.error("Enter the verification code from your email");
+            return;
+        }
+
+        setIsLoading("email");
+
+        try {
+            const response = await fetch("/api/auth/otp/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, token: normalizedCode, next: nextUrl }),
+            });
+            const result = await response.json().catch(() => null) as { error?: string; next?: string } | null;
+
+            if (!response.ok) {
+                toast.error(result?.error || "That code is invalid or has expired. Please try again.");
+                return;
+            }
+
+            window.location.assign(result?.next || nextUrl);
+        } catch (err) {
+            console.error("Email code verification error:", err);
             toast.error("An unexpected error occurred");
         } finally {
             setIsLoading(null);
@@ -115,31 +147,64 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
 
     if (emailSent) {
         return (
-            <div className="flex flex-col items-center justify-center p-6 text-center space-y-4 bg-secondary/20 border border-border/50 rounded-xl animate-in fade-in zoom-in-95">
+            <form onSubmit={handleCodeVerification} className="flex flex-col items-center justify-center p-6 text-center space-y-4 bg-secondary/20 border border-border/50 rounded-xl animate-in fade-in zoom-in-95">
                 <div className="p-3 bg-primary/10 rounded-full">
                     <Mail className="w-6 h-6 text-primary" />
                 </div>
                 <div className="space-y-1">
-                    <h3 className="font-semibold text-foreground">Check your email</h3>
+                    <h3 className="font-semibold text-foreground">Enter your code</h3>
                     <p className="text-sm text-muted-foreground">
-                        We sent a magic link to <span className="font-medium text-foreground">{email}</span>
+                        We sent a verification code to <span className="font-medium text-foreground">{email}</span>
                     </p>
                 </div>
+                <input
+                    aria-label="Verification code"
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    maxLength={8}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="000000"
+                    value={code}
+                    className="h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-center font-medium tracking-[0.35em] text-sm ring-offset-background placeholder:tracking-[0.35em] placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    disabled={isLoading !== null}
+                    required
+                />
                 <Button
-                    variant="outline"
-                    className="mt-4 w-full"
-                    onClick={() => setEmailSent(false)}
+                    type="submit"
+                    className="w-full h-11 font-medium bg-primary text-primary-foreground hover:bg-primary/90"
+                    disabled={isLoading !== null || !code}
                 >
-                    Try another email
+                    {isLoading === "email" ? "Verifying…" : "Verify and continue"}
                 </Button>
-            </div>
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleEmailCodeRequest}
+                    disabled={isLoading !== null}
+                >
+                    Resend code
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full text-muted-foreground"
+                    onClick={() => {
+                        setCode("");
+                        setEmailSent(false);
+                    }}
+                    disabled={isLoading !== null}
+                >
+                    Use another email
+                </Button>
+            </form>
         );
     }
 
     return (
         <div className="flex flex-col gap-6">
-            {/* Email Magic Link Form */}
-            <form onSubmit={handleMagicLinkLogin} className="flex flex-col gap-3">
+            {/* Email verification code form */}
+            <form onSubmit={handleEmailCodeRequest} className="flex flex-col gap-3">
                 <div className="space-y-2">
                     <label htmlFor="email" className="text-sm font-medium text-foreground">
                         Email address
