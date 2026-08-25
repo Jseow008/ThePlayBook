@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/auth/callback/route";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { createClient } from "@/lib/supabase/server";
+import { resolvePostAuthDestination } from "@/lib/auth-activation";
 
 vi.mock("@/lib/server/analytics", () => ({
     captureServerAnalyticsEvent: vi.fn(),
@@ -9,6 +10,10 @@ vi.mock("@/lib/server/analytics", () => ({
 
 vi.mock("@/lib/supabase/server", () => ({
     createClient: vi.fn(),
+}));
+
+vi.mock("@/lib/auth-activation", () => ({
+    resolvePostAuthDestination: vi.fn(),
 }));
 
 describe("Auth callback redirects", () => {
@@ -41,6 +46,7 @@ describe("Auth callback redirects", () => {
             },
         });
         (captureServerAnalyticsEvent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (resolvePostAuthDestination as unknown as ReturnType<typeof vi.fn>).mockImplementation((_: unknown, __: unknown, next: string) => next);
     });
 
     afterEach(() => {

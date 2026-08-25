@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/auth/otp/verify/route";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { createClient } from "@/lib/supabase/server";
+import { resolvePostAuthDestination } from "@/lib/auth-activation";
 
 vi.mock("@/lib/server/analytics", () => ({
     captureServerAnalyticsEvent: vi.fn(),
@@ -9,6 +10,10 @@ vi.mock("@/lib/server/analytics", () => ({
 
 vi.mock("@/lib/supabase/server", () => ({
     createClient: vi.fn(),
+}));
+
+vi.mock("@/lib/auth-activation", () => ({
+    resolvePostAuthDestination: vi.fn(),
 }));
 
 describe("POST /api/auth/otp/verify", () => {
@@ -25,6 +30,7 @@ describe("POST /api/auth/otp/verify", () => {
         });
         (createClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ auth: { verifyOtp } });
         (captureServerAnalyticsEvent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+        (resolvePostAuthDestination as unknown as ReturnType<typeof vi.fn>).mockResolvedValue("/welcome?next=%2Fnotes%3Fask%3D1");
     });
 
     it("verifies an email code, records a new signup, and returns a safe redirect", async () => {
@@ -34,7 +40,7 @@ describe("POST /api/auth/otp/verify", () => {
         }));
 
         expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toEqual({ next: "/notes?ask=1" });
+        await expect(response.json()).resolves.toEqual({ next: "/welcome?next=%2Fnotes%3Fask%3D1" });
         expect(verifyOtp).toHaveBeenCalledWith({ email: "reader@example.com", token: "123456", type: "email" });
         expect(captureServerAnalyticsEvent).toHaveBeenCalledWith(expect.objectContaining({
             event: "signup_completed",

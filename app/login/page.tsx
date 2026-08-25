@@ -56,7 +56,7 @@ export default async function LoginPage({
                     />
                     <h1 className="text-3xl font-bold tracking-tight">Start your library</h1>
                     <p className="text-muted-foreground">
-                        Sign in or create an account with email or Google.
+                        Enter your email to continue.
                     </p>
                 </div>
 

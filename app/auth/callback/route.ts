@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { createClient } from "@/lib/supabase/server";
 import { normalizeLoginNextPath } from "@/lib/auth-redirect";
+import { resolvePostAuthDestination } from "@/lib/auth-activation";
 
 const SIGNUP_COMPLETION_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -96,7 +97,11 @@ export async function GET(request: Request) {
                 });
             }
 
-            return NextResponse.redirect(`${redirectOrigin}${next}`);
+            const destination = user
+                ? await resolvePostAuthDestination(supabase, user, next)
+                : next;
+
+            return NextResponse.redirect(`${redirectOrigin}${destination}`);
         }
     }
 

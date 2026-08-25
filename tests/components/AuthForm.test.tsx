@@ -82,7 +82,7 @@ describe("AuthForm", () => {
         render(<AuthForm />);
 
         expect(screen.queryByRole("button", { name: /sign in with apple/i })).not.toBeInTheDocument();
-        expect(screen.getByRole("button", { name: /sign in with google/i })).toBeVisible();
+        expect(screen.getByRole("button", { name: /continue with google/i })).toBeVisible();
     });
 
     it("shows a clear message when email signup is unavailable", async () => {
