@@ -117,6 +117,7 @@ vi.mock('@/components/reader/ReaderHeroHeader', () => ({
                     }}
                 />
                 <button data-testid="pause-audio" onClick={() => props.onAudioPlaybackStateChange?.(false)} />
+                <button data-testid="start-audio" onClick={() => props.onAudioPlaybackStarted?.(0)} />
                 <button data-testid="resume-audio-follow" onClick={() => props.onResumeAudioFollow?.()} />
             </div>
         );
@@ -1509,6 +1510,21 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
+        });
+    });
+
+    it('opens and scrolls to the first section when audio playback starts', async () => {
+        render(<ReaderView content={{ ...mockContent, audio_url: 'https://example.com/audio.mp3' }} />);
+
+        fireEvent.click(screen.getByTestId('start-audio'));
+
+        await waitFor(() => {
+            const latestProps = segmentAccordionSpy.mock.lastCall?.[0];
+            expect(latestProps?.expandedSegmentId).toBe('seg-1');
+            expect(latestProps?.scrollRequest).toEqual(expect.objectContaining({
+                segmentId: 'seg-1',
+                initialScrollY: expect.any(Number),
+            }));
         });
     });
 

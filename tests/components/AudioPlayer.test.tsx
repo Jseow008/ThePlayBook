@@ -168,6 +168,35 @@ describe("AudioPlayer", () => {
         });
     });
 
+    it("reports the playback position after the play button starts audio", async () => {
+        const onPlaybackStarted = vi.fn();
+        const { container } = render(
+            <AudioPlayer
+                src="https://example.com/audio.mp3"
+                onPlaybackStarted={onPlaybackStarted}
+            />
+        );
+
+        const audio = container.querySelector("audio");
+        expect(audio).not.toBeNull();
+        if (!audio) {
+            return;
+        }
+
+        Object.defineProperty(audio, "currentTime", {
+            configurable: true,
+            writable: true,
+            value: 24,
+        });
+        vi.spyOn(audio, "play").mockResolvedValue();
+
+        fireEvent.click(screen.getByRole("button", { name: "Play" }));
+
+        await waitFor(() => {
+            expect(onPlaybackStarted).toHaveBeenCalledWith(24);
+        });
+    });
+
     it("shows a compact mini-player after the hero player leaves view", async () => {
         mockIntersectionObserver();
         const onMiniPlayerVisibilityChange = vi.fn();

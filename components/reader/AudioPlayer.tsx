@@ -28,6 +28,7 @@ interface AudioPlayerProps {
     onMiniPlayerBottomInsetChange?: (bottomInsetPx: number) => void;
     onTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
     onPlaybackStateChange?: (isPlaying: boolean) => void;
+    onPlaybackStarted?: (timeSec: number) => void;
     onResumeAudioFollow?: () => void;
 }
 
@@ -45,6 +46,7 @@ export function AudioPlayer({
     onMiniPlayerBottomInsetChange,
     onTimeChange,
     onPlaybackStateChange,
+    onPlaybackStarted,
     onResumeAudioFollow,
 }: AudioPlayerProps) {
     const playerContainerRef = useRef<HTMLDivElement>(null);
@@ -257,6 +259,7 @@ export function AudioPlayer({
             setHasEnded(false);
             await audio.play();
             setIsPlaying(true);
+            onPlaybackStarted?.(audio.currentTime);
         } catch (error) {
             const message = error instanceof Error && error.message.trim().length > 0
                 ? error.message

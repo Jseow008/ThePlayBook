@@ -40,6 +40,7 @@ interface ReaderHeroHeaderProps {
     initialAudioTimeSec?: number;
     onAudioTimeChange?: (timeSec: number, metadata?: { durationSec: number; isEnded: boolean }) => void;
     onAudioPlaybackStateChange?: (isPlaying: boolean) => void;
+    onAudioPlaybackStarted?: (timeSec: number) => void;
 }
 
 export function ReaderHeroHeader({
@@ -61,6 +62,7 @@ export function ReaderHeroHeader({
     initialAudioTimeSec = 0,
     onAudioTimeChange,
     onAudioPlaybackStateChange,
+    onAudioPlaybackStarted,
 }: ReaderHeroHeaderProps) {
     const boundedSegmentsCompleted = Math.min(segmentsTotal, Math.max(0, segmentsCompleted));
     const progressPercent =
@@ -192,6 +194,7 @@ export function ReaderHeroHeader({
                         onResumeAudioFollow={onResumeAudioFollow}
                         onTimeChange={onAudioTimeChange}
                         onPlaybackStateChange={onAudioPlaybackStateChange}
+                        onPlaybackStarted={onAudioPlaybackStarted}
                     />
                     {showResumeAudioFollow && (
                         <div className="mt-3 flex flex-col gap-2 rounded-xl border border-border/60 bg-card/50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">

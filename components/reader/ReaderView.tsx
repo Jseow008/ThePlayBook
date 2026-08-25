@@ -206,6 +206,20 @@ export function ReaderView({ content }: ReaderViewProps) {
             requestSegmentScroll(activeNarrationSegmentId, window.scrollY, { focusAfterScroll: true });
         }
     }, [activeNarrationSegmentId, requestSegmentScroll]);
+    const handleAudioPlaybackStarted = useCallback((timeSec: number) => {
+        if (!isAudioFollowEnabled) {
+            return;
+        }
+
+        const segmentId = findSegmentIdForPlaybackTime(content.segments, timeSec)
+            ?? content.segments[0]?.id;
+        if (!segmentId) {
+            return;
+        }
+
+        setExpandedSegmentId(segmentId);
+        requestSegmentScroll(segmentId, window.scrollY);
+    }, [content.segments, isAudioFollowEnabled, requestSegmentScroll]);
 
     // Continue tracking reading activity for analytics without displaying a live timer.
     useReadingTimer(content.id);
@@ -914,6 +928,7 @@ export function ReaderView({ content }: ReaderViewProps) {
                     initialAudioTimeSec={initialAudioTimeSec}
                     onAudioTimeChange={handleAudioTimeChange}
                     onAudioPlaybackStateChange={setIsAudioPlaying}
+                    onAudioPlaybackStarted={handleAudioPlaybackStarted}
                 />
 
                 {content.seriesContext && (
