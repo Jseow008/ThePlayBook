@@ -3,10 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { WelcomeActivation, type WelcomeContentItem } from "@/components/ui/WelcomeActivation";
 import { APP_ONBOARDING_TOUR_KEY, APP_ONBOARDING_VERSION } from "@/lib/onboarding";
 
-const { replaceMock, rpcMock, toastErrorMock } = vi.hoisted(() => ({
+const { replaceMock, rpcMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
     replaceMock: vi.fn(),
     rpcMock: vi.fn(),
     toastErrorMock: vi.fn(),
+    toastSuccessMock: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -18,7 +19,7 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 vi.mock("sonner", () => ({
-    toast: { error: toastErrorMock },
+    toast: { error: toastErrorMock, success: toastSuccessMock },
 }));
 
 const items: WelcomeContentItem[] = [
@@ -86,5 +87,15 @@ describe("WelcomeActivation", () => {
             expect(toastErrorMock).toHaveBeenCalledWith("We couldn't save your progress. Please try again.");
         });
         expect(replaceMock).not.toHaveBeenCalled();
+    });
+
+    it("uses local-only saves and completion in preview mode", async () => {
+        render(<WelcomeActivation nextUrl="/browse" items={items} preview />);
+
+        await userEvent.click(screen.getByRole("button", { name: /skip for now/i }));
+
+        expect(rpcMock).not.toHaveBeenCalled();
+        expect(replaceMock).not.toHaveBeenCalled();
+        expect(toastSuccessMock).toHaveBeenCalledWith("Preview complete. No changes were saved.");
     });
 });

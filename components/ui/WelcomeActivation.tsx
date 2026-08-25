@@ -21,13 +21,14 @@ export interface WelcomeContentItem {
 interface WelcomeActivationProps {
     items: WelcomeContentItem[];
     nextUrl: string;
+    preview?: boolean;
 }
 
 const INTERESTS = ["Psychology", "Business", "Creativity", "Health", "Philosophy", "Technology"] as const;
 const MIN_SAVED_ITEMS = 3;
 const ASK_PROMPT = "What themes connect the summaries I just saved?";
 
-export function WelcomeActivation({ items, nextUrl }: WelcomeActivationProps) {
+export function WelcomeActivation({ items, nextUrl, preview = false }: WelcomeActivationProps) {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [interests, setInterests] = useState<string[]>([]);
@@ -53,6 +54,11 @@ export function WelcomeActivation({ items, nextUrl }: WelcomeActivationProps) {
     };
 
     const completeActivation = async (destination: string) => {
+        if (preview) {
+            toast.success("Preview complete. No changes were saved.");
+            return;
+        }
+
         setIsFinishing(true);
 
         try {
@@ -80,6 +86,12 @@ export function WelcomeActivation({ items, nextUrl }: WelcomeActivationProps) {
 
     const saveItem = async (item: WelcomeContentItem) => {
         if (savedIds.includes(item.id) || savingId) return;
+
+        if (preview) {
+            setSavedIds((current) => [...current, item.id]);
+            return;
+        }
+
         setSavingId(item.id);
 
         try {
