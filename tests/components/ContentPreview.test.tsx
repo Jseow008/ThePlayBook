@@ -5,8 +5,9 @@ import { READER_COVER_IMAGE_SIZES } from '@/components/ui/content-card-standards
 import { vi } from 'vitest';
 import type { ContentItem } from '@/types/database';
 
-const { mockGetProgress } = vi.hoisted(() => ({
+const { mockGetProgress, mockReaderTheme } = vi.hoisted(() => ({
     mockGetProgress: vi.fn(),
+    mockReaderTheme: vi.fn(),
 }));
 
 vi.mock('@/hooks/useReadingProgress', () => ({
@@ -15,6 +16,12 @@ vi.mock('@/hooks/useReadingProgress', () => ({
         isInMyList: vi.fn(() => false),
         toggleMyList: vi.fn(),
         getProgress: mockGetProgress,
+    }),
+}));
+
+vi.mock('@/hooks/useReaderSettings', () => ({
+    useReaderSettings: () => ({
+        readerTheme: mockReaderTheme(),
     }),
 }));
 
@@ -74,6 +81,7 @@ describe('ContentPreview', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockGetProgress.mockReturnValue(null);
+        mockReaderTheme.mockReturnValue('dark');
     });
 
     it.each([
@@ -174,6 +182,14 @@ describe('ContentPreview', () => {
             'pb-[calc(5.75rem+var(--safe-area-bottom))]'
         );
         expect(document.querySelector('.safe-area-pb-sm')).toBeInTheDocument();
+    });
+
+    it('uses the saved reader background theme', () => {
+        mockReaderTheme.mockReturnValue('sepia');
+
+        render(<ContentPreview {...defaultProps} />);
+
+        expect(screen.getByTestId('content-preview')).toHaveClass('reader-sepia');
     });
 
     it('uses the shared reader cover image sizes hint', () => {

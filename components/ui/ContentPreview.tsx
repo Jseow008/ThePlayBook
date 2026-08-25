@@ -14,6 +14,7 @@ import { APP_NAME } from "@/lib/brand";
 import { buildReadPath } from "@/lib/content-paths";
 import { ResilientImage } from "@/components/ui/ResilientImage";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
+import { useReaderSettings } from "@/hooks/useReaderSettings";
 import {
     READER_COVER_FRAME_CLASS,
     READER_COVER_IMAGE_SIZES,
@@ -41,6 +42,7 @@ export function ContentPreview({
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
     const { getProgress } = useReadingProgress();
+    const { readerTheme } = useReaderSettings();
     const progress = getProgress(item.id);
     const readCtaLabel = progress?.isCompleted
         ? "Read Again"
@@ -113,7 +115,10 @@ export function ContentPreview({
 
     return (
         // Mobile padding keeps the final content clear of the fixed CTA rail.
-        <div className="min-h-screen bg-background text-foreground pb-[calc(5.75rem+var(--safe-area-bottom))] sm:pb-10 lg:pb-8">
+        <div
+            data-testid="content-preview"
+            className={`reader-${readerTheme} min-h-screen bg-background text-foreground pb-[calc(5.75rem+var(--safe-area-bottom))] transition-colors duration-300 sm:pb-10 lg:pb-8`}
+        >
             {/* Container */}
             <div className="max-w-3xl mx-auto px-5 sm:px-6 pt-8 pb-3 sm:py-12">
 
