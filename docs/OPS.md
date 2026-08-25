@@ -148,7 +148,7 @@ Category taxonomy note: Phase 1 keeps temporary aliases for old public search li
 
 ### 2.2 Disposable Hosted Database Verification
 
-Run this gate before any database-facing production release. A [Supabase preview branch](https://supabase.com/docs/guides/deployment/branching) is preferred when the plan supports it. While production remains on the Free plan, use a separate short-lived hosted project as described below.
+Run this gate before any database-facing production release. A [Supabase preview branch](https://supabase.com/docs/guides/deployment/branching) may be used for a higher-risk change now that Pro is active; otherwise use the established separate short-lived hosted project as described below. Do not create a branch merely for a routine, low-risk migration.
 
 Hard stops:
 
@@ -843,3 +843,10 @@ Record:
 - **Storage:** `~/Backups/Netflux/2026-07-25-db003-recovery/storage` contains 261 `audio` objects and 752 `media` objects. Production inventories captured before and after the copy matched the local 1,013-object, 1,222,139,218-byte inventory exactly, and all 1,013 entries in `storage.sha256` passed.
 - **Scope:** this refresh did not run another restore drill because the 2026-07-15 drill already proved the current logical restore procedure. It did not mutate production data, schema, migration history, bucket configuration, Auth configuration, or Storage objects.
 - **Remaining launch gate:** this verified manual recovery point is current but does not establish the required recurring cadence. Automated database and Storage recovery points, freshness/failure alerts, approved retention, and a launch-stage plan decision remain required before marking DB-003 Verified.
+
+#### 2026-08-25 Pro backup verification
+
+- **Plan and project:** the linked organization is on Supabase Pro and production project `xmuqsgfxuaaophxnwure` is `ACTIVE_HEALTHY`.
+- **Database backups:** a read-only `supabase backups list --project-ref xmuqsgfxuaaophxnwure` returned seven consecutive `COMPLETED` physical backups from 2026-08-18 through 2026-08-24. The latest completed at `2026-08-24T23:44:11.294Z` (2026-08-25 07:44 Singapore time). PITR is disabled by the approved early-stage cost/risk decision.
+- **Scope:** no database, Storage, backup, or project configuration was changed. The July 2026 independent database and Storage copies remain historical recovery points; no recurring off-platform copy is currently approved.
+- **Remaining proof:** restore one retained Pro backup into a safe temporary environment and record the database, Auth, Storage-metadata, and application smoke results. Configure proportionate capacity/cost alert delivery. Do not enable PITR solely to complete this record.

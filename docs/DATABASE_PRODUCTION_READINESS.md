@@ -184,7 +184,7 @@ A restore drill remains owned by DB-003 rather than being inferred from successf
 
 #### Hosted replay and final production gate — 2026-07-15
 
-- Production remains on the Free plan, where Supabase preview branches are unavailable. The approved substitute was a separate disposable hosted project with an isolated CLI workdir; production data was never copied into it.
+- At the time of the original DB-004 verification, production was on the Free plan and preview branches were unavailable. The approved substitute was a separate disposable hosted project with an isolated CLI workdir; production data was never copied into it. Pro is now active; see DB-004 for the current branch-use policy.
 - The disposable project replayed all 76 repository migrations from an empty remote database. Remote reset initially exposed migration-session `search_path` assumptions around pgvector types, operators, operator classes, and pgcrypto functions. Historical migrations now schema-qualify those extension objects while terminal function definitions preserve production's exact stored text.
 - The schema fingerprint was expanded to cover enum definitions. This found that production already supported `content_type = 'video'` but the historical replay did not. `20260715044322_reconcile_content_type_video.sql` now records that contract with `ALTER TYPE ... ADD VALUE IF NOT EXISTS`.
 - The final hosted reset completed from empty, `db push --dry-run` reported the hosted database up to date, and the hosted/production fingerprint matched exactly across 14 categories: functions, function ACLs, relations, columns, constraints, indexes, policies, relation ACLs, views, triggers, relation comments, required extensions, enum definitions, and Storage bucket configuration.
@@ -389,13 +389,13 @@ The existing embedding-preservation code is useful evidence for identifying stab
 
 ### DB-003: Establish production plan, backup, Storage backup, and restore readiness
 
-Status: In progress — recovery targets, independent Storage verification, a local restore drill, production bucket controls, and a fresh 2026-07-25 manual recovery point are complete; paid-plan retention, PITR, automated cadence, and alerts remain
+Status: In progress — Pro daily database backups are verified; recovery targets, independent Storage verification, a local restore drill, production bucket controls, and a fresh 2026-07-25 manual recovery point are complete. The remaining proof is a restore from the Pro backup posture, plus proportionate capacity/cost alerts.
 
 #### Evidence
 
-- The linked organization is on the Free plan.
+- The linked organization is on the Pro plan as of 2026-08-25. The production project is `ACTIVE_HEALTHY`.
 - Production contains 1,013 Storage objects: 261 in `audio` and 752 in `media`, totaling 1,222,139,218 bytes (approximately 1.22 GB) as of the 2026-07-25 recovery-point refresh.
-- Free projects do not provide the production availability and automatic-backup posture required by this project.
+- Pro retains seven daily physical database backups. A read-only `supabase backups list` verification on 2026-08-25 returned seven consecutive `COMPLETED` physical backups from 2026-08-18 through 2026-08-24; the latest completed at `2026-08-24T23:44:11.294Z` (2026-08-25 07:44 Singapore time). PITR remains disabled.
 - Database backups contain Storage metadata, not the underlying Storage objects.
 - `supabase backups list` again reported no retained physical backups visible to the project, `pitr_enabled: false`, and `walg_enabled: true` on 2026-07-17. WAL archiving capability without a retained, restorable backup or PITR window does not satisfy the launch RPO.
 - The production database measured 64,228,499 bytes (approximately 61 MiB) on 2026-07-17.
@@ -409,19 +409,18 @@ Status: In progress — recovery targets, independent Storage verification, a lo
 #### Recovery objectives and retention policy
 
 - **Database RPO:** no more than 24 hours of committed data loss before public launch. Move to one hour or better through PITR only when revenue, meaningful usage, write volume, or the cost of losing up to 24 hours of data justifies the additional recurring spend.
-- **Storage RPO:** no more than 24 hours of new or changed object loss before public launch.
+- **Storage RPO:** the last independent Storage copy was verified on 2026-07-25. No recurring external Storage copy is currently approved; deletion or loss of Storage objects after that point is an explicitly accepted early-stage risk and must be revisited before Storage becomes business-critical.
 - **Service RTO:** restore database access, required Storage objects, public browse/read, and admin access within four hours of declaring a recoverable incident.
-- **Retention:** retain at least 30 daily database and independent Storage recovery points plus 12 monthly recovery points. Keep the 2026-07-14, 2026-07-15, 2026-07-16, 2026-07-17, and 2026-07-25 recovery points until this automated policy has operated successfully for 30 days.
-- The current manual-only database export cadence and disabled PITR do **not** meet the launch RPO. The gap is accepted temporarily while the product remains pre-revenue with minimal usage, but DB-003 must remain In progress and the project must not be represented as launch-ready under this posture.
+- **Retention:** rely on the seven Pro daily physical database backups for the approved 24-hour database RPO. Keep the verified 2026-07-14, 2026-07-15, 2026-07-16, 2026-07-17, and 2026-07-25 independent recovery points while they remain available; they are supplementary safeguards, not a current recurring guarantee.
+- PITR remains disabled by deliberate cost/risk decision. The seven retained daily Pro backups meet the approved 24-hour database RPO; the remaining gap is a proof that a Pro backup can restore the service within the four-hour RTO.
 
 #### Proportionate staged posture
 
-- **Current pre-revenue stage:** remain on Free and spend USD 0 on PITR. Keep verified manual recovery points, refresh them before database-facing releases and other risky operations, and explicitly accept that this does not provide the launch RPO or production availability. Production Storage currently totals approximately 1.22 GB against the documented 1 GB Free quota, so reduce usage below quota or upgrade before service restrictions become a risk.
-- **Public-launch stage:** upgrade to Pro with the Spend Cap enabled and retain the default Micro compute unless measured load requires more. Current Supabase documentation lists Pro at USD 25 per month, includes USD 10 of compute credit for one default Micro project, provides seven days of automatic daily backups, and includes 100 GB of Storage. Confirm the checkout total and applicable tax before purchase because pricing can change.
-- Continue daily off-platform logical database and Storage recovery points at launch, retaining 30 daily and 12 monthly recovery points. Hosted daily backups provide rapid platform recovery; independent copies protect against project deletion and Storage-object loss.
+- **Current early-stage production posture:** Pro is active, seven daily database backups are retained, and PITR is intentionally disabled. The approved database RPO is up to 24 hours. Pro includes 8 GB of database disk and 100 GB of Storage, so the former 1 GB Free Storage quota is no longer an immediate restriction.
+- **External-copy posture:** the verified 2026-07-25 logical export and Storage copy remain available as a historical recovery point. No new recurring off-platform database or Storage copy is required at this stage; this accepts the residual project-deletion and Storage-object-loss risk. Revisit this before revenue, material user growth, or business-critical uploads.
 - **Scale trigger:** add Small compute and seven-day PITR only when losing up to 24 hours of writes becomes commercially or operationally unacceptable. Current documentation prices this combined posture at approximately USD 130 per month after compute credit and describes a worst-case PITR RPO of two minutes.
 - Configure capacity and cost checks for database/disk size, Storage size, egress, backup freshness, and the upcoming invoice. Supabase Spend Cap is useful protection but explicitly does not provide fine-grained budgets or threshold notifications, and PITR charges are not covered by the Spend Cap.
-- Keep DB-003 In progress until the launch-stage plan is approved, the off-platform destination and credentials are approved, the first automated recovery point and restore proof pass, and alert delivery is tested.
+- Keep DB-003 In progress until one Pro-backup restore drill passes and proportionate capacity/cost alert delivery is tested. PITR and recurring off-platform copies remain future scale controls, not blockers for the current approved posture.
 
 #### Storage lifecycle and orphan policy
 
@@ -429,7 +428,7 @@ Status: In progress — recovery targets, independent Storage verification, a lo
 - Produce a weekly orphan report by comparing Storage object keys with live database references. Reporting is read-only and must not delete objects automatically.
 - Quarantine an apparent orphan for at least 30 days. Delete only after a current independent copy is verified and an operator and reviewer approve the candidate list.
 - Retain objects associated with soft-deleted content during the same quarantine period. A database row deletion must never be the sole trigger for immediate object deletion.
-- Run the independent object copy at least daily before launch, retain it according to the recovery policy above, and monitor copy freshness and checksum failures.
+- Do not delete apparent orphaned objects while recurring independent Storage copies are deferred. Revisit the object-copy cadence before Storage becomes business-critical or before an automated cleanup process is introduced.
 
 #### Required outcome
 
@@ -437,10 +436,10 @@ The production environment has documented capacity, database recovery, Storage r
 
 #### Acceptance criteria
 
-- [ ] The production project is on an approved paid plan before public launch.
-- [ ] Database backup retention satisfies the documented recovery point objective (RPO).
+- [x] The production project is on an approved paid plan before public launch. Pro was verified on 2026-08-25.
+- [x] Database backup retention satisfies the documented 24-hour recovery point objective (RPO). Seven consecutive daily physical backups were verified on 2026-08-25.
 - [x] Recovery time objective (RTO) is documented.
-- [x] PITR is enabled or explicitly risk-assessed against the required RPO. PITR is disabled and the current risk is rejected for public launch.
+- [x] PITR is enabled or explicitly risk-assessed against the required RPO. PITR is disabled; the 24-hour database-RPO risk is accepted for the current stage.
 - [x] Audio and media objects are copied to an independent backup destination and checksum-verified.
 - [x] Bucket-specific MIME-type and file-size restrictions are configured.
 - [x] Storage lifecycle and orphan cleanup rules are documented.
@@ -453,7 +452,7 @@ Status: Verified — disposable hosted replay and two-layer deployment enforceme
 
 #### Verified workflow evidence
 
-- Because production is on the Supabase Free plan, the verified path uses a separate short-lived hosted project and an isolated CLI workdir. A paid preview branch can replace that project when the plan supports branching.
+- The verified path uses a separate short-lived hosted project and an isolated CLI workdir. Now that Pro is active, a temporary Supabase branch may be used for higher-risk migrations, but it is optional; the established disposable-project workflow remains valid and should not be replaced merely for routine changes.
 - [`OPS.md`](./OPS.md) records the repeatable creation, replay, comparison, security, type-generation, application-smoke, go/no-go, and cleanup procedure.
 - The first full run applied all 76 migrations in version order, then proved a destructive remote reset from empty on the disposable project. No production data, user identities, or Storage objects were copied; only synthetic fixtures were created after replay.
 - The hosted and production schemas matched across all 14 fingerprint categories. Fresh generated types matched after normalizing only the platform PostgREST metadata version, and repository typecheck passed.
@@ -775,7 +774,7 @@ Status: In progress
 - Email ownership confirmation is therefore required for any direct email sign-up that bypasses the application's `shouldCreateUser: false` magic-link flow. No Auth user was created or modified by the configuration change; production remains at nine confirmed users and zero unconfirmed users.
 - Email OTP expiry is 3,600 seconds and OTP length is eight digits. Redirects are restricted to the production Netflux origins plus the intentional localhost development callbacks. Secure email change and refresh-token rotation are enabled.
 - Password minimum length remains six and no character-class requirement is configured. Do not strengthen this blindly: Supabase can reject sign-in for an existing weak password, and the production admin uses password authentication. Verify or rotate the admin credential before changing the policy.
-- Leaked-password protection remains unavailable on the Free plan. This is the only current Supabase security-advisor warning and is accepted until a paid plan is justified.
+- Leaked-password protection is now available because Pro is active. It is the next focused DB-107 configuration action and must be enabled and verified without changing the existing admin password policy blindly.
 - Custom SMTP and Auth security-notification emails remain disabled. The application already uses a separate server-side email provider, but Supabase Auth SMTP credentials and delivery behavior must be tested before enabling Auth email delivery for users.
 - User-level TOTP is available, but dashboard-account MFA enrollment and recovery-code custody require an interactive owner action. Organization-wide MFA enforcement is paid-only.
 - SSL enforcement is currently disabled. Database network restrictions are technically applied as `0.0.0.0/0` and `::/0`, which is effectively unrestricted. The Vercel application uses Supabase's HTTPS APIs and is unaffected by database-IP restrictions, but operator and GitHub production-verification SQL connections must be mapped before tightening the database allowlist.
@@ -791,7 +790,7 @@ Status: In progress
 - Do not enable restrictive database CIDRs until the production-verification runner and operator recovery paths have stable, tested source addresses.
 - Do not enable CAPTCHA until the browser Auth flow passes the provider token; enabling only the server setting would break sign-in and sign-up requests.
 - Do not enable password reauthentication requirements until the application implements and tests the corresponding nonce/current-password flow.
-- Do not enable paid leaked-password protection or organization-wide MFA enforcement while the project remains intentionally on the Free plan.
+- Enable leaked-password protection, then verify that the Supabase security advisor clears the warning and that normal production authentication still works. Organization-wide MFA enforcement remains a separate paid-plan capability decision.
 
 #### Acceptance criteria
 
@@ -846,6 +845,11 @@ These are not reasons to redesign the current schema immediately. Each change sh
 
 Status: Not started
 
+#### Pro plan baseline (2026-08-25)
+
+- When DB-203 monitoring is activated, use the Pro quotas of 8 GB database disk and 100 GB Storage rather than the former Free-plan 500 MB and 1 GB limits.
+- Pro daily database-backup freshness is a monitor input. PITR is disabled by current cost/risk decision; independent Storage-copy freshness is not a recurring requirement until that policy is revisited.
+
 #### Acceptance criteria
 
 - [ ] Alerts exist for database and Storage capacity thresholds.
@@ -866,6 +870,7 @@ Record decisions that materially affect database behavior or the order of work.
 | ---------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------- |
 | 2026-07-14 | Treat migration reconciliation, highlight preservation, and recoverability as the first production blockers. | These issues affect reproducibility and irreversible user-data loss.                                                                              | Unassigned       | Before implementation                          |
 | 2026-07-15 | Use an isolated disposable hosted project for DB-004 while production remains on the Supabase Free plan.     | Preview branches require a paid plan; a separate project provides a real hosted replay without production data or production-first mutation.      | Repository owner | Revisit after plan upgrade                     |
+| 2026-08-25 | Adopt Pro daily database backups as the current recovery baseline; defer PITR and recurring off-platform copies. | Seven retained daily physical backups meet the approved 24-hour database RPO at the current low-usage stage. The residual Storage/project-loss risk is accepted until revenue, material growth, or business-critical uploads justify further spend and automation. | Repository owner | Before Storage becomes business-critical |
 | 2026-07-15 | Adopt a 24-hour launch RPO, one-hour post-upgrade database RPO target, and four-hour service RTO.            | These targets are achievable for the current data volume while still rejecting manual-only backups and disabled PITR as a launch posture.         | Repository owner | After the first restore drill on the paid plan |
 | 2026-07-15 | Gate production through required GitHub checks and Vercel checks that block production alias assignment.     | Vercel currently begins and aliases a `main` deployment before GitHub validation completes; both source control and traffic promotion need gates. | Repository owner | After the first bypass test                    |
 | 2026-07-17 | Keep cosine similarity as the Gemini retrieval contract and preserve exact completion-boosted reranking. | Production embeddings are not unit-normalized, while the application threshold and returned similarity already use cosine. A separate exact boosted branch avoids an unmeasured relevance change from truncated ANN candidates. | Repository owner | After embedding model or retrieval-contract changes |
@@ -889,6 +894,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-16 | DB-003, production release            | Applied the reviewed `published_at` and Storage bucket-limit migrations as one production batch after a fresh private roles/schema/data backup, pre-change content fingerprint, bucket configuration snapshot, zero-incompatible-object audit, exact dry-run, and explicit authorization. Production is now 79/79 with recorded-SQL parity and a clean dry-run; all 14 schema categories match local replay; 423 verified items were backfilled to their original creation times while 101 drafts remained unpublished and the verified-row `updated_at` fingerprint did not change. The bucket contracts are live, all 981 Storage objects and total bytes are unchanged, five security suites passed, anonymous RPC smoke passed, and seven public application routes returned HTTP 200. Advisors reported only the existing DB-103/DB-106/DB-107 findings, and lint reported only the pre-existing notification enum-cast error. | Private backup `~/.codex/backups/Lifebook/published-at-storage-production-20260716T094053Z`, migration parity and dry-run, 14-category schema fingerprint, content and Storage invariants, production security suites, advisors, lint, anonymous RPC smoke, and public HTTP smoke |
 | 2026-07-17 | DB-003, recovery-point refresh        | Reconfirmed the organization remains on the Free plan with no retained physical backup and PITR disabled, measured the production database at 64,228,499 bytes, and created a fresh read-only logical database export plus complete independent Storage copy. All three database dump hashes and all 981 Storage hashes passed; Storage counts and 1,146,837,837 total bytes match production exactly. This restores a current manual recovery point but does not close the paid-plan, PITR, automated-retention, or alerting gates. | `supabase backups list`, read-only database/Storage inventory, private database backup `~/.codex/backups/Lifebook/db003-production-20260717T085243Z`, independent Storage backup `~/Backups/Netflux/2026-07-17-db003-recovery`, and SHA-256 manifests |
 | 2026-07-25 | DB-003, recovery-point refresh        | Created a fresh read-only logical database export and complete independent Storage copy. All three database dump hashes and all 1,013 Storage hashes passed; production inventories before and after the copy matched the local 261-audio, 752-media, 1,222,139,218-byte backup exactly. The database measured 64,474,259 bytes. No production database row, schema object, migration record, bucket setting, or Storage object was changed. This restores a current manual recovery point but does not close the automated-retention, alerting, Free-plan availability, or launch-RPO gates. | Private database backup `~/.codex/backups/Lifebook/db003-production-20260725T042740Z`, independent Storage backup `~/Backups/Netflux/2026-07-25-db003-recovery`, pre/post live Storage inventories, and SHA-256 manifests |
+| 2026-08-25 | DB-003, Pro backup verification | Verified the organization is on Pro and production is `ACTIVE_HEALTHY`. Seven consecutive daily physical database backups from 2026-08-18 through 2026-08-24 are `COMPLETED`; the latest completed at `2026-08-24T23:44:11.294Z`. PITR remains disabled by approved cost/risk decision. No database, Storage, backup, or configuration mutation was made. | Read-only organization/project inspection and `supabase backups list --project-ref xmuqsgfxuaaophxnwure` |
 | 2026-07-17 | DB-101                                | Confirmed cosine must remain the Gemini retrieval metric, authored the cosine HNSW swap and index-eligible normal query path, preserved exact completion-boosted reranking, and added a fail-closed local/disposable regression check to the required Security Validation workflow. An empty replay passed. On the isolated production recovery snapshot, 97 real query vectors across all five libraries achieved exact top-12 set and order agreement at `ef_search = 200`; 20 representative normal searches improved from approximately 420.5 ms to 66.9 ms total. Production remained read-only and unchanged. | Live catalog/norm/distribution audit, `20260717101501_align_gemini_cosine_index.sql`, `database-gemini-vector-index-check.sql`, empty local reset, restored-snapshot relevance comparison, function-scoped index statistics, and comparative `EXPLAIN (ANALYZE, BUFFERS)` |
 | 2026-07-17 | DB-101, hosted verification           | Created a $0 short-lived project in the production region, replayed all 80 migration names in repository order, verified the cosine index and function settings on PostgreSQL 17.6/pgvector 0.8.2, passed eight database security and behavior suites, generated types, and confirmed no DB-101 fixtures remained. Advisors introduced no security finding and no unused Gemini HNSW warning. The disposable project was deleted and production remained unchanged. | Hosted migration-name parity, catalog verification, eight SQL suites, generated types, advisor comparison with production, fixture cleanup query, CLI deletion, and post-deletion project inventory |
 | 2026-07-17 | DB-101, production release            | Squash-merged green PR #21, created and hash-verified a fresh private logical backup, confirmed an exact one-migration dry-run, and applied the cosine HNSW migration with explicit authorization. Production reached 80/80 and a clean dry-run. All 4,088 embedding rows and their fingerprint remained unchanged; 97 normal-query ordered results matched the pre-deployment fingerprint; 25 boosted queries matched exact reranking; the valid cosine index recorded 97 scans; five security suites and seven public-route checks passed; security advisors did not regress; the obsolete unused-index finding disappeared; and the project remained healthy. | PR #21 and merge `1f852a6`; backup `~/.codex/backups/Lifebook/db101-production-20260717T143148Z`; migration checksum `82956decf8d46b001dec9732a08abee51332680f11083e1607867e903777e6e8`; pre/post data and relevance fingerprints; index catalog/statistics; parity and dry-run; security suites; advisor comparison; lint; Postgres logs; HTTP smoke |
@@ -922,7 +928,7 @@ Complete these safeguards before changing production schema or migration history
 - [x] Take and verify a logical database export.
 - [x] Copy `audio` and `media` Storage objects to an independent location.
 - [x] Record the export time, Storage copy time, operator, source, destination, and restore instructions.
-- [ ] Begin the approved paid-plan upgrade and capacity review from DB-003.
+- [x] Complete the approved paid-plan upgrade and capacity review from DB-003. Pro and seven completed daily backups were verified on 2026-08-25.
 - [x] Assign an owner for DB-106 and schedule its review before 2026-07-31. The review and rollout completed on 2026-07-22.
 
 Phase 0 is a containment and recovery prerequisite. It does not by itself mark DB-002 or DB-003 fully complete; DB-106 subsequently completed its full verification workflow.
@@ -953,7 +959,7 @@ Critical-path shorthand:
 
 `Phase 0 safeguards → DB-001 → DB-004 → DB-002 → DB-101/DB-102 → DB-103/DB-104/DB-105`
 
-Current position on 2026-07-22: DB-001, DB-002, DB-004, and DB-101 through DB-106 are Verified, completing the planned schema-hardening and public-RPC critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on normal production releases. The remaining authenticated DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 has verified independent Storage and local restore evidence, but paid hosted retention/PITR and alerts remain launch gates; the project intentionally remains on the free plan while usage and revenue are low. DB-107 and DB-203 are the next security and operational workstreams while DB-003 continues in parallel.
+Current position on 2026-08-25: DB-001, DB-002, DB-004, and DB-101 through DB-106 are Verified, completing the planned schema-hardening and public-RPC critical path. DB-004 includes a disposable hosted replay, protected `main` rules, and observed Vercel withholding and post-success promotion behavior on normal production releases. The remaining authenticated DB-002 user-path check is operational follow-up rather than a database-protection gate. DB-003 now has Pro daily database backups in addition to verified independent Storage and local restore evidence; PITR and recurring off-platform copies are deliberately deferred. The remaining DB-003 proof is one Pro-backup restore drill and proportionate alert delivery. DB-107 (leaked-password protection) and DB-203 are the next security and operational workstreams.
 
 ### Parallel launch gates
 
