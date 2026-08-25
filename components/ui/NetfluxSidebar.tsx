@@ -11,7 +11,7 @@ import {
     BookOpenTextIcon,
     ChatCircleDotsIcon,
     CheckCircleIcon,
-    FrameCornersIcon,
+    CrosshairIcon,
     HouseIcon,
     MagnifyingGlassIcon,
     NotebookIcon,
@@ -29,7 +29,7 @@ import { SignInLink } from "@/components/ui/SignInLink";
 const navItems = [
     { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
     { icon: HouseIcon, label: "Browse", href: "/browse" },
-    { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
+    { icon: CrosshairIcon, label: "Focus", href: "/focus" },
 ];
 
 const notesItem = { icon: NotebookIcon, label: "Notes", href: "/notes" };
