@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { WelcomeActivation } from "@/components/ui/WelcomeActivation";
+import type { WelcomeContentItem } from "@/components/ui/WelcomeActivation";
 import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 import { normalizeLoginNextPath } from "@/lib/auth-redirect";
 import { APP_NAME } from "@/lib/brand";
 import { createClient } from "@/lib/supabase/server";
 import { resolvePostAuthDestination } from "@/lib/auth-activation";
+import { createPublicServerClient } from "@/lib/supabase/public-server";
 
 export const metadata: Metadata = {
     title: `Welcome - ${APP_NAME}`,
@@ -31,5 +33,18 @@ export default async function WelcomePage({
         redirect(requestedNext);
     }
 
-    return <WelcomeActivation nextUrl={requestedNext} />;
+    const publicSupabase = createPublicServerClient();
+    const { data: items, error } = await publicSupabase
+        .from("content_item")
+        .select("id, title, author, category, cover_image_url, type")
+        .eq("status", "verified")
+        .is("deleted_at", null)
+        .order("published_at", { ascending: false })
+        .limit(24);
+
+    if (error) {
+        console.error("Failed to load welcome starter shelf", error);
+    }
+
+    return <WelcomeActivation nextUrl={requestedNext} items={(items ?? []) as WelcomeContentItem[]} />;
 }

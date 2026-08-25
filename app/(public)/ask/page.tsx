@@ -16,6 +16,7 @@ interface AskPageProps {
         returnTo?: string;
         scope?: string;
         notesScope?: string;
+        prompt?: string;
     }>;
 }
 
@@ -26,6 +27,7 @@ export default async function AskPage({ searchParams }: AskPageProps) {
     const returnTo = resolvedSearchParams?.returnTo;
     const scope = resolvedSearchParams?.scope === "notes" ? "notes" : "library";
     const initialNotesScope = parseNotesChatScope(resolvedSearchParams?.notesScope);
+    const initialPrompt = resolvedSearchParams?.prompt?.trim().slice(0, 500) || undefined;
 
     if (!user) {
         const loginTargetParams = new URLSearchParams();
@@ -112,6 +114,7 @@ export default async function AskPage({ searchParams }: AskPageProps) {
             initialNotesPage={initialNotesPage}
             initialNotesScope={initialNotesScope ?? undefined}
             initialLibrarySnapshot={initialLibrarySnapshot}
+            initialPrompt={initialPrompt}
         />
     );
 }
