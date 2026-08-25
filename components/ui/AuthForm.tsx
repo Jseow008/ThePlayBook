@@ -265,7 +265,7 @@ export function AuthForm({ nextUrl = DEFAULT_LOGIN_REDIRECT_PATH }: AuthFormProp
                         </div>
                     ) : null}
                     <Chrome className={cn("mr-2 h-4 w-4", isLoading !== null && "opacity-50")} />
-                    <span className={cn(isLoading !== null && "opacity-50")}>Sign in with Google</span>
+                    <span className={cn(isLoading !== null && "opacity-50")}>Continue with Google</span>
                 </Button>
             </div>
 

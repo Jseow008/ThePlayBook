@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { normalizeLoginNextPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
+import { resolvePostAuthDestination } from "@/lib/auth-activation";
 
 const SIGNUP_COMPLETION_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -38,6 +39,10 @@ export async function POST(request: Request) {
     }
 
     const user = data.user ?? data.session?.user ?? null;
+    if (!user) {
+        return NextResponse.json({ error: "We couldn't complete your sign-in. Please try again." }, { status: 500 });
+    }
+
     if (user && isRecentUserCreation(user.created_at)) {
         await captureServerAnalyticsEvent({
             event: "signup_completed",
@@ -52,5 +57,11 @@ export async function POST(request: Request) {
         });
     }
 
-    return NextResponse.json({ next: normalizeLoginNextPath(typeof body.next === "string" ? body.next : undefined) });
+    return NextResponse.json({
+        next: await resolvePostAuthDestination(
+            supabase,
+            user,
+            normalizeLoginNextPath(typeof body.next === "string" ? body.next : undefined)
+        ),
+    });
 }
