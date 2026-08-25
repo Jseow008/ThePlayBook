@@ -843,15 +843,32 @@ These are not reasons to redesign the current schema immediately. Each change sh
 
 ### DB-203: Add capacity, query, and recovery monitoring
 
-Status: Not started
+Status: In progress
 
 #### Pro plan baseline (2026-08-25)
 
-- When DB-203 monitoring is activated, use the Pro quotas of 8 GB database disk and 100 GB Storage rather than the former Free-plan 500 MB and 1 GB limits.
+- Use the Pro quotas of 8 GB database disk, 100 GB Storage, and 250 GB monthly egress rather than the former Free-plan limits. These are review thresholds, not automatic shutdown rules.
+- Verify that the organization Spend Cap is enabled, that the organization billing-notification recipient is monitored, and record the billing-cycle end date. Do not enable PITR: it is intentionally deferred and is not covered by Spend Cap.
+- Review the Supabase Usage and Upcoming Invoice pages monthly, and after every database-facing production release. Supabase quota notifications are the low-risk automated signal; this baseline does not claim custom threshold alerts or a continuously running external monitor.
 - Pro daily database-backup freshness is a monitor input. PITR is disabled by current cost/risk decision; independent Storage-copy freshness is not a recurring requirement until that policy is revisited.
+
+| Signal | Review threshold | Action threshold | Response |
+| --- | --- | --- | --- |
+| Database disk | 6.4 GB (80%) | 7.2 GB (90%) | Identify the largest tables/indexes; defer nonessential growth and plan capacity before any limit is reached. |
+| Storage | 80 GB (80%) | 90 GB (90%) | Identify the largest files; pause unexpected or unbounded uploads and evaluate retention. |
+| Monthly egress | 200 GB (80%) | 225 GB (90%) | Investigate public-media delivery and abusive traffic; do not disable Spend Cap impulsively. |
+| Daily database backup | Any expected daily backup absent | Two consecutive missing days, or no restorable backup | Verify the backup inventory and postpone destructive database changes until resolved. |
+| Cost anomaly | Usage or upcoming invoice materially exceeds expectation | Any paid add-on or Spend Cap change is proposed | Review the usage and invoice detail before approving the change. |
+
+#### Deliberately deferred
+
+- Automated collection from the Supabase Metrics API, query telemetry, worker telemetry, and custom threshold notifications remain deferred until a least-privilege, safely stored credential design is approved.
+- A retained Pro-backup restore drill remains required under DB-003; this baseline does not replace it.
 
 #### Acceptance criteria
 
+- [ ] Spend Cap, billing-notification ownership, and the current billing-cycle end date are verified in the Supabase dashboard.
+- [x] Practical Pro capacity, cost, and backup-freshness thresholds and response actions are documented.
 - [ ] Alerts exist for database and Storage capacity thresholds.
 - [ ] Connection saturation, slow queries, lock waits, failed jobs, and API/database error rates are monitored.
 - [ ] Narration processing and request-notification worker freshness, failure, retry, and backlog signals are monitored wherever those workers are scheduled.
@@ -871,6 +888,7 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-14 | Treat migration reconciliation, highlight preservation, and recoverability as the first production blockers. | These issues affect reproducibility and irreversible user-data loss.                                                                              | Unassigned       | Before implementation                          |
 | 2026-07-15 | Use an isolated disposable hosted project for DB-004 while production remains on the Supabase Free plan.     | Preview branches require a paid plan; a separate project provides a real hosted replay without production data or production-first mutation.      | Repository owner | Revisit after plan upgrade                     |
 | 2026-08-25 | Adopt Pro daily database backups as the current recovery baseline; defer PITR and recurring off-platform copies. | Seven retained daily physical backups meet the approved 24-hour database RPO at the current low-usage stage. The residual Storage/project-loss risk is accepted until revenue, material growth, or business-critical uploads justify further spend and automation. | Repository owner | Before Storage becomes business-critical |
+| 2026-08-25 | Adopt the practical Pro monitoring baseline: Spend Cap and billing-recipient verification, monthly Usage/Upcoming Invoice review, post-release backup/advisor review, and documented 80%/90% capacity thresholds. | It provides proportionate cost and recovery oversight without storing a broad production credential or adding paid monitoring. PITR and advanced automated monitoring remain deferred. | Repository owner | At material growth, a cost anomaly, or before broader automated monitoring |
 | 2026-07-15 | Adopt a 24-hour launch RPO, one-hour post-upgrade database RPO target, and four-hour service RTO.            | These targets are achievable for the current data volume while still rejecting manual-only backups and disabled PITR as a launch posture.         | Repository owner | After the first restore drill on the paid plan |
 | 2026-07-15 | Gate production through required GitHub checks and Vercel checks that block production alias assignment.     | Vercel currently begins and aliases a `main` deployment before GitHub validation completes; both source control and traffic promotion need gates. | Repository owner | After the first bypass test                    |
 | 2026-07-17 | Keep cosine similarity as the Gemini retrieval contract and preserve exact completion-boosted reranking. | Production embeddings are not unit-normalized, while the application threshold and returned similarity already use cosine. A separate exact boosted branch avoids an unmeasured relevance change from truncated ANN candidates. | Repository owner | After embedding model or retrieval-contract changes |
