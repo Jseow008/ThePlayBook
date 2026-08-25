@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
     BooksIcon,
-    FrameCornersIcon,
+    CrosshairIcon,
     HouseIcon,
     MagnifyingGlassIcon,
     NotepadIcon,
@@ -23,7 +23,7 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 const navItems = [
     { icon: HouseIcon, label: "Browse", href: "/browse" },
     { icon: MagnifyingGlassIcon, label: "Search", href: "/search" },
-    { icon: FrameCornersIcon, label: "Focus", href: "/focus" },
+    { icon: CrosshairIcon, label: "Focus", href: "/focus" },
     { icon: NotepadIcon, label: "Notes", href: "/notes" },
     { icon: BooksIcon, label: "Library", href: "/library/my-list" },
 ];
