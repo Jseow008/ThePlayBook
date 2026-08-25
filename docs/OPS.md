@@ -767,6 +767,17 @@ Check:
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_KEY`
 
+### 5.1.1 Email code sign-in sends a link instead of a code
+
+The application requests a passwordless email OTP and verifies the entered code at `/api/auth/otp/verify`. The delivery format is controlled in the hosted Supabase dashboard, not this repository.
+
+1. Open **Authentication → Email Templates → Magic Link**.
+2. Replace the confirmation-link content with a simple branded email that includes `{{ .Token }}` (the email OTP), for example: “Your Netflux sign-in code is: `{{ .Token }}`.”
+3. Save the template and request a new sign-in email from `/login` using a non-team inbox.
+4. Enter the received code in the same browser where sign-in was started. It should create a session and redirect to the requested page.
+
+Do not include a clickable `{{ .ConfirmationURL }}` in this template: link scanners and a different browser/device can consume or break a link-based flow. Keep the custom SMTP sender configured, email tracking disabled for authentication mail, and enforce the Supabase email rate limit before a public launch.
+
 ### 5.2 Public pages show no content
 
 Check:

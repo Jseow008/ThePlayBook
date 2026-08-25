@@ -2,10 +2,11 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AuthForm } from "@/components/ui/AuthForm";
 
-const { signInWithOtpMock, toastErrorMock, toastSuccessMock } = vi.hoisted(() => ({
+const { signInWithOtpMock, toastErrorMock, toastSuccessMock, fetchMock } = vi.hoisted(() => ({
     signInWithOtpMock: vi.fn(),
     toastErrorMock: vi.fn(),
     toastSuccessMock: vi.fn(),
+    fetchMock: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/client", () => ({
@@ -26,13 +27,15 @@ vi.mock("sonner", () => ({
 
 describe("AuthForm", () => {
     beforeEach(() => {
+        vi.stubGlobal("fetch", fetchMock);
         signInWithOtpMock.mockReset();
         toastErrorMock.mockReset();
         toastSuccessMock.mockReset();
+        fetchMock.mockReset();
         signInWithOtpMock.mockResolvedValue({ error: null });
     });
 
-    it("creates a new Supabase user when requesting an email magic link", async () => {
+    it("creates a new Supabase user and asks them for a verification code", async () => {
         render(<AuthForm nextUrl="/notes?ask=1" />);
 
         await userEvent.type(screen.getByLabelText(/email address/i), " reader@example.com ");
@@ -42,10 +45,36 @@ describe("AuthForm", () => {
             expect(signInWithOtpMock).toHaveBeenCalledWith({
                 email: "reader@example.com",
                 options: {
-                    emailRedirectTo: "http://localhost:3000/auth/callback?next=%2Fnotes%3Fask%3D1",
                     shouldCreateUser: true,
                 },
             });
+        });
+
+        expect(screen.getByRole("heading", { name: /enter your code/i })).toBeVisible();
+        expect(screen.getByLabelText(/verification code/i)).toBeVisible();
+    });
+
+    it("verifies the code and preserves the intended redirect", async () => {
+        fetchMock.mockResolvedValue({ ok: true, json: vi.fn().mockResolvedValue({ next: "/notes?ask=1" }) });
+        const assignMock = vi.fn();
+        Object.defineProperty(window, "location", {
+            configurable: true,
+            value: { ...window.location, assign: assignMock },
+        });
+
+        render(<AuthForm nextUrl="/notes?ask=1" />);
+        await userEvent.type(screen.getByLabelText(/email address/i), "reader@example.com");
+        await userEvent.click(screen.getByRole("button", { name: /continue with email/i }));
+        await userEvent.type(screen.getByLabelText(/verification code/i), "123456");
+        await userEvent.click(screen.getByRole("button", { name: /verify and continue/i }));
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledWith("/api/auth/otp/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: "reader@example.com", token: "123456", next: "/notes?ask=1" }),
+            });
+            expect(assignMock).toHaveBeenCalledWith("/notes?ask=1");
         });
     });
 
