@@ -605,7 +605,40 @@ Recommended Sentry issue alerts:
 
 High-volume events are throttled before Sentry capture on a best-effort, per warm runtime instance basis. Serverless cold starts and concurrent function instances can still produce more than one Sentry event per logical throttle window, so use Sentry as an alert-grade summary channel and use the structured server log stream for exact event counts and forensic review. Correlate app telemetry with CDN/WAF logs by `request_id`; do not add raw or hashed IP addresses to Sentry context.
 
-Supabase advisor regressions are monitored by the scheduled/manual `Supabase Advisor Audit` GitHub Actions job, not runtime telemetry. Configure repository or team notifications so a failed `supabase-advisor-audit` job pages the security owner for review.
+Supabase advisor regressions are monitored by the scheduled/manual `Supabase Production Monitoring` GitHub Actions job, not runtime telemetry. Configure repository or team notifications so a failed `supabase-production-monitoring` job pages the security owner for review.
+
+#### Database Production Monitoring
+
+The daily/manual `Supabase Production Monitoring` job is the DB-203 operational audit. It is read-only and uses the current Supabase Management API endpoints for project health, read-only SQL, unified ClickHouse logs, backup inventory, and security/performance advisors. It must never receive a Supabase service-role/secret key or a database password.
+
+Required GitHub secrets:
+
+- `SUPABASE_ACCESS_TOKEN`: a Supabase Management API access token that is limited to the project/database read, advisor read, analytics-log read, and backup-inventory read permissions needed by the monitor
+- `SUPABASE_PROJECT_REF`: the production project reference
+
+Supabase Personal Access Tokens inherit the permissions of the issuing user and must not be used here when that user is an organization Owner. On the Free plan, the organization cannot assign Supabase's persistent Read-Only member role. A scoped OAuth application was verified on 2026-07-29 with only `projects:read`, `database:read`, and `analytics:read`; it could access every endpoint used by this monitor. Its access token was issued with a 24-hour lifetime, however, and its refresh token rotated on first use, so it cannot be maintained as a static GitHub secret. The test authorization was revoked and its access token returned HTTP 401 afterward.
+
+Until a durable least-privilege credential mechanism is approved, keep the scheduled job uncredentialed and treat it as implemented but not activated. Do not substitute an Owner PAT, service-role/secret key, database password, or a GitHub token capable of rewriting repository secrets. A short-lived scoped OAuth access token may be used for a supervised manual proof only if it is removed from GitHub immediately afterward; it is not a recurring-monitoring solution.
+
+Required GitHub repository variables:
+
+- `DB203_DATABASE_RECOVERY_POINT_AT`: UTC ISO-8601 timestamp of the last independently verified logical database recovery point
+- `DB203_STORAGE_RECOVERY_POINT_AT`: UTC ISO-8601 timestamp of the last independently verified Storage copy
+- `DB203_RESTORE_DRILL_AT`: UTC ISO-8601 timestamp of the last successful restore drill
+
+The job fails rather than silently skipping when any required value is absent. Update recovery timestamps only after the corresponding backup manifest and checksums pass; changing a timestamp without creating and verifying the recovery point defeats the alert.
+
+Run locally or through the workflow:
+
+```bash
+npm run monitor:supabase-production-health
+npm run security:supabase-advisors
+npm run monitor:supabase-performance-advisors
+```
+
+Default operating thresholds are recorded under DB-203 in [`DATABASE_PRODUCTION_READINESS.md`](./DATABASE_PRODUCTION_READINESS.md). The scheduled workflow leaves `DB203_NARRATION_WORKER_ENABLED=false` because narration is currently admin-triggered, while request-notification processing is scheduled separately in `process-request-notifications.yml`. Set it to `true` when a recurring narration scheduler is actually deployed. Set `DB203_REQUIRE_HOSTED_BACKUP=true` when the launch-stage plan provides hosted backups or PITR.
+
+GitHub Actions failures are the alert channel at the current low-usage stage. Enable Actions failure email/notification routing for the repository owner, run the workflow manually once, and record both the failing signal and received notification before marking its alert criteria complete. Sentry remains the application error and security-signal channel; do not duplicate raw log messages, SQL text, user content, tokens, or object names into Actions output.
 
 #### CSP Violation Reporting
 

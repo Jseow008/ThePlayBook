@@ -41,6 +41,8 @@
     "security:function-acls": "node scripts/check-supabase-function-acls.mjs",
     "security:new-object-access": "node scripts/check-supabase-new-object-access.mjs",
     "security:supabase-advisors": "node scripts/check-supabase-security-advisors.mjs",
+    "monitor:supabase-performance-advisors": "node scripts/check-supabase-security-advisors.mjs --performance",
+    "monitor:supabase-production-health": "node scripts/check-supabase-production-health.mjs",
     "security:analytics-rls": "node scripts/check-supabase-analytics-rls.mjs",
     "security:embedding-table-reads": "node scripts/check-supabase-embedding-table-reads.mjs",
     "security:storage-bucket-listing": "node scripts/check-supabase-storage-bucket-listing.mjs",
