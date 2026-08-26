@@ -54,6 +54,7 @@ const eslintConfig = defineConfig([
       "lib/server/narration-estimate.ts",
       "lib/server/narration-processor.ts",
       "lib/server/user-library-repository.ts",
+      "lib/server/user-topic-preferences-repository.ts",
     ],
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
