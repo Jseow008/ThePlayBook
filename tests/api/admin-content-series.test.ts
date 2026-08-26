@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     DELETE as deleteAdminContent,
     GET as getAdminContentDetail,
@@ -55,9 +55,14 @@ describe("Admin content series support", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.stubEnv("AUTO_GENERATE_NARRATION_ON_PUBLISH", "false");
         (verifyAdminSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(true);
         (rateLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true, retryAfterMs: 0 });
         afterMock.mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+        vi.unstubAllEnvs();
     });
 
     it("persists series metadata when creating content", async () => {
@@ -182,7 +187,7 @@ describe("Admin content series support", () => {
         expect(revalidatePath).toHaveBeenCalledWith("/series/matthew");
     });
 
-    it("auto-queues narration when creating verified content without manual audio", async () => {
+    it("does not auto-queue narration when creating verified content without manual audio", async () => {
         const contentInsert = vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({
@@ -291,14 +296,11 @@ describe("Admin content series support", () => {
         const res = await createAdminContent(req);
 
         expect(res.status).toBe(201);
-        expect(contentUpdate).toHaveBeenCalledWith(expect.objectContaining({
-            narration_status: "queued",
-            narration_error: null,
-        }));
-        expect(afterMock).toHaveBeenCalledTimes(1);
+        expect(contentUpdate).not.toHaveBeenCalled();
+        expect(afterMock).not.toHaveBeenCalled();
     });
 
-    it("returns a narration warning when auto-queue fails during verified content creation", async () => {
+    it("does not return a narration warning when automatic narration is disabled during verified content creation", async () => {
         const contentInsert = vi.fn().mockReturnValue({
             select: vi.fn().mockReturnValue({
                 single: vi.fn().mockResolvedValue({
@@ -387,7 +389,7 @@ describe("Admin content series support", () => {
         const json = await res.json();
 
         expect(res.status).toBe(201);
-        expect(json.data.narration_warning).toMatch(/could not be queued automatically/i);
+        expect(json.data.narration_warning).toBeNull();
     });
 
     it("does not auto-queue narration when creating verified content with manual audio", async () => {
@@ -1418,6 +1420,8 @@ describe("Admin content series support", () => {
     });
 
     it("auto-queues narration when publishing draft content without manual audio", async () => {
+        vi.stubEnv("AUTO_GENERATE_NARRATION_ON_PUBLISH", "true");
+
         const rpc = vi.fn().mockResolvedValue({ error: null });
         const firstSingle = vi.fn().mockResolvedValue({
             data: {
@@ -1529,6 +1533,8 @@ describe("Admin content series support", () => {
     });
 
     it("returns a narration warning when auto-queue fails after publish", async () => {
+        vi.stubEnv("AUTO_GENERATE_NARRATION_ON_PUBLISH", "true");
+
         const rpc = vi.fn().mockResolvedValue({ error: null });
         const firstSingle = vi.fn().mockResolvedValue({
             data: {
