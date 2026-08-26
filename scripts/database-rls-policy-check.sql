@@ -469,10 +469,9 @@ SELECT pg_temp.assert_count(
     2,
     'service role bypasses owner filters'
 );
-SELECT pg_temp.assert_count(
+SELECT pg_temp.expect_insufficient_privilege(
     $$SELECT 1 FROM public.user_topic_preferences WHERE user_id IN ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000102')$$,
-    2,
-    'service role bypasses topic preference owner filters'
+    'service role cannot read topic preferences without a table grant'
 );
 SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.content_request_notifications WHERE id = '00000000-0000-4000-8000-000000000299'$$,
