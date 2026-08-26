@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +35,24 @@ interface WelcomeActivationProps {
   preview?: boolean;
 }
 const MIN_SAVED_ITEMS = 3;
+const TOPIC_LIMIT_MESSAGE = `You can choose up to ${ONBOARDING_TOPIC_MAX_SELECTIONS} topics. Deselect one to choose another.`;
+
+function getTopicSelectionGuidance(selectedCount: number) {
+  if (selectedCount === 0) {
+    return `0 selected · Choose at least ${ONBOARDING_TOPIC_MIN_SELECTIONS}`;
+  }
+
+  if (selectedCount < ONBOARDING_TOPIC_MIN_SELECTIONS) {
+    return `${selectedCount} selected · Choose ${ONBOARDING_TOPIC_MIN_SELECTIONS - selectedCount} more`;
+  }
+
+  if (selectedCount === ONBOARDING_TOPIC_MAX_SELECTIONS) {
+    return `${selectedCount} selected · Maximum reached — deselect one to choose another`;
+  }
+
+  const remainingTopics = ONBOARDING_TOPIC_MAX_SELECTIONS - selectedCount;
+  return `${selectedCount} selected · You can choose ${remainingTopics === 2 ? "up to " : ""}${remainingTopics} more`;
+}
 
 export function WelcomeActivation({
   initialTopicKeys = [],
@@ -48,18 +66,50 @@ export function WelcomeActivation({
     useState<OnboardingTopicKey[]>(initialTopicKeys);
   const [items, setItems] = useState(initialItems);
   const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [topicLimitMessage, setTopicLimitMessage] = useState<string | null>(
+    null,
+  );
   const [isLoadingShelf, setIsLoadingShelf] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [isFinishing, setIsFinishing] = useState(false);
+  const topicLimitTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const toggleTopic = (topicKey: OnboardingTopicKey) =>
-    setTopicKeys((current) => {
-      if (current.includes(topicKey))
-        return current.filter((key) => key !== topicKey);
-      return current.length === ONBOARDING_TOPIC_MAX_SELECTIONS
-        ? current
-        : [...current, topicKey];
-    });
+  useEffect(
+    () => () => {
+      if (topicLimitTimeout.current) clearTimeout(topicLimitTimeout.current);
+    },
+    [],
+  );
+
+  const clearTopicLimitMessage = () => {
+    if (topicLimitTimeout.current) clearTimeout(topicLimitTimeout.current);
+    setTopicLimitMessage(null);
+  };
+
+  const showTopicLimitMessage = () => {
+    if (topicLimitTimeout.current) clearTimeout(topicLimitTimeout.current);
+    setTopicLimitMessage(TOPIC_LIMIT_MESSAGE);
+    topicLimitTimeout.current = setTimeout(() => {
+      setTopicLimitMessage(null);
+      topicLimitTimeout.current = null;
+    }, 3500);
+  };
+
+  const toggleTopic = (topicKey: OnboardingTopicKey) => {
+    if (topicKeys.includes(topicKey)) {
+      clearTopicLimitMessage();
+      setTopicKeys((current) => current.filter((key) => key !== topicKey));
+      return;
+    }
+
+    if (topicKeys.length >= ONBOARDING_TOPIC_MAX_SELECTIONS) {
+      showTopicLimitMessage();
+      return;
+    }
+
+    clearTopicLimitMessage();
+    setTopicKeys((current) => [...current, topicKey]);
+  };
 
   const saveTopicsAndLoadShelf = async () => {
     if (topicKeys.length < ONBOARDING_TOPIC_MIN_SELECTIONS) return;
@@ -202,10 +252,18 @@ export function WelcomeActivation({
                 );
               })}
             </div>
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              {topicKeys.length}/{ONBOARDING_TOPIC_MAX_SELECTIONS} selected ·
-              Choose at least {ONBOARDING_TOPIC_MIN_SELECTIONS}
-            </p>
+            <div className="mt-4 text-center text-xs">
+              <p className="text-muted-foreground" aria-live="polite">
+                {getTopicSelectionGuidance(topicKeys.length)}
+              </p>
+              <p
+                className="mt-2 min-h-4 text-primary"
+                aria-live="polite"
+                role="status"
+              >
+                {topicLimitMessage}
+              </p>
+            </div>
             <div className="mt-8 flex justify-end">
               <Button
                 type="button"

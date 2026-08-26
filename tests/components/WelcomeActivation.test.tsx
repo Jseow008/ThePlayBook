@@ -107,6 +107,66 @@ describe("WelcomeActivation", () => {
     );
   });
 
+  it("guides topic selection and explains the five-topic limit", async () => {
+    render(<WelcomeActivation nextUrl="/browse" items={items} preview />);
+
+    expect(
+      screen.getByText("0 selected · Choose at least 3"),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Psychology & the Brain" }),
+    );
+    expect(screen.getByText("1 selected · Choose 2 more")).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Business & Strategy" }),
+    );
+    expect(screen.getByText("2 selected · Choose 1 more")).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Wealth & Investing" }),
+    );
+    expect(
+      screen.getByText("3 selected · You can choose up to 2 more"),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Habits & Productivity" }),
+    );
+    expect(
+      screen.getByText("4 selected · You can choose 1 more"),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "AI & Emerging Tech" }),
+    );
+    expect(
+      screen.getByText(
+        "5 selected · Maximum reached — deselect one to choose another",
+      ),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Mindset & Philosophy" }),
+    );
+    expect(
+      screen.getByText(
+        "You can choose up to 5 topics. Deselect one to choose another.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Mindset & Philosophy" }),
+    ).toHaveAttribute("aria-pressed", "false");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "AI & Emerging Tech" }),
+    );
+    expect(
+      screen.getByText("4 selected · You can choose 1 more"),
+    ).toBeInTheDocument();
+  });
+
   it("saves three items then takes the user to their library", async () => {
     render(<WelcomeActivation nextUrl="/browse" items={items} />);
 
