@@ -1141,6 +1141,70 @@ describe("FocusFeed", () => {
         });
     });
 
+    it("finishes a mobile card transition before accepting another swipe", async () => {
+        render(<FocusFeed />);
+
+        await screen.findByText("Deep Work");
+        await act(async () => {});
+
+        const list = screen.getByTestId("focus-feed-list");
+        const swipeUp = () => {
+            fireEvent.touchStart(list, {
+                touches: [{ clientX: 32, clientY: 260 }],
+            });
+            fireEvent.touchMove(list, {
+                touches: [{ clientX: 36, clientY: 180 }],
+            });
+            fireEvent.touchEnd(list, {
+                changedTouches: [{ clientX: 36, clientY: 180 }],
+            });
+        };
+
+        swipeUp();
+        swipeUp();
+
+        expect(scrollIntoViewMock).toHaveBeenCalledTimes(1);
+
+        fireEvent(list, new Event("scrollend"));
+        swipeUp();
+
+        expect(scrollIntoViewMock).toHaveBeenCalledTimes(2);
+    });
+
+    it("settles each swipe immediately when reduced motion is enabled", async () => {
+        mediaQueryState.value = {
+            isDesktop: false,
+            prefersReducedMotion: true,
+        };
+
+        render(<FocusFeed />);
+
+        await screen.findByText("Deep Work");
+        await act(async () => {});
+
+        const list = screen.getByTestId("focus-feed-list");
+        const swipeUp = () => {
+            fireEvent.touchStart(list, {
+                touches: [{ clientX: 32, clientY: 260 }],
+            });
+            fireEvent.touchMove(list, {
+                touches: [{ clientX: 36, clientY: 180 }],
+            });
+            fireEvent.touchEnd(list, {
+                changedTouches: [{ clientX: 36, clientY: 180 }],
+            });
+        };
+
+        swipeUp();
+        swipeUp();
+
+        expect(scrollIntoViewMock).toHaveBeenCalledTimes(2);
+        expect(scrollIntoViewMock).toHaveBeenLastCalledWith({
+            block: "start",
+            behavior: "auto",
+        });
+    });
+
     it("shows three desktop takeaways with utility actions, preview, and read CTAs", async () => {
         mediaQueryState.value = {
             isDesktop: true,
