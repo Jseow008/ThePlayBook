@@ -34,6 +34,7 @@ DECLARE
             ('user_highlights', 'authenticated'),
             ('user_library', 'anon'),
             ('user_library', 'authenticated'),
+            ('user_topic_preferences', 'authenticated'),
             ('user_notification_preferences', 'authenticated')
     ),
     expected_function_roles(function_name, arguments, role_name) AS (

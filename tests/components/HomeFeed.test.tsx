@@ -16,6 +16,10 @@ vi.mock("@/components/ui/RecommendationsRow", () => ({
     ),
 }));
 
+vi.mock("@/components/ui/PersonalizedTopicsRow", () => ({
+    PersonalizedTopicsRow: () => <div data-testid="personalized-topics-row" />,
+}));
+
 vi.mock("@/components/ui/Logo", () => ({
     Logo: () => <span>Netflux</span>,
 }));
