@@ -48,7 +48,7 @@ const FOCUS_FEED_SEED_STORAGE_KEY = "focus-feed-seed-v1";
 const MOBILE_SCROLL_HINT_DISMISSED_STORAGE_KEY = "focus-feed-mobile-scroll-hint-dismissed-v1";
 const RESTORE_STATE_WRITE_DELAY_MS = 250;
 const FOCUS_FEED_FETCH_TIMEOUT_MS = 10_000;
-const FOCUS_FEED_GESTURE_LOCK_MS = 420;
+const FOCUS_FEED_TRANSITION_FALLBACK_MS = 900;
 const FOCUS_FEED_WHEEL_THRESHOLD_PX = 48;
 const FOCUS_FEED_TOUCH_THRESHOLD_PX = 44;
 const FOCUS_EXCLUSION_LIMIT = 500;
@@ -314,7 +314,9 @@ export function FocusFeed() {
     const pendingRestoreCardIndexRef = useRef<number | null>(null);
     const desktopScrollCueTimeoutRef = useRef<number | null>(null);
     const mobileScrollHintShowTimeoutRef = useRef<number | null>(null);
-    const gestureNavigationLockTimeoutRef = useRef<number | null>(null);
+    const cardTransitionTimeoutRef = useRef<number | null>(null);
+    const isCardTransitioningRef = useRef(false);
+    const pendingTransitionTargetIndexRef = useRef<number | null>(null);
     const wheelDeltaYRef = useRef(0);
     const touchStartPointRef = useRef<{ x: number; y: number } | null>(null);
     const hasDismissedMobileScrollHintRef = useRef(false);
@@ -351,12 +353,34 @@ export function FocusFeed() {
         }
     }, []);
 
-    const clearGestureNavigationLockTimeout = useCallback(() => {
-        if (gestureNavigationLockTimeoutRef.current !== null) {
-            window.clearTimeout(gestureNavigationLockTimeoutRef.current);
-            gestureNavigationLockTimeoutRef.current = null;
+    const clearCardTransitionTimeout = useCallback(() => {
+        if (cardTransitionTimeoutRef.current !== null) {
+            window.clearTimeout(cardTransitionTimeoutRef.current);
+            cardTransitionTimeoutRef.current = null;
         }
     }, []);
+
+    const settleCardTransition = useCallback(() => {
+        const targetIndex = pendingTransitionTargetIndexRef.current;
+        const list = listRef.current;
+
+        if (targetIndex !== null && list) {
+            const targetCard = list.querySelector<HTMLElement>(
+                `[data-focus-card-index="${targetIndex}"]`
+            );
+
+            if (targetCard) {
+                list.scrollTop = targetCard.offsetTop;
+            }
+
+            activeCardIndexRef.current = targetIndex;
+            setActiveCardIndex(targetIndex);
+        }
+
+        clearCardTransitionTimeout();
+        pendingTransitionTargetIndexRef.current = null;
+        isCardTransitioningRef.current = false;
+    }, [clearCardTransitionTimeout]);
 
     const dismissMobileScrollHint = useCallback(() => {
         clearMobileScrollHintTimeouts();
@@ -404,7 +428,7 @@ export function FocusFeed() {
 
     const scrollToFocusCard = useCallback((direction: -1 | 1) => {
         const list = listRef.current;
-        if (!list || cards.length <= 1 || gestureNavigationLockTimeoutRef.current !== null) {
+        if (!list || cards.length <= 1 || isCardTransitioningRef.current) {
             return false;
         }
 
@@ -427,10 +451,20 @@ export function FocusFeed() {
 
         activeCardIndexRef.current = targetIndex;
         setActiveCardIndex(targetIndex);
-        targetCard.scrollIntoView({
-            block: "start",
-            behavior: prefersReducedMotion ? "auto" : "smooth",
-        });
+        if (prefersReducedMotion) {
+            targetCard.scrollIntoView({ block: "start", behavior: "auto" });
+            return true;
+        }
+
+        isCardTransitioningRef.current = true;
+        pendingTransitionTargetIndexRef.current = targetIndex;
+        targetCard.scrollIntoView({ block: "start", behavior: "smooth" });
+
+        clearCardTransitionTimeout();
+        cardTransitionTimeoutRef.current = window.setTimeout(
+            settleCardTransition,
+            FOCUS_FEED_TRANSITION_FALLBACK_MS
+        );
 
         if (isFocusDesktop) {
             resetDesktopScrollCueTimer();
@@ -438,17 +472,15 @@ export function FocusFeed() {
             dismissMobileScrollHint();
         }
 
-        gestureNavigationLockTimeoutRef.current = window.setTimeout(() => {
-            gestureNavigationLockTimeoutRef.current = null;
-        }, FOCUS_FEED_GESTURE_LOCK_MS);
-
         return true;
     }, [
         cards.length,
+        clearCardTransitionTimeout,
         dismissMobileScrollHint,
         isFocusDesktop,
         prefersReducedMotion,
         resetDesktopScrollCueTimer,
+        settleCardTransition,
     ]);
 
     const clearSheetAnimationTimeouts = useCallback(() => {
@@ -834,6 +866,10 @@ export function FocusFeed() {
 
         const observer = new IntersectionObserver(
             (entries) => {
+                if (isCardTransitioningRef.current) {
+                    return;
+                }
+
                 entries.forEach((entry) => {
                     const target = entry.target as HTMLElement | null;
                     if (!target) {
@@ -923,6 +959,12 @@ export function FocusFeed() {
             return;
         }
 
+        const handleScrollEnd = () => {
+            if (isCardTransitioningRef.current) {
+                settleCardTransition();
+            }
+        };
+
         const handleWheel = (event: WheelEvent) => {
             if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) {
                 return;
@@ -930,7 +972,7 @@ export function FocusFeed() {
 
             event.preventDefault();
 
-            if (gestureNavigationLockTimeoutRef.current !== null) {
+            if (isCardTransitioningRef.current) {
                 return;
             }
 
@@ -945,6 +987,14 @@ export function FocusFeed() {
         };
 
         const handleTouchStart = (event: TouchEvent) => {
+            if (isCardTransitioningRef.current) {
+                touchStartPointRef.current = null;
+                if (event.cancelable) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
             const touch = event.touches[0];
             if (!touch) {
                 touchStartPointRef.current = null;
@@ -958,6 +1008,13 @@ export function FocusFeed() {
         };
 
         const handleTouchMove = (event: TouchEvent) => {
+            if (isCardTransitioningRef.current) {
+                if (event.cancelable) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
             const touch = event.touches[0];
             const startPoint = touchStartPointRef.current;
             if (!touch || !startPoint) {
@@ -972,10 +1029,18 @@ export function FocusFeed() {
         };
 
         const handleTouchEnd = (event: TouchEvent) => {
+            if (isCardTransitioningRef.current) {
+                touchStartPointRef.current = null;
+                if (event.cancelable) {
+                    event.preventDefault();
+                }
+                return;
+            }
+
             const changedTouch = event.changedTouches[0];
             const startPoint = touchStartPointRef.current;
             touchStartPointRef.current = null;
-            if (!changedTouch || !startPoint || gestureNavigationLockTimeoutRef.current !== null) {
+            if (!changedTouch || !startPoint) {
                 return;
             }
 
@@ -992,19 +1057,21 @@ export function FocusFeed() {
         };
 
         list.addEventListener("wheel", handleWheel, { passive: false });
-        list.addEventListener("touchstart", handleTouchStart, { passive: true });
+        list.addEventListener("touchstart", handleTouchStart, { passive: false });
         list.addEventListener("touchmove", handleTouchMove, { passive: false });
         list.addEventListener("touchend", handleTouchEnd);
+        list.addEventListener("scrollend", handleScrollEnd);
 
         return () => {
             list.removeEventListener("wheel", handleWheel);
             list.removeEventListener("touchstart", handleTouchStart);
             list.removeEventListener("touchmove", handleTouchMove);
             list.removeEventListener("touchend", handleTouchEnd);
+            list.removeEventListener("scrollend", handleScrollEnd);
             wheelDeltaYRef.current = 0;
             touchStartPointRef.current = null;
         };
-    }, [cards.length, scrollToFocusCard]);
+    }, [cards.length, scrollToFocusCard, settleCardTransition]);
 
     useEffect(() => {
         resetDesktopScrollCueTimer();
@@ -1068,13 +1135,15 @@ export function FocusFeed() {
         return () => {
             clearDesktopScrollCueTimeout();
             clearMobileScrollHintTimeouts();
-            clearGestureNavigationLockTimeout();
+            clearCardTransitionTimeout();
+            isCardTransitioningRef.current = false;
+            pendingTransitionTargetIndexRef.current = null;
             clearSheetAnimationTimeouts();
             flushRestoreStateWrite();
         };
     }, [
         clearDesktopScrollCueTimeout,
-        clearGestureNavigationLockTimeout,
+        clearCardTransitionTimeout,
         clearMobileScrollHintTimeouts,
         clearSheetAnimationTimeouts,
         flushRestoreStateWrite,
