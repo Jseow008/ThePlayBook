@@ -119,7 +119,7 @@ BEGIN
             SELECT count(*)
             FROM pg_policies
             WHERE schemaname = 'public'
-        ) <> 41
+        ) <> 45
 
         UNION ALL
 
@@ -212,6 +212,11 @@ VALUES
     ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000211', true),
     ('00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-000000000211', false);
 
+INSERT INTO public.user_topic_preferences (user_id, topic_key)
+VALUES
+    ('00000000-0000-4000-8000-000000000101', 'habits_productivity'),
+    ('00000000-0000-4000-8000-000000000102', 'wealth_investing');
+
 INSERT INTO public.user_highlights (
     id,
     user_id,
@@ -299,6 +304,11 @@ SELECT pg_temp.assert_count(
     0,
     'anon cannot see library rows'
 );
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.user_topic_preferences$$,
+    0,
+    'anon cannot see topic preferences'
+);
 SELECT pg_temp.expect_insufficient_privilege(
     $$SELECT * FROM public.admin_content_workbench_readiness LIMIT 1$$,
     'anon cannot read admin readiness view'
@@ -306,6 +316,10 @@ SELECT pg_temp.expect_insufficient_privilege(
 SELECT pg_temp.expect_insufficient_privilege(
     $$INSERT INTO public.user_library (user_id, content_id) VALUES ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000212')$$,
     'anon cannot insert library rows'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$INSERT INTO public.user_topic_preferences (user_id, topic_key) VALUES ('00000000-0000-4000-8000-000000000101', 'business_strategy')$$,
+    'anon cannot insert topic preferences'
 );
 
 RESET ROLE;
@@ -341,6 +355,16 @@ SELECT pg_temp.assert_count(
     'owner cannot see another library row'
 );
 SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.user_topic_preferences WHERE user_id = '00000000-0000-4000-8000-000000000101'$$,
+    1,
+    'owner sees own topic preference'
+);
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.user_topic_preferences WHERE user_id = '00000000-0000-4000-8000-000000000102'$$,
+    0,
+    'owner cannot see another topic preference'
+);
+SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.user_highlights WHERE user_id = '00000000-0000-4000-8000-000000000101'$$,
     1,
     'owner sees own highlight'
@@ -369,6 +393,20 @@ SELECT pg_temp.assert_affected(
     $$UPDATE public.user_library SET is_bookmarked = true WHERE user_id = '00000000-0000-4000-8000-000000000102' AND content_id = '00000000-0000-4000-8000-000000000211'$$,
     0,
     'owner cannot update another library row'
+);
+SELECT pg_temp.assert_affected(
+    $$UPDATE public.user_topic_preferences SET source = 'settings' WHERE user_id = '00000000-0000-4000-8000-000000000101' AND topic_key = 'habits_productivity'$$,
+    1,
+    'owner updates own topic preference'
+);
+SELECT pg_temp.assert_affected(
+    $$DELETE FROM public.user_topic_preferences WHERE user_id = '00000000-0000-4000-8000-000000000102' AND topic_key = 'wealth_investing'$$,
+    0,
+    'owner cannot delete another topic preference'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$INSERT INTO public.user_topic_preferences (user_id, topic_key) VALUES ('00000000-0000-4000-8000-000000000102', 'business_strategy')$$,
+    'owner cannot create another user topic preference'
 );
 SELECT pg_temp.expect_insufficient_privilege(
     $$UPDATE public.user_highlights SET user_id = '00000000-0000-4000-8000-000000000102' WHERE id = '00000000-0000-4000-8000-000000000261'$$,
@@ -431,6 +469,11 @@ SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.user_library WHERE user_id IN ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000102')$$,
     2,
     'service role bypasses owner filters'
+);
+SELECT pg_temp.assert_count(
+    $$SELECT 1 FROM public.user_topic_preferences WHERE user_id IN ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000102')$$,
+    2,
+    'service role bypasses topic preference owner filters'
 );
 SELECT pg_temp.assert_count(
     $$SELECT 1 FROM public.content_request_notifications WHERE id = '00000000-0000-4000-8000-000000000299'$$,
