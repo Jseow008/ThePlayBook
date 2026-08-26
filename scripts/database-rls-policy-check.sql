@@ -304,10 +304,9 @@ SELECT pg_temp.assert_count(
     0,
     'anon cannot see library rows'
 );
-SELECT pg_temp.assert_count(
+SELECT pg_temp.expect_insufficient_privilege(
     $$SELECT 1 FROM public.user_topic_preferences$$,
-    0,
-    'anon cannot see topic preferences'
+    'anon cannot read topic preferences'
 );
 SELECT pg_temp.expect_insufficient_privilege(
     $$SELECT * FROM public.admin_content_workbench_readiness LIMIT 1$$,
