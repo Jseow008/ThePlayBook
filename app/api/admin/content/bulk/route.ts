@@ -5,6 +5,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
+import { isAutomaticNarrationOnPublishEnabled } from "@/lib/server/narration-policy";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 import { processNextStoryImageJob } from "@/lib/server/story-image-processor";
@@ -195,35 +196,37 @@ export async function POST(request: NextRequest) {
                 }
 
                 for (const item of eligibleToPublish) {
-                    try {
-                        const { queued } = await queueNarrationJobIfEligible({
-                            supabase,
-                            contentId: item.id,
-                            row: {
-                                audio_url: item.audio_url,
-                                narration_status: item.narration_status,
-                                narration_error: item.narration_error,
-                                narration_requested_at: item.narration_requested_at,
-                                narration_started_at: item.narration_started_at,
-                                narration_completed_at: item.narration_completed_at,
-                            },
-                        });
+                    if (isAutomaticNarrationOnPublishEnabled()) {
+                        try {
+                            const { queued } = await queueNarrationJobIfEligible({
+                                supabase,
+                                contentId: item.id,
+                                row: {
+                                    audio_url: item.audio_url,
+                                    narration_status: item.narration_status,
+                                    narration_error: item.narration_error,
+                                    narration_requested_at: item.narration_requested_at,
+                                    narration_started_at: item.narration_started_at,
+                                    narration_completed_at: item.narration_completed_at,
+                                },
+                            });
 
-                        if (queued) {
-                            queuedCount += 1;
+                            if (queued) {
+                                queuedCount += 1;
+                            }
+                        } catch (queueError) {
+                            skipped.push({
+                                id: item.id,
+                                title: item.title,
+                                reason: "Published, but narration could not be queued automatically.",
+                            });
+                            logApiError({
+                                requestId,
+                                route: "/api/admin/content/bulk",
+                                message: "Failed to auto-queue narration during bulk publish",
+                                error: queueError,
+                            });
                         }
-                    } catch (queueError) {
-                        skipped.push({
-                            id: item.id,
-                            title: item.title,
-                            reason: "Published, but narration could not be queued automatically.",
-                        });
-                        logApiError({
-                            requestId,
-                            route: "/api/admin/content/bulk",
-                            message: "Failed to auto-queue narration during bulk publish",
-                            error: queueError,
-                        });
                     }
 
                     try {

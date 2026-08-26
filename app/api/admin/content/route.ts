@@ -11,6 +11,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { apiError, getRequestId, isUniqueConstraintViolation, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { getVerifiedContentIssues } from "@/lib/server/admin-content-publish";
+import { isAutomaticNarrationOnPublishEnabled } from "@/lib/server/narration-policy";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 import { processNextStoryImageJob } from "@/lib/server/story-image-processor";
@@ -524,7 +525,11 @@ export async function POST(request: NextRequest) {
         let narrationWarning: string | null = null;
         let storyImageWarning: string | null = null;
 
-        if (contentData.status === "verified" && !contentData.audio_url) {
+        if (
+            isAutomaticNarrationOnPublishEnabled()
+            && contentData.status === "verified"
+            && !contentData.audio_url
+        ) {
             try {
                 const { queued } = await queueNarrationJobIfEligible({
                     supabase,
