@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Compass, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -123,24 +123,33 @@ export function WelcomeActivation({
     }
   };
 
-  const saveItem = async (item: WelcomeContentItem) => {
-    if (savedIds.includes(item.id) || savingId) return;
+  const toggleSavedItem = async (item: WelcomeContentItem) => {
+    if (savingId) return;
+    const isSaved = savedIds.includes(item.id);
     if (preview) {
-      setSavedIds((current) => [...current, item.id]);
+      setSavedIds((current) =>
+        isSaved
+          ? current.filter((savedId) => savedId !== item.id)
+          : [...current, item.id],
+      );
       return;
     }
     setSavingId(item.id);
     try {
       const response = await fetch("/api/library/bookmarks", {
-        method: "POST",
+        method: isSaved ? "DELETE" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content_item_id: item.id }),
       });
-      if (!response.ok) throw new Error("Failed to save item");
-      setSavedIds((current) => [...current, item.id]);
+      if (!response.ok) throw new Error("Failed to update saved item");
+      setSavedIds((current) =>
+        isSaved
+          ? current.filter((savedId) => savedId !== item.id)
+          : [...current, item.id],
+      );
     } catch (error) {
-      console.error("Failed to save welcome item", error);
-      toast.error("We couldn't save that summary. Please try again.");
+      console.error("Failed to update welcome item", error);
+      toast.error("We couldn't update that summary. Please try again.");
     } finally {
       setSavingId(null);
     }
@@ -149,10 +158,7 @@ export function WelcomeActivation({
   return (
     <div className="min-h-screen bg-background px-4 py-8 sm:flex sm:items-center sm:justify-center sm:py-12">
       <section className="mx-auto w-full max-w-3xl rounded-2xl border border-border/50 bg-card/35 p-6 shadow-sm backdrop-blur-sm sm:p-9">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Compass className="h-5 w-5" />
-          </div>
+        <div className="flex justify-end">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             Step {step} of 2
           </p>
@@ -238,12 +244,12 @@ export function WelcomeActivation({
                       key={item.id}
                       type="button"
                       aria-pressed={saved}
-                      aria-label={`${saved ? "Saved" : "Save"} ${item.title} to your library`}
+                      aria-label={`${saved ? "Remove" : "Save"} ${item.title} ${saved ? "from" : "to"} your library`}
                       className={`relative flex w-full gap-3 rounded-xl border p-3 text-left transition-all duration-200 sm:block ${saved ? "border-primary bg-primary/15 shadow-[0_0_0_1px_hsl(var(--primary)/0.2),0_10px_24px_hsl(var(--primary)/0.1)]" : "border-border/55 bg-card/30 hover:border-primary/45 hover:bg-card/50"}`}
-                      onClick={() => void saveItem(item)}
-                      disabled={saved || Boolean(savingId)}
+                      onClick={() => void toggleSavedItem(item)}
+                      disabled={Boolean(savingId)}
                     >
-                      <div className="relative flex h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-primary/10 text-primary sm:h-24 sm:w-full">
+                      <div className="relative flex h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted/45 sm:h-24 sm:w-full">
                         {item.cover_image_url ? (
                           <ResilientImage
                             src={item.cover_image_url}
@@ -253,9 +259,7 @@ export function WelcomeActivation({
                             className="object-cover"
                             surface="content-card"
                           />
-                        ) : (
-                          <Compass className="h-5 w-5" />
-                        )}
+                        ) : null}
                       </div>
                       <div className="min-w-0 flex-1 sm:mt-3">
                         <p className="truncate text-sm font-semibold text-foreground">
@@ -273,9 +277,11 @@ export function WelcomeActivation({
                             <Check className="h-3.5 w-3.5" />
                           ) : null}
                           {isSaving
-                            ? "Saving…"
+                            ? saved
+                              ? "Removing…"
+                              : "Saving…"
                             : saved
-                              ? "Saved to your library"
+                              ? "Selected · click to remove"
                               : "Select to save"}
                         </p>
                       </div>

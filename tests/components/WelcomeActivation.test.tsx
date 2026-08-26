@@ -154,6 +154,45 @@ describe("WelcomeActivation", () => {
     });
   });
 
+  it("lets a user unselect a starter item before finishing", async () => {
+    render(<WelcomeActivation nextUrl="/browse" items={items} preview />);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Psychology & the Brain" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Business & Strategy" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Wealth & Investing" }),
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: /build your starter shelf/i }),
+    );
+
+    const itemButton = await screen.findByRole("button", {
+      name: /save the psychology of money to your library/i,
+    });
+    await userEvent.click(itemButton);
+    expect(
+      screen.getByRole("button", {
+        name: /remove the psychology of money from your library/i,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: /remove the psychology of money from your library/i,
+      }),
+    );
+    expect(
+      screen.getByRole("button", {
+        name: /save the psychology of money to your library/i,
+      }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByText("0/3 saved")).toBeInTheDocument();
+  });
+
   it("keeps the user on welcome when activation cannot be saved", async () => {
     rpcMock.mockResolvedValue({ error: new Error("Database unavailable") });
     render(<WelcomeActivation nextUrl="/browse" items={items} />);
