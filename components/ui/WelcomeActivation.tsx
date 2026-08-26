@@ -240,7 +240,7 @@ export function WelcomeActivation({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => toggleTopic(topic.key)}
-                    className={`rounded-xl border px-4 py-4 text-sm font-medium transition-all duration-200 ${selected ? "border-primary bg-primary/20 text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_10px_24px_hsl(var(--primary)/0.12)]" : "border-border/60 bg-card/35 text-foreground hover:border-primary/45 hover:bg-card/60"}`}
+                    className={`rounded-xl border px-4 py-4 text-sm font-medium transition-all duration-200 ${selected ? "border-primary bg-primary/20 text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_10px_24px_hsl(var(--primary)/0.12)] hover:border-primary/90 hover:bg-primary/25" : "border-border/60 bg-card/35 text-foreground hover:-translate-y-0.5 hover:border-primary/45 hover:bg-card/60 hover:shadow-[0_8px_20px_hsl(var(--background)/0.28)]"}`}
                   >
                     {topic.label}
                     {selected && (
