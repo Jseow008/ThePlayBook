@@ -24,6 +24,7 @@ import {
     shouldInvalidateContentEmbedding,
 } from "@/lib/server/admin-content-publish";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
+import { isAutomaticNarrationOnPublishEnabled } from "@/lib/server/narration-policy";
 import { processNextNarrationJob } from "@/lib/server/narration-processor";
 import { queueNarrationJobIfEligible } from "@/lib/server/narration-queue";
 import { processNextStoryImageJob } from "@/lib/server/story-image-processor";
@@ -414,7 +415,9 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         const nextAudioUrl = contentData.audio_url !== undefined ? normalizeAudioUrl(contentData.audio_url) : undefined;
         const isManualAudioOverride = nextAudioUrl !== undefined && nextAudioUrl !== existingAudioUrl;
         const shouldTrackNarrationFreshness = currentStatus === "verified" || nextStatus === "verified";
-        const shouldAutoQueueNarration = currentStatus === "draft" && nextStatus === "verified";
+        const shouldAutoQueueNarration = isAutomaticNarrationOnPublishEnabled()
+            && currentStatus === "draft"
+            && nextStatus === "verified";
         const shouldCheckNarrationStale = Boolean(
             shouldTrackNarrationFreshness
             && existingAudioUrl
