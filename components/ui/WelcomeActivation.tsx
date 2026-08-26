@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bookmark, Check, Compass, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Compass, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ResilientImage } from "@/components/ui/ResilientImage";
@@ -184,10 +184,14 @@ export function WelcomeActivation({
                     type="button"
                     aria-pressed={selected}
                     onClick={() => toggleTopic(topic.key)}
-                    className={`rounded-xl border px-4 py-4 text-sm font-medium transition-colors ${selected ? "border-primary bg-primary/12 text-primary" : "border-border/60 bg-card/35 text-foreground hover:border-primary/45 hover:bg-card/60"}`}
+                    className={`rounded-xl border px-4 py-4 text-sm font-medium transition-all duration-200 ${selected ? "border-primary bg-primary/20 text-primary shadow-[0_0_0_1px_hsl(var(--primary)/0.25),0_10px_24px_hsl(var(--primary)/0.12)]" : "border-border/60 bg-card/35 text-foreground hover:border-primary/45 hover:bg-card/60"}`}
                   >
                     {topic.label}
-                    {selected && <Check className="ml-2 inline h-3.5 w-3.5" />}
+                    {selected && (
+                      <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground align-middle">
+                        <Check className="h-3.5 w-3.5" />
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -210,7 +214,7 @@ export function WelcomeActivation({
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
-                    See your starter shelf{" "}
+                    Build your starter shelf{" "}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </>
                 )}
@@ -222,7 +226,7 @@ export function WelcomeActivation({
             <StepHeading
               eyebrow="Build your starter shelf"
               title="Save a few ideas to return to."
-              description="Pick three summaries to make your library useful from the start. You can skip this and explore on your own."
+              description="Based on your selected topics. Pick three summaries to make your library useful from the start, or skip and explore on your own."
             />
             {items.length > 0 ? (
               <div className="mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -230,9 +234,14 @@ export function WelcomeActivation({
                   const saved = savedIds.includes(item.id);
                   const isSaving = savingId === item.id;
                   return (
-                    <article
+                    <button
                       key={item.id}
-                      className="flex gap-3 rounded-xl border border-border/55 bg-card/30 p-3 text-left sm:block"
+                      type="button"
+                      aria-pressed={saved}
+                      aria-label={`${saved ? "Saved" : "Save"} ${item.title} to your library`}
+                      className={`relative flex w-full gap-3 rounded-xl border p-3 text-left transition-all duration-200 sm:block ${saved ? "border-primary bg-primary/15 shadow-[0_0_0_1px_hsl(var(--primary)/0.2),0_10px_24px_hsl(var(--primary)/0.1)]" : "border-border/55 bg-card/30 hover:border-primary/45 hover:bg-card/50"}`}
+                      onClick={() => void saveItem(item)}
+                      disabled={saved || Boolean(savingId)}
                     >
                       <div className="relative flex h-16 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-primary/10 text-primary sm:h-24 sm:w-full">
                         {item.cover_image_url ? (
@@ -255,30 +264,22 @@ export function WelcomeActivation({
                         <p className="mt-1 truncate text-xs text-muted-foreground">
                           {item.author || item.category || item.type}
                         </p>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant={saved ? "secondary" : "outline"}
-                          className="mt-3 h-8 w-full text-xs"
-                          onClick={() => void saveItem(item)}
-                          disabled={saved || Boolean(savingId)}
+                        <p
+                          className={`mt-3 flex items-center gap-1.5 text-xs font-medium ${saved ? "text-primary" : "text-muted-foreground"}`}
                         >
                           {isSaving ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : saved ? (
-                            <>
-                              <Check className="mr-1.5 h-3.5 w-3.5" />
-                              Saved
-                            </>
-                          ) : (
-                            <>
-                              <Bookmark className="mr-1.5 h-3.5 w-3.5" />
-                              Save
-                            </>
-                          )}
-                        </Button>
+                            <Check className="h-3.5 w-3.5" />
+                          ) : null}
+                          {isSaving
+                            ? "Saving…"
+                            : saved
+                              ? "Saved to your library"
+                              : "Select to save"}
+                        </p>
                       </div>
-                    </article>
+                    </button>
                   );
                 })}
               </div>
@@ -291,7 +292,7 @@ export function WelcomeActivation({
             <p className="mt-4 text-center text-xs text-muted-foreground">
               {savedIds.length}/{MIN_SAVED_ITEMS} saved
             </p>
-            <div className="mt-8 flex flex-col-reverse items-center justify-between gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col-reverse items-center justify-end gap-3 sm:flex-row">
               <Button
                 type="button"
                 variant="ghost"

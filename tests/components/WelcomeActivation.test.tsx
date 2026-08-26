@@ -79,12 +79,12 @@ describe("WelcomeActivation", () => {
     render(<WelcomeActivation nextUrl="/browse" items={items} />);
 
     const continueButton = screen.getByRole("button", {
-      name: /see your starter shelf/i,
+      name: /build your starter shelf/i,
     });
     expect(continueButton).toBeDisabled();
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Cognitive Science & Brain" }),
+      screen.getByRole("button", { name: "Psychology & the Brain" }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: "Business & Strategy" }),
@@ -111,7 +111,7 @@ describe("WelcomeActivation", () => {
     render(<WelcomeActivation nextUrl="/browse" items={items} />);
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Cognitive Science & Brain" }),
+      screen.getByRole("button", { name: "Psychology & the Brain" }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: "Business & Strategy" }),
@@ -120,11 +120,11 @@ describe("WelcomeActivation", () => {
       screen.getByRole("button", { name: "Wealth & Investing" }),
     );
     await userEvent.click(
-      screen.getByRole("button", { name: /see your starter shelf/i }),
+      screen.getByRole("button", { name: /build your starter shelf/i }),
     );
 
     const saveButtons = await screen.findAllByRole("button", {
-      name: /^save$/i,
+      name: /save .* to your library/i,
     });
     for (const button of saveButtons) await userEvent.click(button);
 
@@ -159,7 +159,7 @@ describe("WelcomeActivation", () => {
     render(<WelcomeActivation nextUrl="/browse" items={items} />);
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Cognitive Science & Brain" }),
+      screen.getByRole("button", { name: "Psychology & the Brain" }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: "Business & Strategy" }),
@@ -168,7 +168,7 @@ describe("WelcomeActivation", () => {
       screen.getByRole("button", { name: "Wealth & Investing" }),
     );
     await userEvent.click(
-      screen.getByRole("button", { name: /see your starter shelf/i }),
+      screen.getByRole("button", { name: /build your starter shelf/i }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: /skip for now/i }),
@@ -186,7 +186,7 @@ describe("WelcomeActivation", () => {
     render(<WelcomeActivation nextUrl="/browse" items={items} preview />);
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Cognitive Science & Brain" }),
+      screen.getByRole("button", { name: "Psychology & the Brain" }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: "Business & Strategy" }),
@@ -195,7 +195,7 @@ describe("WelcomeActivation", () => {
       screen.getByRole("button", { name: "Wealth & Investing" }),
     );
     await userEvent.click(
-      screen.getByRole("button", { name: /see your starter shelf/i }),
+      screen.getByRole("button", { name: /build your starter shelf/i }),
     );
     await userEvent.click(
       screen.getByRole("button", { name: /skip for now/i }),

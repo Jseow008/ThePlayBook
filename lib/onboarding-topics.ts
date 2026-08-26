@@ -36,17 +36,17 @@ export const ONBOARDING_TOPICS = [
   },
   {
     key: "cognitive_science_brain",
-    label: "Cognitive Science & Brain",
+    label: "Psychology & the Brain",
     categories: ["Psychology", "Science", "Behavioral Economics"],
   },
   {
     key: "human_behavior_social",
-    label: "Human Behavior & Social Dynamics",
+    label: "Human Behavior",
     categories: ["Psychology", "Relationships", "Lifestyle"],
   },
   {
     key: "health_longevity_nutrition",
-    label: "Health, Longevity & Nutrition",
+    label: "Health & Longevity",
     categories: [
       "Health & Nutrition",
       "Fitness",
@@ -56,7 +56,7 @@ export const ONBOARDING_TOPICS = [
   },
   {
     key: "science_universe",
-    label: "Science & the Universe",
+    label: "Science & Discovery",
     categories: ["Science"],
   },
   {
