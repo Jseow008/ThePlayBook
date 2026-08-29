@@ -408,12 +408,12 @@ describe('ReaderView', () => {
     it.each([
         { label: 'without narration', audioUrl: null },
         { label: 'with narration', audioUrl: 'https://example.com/audio.mp3' },
-    ])('opens the first section for a new reader $label without scrolling or starting audio', async ({ audioUrl }) => {
+    ])('keeps all sections collapsed for a new reader $label without scrolling or starting audio', async ({ audioUrl }) => {
         render(<ReaderView content={{ ...mockContent, audio_url: audioUrl }} />);
 
         await waitFor(() => {
             const latestAccordionProps = segmentAccordionSpy.mock.lastCall?.[0];
-            expect(latestAccordionProps?.expandedSegmentId).toBe('seg-1');
+            expect(latestAccordionProps?.expandedSegmentId).toBeNull();
             expect(latestAccordionProps?.scrollRequest).toBeNull();
             expect(latestAccordionProps?.activeNarratedSegmentId).toBeNull();
             expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
@@ -895,7 +895,7 @@ describe('ReaderView', () => {
         const { container } = render(<ReaderView content={contentWithSecondSegment} />);
 
         await waitFor(() => {
-            expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBe('seg-1');
+            expect(segmentAccordionSpy.mock.lastCall?.[0]?.expandedSegmentId).toBeNull();
         });
 
         let jumpPromise: Promise<void> | undefined;
@@ -1027,7 +1027,7 @@ describe('ReaderView', () => {
 
         render(<ReaderView content={timedContent} />);
 
-        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
+        expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
 
         fireEvent.click(screen.getByTestId('sync-audio-seg-2'));
 
@@ -1310,7 +1310,7 @@ describe('ReaderView', () => {
         render(<ReaderView content={timedContent} />);
 
         await waitFor(() => {
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
             expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
             expect(readerHeroHeaderSpy).toHaveBeenLastCalledWith(expect.objectContaining({
                 initialAudioTimeSec: 0,
@@ -1503,13 +1503,13 @@ describe('ReaderView', () => {
         });
     });
 
-    it('keeps the first section open when narration timings are unavailable', async () => {
+    it('keeps sections collapsed when audio sync has no narration timings', async () => {
         render(<ReaderView content={{ ...mockContent, audio_url: 'https://example.com/audio.mp3' }} />);
 
         fireEvent.click(screen.getByTestId('sync-audio-seg-1'));
 
         await waitFor(() => {
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
         });
     });
 
@@ -1763,7 +1763,7 @@ describe('ReaderView', () => {
 
         await waitFor(() => {
             expect(localStorageState.has(audioResumeKey('guest', 'test-item-1'))).toBe(false);
-            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('seg-1');
+            expect(screen.getByTestId('mock-segment-accordion')).toHaveTextContent('none');
         });
     });
 });

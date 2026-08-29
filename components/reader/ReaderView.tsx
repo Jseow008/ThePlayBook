@@ -361,7 +361,6 @@ export function ReaderView({ content }: ReaderViewProps) {
         if (!savedProgress) {
             if (!content.audio_url) {
                 handledReaderEntryRef.current = readerEntryKey;
-                setExpandedSegmentId(content.segments[0]?.id ?? null);
             }
             return;
         }
@@ -432,7 +431,7 @@ export function ReaderView({ content }: ReaderViewProps) {
 
         if (hydratedResume && hydratedResume.audioSource !== content.audio_url) {
             clearScopedAudioResume(localStorage, storageScope, content.id);
-            setExpandedSegmentId(content.segments[0]?.id ?? null);
+            setExpandedSegmentId(null);
             return;
         }
 
@@ -440,7 +439,7 @@ export function ReaderView({ content }: ReaderViewProps) {
         setInitialAudioTimeSec(resumeTimeSec);
 
         if (resumeTimeSec <= 0) {
-            setExpandedSegmentId(content.segments[0]?.id ?? null);
+            setExpandedSegmentId(null);
             return;
         }
 
