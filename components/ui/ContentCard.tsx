@@ -168,8 +168,9 @@ function BaseContentCard({
     const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
     const SecondaryRemoveIcon = secondaryRemoveIcon === "archive" ? Archive : Trash2;
 
-    const createdAt = item.created_at ? new Date(item.created_at) : null;
-    const isNew = createdAt ? createdAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false;
+    const publicationDate = item.published_at ?? item.created_at;
+    const publishedAt = publicationDate ? new Date(publicationDate) : null;
+    const isNew = publishedAt ? publishedAt > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) : false;
     const renderNewBadge = isNew && !showCompletedBadge;
     const hasAudioSummary = Boolean(item.audio_url?.trim());
     const linkLabel = getContentCardLabel(href, item.title, hasAudioSummary);
