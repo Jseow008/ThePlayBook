@@ -118,6 +118,7 @@ interface AskClientPageProps {
     initialNotesPage?: HighlightsPage;
     initialNotesScope?: NotesChatScope;
     initialLibrarySnapshot?: LibrarySnapshot;
+    initialPrompt?: string;
 }
 
 export function AskClientPage({
@@ -126,6 +127,7 @@ export function AskClientPage({
     initialNotesPage,
     initialNotesScope,
     initialLibrarySnapshot,
+    initialPrompt,
 }: AskClientPageProps) {
     const {
         messages,
@@ -136,7 +138,7 @@ export function AskClientPage({
         transport: chatTransport,
     });
 
-    const [input, setInput] = useState("");
+    const [input, setInput] = useState(initialPrompt ?? "");
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     // Full Ask layout follows lg app chrome behavior, not generic content desktop.
     const isAskFullLayout = useMediaQuery(VIEWPORT_QUERIES.askFullLayout);
