@@ -10,7 +10,7 @@ import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
-const REFLECTION_PROMPT = "What idea from this will stay with you?";
+const REFLECTION_PROMPT = "What idea do you want to remember from this?";
 const REFLECTION_MAX_LENGTH = 1_000;
 
 function getDraftKey(contentId: string) {
