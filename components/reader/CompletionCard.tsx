@@ -127,7 +127,7 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
                         {existingReflection && <Pencil className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />}
                     </div>
                     <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
-                        {existingReflection ? "Edit reflection" : "Take a moment"}
+                        {existingReflection ? "Edit reflection" : "Write a reflection"}
                         <ArrowRight className="size-3 group-hover:translate-x-1 transition-transform" />
                     </div>
                 </button>
@@ -157,7 +157,7 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
                             </div>
                         </div>
                         <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
-                            Start conversation
+                            Start a conversation
                             <ArrowRight className="size-3 group-hover:translate-x-1 transition-transform" />
                         </div>
                     </button>
