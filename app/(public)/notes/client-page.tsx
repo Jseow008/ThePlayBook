@@ -15,6 +15,7 @@ import {
     ExternalLink,
     Filter,
     Highlighter,
+    Lightbulb,
     Loader2,
     Search,
     SlidersHorizontal,
@@ -28,6 +29,7 @@ import {
     type HighlightsPage,
     type HighlightWithContent,
 } from "@/hooks/useHighlights";
+import { useReflections, type ReflectionWithContent } from "@/hooks/useReflections";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { toast } from "sonner";
@@ -40,12 +42,13 @@ import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
-type ItemTypeFilter = "all" | "note" | "highlight";
+type ItemTypeFilter = "all" | "note" | "highlight" | "reflection";
 type SortDirection = "newest" | "oldest";
 type ColorFilter = "all" | "yellow" | "blue" | "green" | "red" | "purple";
 
 interface BrainClientPageProps {
     initialPage: HighlightsPage;
+    initialReflections?: ReflectionWithContent[];
     initialAskOpen?: boolean;
 }
 
@@ -90,7 +93,7 @@ const NotesAskPanel = dynamic(
 );
 
 function getValidTypeFilter(value: string | null): ItemTypeFilter {
-    return value === "note" || value === "highlight" ? value : DEFAULT_SELECTED_TYPE;
+    return value === "note" || value === "highlight" || value === "reflection" ? value : DEFAULT_SELECTED_TYPE;
 }
 
 function getValidSortDirection(value: string | null): SortDirection {
@@ -129,7 +132,7 @@ function buildScopeSummary({
     }
 
     if (selectedType !== "all") {
-        parts.push(selectedType === "note" ? "notes only" : "highlights only");
+        parts.push(selectedType === "note" ? "notes only" : selectedType === "reflection" ? "reflections only" : "highlights only");
     }
 
     if (selectedColor !== "all") {
@@ -389,6 +392,51 @@ function HighlightListItem({
     );
 }
 
+function ReflectionListItem({ item }: { item: ReflectionWithContent }) {
+    const href = item.content_item
+        ? buildCanonicalReadPath(item.content_item.id, item.content_item.title)
+        : null;
+
+    const content = (
+        <>
+            <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                    <Lightbulb className="size-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                    <h3 className="line-clamp-1 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
+                        {item.content_item?.title || "Saved reflection"}
+                    </h3>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.76rem] text-muted-foreground">
+                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-primary">Reflection</span>
+                        <span className="text-muted-foreground/40">•</span>
+                        <time dateTime={item.created_at}>{format(new Date(item.created_at), "MMM d, h:mm a")}</time>
+                    </div>
+                </div>
+            </div>
+            <p className="mt-4 max-w-3xl text-[0.97rem] leading-6 text-foreground/92">{item.reflection_text}</p>
+        </>
+    );
+
+    return (
+        <div className="group relative overflow-hidden rounded-2xl bg-primary/[0.045] ring-1 ring-primary/15 transition-[background-color,box-shadow] hover:bg-primary/[0.08] hover:shadow-[0_18px_40px_-32px_rgba(255,255,255,0.28)]">
+            <div aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-primary" />
+            <div className="flex items-start gap-2 p-3 sm:p-4">
+                {href ? (
+                    <Link href={href} className="min-w-0 flex-1 rounded-xl px-3 py-2 transition-colors hover:bg-background/20 focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`Open reflection for ${item.content_item?.title || "this read"}`}>
+                        {content}
+                    </Link>
+                ) : <div className="min-w-0 flex-1 px-3 py-2">{content}</div>}
+                {href && (
+                    <Link href={href} className="mt-0.5 rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-background/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Open reflection in reader">
+                        <ExternalLink className="size-4" />
+                    </Link>
+                )}
+            </div>
+        </div>
+    );
+}
+
 interface NoteEditorOverlayProps {
     item: HighlightWithContent | null;
     draftNote: string;
@@ -579,7 +627,7 @@ function NoteEditorOverlay({
     );
 }
 
-export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainClientPageProps) {
+export function BrainClientPage({ initialPage, initialReflections = [], initialAskOpen = false }: BrainClientPageProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -617,6 +665,11 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         isLoading,
         isError,
     } = useInfiniteHighlights(undefined, { initialPage });
+    const {
+        data: reflections = initialReflections,
+        isLoading: reflectionsLoading,
+        isError: reflectionsError,
+    } = useReflections(undefined, initialReflections);
 
     const highlights = useMemo(
         () => data?.pages.flatMap((page) => page.data) ?? initialPage.data,
@@ -766,8 +819,16 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                 });
             }
         });
+        reflections.forEach((reflection) => {
+            if (reflection.content_item) {
+                map.set(reflection.content_item.id, {
+                    id: reflection.content_item.id,
+                    title: reflection.content_item.title,
+                });
+            }
+        });
         return Array.from(map.values());
-    }, [highlights]);
+    }, [highlights, reflections]);
 
     const filteredHighlights = useMemo(() => {
         const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -786,7 +847,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                     || highlight.segment?.title?.toLowerCase().includes(normalizedQuery);
 
                 const matchesItem = selectedItem === "all" || highlight.content_item?.id === selectedItem;
-                const matchesType = selectedType === "all" || itemType === selectedType;
+                const matchesType = selectedType === "all" || (selectedType !== "reflection" && itemType === selectedType);
                 const matchesColor = selectedColor === "all" || normalizedColor === selectedColor;
 
                 return matchesSearch && matchesItem && matchesType && matchesColor;
@@ -797,6 +858,25 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                 return sortBy === "newest" ? rightDate - leftDate : leftDate - rightDate;
             });
     }, [highlights, searchQuery, selectedItem, selectedType, selectedColor, sortBy]);
+
+    const filteredReflections = useMemo(() => {
+        const normalizedQuery = searchQuery.trim().toLowerCase();
+
+        return [...reflections]
+            .filter((reflection) => {
+                const matchesSearch = !normalizedQuery
+                    || reflection.reflection_text.toLowerCase().includes(normalizedQuery)
+                    || reflection.content_item?.title.toLowerCase().includes(normalizedQuery);
+                const matchesItem = selectedItem === "all" || reflection.content_item_id === selectedItem;
+                const matchesType = selectedType === "all" || selectedType === "reflection";
+                return matchesSearch && matchesItem && matchesType;
+            })
+            .sort((left, right) => {
+                const leftDate = new Date(left.created_at).getTime();
+                const rightDate = new Date(right.created_at).getTime();
+                return sortBy === "newest" ? rightDate - leftDate : leftDate - rightDate;
+            });
+    }, [reflections, searchQuery, selectedItem, selectedType, sortBy]);
 
     const shouldVirtualize = filteredHighlights.length >= VIRTUALIZATION_MIN_ITEMS;
 
@@ -917,7 +997,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
         if (selectedType !== DEFAULT_SELECTED_TYPE) {
             chips.push({
                 key: "type",
-                label: selectedType === "note" ? "Notes only" : "Highlights only",
+                label: selectedType === "note" ? "Notes only" : selectedType === "reflection" ? "Reflections only" : "Highlights only",
                 onRemove: () => setSelectedType(DEFAULT_SELECTED_TYPE),
             });
         }
@@ -942,7 +1022,9 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
     }, [searchQuery, selectedItem, selectedItemTitle, selectedType, selectedColor, sortBy]);
     const activeFilterCount = activeFilterChips.length;
 
-    const resultLabel = `${filteredHighlights.length} ${filteredHighlights.length === 1 ? "result" : "results"}`;
+    const filteredEntryCount = filteredHighlights.length + filteredReflections.length;
+    const loadedEntryCount = highlights.length + reflections.length;
+    const resultLabel = `${filteredEntryCount} ${filteredEntryCount === 1 ? "result" : "results"}`;
 
     const notesChatScope = useMemo<NotesChatScope>(() => {
         const scopedHighlights = filteredHighlights.slice(0, 40);
@@ -1171,7 +1253,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                             <span className="rounded-full border border-white/10 bg-card/35 px-2.5 py-1 text-foreground/88">
                                                 {resultLabel}
                                             </span>
-                                            <span>from {highlights.length} loaded entries</span>
+                                            <span>from {loadedEntryCount} loaded entries</span>
                                         </div>
 
                                         <div className="flex items-center gap-2">
@@ -1266,6 +1348,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                                     <option value="all">All types</option>
                                                     <option value="note">Notes</option>
                                                     <option value="highlight">Highlights</option>
+                                                    <option value="reflection">Reflections</option>
                                                 </select>
                                                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                             </label>
@@ -1397,6 +1480,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                             <option value="all">All types</option>
                                             <option value="note">Notes</option>
                                             <option value="highlight">Highlights</option>
+                                            <option value="reflection">Reflections</option>
                                         </select>
                                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     </label>
@@ -1429,7 +1513,7 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                             <span className="rounded-full border border-white/10 bg-card/35 px-2.5 py-1 text-foreground/88">
                                                 {resultLabel}
                                             </span>
-                                            <span>from {highlights.length} loaded entries</span>
+                                            <span>from {loadedEntryCount} loaded entries</span>
                                         </div>
 
                                         {hasActiveControls && (
@@ -1470,24 +1554,24 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                             </div>
                         </div>
 
-                        {isLoading ? (
+                        {isLoading || reflectionsLoading ? (
                             <div className="space-y-3">
                                 {[1, 2, 3].map((item) => (
                                     <div key={item} className="h-28 rounded-2xl bg-card/40 animate-pulse" />
                                 ))}
                             </div>
-                        ) : isError ? (
+                        ) : isError || reflectionsError ? (
                             <div className="rounded-2xl border border-white/10 bg-card/20 px-6 py-16 text-center text-muted-foreground">
                                 Failed to load notes.
                             </div>
-                        ) : filteredHighlights.length === 0 ? (
+                        ) : filteredEntryCount === 0 ? (
                             <div className="rounded-2xl border border-dashed border-white/10 bg-card/20 px-6 py-16 text-center text-muted-foreground">
                                 <BookOpen className="size-12 mx-auto mb-4 opacity-25" />
                                 <h3 className="mb-2 text-lg font-medium text-foreground">No notes found</h3>
                                 <p className="mx-auto max-w-md">
                                     {hasFilters
-                                        ? "No highlights match your current filters."
-                                        : "You have not highlighted anything yet. Start reading and save passages to build your notes."}
+                                        ? "No saved ideas match your current filters."
+                                        : "You have not saved any notes, highlights, or reflections yet. Start reading and capture what matters."}
                                 </p>
                                 {hasActiveControls && (
                                     <button
@@ -1500,6 +1584,18 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                 )}
                             </div>
                         ) : (
+                            <>
+                            {filteredReflections.length > 0 && (
+                                <section className="mb-6">
+                                    {selectedType === "all" && (
+                                        <h2 className="mb-3 text-sm font-semibold text-foreground">Reflections</h2>
+                                    )}
+                                    <div className="space-y-3">
+                                        {filteredReflections.map((item) => <ReflectionListItem key={item.id} item={item} />)}
+                                    </div>
+                                </section>
+                            )}
+                            {filteredHighlights.length > 0 && (
                             <div ref={listContainerRef}>
                                 {shouldVirtualize ? (
                                     <div
@@ -1552,8 +1648,10 @@ export function BrainClientPage({ initialPage, initialAskOpen = false }: BrainCl
                                     </div>
                                 )}
                             </div>
+                            )}
+                            </>
                         )}
-                        {hasNextPage && (
+                        {hasNextPage && selectedType !== "reflection" && (
                             <div className="mt-6 flex justify-center">
                                 <button
                                     type="button"

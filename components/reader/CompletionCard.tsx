@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { MessageCircleQuestion, BookOpen, ArrowRight, PartyPopper, BookmarkCheck } from "lucide-react";
+import { MessageCircleQuestion, BookOpen, ArrowRight, PartyPopper, BookmarkCheck, Lightbulb, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
 import Link from "next/link";
@@ -13,6 +13,9 @@ import { buildReadPath } from "@/lib/content-paths";
 import { SignInLink } from "@/components/ui/SignInLink";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 import type { ReaderTheme } from "@/hooks/useReaderSettings";
+import { useReflections } from "@/hooks/useReflections";
+import { ReflectionComposer } from "./ReflectionComposer";
+import { captureAnalyticsEvent } from "@/lib/analytics";
 
 const AuthorChat = dynamic(
     () => import("./AuthorChat").then((mod) => mod.AuthorChat),
@@ -42,6 +45,7 @@ interface CompletionCardProps {
 export function CompletionCard({ contentId, title, author, segmentCount, readerTheme = "dark" }: CompletionCardProps) {
     const { completedIds, inProgressIds, myListIds, isLoaded, user } = useReadingProgress();
     const [showChat, setShowChat] = useState(false);
+    const [showReflectionComposer, setShowReflectionComposer] = useState(false);
     const { data: recommendationItems = [], isLoading: loadingRec } = useRecommendations(
         [contentId],
         {
@@ -53,6 +57,9 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
     const recommendation = recommendationItems[0] ?? null;
     const isRecommendationLoading = !isLoaded || loadingRec;
     const isGuest = isLoaded && user === null;
+    const isAuthenticated = isLoaded && user !== null;
+    const { data: reflections = [] } = useReflections(contentId);
+    const existingReflection = reflections[0] ?? null;
 
     const authorName = author || "the Author";
 
@@ -79,6 +86,51 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
                         )}
                     </p>
                 </div>
+
+                <button
+                    type="button"
+                    onClick={() => {
+                        captureAnalyticsEvent("reflection_opened", {
+                            content_id: contentId,
+                            route: "/read/[id]",
+                            user_state: isAuthenticated ? "authenticated" : "anonymous",
+                        });
+                        setShowReflectionComposer(true);
+                    }}
+                    className={cn(
+                        "group mb-4 w-full overflow-hidden rounded-2xl border border-primary/25 bg-primary/[0.07] p-5 text-left sm:p-6",
+                        "transition-all duration-300 hover:border-primary/45 hover:bg-primary/[0.11]",
+                        "focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    )}
+                >
+                    <div className="flex items-start gap-4">
+                        <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary transition-colors group-hover:bg-primary/25">
+                            <Lightbulb className="size-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <h3 className="font-bold text-foreground text-base">
+                                    {existingReflection ? "Your reflection" : "Capture a reflection"}
+                                </h3>
+                                {existingReflection && (
+                                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[0.68rem] font-medium text-primary">
+                                        Saved
+                                    </span>
+                                )}
+                            </div>
+                            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                                {existingReflection
+                                    ? existingReflection.reflection_text
+                                    : "Pause for a moment and put the idea you want to keep in your own words."}
+                            </p>
+                        </div>
+                        {existingReflection && <Pencil className="mt-1 size-4 shrink-0 text-primary" aria-hidden="true" />}
+                    </div>
+                    <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-primary">
+                        {existingReflection ? "Edit reflection" : "Take a moment"}
+                        <ArrowRight className="size-3 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                </button>
 
                 {/* ── Action Cards ──────────────────────────────────────────── */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
@@ -212,6 +264,16 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
                     onClose={() => setShowChat(false)}
                 />
             )}
+
+            <ReflectionComposer
+                contentId={contentId}
+                contentTitle={title}
+                isOpen={showReflectionComposer}
+                isAuthenticated={isAuthenticated}
+                existingReflection={existingReflection}
+                onClose={() => setShowReflectionComposer(false)}
+                onSaved={() => setShowReflectionComposer(false)}
+            />
         </>
     );
 }

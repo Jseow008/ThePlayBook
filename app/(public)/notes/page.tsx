@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { BrainClientPage } from "./client-page";
 import type { HighlightsPage } from "@/hooks/useHighlights";
+import type { ReflectionWithContent } from "@/hooks/useReflections";
 import { buildLoginHref } from "@/lib/auth-redirect";
 
 export const metadata = {
@@ -51,6 +52,16 @@ export default async function BrainPage({ searchParams }: BrainPageProps) {
         console.error("Failed to load brain highlights:", error);
     }
 
+    const { data: reflections, error: reflectionsError } = await supabase
+        .from("user_reflections")
+        .select("id, content_item_id, prompt, reflection_text, created_at, updated_at, content_item ( id, title, author, cover_image_url )")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+    if (reflectionsError) {
+        console.error("Failed to load reflections:", reflectionsError);
+    }
+
     const initialPage: HighlightsPage = {
         data: (highlights || []) as HighlightsPage["data"],
         nextCursor:
@@ -59,5 +70,11 @@ export default async function BrainPage({ searchParams }: BrainPageProps) {
                 : null,
     };
 
-    return <BrainClientPage initialPage={initialPage} initialAskOpen={resolvedSearchParams?.ask === "1"} />;
+    return (
+        <BrainClientPage
+            initialPage={initialPage}
+            initialReflections={(reflections || []) as ReflectionWithContent[]}
+            initialAskOpen={resolvedSearchParams?.ask === "1"}
+        />
+    );
 }
