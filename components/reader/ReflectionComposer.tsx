@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Lightbulb, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
@@ -44,11 +44,43 @@ export function ReflectionComposer({
     const [showSignInPrompt, setShowSignInPrompt] = useState(false);
     const saveReflection = useSaveReflection();
 
+    const persistDraft = useCallback((nextDraft: string) => {
+        try {
+            if (nextDraft) {
+                window.sessionStorage.setItem(getDraftKey(contentId), nextDraft);
+                setIsDraftStored(true);
+            } else {
+                window.sessionStorage.removeItem(getDraftKey(contentId));
+                setIsDraftStored(false);
+            }
+        } catch {
+            // A draft is a convenience, not a requirement for the feature.
+            setIsDraftStored(false);
+        }
+    }, [contentId]);
+
+    const closeWithDraft = useCallback(() => {
+        if (saveReflection.isPending) {
+            return;
+        }
+
+        if (draft) {
+            persistDraft(draft);
+        }
+
+        captureAnalyticsEvent("reflection_skipped", {
+            content_id: contentId,
+            route: "/read/[id]",
+            user_state: isAuthenticated ? "authenticated" : "anonymous",
+        });
+        onClose();
+    }, [contentId, draft, isAuthenticated, onClose, persistDraft, saveReflection.isPending]);
+
     useOverlayInteractions({
         enabled: isOpen,
         containerRef: dialogRef,
         initialFocusRef: textareaRef,
-        onEscape: saveReflection.isPending ? undefined : onClose,
+        onEscape: saveReflection.isPending ? undefined : closeWithDraft,
         scrollLock: { lockDocumentElement: true },
     });
 
@@ -75,22 +107,11 @@ export function ReflectionComposer({
         }
 
         const timeoutId = window.setTimeout(() => {
-            try {
-                if (draft) {
-                    window.sessionStorage.setItem(getDraftKey(contentId), draft);
-                    setIsDraftStored(true);
-                } else {
-                    window.sessionStorage.removeItem(getDraftKey(contentId));
-                    setIsDraftStored(false);
-                }
-            } catch {
-                // A draft is a convenience, not a requirement for the feature.
-                setIsDraftStored(false);
-            }
+            persistDraft(draft);
         }, 300);
 
         return () => window.clearTimeout(timeoutId);
-    }, [contentId, draft, hasLoadedDraft]);
+    }, [draft, hasLoadedDraft, persistDraft]);
 
     const discardDraft = () => {
         setDraft("");
@@ -143,7 +164,7 @@ export function ReflectionComposer({
             <button
                 type="button"
                 aria-label="Close reflection"
-                onClick={onClose}
+                onClick={closeWithDraft}
                 disabled={saveReflection.isPending}
                 className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             />
@@ -171,7 +192,7 @@ export function ReflectionComposer({
                         </div>
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={closeWithDraft}
                             disabled={saveReflection.isPending}
                             className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-card/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                             aria-label="Close reflection"
@@ -197,11 +218,13 @@ export function ReflectionComposer({
                             <span>Private to you</span>
                             <span aria-live="polite">{draft.length} / {REFLECTION_MAX_LENGTH}</span>
                         </div>
-                        {draft && isDraftStored && (
-                            <p role="status" className="mt-2 text-xs text-muted-foreground">
-                                Draft saved in this browser.
-                            </p>
-                        )}
+                        <div className="mt-2 min-h-5">
+                            {draft && isDraftStored && (
+                                <p role="status" className="text-xs text-muted-foreground">
+                                    Draft saved in this browser.
+                                </p>
+                            )}
+                        </div>
                         {showSignInPrompt && !isAuthenticated && (
                             <p role="status" className="mt-3 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm text-primary">
                                 Sign in to save your reflection. Your draft will still be here when you return.
@@ -209,7 +232,7 @@ export function ReflectionComposer({
                         )}
                     </div>
 
-                    <div className="flex items-center justify-between gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
+                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
                         <div>
                             {draft && (
                                 <button
@@ -223,22 +246,6 @@ export function ReflectionComposer({
                                 </button>
                             )}
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (!saveReflection.isPending) {
-                                    captureAnalyticsEvent("reflection_skipped", {
-                                        content_id: contentId,
-                                        route: "/read/[id]",
-                                        user_state: isAuthenticated ? "authenticated" : "anonymous",
-                                    });
-                                    onClose();
-                                }
-                            }}
-                            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/84 transition-colors hover:bg-card/50 hover:text-foreground"
-                        >
-                            Not now
-                        </button>
                         <button
                             type="button"
                             onClick={() => void handleSave()}
