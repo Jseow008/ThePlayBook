@@ -242,7 +242,7 @@ export function ReflectionComposer({
                                     className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
                                 >
                                     <Trash2 className="size-3.5" />
-                                    Discard draft
+                                    Clear draft
                                 </button>
                             )}
                         </div>
