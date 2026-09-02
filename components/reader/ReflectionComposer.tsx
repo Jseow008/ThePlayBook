@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Lightbulb, Loader2, Trash2, X } from "lucide-react";
+import { Lightbulb, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { useSaveReflection, type ReflectionWithContent } from "@/hooks/useReflections";
@@ -40,6 +40,7 @@ export function ReflectionComposer({
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const [draft, setDraft] = useState("");
     const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+    const [isDraftStored, setIsDraftStored] = useState(false);
     const [showSignInPrompt, setShowSignInPrompt] = useState(false);
     const saveReflection = useSaveReflection();
 
@@ -52,10 +53,12 @@ export function ReflectionComposer({
     });
 
     useEffect(() => {
+        setIsDraftStored(false);
         try {
             const storedDraft = window.sessionStorage.getItem(getDraftKey(contentId));
             if (storedDraft !== null) {
                 setDraft(storedDraft);
+                setIsDraftStored(storedDraft.length > 0);
             } else if (existingReflection?.reflection_text) {
                 setDraft(existingReflection.reflection_text);
             }
@@ -75,11 +78,14 @@ export function ReflectionComposer({
             try {
                 if (draft) {
                     window.sessionStorage.setItem(getDraftKey(contentId), draft);
+                    setIsDraftStored(true);
                 } else {
                     window.sessionStorage.removeItem(getDraftKey(contentId));
+                    setIsDraftStored(false);
                 }
             } catch {
                 // A draft is a convenience, not a requirement for the feature.
+                setIsDraftStored(false);
             }
         }, 300);
 
@@ -88,6 +94,7 @@ export function ReflectionComposer({
 
     const discardDraft = () => {
         setDraft("");
+        setIsDraftStored(false);
         try {
             window.sessionStorage.removeItem(getDraftKey(contentId));
         } catch {
@@ -178,7 +185,10 @@ export function ReflectionComposer({
                         <textarea
                             ref={textareaRef}
                             value={draft}
-                            onChange={(event) => setDraft(event.target.value)}
+                            onChange={(event) => {
+                                setDraft(event.target.value);
+                                setIsDraftStored(false);
+                            }}
                             maxLength={REFLECTION_MAX_LENGTH}
                             placeholder="A few sentences is enough."
                             className="mt-4 min-h-40 w-full resize-none rounded-2xl border border-white/10 bg-card/35 px-4 py-3 text-sm leading-6 text-foreground placeholder:text-muted-foreground/65 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -187,6 +197,11 @@ export function ReflectionComposer({
                             <span>Private to you</span>
                             <span aria-live="polite">{draft.length} / {REFLECTION_MAX_LENGTH}</span>
                         </div>
+                        {draft && isDraftStored && (
+                            <p role="status" className="mt-2 text-xs text-muted-foreground">
+                                Draft saved in this browser.
+                            </p>
+                        )}
                         {showSignInPrompt && !isAuthenticated && (
                             <p role="status" className="mt-3 rounded-xl border border-primary/20 bg-primary/10 px-3 py-2 text-sm text-primary">
                                 Sign in to save your reflection. Your draft will still be here when you return.
@@ -228,9 +243,9 @@ export function ReflectionComposer({
                             type="button"
                             onClick={() => void handleSave()}
                             disabled={!draft.trim() || saveReflection.isPending}
-                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-55"
+                            className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:border disabled:border-border/60 disabled:bg-muted disabled:text-muted-foreground disabled:hover:bg-muted"
                         >
-                            {saveReflection.isPending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                            {saveReflection.isPending && <Loader2 className="size-4 animate-spin" />}
                             {isAuthenticated ? "Save reflection" : showSignInPrompt ? "Continue to sign in" : "Save reflection"}
                         </button>
                     </div>
