@@ -108,6 +108,96 @@ describe("ContentCard", () => {
             .toHaveClass("touch-target-44");
     });
 
+    it("shows NEW for an older draft that was published within the last seven days", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-30T12:00:00Z"));
+
+        try {
+            render(
+                <ContentCard
+                    item={{
+                        ...item,
+                        created_at: "2026-01-01T00:00:00Z",
+                        published_at: "2026-08-27T12:00:00Z",
+                    }}
+                    enableUserState={false}
+                />
+            );
+
+            expect(screen.getByText("NEW")).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("does not show NEW for an item published more than seven days ago, even if it was updated recently", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-30T12:00:00Z"));
+
+        try {
+            render(
+                <ContentCard
+                    item={{
+                        ...item,
+                        created_at: "2026-01-01T00:00:00Z",
+                        published_at: "2026-08-22T12:00:00Z",
+                        updated_at: "2026-08-29T12:00:00Z",
+                    }}
+                    enableUserState={false}
+                />
+            );
+
+            expect(screen.queryByText("NEW")).not.toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("falls back to the creation date when publication time is unavailable", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-30T12:00:00Z"));
+
+        try {
+            render(
+                <ContentCard
+                    item={{
+                        ...item,
+                        created_at: "2026-08-27T12:00:00Z",
+                        published_at: null,
+                    }}
+                    enableUserState={false}
+                />
+            );
+
+            expect(screen.getByText("NEW")).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("prioritizes the completed state over NEW", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-30T12:00:00Z"));
+
+        try {
+            render(
+                <ContentCard
+                    item={{
+                        ...item,
+                        published_at: "2026-08-27T12:00:00Z",
+                    }}
+                    enableUserState={false}
+                    showCompletedBadge
+                />
+            );
+
+            expect(screen.queryByText("NEW")).not.toBeInTheDocument();
+            expect(screen.getByRole("img", { name: "Deep Work completed" })).toBeInTheDocument();
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
     it("uses the shared catalog card frame and image sizing contract", () => {
         render(
             <ContentCard
