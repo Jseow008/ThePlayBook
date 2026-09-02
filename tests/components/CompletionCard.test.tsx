@@ -30,6 +30,14 @@ vi.mock("@/hooks/use-content-queries", () => ({
     useRecommendations: (...args: unknown[]) => useRecommendationsMock(...args),
 }));
 
+vi.mock("@/hooks/useReflections", () => ({
+    useReflections: () => ({ data: [] }),
+    useSaveReflection: () => ({
+        isPending: false,
+        mutateAsync: vi.fn(),
+    }),
+}));
+
 vi.mock("@/components/ui/ContentFeedback", () => ({
     ContentFeedback: () => <div data-testid="mock-content-feedback" />,
 }));
