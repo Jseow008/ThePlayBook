@@ -80,6 +80,7 @@ export function ReflectionComposer({
         enabled: isOpen,
         containerRef: dialogRef,
         initialFocusRef: textareaRef,
+        preventInitialFocusScroll: true,
         onEscape: saveReflection.isPending ? undefined : closeWithDraft,
         scrollLock: { lockDocumentElement: true },
     });

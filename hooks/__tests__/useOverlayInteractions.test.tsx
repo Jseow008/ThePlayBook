@@ -11,6 +11,7 @@ function TestOverlay({
     restoreFocusRef,
     scrollLock = false,
     isolateBackground = false,
+    preventInitialFocusScroll = false,
 }: {
     label: string;
     open: boolean;
@@ -18,6 +19,7 @@ function TestOverlay({
     restoreFocusRef?: RefObject<HTMLElement | null>;
     scrollLock?: boolean;
     isolateBackground?: boolean;
+    preventInitialFocusScroll?: boolean;
 }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const firstButtonRef = useRef<HTMLButtonElement>(null);
@@ -26,6 +28,7 @@ function TestOverlay({
         enabled: open,
         containerRef,
         initialFocusRef: firstButtonRef,
+        preventInitialFocusScroll,
         restoreFocusRef,
         onEscape,
         isolateBackground,
@@ -70,6 +73,19 @@ describe("useOverlayInteractions", () => {
 
         fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
         expect(last).toHaveFocus();
+    });
+
+    it("can focus the initial target without scrolling the page", async () => {
+        const focusSpy = vi.spyOn(HTMLElement.prototype, "focus");
+
+        render(<TestOverlay label="No scroll" open onEscape={vi.fn()} preventInitialFocusScroll />);
+
+        await screen.findByRole("button", { name: "First No scroll" });
+        await waitFor(() => {
+            expect(focusSpy).toHaveBeenCalledWith({ preventScroll: true });
+        });
+
+        focusSpy.mockRestore();
     });
 
     it("routes Escape only to the top overlay", async () => {
