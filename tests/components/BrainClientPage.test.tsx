@@ -59,6 +59,14 @@ vi.mock("@/hooks/useHighlights", () => ({
     }),
 }));
 
+vi.mock("@/hooks/useReflections", () => ({
+    useReflections: () => ({
+        data: [],
+        isLoading: false,
+        isError: false,
+    }),
+}));
+
 vi.mock("@/hooks/useMediaQuery", () => ({
     useMediaQuery: () => mediaQueryState.value.isNotesAskSidebarAvailable,
 }));

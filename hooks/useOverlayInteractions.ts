@@ -63,6 +63,7 @@ interface UseOverlayInteractionsOptions {
     containerRef: RefObject<HTMLElement | null>;
     onEscape?: () => void;
     initialFocusRef?: RefObject<HTMLElement | null>;
+    preventInitialFocusScroll?: boolean;
     restoreFocusRef?: RefObject<HTMLElement | null>;
     trapFocus?: boolean;
     restoreFocus?: boolean;
@@ -75,6 +76,7 @@ export function useOverlayInteractions({
     containerRef,
     onEscape,
     initialFocusRef,
+    preventInitialFocusScroll = false,
     restoreFocusRef,
     trapFocus = true,
     restoreFocus = true,
@@ -163,7 +165,7 @@ export function useOverlayInteractions({
                 ?? getOverlayFocusableElements(container)[0]
                 ?? container;
 
-            focusTarget?.focus();
+            focusTarget?.focus(preventInitialFocusScroll ? { preventScroll: true } : undefined);
         });
 
         return () => {
@@ -179,7 +181,7 @@ export function useOverlayInteractions({
                 window.requestAnimationFrame(() => restoreTarget.focus());
             }
         };
-    }, [containerRef, enabled, initialFocusRef, restoreFocus, restoreFocusRef]);
+    }, [containerRef, enabled, initialFocusRef, preventInitialFocusScroll, restoreFocus, restoreFocusRef]);
 
     useEffect(() => {
         if (!enabled) {

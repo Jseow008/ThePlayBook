@@ -86,6 +86,11 @@ export interface AnalyticsEventPropertiesByName {
     highlight_id?: string;
     note_length?: number;
   };
+  reflection_opened: AnalyticsCommonProperties;
+  reflection_skipped: AnalyticsCommonProperties;
+  reflection_saved: AnalyticsCommonProperties & {
+    reflection_length: number;
+  };
   ai_chat_started: AnalyticsCommonProperties & {
     source: string;
     chat_scope?: "content" | "notes" | "library" | "global";
@@ -183,6 +188,30 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     description: "User creates a note. Never include note text.",
     requiredProperties: ["content_id"],
     allowedProperties: eventProperties(["highlight_id", "note_length"]),
+    privacy: "behavioral_metadata",
+    delivery: "server_confirmed",
+  },
+  reflection_opened: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Reader opens the optional reflection composer. Never include reflection text.",
+    requiredProperties: ["content_id"],
+    allowedProperties: eventProperties([]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  reflection_skipped: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Reader closes the reflection composer without saving. Never include reflection text.",
+    requiredProperties: ["content_id"],
+    allowedProperties: eventProperties([]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  reflection_saved: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "Reader saves a reflection. Never include reflection text or prompt text.",
+    requiredProperties: ["content_id", "reflection_length"],
+    allowedProperties: eventProperties(["reflection_length"]),
     privacy: "behavioral_metadata",
     delivery: "server_confirmed",
   },

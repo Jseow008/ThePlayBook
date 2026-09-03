@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CompletionCard } from "@/components/reader/CompletionCard";
@@ -30,6 +30,14 @@ vi.mock("@/hooks/use-content-queries", () => ({
     useRecommendations: (...args: unknown[]) => useRecommendationsMock(...args),
 }));
 
+vi.mock("@/hooks/useReflections", () => ({
+    useReflections: () => ({ data: [] }),
+    useSaveReflection: () => ({
+        isPending: false,
+        mutateAsync: vi.fn(),
+    }),
+}));
+
 vi.mock("@/components/ui/ContentFeedback", () => ({
     ContentFeedback: () => <div data-testid="mock-content-feedback" />,
 }));
@@ -54,6 +62,10 @@ vi.mock("@/components/ui/SignInLink", () => ({
             {children}
         </a>
     ),
+}));
+
+vi.mock("@/lib/analytics", () => ({
+    captureAnalyticsEvent: vi.fn(),
 }));
 
 describe("CompletionCard", () => {
@@ -181,5 +193,34 @@ describe("CompletionCard", () => {
         );
 
         expect(screen.queryByText("Sign up to save your progress.")).not.toBeInTheDocument();
+    });
+
+    it("opens the reflection composer when the capture card is selected", () => {
+        useReadingProgressMock.mockReturnValue({
+            completedIds: [],
+            inProgressIds: [],
+            myListIds: [],
+            isLoaded: true,
+            user: null,
+        });
+        useRecommendationsMock.mockReturnValue({
+            data: [],
+            isLoading: false,
+            isPlaceholderData: false,
+        });
+
+        render(
+            <CompletionCard
+                contentId="11111111-1111-1111-1111-111111111111"
+                title="Deep Work"
+                author="Cal Newport"
+                segmentCount={12}
+            />
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: /capture a reflection/i }));
+
+        expect(screen.getByRole("dialog", { name: "Take a moment to reflect" })).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("A few sentences is enough.")).toBeInTheDocument();
     });
 });

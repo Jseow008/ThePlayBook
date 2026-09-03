@@ -920,6 +920,51 @@ export type Database = {
           },
         ]
       }
+      user_reflections: {
+        Row: {
+          content_item_id: string
+          created_at: string
+          id: string
+          prompt: string
+          reflection_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_item_id: string
+          created_at?: string
+          id?: string
+          prompt: string
+          reflection_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          prompt?: string
+          reflection_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_reflections_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_reflections_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_library: {
         Row: {
           content_id: string
@@ -1471,3 +1516,4 @@ export type HomepageSection = Database["public"]["Tables"]["homepage_section"]["
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type ContentFeedback = Database["public"]["Tables"]["content_feedback"]["Row"];
 export type UserHighlight = Database["public"]["Tables"]["user_highlights"]["Row"];
+export type UserReflection = Database["public"]["Tables"]["user_reflections"]["Row"];
