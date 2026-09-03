@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Lightbulb, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
@@ -42,7 +43,12 @@ export function ReflectionComposer({
     const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
     const [isDraftStored, setIsDraftStored] = useState(false);
     const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+    const [mounted, setMounted] = useState(false);
     const saveReflection = useSaveReflection();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const persistDraft = useCallback((nextDraft: string) => {
         try {
@@ -77,7 +83,7 @@ export function ReflectionComposer({
     }, [contentId, draft, isAuthenticated, onClose, persistDraft, saveReflection.isPending]);
 
     useOverlayInteractions({
-        enabled: isOpen,
+        enabled: isOpen && mounted,
         containerRef: dialogRef,
         initialFocusRef: textareaRef,
         preventInitialFocusScroll: true,
@@ -156,31 +162,36 @@ export function ReflectionComposer({
         }
     };
 
-    if (!isOpen) {
+    if (!mounted || !isOpen) {
         return null;
     }
 
-    return (
-        <div className={cn("fixed inset-0", OVERLAY_LAYER_CLASS.panel)}>
+    return createPortal(
+        <>
             <button
                 type="button"
                 aria-label="Close reflection"
                 onClick={closeWithDraft}
                 disabled={saveReflection.isPending}
-                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+                className={cn("fixed inset-0 bg-black/70 backdrop-blur-sm", OVERLAY_LAYER_CLASS.panel)}
             />
 
-            <div className="absolute inset-x-0 bottom-0 flex justify-center sm:inset-0 sm:items-center sm:px-4">
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="reflection-composer-title"
+                tabIndex={-1}
+                className={cn(
+                    "fixed inset-x-0 bottom-0 flex max-h-[100dvh] justify-center sm:inset-0 sm:items-center sm:px-4",
+                    OVERLAY_LAYER_CLASS.panel
+                )}
+            >
                 <div
-                    ref={dialogRef}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="reflection-composer-title"
-                    tabIndex={-1}
-                    className="relative flex max-h-[88vh] w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-background/96 shadow-[0_-20px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-h-[80vh] sm:rounded-[1.75rem]"
+                    className="relative flex max-h-[88dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-background/96 shadow-[0_-20px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-h-[80dvh] sm:rounded-[1.75rem]"
                 >
                     <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/14 sm:hidden" />
-                    <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 pb-4 pt-4 sm:px-6 sm:pt-5">
+                    <div className="flex shrink-0 items-start justify-between gap-4 border-b border-white/8 px-5 pb-4 pt-4 sm:px-6 sm:pt-5">
                         <div className="min-w-0">
                             <div className="flex items-center gap-2 text-primary">
                                 <Lightbulb className="size-4" aria-hidden="true" />
@@ -202,7 +213,7 @@ export function ReflectionComposer({
                         </button>
                     </div>
 
-                    <div className="overflow-y-auto px-5 py-5 sm:px-6">
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
                         <p className="text-base font-medium leading-7 text-foreground">{REFLECTION_PROMPT}</p>
                         <textarea
                             ref={textareaRef}
@@ -233,7 +244,7 @@ export function ReflectionComposer({
                         )}
                     </div>
 
-                    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
+                    <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
                         <div>
                             {draft && (
                                 <button
@@ -259,6 +270,7 @@ export function ReflectionComposer({
                     </div>
                 </div>
             </div>
-        </div>
+        </>,
+        document.body
     );
 }
