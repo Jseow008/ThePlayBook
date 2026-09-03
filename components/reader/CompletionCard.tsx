@@ -90,12 +90,12 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
                 <button
                     type="button"
                     onClick={() => {
+                        setShowReflectionComposer(true);
                         captureAnalyticsEvent("reflection_opened", {
                             content_id: contentId,
                             route: "/read/[id]",
                             user_state: isAuthenticated ? "authenticated" : "anonymous",
                         });
-                        setShowReflectionComposer(true);
                     }}
                     className={cn(
                         "group mb-4 w-full overflow-hidden rounded-2xl border border-primary/25 bg-primary/[0.07] p-5 text-left sm:p-6",
