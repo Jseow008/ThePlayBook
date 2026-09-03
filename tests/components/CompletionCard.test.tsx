@@ -220,7 +220,11 @@ describe("CompletionCard", () => {
 
         fireEvent.click(screen.getByRole("button", { name: /capture a reflection/i }));
 
-        expect(screen.getByRole("dialog", { name: "Take a moment to reflect" })).toBeInTheDocument();
+        const dialog = screen.getByRole("dialog", { name: "Take a moment to reflect" });
+        expect(dialog).toBeInTheDocument();
+        expect(dialog.parentElement).toBe(document.body);
+        expect(dialog).toHaveClass("fixed", "bottom-0", "max-h-[100dvh]");
+        expect(dialog.firstElementChild).toHaveClass("max-h-[88dvh]");
         expect(screen.getByPlaceholderText("A few sentences is enough.")).toBeInTheDocument();
     });
 });
