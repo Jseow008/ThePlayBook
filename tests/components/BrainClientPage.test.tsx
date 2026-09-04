@@ -12,6 +12,7 @@ const {
     infiniteHighlightsState,
     searchParamsState,
     mediaQueryState,
+    reflectionsState,
 } = vi.hoisted(() => ({
     deleteHighlightMock: vi.fn(),
     updateHighlightMock: vi.fn(),
@@ -41,6 +42,9 @@ const {
             isNotesAskSidebarAvailable: true,
         },
     },
+    reflectionsState: {
+        value: [] as Array<Record<string, unknown>>,
+    },
 }));
 
 const notesAskPanelMock = vi.fn();
@@ -61,7 +65,7 @@ vi.mock("@/hooks/useHighlights", () => ({
 
 vi.mock("@/hooks/useReflections", () => ({
     useReflections: () => ({
-        data: [],
+        data: reflectionsState.value,
         isLoading: false,
         isError: false,
     }),
@@ -179,6 +183,7 @@ describe("BrainClientPage", () => {
         mediaQueryState.value = {
             isNotesAskSidebarAvailable: true,
         };
+        reflectionsState.value = [];
         document.body.style.overflow = "";
         fetchNextPageMock.mockResolvedValue(undefined);
         infiniteHighlightsState.value = {
@@ -206,6 +211,31 @@ describe("BrainClientPage", () => {
         expect(screen.getByText("Note")).toBeInTheDocument();
         expect(screen.getAllByText("Highlight").length).toBeGreaterThan(0);
         expect(screen.queryByText("   ")).not.toBeInTheDocument();
+    });
+
+    it("uses the shared notes card style for reflections while preserving their identity", () => {
+        reflectionsState.value = [{
+            id: "reflection-1",
+            user_id: "user-1",
+            content_item_id: "content-1",
+            prompt: "What idea do you want to remember from this?",
+            reflection_text: "Choose the work that matters, even when the comfortable option is to stop.",
+            created_at: "2026-03-12T12:00:00.000Z",
+            updated_at: null,
+            content_item: {
+                id: "content-1",
+                title: "Can't Hurt Me",
+                author: "David Goggins",
+                cover_image_url: "https://example.com/cover-1.jpg",
+            },
+        }];
+
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        const reflectionText = screen.getByText(/choose the work that matters/i);
+        expect(screen.getByText("Your reflection")).toBeInTheDocument();
+        expect(screen.getByText("Reflection")).toBeInTheDocument();
+        expect(reflectionText.closest(".group")).toHaveClass("bg-background/30", "ring-white/8");
     });
 
     it("filters by search, type, and color and supports inline two-step deletion", async () => {
