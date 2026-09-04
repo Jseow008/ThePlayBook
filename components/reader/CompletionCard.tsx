@@ -268,6 +268,7 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
             <ReflectionComposer
                 contentId={contentId}
                 contentTitle={title}
+                readerTheme={readerTheme}
                 isOpen={showReflectionComposer}
                 isAuthenticated={isAuthenticated}
                 existingReflection={existingReflection}
