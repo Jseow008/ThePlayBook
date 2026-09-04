@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
@@ -66,16 +66,18 @@ export async function POST(request: NextRequest) {
             throw error;
         }
 
-        await captureServerAnalyticsEvent({
-            event: "email_subscribed",
-            distinctId: `anonymous:${requestId}`,
-            insertId: `email_subscribed:${requestId}`,
-            properties: {
-                source: parsed.data.source,
-                path: pagePath ?? undefined,
-                route: "/api/email-subscriptions",
-                user_state: "anonymous",
-            },
+        after(async () => {
+            await captureServerAnalyticsEvent({
+                event: "email_subscribed",
+                distinctId: `anonymous:${requestId}`,
+                insertId: `email_subscribed:${requestId}`,
+                properties: {
+                    source: parsed.data.source,
+                    path: pagePath ?? undefined,
+                    route: "/api/email-subscriptions",
+                    user_state: "anonymous",
+                },
+            });
         });
 
         return NextResponse.json({ success: true }, { status: 200 });

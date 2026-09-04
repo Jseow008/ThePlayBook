@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { normalizeLoginNextPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
@@ -44,16 +44,18 @@ export async function POST(request: Request) {
     }
 
     if (user && isRecentUserCreation(user.created_at)) {
-        await captureServerAnalyticsEvent({
-            event: "signup_completed",
-            distinctId: user.id,
-            insertId: `signup_completed:${user.id}`,
-            properties: {
-                source: "auth_otp_verify",
-                auth_method: "email",
-                route: "/login",
-                user_state: "authenticated",
-            },
+        after(async () => {
+            await captureServerAnalyticsEvent({
+                event: "signup_completed",
+                distinctId: user.id,
+                insertId: `signup_completed:${user.id}`,
+                properties: {
+                    source: "auth_otp_verify",
+                    auth_method: "email",
+                    route: "/login",
+                    user_state: "authenticated",
+                },
+            });
         });
     }
 

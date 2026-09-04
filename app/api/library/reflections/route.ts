@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
@@ -98,16 +98,18 @@ export async function POST(request: NextRequest) {
         }
 
         const reflection = data as ReflectionRow;
-        await captureServerAnalyticsEvent({
-            event: "reflection_saved",
-            distinctId: user.id,
-            insertId: `reflection_saved:${user.id}:${reflection.id}:${reflection.updated_at ?? ""}`,
-            properties: {
-                content_id: parsed.data.content_item_id,
-                reflection_length: parsed.data.reflection_text.length,
-                route: "/read/[id]",
-                user_state: "authenticated",
-            },
+        after(async () => {
+            await captureServerAnalyticsEvent({
+                event: "reflection_saved",
+                distinctId: user.id,
+                insertId: `reflection_saved:${user.id}:${reflection.id}:${reflection.updated_at ?? ""}`,
+                properties: {
+                    content_id: parsed.data.content_item_id,
+                    reflection_length: parsed.data.reflection_text.length,
+                    route: "/read/[id]",
+                    user_state: "authenticated",
+                },
+            });
         });
 
         return NextResponse.json({ data: reflection });
