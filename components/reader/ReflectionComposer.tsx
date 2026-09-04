@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Lightbulb, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
+import type { ReaderTheme } from "@/hooks/useReaderSettings";
 import { useSaveReflection, type ReflectionWithContent } from "@/hooks/useReflections";
 import { buildLoginHref } from "@/lib/auth-redirect";
 import { captureAnalyticsEvent } from "@/lib/analytics";
@@ -21,6 +22,7 @@ function getDraftKey(contentId: string) {
 interface ReflectionComposerProps {
     contentId: string;
     contentTitle: string;
+    readerTheme: ReaderTheme;
     isOpen: boolean;
     isAuthenticated: boolean;
     existingReflection: ReflectionWithContent | null;
@@ -31,6 +33,7 @@ interface ReflectionComposerProps {
 export function ReflectionComposer({
     contentId,
     contentTitle,
+    readerTheme,
     isOpen,
     isAuthenticated,
     existingReflection,
@@ -188,7 +191,10 @@ export function ReflectionComposer({
                 )}
             >
                 <div
-                    className="relative flex max-h-[88dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-background/96 shadow-[0_-20px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-h-[80dvh] sm:rounded-[1.75rem]"
+                    className={cn(
+                        `reader-${readerTheme}`,
+                        "relative flex max-h-[88dvh] w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-background/96 shadow-[0_-20px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:max-h-[80dvh] sm:rounded-[1.75rem]"
+                    )}
                 >
                     <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/14 sm:hidden" />
                     <div className="flex shrink-0 items-start justify-between gap-4 border-b border-white/8 px-5 pb-4 pt-4 sm:px-6 sm:pt-5">

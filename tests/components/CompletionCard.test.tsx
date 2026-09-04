@@ -224,7 +224,36 @@ describe("CompletionCard", () => {
         expect(dialog).toBeInTheDocument();
         expect(dialog.parentElement).toBe(document.body);
         expect(dialog).toHaveClass("fixed", "bottom-0", "max-h-[100dvh]");
-        expect(dialog.firstElementChild).toHaveClass("max-h-[88dvh]");
+        expect(dialog.firstElementChild).toHaveClass("reader-dark", "max-h-[88dvh]");
         expect(screen.getByPlaceholderText("A few sentences is enough.")).toBeInTheDocument();
+    });
+
+    it("keeps the reflection composer aligned with the selected reader theme", () => {
+        useReadingProgressMock.mockReturnValue({
+            completedIds: [],
+            inProgressIds: [],
+            myListIds: [],
+            isLoaded: true,
+            user: null,
+        });
+        useRecommendationsMock.mockReturnValue({
+            data: [],
+            isLoading: false,
+            isPlaceholderData: false,
+        });
+
+        render(
+            <CompletionCard
+                contentId="11111111-1111-1111-1111-111111111111"
+                title="Deep Work"
+                author="Cal Newport"
+                segmentCount={12}
+                readerTheme="sepia"
+            />
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: /capture a reflection/i }));
+
+        expect(screen.getByRole("dialog").firstElementChild).toHaveClass("reader-sepia");
     });
 });
