@@ -1,7 +1,8 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import type { Database } from "@/types/database";
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
         }
 
         const reflection = data as ReflectionRow;
-        after(async () => {
+        afterResponse(async () => {
             await captureServerAnalyticsEvent({
                 event: "reflection_saved",
                 distinctId: user.id,

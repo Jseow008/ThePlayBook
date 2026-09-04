@@ -1,5 +1,6 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { normalizeLoginNextPath } from "@/lib/auth-redirect";
 import { createClient } from "@/lib/supabase/server";
 import { resolvePostAuthDestination } from "@/lib/auth-activation";
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     if (user && isRecentUserCreation(user.created_at)) {
-        after(async () => {
+        afterResponse(async () => {
             await captureServerAnalyticsEvent({
                 event: "signup_completed",
                 distinctId: user.id,

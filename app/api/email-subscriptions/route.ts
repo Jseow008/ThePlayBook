@@ -1,7 +1,8 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { subscribeEmailSubscription } from "@/lib/server/email-subscription-rpcs";
 import { rateLimit } from "@/lib/server/rate-limit";
 
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
             throw error;
         }
 
-        after(async () => {
+        afterResponse(async () => {
             await captureServerAnalyticsEvent({
                 event: "email_subscribed",
                 distinctId: `anonymous:${requestId}`,

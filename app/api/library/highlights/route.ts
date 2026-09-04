@@ -1,7 +1,8 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import {
@@ -184,7 +185,7 @@ export async function POST(request: NextRequest) {
         const highlightId = typeof highlight.id === "string" ? highlight.id : requestId;
         const noteLength = note_body?.trim().length ?? 0;
 
-        after(async () => {
+        afterResponse(async () => {
             const highlightEvent = captureServerAnalyticsEvent({
                 event: "highlight_created",
                 distinctId: user.id,

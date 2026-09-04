@@ -1,7 +1,8 @@
-import { after, NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import {
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
             return apiError("INTERNAL_ERROR", "Failed to save bookmark.", 500, requestId);
         }
 
-        after(async () => {
+        afterResponse(async () => {
             await captureServerAnalyticsEvent({
                 event: "library_saved",
                 distinctId: user.id,
