@@ -408,22 +408,27 @@ function ReflectionListItem({ item }: { item: ReflectionWithContent }) {
                         {item.content_item?.title || "Saved reflection"}
                     </h3>
                     <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.76rem] text-muted-foreground">
-                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-primary">Reflection</span>
+                        <span className="rounded-full border border-white/10 bg-card/40 px-2 py-0.5 text-[0.68rem] font-medium uppercase tracking-[0.12em] text-foreground/78">Reflection</span>
                         <span className="text-muted-foreground/40">•</span>
                         <time dateTime={item.created_at}>{format(new Date(item.created_at), "MMM d, h:mm a")}</time>
                     </div>
                 </div>
             </div>
-            <p className="mt-4 max-w-3xl text-[0.97rem] leading-6 text-foreground/92">{item.reflection_text}</p>
+            <div className="mt-4 rounded-xl border border-white/8 bg-card/45 px-3.5 py-3">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                    Your reflection
+                </p>
+                <p className="mt-1.5 max-w-3xl text-[0.88rem] leading-6 text-foreground/92">{item.reflection_text}</p>
+            </div>
         </>
     );
 
     return (
-        <div className="group relative overflow-hidden rounded-2xl bg-primary/[0.045] ring-1 ring-primary/15 transition-[background-color,box-shadow] hover:bg-primary/[0.08] hover:shadow-[0_18px_40px_-32px_rgba(255,255,255,0.28)]">
+        <div className="group relative overflow-hidden rounded-2xl bg-background/30 ring-1 ring-white/8 transition-[background-color,box-shadow] hover:bg-card/40 hover:shadow-[0_18px_40px_-32px_rgba(255,255,255,0.28)]">
             <div aria-hidden="true" className="absolute inset-y-0 left-0 w-[3px] bg-primary" />
             <div className="flex items-start gap-2 p-3 sm:p-4">
                 {href ? (
-                    <Link href={href} className="min-w-0 flex-1 rounded-xl px-3 py-2 transition-colors hover:bg-background/20 focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`Open reflection for ${item.content_item?.title || "this read"}`}>
+                    <Link href={href} className="min-w-0 flex-1 rounded-xl px-3 py-2 transition-colors hover:bg-background/35 focus:outline-none focus:ring-2 focus:ring-primary" aria-label={`Open reflection for ${item.content_item?.title || "this read"}`}>
                         {content}
                     </Link>
                 ) : <div className="min-w-0 flex-1 px-3 py-2">{content}</div>}
