@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import type { Database } from "@/types/database";
@@ -98,16 +99,18 @@ export async function POST(request: NextRequest) {
         }
 
         const reflection = data as ReflectionRow;
-        await captureServerAnalyticsEvent({
-            event: "reflection_saved",
-            distinctId: user.id,
-            insertId: `reflection_saved:${user.id}:${reflection.id}:${reflection.updated_at ?? ""}`,
-            properties: {
-                content_id: parsed.data.content_item_id,
-                reflection_length: parsed.data.reflection_text.length,
-                route: "/read/[id]",
-                user_state: "authenticated",
-            },
+        afterResponse(async () => {
+            await captureServerAnalyticsEvent({
+                event: "reflection_saved",
+                distinctId: user.id,
+                insertId: `reflection_saved:${user.id}:${reflection.id}:${reflection.updated_at ?? ""}`,
+                properties: {
+                    content_id: parsed.data.content_item_id,
+                    reflection_length: parsed.data.reflection_text.length,
+                    route: "/read/[id]",
+                    user_state: "authenticated",
+                },
+            });
         });
 
         return NextResponse.json({ data: reflection });

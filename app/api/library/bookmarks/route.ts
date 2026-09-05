@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import {
@@ -62,16 +63,18 @@ export async function POST(request: NextRequest) {
             return apiError("INTERNAL_ERROR", "Failed to save bookmark.", 500, requestId);
         }
 
-        await captureServerAnalyticsEvent({
-            event: "library_saved",
-            distinctId: user.id,
-            insertId: `library_saved:${user.id}:${content_item_id}:${requestId}`,
-            properties: {
-                content_id: content_item_id,
-                route: "POST /api/library/bookmarks",
-                save_state: "saved",
-                user_state: "authenticated",
-            },
+        afterResponse(async () => {
+            await captureServerAnalyticsEvent({
+                event: "library_saved",
+                distinctId: user.id,
+                insertId: `library_saved:${user.id}:${content_item_id}:${requestId}`,
+                properties: {
+                    content_id: content_item_id,
+                    route: "POST /api/library/bookmarks",
+                    save_state: "saved",
+                    user_state: "authenticated",
+                },
+            });
         });
 
         return NextResponse.json({ success: true });

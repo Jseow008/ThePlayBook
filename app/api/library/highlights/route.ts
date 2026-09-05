@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
+import { afterResponse } from "@/lib/server/after-response";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
 import {
@@ -184,33 +185,36 @@ export async function POST(request: NextRequest) {
         const highlightId = typeof highlight.id === "string" ? highlight.id : requestId;
         const noteLength = note_body?.trim().length ?? 0;
 
-        await captureServerAnalyticsEvent({
-            event: "highlight_created",
-            distinctId: user.id,
-            insertId: `highlight_created:${user.id}:${highlightId}`,
-            properties: {
-                content_id: content_item_id,
-                route: "POST /api/library/highlights",
-                color: payload.color ?? undefined,
-                has_note: noteLength > 0,
-                user_state: "authenticated",
-            },
-        });
-
-        if (noteLength > 0) {
-            await captureServerAnalyticsEvent({
-                event: "note_created",
+        afterResponse(async () => {
+            const highlightEvent = captureServerAnalyticsEvent({
+                event: "highlight_created",
                 distinctId: user.id,
-                insertId: `note_created:${user.id}:${highlightId}`,
+                insertId: `highlight_created:${user.id}:${highlightId}`,
                 properties: {
                     content_id: content_item_id,
                     route: "POST /api/library/highlights",
-                    highlight_id: highlightId,
-                    note_length: noteLength,
+                    color: payload.color ?? undefined,
+                    has_note: noteLength > 0,
                     user_state: "authenticated",
                 },
             });
-        }
+            const noteEvent = noteLength > 0
+                ? captureServerAnalyticsEvent({
+                    event: "note_created",
+                    distinctId: user.id,
+                    insertId: `note_created:${user.id}:${highlightId}`,
+                    properties: {
+                        content_id: content_item_id,
+                        route: "POST /api/library/highlights",
+                        highlight_id: highlightId,
+                        note_length: noteLength,
+                        user_state: "authenticated",
+                    },
+                })
+                : null;
+
+            await Promise.all([highlightEvent, noteEvent]);
+        });
 
         return NextResponse.json({ data, disposition: "created" });
     } catch (error) {
