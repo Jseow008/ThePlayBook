@@ -244,6 +244,17 @@ describe("HeroCarousel", () => {
         expect(screen.getByTestId("hero-carousel-content")).toHaveClass("pb-12", "md:pb-0");
     });
 
+    it("uses compact mobile action labels and full labels from the small breakpoint", () => {
+        render(<HeroCarousel items={items} />);
+
+        expect(screen.getByText("Read")).toHaveClass("sm:hidden");
+        expect(screen.getByText("Read Summary")).toHaveClass("hidden", "sm:inline");
+        expect(screen.getByText("Preview")).toHaveClass("sm:hidden");
+        expect(screen.getByText("Preview Takeaways")).toHaveClass("hidden", "sm:inline");
+        expect(screen.getByRole("link", { name: "Read Summary" })).toHaveClass("whitespace-nowrap");
+        expect(screen.getByRole("link", { name: "Preview Takeaways" })).toHaveClass("whitespace-nowrap");
+    });
+
     it("falls back to the default description when no hook or big idea exists", () => {
         render(<HeroCarousel items={items} />);
 
