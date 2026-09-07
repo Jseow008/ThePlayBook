@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
     BookOpen,
@@ -167,6 +167,7 @@ function BaseContentCard({
     priority = false,
     showDesktopQuickActions = false,
 }: BaseContentCardProps) {
+    const [isCoverLoaded, setIsCoverLoaded] = useState(false);
     const Icon = TYPE_ICONS[item.type] || BookOpen;
     const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
     const SecondaryRemoveIcon = secondaryRemoveIcon === "archive" ? Archive : Trash2;
@@ -181,6 +182,10 @@ function BaseContentCard({
     const contentHook = getContentCardHook(item);
     const isAppCompact = titleDensity === "app-compact";
 
+    useEffect(() => {
+        setIsCoverLoaded(false);
+    }, [item.cover_image_url]);
+
     return (
         <div className={cn(
             "content-card-motion-surface group relative block w-full overflow-hidden rounded-md bg-card ring-1 ring-transparent transition-[transform,box-shadow] duration-300 max-md:active:scale-[0.98] max-md:active:ring-white/30 max-md:active:shadow-[0_8px_20px_rgba(0,0,0,0.38)] max-md:duration-150 md:hover:z-10 md:hover:-translate-y-1 md:hover:ring-white/15 md:hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] md:group-focus-within:z-10 md:group-focus-within:-translate-y-1 md:group-focus-within:ring-white/15 md:group-focus-within:shadow-[0_14px_32px_rgba(0,0,0,0.42)] motion-reduce:active:scale-100 motion-reduce:transition-none",
@@ -192,14 +197,26 @@ function BaseContentCard({
 
             {item.cover_image_url ? (
                 <div className="absolute inset-0 h-full w-full">
+                    <div
+                        aria-hidden="true"
+                        data-testid="content-card-image-loading"
+                        className={cn(
+                            "pointer-events-none absolute inset-0 z-0 bg-gradient-to-br from-muted/70 via-secondary/55 to-card transition-opacity duration-300 motion-safe:animate-pulse motion-reduce:transition-none",
+                            isCoverLoaded ? "opacity-0" : "opacity-100",
+                        )}
+                    />
                     <ResilientImage
                         src={item.cover_image_url}
                         alt={item.title}
                         fill
                         surface="content-card"
-                        className="content-card-motion-image brightness-[1.08] object-cover transition-transform duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none"
+                        className={cn(
+                            "content-card-motion-image brightness-[1.08] object-cover transition-[opacity,transform] duration-300 md:group-hover:scale-[1.035] md:group-focus-within:scale-[1.035] motion-reduce:transition-none",
+                            isCoverLoaded ? "opacity-100" : "opacity-0",
+                        )}
                         sizes={CONTENT_CARD_IMAGE_SIZES}
                         priority={priority}
+                        onLoad={() => setIsCoverLoaded(true)}
                         fallback={
                             <div className="absolute inset-0 flex h-full w-full items-center justify-center bg-gradient-to-br from-muted via-card to-background">
                                 <Icon className="size-16 text-muted-foreground" />

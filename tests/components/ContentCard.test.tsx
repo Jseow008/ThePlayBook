@@ -223,6 +223,28 @@ describe("ContentCard", () => {
         expect(screen.getByAltText("Deep Work")).toHaveAttribute("sizes", CONTENT_CARD_IMAGE_SIZES);
     });
 
+    it("shows a cover placeholder until the image loads, then fades the cover in", () => {
+        render(
+            <ContentCard
+                item={{
+                    ...item,
+                    cover_image_url: "https://example.com/deep-work.jpg",
+                }}
+            />
+        );
+
+        const placeholder = screen.getByTestId("content-card-image-loading");
+        const image = screen.getByAltText("Deep Work");
+
+        expect(placeholder).toHaveClass("opacity-100", "motion-safe:animate-pulse");
+        expect(image).toHaveClass("opacity-0", "transition-[opacity,transform]");
+
+        fireEvent.load(image);
+
+        expect(placeholder).toHaveClass("opacity-0");
+        expect(image).toHaveClass("opacity-100");
+    });
+
     it("keeps card actions discoverable without large-screen hover-only opacity classes", () => {
         const onRemove = vi.fn();
         const onSecondaryRemove = vi.fn();
