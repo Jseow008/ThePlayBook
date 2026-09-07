@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
     BookOpen,
@@ -173,6 +173,7 @@ function BaseContentCard({
 }: BaseContentCardProps) {
     const [isCoverLoaded, setIsCoverLoaded] = useState(false);
     const [isRemoveMenuOpen, setIsRemoveMenuOpen] = useState(false);
+    const removeMenuRef = useRef<HTMLDivElement>(null);
     const Icon = TYPE_ICONS[item.type] || BookOpen;
     const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
     const SecondaryRemoveIcon = secondaryRemoveIcon === "archive" ? Archive : Trash2;
@@ -190,6 +191,31 @@ function BaseContentCard({
     useEffect(() => {
         setIsCoverLoaded(false);
     }, [item.cover_image_url]);
+
+    useEffect(() => {
+        if (!isRemoveMenuOpen) {
+            return;
+        }
+
+        const closeOnOutsidePointerDown = (event: PointerEvent) => {
+            if (!removeMenuRef.current?.contains(event.target as Node)) {
+                setIsRemoveMenuOpen(false);
+            }
+        };
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setIsRemoveMenuOpen(false);
+            }
+        };
+
+        document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+        document.addEventListener("keydown", closeOnEscape);
+
+        return () => {
+            document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+            document.removeEventListener("keydown", closeOnEscape);
+        };
+    }, [isRemoveMenuOpen]);
 
     return (
         <div className={cn(
@@ -394,7 +420,7 @@ function BaseContentCard({
             ) : null}
 
             {showRemoveMenu && (onRemove || onSecondaryRemove) ? (
-                <div className="absolute left-2 top-2 z-40">
+                <div ref={removeMenuRef} className="absolute left-2 top-2 z-40">
                     <button
                         type="button"
                         onClick={(event) => {
