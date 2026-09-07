@@ -258,4 +258,17 @@ describe("HomeFeed", () => {
             expect(screen.getByRole("link", { name: label })).toHaveClass("touch-target-44");
         }
     });
+
+    it("keeps the Browse footer logo within the app experience", () => {
+        render(
+            <HomeFeed
+                items={[item]}
+                featuredItems={[item]}
+                sections={[]}
+                sectionItems={{}}
+            />
+        );
+
+        expect(screen.getByRole("link", { name: "Netflux" })).toHaveAttribute("href", "/browse");
+    });
 });

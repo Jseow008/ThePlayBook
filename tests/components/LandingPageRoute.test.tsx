@@ -59,15 +59,10 @@ describe("LandingPageRoute", () => {
             ),
         }));
 
-        vi.doMock("@/components/ui/LandingRedirectGuard", () => ({
-            LandingRedirectGuard: () => <div data-testid="landing-redirect-guard" />,
-        }));
-
         const landingModule = await import("@/app/page");
 
         render(await landingModule.default());
 
-        expect(screen.getByTestId("landing-redirect-guard")).toBeInTheDocument();
         expect(screen.getByText("Featured")).toBeInTheDocument();
         expect(screen.getByText("24 total")).toBeInTheDocument();
         expect(createServerClientMock).not.toHaveBeenCalled();

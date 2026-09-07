@@ -195,6 +195,32 @@ describe("CompletionCard", () => {
         expect(screen.queryByText("Sign up to save your progress.")).not.toBeInTheDocument();
     });
 
+    it("sends readers directly to Browse when no recommendation is available", () => {
+        useReadingProgressMock.mockReturnValue({
+            completedIds: [],
+            inProgressIds: [],
+            myListIds: [],
+            isLoaded: true,
+            user: { id: "user-1" },
+        });
+        useRecommendationsMock.mockReturnValue({
+            data: [],
+            isLoading: false,
+            isPlaceholderData: false,
+        });
+
+        render(
+            <CompletionCard
+                contentId="11111111-1111-1111-1111-111111111111"
+                title="Deep Work"
+                author="Cal Newport"
+                segmentCount={12}
+            />
+        );
+
+        expect(screen.getByRole("link", { name: /explore more/i })).toHaveAttribute("href", "/browse");
+    });
+
     it("opens the reflection composer when the capture card is selected", () => {
         useReadingProgressMock.mockReturnValue({
             completedIds: [],

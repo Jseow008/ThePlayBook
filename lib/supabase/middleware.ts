@@ -1,12 +1,15 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
-import type { User } from "@supabase/supabase-js";
 
 type CookieToSet = {
     name: string;
     value: string;
     options: CookieOptions;
+};
+
+type SessionUser = {
+    id: string;
 };
 
 export async function updateSession(request: NextRequest) {
@@ -43,11 +46,16 @@ export async function updateSession(request: NextRequest) {
         && !name.endsWith("-code-verifier")
     );
     if (!hasAuthCookie) {
-        return { response: supabaseResponse, user: null as User | null };
+        return { response: supabaseResponse, user: null as SessionUser | null };
     }
 
-    // Keep auth cookie fresh for routes that pass through the proxy.
-    const { data: { user } } = await supabase.auth.getUser();
+    // getClaims validates the JWT and refreshes it when necessary without
+    // requiring an Auth user-record lookup for every valid request.
+    const { data } = await supabase.auth.getClaims();
+    const subject = data?.claims.sub;
 
-    return { response: supabaseResponse, user };
+    return {
+        response: supabaseResponse,
+        user: typeof subject === "string" ? { id: subject } : null,
+    };
 }

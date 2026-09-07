@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { LandingPage } from "@/components/ui/LandingPage";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { LandingRedirectGuard } from "@/components/ui/LandingRedirectGuard";
 import type { ContentItem } from "@/types/database";
 import { APP_NAME } from "@/lib/brand";
 import { ROOT_OG_IMAGE, ROOT_OG_IMAGE_ALT, SITE_DESCRIPTION, SITE_URL } from "@/lib/seo";
@@ -45,12 +44,7 @@ const LANDING_SELECT =
 export default async function LandingPageRoute() {
   const landingContent = await LandingPageData();
 
-  return (
-    <>
-      <LandingRedirectGuard />
-      {landingContent}
-    </>
-  );
+  return landingContent;
 }
 
 async function LandingPageData() {

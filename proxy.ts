@@ -122,6 +122,10 @@ function hasValidCronSecret(request: NextRequest): boolean {
     return request.headers.get("authorization") === `Bearer ${cronSecret}`;
 }
 
+function copyResponseCookies(source: NextResponse, target: NextResponse) {
+    source.cookies.getAll().forEach((cookie) => target.cookies.set(cookie));
+}
+
 export async function proxy(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
     const isAdminApiRoute = isAdminApiPath(pathname);
@@ -166,6 +170,14 @@ export async function proxy(request: NextRequest) {
     }
 
     const { response: supabaseResponse, user: sessionUser } = await updateSession(request);
+
+    // Authenticated visitors should reach their library before the static
+    // marketing page is rendered, while guests keep the cacheable landing page.
+    if (pathname === "/" && sessionUser) {
+        const browseRedirect = NextResponse.redirect(new URL("/browse", request.url));
+        copyResponseCookies(supabaseResponse, browseRedirect);
+        return browseRedirect;
+    }
 
     if (isProtectedAdminPath(pathname)) {
         const supabase = createServerClient(
@@ -225,6 +237,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
     matcher: [
+        "/",
         "/login",
         "/auth/callback",
         "/browse",
