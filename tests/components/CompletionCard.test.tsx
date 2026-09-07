@@ -36,6 +36,10 @@ vi.mock("@/hooks/useReflections", () => ({
         isPending: false,
         mutateAsync: vi.fn(),
     }),
+    useDeleteReflection: () => ({
+        isPending: false,
+        mutateAsync: vi.fn(),
+    }),
 }));
 
 vi.mock("@/components/ui/ContentFeedback", () => ({

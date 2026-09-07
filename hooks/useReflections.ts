@@ -36,6 +36,11 @@ interface SaveReflectionArgs {
     reflection_text: string;
 }
 
+interface UpdateReflectionArgs {
+    id: string;
+    reflection_text: string;
+}
+
 export function useSaveReflection() {
     const queryClient = useQueryClient();
 
@@ -56,6 +61,48 @@ export function useSaveReflection() {
         onSuccess: (_reflection, variables) => {
             void queryClient.invalidateQueries({ queryKey: ["reflections"] });
             void queryClient.invalidateQueries({ queryKey: ["reflections", variables.content_item_id] });
+        },
+    });
+}
+
+export function useUpdateReflection() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({ id, reflection_text }: UpdateReflectionArgs): Promise<UserReflection> => {
+            const response = await fetch(`/api/library/reflections/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ reflection_text }),
+            });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error(body?.error?.message || "Failed to update reflection");
+            }
+            const { data } = await response.json();
+            return data as UserReflection;
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["reflections"] });
+        },
+    });
+}
+
+export function useDeleteReflection() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            const response = await fetch(`/api/library/reflections/${id}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) {
+                const body = await response.json().catch(() => ({}));
+                throw new Error(body?.error?.message || "Failed to delete reflection");
+            }
+        },
+        onSuccess: () => {
+            void queryClient.invalidateQueries({ queryKey: ["reflections"] });
         },
     });
 }

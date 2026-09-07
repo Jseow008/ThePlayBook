@@ -15,7 +15,6 @@ import {
     ExternalLink,
     Filter,
     Highlighter,
-    Lightbulb,
     Loader2,
     Search,
     SlidersHorizontal,
@@ -29,7 +28,12 @@ import {
     type HighlightsPage,
     type HighlightWithContent,
 } from "@/hooks/useHighlights";
-import { useReflections, type ReflectionWithContent } from "@/hooks/useReflections";
+import {
+    useDeleteReflection,
+    useReflections,
+    useUpdateReflection,
+    type ReflectionWithContent,
+} from "@/hooks/useReflections";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { toast } from "sonner";
@@ -70,6 +74,12 @@ const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
 const VIRTUAL_OVERSCAN_PX = 720;
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
+const TYPE_FILTER_OPTIONS: Array<{ value: ItemTypeFilter; label: string }> = [
+    { value: "all", label: "All" },
+    { value: "note", label: "Notes" },
+    { value: "highlight", label: "Highlights" },
+    { value: "reflection", label: "Reflections" },
+];
 
 const NotesAskPanel = dynamic(
     () => import("@/components/notes/NotesAskPanel").then((mod) => mod.NotesAskPanel),
@@ -98,6 +108,43 @@ function getValidTypeFilter(value: string | null): ItemTypeFilter {
 
 function getValidSortDirection(value: string | null): SortDirection {
     return value === "oldest" ? value : DEFAULT_SORT;
+}
+
+function TypeFilterPills({
+    value,
+    onChange,
+}: {
+    value: ItemTypeFilter;
+    onChange: (value: ItemTypeFilter) => void;
+}) {
+    return (
+        <div
+            role="group"
+            aria-label="Filter saved items by type"
+            className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+            {TYPE_FILTER_OPTIONS.map((option) => {
+                const isSelected = value === option.value;
+
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => onChange(option.value)}
+                        aria-pressed={isSelected}
+                        className={cn(
+                            "inline-flex h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary",
+                            isSelected
+                                ? "border-primary/30 bg-primary/15 text-primary"
+                                : "border-white/10 bg-card/35 text-foreground/78 hover:bg-card/55 hover:text-foreground"
+                        )}
+                    >
+                        {option.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
 }
 
 function getValidColorFilter(value: string | null): ColorFilter {
@@ -392,7 +439,19 @@ function HighlightListItem({
     );
 }
 
-function ReflectionListItem({ item }: { item: ReflectionWithContent }) {
+function ReflectionListItem({
+    item,
+    deletePending,
+    isDeleteArmed,
+    onDelete,
+    onEdit,
+}: {
+    item: ReflectionWithContent;
+    deletePending: boolean;
+    isDeleteArmed: boolean;
+    onDelete: (id: string) => void;
+    onEdit: (item: ReflectionWithContent) => void;
+}) {
     const href = item.content_item
         ? buildCanonicalReadPath(item.content_item.id, item.content_item.title)
         : null;
@@ -400,9 +459,19 @@ function ReflectionListItem({ item }: { item: ReflectionWithContent }) {
     const content = (
         <>
             <div className="flex items-start gap-3">
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
-                    <Lightbulb className="size-4" />
-                </div>
+                {item.content_item?.cover_image_url ? (
+                    <Image
+                        src={item.content_item.cover_image_url}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="mt-0.5 h-8 w-8 shrink-0 rounded-lg object-cover"
+                    />
+                ) : (
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card/60 text-muted-foreground">
+                        <BookOpen className="size-4" />
+                    </div>
+                )}
                 <div className="min-w-0 flex-1">
                     <h3 className="line-clamp-1 text-[0.98rem] font-semibold tracking-[-0.01em] text-foreground">
                         {item.content_item?.title || "Saved reflection"}
@@ -432,11 +501,37 @@ function ReflectionListItem({ item }: { item: ReflectionWithContent }) {
                         {content}
                     </Link>
                 ) : <div className="min-w-0 flex-1 px-3 py-2">{content}</div>}
-                {href && (
+                <div className="mt-0.5 flex shrink-0 self-start items-center gap-1 sm:gap-1.5">
+                    <button
+                        type="button"
+                        onClick={() => onEdit(item)}
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/10 bg-card/35 px-2.5 py-1.5 text-[0.72rem] font-medium text-foreground/85 transition-colors hover:bg-card/55 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        aria-label="Edit reflection"
+                    >
+                        <Edit3 className="size-3.5" />
+                        <span>Edit</span>
+                    </button>
+                    {href && (
                     <Link href={href} className="mt-0.5 rounded-md p-2 text-muted-foreground/80 transition-colors hover:bg-background/40 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary" aria-label="Open reflection in reader">
                         <ExternalLink className="size-4" />
                     </Link>
-                )}
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => onDelete(item.id)}
+                        disabled={deletePending}
+                        className={cn(
+                            "rounded-md p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60",
+                            isDeleteArmed
+                                ? "bg-destructive/12 text-destructive hover:bg-destructive/18"
+                                : "text-muted-foreground/80 hover:bg-destructive/10 hover:text-destructive"
+                        )}
+                        aria-label={isDeleteArmed ? "Confirm delete reflection" : "Delete reflection"}
+                        title={isDeleteArmed ? "Click again to delete this reflection" : "Delete reflection"}
+                    >
+                        {isDeleteArmed ? <X className="size-4" /> : <Trash2 className="size-4" />}
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -632,6 +727,111 @@ function NoteEditorOverlay({
     );
 }
 
+function ReflectionEditorOverlay({
+    item,
+    draftReflection,
+    canSave,
+    isSaving,
+    onClose,
+    onDraftChange,
+    onSave,
+}: {
+    item: ReflectionWithContent | null;
+    draftReflection: string;
+    canSave: boolean;
+    isSaving: boolean;
+    onClose: () => void;
+    onDraftChange: (value: string) => void;
+    onSave: () => void;
+}) {
+    const dialogRef = useRef<HTMLDivElement | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    useOverlayInteractions({
+        enabled: item !== null,
+        containerRef: dialogRef,
+        initialFocusRef: textareaRef,
+        onEscape: isSaving ? undefined : onClose,
+        scrollLock: { lockDocumentElement: true },
+    });
+
+    if (!item) {
+        return null;
+    }
+
+    return (
+        <div className={cn("fixed inset-0", OVERLAY_LAYER_CLASS.panel)}>
+            <button
+                type="button"
+                aria-label="Close reflection editor"
+                onClick={onClose}
+                className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            />
+            <div className="absolute inset-x-0 bottom-0 flex justify-center px-0 sm:inset-0 sm:items-center sm:px-4">
+                <div
+                    ref={dialogRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="reflection-editor-title"
+                    tabIndex={-1}
+                    className="relative flex w-full max-w-xl flex-col overflow-hidden rounded-t-[1.75rem] border border-white/10 bg-background/96 shadow-[0_-20px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:rounded-[1.75rem]"
+                >
+                    <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-white/14 sm:hidden" />
+                    <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 pb-4 pt-4 sm:px-6 sm:pt-5">
+                        <div className="min-w-0">
+                            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground/75">Edit reflection</p>
+                            <h2 id="reflection-editor-title" className="mt-1 line-clamp-1 text-lg font-semibold text-foreground">
+                                {item.content_item?.title || "Saved reflection"}
+                            </h2>
+                            <p className="mt-1 text-sm text-muted-foreground">{item.prompt}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-card/60 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            aria-label="Close reflection editor"
+                        >
+                            <X className="size-4" />
+                        </button>
+                    </div>
+                    <div className="flex max-h-[78vh] flex-col gap-5 overflow-y-auto px-5 py-5 sm:px-6">
+                        <div>
+                            <div className="flex items-center justify-between gap-3">
+                                <label htmlFor="reflection-editor-textarea" className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted-foreground/80">
+                                    Your reflection
+                                </label>
+                                <span className="text-xs text-muted-foreground">{draftReflection.length} / 1,000</span>
+                            </div>
+                            <textarea
+                                ref={textareaRef}
+                                id="reflection-editor-textarea"
+                                value={draftReflection}
+                                onChange={(event) => onDraftChange(event.target.value)}
+                                maxLength={1_000}
+                                className="mt-3 min-h-40 w-full resize-none rounded-2xl border border-white/10 bg-card/35 px-4 py-3 text-sm leading-6 text-foreground placeholder:text-muted-foreground/65 focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                        </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
+                        <button type="button" onClick={onClose} className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/84 transition-colors hover:bg-card/50 hover:text-foreground">
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onSave}
+                            disabled={isSaving || !canSave}
+                            className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+                            Save changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function BrainClientPage({ initialPage, initialReflections = [], initialAskOpen = false }: BrainClientPageProps) {
     const router = useRouter();
     const pathname = usePathname();
@@ -653,6 +853,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const [editingHighlight, setEditingHighlight] = useState<HighlightWithContent | null>(null);
     const [draftNote, setDraftNote] = useState("");
     const [draftColor, setDraftColor] = useState<HighlightColor>("yellow");
+    const [editingReflection, setEditingReflection] = useState<ReflectionWithContent | null>(null);
+    const [draftReflection, setDraftReflection] = useState("");
     const askToggleButtonRef = useRef<HTMLButtonElement | null>(null);
     const listContainerRef = useRef<HTMLDivElement | null>(null);
     const shouldRestoreAskFocusRef = useRef(false);
@@ -662,6 +864,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const shouldRespectInitialAskOpenRef = useRef(initialAskOpen);
     const deleteHighlight = useDeleteHighlight();
     const updateHighlight = useUpdateHighlight();
+    const deleteReflection = useDeleteReflection();
+    const updateReflection = useUpdateReflection();
     const {
         data,
         fetchNextPage,
@@ -743,7 +947,9 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         const nextSearchQuery = searchParams.get("q") ?? "";
         const nextSelectedItem = searchParams.get("item") ?? DEFAULT_SELECTED_ITEM;
         const nextSelectedType = getValidTypeFilter(searchParams.get("type"));
-        const nextSelectedColor = getValidColorFilter(searchParams.get("color"));
+        const nextSelectedColor = nextSelectedType === "reflection"
+            ? DEFAULT_SELECTED_COLOR
+            : getValidColorFilter(searchParams.get("color"));
         const nextSortBy = getValidSortDirection(searchParams.get("sort"));
         const nextAskValue = searchParams.get("ask");
         const shouldSyncAskOpen = nextAskValue !== null || !shouldRespectInitialAskOpenRef.current;
@@ -1089,6 +1295,14 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         return draftNote.trim() !== originalNote || draftColor !== originalColor;
     }, [draftColor, draftNote, editingHighlight]);
 
+    const hasReflectionChanges = useMemo(() => {
+        return Boolean(
+            editingReflection
+            && draftReflection.trim()
+            && draftReflection.trim() !== editingReflection.reflection_text.trim()
+        );
+    }, [draftReflection, editingReflection]);
+
     const handleDelete = async (id: string) => {
         if (armedDeleteId !== id) {
             setArmedDeleteId(id);
@@ -1108,6 +1322,49 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         setEditingHighlight(item);
         setDraftNote(item.note_body?.trim() || "");
         setDraftColor(normalizeHighlightColor(item.color));
+    };
+
+    const handleDeleteReflection = async (id: string) => {
+        if (armedDeleteId !== id) {
+            setArmedDeleteId(id);
+            return;
+        }
+
+        try {
+            await deleteReflection.mutateAsync(id);
+            setArmedDeleteId(null);
+            toast.success("Reflection deleted");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to delete reflection");
+        }
+    };
+
+    const handleOpenReflectionEditor = (item: ReflectionWithContent) => {
+        setEditingReflection(item);
+        setDraftReflection(item.reflection_text);
+    };
+
+    const handleCloseReflectionEditor = () => {
+        if (!updateReflection.isPending) {
+            setEditingReflection(null);
+        }
+    };
+
+    const handleSaveReflectionEditor = async () => {
+        if (!editingReflection || !hasReflectionChanges) {
+            return;
+        }
+
+        try {
+            await updateReflection.mutateAsync({
+                id: editingReflection.id,
+                reflection_text: draftReflection.trim(),
+            });
+            setEditingReflection(null);
+            toast.success("Reflection updated");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to update reflection");
+        }
     };
 
     const handleCloseEditor = () => {
@@ -1196,6 +1453,9 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
 
     const updateSelectedType = (value: ItemTypeFilter) => {
         setSelectedType(value);
+        if (value === "reflection") {
+            setSelectedColor(DEFAULT_SELECTED_COLOR);
+        }
     };
 
     const updateSelectedColor = (value: ColorFilter) => {
@@ -1252,6 +1512,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                             className="h-10 w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary"
                                         />
                                     </label>
+
+                                    <TypeFilterPills value={selectedType} onChange={updateSelectedType} />
 
                                     <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                         <div className="flex flex-wrap items-center gap-2">
@@ -1344,34 +1606,23 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                             </label>
 
-                                            <label className="relative">
-                                                <select
-                                                    value={selectedType}
-                                                    onChange={(event) => updateSelectedType(event.target.value as ItemTypeFilter)}
-                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                                >
-                                                    <option value="all">All types</option>
-                                                    <option value="note">Notes</option>
-                                                    <option value="highlight">Highlights</option>
-                                                    <option value="reflection">Reflections</option>
-                                                </select>
-                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                            </label>
-
-                                            <label className="relative">
-                                                <select
-                                                    value={selectedColor}
-                                                    onChange={(event) => updateSelectedColor(event.target.value as ColorFilter)}
-                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                                >
-                                                    {COLOR_FILTER_OPTIONS.map((option) => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                            </label>
+                                            {selectedType !== "reflection" && (
+                                                <label className="relative">
+                                                    <select
+                                                        value={selectedColor}
+                                                        onChange={(event) => updateSelectedColor(event.target.value as ColorFilter)}
+                                                        aria-label="Filter highlights by color"
+                                                        className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    >
+                                                        {COLOR_FILTER_OPTIONS.map((option) => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                                </label>
+                                            )}
 
                                             {hasActiveControls && (
                                                 <div className="flex items-center justify-between gap-2">
@@ -1430,10 +1681,14 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                     />
                                 </label>
 
+                                <TypeFilterPills value={selectedType} onChange={updateSelectedType} />
+
                                 <div className={cn(
                                     "grid sm:grid-cols-2 transition-all duration-200",
                                     isFilterBarCompact ? "gap-2.5" : "gap-3",
-                                    isAskOpen ? "xl:grid-cols-4" : "lg:grid-cols-4"
+                                    selectedType === "reflection"
+                                        ? (isAskOpen ? "xl:grid-cols-2" : "lg:grid-cols-2")
+                                        : (isAskOpen ? "xl:grid-cols-3" : "lg:grid-cols-3")
                                 )}>
                                     <label className="relative">
                                         <Filter className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -1473,40 +1728,26 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     </label>
 
-                                    <label className="relative">
-                                        <select
-                                            value={selectedType}
-                                            onChange={(event) => setSelectedType(event.target.value as ItemTypeFilter)}
-                                            className={cn(
-                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
-                                                isFilterBarCompact ? "h-9" : "h-10"
-                                            )}
-                                        >
-                                            <option value="all">All types</option>
-                                            <option value="note">Notes</option>
-                                            <option value="highlight">Highlights</option>
-                                            <option value="reflection">Reflections</option>
-                                        </select>
-                                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    </label>
-
-                                    <label className="relative">
-                                        <select
-                                            value={selectedColor}
-                                            onChange={(event) => setSelectedColor(event.target.value as ColorFilter)}
-                                            className={cn(
-                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
-                                                isFilterBarCompact ? "h-9" : "h-10"
-                                            )}
-                                        >
-                                            {COLOR_FILTER_OPTIONS.map((option) => (
-                                                <option key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    </label>
+                                    {selectedType !== "reflection" && (
+                                        <label className="relative">
+                                            <select
+                                                value={selectedColor}
+                                                onChange={(event) => setSelectedColor(event.target.value as ColorFilter)}
+                                                aria-label="Filter highlights by color"
+                                                className={cn(
+                                                    "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
+                                                    isFilterBarCompact ? "h-9" : "h-10"
+                                                )}
+                                            >
+                                                {COLOR_FILTER_OPTIONS.map((option) => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                        </label>
+                                    )}
                                 </div>
 
                                 <div className={cn(
@@ -1596,7 +1837,18 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                         <h2 className="mb-3 text-sm font-semibold text-foreground">Reflections</h2>
                                     )}
                                     <div className="space-y-3">
-                                        {filteredReflections.map((item) => <ReflectionListItem key={item.id} item={item} />)}
+                                        {filteredReflections.map((item) => (
+                                            <ReflectionListItem
+                                                key={item.id}
+                                                item={item}
+                                                deletePending={deleteReflection.isPending}
+                                                isDeleteArmed={armedDeleteId === item.id}
+                                                onEdit={handleOpenReflectionEditor}
+                                                onDelete={(id) => {
+                                                    void handleDeleteReflection(id);
+                                                }}
+                                            />
+                                        ))}
                                     </div>
                                 </section>
                             )}
@@ -1697,6 +1949,17 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                 onClearDraft={() => setDraftNote("")}
                 onSave={() => {
                     void handleSaveEditor();
+                }}
+            />
+            <ReflectionEditorOverlay
+                item={editingReflection}
+                draftReflection={draftReflection}
+                canSave={hasReflectionChanges}
+                isSaving={updateReflection.isPending}
+                onClose={handleCloseReflectionEditor}
+                onDraftChange={setDraftReflection}
+                onSave={() => {
+                    void handleSaveReflectionEditor();
                 }}
             />
         </div>
