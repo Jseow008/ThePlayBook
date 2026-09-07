@@ -269,6 +269,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             categoryLabel={selectedTopicLabel}
                             categoryValues={selectedTopicValues}
                             type={selectedTypeParam}
+                            page={selectedPage}
                         />
                     </Suspense>
                 ) : selectedSort === "recent" ? (
