@@ -6,7 +6,6 @@ import {
     BookOpen,
     Headphones,
     FileText,
-    Check,
     Info,
     Trash2,
     Video,
@@ -117,7 +116,6 @@ function InteractiveContentCard(props: ContentCardProps) {
         item,
         hideProgressBar = false,
         navigationMode = "preview",
-        showUserCompletionBadge = false,
     } = props;
     const { isInMyList, toggleMyList, getProgress } = useReadingProgress();
     const isBookmarked = isInMyList(item.id);
@@ -144,7 +142,7 @@ function InteractiveContentCard(props: ContentCardProps) {
             isBookmarked={isBookmarked}
             progressPercentage={percentage}
             showProgress={showProgress}
-            showCompletedBadge={props.showCompletedBadge || (showUserCompletionBadge && progress?.isCompleted)}
+            showCompletedBadge={props.showCompletedBadge || progress?.isCompleted}
             href={href}
             onToggleBookmark={handleToggleBookmark}
         />
@@ -267,16 +265,6 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            {showCompletedBadge ? (
-                <div
-                    role="img"
-                    aria-label={`${item.title} completed`}
-                    className="pointer-events-none absolute right-2 top-2 z-20 flex size-7 items-center justify-center rounded-full border border-white/15 bg-emerald-900/95 shadow-[0_3px_10px_rgba(0,0,0,0.45)] backdrop-blur-sm"
-                >
-                    <Check aria-hidden="true" className="size-4 text-white" strokeWidth={2.5} />
-                </div>
-            ) : null}
-
             {showBookmarkButton ? (
                 <LibrarySaveButton
                     contentTitle={item.title}
@@ -287,7 +275,7 @@ function BaseContentCard({
                     stopPropagation
                     className={cn(
                         "content-card-motion-action focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
-                        showCompletedBadge ? "right-10" : "right-2"
+                        "right-2"
                     )}
                     savedClassName="bg-primary text-primary-foreground opacity-100"
                     unsavedClassName="content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
@@ -410,11 +398,20 @@ function BaseContentCard({
                 </div>
             </div>
 
-            {showProgress ? (
-                <div className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/40 backdrop-blur-sm">
+            {showProgress || showCompletedBadge ? (
+                <div
+                    role={showCompletedBadge ? "img" : undefined}
+                    aria-label={showCompletedBadge ? `${item.title} completed` : undefined}
+                    className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/40 backdrop-blur-sm"
+                >
                     <div
-                        className="content-card-motion-progress h-full rounded-b-[5px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300 motion-reduce:transition-none"
-                        style={{ width: `${progressPercentage}%` }}
+                        className={cn(
+                            "content-card-motion-progress h-full rounded-b-[5px] transition-all duration-300 motion-reduce:transition-none",
+                            showCompletedBadge
+                                ? "bg-emerald-500/85 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                                : "bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]",
+                        )}
+                        style={{ width: `${showCompletedBadge ? 100 : progressPercentage}%` }}
                     />
                 </div>
             ) : null}
