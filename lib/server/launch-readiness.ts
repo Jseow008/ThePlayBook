@@ -198,6 +198,8 @@ export async function getLaunchReadinessReport(
     }
 
     if (supabase) {
+        await Promise.all([
+        (async () => {
         try {
             const { data, error } = await supabase.rpc("get_admin_ai_readiness_summary");
 
@@ -241,7 +243,8 @@ export async function getLaunchReadinessReport(
             });
             aiReadiness.issues.push("Failed to load AI readiness details.");
         }
-
+        })(),
+        (async () => {
         try {
             const coverage = await getGeminiSegmentCoverage(supabase as any);
             segmentCoverage.summary = coverage;
@@ -266,7 +269,8 @@ export async function getLaunchReadinessReport(
             });
             segmentCoverage.issues.push("Failed to load Gemini segment coverage.");
         }
-
+        })(),
+        (async () => {
         try {
             const { data: buckets, error } = await supabase.storage.listBuckets();
 
@@ -294,6 +298,8 @@ export async function getLaunchReadinessReport(
             });
             storage.issues.push("Failed to list Supabase storage buckets.");
         }
+        })(),
+        ]);
     }
 
     const databaseIssues = uniqueIssues([

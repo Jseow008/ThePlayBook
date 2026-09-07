@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect, type MouseEvent as ReactMouseEvent } from "react";
+import { memo, useMemo, useState, useRef, useCallback, useEffect, type MouseEvent as ReactMouseEvent } from "react";
 import { ChevronRight, CheckCircle2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -296,6 +296,32 @@ const HIGHLIGHT_SANITIZE_SCHEMA = {
     },
 };
 
+const REHYPE_PLUGINS: NonNullable<React.ComponentProps<typeof ReactMarkdown>["rehypePlugins"]> = [
+    rehypeRaw, [rehypeSanitize, HIGHLIGHT_SANITIZE_SCHEMA],
+];
+
+const SegmentMarkdown = memo(function SegmentMarkdown({ body, segmentId, highlights }: {
+    body: string;
+    segmentId: string;
+    highlights: HighlightWithContent[];
+}) {
+    const remarkPlugins = useMemo(() => {
+        const matching = highlights.filter((highlight) => highlight.segment_id === segmentId);
+        return matching.length > 0
+            ? [remarkGfm, remarkBreaks, createRemarkHighlightPlugin(matching, true)]
+            : [remarkGfm, remarkBreaks];
+    }, [highlights, segmentId]);
+    return <ReactMarkdown remarkPlugins={remarkPlugins} rehypePlugins={REHYPE_PLUGINS}>{body}</ReactMarkdown>;
+});
+
+function LazySegmentMarkdown(props: React.ComponentProps<typeof SegmentMarkdown> & { expanded: boolean }) {
+    const [hasExpanded, setHasExpanded] = useState(props.expanded);
+    if (props.expanded && !hasExpanded) setHasExpanded(true);
+    // Keep visited text mounted so collapse animation and highlight anchors survive.
+    if (!hasExpanded && !props.expanded) return null;
+    return <SegmentMarkdown body={props.body} segmentId={props.segmentId} highlights={props.highlights} />;
+}
+
 interface SegmentAccordionProps {
     segments: SegmentFull[];
     completedSegments: Set<string>;
@@ -539,13 +565,6 @@ export function SegmentAccordion({
                 const isCompleted = completedSegments.has(segment.id);
                 const isLastSegment = index === segments.length - 1;
                 const isAudioActive = activeNarratedSegmentId === segment.id;
-                const segmentHighlights = highlights.filter((highlight) => highlight.segment_id === segment.id);
-                const remarkPlugins: any[] = [remarkGfm, remarkBreaks];
-
-                if (segmentHighlights.length > 0) {
-                    remarkPlugins.push(createRemarkHighlightPlugin(segmentHighlights, true));
-                }
-
                 return (
                     <div
                         key={segment.id}
@@ -658,12 +677,12 @@ export function SegmentAccordion({
                                             "prose-li:marker:text-muted-foreground"
                                         )}
                                     >
-                                        <ReactMarkdown
-                                            remarkPlugins={remarkPlugins as any}
-                                            rehypePlugins={[rehypeRaw, [rehypeSanitize, HIGHLIGHT_SANITIZE_SCHEMA]]}
-                                        >
-                                            {segment.markdown_body}
-                                        </ReactMarkdown>
+                                        <LazySegmentMarkdown
+                                            expanded={isExpanded}
+                                            body={segment.markdown_body}
+                                            segmentId={segment.id}
+                                            highlights={highlights}
+                                        />
                                     </div>
 
                                     <div className="mt-8 flex justify-center">

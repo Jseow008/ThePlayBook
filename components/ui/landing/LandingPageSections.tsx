@@ -1210,7 +1210,7 @@ export function CorePlatformFeaturesSection() {
                   className="flex h-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
                   style={{ transform: `translateX(-${activeStoryboardSlide * 100}%)` }}
                 >
-                  {STORYBOARD_SLIDES.map((slide) => (
+                  {STORYBOARD_SLIDES.map((slide, slideIndex) => (
                     <div key={`lightbox-${slide.title}`} className="relative h-full w-full shrink-0">
                       <Image
                         src={slide.image}
@@ -1218,7 +1218,7 @@ export function CorePlatformFeaturesSection() {
                         fill
                         sizes="94vw"
                         className="object-contain"
-                        priority
+                        priority={slideIndex === activeStoryboardSlide}
                       />
                     </div>
                   ))}

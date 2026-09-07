@@ -36,7 +36,7 @@ export function RecommendationsRow({
         mostRecentId || (isWorthFetchingGeneral && clusterIds.length > 0),
     );
 
-    const { data } = useBrowseRecommendations({
+    const { data, isLoading } = useBrowseRecommendations({
         recentSeedId: mostRecentId,
         librarySeedIds: isWorthFetchingGeneral ? librarySeedIds : [],
         excludeIds: knownRecommendationIds,
@@ -45,6 +45,18 @@ export function RecommendationsRow({
     });
 
     if (!isLoaded || !hasFetchableRecommendationSeeds) return null;
+    if (isLoading) {
+        return (
+            <section aria-hidden="true" className="min-h-[18rem] animate-pulse px-4 py-2 md:min-h-[23rem] md:px-6 lg:px-16">
+                <div className="mb-5 h-7 w-56 rounded bg-muted/50" />
+                <div className="flex gap-3 overflow-hidden">
+                    {Array.from({ length: 6 }, (_, index) => (
+                        <div key={index} className="aspect-[2/3] w-44 shrink-0 rounded-md bg-muted/35 md:w-60" />
+                    ))}
+                </div>
+            </section>
+        );
+    }
 
     const recentItems = data?.recentItems ?? [];
     const libraryItems = data?.libraryItems ?? [];

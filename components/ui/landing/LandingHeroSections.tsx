@@ -21,6 +21,7 @@ export function LandingHeader() {
           <Logo
             width={104}
             height={28}
+            priority
             className="brightness-110 drop-shadow-[0_1px_8px_rgba(255,255,255,0.08)]"
           />
         </Link>

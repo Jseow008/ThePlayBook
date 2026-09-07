@@ -469,10 +469,14 @@ function ensureReaderSettingsAuthSync() {
     return releaseReaderSettingsAuthSync;
 }
 
-export function useReaderSettings() {
+const selectReaderSettingsState = (state: ReaderSettingsState) => state;
+
+export function useReaderSettings(): ReaderSettingsState;
+export function useReaderSettings<T>(selector: (state: ReaderSettingsState) => T): T;
+export function useReaderSettings<T>(selector?: (state: ReaderSettingsState) => T) {
     useEffect(() => {
         return ensureReaderSettingsAuthSync();
     }, []);
 
-    return useReaderSettingsStore();
+    return useReaderSettingsStore(selector ?? (selectReaderSettingsState as (state: ReaderSettingsState) => T));
 }

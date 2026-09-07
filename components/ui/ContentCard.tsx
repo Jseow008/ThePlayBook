@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import Link from "next/link";
 import {
     BookOpen,
@@ -50,6 +51,13 @@ interface BaseContentCardProps extends ContentCardProps {
     href?: string;
 }
 
+const TYPE_ICONS: Record<ContentItem["type"], React.ComponentType<{ className?: string }>> = {
+    podcast: Headphones,
+    book: BookOpen,
+    article: FileText,
+    video: Video,
+};
+
 function hasUsableProgress(progress: ReturnType<typeof useReadingProgress>["getProgress"] extends (itemId: string) => infer T ? T : never) {
     if (!progress) {
         return false;
@@ -90,7 +98,7 @@ function getContentCardHook(item: ContentItem) {
     return hook.trim() || null;
 }
 
-export function ContentCard({
+export const ContentCard = memo(function ContentCard({
     enableUserState = true,
     ...props
 }: ContentCardProps) {
@@ -99,7 +107,7 @@ export function ContentCard({
     }
 
     return <InteractiveContentCard {...props} />;
-}
+});
 
 function InteractiveContentCard(props: ContentCardProps) {
     const {
@@ -112,6 +120,10 @@ function InteractiveContentCard(props: ContentCardProps) {
     const isBookmarked = isInMyList(item.id);
     const progress = getProgress(item.id);
     const href = getContentCardHref(item, navigationMode, hasUsableProgress(progress));
+    const handleToggleBookmark = useCallback(() => {
+        toggleMyList(item.id);
+        toast.success(isBookmarked ? "Removed from Library" : "Saved to Library");
+    }, [isBookmarked, item.id, toggleMyList]);
 
     const percentage =
         progress && progress.totalSegments
@@ -131,10 +143,7 @@ function InteractiveContentCard(props: ContentCardProps) {
             showProgress={showProgress}
             showCompletedBadge={props.showCompletedBadge || (showUserCompletionBadge && progress?.isCompleted)}
             href={href}
-            onToggleBookmark={() => {
-                toggleMyList(item.id);
-                toast.success(isBookmarked ? "Removed from Library" : "Saved to Library");
-            }}
+            onToggleBookmark={handleToggleBookmark}
         />
     );
 }
@@ -158,13 +167,7 @@ function BaseContentCard({
     priority = false,
     showDesktopQuickActions = false,
 }: BaseContentCardProps) {
-    const typeIcon: Record<ContentItem["type"], React.ComponentType<{ className?: string }>> = {
-        podcast: Headphones,
-        book: BookOpen,
-        article: FileText,
-        video: Video,
-    };
-    const Icon = typeIcon[item.type] || BookOpen;
+    const Icon = TYPE_ICONS[item.type] || BookOpen;
     const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
     const SecondaryRemoveIcon = secondaryRemoveIcon === "archive" ? Archive : Trash2;
 

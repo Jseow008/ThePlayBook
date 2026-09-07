@@ -7,6 +7,7 @@ import {
     useContext,
     useEffect,
     useRef,
+    useMemo,
     useState,
     type ReactNode,
 } from "react";
@@ -740,13 +741,15 @@ function useReadingProgressController(initialUser?: User | null) {
     const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);
     const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
 
-    return {
+    const refresh = useCallback(() => loadProgress(scopeRef.current), [loadProgress]);
+
+    return useMemo(() => ({
         inProgressIds,
         completedIds,
         inProgressCount: inProgressIds.length,
         completedCount: completedIds.length,
         isLoaded,
-        refresh: () => loadProgress(scopeRef.current),
+        refresh,
         archiveFromProgressList,
         restoreProgressListArchive,
         removeFromProgress,
@@ -762,7 +765,10 @@ function useReadingProgressController(initialUser?: User | null) {
         totalLibraryItems,
         storageScope,
         user,
-    };
+    }), [inProgressIds, completedIds, isLoaded, refresh, archiveFromProgressList,
+        restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
+        getProgress, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
+        totalLibraryItems, storageScope, user]);
 }
 
 type ReadingProgressValue = ReturnType<typeof useReadingProgressController>;

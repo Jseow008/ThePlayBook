@@ -67,13 +67,15 @@ export default function ContinueReadingPage() {
             );
         }
 
+        const orderById = new Map(inProgressIds.map((id, index) => [id, index]));
+
         // 3. Sort
         items.sort((a, b) => {
             if (activeSort === "title") {
                 return a.title.localeCompare(b.title);
             }
-            const indexA = inProgressIds.indexOf(a.id);
-            const indexB = inProgressIds.indexOf(b.id);
+            const indexA = (orderById.get(a.id) ?? -1);
+            const indexB = (orderById.get(b.id) ?? -1);
             if (activeSort === "newest") return indexA - indexB;
             if (activeSort === "oldest") return indexB - indexA;
             return 0;

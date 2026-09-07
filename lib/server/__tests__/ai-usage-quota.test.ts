@@ -28,6 +28,18 @@ describe("AI usage quota", () => {
         vi.restoreAllMocks();
     });
 
+    it("starts all quota reads before waiting and preserves window order", async () => {
+        const resolvers: Array<(value: { count: number; error: null }) => void> = [];
+        const gte = vi.fn(() => new Promise<{ count: number; error: null }>((resolve) => resolvers.push(resolve)));
+        const supabase = { from: () => ({ select: () => ({ eq: () => ({ gte }) }) }) };
+        const resultPromise = checkAiUsageQuota(supabase, "user-123");
+        expect(gte).toHaveBeenCalledTimes(3);
+        resolvers[2]({ count: 200, error: null });
+        resolvers[0]({ count: 2, error: null });
+        resolvers[1]({ count: 30, error: null });
+        expect((await resultPromise).windows.map((window) => window.used)).toEqual([2, 30, 200]);
+    });
+
     it("uses the free-user default limits", () => {
         expect(getAiUsageQuotaLimits()).toEqual(DEFAULT_AI_USAGE_QUOTA_LIMITS);
     });

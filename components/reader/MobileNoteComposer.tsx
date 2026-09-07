@@ -46,7 +46,7 @@ export function MobileNoteComposer({
     onSave,
 }: MobileNoteComposerProps) {
     const [mounted, setMounted] = useState(false);
-    const { readerTheme } = useReaderSettings();
+    const readerTheme = useReaderSettings((state) => state.readerTheme);
     const dialogRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 

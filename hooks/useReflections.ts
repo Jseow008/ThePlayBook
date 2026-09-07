@@ -1,3 +1,4 @@
+import { useAuthUser } from "@/hooks/useAuthUser";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { UserReflection } from "@/types/database";
 
@@ -11,8 +12,10 @@ export type ReflectionWithContent = UserReflection & {
 };
 
 export function useReflections(contentItemId?: string, initialData?: ReflectionWithContent[]) {
+    const user = useAuthUser();
     return useQuery({
-        queryKey: ["reflections", contentItemId ?? null],
+        queryKey: ["reflections", contentItemId ?? null, user?.id ?? null],
+        enabled: Boolean(user),
         queryFn: async (): Promise<ReflectionWithContent[]> => {
             const search = contentItemId ? `?content_item_id=${encodeURIComponent(contentItemId)}` : "";
             const response = await fetch(`/api/library/reflections${search}`);

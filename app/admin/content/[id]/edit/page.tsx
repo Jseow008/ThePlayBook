@@ -9,7 +9,7 @@ import { getAdminClient } from "@/lib/supabase/admin";
 import { ContentForm } from "@/components/admin/ContentForm";
 import { getAdminSeriesOptions } from "@/lib/server/admin-series";
 import { getAdminAiReadinessMap } from "@/lib/server/admin-ai-readiness";
-import { getNarrationEstimateByContentId } from "@/lib/server/narration-estimate";
+import { toNarrationEstimate } from "@/lib/server/narration-estimate";
 import { Segment } from "@/types/database";
 import { getNarrationJobState } from "@/lib/narration-job";
 
@@ -22,19 +22,22 @@ export default async function EditContentPage({ params, searchParams }: EditCont
     const { id } = await params;
     const resolvedSearchParams = await searchParams;
     const supabase = getAdminClient();
-    const seriesOptions = await getAdminSeriesOptions();
 
     // Fetch content with segments and artifacts
-    const { data: contentItemRaw, error } = await supabase
+    const [seriesOptions, { data: contentItemRaw, error }] = await Promise.all([
+        getAdminSeriesOptions(),
+        supabase
         .from("content_item")
         .select(`
             *,
-            segments:segment(id, order_index, title, markdown_body, start_time_sec, end_time_sec),
+            segments:segment(id, order_index, title, markdown_body, deleted_at, start_time_sec, end_time_sec),
             artifacts:artifact(id, type, payload_schema)
         `)
         .eq("id", id)
+        .is("deleted_at", null)
         .order("order_index", { referencedTable: "segment" })
-        .single();
+        .single(),
+    ]);
 
     if (error || !contentItemRaw) {
         notFound();
@@ -54,7 +57,7 @@ export default async function EditContentPage({ params, searchParams }: EditCont
         status: contentItem.status,
         embedding: contentItem.embedding,
     }]);
-    const narrationEstimate = await getNarrationEstimateByContentId(supabase as any, contentItem.id);
+    const narrationEstimate = toNarrationEstimate(contentItem);
 
     // Transform data for the form
     const formData = {

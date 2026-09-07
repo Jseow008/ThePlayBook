@@ -8,7 +8,11 @@ const profileSingleMock = vi.fn();
 const legacyMaybeSingleMock = vi.fn();
 
 vi.mock("@/lib/supabase/middleware", () => ({
-    updateSession: vi.fn(async (request: NextRequest) => NextResponse.next({ request })),
+    updateSession: vi.fn(async (request: NextRequest) => {
+        const hasAuthCookie = request.cookies.getAll().some(({ name }) => name.includes("-auth-token"));
+        const user = hasAuthCookie ? (await getUserMock()).data.user : null;
+        return { response: NextResponse.next({ request }), user };
+    }),
 }));
 
 vi.mock("@supabase/ssr", () => ({
@@ -88,7 +92,7 @@ describe("proxy auth routing", () => {
 
         expect(response.status).toBe(307);
         expect(response.headers.get("location")).toBe("http://localhost/login?next=%2Fadmin%2Fcontent");
-        expect(getUserMock).toHaveBeenCalledTimes(1);
+        expect(getUserMock).not.toHaveBeenCalled();
         expectAdminTelemetry("missing_user", "/admin/content");
     });
 
@@ -113,7 +117,7 @@ describe("proxy auth routing", () => {
 
         expect(response.status).toBe(307);
         expect(response.headers.get("location")).toBe("http://localhost/login?next=%2Fadmin%2Fcontent");
-        expect(getUserMock).toHaveBeenCalledTimes(1);
+        expect(getUserMock).not.toHaveBeenCalled();
     });
 
     it("hides production admin paths from non-allowlisted IPs", async () => {
@@ -170,7 +174,9 @@ describe("proxy auth routing", () => {
             error: null,
         });
 
-        const response = await proxy(new NextRequest("http://localhost/admin/content"));
+        const response = await proxy(new NextRequest("http://localhost/admin/content", {
+            headers: { cookie: "sb-test-auth-token=session" },
+        }));
 
         expect(response.status).toBe(307);
         expect(response.headers.get("location")).toBe("http://localhost/");

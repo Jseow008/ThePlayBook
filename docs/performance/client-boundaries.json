@@ -64,7 +64,6 @@
     "components/ui/AppOnboardingGate.tsx",
     "components/ui/AppOnboardingTour.tsx",
     "components/ui/AuthForm.tsx",
-    "components/ui/background-scroll-animation.tsx",
     "components/ui/ContentCard.tsx",
     "components/ui/ContentFeedback.tsx",
     "components/ui/ContentLane.tsx",

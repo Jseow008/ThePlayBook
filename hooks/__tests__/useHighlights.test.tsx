@@ -9,6 +9,9 @@ import {
     useHighlights,
 } from "@/hooks/useHighlights";
 
+const { mockUser } = vi.hoisted(() => ({ mockUser: vi.fn() }));
+vi.mock("@/hooks/useAuthUser", () => ({ useAuthUser: mockUser }));
+
 function createWrapper() {
     const queryClient = new QueryClient({
         defaultOptions: {
@@ -28,12 +31,21 @@ describe("useHighlights", () => {
     const fetchMock = vi.fn();
 
     beforeEach(() => {
+        mockUser.mockReturnValue({ id: "user-1" });
         fetchMock.mockReset();
         fetchMock.mockResolvedValue({
             ok: true,
             json: async () => ({ data: [] }),
         });
         vi.stubGlobal("fetch", fetchMock);
+    });
+
+    it("does not request highlights for a guest or unresolved session", () => {
+        mockUser.mockReturnValue(undefined);
+        const { rerender } = renderHook(() => useHighlights("content-1"), { wrapper: createWrapper() });
+        mockUser.mockReturnValue(null);
+        rerender();
+        expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it("includes content item and limit query params when provided", async () => {

@@ -17,7 +17,9 @@ import {
 } from "@/lib/onboarding";
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/database";
-import { AppOnboardingTour } from "@/components/ui/AppOnboardingTour";
+import dynamic from "next/dynamic";
+
+const AppOnboardingTour = dynamic(() => import("@/components/ui/AppOnboardingTour").then((mod) => mod.AppOnboardingTour));
 
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 type ActiveTour = "account" | "guest" | null;
@@ -140,6 +142,8 @@ export function AppOnboardingGate() {
             setIsSaving(false);
         }
     };
+
+    if (!isOpen) return null;
 
     return (
         <AppOnboardingTour

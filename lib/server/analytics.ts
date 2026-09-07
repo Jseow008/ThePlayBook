@@ -9,7 +9,7 @@ import {
 } from "@/lib/analytics-events";
 
 const DEFAULT_POSTHOG_HOST = "https://us.i.posthog.com";
-const SERVER_ANALYTICS_SHUTDOWN_TIMEOUT_MS = 5_000;
+let sharedClient: { token: string; host: string; client: PostHog } | undefined;
 
 type ServerAnalyticsCapture<E extends AnalyticsEvent> = {
     event: E;
@@ -33,15 +33,22 @@ function getServerPostHogConfig() {
 }
 
 function createServerPostHogClient(config: NonNullable<ReturnType<typeof getServerPostHogConfig>>) {
-    return new PostHog(config.projectToken, {
+    if (sharedClient?.token === config.projectToken && sharedClient.host === config.host) {
+        return sharedClient.client;
+    }
+    const client = new PostHog(config.projectToken, {
         host: config.host,
-        flushAt: 1,
-        flushInterval: 0,
+        requestTimeout: 5_000,
+        fetchRetryCount: 0,
+        flushAt: 20,
+        flushInterval: 10_000,
         preloadFeatureFlags: false,
         sendFeatureFlagEvent: false,
         disableRemoteConfig: true,
         disableSurveys: true,
     });
+    sharedClient = { token: config.projectToken, host: config.host, client };
+    return client;
 }
 
 export async function captureServerAnalyticsEvent<E extends AnalyticsEvent>({
@@ -65,18 +72,14 @@ export async function captureServerAnalyticsEvent<E extends AnalyticsEvent>({
     }
 
     try {
-        await posthog.captureImmediate({
+        posthog.capture({
             distinctId,
             event,
             properties: sanitizedProperties,
         });
+        await posthog.flush();
     } catch (error) {
         console.warn("[analytics] Server event capture failed.", { event, error });
     }
 
-    try {
-        await posthog.shutdown(SERVER_ANALYTICS_SHUTDOWN_TIMEOUT_MS);
-    } catch (error) {
-        console.warn("[analytics] Server event shutdown failed.", { event, error });
-    }
 }

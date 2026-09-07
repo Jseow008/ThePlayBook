@@ -1,3 +1,4 @@
+import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { smoothStream, streamText } from "ai";
@@ -301,7 +302,7 @@ Rules:
                 }
 
                 if (messages.filter((message) => message.role === "user").length === 1) {
-                    await captureServerAnalyticsEvent({
+                    afterResponse(() => captureServerAnalyticsEvent({
                         event: "ai_chat_started",
                         distinctId: user.id,
                         insertId: `ai_chat_started:notes:${user.id}:${requestId}`,
@@ -312,7 +313,7 @@ Rules:
                             note_count: rows.length,
                             user_state: "authenticated",
                         },
-                    });
+                    }));
                 }
             },
         });

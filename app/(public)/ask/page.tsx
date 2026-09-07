@@ -52,7 +52,7 @@ export default async function AskPage({ searchParams }: AskPageProps) {
     let initialNotesPage: HighlightsPage | undefined;
     let initialLibrarySnapshot: LibrarySnapshot | undefined;
 
-    const { data: libraryRows, error: libraryError } = await supabase
+    const libraryPromise = supabase
         .from("user_library")
         .select(`
             content_id,
@@ -63,15 +63,8 @@ export default async function AskPage({ searchParams }: AskPageProps) {
         `)
         .eq("user_id", user.id)
         .order("last_interacted_at", { ascending: false });
-
-    if (libraryError) {
-        console.error("Failed to load ask library snapshot:", libraryError);
-    } else {
-        initialLibrarySnapshot = buildLibrarySnapshot((libraryRows || []) as LibraryItemRow[]);
-    }
-
-    if (scope === "notes" && !initialNotesScope) {
-        const { data: highlights, error } = await supabase
+    const highlightsPromise = scope === "notes" && !initialNotesScope
+        ? supabase
             .from("user_highlights")
             .select(`
                 id,
@@ -90,10 +83,22 @@ export default async function AskPage({ searchParams }: AskPageProps) {
             `)
             .eq("user_id", user.id)
             .order("created_at", { ascending: false })
-            .limit(30);
+            .limit(30)
+        : Promise.resolve({ data: null, error: null });
+    const [
+        { data: libraryRows, error: libraryError },
+        { data: highlights, error: highlightsError },
+    ] = await Promise.all([libraryPromise, highlightsPromise]);
 
-        if (error) {
-            console.error("Failed to load ask notes highlights:", error);
+    if (libraryError) {
+        console.error("Failed to load ask library snapshot:", libraryError);
+    } else {
+        initialLibrarySnapshot = buildLibrarySnapshot((libraryRows || []) as LibraryItemRow[]);
+    }
+
+    if (scope === "notes" && !initialNotesScope) {
+        if (highlightsError) {
+            console.error("Failed to load ask notes highlights:", highlightsError);
         }
 
         initialNotesPage = {

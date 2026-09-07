@@ -6,7 +6,6 @@ import {
 } from "@/lib/admin-content-query";
 import {
     getAdminAiReadinessFromCounts,
-    getAdminAiReadinessMap,
     type AdminAiReadiness,
 } from "@/lib/server/admin-ai-readiness";
 import type { NarrationCostEstimate } from "@/lib/narration-cost";
@@ -60,7 +59,6 @@ type AdminContentWorkbenchReadinessRow = AdminContentWorkbenchItem & {
     embedded_segments: number | null;
 };
 
-const ADMIN_CONTENT_WORKBENCH_SELECT = "id, title, type, author, status, is_featured, embedding, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at";
 const ADMIN_CONTENT_WORKBENCH_READINESS_SELECT = "id, title, type, author, status, is_featured, audio_url, narration_status, narration_error, narration_requested_at, narration_started_at, narration_completed_at, created_at, updated_at, deleted_at, has_content_embedding, total_segments, embedded_segments";
 
 function toAiReadinessByIdFromRows(rows: AdminContentWorkbenchReadinessRow[]) {
@@ -125,8 +123,8 @@ export async function getAdminContentWorkbenchData(
     const returnTo = returnParams.toString() ? `${basePath}?${returnParams.toString()}` : basePath;
 
     let baseQuery = (supabase
-        .from("content_item") as any)
-        .select(ADMIN_CONTENT_WORKBENCH_SELECT, { count: "exact" })
+        .from("admin_content_workbench_readiness") as any)
+        .select(ADMIN_CONTENT_WORKBENCH_READINESS_SELECT, { count: "exact" })
         .is("deleted_at", null);
 
     if (viewState.status !== "all") {
@@ -187,20 +185,10 @@ export async function getAdminContentWorkbenchData(
             items = (fallbackResult.data ?? []) as AdminContentWorkbenchItem[];
         }
 
-        const [aiReadinessById, narrationEstimatesById] = await Promise.all([
-            getAdminAiReadinessMap(
-                supabase as any,
-                items.map((item) => ({
-                    id: item.id,
-                    status: item.status,
-                    embedding: item.embedding,
-                }))
-            ),
-            getNarrationEstimatesByContentId(
-                supabase as any,
-                items.map((item) => item.id)
-            ),
-        ]);
+        const aiReadinessById = toAiReadinessByIdFromRows(items as AdminContentWorkbenchReadinessRow[]);
+        const narrationEstimatesById = await getNarrationEstimatesByContentId(
+            supabase as any, items.map((item) => item.id)
+        );
 
         return {
             items,

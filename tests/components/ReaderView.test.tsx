@@ -327,12 +327,12 @@ describe('ReaderView', () => {
         syncFromCloudMock.mockClear();
     });
 
-    it('renders the layout components including header, accordion, and drawers', () => {
+    it('renders the layout components including header, accordion, and drawers', async () => {
         render(<ReaderView content={mockContent} />);
 
         expect(screen.getByTestId('mock-hero-header')).toBeInTheDocument();
         expect(screen.getByTestId('mock-segment-accordion')).toBeInTheDocument();
-        expect(screen.getByTestId('mock-notes-drawer')).toBeInTheDocument();
+        expect(await screen.findByTestId('mock-notes-drawer')).toBeInTheDocument();
         expect(screen.getByTestId('mock-text-toolbar')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'Discuss ideas' })).toBeInTheDocument();
 

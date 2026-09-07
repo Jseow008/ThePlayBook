@@ -27,7 +27,7 @@ type NarrationEstimateSupabaseClient = {
     };
 };
 
-function toNarrationEstimate(row: ContentNarrationSourceRow): NarrationCostEstimate | null {
+export function toNarrationEstimate(row: ContentNarrationSourceRow): NarrationCostEstimate | null {
     const segments = (row.segments ?? []).filter((segment) => !segment.deleted_at);
 
     try {

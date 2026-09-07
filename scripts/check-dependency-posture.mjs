@@ -126,7 +126,7 @@ const trackedGroups = [
   {
     tier: "Special watch",
     area: "Low-use/heavy dependencies",
-    packages: ["framer-motion", "ffmpeg-static", "@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
+    packages: ["ffmpeg-static", "@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
   },
 ];
 
