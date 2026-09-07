@@ -303,17 +303,13 @@ describe("BrainClientPage", () => {
         expect(screen.getByText(/second highlight/i)).toBeInTheDocument();
         expect(screen.queryByText(/highlighted passage/i)).not.toBeInTheDocument();
 
-        fireEvent.change(screen.getAllByDisplayValue("All types")[0], {
-            target: { value: "note" },
-        });
+        fireEvent.click(screen.getAllByRole("button", { name: "Notes" })[0]);
         expect(screen.queryByText("A second highlight")).not.toBeInTheDocument();
 
         fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], {
             target: { value: "" },
         });
-        fireEvent.change(screen.getAllByDisplayValue("Notes")[0], {
-            target: { value: "all" },
-        });
+        fireEvent.click(screen.getAllByRole("button", { name: "All" })[0]);
         fireEvent.change(screen.getAllByDisplayValue("All colors")[0], {
             target: { value: "blue" },
         });
@@ -330,6 +326,20 @@ describe("BrainClientPage", () => {
         await waitFor(() => {
             expect(deleteHighlightMock).toHaveBeenCalledWith("highlight-1");
         });
+    });
+
+    it("hides and clears the color filter when reflections are selected", () => {
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        fireEvent.change(screen.getAllByLabelText("Filter highlights by color")[0], {
+            target: { value: "blue" },
+        });
+        fireEvent.click(screen.getAllByRole("button", { name: "Reflections" })[0]);
+
+        expect(screen.queryByLabelText("Filter highlights by color")).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getAllByRole("button", { name: "Highlights" })[0]);
+        expect(screen.getAllByLabelText("Filter highlights by color")[0]).toHaveValue("all");
     });
 
     it("loads more notes when another page is available", async () => {

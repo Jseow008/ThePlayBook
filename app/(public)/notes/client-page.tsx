@@ -74,6 +74,12 @@ const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
 const VIRTUAL_OVERSCAN_PX = 720;
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
+const TYPE_FILTER_OPTIONS: Array<{ value: ItemTypeFilter; label: string }> = [
+    { value: "all", label: "All" },
+    { value: "note", label: "Notes" },
+    { value: "highlight", label: "Highlights" },
+    { value: "reflection", label: "Reflections" },
+];
 
 const NotesAskPanel = dynamic(
     () => import("@/components/notes/NotesAskPanel").then((mod) => mod.NotesAskPanel),
@@ -102,6 +108,43 @@ function getValidTypeFilter(value: string | null): ItemTypeFilter {
 
 function getValidSortDirection(value: string | null): SortDirection {
     return value === "oldest" ? value : DEFAULT_SORT;
+}
+
+function TypeFilterPills({
+    value,
+    onChange,
+}: {
+    value: ItemTypeFilter;
+    onChange: (value: ItemTypeFilter) => void;
+}) {
+    return (
+        <div
+            role="group"
+            aria-label="Filter saved items by type"
+            className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+            {TYPE_FILTER_OPTIONS.map((option) => {
+                const isSelected = value === option.value;
+
+                return (
+                    <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => onChange(option.value)}
+                        aria-pressed={isSelected}
+                        className={cn(
+                            "inline-flex h-9 shrink-0 items-center rounded-full border px-3 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary",
+                            isSelected
+                                ? "border-primary/30 bg-primary/15 text-primary"
+                                : "border-white/10 bg-card/35 text-foreground/78 hover:bg-card/55 hover:text-foreground"
+                        )}
+                    >
+                        {option.label}
+                    </button>
+                );
+            })}
+        </div>
+    );
 }
 
 function getValidColorFilter(value: string | null): ColorFilter {
@@ -904,7 +947,9 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         const nextSearchQuery = searchParams.get("q") ?? "";
         const nextSelectedItem = searchParams.get("item") ?? DEFAULT_SELECTED_ITEM;
         const nextSelectedType = getValidTypeFilter(searchParams.get("type"));
-        const nextSelectedColor = getValidColorFilter(searchParams.get("color"));
+        const nextSelectedColor = nextSelectedType === "reflection"
+            ? DEFAULT_SELECTED_COLOR
+            : getValidColorFilter(searchParams.get("color"));
         const nextSortBy = getValidSortDirection(searchParams.get("sort"));
         const nextAskValue = searchParams.get("ask");
         const shouldSyncAskOpen = nextAskValue !== null || !shouldRespectInitialAskOpenRef.current;
@@ -1408,6 +1453,9 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
 
     const updateSelectedType = (value: ItemTypeFilter) => {
         setSelectedType(value);
+        if (value === "reflection") {
+            setSelectedColor(DEFAULT_SELECTED_COLOR);
+        }
     };
 
     const updateSelectedColor = (value: ColorFilter) => {
@@ -1464,6 +1512,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                             className="h-10 w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary"
                                         />
                                     </label>
+
+                                    <TypeFilterPills value={selectedType} onChange={updateSelectedType} />
 
                                     <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
                                         <div className="flex flex-wrap items-center gap-2">
@@ -1556,34 +1606,23 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                             </label>
 
-                                            <label className="relative">
-                                                <select
-                                                    value={selectedType}
-                                                    onChange={(event) => updateSelectedType(event.target.value as ItemTypeFilter)}
-                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                                >
-                                                    <option value="all">All types</option>
-                                                    <option value="note">Notes</option>
-                                                    <option value="highlight">Highlights</option>
-                                                    <option value="reflection">Reflections</option>
-                                                </select>
-                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                            </label>
-
-                                            <label className="relative">
-                                                <select
-                                                    value={selectedColor}
-                                                    onChange={(event) => updateSelectedColor(event.target.value as ColorFilter)}
-                                                    className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                                                >
-                                                    {COLOR_FILTER_OPTIONS.map((option) => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                            </label>
+                                            {selectedType !== "reflection" && (
+                                                <label className="relative">
+                                                    <select
+                                                        value={selectedColor}
+                                                        onChange={(event) => updateSelectedColor(event.target.value as ColorFilter)}
+                                                        aria-label="Filter highlights by color"
+                                                        className="h-10 w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                                    >
+                                                        {COLOR_FILTER_OPTIONS.map((option) => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                                </label>
+                                            )}
 
                                             {hasActiveControls && (
                                                 <div className="flex items-center justify-between gap-2">
@@ -1642,10 +1681,14 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                     />
                                 </label>
 
+                                <TypeFilterPills value={selectedType} onChange={updateSelectedType} />
+
                                 <div className={cn(
                                     "grid sm:grid-cols-2 transition-all duration-200",
                                     isFilterBarCompact ? "gap-2.5" : "gap-3",
-                                    isAskOpen ? "xl:grid-cols-4" : "lg:grid-cols-4"
+                                    selectedType === "reflection"
+                                        ? (isAskOpen ? "xl:grid-cols-2" : "lg:grid-cols-2")
+                                        : (isAskOpen ? "xl:grid-cols-3" : "lg:grid-cols-3")
                                 )}>
                                     <label className="relative">
                                         <Filter className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -1685,40 +1728,26 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                         <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     </label>
 
-                                    <label className="relative">
-                                        <select
-                                            value={selectedType}
-                                            onChange={(event) => setSelectedType(event.target.value as ItemTypeFilter)}
-                                            className={cn(
-                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
-                                                isFilterBarCompact ? "h-9" : "h-10"
-                                            )}
-                                        >
-                                            <option value="all">All types</option>
-                                            <option value="note">Notes</option>
-                                            <option value="highlight">Highlights</option>
-                                            <option value="reflection">Reflections</option>
-                                        </select>
-                                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    </label>
-
-                                    <label className="relative">
-                                        <select
-                                            value={selectedColor}
-                                            onChange={(event) => setSelectedColor(event.target.value as ColorFilter)}
-                                            className={cn(
-                                                "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
-                                                isFilterBarCompact ? "h-9" : "h-10"
-                                            )}
-                                        >
-                                            {COLOR_FILTER_OPTIONS.map((option) => (
-                                                <option key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                                    </label>
+                                    {selectedType !== "reflection" && (
+                                        <label className="relative">
+                                            <select
+                                                value={selectedColor}
+                                                onChange={(event) => setSelectedColor(event.target.value as ColorFilter)}
+                                                aria-label="Filter highlights by color"
+                                                className={cn(
+                                                    "w-full appearance-none rounded-xl border border-white/10 bg-card/35 px-4 pr-10 text-sm text-foreground transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",
+                                                    isFilterBarCompact ? "h-9" : "h-10"
+                                                )}
+                                            >
+                                                {COLOR_FILTER_OPTIONS.map((option) => (
+                                                    <option key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                                        </label>
+                                    )}
                                 </div>
 
                                 <div className={cn(
