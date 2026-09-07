@@ -334,6 +334,24 @@ describe("SearchPage", () => {
         expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
         expect(queryBuilder?.eq).toHaveBeenCalledWith("type", "podcast");
         expect(queryBuilder?.or).toHaveBeenCalledWith("title.ilike.%focus%,author.ilike.%focus%,category.ilike.%focus%");
+        expect(queryBuilder?.range).toHaveBeenCalledWith(0, 19);
+        expect(queryBuilder?.order).toHaveBeenNthCalledWith(1, "created_at", { ascending: false });
+        expect(queryBuilder?.order).toHaveBeenNthCalledWith(2, "id", { ascending: false });
+    });
+
+    it("retrieves the next non-overlapping search page and preserves its filters in pagination links", async () => {
+        const results = await runSearchResultsFromPage({ q: "focus", type: "book", page: "2" });
+        const queryBuilder = getLatestQueryBuilder();
+
+        expect(queryBuilder?.range).toHaveBeenCalledWith(20, 39);
+
+        await act(async () => {
+            render(results);
+        });
+
+        expect(screen.getByRole("link", { name: "Previous" })).toHaveAttribute("href", "/search?q=focus&type=book");
+        expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/search?q=focus&type=book&page=3");
+        expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
     });
 
     it("does not show a request-summary action when search has matching results", async () => {
@@ -343,7 +361,7 @@ describe("SearchPage", () => {
             render(results);
         });
 
-        expect(screen.getByText('1 result for "focus" (book)')).toBeInTheDocument();
+        expect(screen.getByText('41 results for "focus" (book)')).toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /request a summary/i })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /request this summary/i })).not.toBeInTheDocument();
     });
