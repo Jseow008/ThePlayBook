@@ -1,6 +1,7 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
+import type { User } from "@supabase/supabase-js";
 
 type CookieToSet = {
     name: string;
@@ -36,8 +37,17 @@ export async function updateSession(request: NextRequest) {
         }
     );
 
-    // Keep auth cookie fresh for routes that pass through the proxy.
-    await supabase.auth.getUser();
+    const hasAuthCookie = request.cookies.getAll().some(({ name }) =>
+        name.startsWith("sb-")
+        && name.includes("-auth-token")
+        && !name.endsWith("-code-verifier")
+    );
+    if (!hasAuthCookie) {
+        return { response: supabaseResponse, user: null as User | null };
+    }
 
-    return supabaseResponse;
+    // Keep auth cookie fresh for routes that pass through the proxy.
+    const { data: { user } } = await supabase.auth.getUser();
+
+    return { response: supabaseResponse, user };
 }

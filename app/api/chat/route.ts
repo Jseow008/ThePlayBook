@@ -1,3 +1,4 @@
+import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { smoothStream, streamText } from "ai";
@@ -459,7 +460,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const { data: libraryRows, error: libraryError } = await supabase
+        const libraryPromise = supabase
             .from("user_library")
             .select(`
                 content_id,
@@ -470,6 +471,20 @@ export async function POST(req: NextRequest) {
             `)
             .eq("user_id", user.id)
             .order("last_interacted_at", { ascending: false });
+        const embeddingPromise = intent !== "library_metadata" && hasGemini
+            ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! }).models.embedContent({
+                model: EMBEDDING_MODEL,
+                contents: userQuery,
+                config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+            }).then(
+                (response) => ({ response, error: null as unknown }),
+                (error: unknown) => ({ response: null, error }),
+            )
+            : Promise.resolve({ response: null, error: null as unknown });
+        const [
+            { data: libraryRows, error: libraryError },
+            embeddingResult,
+        ] = await Promise.all([libraryPromise, embeddingPromise]);
 
         if (libraryError) {
             logApiError({ requestId, route: "/api/chat", message: "Failed to load library metadata", error: libraryError });
@@ -483,20 +498,11 @@ export async function POST(req: NextRequest) {
         let retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
 
         if (intent !== "library_metadata" && hasGemini) {
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-            let queryEmbedding: number[] | undefined;
-            try {
-                const embeddingResponse = await ai.models.embedContent({
-                    model: EMBEDDING_MODEL,
-                    contents: userQuery,
-                    config: { outputDimensionality: EMBEDDING_DIMENSIONS },
-                });
-
-                queryEmbedding = embeddingResponse.embeddings?.[0]?.values;
-            } catch (error) {
-                logApiError({ requestId, route: "/api/chat", message: "Gemini embedding API error", error });
+            if (embeddingResult.error) {
+                logApiError({ requestId, route: "/api/chat", message: "Gemini embedding API error", error: embeddingResult.error });
                 return apiError("INTERNAL_ERROR", "Ask My Library retrieval is temporarily unavailable. Please try again later.", 500, requestId);
             }
+            const queryEmbedding = embeddingResult.response?.embeddings?.[0]?.values;
 
             if (!queryEmbedding || queryEmbedding.length !== EMBEDDING_DIMENSIONS) {
                 logApiError({
@@ -574,7 +580,7 @@ Rules:
                 }
 
                 if (messages.filter((message) => message.role === "user").length === 1) {
-                    await captureServerAnalyticsEvent({
+                    afterResponse(() => captureServerAnalyticsEvent({
                         event: "ai_chat_started",
                         distinctId: user.id,
                         insertId: `ai_chat_started:library:${user.id}:${requestId}`,
@@ -584,7 +590,7 @@ Rules:
                             chat_scope: "library",
                             user_state: "authenticated",
                         },
-                    });
+                    }));
                 }
             },
         });

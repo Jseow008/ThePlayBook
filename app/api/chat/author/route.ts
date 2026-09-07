@@ -1,3 +1,4 @@
+import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { anthropic } from "@ai-sdk/anthropic";
@@ -332,7 +333,6 @@ export async function POST(req: NextRequest) {
         // --- Sliding Context Window: only keep last N messages ---
         const messages = allMessages.slice(-MAX_HISTORY_MESSAGES);
 
-        // --- Fetch Content Segments for Context ---
         const { data: segments, error: segError } = await supabase
             .from("segment")
             .select("title, markdown_body, order_index")
@@ -399,7 +399,7 @@ Rules:
 
                 if (allMessages.filter((message) => message.role === "user").length === 1) {
                     const distinctId = user?.id ?? `anonymous:${requestId}`;
-                    await captureServerAnalyticsEvent({
+                    afterResponse(() => captureServerAnalyticsEvent({
                         event: "ai_chat_started",
                         distinctId,
                         insertId: `ai_chat_started:content:${distinctId}:${contentId}:${requestId}`,
@@ -410,7 +410,7 @@ Rules:
                             content_id: contentId,
                             user_state: user ? "authenticated" : "anonymous",
                         },
-                    });
+                    }));
                 }
             },
         });

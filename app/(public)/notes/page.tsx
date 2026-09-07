@@ -29,8 +29,8 @@ export default async function BrainPage({ searchParams }: BrainPageProps) {
         redirect(buildLoginHref(loginTarget));
     }
 
-    // Pre-fetch global highlights
-    const { data: highlights, error } = await supabase
+    const [{ data: highlights, error }, { data: reflections, error: reflectionsError }] = await Promise.all([
+        supabase
         .from("user_highlights")
         .select(`
             id,
@@ -46,17 +46,17 @@ export default async function BrainPage({ searchParams }: BrainPageProps) {
         `)
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
-        .limit(30);
+        .limit(30),
+        supabase
+        .from("user_reflections")
+        .select("id, content_item_id, prompt, reflection_text, created_at, updated_at, content_item ( id, title, author, cover_image_url )")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+    ]);
 
     if (error) {
         console.error("Failed to load brain highlights:", error);
     }
-
-    const { data: reflections, error: reflectionsError } = await supabase
-        .from("user_reflections")
-        .select("id, content_item_id, prompt, reflection_text, created_at, updated_at, content_item ( id, title, author, cover_image_url )")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
 
     if (reflectionsError) {
         console.error("Failed to load reflections:", reflectionsError);

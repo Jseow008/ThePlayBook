@@ -14,6 +14,7 @@ import {
 
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
+const EMBEDDING_CONCURRENCY = 5;
 const MAX_ITEMS_PER_REQUEST = 25;
 
 function buildEmbeddingText(item: any): string {
@@ -134,45 +135,36 @@ export async function POST(request: NextRequest) {
         const ai = new GoogleGenAI({ apiKey });
         let successCount = 0;
         let failedCount = 0;
-
-        // Process sequentially to respect rate limits (or do batching if needed)
-        // With Edge Functions/Serverless, we must be mindful of timeouts.
-        // If there are many items, processing 10-20 should be fine within the timeout.
-        for (const item of items) {
-            const text = buildEmbeddingText(item);
-            if (!text.trim()) {
-                failedCount++;
-                continue;
-            }
-
-            try {
-                // Call Gemini API
+        for (let offset = 0; offset < items.length; offset += EMBEDDING_CONCURRENCY) {
+            const batch = items.slice(offset, offset + EMBEDDING_CONCURRENCY);
+            const results = await Promise.allSettled(batch.map(async (item) => {
+                const text = buildEmbeddingText(item);
+                if (!text.trim()) {
+                    throw new Error("Content has no text to embed");
+                }
                 const response = await ai.models.embedContent({
                     model: EMBEDDING_MODEL,
                     contents: text,
                     config: { outputDimensionality: EMBEDDING_DIMENSIONS }
                 });
-
                 const embedding = response.embeddings?.[0]?.values;
                 if (!embedding || embedding.length !== EMBEDDING_DIMENSIONS) {
                     throw new Error(`Invalid embedding returned: expected ${EMBEDDING_DIMENSIONS} dims`);
                 }
-
-                // Update row
                 const { error: updateError } = await supabase
                     .from("content_item")
                     .update({ embedding: JSON.stringify(embedding) })
                     .eq("id", item.id);
-
-                if (updateError) {
-                    throw updateError;
+                if (updateError) throw updateError;
+            }));
+            results.forEach((result, index) => {
+                if (result.status === "fulfilled") {
+                    successCount += 1;
+                } else {
+                    failedCount += 1;
+                    console.error(`Error embedding item ${batch[index].id}:`, result.reason);
                 }
-
-                successCount++;
-            } catch (err) {
-                console.error(`Error embedding item ${item.id}:`, err);
-                failedCount++;
-            }
+            });
         }
 
         return NextResponse.json({

@@ -90,6 +90,8 @@ export default function CompletedPage() {
             );
         }
 
+        const orderById = new Map(completedIds.map((id, index) => [id, index]));
+
         // 3. Sort
         items.sort((a, b) => {
             if (activeSort === "title") {
@@ -104,8 +106,8 @@ export default function CompletedPage() {
                 if (activeSort === "oldest") return timeA - timeB;
             }
 
-            const indexA = completedIds.indexOf(a.id);
-            const indexB = completedIds.indexOf(b.id);
+            const indexA = (orderById.get(a.id) ?? -1);
+            const indexB = (orderById.get(b.id) ?? -1);
 
             if (activeSort === "newest") return indexA - indexB; // Lower index = more recent (sorted desc in hook)
             if (activeSort === "oldest") return indexB - indexA;

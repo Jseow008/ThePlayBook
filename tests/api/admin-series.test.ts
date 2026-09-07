@@ -79,9 +79,17 @@ describe("Admin series API", () => {
     });
 
     it("lists series with content counts", async () => {
-        const countSelect = vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-                is: vi.fn().mockResolvedValue({ count: 4 }),
+        const contentSelect = vi.fn().mockReturnValue({
+            in: vi.fn().mockReturnValue({
+                is: vi.fn().mockResolvedValue({
+                    data: [
+                        { series_id: "series-1" },
+                        { series_id: "series-1" },
+                        { series_id: "series-1" },
+                        { series_id: "series-1" },
+                    ],
+                    error: null,
+                }),
             }),
         });
 
@@ -106,7 +114,7 @@ describe("Admin series API", () => {
                 }
 
                 if (table === "content_item") {
-                    return { select: countSelect };
+                    return { select: contentSelect };
                 }
 
                 throw new Error(`Unexpected table ${table}`);
@@ -121,9 +129,9 @@ describe("Admin series API", () => {
     });
 
     it("returns 500 when a series count lookup fails", async () => {
-        const countSelect = vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-                is: vi.fn().mockResolvedValue({ count: null, error: { code: "COUNT_FAILED" } }),
+        const contentSelect = vi.fn().mockReturnValue({
+            in: vi.fn().mockReturnValue({
+                is: vi.fn().mockResolvedValue({ data: null, error: { code: "COUNT_FAILED" } }),
             }),
         });
 
@@ -148,7 +156,7 @@ describe("Admin series API", () => {
                 }
 
                 if (table === "content_item") {
-                    return { select: countSelect };
+                    return { select: contentSelect };
                 }
 
                 throw new Error(`Unexpected table ${table}`);

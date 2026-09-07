@@ -1,3 +1,4 @@
+import { useAuthUser } from "@/hooks/useAuthUser";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import type { UserHighlight } from "@/types/database";
 import type { HighlightRangeRelationship } from "@/lib/highlight-ranges";
@@ -35,8 +36,10 @@ interface UseInfiniteHighlightsOptions {
 // Fetch Highlights
 // ----------------------------------------------------------------------------
 export function useHighlights(contentItemId?: string, options?: UseHighlightsOptions) {
+    const user = useAuthUser();
     return useQuery({
-        queryKey: ["highlights", contentItemId, options?.limit ?? null],
+        queryKey: ["highlights", contentItemId, options?.limit ?? null, user?.id ?? null],
+        enabled: Boolean(user),
         queryFn: async (): Promise<HighlightWithContent[]> => {
             const params = new URLSearchParams();
 

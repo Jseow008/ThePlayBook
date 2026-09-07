@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
-import { Instrument_Serif, Inter, Outfit, Playfair_Display } from "next/font/google";
+import { Inter, Outfit, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { QueryProvider } from "@/components/providers/query-provider";
@@ -32,13 +32,6 @@ const outfit = Outfit({
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-playfair",
-  display: "swap",
-});
-
-const landingHeroSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-landing-hero-serif",
   display: "swap",
 });
 
@@ -109,7 +102,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`dark ${inter.variable} ${outfit.variable} ${playfair.variable} ${landingHeroSerif.variable}`}
+      className={`dark ${inter.variable} ${outfit.variable} ${playfair.variable}`}
     >
       <body className="font-sans antialiased isolate">
         <script

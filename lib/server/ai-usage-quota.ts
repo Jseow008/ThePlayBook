@@ -122,20 +122,18 @@ export async function checkAiUsageQuota(
     const limits = getAiUsageQuotaLimits();
     const boundaries = getWindowBoundaries(now);
     const windows: QuotaWindow[] = ["day", "week", "month"];
-    const states: QuotaWindowState[] = [];
-
-    for (const window of windows) {
+    const states: QuotaWindowState[] = await Promise.all(windows.map(async (window) => {
         const used = await countUsageSince(supabase, userId, boundaries[window].start);
         const limit = limits[window];
 
-        states.push({
+        return {
             window,
             limit,
             used,
             remaining: Math.max(0, limit - used),
             resetAt: boundaries[window].resetAt,
-        });
-    }
+        };
+    }));
 
     const blocked = states.find((state) => state.used >= state.limit);
     if (!blocked) {

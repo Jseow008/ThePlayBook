@@ -193,7 +193,7 @@ describe("RecommendationsRow", () => {
         expect(within(generalLane!).queryByText(/The Comfort Crisis/)).not.toBeInTheDocument();
     });
 
-    it("stays collapsed while recommendations are loading without available items", () => {
+    it("reserves lane space while recommendations are loading", () => {
         useReadingProgressMock.mockReturnValue({
             completedIds: [recommendation.id],
             inProgressIds: [],
@@ -212,8 +212,7 @@ describe("RecommendationsRow", () => {
         const { container } = render(<RecommendationsRow />);
 
         expect(screen.queryByRole("heading")).not.toBeInTheDocument();
-        expect(container.querySelector(".animate-pulse")).not.toBeInTheDocument();
-        expect(container).toBeEmptyDOMElement();
+        expect(container.querySelector(".animate-pulse")).toBeInTheDocument();
     });
 
     it("uses one stable browse recommendations query", () => {

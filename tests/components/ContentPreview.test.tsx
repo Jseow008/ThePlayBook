@@ -20,7 +20,7 @@ vi.mock('@/hooks/useReadingProgress', () => ({
 }));
 
 vi.mock('@/hooks/useReaderSettings', () => ({
-    useReaderSettings: () => ({
+    useReaderSettings: (selector: (state: { readerTheme: string }) => unknown) => selector({
         readerTheme: mockReaderTheme(),
     }),
 }));

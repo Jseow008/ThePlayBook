@@ -42,7 +42,7 @@ export function ContentPreview({
 }: ContentPreviewProps) {
     const quickMode = item.quick_mode_json as QuickMode | null;
     const { getProgress } = useReadingProgress();
-    const { readerTheme } = useReaderSettings();
+    const readerTheme = useReaderSettings((state) => state.readerTheme);
     const progress = getProgress(item.id);
     const readCtaLabel = progress?.isCompleted
         ? "Read Again"

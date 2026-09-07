@@ -38,24 +38,27 @@ export async function GET(request: NextRequest) {
         }
 
         const rows = data ?? [];
-        const seriesWithCounts = await Promise.all(
-            rows.map(async (series) => {
-                const { count, error: countError } = await supabase
-                    .from("content_item")
-                    .select("id", { count: "exact", head: true })
-                    .eq("series_id", series.id)
-                    .is("deleted_at", null);
-
-                if (countError) {
-                    throw countError;
-                }
-
-                return {
-                    ...series,
-                    content_count: count ?? 0,
-                };
-            })
-        );
+        const seriesIds = rows.map((series) => series.id);
+        const { data: contentRows, error: countError } = seriesIds.length > 0
+            ? await supabase
+                .from("content_item")
+                .select("series_id")
+                .in("series_id", seriesIds)
+                .is("deleted_at", null)
+            : { data: [], error: null };
+        if (countError) {
+            throw countError;
+        }
+        const countsBySeriesId = (contentRows ?? []).reduce((counts, item) => {
+            if (item.series_id) {
+                counts.set(item.series_id, (counts.get(item.series_id) ?? 0) + 1);
+            }
+            return counts;
+        }, new Map<string, number>());
+        const seriesWithCounts = rows.map((series) => ({
+            ...series,
+            content_count: countsBySeriesId.get(series.id) ?? 0,
+        }));
 
         return NextResponse.json(seriesWithCounts);
     } catch (error) {

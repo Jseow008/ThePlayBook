@@ -55,6 +55,15 @@ describe('SegmentAccordion', () => {
         window.scrollTo = vi.fn();
     });
 
+    it('defers unopened markdown and retains visited text after collapsing', () => {
+        const { rerender } = render(<SegmentAccordion {...defaultProps} expandedSegmentId={null} />);
+        expect(screen.queryByText('Alpha Beta Alpha')).not.toBeInTheDocument();
+        rerender(<SegmentAccordion {...defaultProps} expandedSegmentId="seg-1" />);
+        expect(screen.getByText('Alpha Beta Alpha')).toBeInTheDocument();
+        rerender(<SegmentAccordion {...defaultProps} expandedSegmentId={null} />);
+        expect(screen.getByText('Alpha Beta Alpha')).toBeInTheDocument();
+    });
+
     it('renders all segment titles', () => {
         render(<SegmentAccordion {...defaultProps} />);
         expect(screen.getByRole('heading', { level: 2, name: 'Sections' })).toBeInTheDocument();

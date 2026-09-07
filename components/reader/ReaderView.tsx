@@ -13,9 +13,10 @@ import { useReadingProgress, type ReadingProgressData } from "@/hooks/useReading
 import { useReadingTimer } from "@/hooks/useReadingTimer";
 import { useReaderSettings } from "@/hooks/useReaderSettings";
 import { ContentFeedback } from "@/components/ui/ContentFeedback";
-import { CompletionCard } from "./CompletionCard";
+
+const CompletionCard = dynamic(() => import("./CompletionCard").then((mod) => mod.CompletionCard));
 import { TextSelectionToolbar } from "./TextSelectionToolbar";
-import { NotesDrawer } from "./NotesDrawer";
+const NotesDrawer = dynamic(() => import("./NotesDrawer").then((mod) => mod.NotesDrawer));
 import { useHighlights } from "@/hooks/useHighlights";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";

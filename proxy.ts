@@ -165,7 +165,7 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next({ request });
     }
 
-    const supabaseResponse = await updateSession(request);
+    const { response: supabaseResponse, user: sessionUser } = await updateSession(request);
 
     if (isProtectedAdminPath(pathname)) {
         const supabase = createServerClient(
@@ -181,7 +181,7 @@ export async function proxy(request: NextRequest) {
             }
         );
 
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = sessionUser;
         if (!user) {
             recordEdgeAdminAuthFailure({
                 request,

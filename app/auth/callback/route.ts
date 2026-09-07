@@ -1,3 +1,4 @@
+import { afterResponse } from "@/lib/server/after-response";
 import { NextResponse } from "next/server";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { createClient } from "@/lib/supabase/server";
@@ -85,7 +86,7 @@ export async function GET(request: Request) {
         if (!error) {
             const user = data.user ?? data.session?.user ?? null;
             if (user && isRecentUserCreation(user.created_at)) {
-                await captureServerAnalyticsEvent({
+                afterResponse(() => captureServerAnalyticsEvent({
                     event: "signup_completed",
                     distinctId: user.id,
                     insertId: `signup_completed:${user.id}`,
@@ -94,7 +95,7 @@ export async function GET(request: Request) {
                         route: "/auth/callback",
                         user_state: "authenticated",
                     },
-                });
+                }));
             }
 
             const destination = user
