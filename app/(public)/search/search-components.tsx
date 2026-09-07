@@ -72,7 +72,7 @@ export function buildSearchHref({
         params.set("sort", sort);
     }
 
-    if (sort !== "popular" && page && page > 1) {
+    if (!query?.trim() && sort !== "popular" && page && page > 1) {
         params.set("page", String(page));
     }
 
@@ -100,7 +100,6 @@ export async function RecentCatalog({
         .eq("status", "verified")
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .order("id", { ascending: false })
         .range(offset, offset + CATALOG_PAGE_SIZE - 1);
 
     if (normalizedCategoryValues.length === 1) {
@@ -161,13 +160,11 @@ export function ContentGrid({ items }: { items: ContentItem[] }) {
 function CatalogPagination({
     currentPage,
     totalPages,
-    query,
     category,
     type,
 }: {
     currentPage: number;
     totalPages: number;
-    query?: string;
     category?: string;
     type?: ContentType;
 }) {
@@ -178,7 +175,7 @@ function CatalogPagination({
     return (
         <nav aria-label="Catalog pagination" className="mt-10 flex items-center justify-center gap-4">
             <Link
-                href={currentPage > 1 ? buildSearchHref({ query, category, type, page: currentPage - 1 }) : "#"}
+                href={currentPage > 1 ? buildSearchHref({ category, type, page: currentPage - 1 }) : "#"}
                 aria-disabled={currentPage <= 1}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${
                     currentPage > 1
@@ -193,7 +190,7 @@ function CatalogPagination({
                 Page {currentPage} of {totalPages}
             </span>
             <Link
-                href={currentPage < totalPages ? buildSearchHref({ query, category, type, page: currentPage + 1 }) : "#"}
+                href={currentPage < totalPages ? buildSearchHref({ category, type, page: currentPage + 1 }) : "#"}
                 aria-disabled={currentPage >= totalPages}
                 className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${
                     currentPage < totalPages
@@ -228,19 +225,16 @@ export async function SearchResults({
     categoryLabel,
     categoryValues,
     type,
-    page,
 }: {
     query?: string;
     categoryLabel?: string;
     categoryValues?: string[];
     type?: string;
-    page: number;
 }) {
     const supabase = createPublicServerClient();
     const normalizedType = normalizeType(type);
     const trimmedQuery = query?.trim() ?? "";
     const normalizedCategoryValues = categoryValues?.filter(Boolean) ?? [];
-    const offset = (page - 1) * CATALOG_PAGE_SIZE;
 
     let results: ContentItem[] = [];
     const hasQuery = trimmedQuery.length > 0;
@@ -249,12 +243,11 @@ export async function SearchResults({
     if (hasSearch) {
         let queryBuilder = supabase
             .from("content_item")
-            .select(CONTENT_CARD_SELECT, { count: "exact" })
+            .select(CONTENT_CARD_SELECT)
             .eq("status", "verified")
             .is("deleted_at", null)
             .order("created_at", { ascending: false })
-            .order("id", { ascending: false })
-            .range(offset, offset + CATALOG_PAGE_SIZE - 1);
+            .limit(50);
 
         if (normalizedCategoryValues.length === 1) {
             queryBuilder = queryBuilder.eq("category", normalizedCategoryValues[0]);
@@ -271,68 +264,27 @@ export async function SearchResults({
             queryBuilder = queryBuilder.or(`title.ilike.${searchTerm},author.ilike.${searchTerm},category.ilike.${searchTerm}`);
         }
 
-        const { data, count } = await queryBuilder;
+        const { data } = await queryBuilder;
         results = (data || []) as ContentItem[];
-
-        const totalItems = count ?? results.length;
-        const totalPages = Math.max(1, Math.ceil(totalItems / CATALOG_PAGE_SIZE));
-
-        return renderSearchResults({
-            results,
-            totalItems,
-            totalPages,
-            page,
-            query,
-            categoryLabel,
-            categoryValues: normalizedCategoryValues,
-            normalizedType,
-            hasQuery,
-            queryLength: trimmedQuery.length,
-            requestQuery: trimmedQuery,
-        });
     }
 
-    return null;
-}
+    if (!hasSearch) {
+        return null;
+    }
 
-function renderSearchResults({
-    results,
-    totalItems,
-    totalPages,
-    page,
-    query,
-    categoryLabel,
-    categoryValues,
-    normalizedType,
-    hasQuery,
-    queryLength,
-    requestQuery,
-}: {
-    results: ContentItem[];
-    totalItems: number;
-    totalPages: number;
-    page: number;
-    query?: string;
-    categoryLabel?: string;
-    categoryValues: string[];
-    normalizedType?: ContentType;
-    hasQuery: boolean;
-    queryLength: number;
-    requestQuery: string;
-}) {
-    const filtersCount = Number(categoryValues.length > 0) + Number(Boolean(normalizedType));
+    const filtersCount = Number(normalizedCategoryValues.length > 0) + Number(Boolean(normalizedType));
 
     return (
         <div className="animate-in fade-in duration-500">
             <SearchAnalyticsTracker
                 queryPresent={hasQuery}
-                queryLength={hasQuery ? queryLength : undefined}
-                resultCount={totalItems}
+                queryLength={hasQuery ? trimmedQuery.length : undefined}
+                resultCount={results.length}
                 filtersCount={filtersCount}
             />
             <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <p className="text-muted-foreground text-lg font-medium">
-                    {totalItems} result{totalItems !== 1 ? "s" : ""}
+                    {results.length} result{results.length !== 1 ? "s" : ""}
                     {query && ` for "${query}"`}
                     {categoryLabel && ` in ${categoryLabel}`}
                     {normalizedType && ` (${normalizedType})`}
@@ -340,16 +292,7 @@ function renderSearchResults({
             </div>
 
             {results.length > 0 ? (
-                <>
-                    <ContentGrid items={results} />
-                    <CatalogPagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        query={query}
-                        category={categoryLabel}
-                        type={normalizedType}
-                    />
-                </>
+                <ContentGrid items={results} />
             ) : (
                 <div className="text-center py-2 md:py-20 animate-in fade-in zoom-in-95 duration-300">
                     <div className="hidden md:inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border">
@@ -362,7 +305,7 @@ function renderSearchResults({
                     <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                         {hasQuery ? (
                             <Link
-                                href={buildRequestHref({ query: requestQuery, type: normalizedType })}
+                                href={buildRequestHref({ query: trimmedQuery, type: normalizedType })}
                                 className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                             >
                                 Request this summary

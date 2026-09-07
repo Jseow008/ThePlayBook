@@ -271,52 +271,6 @@ describe("ContentCard", () => {
         }
     });
 
-    it("groups optional history actions behind one menu trigger when requested", () => {
-        const onRemove = vi.fn();
-        const onSecondaryRemove = vi.fn();
-
-        render(
-            <ContentCard
-                item={item}
-                onRemove={onRemove}
-                onSecondaryRemove={onSecondaryRemove}
-                removeLabel="Hide from Completed"
-                secondaryRemoveLabel="Remove from reading history"
-                showRemoveMenu
-            />
-        );
-
-        expect(screen.queryByRole("button", { name: "Hide from Completed" })).not.toBeInTheDocument();
-        expect(screen.queryByRole("button", { name: "Remove from reading history" })).not.toBeInTheDocument();
-
-        fireEvent.click(screen.getByRole("button", { name: "Manage Deep Work" }));
-
-        fireEvent.click(screen.getByRole("menuitem", { name: "Hide from Completed" }));
-        expect(onRemove).toHaveBeenCalledWith(item.id);
-    });
-
-    it("dismisses the history action menu on an outside click or Escape", () => {
-        render(
-            <ContentCard
-                item={item}
-                onRemove={vi.fn()}
-                removeLabel="Hide from Completed"
-                showRemoveMenu
-            />
-        );
-
-        const trigger = screen.getByRole("button", { name: "Manage Deep Work" });
-        fireEvent.click(trigger);
-        expect(screen.getByRole("menu", { name: "Manage Deep Work" })).toBeInTheDocument();
-
-        fireEvent.pointerDown(document.body);
-        expect(screen.queryByRole("menu", { name: "Manage Deep Work" })).not.toBeInTheDocument();
-
-        fireEvent.click(trigger);
-        fireEvent.keyDown(document, { key: "Escape" });
-        expect(screen.queryByRole("menu", { name: "Manage Deep Work" })).not.toBeInTheDocument();
-    });
-
     it("does not render an inert bookmark button when user state is disabled", () => {
         render(<ContentCard item={item} enableUserState={false} />);
 

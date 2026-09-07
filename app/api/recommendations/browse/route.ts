@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import {
-    getBrowseRecommendationCacheKey,
-    readBrowseRecommendationCache,
-    writeBrowseRecommendationCache,
-} from "@/lib/server/browse-recommendation-cache";
 import { rateLimitFailureResponse, strictPublicRateLimit } from "@/lib/server/rate-limit";
 import type { Database } from "@/types/database";
 
@@ -36,33 +31,6 @@ function logBrowseRecommendationTiming(fields: Record<string, number | string>) 
     });
 }
 
-function recommendationResponse(payload: {
-    recentItems: RecommendationItem[];
-    libraryItems: RecommendationItem[];
-}, timings: {
-    recentMs: number;
-    libraryMs: number;
-    fillMs: number;
-    totalMs: number;
-    cacheMs: number;
-    cacheStatus: string;
-}) {
-    return NextResponse.json(
-        payload,
-        {
-            headers: {
-                "Cache-Control": "private, no-store",
-                "Server-Timing": [
-                    `recent;dur=${timings.recentMs}`,
-                    `library;dur=${timings.libraryMs}`,
-                    `fill;dur=${timings.fillMs}`,
-                    `total;dur=${timings.totalMs}`,
-                    `cache;dur=${timings.cacheMs};desc="${timings.cacheStatus}"`,
-                ].join(", "),
-            },
-        },
-    );
-}
 async function timeAsync<T>(operation: () => Promise<T>) {
     const startedAt = Date.now();
     const result = await operation();
@@ -229,48 +197,6 @@ export async function POST(request: NextRequest) {
             ...librarySeedIds,
             recentSeedId,
         ]);
-        const cacheKey = getBrowseRecommendationCacheKey({
-            recentSeedId,
-            librarySeedIds,
-            excludeIds: baseExcludeIds,
-            targetCount,
-        });
-        const timedCacheRead = await timeAsync(() => readBrowseRecommendationCache<{
-            recentItems: RecommendationItem[];
-            libraryItems: RecommendationItem[];
-        }>(cacheKey));
-        const cacheEntry = timedCacheRead.result;
-
-        if (cacheEntry.value) {
-            const totalDurationMs = Date.now() - requestStartedAt;
-            logBrowseRecommendationTiming({
-                outcome: "success",
-                cache_status: cacheEntry.status,
-                rate_limit_ms: rateLimitDurationMs,
-                recent_ms: 0,
-                library_ms: 0,
-                fill_ms: 0,
-                cache_read_ms: timedCacheRead.durationMs,
-                cache_write_ms: 0,
-                total_ms: totalDurationMs,
-                recent_seed_count: recentSeedId ? 1 : 0,
-                library_seed_count: librarySeedIds.length,
-                exclude_count: baseExcludeIds.length,
-                target_count: targetCount,
-                recent_result_count: cacheEntry.value.recentItems.length,
-                library_semantic_result_count: 0,
-                library_fill_result_count: 0,
-                library_result_count: cacheEntry.value.libraryItems.length,
-            });
-            return recommendationResponse(cacheEntry.value, {
-                recentMs: 0,
-                libraryMs: 0,
-                fillMs: 0,
-                totalMs: totalDurationMs,
-                cacheMs: timedCacheRead.durationMs,
-                cacheStatus: cacheEntry.status,
-            });
-        }
 
         const [timedRecentResult, timedLibraryResult] = await Promise.all([
             timeAsync(() => loadSemanticRecommendations({
@@ -342,18 +268,13 @@ export async function POST(request: NextRequest) {
             ...semanticLibraryItems,
             ...fillResult.data,
         ]).slice(0, targetCount);
-        const responsePayload = { recentItems, libraryItems };
-        const timedCacheWrite = await timeAsync(() => writeBrowseRecommendationCache(cacheKey, responsePayload));
         const totalDurationMs = Date.now() - requestStartedAt;
         logBrowseRecommendationTiming({
             outcome: "success",
-            cache_status: cacheEntry.status,
             rate_limit_ms: rateLimitDurationMs,
             recent_ms: timedRecentResult.durationMs,
             library_ms: timedLibraryResult.durationMs,
             fill_ms: timedFillResult.durationMs,
-            cache_read_ms: timedCacheRead.durationMs,
-            cache_write_ms: timedCacheWrite.durationMs,
             total_ms: totalDurationMs,
             recent_seed_count: recentSeedId ? 1 : 0,
             library_seed_count: librarySeedIds.length,
@@ -365,14 +286,23 @@ export async function POST(request: NextRequest) {
             library_result_count: libraryItems.length,
         });
 
-        return recommendationResponse(responsePayload, {
-            recentMs: timedRecentResult.durationMs,
-            libraryMs: timedLibraryResult.durationMs,
-            fillMs: timedFillResult.durationMs,
-            totalMs: totalDurationMs,
-            cacheMs: timedCacheRead.durationMs + timedCacheWrite.durationMs,
-            cacheStatus: cacheEntry.status,
-        });
+        return NextResponse.json(
+            { recentItems, libraryItems },
+            {
+                headers: {
+                    "Cache-Control": "private, no-store",
+                    "Server-Timing": [
+                        `recent;dur=${timedRecentResult.durationMs}`,
+                        `library;dur=${timedLibraryResult.durationMs}`,
+                        `fill;dur=${timedFillResult.durationMs}`,
+                        `total;dur=${totalDurationMs}`,
+                        // The route deliberately has no response cache yet. Exposing
+                        // this now makes future cache rollout measurable in the same trace.
+                        `cache;desc="${BROWSE_RECOMMENDATIONS_CACHE_STATUS}"`,
+                    ].join(", "),
+                },
+            },
+        );
     } catch (error) {
         logApiError({
             requestId,
