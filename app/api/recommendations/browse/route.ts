@@ -17,6 +17,20 @@ const BROWSE_RECOMMENDATION_SELECT =
 
 type RecommendationItem = Database["public"]["Functions"]["match_recommendations"]["Returns"][number];
 
+const BROWSE_RECOMMENDATIONS_ROUTE = "/api/recommendations/browse";
+const BROWSE_RECOMMENDATIONS_CACHE_STATUS = "bypass";
+
+function logBrowseRecommendationTiming(fields: Record<string, number | string>) {
+    // Keep this event aggregate-only: seed, exclusion, and returned-item values
+    // are logged as counts. Do not add content, library, user, or request IDs.
+    console.info("Browse recommendations timing", {
+        observability_version: "v1",
+        route: BROWSE_RECOMMENDATIONS_ROUTE,
+        cache_status: BROWSE_RECOMMENDATIONS_CACHE_STATUS,
+        ...fields,
+    });
+}
+
 async function timeAsync<T>(operation: () => Promise<T>) {
     const startedAt = Date.now();
     const result = await operation();
@@ -144,21 +158,33 @@ async function loadLatestFill(params: {
 }
 
 export async function POST(request: NextRequest) {
+    const requestStartedAt = Date.now();
     const requestId = getRequestId();
+    const rateLimitStartedAt = Date.now();
     const rl = await strictPublicRateLimit(request, {
         limit: 10,
         windowMs: 60_000,
-        routeLabel: "/api/recommendations/browse",
+        routeLabel: BROWSE_RECOMMENDATIONS_ROUTE,
     });
+    const rateLimitDurationMs = Date.now() - rateLimitStartedAt;
 
     if (!rl.success) {
+        logBrowseRecommendationTiming({
+            outcome: "rate_limited",
+            rate_limit_ms: rateLimitDurationMs,
+            total_ms: Date.now() - requestStartedAt,
+        });
         return rateLimitFailureResponse(rl);
     }
 
     try {
-        const requestStartedAt = Date.now();
         const parsed = BrowseRecommendationsRequestSchema.safeParse(await request.json());
         if (!parsed.success) {
+            logBrowseRecommendationTiming({
+                outcome: "validation_error",
+                rate_limit_ms: rateLimitDurationMs,
+                total_ms: Date.now() - requestStartedAt,
+            });
             return apiError("VALIDATION_ERROR", "Invalid request payload", 400, requestId);
         }
 
@@ -192,7 +218,7 @@ export async function POST(request: NextRequest) {
         if (recentResult.error) {
             logApiError({
                 requestId,
-                route: "/api/recommendations/browse",
+                route: BROWSE_RECOMMENDATIONS_ROUTE,
                 message: "Recent browse recommendation RPC failed",
                 error: recentResult.error,
             });
@@ -201,7 +227,7 @@ export async function POST(request: NextRequest) {
         if (libraryResult.error) {
             logApiError({
                 requestId,
-                route: "/api/recommendations/browse",
+                route: BROWSE_RECOMMENDATIONS_ROUTE,
                 message: "Library browse recommendation RPC failed",
                 error: libraryResult.error,
             });
@@ -232,7 +258,7 @@ export async function POST(request: NextRequest) {
         if (fillResult.error) {
             logApiError({
                 requestId,
-                route: "/api/recommendations/browse",
+                route: BROWSE_RECOMMENDATIONS_ROUTE,
                 message: "Browse recommendation fallback fill failed",
                 error: fillResult.error,
             });
@@ -243,15 +269,22 @@ export async function POST(request: NextRequest) {
             ...fillResult.data,
         ]).slice(0, targetCount);
         const totalDurationMs = Date.now() - requestStartedAt;
-        if (totalDurationMs > 1200) {
-            console.info("Slow browse recommendations request", {
-                request_id: requestId,
-                recent_ms: timedRecentResult.durationMs,
-                library_ms: timedLibraryResult.durationMs,
-                fill_ms: timedFillResult.durationMs,
-                total_ms: totalDurationMs,
-            });
-        }
+        logBrowseRecommendationTiming({
+            outcome: "success",
+            rate_limit_ms: rateLimitDurationMs,
+            recent_ms: timedRecentResult.durationMs,
+            library_ms: timedLibraryResult.durationMs,
+            fill_ms: timedFillResult.durationMs,
+            total_ms: totalDurationMs,
+            recent_seed_count: recentSeedId ? 1 : 0,
+            library_seed_count: librarySeedIds.length,
+            exclude_count: baseExcludeIds.length,
+            target_count: targetCount,
+            recent_result_count: recentItems.length,
+            library_semantic_result_count: semanticLibraryItems.length,
+            library_fill_result_count: fillResult.data.length,
+            library_result_count: libraryItems.length,
+        });
 
         return NextResponse.json(
             { recentItems, libraryItems },
@@ -263,6 +296,9 @@ export async function POST(request: NextRequest) {
                         `library;dur=${timedLibraryResult.durationMs}`,
                         `fill;dur=${timedFillResult.durationMs}`,
                         `total;dur=${totalDurationMs}`,
+                        // The route deliberately has no response cache yet. Exposing
+                        // this now makes future cache rollout measurable in the same trace.
+                        `cache;desc="${BROWSE_RECOMMENDATIONS_CACHE_STATUS}"`,
                     ].join(", "),
                 },
             },
@@ -270,9 +306,14 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         logApiError({
             requestId,
-            route: "/api/recommendations/browse",
+            route: BROWSE_RECOMMENDATIONS_ROUTE,
             message: "Browse recommendations request parse error",
             error,
+        });
+        logBrowseRecommendationTiming({
+            outcome: "invalid_json",
+            rate_limit_ms: rateLimitDurationMs,
+            total_ms: Date.now() - requestStartedAt,
         });
         return apiError("INVALID_JSON", "Invalid request body", 400, requestId);
     }

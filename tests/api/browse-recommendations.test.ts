@@ -1,6 +1,6 @@
 import { POST } from "@/app/api/recommendations/browse/route";
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
 import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 
@@ -77,6 +77,7 @@ function createRequest(body: unknown) {
 describe("Browse recommendations API", () => {
     const mockRpc = vi.fn();
     const mockFrom = vi.fn();
+    const consoleInfoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -89,6 +90,10 @@ describe("Browse recommendations API", () => {
         mockFrom.mockReturnValue(createLatestQuery());
     });
 
+    afterAll(() => {
+        consoleInfoSpy.mockRestore();
+    });
+
     it("validates request payloads", async () => {
         const response = await POST(createRequest({
             recentSeedId: "not-a-uuid",
@@ -97,6 +102,10 @@ describe("Browse recommendations API", () => {
         expect(response.status).toBe(400);
         expect(mockRpc).not.toHaveBeenCalled();
         expect(mockFrom).not.toHaveBeenCalled();
+        expect(consoleInfoSpy).toHaveBeenCalledWith("Browse recommendations timing", expect.objectContaining({
+            outcome: "validation_error",
+            cache_status: "bypass",
+        }));
     });
 
     it("returns one deduped response and fills the library lane from latest verified content", async () => {
@@ -122,6 +131,25 @@ describe("Browse recommendations API", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("Server-Timing")).toContain("total;dur=");
+        expect(response.headers.get("Server-Timing")).toContain('cache;desc="bypass"');
+        expect(consoleInfoSpy).toHaveBeenCalledWith("Browse recommendations timing", expect.objectContaining({
+            outcome: "success",
+            cache_status: "bypass",
+            recent_seed_count: 1,
+            library_seed_count: 1,
+            exclude_count: 3,
+            target_count: 3,
+            recent_result_count: 1,
+            library_semantic_result_count: 1,
+            library_fill_result_count: 2,
+            library_result_count: 3,
+            recent_ms: expect.any(Number),
+            library_ms: expect.any(Number),
+            fill_ms: expect.any(Number),
+            total_ms: expect.any(Number),
+        }));
+        const timingEvent = consoleInfoSpy.mock.calls.find(([eventName]) => eventName === "Browse recommendations timing")?.[1];
+        expect(timingEvent).not.toHaveProperty("request_id");
         expect(mockRpc).toHaveBeenCalledTimes(2);
         expect(mockRpc).toHaveBeenNthCalledWith(1, "match_recommendations", {
             seed_ids: [RECENT_SEED_ID],
@@ -196,6 +224,10 @@ describe("Browse recommendations API", () => {
         });
         expect(mockRpc).not.toHaveBeenCalled();
         expect(mockFrom).not.toHaveBeenCalled();
+        expect(consoleInfoSpy).toHaveBeenCalledWith("Browse recommendations timing", expect.objectContaining({
+            outcome: "rate_limited",
+            cache_status: "bypass",
+        }));
     });
 
     it("ranks a newly published long-lived draft as fresh", async () => {
