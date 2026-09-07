@@ -295,6 +295,28 @@ describe("ContentCard", () => {
         expect(onRemove).toHaveBeenCalledWith(item.id);
     });
 
+    it("dismisses the history action menu on an outside click or Escape", () => {
+        render(
+            <ContentCard
+                item={item}
+                onRemove={vi.fn()}
+                removeLabel="Hide from Completed"
+                showRemoveMenu
+            />
+        );
+
+        const trigger = screen.getByRole("button", { name: "Manage Deep Work" });
+        fireEvent.click(trigger);
+        expect(screen.getByRole("menu", { name: "Manage Deep Work" })).toBeInTheDocument();
+
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole("menu", { name: "Manage Deep Work" })).not.toBeInTheDocument();
+
+        fireEvent.click(trigger);
+        fireEvent.keyDown(document, { key: "Escape" });
+        expect(screen.queryByRole("menu", { name: "Manage Deep Work" })).not.toBeInTheDocument();
+    });
+
     it("does not render an inert bookmark button when user state is disabled", () => {
         render(<ContentCard item={item} enableUserState={false} />);
 
