@@ -2,6 +2,11 @@ import { POST } from "@/app/api/recommendations/browse/route";
 import { NextRequest } from "next/server";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
+import {
+    getBrowseRecommendationCacheKey,
+    readBrowseRecommendationCache,
+    writeBrowseRecommendationCache,
+} from "@/lib/server/browse-recommendation-cache";
 import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 vi.mock("@/lib/supabase/public-server", () => ({
@@ -19,6 +24,12 @@ vi.mock("@/lib/server/rate-limit", () => ({
         },
         { status: result.unavailable ? 503 : 429 }
     )),
+}));
+
+vi.mock("@/lib/server/browse-recommendation-cache", () => ({
+    getBrowseRecommendationCacheKey: vi.fn(),
+    readBrowseRecommendationCache: vi.fn(),
+    writeBrowseRecommendationCache: vi.fn(),
 }));
 
 const RECENT_SEED_ID = "123e4567-e89b-12d3-a456-426614174000";
@@ -86,6 +97,9 @@ describe("Browse recommendations API", () => {
             from: mockFrom,
         } as any);
         vi.mocked(strictPublicRateLimit).mockResolvedValue({ success: true });
+        vi.mocked(getBrowseRecommendationCacheKey).mockReturnValue("browse-recommendation-cache-key");
+        vi.mocked(readBrowseRecommendationCache).mockResolvedValue({ status: "bypass", value: null });
+        vi.mocked(writeBrowseRecommendationCache).mockResolvedValue(false);
         mockRpc.mockResolvedValue({ data: [], error: null });
         mockFrom.mockReturnValue(createLatestQuery());
     });
@@ -131,7 +145,7 @@ describe("Browse recommendations API", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers.get("Server-Timing")).toContain("total;dur=");
-        expect(response.headers.get("Server-Timing")).toContain('cache;desc="bypass"');
+        expect(response.headers.get("Server-Timing")).toContain('desc="bypass"');
         expect(consoleInfoSpy).toHaveBeenCalledWith("Browse recommendations timing", expect.objectContaining({
             outcome: "success",
             cache_status: "bypass",
@@ -146,11 +160,17 @@ describe("Browse recommendations API", () => {
             recent_ms: expect.any(Number),
             library_ms: expect.any(Number),
             fill_ms: expect.any(Number),
+            cache_read_ms: expect.any(Number),
+            cache_write_ms: expect.any(Number),
             total_ms: expect.any(Number),
         }));
         const timingEvent = consoleInfoSpy.mock.calls.find(([eventName]) => eventName === "Browse recommendations timing")?.[1];
         expect(timingEvent).not.toHaveProperty("request_id");
         expect(mockRpc).toHaveBeenCalledTimes(2);
+        expect(writeBrowseRecommendationCache).toHaveBeenCalledWith("browse-recommendation-cache-key", {
+            recentItems: [recentItem],
+            libraryItems: [semanticLibraryItem, fillItems[0], fillItems[1]],
+        });
         expect(mockRpc).toHaveBeenNthCalledWith(1, "match_recommendations", {
             seed_ids: [RECENT_SEED_ID],
             exclude_ids: [RECENT_SEED_ID, KNOWN_ID, LIBRARY_SEED_ID],
@@ -199,6 +219,36 @@ describe("Browse recommendations API", () => {
         expect(json).toEqual({
             recentItems: [recentItem],
             libraryItems: [],
+        });
+    });
+
+    it("returns a cache hit without running vector searches or fallback fill", async () => {
+        const cachedRecentItem = createRecommendation("123e4567-e89b-12d3-a456-426614174130", "Cached recent");
+        const cachedLibraryItem = createRecommendation("123e4567-e89b-12d3-a456-426614174131", "Cached library");
+        vi.mocked(readBrowseRecommendationCache).mockResolvedValueOnce({
+            status: "hit",
+            value: {
+                recentItems: [cachedRecentItem],
+                libraryItems: [cachedLibraryItem],
+            },
+        });
+
+        const response = await POST(createRequest({
+            recentSeedId: RECENT_SEED_ID,
+            librarySeedIds: [LIBRARY_SEED_ID],
+            targetCount: 3,
+        }));
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+        expect(response.headers.get("Server-Timing")).toContain('cache;dur=');
+        expect(response.headers.get("Server-Timing")).toContain('desc="hit"');
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockFrom).not.toHaveBeenCalled();
+        expect(writeBrowseRecommendationCache).not.toHaveBeenCalled();
+        await expect(response.json()).resolves.toEqual({
+            recentItems: [cachedRecentItem],
+            libraryItems: [cachedLibraryItem],
         });
     });
 
