@@ -6,6 +6,8 @@ import { vi } from "vitest";
 const {
     deleteHighlightMock,
     updateHighlightMock,
+    deleteReflectionMock,
+    updateReflectionMock,
     fetchNextPageMock,
     toastSuccessMock,
     toastErrorMock,
@@ -16,6 +18,8 @@ const {
 } = vi.hoisted(() => ({
     deleteHighlightMock: vi.fn(),
     updateHighlightMock: vi.fn(),
+    deleteReflectionMock: vi.fn(),
+    updateReflectionMock: vi.fn(),
     fetchNextPageMock: vi.fn(),
     toastSuccessMock: vi.fn(),
     toastErrorMock: vi.fn(),
@@ -68,6 +72,14 @@ vi.mock("@/hooks/useReflections", () => ({
         data: reflectionsState.value,
         isLoading: false,
         isError: false,
+    }),
+    useDeleteReflection: () => ({
+        mutateAsync: deleteReflectionMock,
+        isPending: false,
+    }),
+    useUpdateReflection: () => ({
+        mutateAsync: updateReflectionMock,
+        isPending: false,
     }),
 }));
 
@@ -236,6 +248,48 @@ describe("BrainClientPage", () => {
         expect(screen.getByText("Your reflection")).toBeInTheDocument();
         expect(screen.getByText("Reflection")).toBeInTheDocument();
         expect(reflectionText.closest(".group")).toHaveClass("bg-background/30", "ring-white/8");
+    });
+
+    it("lets users edit and delete a reflection from the notes page", async () => {
+        reflectionsState.value = [{
+            id: "reflection-1",
+            user_id: "user-1",
+            content_item_id: "content-1",
+            prompt: "What idea do you want to remember from this?",
+            reflection_text: "Original reflection",
+            created_at: "2026-03-12T12:00:00.000Z",
+            updated_at: null,
+            content_item: {
+                id: "content-1",
+                title: "Can't Hurt Me",
+                author: "David Goggins",
+                cover_image_url: "https://example.com/cover-1.jpg",
+            },
+        }];
+        updateReflectionMock.mockResolvedValue({ id: "reflection-1" });
+        deleteReflectionMock.mockResolvedValue(undefined);
+
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        fireEvent.click(screen.getByLabelText("Edit reflection"));
+        fireEvent.change(screen.getByLabelText("Your reflection"), {
+            target: { value: "Updated reflection" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+        await waitFor(() => {
+            expect(updateReflectionMock).toHaveBeenCalledWith({
+                id: "reflection-1",
+                reflection_text: "Updated reflection",
+            });
+        });
+
+        fireEvent.click(screen.getByLabelText("Delete reflection"));
+        fireEvent.click(screen.getByLabelText("Confirm delete reflection"));
+
+        await waitFor(() => {
+            expect(deleteReflectionMock).toHaveBeenCalledWith("reflection-1");
+        });
     });
 
     it("filters by search, type, and color and supports inline two-step deletion", async () => {

@@ -6,7 +6,11 @@ import { Lightbulb, Loader2, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import type { ReaderTheme } from "@/hooks/useReaderSettings";
-import { useSaveReflection, type ReflectionWithContent } from "@/hooks/useReflections";
+import {
+    useDeleteReflection,
+    useSaveReflection,
+    type ReflectionWithContent,
+} from "@/hooks/useReflections";
 import { buildLoginHref } from "@/lib/auth-redirect";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -46,8 +50,10 @@ export function ReflectionComposer({
     const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
     const [isDraftStored, setIsDraftStored] = useState(false);
     const [showSignInPrompt, setShowSignInPrompt] = useState(false);
+    const [isDeleteArmed, setIsDeleteArmed] = useState(false);
     const [mounted, setMounted] = useState(false);
     const saveReflection = useSaveReflection();
+    const deleteReflection = useDeleteReflection();
 
     useEffect(() => {
         setMounted(true);
@@ -165,6 +171,27 @@ export function ReflectionComposer({
         }
     };
 
+    const handleDelete = async () => {
+        if (!existingReflection || deleteReflection.isPending) {
+            return;
+        }
+
+        if (!isDeleteArmed) {
+            setIsDeleteArmed(true);
+            return;
+        }
+
+        try {
+            await deleteReflection.mutateAsync(existingReflection.id);
+            discardDraft();
+            toast.success("Reflection deleted");
+            onSaved();
+            onClose();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to delete reflection");
+        }
+    };
+
     if (!mounted || !isOpen) {
         return null;
     }
@@ -251,8 +278,18 @@ export function ReflectionComposer({
                     </div>
 
                     <div className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-white/8 bg-background/92 px-5 py-4 safe-area-pb-md sm:px-6 sm:pb-4">
-                        <div>
-                            {draft && (
+                        <div className="flex flex-wrap items-center gap-2">
+                            {existingReflection ? (
+                                <button
+                                    type="button"
+                                    onClick={() => void handleDelete()}
+                                    disabled={saveReflection.isPending || deleteReflection.isPending}
+                                    className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-destructive disabled:opacity-50"
+                                >
+                                    <Trash2 className="size-3.5" />
+                                    {isDeleteArmed ? "Confirm delete" : "Delete reflection"}
+                                </button>
+                            ) : draft && (
                                 <button
                                     type="button"
                                     onClick={discardDraft}
@@ -267,7 +304,7 @@ export function ReflectionComposer({
                         <button
                             type="button"
                             onClick={() => void handleSave()}
-                            disabled={!draft.trim() || saveReflection.isPending}
+                            disabled={!draft.trim() || saveReflection.isPending || deleteReflection.isPending}
                             className="inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:border disabled:border-border/60 disabled:bg-muted disabled:text-muted-foreground disabled:hover:bg-muted"
                         >
                             {saveReflection.isPending && <Loader2 className="size-4 animate-spin" />}
