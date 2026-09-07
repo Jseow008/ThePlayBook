@@ -63,7 +63,6 @@ function recommendationResponse(payload: {
         },
     );
 }
-
 async function timeAsync<T>(operation: () => Promise<T>) {
     const startedAt = Date.now();
     const result = await operation();
