@@ -24,7 +24,6 @@ const mockContentCard = vi.fn(
         onRemove?: (id: string) => void;
         secondaryRemoveLabel?: string;
         onSecondaryRemove?: (id: string) => void;
-        showRemoveMenu?: boolean;
         showCompletedBadge?: boolean;
         showDesktopQuickActions?: boolean;
         titleDensity?: "default" | "app-compact";
@@ -69,7 +68,6 @@ vi.mock("@/components/ui/ContentCard", () => ({
         onRemove?: (id: string) => void;
         secondaryRemoveLabel?: string;
         onSecondaryRemove?: (id: string) => void;
-        showRemoveMenu?: boolean;
         showCompletedBadge?: boolean;
         showDesktopQuickActions?: boolean;
         titleDensity?: "default" | "app-compact";
@@ -136,7 +134,7 @@ describe("CompletedPage", () => {
         });
     });
 
-    it("groups completed-card history actions in a compact menu", () => {
+    it("renders completed cards with the archive action label", () => {
         render(<CompletedPage />);
 
         expect(screen.getByText("completed:app-compact:quick-actions:Atomic Habits")).toBeInTheDocument();
@@ -147,7 +145,6 @@ describe("CompletedPage", () => {
                 removeIcon: "archive",
                 removeLabel: "Hide from Completed",
                 secondaryRemoveLabel: "Remove from reading history",
-                showRemoveMenu: true,
                 showCompletedBadge: true,
                 showDesktopQuickActions: true,
                 titleDensity: "app-compact",
