@@ -128,7 +128,7 @@ export function HomeFeed({
             <footer className="mt-8 border-t border-border bg-card/10 px-4 py-8 backdrop-blur-sm md:mt-0 md:px-6 lg:px-16 lg:py-8">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-muted-foreground">
                     <div className="flex flex-col items-center gap-3 md:items-start">
-                        <Link href="/" className="focus-ring touch-target-44 inline-flex rounded-sm">
+                        <Link href="/browse" className="focus-ring touch-target-44 inline-flex rounded-sm">
                             <Logo
                                 width={96}
                                 height={26}

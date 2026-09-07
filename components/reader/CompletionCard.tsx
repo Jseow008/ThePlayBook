@@ -222,7 +222,7 @@ export function CompletionCard({ contentId, title, author, segmentCount, readerT
                         </Link>
                     ) : (
                         <Link
-                            href="/"
+                            href="/browse"
                             className={cn(
                                 "group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-6",
                                 "hover:border-primary/40 hover:bg-primary/5 transition-all duration-300",

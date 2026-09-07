@@ -87,6 +87,44 @@ describe("proxy auth routing", () => {
         expect(getUserMock).not.toHaveBeenCalled();
     });
 
+    it("redirects authenticated root requests to browse before the landing page renders", async () => {
+        getUserMock.mockResolvedValue({
+            data: { user: { id: "user-123" } },
+            error: null,
+        });
+
+        const response = await proxy(new NextRequest("http://localhost/", {
+            headers: { cookie: "sb-test-auth-token=session" },
+        }));
+
+        expect(response.status).toBe(307);
+        expect(response.headers.get("location")).toBe("http://localhost/browse");
+        expect(updateSession).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves refreshed auth cookies on the root redirect", async () => {
+        const request = new NextRequest("http://localhost/");
+        const refreshedSessionResponse = NextResponse.next({ request });
+        refreshedSessionResponse.cookies.set("sb-test-auth-token", "fresh-session");
+        vi.mocked(updateSession).mockResolvedValueOnce({
+            response: refreshedSessionResponse,
+            user: { id: "user-123" },
+        });
+
+        const response = await proxy(request);
+
+        expect(response.status).toBe(307);
+        expect(response.cookies.get("sb-test-auth-token")?.value).toBe("fresh-session");
+    });
+
+    it("allows guest root requests through to the static landing page", async () => {
+        const response = await proxy(new NextRequest("http://localhost/"));
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("location")).toBeNull();
+        expect(updateSession).toHaveBeenCalledTimes(1);
+    });
+
     it("redirects unauthenticated admin pages to the public login flow", async () => {
         const response = await proxy(new NextRequest("http://localhost/admin/content"));
 
@@ -234,6 +272,7 @@ describe("proxy auth routing", () => {
 
     it("matches the routes that need auth cookie refresh coverage", () => {
         expect(config.matcher).toEqual(expect.arrayContaining([
+            "/",
             "/login",
             "/auth/callback",
             "/browse",
