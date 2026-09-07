@@ -1,16 +1,16 @@
 "use client";
 
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
     BookOpen,
     Headphones,
     FileText,
-    Check,
     Info,
     Trash2,
     Video,
     Archive,
+    Ellipsis,
 } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -34,6 +34,8 @@ interface ContentCardProps {
     onSecondaryRemove?: (id: string) => void;
     secondaryRemoveLabel?: string;
     secondaryRemoveIcon?: "archive" | "trash";
+    /** Groups optional list-management actions behind one compact menu trigger. */
+    showRemoveMenu?: boolean;
     hideProgressBar?: boolean;
     hideBookmark?: boolean;
     enableUserState?: boolean;
@@ -114,7 +116,6 @@ function InteractiveContentCard(props: ContentCardProps) {
         item,
         hideProgressBar = false,
         navigationMode = "preview",
-        showUserCompletionBadge = false,
     } = props;
     const { isInMyList, toggleMyList, getProgress } = useReadingProgress();
     const isBookmarked = isInMyList(item.id);
@@ -141,7 +142,7 @@ function InteractiveContentCard(props: ContentCardProps) {
             isBookmarked={isBookmarked}
             progressPercentage={percentage}
             showProgress={showProgress}
-            showCompletedBadge={props.showCompletedBadge || (showUserCompletionBadge && progress?.isCompleted)}
+            showCompletedBadge={props.showCompletedBadge || progress?.isCompleted}
             href={href}
             onToggleBookmark={handleToggleBookmark}
         />
@@ -157,6 +158,7 @@ function BaseContentCard({
     onSecondaryRemove,
     secondaryRemoveLabel = "Remove from reading history",
     secondaryRemoveIcon = "trash",
+    showRemoveMenu = false,
     hideBookmark = false,
     isBookmarked = false,
     progressPercentage = 0,
@@ -168,6 +170,8 @@ function BaseContentCard({
     showDesktopQuickActions = false,
 }: BaseContentCardProps) {
     const [isCoverLoaded, setIsCoverLoaded] = useState(false);
+    const [isRemoveMenuOpen, setIsRemoveMenuOpen] = useState(false);
+    const removeMenuRef = useRef<HTMLDivElement>(null);
     const Icon = TYPE_ICONS[item.type] || BookOpen;
     const RemoveIcon = removeIcon === "archive" ? Archive : Trash2;
     const SecondaryRemoveIcon = secondaryRemoveIcon === "archive" ? Archive : Trash2;
@@ -185,6 +189,31 @@ function BaseContentCard({
     useEffect(() => {
         setIsCoverLoaded(false);
     }, [item.cover_image_url]);
+
+    useEffect(() => {
+        if (!isRemoveMenuOpen) {
+            return;
+        }
+
+        const closeOnOutsidePointerDown = (event: PointerEvent) => {
+            if (!removeMenuRef.current?.contains(event.target as Node)) {
+                setIsRemoveMenuOpen(false);
+            }
+        };
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                setIsRemoveMenuOpen(false);
+            }
+        };
+
+        document.addEventListener("pointerdown", closeOnOutsidePointerDown);
+        document.addEventListener("keydown", closeOnEscape);
+
+        return () => {
+            document.removeEventListener("pointerdown", closeOnOutsidePointerDown);
+            document.removeEventListener("keydown", closeOnEscape);
+        };
+    }, [isRemoveMenuOpen]);
 
     return (
         <div className={cn(
@@ -236,16 +265,6 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            {showCompletedBadge ? (
-                <div
-                    role="img"
-                    aria-label={`${item.title} completed`}
-                    className="pointer-events-none absolute right-2 top-2 z-20 flex size-7 items-center justify-center rounded-full border border-white/15 bg-emerald-900/95 shadow-[0_3px_10px_rgba(0,0,0,0.45)] backdrop-blur-sm"
-                >
-                    <Check aria-hidden="true" className="size-4 text-white" strokeWidth={2.5} />
-                </div>
-            ) : null}
-
             {showBookmarkButton ? (
                 <LibrarySaveButton
                     contentTitle={item.title}
@@ -256,7 +275,7 @@ function BaseContentCard({
                     stopPropagation
                     className={cn(
                         "content-card-motion-action focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
-                        showCompletedBadge ? "right-10" : "right-2"
+                        "right-2"
                     )}
                     savedClassName="bg-primary text-primary-foreground opacity-100"
                     unsavedClassName="content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
@@ -379,16 +398,83 @@ function BaseContentCard({
                 </div>
             </div>
 
-            {showProgress ? (
-                <div className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/40 backdrop-blur-sm">
+            {showProgress || showCompletedBadge ? (
+                <div
+                    role={showCompletedBadge ? "img" : undefined}
+                    aria-label={showCompletedBadge ? `${item.title} completed` : undefined}
+                    className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/40 backdrop-blur-sm"
+                >
                     <div
-                        className="content-card-motion-progress h-full rounded-b-[5px] bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] transition-all duration-300 motion-reduce:transition-none"
-                        style={{ width: `${progressPercentage}%` }}
+                        className={cn(
+                            "content-card-motion-progress h-full rounded-b-[5px] transition-all duration-300 motion-reduce:transition-none",
+                            showCompletedBadge
+                                ? "bg-emerald-500/85 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                                : "bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]",
+                        )}
+                        style={{ width: `${showCompletedBadge ? 100 : progressPercentage}%` }}
                     />
                 </div>
             ) : null}
 
-            {onRemove ? (
+            {showRemoveMenu && (onRemove || onSecondaryRemove) ? (
+                <div ref={removeMenuRef} className="absolute left-2 top-2 z-40">
+                    <button
+                        type="button"
+                        onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            setIsRemoveMenuOpen((isOpen) => !isOpen);
+                        }}
+                        className="content-card-hover-action focus-ring touch-target-44 flex rounded-full bg-black/50 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/70 motion-reduce:transition-none"
+                        aria-label={`Manage ${item.title}`}
+                        aria-expanded={isRemoveMenuOpen}
+                        aria-haspopup="menu"
+                    >
+                        <Ellipsis className="size-4" aria-hidden="true" />
+                    </button>
+
+                    {isRemoveMenuOpen ? (
+                        <div
+                            role="menu"
+                            aria-label={`Manage ${item.title}`}
+                            className="absolute left-0 top-full mt-1.5 w-52 overflow-hidden rounded-md border border-white/15 bg-popover/95 p-1 text-popover-foreground shadow-xl backdrop-blur-md"
+                        >
+                            {onRemove ? (
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        setIsRemoveMenuOpen(false);
+                                        onRemove(item.id);
+                                    }}
+                                    className="focus-ring flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-left text-xs font-medium transition-colors hover:bg-white/10"
+                                >
+                                    <RemoveIcon className="size-3.5" aria-hidden="true" />
+                                    {removeLabel}
+                                </button>
+                            ) : null}
+                            {onSecondaryRemove ? (
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    onClick={(event) => {
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                        setIsRemoveMenuOpen(false);
+                                        onSecondaryRemove(item.id);
+                                    }}
+                                    className="focus-ring flex w-full items-center gap-2 rounded-sm px-2.5 py-2 text-left text-xs font-medium text-red-200 transition-colors hover:bg-red-500/15 hover:text-red-100"
+                                >
+                                    <SecondaryRemoveIcon className="size-3.5" aria-hidden="true" />
+                                    {secondaryRemoveLabel}
+                                </button>
+                            ) : null}
+                        </div>
+                    ) : null}
+                </div>
+            ) : onRemove ? (
                 <button
                     onClick={(event) => {
                         event.preventDefault();
@@ -406,7 +492,7 @@ function BaseContentCard({
                 </button>
             ) : null}
 
-            {onSecondaryRemove ? (
+            {!showRemoveMenu && onSecondaryRemove ? (
                 <button
                     onClick={(event) => {
                         event.preventDefault();

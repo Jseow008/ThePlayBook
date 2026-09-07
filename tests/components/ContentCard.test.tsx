@@ -271,6 +271,52 @@ describe("ContentCard", () => {
         }
     });
 
+    it("groups optional history actions behind one menu trigger when requested", () => {
+        const onRemove = vi.fn();
+        const onSecondaryRemove = vi.fn();
+
+        render(
+            <ContentCard
+                item={item}
+                onRemove={onRemove}
+                onSecondaryRemove={onSecondaryRemove}
+                removeLabel="Hide from Completed"
+                secondaryRemoveLabel="Remove from reading history"
+                showRemoveMenu
+            />
+        );
+
+        expect(screen.queryByRole("button", { name: "Hide from Completed" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Remove from reading history" })).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole("button", { name: "Manage Deep Work" }));
+
+        fireEvent.click(screen.getByRole("menuitem", { name: "Hide from Completed" }));
+        expect(onRemove).toHaveBeenCalledWith(item.id);
+    });
+
+    it("dismisses the history action menu on an outside click or Escape", () => {
+        render(
+            <ContentCard
+                item={item}
+                onRemove={vi.fn()}
+                removeLabel="Hide from Completed"
+                showRemoveMenu
+            />
+        );
+
+        const trigger = screen.getByRole("button", { name: "Manage Deep Work" });
+        fireEvent.click(trigger);
+        expect(screen.getByRole("menu", { name: "Manage Deep Work" })).toBeInTheDocument();
+
+        fireEvent.pointerDown(document.body);
+        expect(screen.queryByRole("menu", { name: "Manage Deep Work" })).not.toBeInTheDocument();
+
+        fireEvent.click(trigger);
+        fireEvent.keyDown(document, { key: "Escape" });
+        expect(screen.queryByRole("menu", { name: "Manage Deep Work" })).not.toBeInTheDocument();
+    });
+
     it("does not render an inert bookmark button when user state is disabled", () => {
         render(<ContentCard item={item} enableUserState={false} />);
 
@@ -373,7 +419,7 @@ describe("ContentCard", () => {
         );
     });
 
-    it("shows the completed badge from user progress only when requested", () => {
+    it("shows a full completion bar from user progress across card surfaces", () => {
         mockGetProgress.mockReturnValue({
             itemId: item.id,
             completed: ["segment-1", "segment-2"],
@@ -384,17 +430,13 @@ describe("ContentCard", () => {
             totalSegments: 2,
         });
 
-        const { rerender } = render(<ContentCard item={item} />);
+        render(<ContentCard item={item} />);
 
-        expect(screen.queryByRole("img", { name: "Deep Work completed" })).not.toBeInTheDocument();
-
-        rerender(<ContentCard item={item} showUserCompletionBadge />);
-
-        const completedBadge = screen.getByRole("img", { name: "Deep Work completed" });
-        expect(completedBadge).toHaveClass("size-7", "bg-emerald-900/95");
-        expect(completedBadge.querySelector("svg")).toHaveClass("size-4", "text-white");
-        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toHaveClass("right-10");
-        expect(document.querySelector(".content-card-motion-progress")).not.toBeInTheDocument();
+        const completionBar = screen.getByRole("img", { name: "Deep Work completed" });
+        expect(completionBar).toHaveClass("bottom-px", "h-1.5");
+        expect(completionBar.querySelector(".content-card-motion-progress")).toHaveClass("bg-emerald-500/85");
+        expect(completionBar.querySelector(".content-card-motion-progress")).toHaveStyle({ width: "100%" });
+        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toHaveClass("right-2");
     });
 
     it("falls back to the non-image artwork treatment after the direct retry fails", () => {

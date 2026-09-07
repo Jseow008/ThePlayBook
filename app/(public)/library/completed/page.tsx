@@ -352,6 +352,7 @@ export default function CompletedPage() {
                                         titleDensity="app-compact"
                                         showCompletedBadge
                                         showDesktopQuickActions
+                                        showRemoveMenu
                                         removeIcon="archive"
                                         removeLabel="Hide from Completed"
                                         secondaryRemoveLabel="Remove from reading history"
