@@ -419,7 +419,7 @@ describe("ContentCard", () => {
         );
     });
 
-    it("shows the completed badge from user progress only when requested", () => {
+    it("shows a full completion bar from user progress across card surfaces", () => {
         mockGetProgress.mockReturnValue({
             itemId: item.id,
             completed: ["segment-1", "segment-2"],
@@ -430,17 +430,13 @@ describe("ContentCard", () => {
             totalSegments: 2,
         });
 
-        const { rerender } = render(<ContentCard item={item} />);
+        render(<ContentCard item={item} />);
 
-        expect(screen.queryByRole("img", { name: "Deep Work completed" })).not.toBeInTheDocument();
-
-        rerender(<ContentCard item={item} showUserCompletionBadge />);
-
-        const completedBadge = screen.getByRole("img", { name: "Deep Work completed" });
-        expect(completedBadge).toHaveClass("size-7", "bg-emerald-900/95");
-        expect(completedBadge.querySelector("svg")).toHaveClass("size-4", "text-white");
-        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toHaveClass("right-10");
-        expect(document.querySelector(".content-card-motion-progress")).not.toBeInTheDocument();
+        const completionBar = screen.getByRole("img", { name: "Deep Work completed" });
+        expect(completionBar).toHaveClass("bottom-px", "h-1.5");
+        expect(completionBar.querySelector(".content-card-motion-progress")).toHaveClass("bg-emerald-500/85");
+        expect(completionBar.querySelector(".content-card-motion-progress")).toHaveStyle({ width: "100%" });
+        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toHaveClass("right-2");
     });
 
     it("falls back to the non-image artwork treatment after the direct retry fails", () => {
