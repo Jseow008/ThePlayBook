@@ -455,14 +455,14 @@ function BaseContentCard({
                 <div
                     role={showCompletedBadge ? "img" : undefined}
                     aria-label={showCompletedBadge ? `${item.title} completed` : undefined}
-                    className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/40 backdrop-blur-sm"
+                    className="absolute inset-x-px bottom-px z-40 h-1.5 rounded-b-[5px] bg-black/50 backdrop-blur-md"
                 >
                     <div
                         className={cn(
                             "content-card-motion-progress h-full rounded-b-[5px] transition-all duration-300 motion-reduce:transition-none",
                             showCompletedBadge
-                                ? "bg-emerald-500/85 shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                                : "bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]",
+                                ? "bg-primary/70 shadow-[0_0_4px_rgba(16,185,129,0.15)]"
+                                : "bg-white/80 shadow-[0_0_4px_rgba(255,255,255,0.2)]",
                         )}
                         style={{ width: `${showCompletedBadge ? 100 : progressPercentage}%` }}
                     />
