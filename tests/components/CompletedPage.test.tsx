@@ -7,6 +7,12 @@ const mockUseReadingProgress = vi.fn();
 const mockUseBatchContentItems = vi.fn();
 const mockToastSuccess = vi.fn();
 const mockToastError = vi.fn();
+const mockUseReflections = vi.fn();
+const mockReflectionComposer = vi.fn(
+    ({ isOpen, contentTitle }: { isOpen: boolean; contentTitle: string }) => (
+        isOpen ? <div role="dialog">Reflection for {contentTitle}</div> : null
+    )
+);
 const mockContentCard = vi.fn(
     ({
         item,
@@ -17,6 +23,8 @@ const mockContentCard = vi.fn(
         showCompletedBadge,
         showDesktopQuickActions,
         titleDensity,
+        reflectionState,
+        onReflectionClick,
     }: {
         item: ContentItem;
         removeIcon?: "archive" | "trash";
@@ -28,6 +36,8 @@ const mockContentCard = vi.fn(
         showCompletedBadge?: boolean;
         showDesktopQuickActions?: boolean;
         titleDensity?: "default" | "app-compact";
+        reflectionState?: "empty" | "saved";
+        onReflectionClick?: () => void;
     }) => (
         <div>
             <span>{`${showCompletedBadge ? "completed" : "plain"}:${titleDensity ?? "default"}:${showDesktopQuickActions ? "quick-actions" : "no-quick-actions"}:${item.title}`}</span>
@@ -39,6 +49,11 @@ const mockContentCard = vi.fn(
             {onSecondaryRemove ? (
                 <button onClick={() => onSecondaryRemove(item.id)}>
                     {secondaryRemoveLabel ?? "Secondary remove"}
+                </button>
+            ) : null}
+            {onReflectionClick ? (
+                <button onClick={onReflectionClick}>
+                    {reflectionState === "saved" ? "Edit reflection" : "Write reflection"}
                 </button>
             ) : null}
         </div>
@@ -59,6 +74,14 @@ vi.mock("@/hooks/useReadingProgress", () => ({
 
 vi.mock("@/hooks/use-content-queries", () => ({
     useBatchContentItems: (...args: unknown[]) => mockUseBatchContentItems(...args),
+}));
+
+vi.mock("@/hooks/useReflections", () => ({
+    useReflections: () => mockUseReflections(),
+}));
+
+vi.mock("@/components/reader/ReflectionComposer", () => ({
+    ReflectionComposer: (props: { isOpen: boolean; contentTitle: string }) => mockReflectionComposer(props),
 }));
 
 vi.mock("@/components/ui/ContentCard", () => ({
@@ -116,6 +139,8 @@ describe("CompletedPage", () => {
         mockContentCard.mockClear();
         mockToastSuccess.mockClear();
         mockToastError.mockClear();
+        mockReflectionComposer.mockClear();
+        mockUseReflections.mockReturnValue({ data: [] });
         mockUseReadingProgress.mockReturnValue({
             archiveFromProgressList: vi.fn(),
             completedIds: [item.id],
@@ -151,8 +176,36 @@ describe("CompletedPage", () => {
                 showCompletedBadge: true,
                 showDesktopQuickActions: true,
                 titleDensity: "app-compact",
+                reflectionState: "empty",
+                onReflectionClick: expect.any(Function),
             })
         );
+    });
+
+    it("opens the reflection composer from a completed card and supplies any saved reflection", () => {
+        mockUseReflections.mockReturnValue({
+            data: [{
+                id: "reflection-1",
+                content_item_id: item.id,
+                reflection_text: "Protect the habit.",
+                prompt: "What idea do you want to remember from this?",
+                user_id: "user-1",
+                created_at: "2026-03-02T00:00:00Z",
+                updated_at: null,
+                content_item: null,
+            }],
+        });
+
+        render(<CompletedPage />);
+
+        expect(mockContentCard).toHaveBeenCalledWith(expect.objectContaining({ reflectionState: "saved" }));
+        fireEvent.click(screen.getByRole("button", { name: "Edit reflection" }));
+
+        expect(screen.getByRole("dialog")).toHaveTextContent("Reflection for Atomic Habits");
+        expect(mockReflectionComposer).toHaveBeenLastCalledWith(expect.objectContaining({
+            contentId: item.id,
+            existingReflection: expect.objectContaining({ id: "reflection-1" }),
+        }));
     });
 
     it("archives cards from Completed without deleting progress", () => {
