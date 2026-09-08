@@ -128,6 +128,7 @@ describe("HeroCarousel", () => {
         act(() => {
             vi.runOnlyPendingTimers();
         });
+        vi.unstubAllGlobals();
         vi.useRealTimers();
     });
 
@@ -161,6 +162,38 @@ describe("HeroCarousel", () => {
         });
 
         expect(screen.getByRole("heading", { name: "Second Feature" })).toBeInTheDocument();
+    });
+
+    it("pauses autoplay when the hero is outside the viewport", () => {
+        let onIntersection: IntersectionObserverCallback | null = null;
+
+        class MockIntersectionObserver {
+            constructor(callback: IntersectionObserverCallback) {
+                onIntersection = callback;
+            }
+
+            observe = vi.fn();
+            disconnect = vi.fn();
+            unobserve = vi.fn();
+            takeRecords = vi.fn(() => []);
+            root = null;
+            rootMargin = "0px";
+            thresholds = [0.1];
+        }
+
+        vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+        render(<HeroCarousel items={items} />);
+
+        act(() => {
+            onIntersection?.([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver);
+        });
+
+        act(() => {
+            vi.advanceTimersByTime(7000);
+        });
+
+        expect(screen.getByRole("heading", { name: "First Feature" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "Go to item 1" })).toHaveAttribute("aria-current", "true");
     });
 
     it("pauses autoplay while keyboard focus is inside the hero", () => {
@@ -223,6 +256,8 @@ describe("HeroCarousel", () => {
             "href",
             "/preview/11111111-1111-1111-1111-111111111111"
         );
+        expect(screen.getByAltText("").parentElement).toHaveClass("blur-2xl");
+        expect(screen.getByAltText("")).toHaveAttribute("sizes", "256px");
     });
 
     it("keeps the hero content visible if the artwork fails twice", () => {
