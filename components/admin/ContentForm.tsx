@@ -1048,14 +1048,14 @@ export function ContentForm({
                             </div>
                         </div>
 
-                        {/* Hero Image (Landscape - for Featured Carousel) */}
+                        {/* Optional landscape artwork for the featured carousel. */}
                         {formData.is_featured && (
                             <div className="space-y-4 border-t border-zinc-200 pt-4">
                                 <div className="space-y-1">
                                     <label className="block text-sm font-medium text-zinc-700">
-                                        Hero Image (16:9 Landscape)
+                                        Hero Image (16:9 Landscape, optional)
                                     </label>
-                                    <p className="text-xs text-zinc-500">Landscape image for the homepage carousel. Recommended: 1920×1080.</p>
+                                    <p className="text-xs text-zinc-500">Optional wide artwork for the homepage carousel. Without it, Netflux uses the cover as an ambient backdrop with the full cover displayed on desktop. Recommended: 1920×1080.</p>
                                 </div>
                                 <div className="space-y-4">
                                     {/* Upload Area */}

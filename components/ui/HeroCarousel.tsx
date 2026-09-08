@@ -127,6 +127,8 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     const renderImageLayer = useCallback((item: ContentItem, state: "active" | "previous") => {
         const isPrevious = state === "previous";
+        const hasLandscapeHero = Boolean(item.hero_image_url);
+        const imageSrc = item.hero_image_url || item.cover_image_url;
 
         return (
             <div
@@ -142,29 +144,67 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                             : "opacity-0"
                 )}
             >
-                {(item.hero_image_url || item.cover_image_url) ? (
+                {imageSrc ? (
                     <>
-                        {/* The Image Container - Anchored Right */}
-                        <div className="absolute top-0 right-0 bottom-0 w-full md:w-[85%] lg:w-[75%] xl:w-[65%]">
-                            <ResilientImage
-                                src={(item.hero_image_url || item.cover_image_url)!}
-                                alt={item.title}
-                                fill
-                                priority={activeIndex === 0 && !isPrevious}
-                                surface="hero-carousel"
-                                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 85vw, 65vw"
-                                className="object-cover object-[50%_20%]"
-                                fallback={<div className="h-full w-full bg-card" />}
-                            />
-                            {!isPrevious && (
-                                <Link
-                                    href={`/preview/${item.id}`}
-                                    aria-label={`Preview ${item.title}`}
-                                    tabIndex={-1}
-                                    className="absolute inset-x-0 top-0 bottom-12 z-10 cursor-pointer md:inset-0"
+                        {hasLandscapeHero ? (
+                            /* Wide editorial artwork remains the premium hero treatment when supplied. */
+                            <div className="absolute top-0 right-0 bottom-0 w-full md:w-[85%] lg:w-[75%] xl:w-[65%]">
+                                <ResilientImage
+                                    src={imageSrc}
+                                    alt={item.title}
+                                    fill
+                                    priority={activeIndex === 0 && !isPrevious}
+                                    surface="hero-carousel"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1280px) 85vw, 65vw"
+                                    className="object-cover object-[50%_20%]"
+                                    fallback={<div className="h-full w-full bg-card" />}
                                 />
-                            )}
-                        </div>
+                                {!isPrevious && (
+                                    <Link
+                                        href={`/preview/${item.id}`}
+                                        aria-label={`Preview ${item.title}`}
+                                        tabIndex={-1}
+                                        className="absolute inset-x-0 top-0 bottom-12 z-10 cursor-pointer md:inset-0"
+                                    />
+                                )}
+                            </div>
+                        ) : (
+                            /* Portrait covers get their own composition instead of an unreadable landscape crop. */
+                            <>
+                                <div className="absolute -inset-10 scale-110 opacity-55 blur-3xl">
+                                    <ResilientImage
+                                        src={imageSrc}
+                                        alt=""
+                                        fill
+                                        priority={activeIndex === 0 && !isPrevious}
+                                        surface="hero-carousel"
+                                        sizes="100vw"
+                                        className="object-cover"
+                                        fallback={<div className="h-full w-full bg-card" />}
+                                    />
+                                </div>
+                                <div className="absolute right-[clamp(5rem,12vw,14rem)] top-1/2 hidden aspect-[2/3] w-[clamp(13rem,20vw,20rem)] -translate-y-1/2 overflow-hidden rounded-lg ring-1 ring-white/15 shadow-[0_28px_80px_rgba(0,0,0,0.62)] md:block">
+                                    <ResilientImage
+                                        src={imageSrc}
+                                        alt={item.title}
+                                        fill
+                                        priority={activeIndex === 0 && !isPrevious}
+                                        surface="hero-carousel"
+                                        sizes="(max-width: 1280px) 20vw, 320px"
+                                        className="object-cover"
+                                        fallback={<div className="h-full w-full bg-card" />}
+                                    />
+                                    {!isPrevious && (
+                                        <Link
+                                            href={`/preview/${item.id}`}
+                                            aria-label={`Preview ${item.title}`}
+                                            tabIndex={-1}
+                                            className="absolute inset-0 z-10 cursor-pointer"
+                                        />
+                                    )}
+                                </div>
+                            </>
+                        )}
 
                         {/* Full-screen Gradient Overlay to Blend Image into Background */}
                         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background via-background/42 to-transparent via-[48%] to-[82%] md:bg-gradient-to-r md:from-background md:via-background md:to-transparent md:via-[15%] md:to-[60%] lg:via-[25%] lg:to-[70%] xl:via-[35%] xl:to-[80%]" />
