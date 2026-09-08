@@ -433,8 +433,8 @@ describe("ContentCard", () => {
         render(<ContentCard item={item} />);
 
         const completionBar = screen.getByRole("img", { name: "Deep Work completed" });
-        expect(completionBar).toHaveClass("bottom-px", "h-1.5");
-        expect(completionBar.querySelector(".content-card-motion-progress")).toHaveClass("bg-emerald-500/85");
+        expect(completionBar).toHaveClass("bottom-px", "h-1.5", "bg-black/50", "backdrop-blur-md");
+        expect(completionBar.querySelector(".content-card-motion-progress")).toHaveClass("bg-primary/70");
         expect(completionBar.querySelector(".content-card-motion-progress")).toHaveStyle({ width: "100%" });
         expect(screen.getByRole("button", { name: "Save Deep Work to Library" }).parentElement).toHaveClass("right-2");
     });
