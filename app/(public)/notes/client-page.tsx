@@ -1499,7 +1499,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                     isAskOpen && "lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_25rem]"
                 )}>
                     <div className={cn("min-w-0", !isAskOpen && "lg:mx-auto lg:max-w-4xl lg:w-full")}>
-                        <div className="sticky top-4 z-10 mb-8 lg:hidden">
+                        <div className="sticky top-4 z-10 mb-8 isolate lg:hidden before:pointer-events-none before:absolute before:-inset-x-4 before:-top-4 before:-bottom-8 before:-z-10 before:bg-background">
                             <div className="rounded-2xl border border-white/10 bg-background/92 p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)] backdrop-blur-sm">
                                 <div className="flex flex-col gap-2.5">
                                     <label className="relative">
@@ -1661,7 +1661,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                         </div>
 
                         <div className={cn(
-                            "sticky top-4 z-10 mb-8 hidden rounded-2xl border border-white/10 bg-background/90 backdrop-blur-sm transition-all duration-200 lg:block",
+                            "sticky top-4 z-10 mb-8 hidden isolate rounded-2xl border border-white/10 bg-background/90 backdrop-blur-sm transition-all duration-200 before:pointer-events-none before:absolute before:-inset-x-4 before:-top-4 before:-bottom-8 before:-z-10 before:bg-background lg:block",
                             isFilterBarCompact
                                 ? "p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)]"
                                 : "p-4"
