@@ -1,0 +1,72 @@
+name: Pull Request Scope
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-scope:
+    name: PR scope
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject unlabelled stacked history
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pullRequest = context.payload.pull_request;
+            const labels = new Set(pullRequest.labels.map(({ name }) => name.toLowerCase()));
+
+            if (labels.has('stacked-pr')) {
+              core.info('Intentional stacked PR: scope ancestry check bypassed.');
+              return;
+            }
+
+            const openPulls = await github.paginate(github.rest.pulls.list, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+
+            const inheritedPulls = [];
+
+            for (const otherPull of openPulls) {
+              if (otherPull.number === pullRequest.number) continue;
+              if (otherPull.base.ref !== pullRequest.base.ref) continue;
+
+              const [otherIntoCurrent, otherIntoBase] = await Promise.all([
+                github.rest.repos.compareCommits({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  base: otherPull.head.sha,
+                  head: pullRequest.head.sha,
+                }),
+                github.rest.repos.compareCommits({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  base: otherPull.head.sha,
+                  head: pullRequest.base.sha,
+                }),
+              ]);
+
+              const otherIsAncestorOfCurrent = otherIntoCurrent.data.behind_by === 0;
+              const otherAlreadyInBase = otherIntoBase.data.behind_by === 0;
+
+              if (otherIsAncestorOfCurrent && !otherAlreadyInBase) {
+                inheritedPulls.push(`#${otherPull.number} (${otherPull.html_url})`);
+              }
+            }
+
+            if (inheritedPulls.length > 0) {
+              core.setFailed(
+                `This PR includes unmerged history from open PR(s): ${inheritedPulls.join(', ')}. ` +
+                'Recreate the branch from origin/main or add the stacked-pr label for an intentional stack.'
+              );
+            } else {
+              core.info('No unmerged history from another open PR was found.');
+            }

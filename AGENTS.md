@@ -54,10 +54,20 @@ Do not add new sections, move sections, or replace the hero concept unless expli
 
 For ordinary application, test, documentation, or configuration changes:
 
-1. Create a focused branch and commit only the intended files.
-2. Push the branch and open a ready-for-review pull request.
-3. Enable squash auto-merge with `gh pr merge --auto --squash`.
-4. Let GitHub run the required `validate` and `Security Validation` checks in the background. Do not repeatedly poll them or keep the user waiting while they run.
-5. Do not wait for post-merge checks unless the user explicitly asks for deployment monitoring or a required check fails.
+1. Start every **independent** change from a freshly fetched `origin/main`, never from the currently checked-out feature branch:
+   ```bash
+   git fetch origin main
+   git switch -c codex/<task> --no-track origin/main
+   ```
+   An intentionally stacked PR is the only exception. Label it `stacked-pr` and name its parent PR in the PR description.
+2. Use a separate Codex-managed worktree for parallel tasks whenever practical. A worktree isolates files, but does not replace the branch and scope checks below.
+3. Create a focused branch and commit only the intended files. Before opening a PR—and again before enabling auto-merge—verify that its commits and files match only the stated task:
+   ```bash
+   git log --oneline origin/main..HEAD
+   git diff --name-status origin/main...HEAD
+   ```
+4. Push the branch and open a ready-for-review pull request. Inspect the rendered PR file list with `gh pr diff --stat` before treating its scope as approved.
+5. Enable squash auto-merge with `gh pr merge --auto --squash` only after the `PR scope` check passes and the scope inspection is clean. Let GitHub run the required `validate` and `Security Validation` checks in the background; auto-merge will wait for them.
+6. Do not wait for post-merge checks unless the user explicitly asks for deployment monitoring or a required check fails.
 
 Auto-merge does not authorize a production database change. For a new Supabase migration, follow the database-facing production release gate in `docs/OPS.md`, including the reviewed production dry-run and explicit authorization before `db push`. If a migration is already applied and the current change contains application or generated-type updates only, do not reapply the migration or repeat the full database rollout; record that fact in the pull request instead.
