@@ -213,6 +213,18 @@ describe("HeroCarousel", () => {
         expect(artworkPreviewLink).toHaveAttribute("tabindex", "-1");
     });
 
+    it("keeps a cover-only featured item intact in the portrait fallback", () => {
+        const coverOnlyItem = { ...items[0], hero_image_url: null };
+
+        render(<HeroCarousel items={[coverOnlyItem]} />);
+
+        expect(screen.getByAltText("First Feature")).toHaveAttribute("src", "https://example.com/one.jpg");
+        expect(screen.getByRole("link", { name: "Preview First Feature" })).toHaveAttribute(
+            "href",
+            "/preview/11111111-1111-1111-1111-111111111111"
+        );
+    });
+
     it("keeps the hero content visible if the artwork fails twice", () => {
         render(<HeroCarousel items={items} />);
 
