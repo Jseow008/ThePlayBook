@@ -26,13 +26,16 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
     const [outgoingVisible, setOutgoingVisible] = useState(false);
     const [contentVisible, setContentVisible] = useState(true);
     const [isFocusPaused, setIsFocusPaused] = useState(false);
+    const [isHeroInView, setIsHeroInView] = useState(true);
+    const [isDocumentVisible, setIsDocumentVisible] = useState(true);
+    const heroShellRef = useRef<HTMLDivElement>(null);
     const autoRotateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const contentRevealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const incomingFrameRef = useRef<number | null>(null);
     const contentRevealFrameRef = useRef<number | null>(null);
     const prefersReducedMotion = usePrefersReducedMotion();
-    const isPaused = isFocusPaused || prefersReducedMotion;
+    const isPaused = isFocusPaused || prefersReducedMotion || !isHeroInView || !isDocumentVisible;
 
     const clearAutoRotate = useCallback(() => {
         if (!autoRotateTimeoutRef.current) return;
@@ -125,6 +128,28 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
         setIsFocusPaused(false);
     }, []);
 
+    useEffect(() => {
+        const heroShell = heroShellRef.current;
+        if (!heroShell || typeof IntersectionObserver === "undefined") return;
+
+        const observer = new IntersectionObserver(([entry]) => {
+            setIsHeroInView(entry.isIntersecting);
+        }, { threshold: 0.1 });
+
+        observer.observe(heroShell);
+        return () => observer.disconnect();
+    }, []);
+
+    useEffect(() => {
+        const updateDocumentVisibility = () => {
+            setIsDocumentVisible(document.visibilityState === "visible");
+        };
+
+        updateDocumentVisibility();
+        document.addEventListener("visibilitychange", updateDocumentVisibility);
+        return () => document.removeEventListener("visibilitychange", updateDocumentVisibility);
+    }, []);
+
     const renderImageLayer = useCallback((item: ContentItem, state: "active" | "previous") => {
         const isPrevious = state === "previous";
         const hasLandscapeHero = Boolean(item.hero_image_url);
@@ -171,14 +196,13 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                         ) : (
                             /* Cover-only items use an enlarged focal crop, with a soft version behind it for edge fill. */
                             <>
-                                <div className="absolute -inset-10 scale-110 opacity-55 blur-3xl">
+                                <div className="absolute -inset-6 scale-105 opacity-45 blur-2xl">
                                     <ResilientImage
                                         src={imageSrc}
                                         alt=""
                                         fill
-                                        priority={activeIndex === 0 && !isPrevious}
                                         surface="hero-carousel"
-                                        sizes="100vw"
+                                        sizes="256px"
                                         className="object-cover"
                                         fallback={<div className="h-full w-full bg-card" />}
                                     />
@@ -291,6 +315,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
 
     return (
         <div
+            ref={heroShellRef}
             className="relative browse-hero-shell w-full overflow-hidden bg-background"
             onFocusCapture={handleFocus}
             onBlurCapture={handleBlur}
