@@ -169,7 +169,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                 )}
                             </div>
                         ) : (
-                            /* Portrait covers get their own composition instead of an unreadable landscape crop. */
+                            /* Cover-only items use an enlarged focal crop, with a soft version behind it for edge fill. */
                             <>
                                 <div className="absolute -inset-10 scale-110 opacity-55 blur-3xl">
                                     <ResilientImage
@@ -183,15 +183,15 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                         fallback={<div className="h-full w-full bg-card" />}
                                     />
                                 </div>
-                                <div className="absolute right-[clamp(5rem,12vw,14rem)] top-1/2 hidden aspect-[2/3] w-[clamp(13rem,20vw,20rem)] -translate-y-1/2 overflow-hidden rounded-lg ring-1 ring-white/15 shadow-[0_28px_80px_rgba(0,0,0,0.62)] md:block">
+                                <div className="absolute inset-y-0 right-0 w-full overflow-hidden md:w-[82%] lg:w-[74%] xl:w-[68%]">
                                     <ResilientImage
                                         src={imageSrc}
                                         alt={item.title}
                                         fill
                                         priority={activeIndex === 0 && !isPrevious}
                                         surface="hero-carousel"
-                                        sizes="(max-width: 1280px) 20vw, 320px"
-                                        className="object-cover"
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1280px) 82vw, 68vw"
+                                        className="object-cover object-[50%_30%]"
                                         fallback={<div className="h-full w-full bg-card" />}
                                     />
                                     {!isPrevious && (
@@ -199,7 +199,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                             href={`/preview/${item.id}`}
                                             aria-label={`Preview ${item.title}`}
                                             tabIndex={-1}
-                                            className="absolute inset-0 z-10 cursor-pointer"
+                                            className="absolute inset-x-0 top-0 bottom-12 z-10 cursor-pointer md:inset-0"
                                         />
                                     )}
                                 </div>
