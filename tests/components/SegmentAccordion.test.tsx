@@ -478,6 +478,44 @@ describe('SegmentAccordion', () => {
         );
     });
 
+    it('opens a hover preview on desktop without changing the click interaction', () => {
+        const onHighlightPreview = vi.fn();
+        const onHighlightPreviewEnd = vi.fn();
+        const { container } = render(
+            <SegmentAccordion
+                {...defaultProps}
+                onHighlightPreview={onHighlightPreview}
+                onHighlightPreviewEnd={onHighlightPreviewEnd}
+                highlights={[{
+                    id: 'highlight-preview',
+                    user_id: 'user-1',
+                    content_item_id: 'item-1',
+                    segment_id: 'seg-1',
+                    highlighted_text: 'Alpha',
+                    note_body: 'A note',
+                    color: 'blue',
+                    anchor_start: 0,
+                    anchor_end: 5,
+                    created_at: '2026-03-10T00:00:00.000Z',
+                    updated_at: null,
+                    content_item: null,
+                    segment: null,
+                }]}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Introduction').closest('button')!);
+        const mark = container.querySelector('mark[data-id="highlight-preview"]')!;
+        fireEvent.mouseMove(mark);
+
+        expect(onHighlightPreview).toHaveBeenCalledWith(
+            'highlight-preview',
+            expect.objectContaining({ top: expect.any(Number), left: expect.any(Number) })
+        );
+        fireEvent.mouseLeave(mark.closest('[data-segment-id]')!);
+        expect(onHighlightPreviewEnd).toHaveBeenCalled();
+    });
+
     it('renders a visible narrated cue when the active audio segment is provided', () => {
         render(
             <SegmentAccordion

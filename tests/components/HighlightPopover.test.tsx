@@ -85,4 +85,24 @@ describe('HighlightPopover', () => {
         expect(blueButton.className).toContain('ring-2');
         expect(redButton.className).not.toContain('ring-2');
     });
+
+    it('renders a compact, read-only preview for hover', () => {
+        const portalContainer = createPortalContainer();
+        render(
+            <HighlightPopover
+                highlightId="highlight-preview"
+                noteBody="A note worth revisiting"
+                highlightedText="Quoted source"
+                currentColor="blue"
+                position={{ top: 40, left: 40, width: 20, height: 10 }}
+                portalContainer={portalContainer}
+                variant="preview"
+                onClose={vi.fn()}
+            />
+        );
+
+        expect(screen.getByText('A note worth revisiting')).toBeInTheDocument();
+        expect(screen.queryByTitle('Edit Color or Note')).not.toBeInTheDocument();
+        expect(screen.queryByText('Quoted source')).not.toBeInTheDocument();
+    });
 });

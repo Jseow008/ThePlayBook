@@ -330,6 +330,8 @@ interface SegmentAccordionProps {
     onFinishReading?: () => void;
     highlights?: HighlightWithContent[];
     onHighlightActivate?: (highlightId: string, position: HighlightPosition) => void;
+    onHighlightPreview?: (highlightId: string, position: HighlightPosition) => void;
+    onHighlightPreviewEnd?: () => void;
     expandedSegmentId?: string | null;
     onExpandedSegmentChange?: (segmentId: string | null) => void;
     scrollRequest?: {
@@ -349,6 +351,8 @@ export function SegmentAccordion({
     onFinishReading,
     highlights = [],
     onHighlightActivate,
+    onHighlightPreview,
+    onHighlightPreviewEnd,
     expandedSegmentId,
     onExpandedSegmentChange,
     scrollRequest = null,
@@ -357,6 +361,7 @@ export function SegmentAccordion({
     const [uncontrolledExpandedId, setUncontrolledExpandedId] = useState<string | null>(null);
     const itemRefs = useRef<Map<string, HTMLDivElement>>(new Map());
     const contentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+    const hoveredHighlightIdRef = useRef<string | null>(null);
     const pendingScrollCleanupRef = useRef<(() => void) | null>(null);
     const lastProcessedScrollRequestRef = useRef<string | null>(null);
     const { fontSize, fontFamily, lineHeight } = useReaderSettings();
@@ -555,6 +560,39 @@ export function SegmentAccordion({
         [isReaderInteractionDesktop, onHighlightActivate]
     );
 
+    const previewHighlight = useCallback(
+        (event: ReactMouseEvent<HTMLElement>) => {
+            const target = (event.target as HTMLElement).closest("mark[data-id]");
+            const highlightId = target?.getAttribute("data-id");
+
+            if (!target || !highlightId || !onHighlightPreview) {
+                if (hoveredHighlightIdRef.current) {
+                    hoveredHighlightIdRef.current = null;
+                    onHighlightPreviewEnd?.();
+                }
+                return;
+            }
+
+            if (hoveredHighlightIdRef.current === highlightId) return;
+
+            hoveredHighlightIdRef.current = highlightId;
+            const rect = target.getBoundingClientRect();
+            onHighlightPreview(highlightId, {
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+            });
+        },
+        [onHighlightPreview, onHighlightPreviewEnd]
+    );
+
+    const endHighlightPreview = useCallback(() => {
+        if (!hoveredHighlightIdRef.current) return;
+        hoveredHighlightIdRef.current = null;
+        onHighlightPreviewEnd?.();
+    }, [onHighlightPreviewEnd]);
+
     return (
         <div className="space-y-2">
             <h2 className="text-sm font-bold uppercase tracking-[0.15em] text-muted-foreground mb-4 px-1">
@@ -663,7 +701,8 @@ export function SegmentAccordion({
                                 <div className="px-4 pt-3 pb-5 ml-[3.25rem]">
                                         <div
                                             data-segment-id={segment.id}
-                                            onMouseMove={isReaderInteractionDesktop ? activateHighlight : undefined}
+                                            onMouseMove={isReaderInteractionDesktop ? previewHighlight : undefined}
+                                            onMouseLeave={isReaderInteractionDesktop ? endHighlightPreview : undefined}
                                             onClick={activateHighlight}
                                             className={cn(
                                             "reading-copy reading-copy-prose reading-copy-strong prose max-w-none relative transition-all duration-300",

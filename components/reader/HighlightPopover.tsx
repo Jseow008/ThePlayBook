@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { BookOpen, AlertCircle, Edit3, Trash2, Check, X, Highlighter } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -19,6 +19,7 @@ interface HighlightPopoverProps {
     createdAt?: string;
     position: { top: number; left: number; width: number; height: number };
     portalContainer: HTMLElement;
+    variant?: "preview" | "full";
     onClose: () => void;
     onMouseEnter?: () => void;
     onMouseLeave?: () => void;
@@ -34,6 +35,7 @@ export function HighlightPopover({
     currentColor,
     position,
     portalContainer,
+    variant = "full",
     onClose,
     onMouseEnter,
     onMouseLeave,
@@ -47,10 +49,49 @@ export function HighlightPopover({
     const [localColor, setLocalColor] = useState(normalizeHighlightColor(currentColor));
     const updateHighlight = useUpdateHighlight();
     const deleteHighlight = useDeleteHighlight();
+    const [placement, setPlacement] = useState<{
+        top: number;
+        left: number;
+        direction: "above" | "below";
+        caretLeft: number;
+    } | null>(null);
+
+    const updatePlacement = useCallback(() => {
+        const popover = popoverRef.current;
+        if (!popover) return;
+
+        const viewportPadding = 16;
+        const gap = 10;
+        const width = popover.offsetWidth;
+        const height = popover.offsetHeight;
+        const anchorX = position.left + (position.width / 2);
+        const left = Math.min(
+            Math.max(anchorX, viewportPadding + (width / 2)),
+            window.innerWidth - viewportPadding - (width / 2)
+        );
+        const direction = position.top >= height + gap + viewportPadding ? "above" : "below";
+        const top = direction === "above"
+            ? position.top - gap - height
+            : position.top + position.height + gap;
+        const caretLeft = Math.min(
+            Math.max(anchorX - (left - (width / 2)), 16),
+            width - 16
+        );
+
+        setPlacement({ top, left, direction, caretLeft });
+    }, [position]);
 
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    useLayoutEffect(() => {
+        if (!mounted) return;
+
+        updatePlacement();
+        window.addEventListener("resize", updatePlacement);
+        return () => window.removeEventListener("resize", updatePlacement);
+    }, [mounted, updatePlacement, variant]);
 
     useEffect(() => {
         const normalizedColor = normalizeHighlightColor(currentColor);
@@ -88,9 +129,8 @@ export function HighlightPopover({
 
     if (!mounted) return null;
 
-    const top = position.top + window.scrollY;
-    const left = position.left + window.scrollX + (position.width / 2);
     const colorClasses = HIGHLIGHT_COLOR_CLASSES[localColor];
+    const isPreview = variant === "preview";
 
     const handleSave = async () => {
         try {
@@ -136,15 +176,36 @@ export function HighlightPopover({
             ref={popoverRef}
             onMouseEnter={onMouseEnter}
             onMouseLeave={() => {
+                if (!isPreview && !isEditing) return;
+
                 if (!isEditing && onMouseLeave) {
                     onMouseLeave();
                 }
             }}
-            className={`absolute ${OVERLAY_LAYER_CLASS.popover} transform -translate-x-1/2 -translate-y-full w-80 origin-bottom animate-in fade-in zoom-in-95 duration-200 pb-2.5`}
-            style={{ top, left }}
+            className={cn(
+                "fixed transform -translate-x-1/2 origin-center animate-in fade-in zoom-in-95 duration-200",
+                "w-[min(20rem,calc(100vw-2rem))] max-h-[calc(100vh-2rem)]",
+                placement?.direction === "above" ? "pb-2.5" : "pt-2.5",
+                OVERLAY_LAYER_CLASS.popover
+            )}
+            style={{
+                top: placement?.top ?? position.top,
+                left: placement?.left ?? position.left + (position.width / 2),
+                opacity: placement ? undefined : 0,
+            }}
         >
             <div className="bg-popover/95 backdrop-blur-md text-popover-foreground rounded-xl shadow-2xl border border-border/50 overflow-hidden flex flex-col pointer-events-auto">
-                {isEditing ? (
+                {isPreview ? (
+                    <div className="p-3">
+                        <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                            <BookOpen className="size-3.5 text-blue-500" />
+                            <span>Your Note</span>
+                        </div>
+                        <p className="line-clamp-3 text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                            {localNoteBody}
+                        </p>
+                    </div>
+                ) : isEditing ? (
                     <div className="p-3 flex flex-col gap-3">
                         <div className={cn("rounded-lg border p-3 text-sm italic text-foreground/85", colorClasses.border)}>
                             &ldquo;{highlightedText}&rdquo;
@@ -244,7 +305,15 @@ export function HighlightPopover({
                 )}
             </div>
 
-            <div className="w-3 h-3 bg-popover/95 backdrop-blur-md border-b border-r border-border/50 absolute bottom-1 translate-y-1/2 rotate-45 transform left-1/2 -translate-x-1/2 pointer-events-none" />
+            <div
+                className={cn(
+                    "w-3 h-3 bg-popover/95 backdrop-blur-md border-border/50 absolute rotate-45 transform -translate-x-1/2 pointer-events-none",
+                    placement?.direction === "above"
+                        ? "bottom-1 translate-y-1/2 border-b border-r"
+                        : "top-1 -translate-y-1/2 border-t border-l"
+                )}
+                style={{ left: placement?.caretLeft ?? "50%" }}
+            />
         </div>,
         portalContainer
     );
