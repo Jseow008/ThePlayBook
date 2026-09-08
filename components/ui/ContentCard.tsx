@@ -273,7 +273,7 @@ function BaseContentCard({
             ) : null}
 
             {showBookmarkButton || showReflectionButton ? (
-                <div className="absolute right-2 top-2 z-20 flex items-center gap-3">
+                <div className="absolute right-2 top-2 z-20 flex items-center gap-2">
                     {showBookmarkButton ? (
                         <LibrarySaveButton
                             contentTitle={item.title}
@@ -282,9 +282,9 @@ function BaseContentCard({
                                 onToggleBookmark?.();
                             }}
                             stopPropagation
-                            className="content-card-motion-action focus-ring inline-flex size-9 items-center justify-center rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none"
-                            savedClassName="bg-primary text-primary-foreground opacity-100"
-                            unsavedClassName="content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
+                            className="content-card-motion-action focus-ring touch-target-44 inline-flex size-9 items-center justify-center rounded-full transition-colors duration-300 motion-reduce:transition-none"
+                            savedClassName="text-primary opacity-100 hover:bg-primary/15"
+                            unsavedClassName="content-card-hover-action text-white/70 opacity-100 hover:bg-black/35 hover:text-white"
                             savedIconClassName="size-5"
                             unsavedIconClassName="size-[18px]"
                         />
@@ -298,10 +298,10 @@ function BaseContentCard({
                                 onReflectionClick?.();
                             }}
                             className={cn(
-                                "content-card-motion-action focus-ring touch-target-44 inline-flex size-9 items-center justify-center rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
+                                "content-card-motion-action focus-ring touch-target-44 inline-flex size-9 items-center justify-center rounded-full transition-colors duration-300 motion-reduce:transition-none",
                                 hasSavedReflection
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-black/40 text-white/85 hover:bg-black/70 hover:text-white"
+                                    ? "text-primary hover:bg-primary/15"
+                                    : "text-white/70 hover:bg-black/35 hover:text-white"
                             )}
                             aria-label={hasSavedReflection ? `Edit reflection for ${item.title}` : `Write reflection for ${item.title}`}
                             title={hasSavedReflection ? "Reflection saved" : "Write a reflection"}
