@@ -1499,7 +1499,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                     isAskOpen && "lg:grid-cols-[minmax(0,1fr)_24rem] xl:grid-cols-[minmax(0,1fr)_25rem]"
                 )}>
                     <div className={cn("min-w-0", !isAskOpen && "lg:mx-auto lg:max-w-4xl lg:w-full")}>
-                        <div className="sticky top-4 z-10 mb-8 lg:hidden">
+                        <div className="sticky top-0 z-10 -mx-4 -mt-4 bg-background px-4 pt-4 pb-8 lg:hidden">
                             <div className="rounded-2xl border border-white/10 bg-background/92 p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)] backdrop-blur-sm">
                                 <div className="flex flex-col gap-2.5">
                                     <label className="relative">
@@ -1660,13 +1660,14 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                             </div>
                         </div>
 
-                        <div className={cn(
-                            "sticky top-4 z-10 mb-8 hidden rounded-2xl border border-white/10 bg-background/90 backdrop-blur-sm transition-all duration-200 lg:block",
-                            isFilterBarCompact
-                                ? "p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)]"
-                                : "p-4"
-                        )}>
-                            <div className={cn("flex flex-col transition-all duration-200", isFilterBarCompact ? "gap-2.5" : "gap-3")}>
+                        <div className="sticky top-0 z-10 -mx-4 -mt-4 hidden bg-background px-4 pt-4 pb-8 lg:block">
+                            <div className={cn(
+                                "rounded-2xl border border-white/10 bg-background/90 backdrop-blur-sm transition-all duration-200",
+                                isFilterBarCompact
+                                    ? "p-3 shadow-[0_18px_36px_-30px_rgba(0,0,0,0.7)]"
+                                    : "p-4"
+                            )}>
+                                <div className={cn("flex flex-col transition-all duration-200", isFilterBarCompact ? "gap-2.5" : "gap-3")}>
                                 <label className="relative">
                                     <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                                     <input
@@ -1798,6 +1799,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                     )}
                                 </div>
                             </div>
+                        </div>
                         </div>
 
                         {isLoading || reflectionsLoading ? (
