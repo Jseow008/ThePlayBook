@@ -196,6 +196,7 @@ export default function ContinueReadingPage() {
                                         navigationMode="resume"
                                         titleDensity="app-compact"
                                         showDesktopQuickActions
+                                        desktopQuickAction="resume"
                                         removeIcon="archive"
                                         removeLabel="Hide from Continue Reading"
                                         onRemove={(id) => {

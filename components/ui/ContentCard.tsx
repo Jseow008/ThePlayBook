@@ -12,6 +12,7 @@ import {
     Archive,
     Ellipsis,
     Lightbulb,
+    Play,
 } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -44,6 +45,7 @@ interface ContentCardProps {
     titleDensity?: "default" | "app-compact";
     priority?: boolean;
     showDesktopQuickActions?: boolean;
+    desktopQuickAction?: "default" | "resume";
     reflectionState?: "empty" | "saved";
     onReflectionClick?: () => void;
 }
@@ -171,6 +173,7 @@ function BaseContentCard({
     titleDensity = "default",
     priority = false,
     showDesktopQuickActions = false,
+    desktopQuickAction = "default",
     reflectionState = "empty",
     onReflectionClick,
 }: BaseContentCardProps) {
@@ -413,22 +416,35 @@ function BaseContentCard({
 
                         {showDesktopQuickActions ? (
                             <div className="pointer-events-auto absolute inset-0 hidden items-end gap-1.5 opacity-0 transition-opacity duration-200 md:flex md:group-hover:opacity-100 md:group-focus-within:opacity-100 motion-reduce:transition-none">
-                                <Link
-                                    href={buildReadPath(item)}
-                                    aria-label={`Read summary: ${item.title}`}
-                                    className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm bg-white px-2 text-[10px] font-bold text-black shadow-sm transition-colors hover:bg-white/90 motion-reduce:transition-none"
-                                >
-                                    <BookOpen className="size-3" aria-hidden="true" />
-                                    <span>Read</span>
-                                </Link>
-                                <Link
-                                    href={`/preview/${item.id}`}
-                                    aria-label={`Preview takeaways for ${item.title}`}
-                                    className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm border border-white/25 bg-black/45 px-2 text-[10px] font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:border-white/45 hover:bg-black/65 motion-reduce:transition-none"
-                                >
-                                    <Info className="size-3" aria-hidden="true" />
-                                    <span>Preview</span>
-                                </Link>
+                                {desktopQuickAction === "resume" ? (
+                                    <Link
+                                        href={buildReadPath(item)}
+                                        aria-label={`Resume reading: ${item.title}`}
+                                        className="focus-ring flex h-7 w-full items-center justify-center gap-1 rounded-sm bg-white px-2 text-[10px] font-bold text-black shadow-sm transition-colors hover:bg-white/90 motion-reduce:transition-none"
+                                    >
+                                        <Play className="size-3 fill-current" aria-hidden="true" />
+                                        <span>Resume reading</span>
+                                    </Link>
+                                ) : (
+                                    <>
+                                        <Link
+                                            href={buildReadPath(item)}
+                                            aria-label={`Read summary: ${item.title}`}
+                                            className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm bg-white px-2 text-[10px] font-bold text-black shadow-sm transition-colors hover:bg-white/90 motion-reduce:transition-none"
+                                        >
+                                            <BookOpen className="size-3" aria-hidden="true" />
+                                            <span>Read</span>
+                                        </Link>
+                                        <Link
+                                            href={`/preview/${item.id}`}
+                                            aria-label={`Preview takeaways for ${item.title}`}
+                                            className="focus-ring flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-sm border border-white/25 bg-black/45 px-2 text-[10px] font-semibold text-white shadow-sm backdrop-blur-sm transition-colors hover:border-white/45 hover:bg-black/65 motion-reduce:transition-none"
+                                        >
+                                            <Info className="size-3" aria-hidden="true" />
+                                            <span>Preview</span>
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         ) : null}
                     </div>
