@@ -90,8 +90,8 @@ export default async function EditContentPage({ params, searchParams }: EditCont
             order_index: seg.order_index,
             title: seg.title || "",
             markdown_body: seg.markdown_body,
-            start_time_sec: seg.start_time_sec || undefined,
-            end_time_sec: seg.end_time_sec || undefined,
+            start_time_sec: seg.start_time_sec ?? undefined,
+            end_time_sec: seg.end_time_sec ?? undefined,
         })),
         artifacts: ((contentItem as any).artifacts || []).map((artifact: any) => ({
             id: artifact.id,

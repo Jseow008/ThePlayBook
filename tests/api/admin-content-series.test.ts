@@ -170,7 +170,12 @@ describe("Admin content series support", () => {
                     big_idea: "Idea",
                     key_takeaways: ["A"],
                 },
-                segments: [{ order_index: 0, markdown_body: "Blessed are the poor in spirit." }],
+                segments: [{
+                    order_index: 0,
+                    markdown_body: "Blessed are the poor in spirit.",
+                    start_time_sec: 0,
+                    end_time_sec: 30,
+                }],
                 artifacts: [],
             }),
         });
@@ -183,6 +188,10 @@ describe("Admin content series support", () => {
             series_id: seriesId,
             series_order: 2,
         }));
+        expect(segmentInsert).toHaveBeenCalledWith([expect.objectContaining({
+            start_time_sec: 0,
+            end_time_sec: 30,
+        })]);
         expect(revalidatePath).toHaveBeenCalledWith("/browse");
         expect(revalidatePath).toHaveBeenCalledWith("/series/matthew");
     });

@@ -479,8 +479,8 @@ export async function POST(request: NextRequest) {
                 order_index: segment.order_index,
                 title: segment.title || null,
                 markdown_body: segment.markdown_body,
-                start_time_sec: segment.start_time_sec || null,
-                end_time_sec: segment.end_time_sec || null,
+                start_time_sec: segment.start_time_sec ?? null,
+                end_time_sec: segment.end_time_sec ?? null,
             }));
 
             const { error: segmentError } = await supabase
