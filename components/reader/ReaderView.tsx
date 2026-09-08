@@ -87,10 +87,12 @@ export function ReaderView({ content }: ReaderViewProps) {
         width: number;
         height: number;
     } | null>(null);
+    const [popoverMode, setPopoverMode] = useState<"preview" | "full">("full");
     const [expandedSegmentId, setExpandedSegmentId] = useState<string | null>(null);
     const [isNotesDrawerOpen, setIsNotesDrawerOpen] = useState(false);
     const [isPopoverHovered, setIsPopoverHovered] = useState(false);
     const [popoverPortalEl, setPopoverPortalEl] = useState<HTMLDivElement | null>(null);
+    const popoverCloseTimeoutRef = useRef<number | null>(null);
     const [showAuthorChat, setShowAuthorChat] = useState(false);
     const [audioCurrentTimeSec, setAudioCurrentTimeSec] = useState(0);
     const [audioDurationSec, setAudioDurationSec] = useState(0);
@@ -672,11 +674,28 @@ export function ReaderView({ content }: ReaderViewProps) {
         }
     }, [searchParams]);
 
-    const closeActiveHighlight = () => {
+    const clearPopoverCloseTimeout = useCallback(() => {
+        if (popoverCloseTimeoutRef.current !== null) {
+            window.clearTimeout(popoverCloseTimeoutRef.current);
+            popoverCloseTimeoutRef.current = null;
+        }
+    }, []);
+
+    const closeActiveHighlight = useCallback(() => {
+        clearPopoverCloseTimeout();
         setPopoverHighlightId(null);
         setActiveHighlightPosition(null);
         setIsPopoverHovered(false);
-    };
+    }, [clearPopoverCloseTimeout]);
+
+    const schedulePreviewClose = useCallback(() => {
+        if (popoverMode !== "preview") return;
+
+        clearPopoverCloseTimeout();
+        popoverCloseTimeoutRef.current = window.setTimeout(closeActiveHighlight, 150);
+    }, [clearPopoverCloseTimeout, closeActiveHighlight, popoverMode]);
+
+    useEffect(() => () => clearPopoverCloseTimeout(), [clearPopoverCloseTimeout]);
 
     const applyHighlightSpotlight = (highlightId: string, marks: HTMLElement[]) => {
         if (spotlightTimeoutRef.current !== null) {
@@ -1026,10 +1045,12 @@ export function ReaderView({ content }: ReaderViewProps) {
                     scrollRequest={segmentScrollRequest}
                     activeNarratedSegmentId={activeNarratedSegmentId}
                     onHighlightActivate={(highlightId, position) => {
+                        clearPopoverCloseTimeout();
                         setActiveHighlightId(highlightId);
                         if (isReaderInteractionDesktop) {
                             setPopoverHighlightId(highlightId);
                             setActiveHighlightPosition(position);
+                            setPopoverMode("full");
                             return;
                         }
 
@@ -1038,6 +1059,19 @@ export function ReaderView({ content }: ReaderViewProps) {
                         setIsPopoverHovered(false);
                         setIsNotesDrawerOpen(true);
                     }}
+                    onHighlightPreview={(highlightId, position) => {
+                        const highlight = highlights.find((item) => item.id === highlightId);
+                        if (!highlight?.note_body?.trim()) {
+                            schedulePreviewClose();
+                            return;
+                        }
+
+                        clearPopoverCloseTimeout();
+                        setPopoverHighlightId(highlightId);
+                        setActiveHighlightPosition(position);
+                        setPopoverMode("preview");
+                    }}
+                    onHighlightPreviewEnd={schedulePreviewClose}
                 />
 
                 {!isBookCompleted && (
@@ -1112,12 +1146,16 @@ export function ReaderView({ content }: ReaderViewProps) {
                     currentColor={popoverHighlight.color || "yellow"}
                     position={activeHighlightPosition}
                     portalContainer={popoverPortalEl}
+                    variant={popoverMode}
                     createdAt={popoverHighlight.created_at || undefined}
                     onClose={closeActiveHighlight}
-                    onMouseEnter={() => setIsPopoverHovered(true)}
+                    onMouseEnter={() => {
+                        clearPopoverCloseTimeout();
+                        setIsPopoverHovered(true);
+                    }}
                     onMouseLeave={() => {
                         setIsPopoverHovered(false);
-                        closeActiveHighlight();
+                        schedulePreviewClose();
                     }}
                 />
             )}
