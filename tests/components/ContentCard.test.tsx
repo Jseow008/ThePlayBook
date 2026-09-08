@@ -454,8 +454,8 @@ describe("ContentCard", () => {
         const bookmarkButton = screen.getByRole("button", { name: "Save Deep Work to Library" });
 
         expect(reflectionButton.parentElement).toBe(bookmarkButton.parentElement);
-        expect(reflectionButton).toHaveClass("bg-primary");
-        expect(reflectionButton.parentElement).toHaveClass("right-2", "gap-3");
+        expect(reflectionButton).toHaveClass("text-primary");
+        expect(reflectionButton.parentElement).toHaveClass("right-2", "gap-2");
         expect(screen.getByText("Cal Newport").parentElement).toHaveClass("pt-14");
 
         fireEvent.click(reflectionButton);
