@@ -436,7 +436,30 @@ describe("ContentCard", () => {
         expect(completionBar).toHaveClass("bottom-px", "h-1.5");
         expect(completionBar.querySelector(".content-card-motion-progress")).toHaveClass("bg-emerald-500/85");
         expect(completionBar.querySelector(".content-card-motion-progress")).toHaveStyle({ width: "100%" });
-        expect(screen.getByRole("button", { name: "Save Deep Work to Library" })).toHaveClass("right-2");
+        expect(screen.getByRole("button", { name: "Save Deep Work to Library" }).parentElement).toHaveClass("right-2");
+    });
+
+    it("places the reflection control to the right of the bookmark and exposes its saved state", () => {
+        const onReflectionClick = vi.fn();
+
+        render(
+            <ContentCard
+                item={item}
+                reflectionState="saved"
+                onReflectionClick={onReflectionClick}
+            />
+        );
+
+        const reflectionButton = screen.getByRole("button", { name: "Edit reflection for Deep Work" });
+        const bookmarkButton = screen.getByRole("button", { name: "Save Deep Work to Library" });
+
+        expect(reflectionButton.parentElement).toBe(bookmarkButton.parentElement);
+        expect(reflectionButton).toHaveClass("bg-primary");
+        expect(reflectionButton.parentElement).toHaveClass("right-2", "gap-3");
+        expect(screen.getByText("Cal Newport").parentElement).toHaveClass("pt-14");
+
+        fireEvent.click(reflectionButton);
+        expect(onReflectionClick).toHaveBeenCalledOnce();
     });
 
     it("falls back to the non-image artwork treatment after the direct retry fails", () => {

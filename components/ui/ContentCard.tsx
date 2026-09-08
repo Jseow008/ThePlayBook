@@ -11,6 +11,7 @@ import {
     Video,
     Archive,
     Ellipsis,
+    Lightbulb,
 } from "lucide-react";
 import type { ContentItem } from "@/types/database";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
@@ -43,6 +44,8 @@ interface ContentCardProps {
     titleDensity?: "default" | "app-compact";
     priority?: boolean;
     showDesktopQuickActions?: boolean;
+    reflectionState?: "empty" | "saved";
+    onReflectionClick?: () => void;
 }
 
 interface BaseContentCardProps extends ContentCardProps {
@@ -168,6 +171,8 @@ function BaseContentCard({
     titleDensity = "default",
     priority = false,
     showDesktopQuickActions = false,
+    reflectionState = "empty",
+    onReflectionClick,
 }: BaseContentCardProps) {
     const [isCoverLoaded, setIsCoverLoaded] = useState(false);
     const [isRemoveMenuOpen, setIsRemoveMenuOpen] = useState(false);
@@ -183,6 +188,8 @@ function BaseContentCard({
     const hasAudioSummary = Boolean(item.audio_url?.trim());
     const linkLabel = getContentCardLabel(href, item.title, hasAudioSummary);
     const showBookmarkButton = !hideBookmark && Boolean(onToggleBookmark);
+    const showReflectionButton = Boolean(onReflectionClick);
+    const hasSavedReflection = reflectionState === "saved";
     const contentHook = getContentCardHook(item);
     const isAppCompact = titleDensity === "app-compact";
 
@@ -265,27 +272,57 @@ function BaseContentCard({
                 </div>
             ) : null}
 
-            {showBookmarkButton ? (
-                <LibrarySaveButton
-                    contentTitle={item.title}
-                    isSaved={isBookmarked}
-                    onToggle={() => {
-                        onToggleBookmark?.();
-                    }}
-                    stopPropagation
-                    className={cn(
-                        "content-card-motion-action focus-ring absolute top-2 z-20 rounded-full p-1.5 shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
-                        "right-2"
-                    )}
-                    savedClassName="bg-primary text-primary-foreground opacity-100"
-                    unsavedClassName="content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
-                    savedIconClassName="size-5"
-                    unsavedIconClassName="size-[18px]"
-                />
+            {showBookmarkButton || showReflectionButton ? (
+                <div className="absolute right-2 top-2 z-20 flex items-center gap-3">
+                    {showBookmarkButton ? (
+                        <LibrarySaveButton
+                            contentTitle={item.title}
+                            isSaved={isBookmarked}
+                            onToggle={() => {
+                                onToggleBookmark?.();
+                            }}
+                            stopPropagation
+                            className="content-card-motion-action focus-ring inline-flex size-9 items-center justify-center rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none"
+                            savedClassName="bg-primary text-primary-foreground opacity-100"
+                            unsavedClassName="content-card-hover-action bg-black/40 text-white/85 opacity-100 hover:bg-black/70 hover:text-white"
+                            savedIconClassName="size-5"
+                            unsavedIconClassName="size-[18px]"
+                        />
+                    ) : null}
+                    {showReflectionButton ? (
+                        <button
+                            type="button"
+                            onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                onReflectionClick?.();
+                            }}
+                            className={cn(
+                                "content-card-motion-action focus-ring touch-target-44 inline-flex size-9 items-center justify-center rounded-full shadow-lg backdrop-blur-sm transition-all duration-300 motion-reduce:transition-none",
+                                hasSavedReflection
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-black/40 text-white/85 hover:bg-black/70 hover:text-white"
+                            )}
+                            aria-label={hasSavedReflection ? `Edit reflection for ${item.title}` : `Write reflection for ${item.title}`}
+                            title={hasSavedReflection ? "Reflection saved" : "Write a reflection"}
+                        >
+                            <Lightbulb
+                                className="size-[18px]"
+                                fill={hasSavedReflection ? "currentColor" : "none"}
+                                aria-hidden="true"
+                            />
+                        </button>
+                    ) : null}
+                </div>
             ) : null}
 
             {item.author ? (
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/70 via-black/25 to-transparent px-5 pb-5 pt-5 md:px-8 md:pb-8 md:pt-10">
+                <div
+                    className={cn(
+                        "pointer-events-none absolute inset-x-0 top-0 z-30 flex justify-center bg-gradient-to-b from-black/70 via-black/25 to-transparent px-5 pb-5 md:px-8 md:pb-8",
+                        showReflectionButton ? "pt-14 md:pt-16" : "pt-5 md:pt-10"
+                    )}
+                >
                     <p
                         className={cn(
                             "translate-z-0 max-w-[82%] break-words text-center font-medium uppercase leading-relaxed tracking-[0.1em] whitespace-normal text-white/86 drop-shadow-md md:text-[11px] md:tracking-[0.15em]",

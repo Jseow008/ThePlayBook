@@ -10,8 +10,12 @@ import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { useOverlayInteractions } from "@/hooks/useOverlayInteractions";
 import { ContentCard } from "@/components/ui/ContentCard";
 import { useBatchContentItems } from "@/hooks/use-content-queries";
+import { useReflections } from "@/hooks/useReflections";
+import { ReflectionComposer } from "@/components/reader/ReflectionComposer";
 import { cn } from "@/lib/utils";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
+import { captureAnalyticsEvent } from "@/lib/analytics";
+import type { ContentItem } from "@/types/database";
 import {
     LIBRARY_CARD_GRID_CLASS,
     LibraryGridSkeleton,
@@ -39,6 +43,7 @@ export default function CompletedPage() {
         removeFromHistory,
         removeFromProgress,
         restoreProgressListArchive,
+        user,
     } = useReadingProgress();
 
     // Filter/Sort State
@@ -49,6 +54,7 @@ export default function CompletedPage() {
     const [shouldDeleteNotes, setShouldDeleteNotes] = useState(false);
     const [isRemovingHistory, setIsRemovingHistory] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [reflectionItem, setReflectionItem] = useState<ContentItem | null>(null);
     const historyDialogRef = useRef<HTMLDivElement | null>(null);
 
     const {
@@ -58,6 +64,7 @@ export default function CompletedPage() {
         isSuccess,
         refetch,
     } = useBatchContentItems(completedIds, { enabled: isLoaded });
+    const { data: reflections = [] } = useReflections();
     const isPageLoading = !isLoaded || isLoading;
     const shouldShowLibraryControls = isPageLoading || allItems.length > 0;
 
@@ -121,6 +128,10 @@ export default function CompletedPage() {
     const pendingRemovalItem = useMemo(
         () => allItems.find((item) => item.id === pendingHistoryRemoval) ?? null,
         [allItems, pendingHistoryRemoval],
+    );
+    const reflectionsByContentId = useMemo(
+        () => new Map(reflections.map((reflection) => [reflection.content_item_id, reflection])),
+        [reflections]
     );
 
     useEffect(() => {
@@ -352,6 +363,15 @@ export default function CompletedPage() {
                                         titleDensity="app-compact"
                                         showCompletedBadge
                                         showDesktopQuickActions
+                                        reflectionState={reflectionsByContentId.has(item.id) ? "saved" : "empty"}
+                                        onReflectionClick={() => {
+                                            setReflectionItem(item);
+                                            captureAnalyticsEvent("reflection_opened", {
+                                                content_id: item.id,
+                                                route: "/library/completed",
+                                                user_state: user ? "authenticated" : "anonymous",
+                                            });
+                                        }}
                                         showRemoveMenu
                                         removeIcon="archive"
                                         removeLabel="Hide from Completed"
@@ -378,6 +398,18 @@ export default function CompletedPage() {
             </div>
 
             {historyRemovalDialog}
+            {reflectionItem ? (
+                <ReflectionComposer
+                    contentId={reflectionItem.id}
+                    contentTitle={reflectionItem.title}
+                    readerTheme="dark"
+                    isOpen
+                    isAuthenticated={Boolean(user)}
+                    existingReflection={reflectionsByContentId.get(reflectionItem.id) ?? null}
+                    onClose={() => setReflectionItem(null)}
+                    onSaved={() => undefined}
+                />
+            ) : null}
         </div>
     );
 }
