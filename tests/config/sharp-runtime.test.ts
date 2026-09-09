@@ -10,7 +10,7 @@ describe("Sharp production runtime packaging", () => {
       fs.readFileSync(path.join(rootDir, "package.json"), "utf8"),
     ) as { dependencies?: Record<string, string> };
 
-    expect(packageJson.dependencies?.sharp).toBe("0.35.3");
+    expect(packageJson.dependencies?.sharp).toBe("0.35.4");
   });
 
   it("traces the Linux Sharp runtime into each story-image function", () => {
