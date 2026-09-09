@@ -74,7 +74,9 @@ Example response:
 - Cursor payload: `{ v, accountBinding, collection, sort, filterHash, after, expiresAt }`. `after` contains every ordered field and the immutable tie-breaker. The payload is authenticated with a server secret and is not client-editable.
 - On the next request, the server checks token integrity, expiry, account binding, collection, sort, and filter hash before applying the keyset predicate. A mismatch returns `CURSOR_INVALID` (400) and tells the client to restart, never an empty successful page.
 - A list response supplies `hasNextPage` based on fetching `pageSize + 1` rows. It supplies `totalCount` from an authorized aggregate query. A short page is not completion evidence by itself.
-- The client cache key includes collection, normalized query, sort, direction, and schema version. Changing any of these discards the cursor and begins at the first page.
+- The client cache key includes the authenticated account ID, a client authentication epoch, collection, normalized query, sort, direction, and schema version. Changing any of these discards the cursor and begins at the first page.
+- Logout, account switch, session replacement, and account deletion increment the authentication epoch, cancel in-flight account-data requests, clear account-scoped query caches and rendered replica state, and clear any decrypted snapshot data. Guest state remains in its separate guest scope.
+- Every request captures `{ accountId, authenticationEpoch }` before it starts. A response may update state only when both values still equal the active session when it settles; otherwise it is discarded even if the server response itself was authorized. This prevents an in-flight Account A response from rendering after Account B signs in.
 
 For `user_library`, add a non-null server-maintained `library_updated_at` and use `library_updated_at DESC, content_id ASC`. Existing rows are backfilled once in the migration. This avoids nullable `last_interacted_at` ordering and gives every mutation a deterministic ordering key. All other collection orders are listed in the inventory.
 
@@ -86,7 +88,7 @@ Live paging intentionally makes no snapshot claim. A newly saved or removed row 
 
 ### Chosen mechanism: persisted immutable snapshot records
 
-The implementation creates a server-owned snapshot in a **single `REPEATABLE READ` PostgreSQL transaction** using a parameterized server database connection after the session has been authenticated. It does not attempt to approximate the boundary by issuing independent browser or PostgREST queries.
+The implementation creates a server-owned snapshot in a **single `REPEATABLE READ` PostgreSQL transaction** using a parameterized server database connection after the session has been authenticated. At this isolation level PostgreSQL keeps successive reads on the transaction’s stable snapshot; a conflicting write transaction can require retry, which the creation path handles as a typed retryable failure. [PostgreSQL transaction isolation](https://www.postgresql.org/docs/current/transaction-iso.html) It does not attempt to approximate the boundary by issuing independent browser or PostgREST queries.
 
 Within that transaction it:
 
@@ -98,15 +100,37 @@ Within that transaction it:
 
 The transaction’s first data read establishes the boundary. Consequently an export created at that boundary includes exactly the membership and field values visible then across *all* included collections. A later create is excluded; a later update, delete, or replacement does not alter the stored snapshot payload.
 
-Snapshot reads are authorized again by account ID and stream only persisted snapshot rows ordered by `(collection, ordinal)`. Their cursor is signed and bound to the snapshot ID, account, collection, and ordinal. Snapshots expire after **24 hours** and are removed by a scheduled cleanup. An expired snapshot returns `SNAPSHOT_EXPIRED`, never a partial replacement traversal.
+### Snapshot authorization, storage, and deletion
+
+`account_data_snapshots` and `account_data_snapshot_records` live in the non-exposed `private` schema, not `public`. The migration enables and forces RLS, revokes all table, sequence, schema, and function privileges from `PUBLIC`, `anon`, and `authenticated`, and grants the minimum transaction privileges only to the `netflux_snapshot_worker` server-only database role. No browser Supabase client, Data API route, or public RPC receives a grant or a policy for either table. This protects against both accidental Data API exposure and a future permissive `public`-schema default; Supabase treats grants and RLS as distinct access controls, and recommends keeping internal objects outside the API surface. [Supabase API security guidance](https://supabase.com/docs/guides/api/securing-your-api)
+
+The Next.js server authenticates the session before opening the worker transaction, sets a transaction-local account binding, and uses parameterized queries only. Snapshot creation and reads apply that binding to every source and snapshot row. The web route re-checks the active account before returning any snapshot metadata or page; a snapshot ID is never sufficient authority. The worker credential is server-only and is not a `NEXT_PUBLIC_` value.
+
+Account deletion first revokes sessions and marks the account unavailable to snapshot routes, then deletes snapshot records and their parent snapshots in the same account-deletion workflow. A foreign key cascade handles records after the parent is selected for deletion; a deletion audit records counts but never payloads. Cleanup also removes expired snapshots. If cleanup fails, expired or account-deleted snapshots remain denied by the server and RLS, cleanup retries with backoff, and an alert fires for any snapshot older than 26 hours.
+
+Required security tests attempt direct Data API access as `anon` and `authenticated`, direct ordinary-client table access, a foreign snapshot ID through the endpoint, and access after logout/account deletion. All fail closed; only the server route for the active owner can read a ready snapshot.
+
+### Snapshot creation bounds and lifecycle
+
+Snapshot creation accepts an immutable client-generated idempotency key. The unique `(account_id, idempotency_key)` record returns the same `building`, `ready`, or terminal failure result on retry. A transaction advisory lock permits at most one building snapshot per account; a global worker limit permits at most four concurrent creations. The server rate-limits new keys to six per account per hour and returns `SNAPSHOT_IN_PROGRESS` or `SNAPSHOT_RATE_LIMITED` with retry guidance instead of starting duplicate copies.
+
+The initial synchronous path has three hard limits: **10,000 records**, **25 MiB** of canonical serialized payload, and a **30-second transaction deadline** (with a 15-second statement timeout). Preflight counts run under the owner predicate; record and byte limits are checked while copying. Hitting any limit, timing out, losing the database connection, or receiving a serialization failure rolls back the complete transaction and returns a typed incomplete result such as `SNAPSHOT_TOO_LARGE` or `SNAPSHOT_TIMED_OUT`. It never returns a truncated or partially ready snapshot. An oversized account receives that explicit failure until a separately reviewed background snapshot path exists; background work is not implied by this design.
+
+Snapshots expire after **24 hours**. A successful cleanup runs hourly; an expired snapshot returns `SNAPSHOT_EXPIRED` immediately even if physical deletion has not yet succeeded. Creation metrics record result, elapsed time, record count, byte count, retry/idempotency outcome, and cleanup age without recording account data.
+
+Snapshot reads are authorized again by account ID and stream only persisted snapshot rows ordered by `(collection, ordinal)`. Their cursor is signed and bound to the snapshot ID, account, collection, and ordinal. An expired snapshot returns `SNAPSHOT_EXPIRED`, never a partial replacement traversal.
 
 If the database connection required for `REPEATABLE READ` is unavailable, snapshot creation fails before returning a snapshot ID. The product reports an incomplete export/full sync and offers retry; it never falls back to multiple independent queries.
 
 ### Full synchronization
 
-For library hydration, request a snapshot limited to `user_library`, exhaust its pages, verify that received unique IDs and values equal the snapshot’s per-collection count and manifest hash, then atomically replace the local *replica*. Until all checks pass, retain the prior replica and show `pending` or `needs attention`; do not label it synced.
+For library hydration, capture `{ accountId, authenticationEpoch, hydrationGeneration, resetEpoch, localAcknowledgementSequence }` before requesting a snapshot limited to `user_library`. Starting another hydration increments `hydrationGeneration` and aborts the older traversal. Snapshot metadata includes its account reset epoch and boundary library revision.
 
-No hydration read enqueues an upsert. Explicit writes and durable queued mutations remain the only source of server mutations, and use the revision/reset-epoch checks in the lifecycle contract.
+The client exhausts the snapshot pages, verifies that received unique IDs and values equal the snapshot’s per-collection count and manifest hash, then may install it only when the active account/authentication epoch and the current hydration generation still match. It additionally compares reset epochs: a snapshot from an earlier epoch is discarded, while an acknowledged reset at the same or later point invalidates all prior visible state and starts a new hydration.
+
+An acknowledged save, removal, or progress mutation after the snapshot boundary is never overwritten by snapshot installation. Its server revision and reset epoch are retained in a separate acknowledged-mutation overlay and applied after the verified snapshot; a reset overlay wins over all earlier rows. Pending durable mutations stay in a separate optimistic queue/overlay and are not treated as snapshot data or server acknowledgement. A failed or stale queued mutation remains `needs attention` rather than being silently replayed or erased.
+
+Only after this generation, epoch, checksum, and overlay reconciliation succeeds may the client replace the committed server replica. Until then it retains the prior replica and shows `pending` or `needs attention`; it never labels a partial or superseded traversal synced. No hydration read enqueues an upsert. Explicit writes and durable queued mutations remain the only source of server mutations, and use the revision/reset-epoch checks in the lifecycle contract.
 
 ### Export assembly
 
@@ -135,13 +159,18 @@ Fixtures are synthetic, account-scoped, deterministic, and committed with a mani
 | Over-cap library | Account A has **1,201** library rows, including progress-only and bookmark-only rows; page size is 100. | Eleven-plus pages return every expected `content_id` exactly once; `totalCount` is 1,201; completed snapshot hydration matches its manifest. |
 | Timestamp ties | At least 250 highlights and 250 reflections share the same primary sort timestamp, with distinct IDs. | Traversal is deterministic, contains every ID once, and does not skip or duplicate the tie boundary. |
 | Account isolation | Both accounts have rows with deliberately similar IDs/content references. Reuse A’s cursor/snapshot ID/requested record against B. | B receives no A data; invalid tokens/foreign snapshot IDs fail closed; no list, export, full sync, or later citation fixture crosses account boundary. |
+| Account-switch cache isolation | Start an Account A page request, keep it in flight, then sign out and sign in as B before it resolves. Repeat with an in-flight snapshot page. | A’s request is aborted or its late response is discarded by account/authentication epoch; A’s query cache, rendered replica, and decrypted snapshot data are cleared before B renders. |
 | Interrupted page | Fail page N in a snapshot traversal and separately expire a cursor before page N. | No complete manifest/export is emitted; the client exposes recoverable incomplete state; retry starts a new or still-valid snapshot explicitly. |
 | Live concurrent change | Between live pages, add, edit, and delete A’s rows around the page boundary. | UI deduplicates by stable ID, permits refresh, and makes no snapshot/completeness claim. |
 | Snapshot concurrent change | Create snapshot; then add one row, edit one row, and delete-and-replace one row while paging it. | Export equals the recorded membership *and values* at the snapshot boundary; it neither mixes changes nor passes from matching counts alone. |
+| Hydration/write race | During a library snapshot traversal, acknowledge a save, a removal, a progress update, and a library reset in separate runs; start a second hydration before the first completes. | Only the current hydration generation may install. Later acknowledged revisions overlay the snapshot; a newer reset discards it; pending mutations remain separate; no acknowledged visible state regresses. |
 | Stale queued save | Device A queues save offline with base revision/epoch. Device B removes the bookmark; repeat with B performing a library reset. | Replay is rejected with current state, does not resurrect data, preserves queue record for explicit resolution, and never becomes synced automatically. |
 | Stale queued removal | Device A queues removal while B changes the same record. | Server applies only a valid base revision or returns conflict/current state; no automatic rebase changes B’s newer state. |
 | Guest migration | Guest has bookmark/progress captures; sign in to A; retry same migration ID; interrupt between records; separately reset A before replay. | Eligible records migrate exactly once; retry is idempotent; no newer authenticated state is overwritten; post-reset replay is rejected/skipped visibly. |
 | Export coverage | A has at least one record in every inventory collection, including a reflection and user-visible request notification. | The complete export contains every expected record once, omits secret/internal fields, and its counts and hashes match the manifest. |
+| Snapshot direct access | Attempt `anon`, authenticated ordinary-client, and Data API reads/writes against both private snapshot tables and snapshot helper functions. | Every direct attempt is denied; the tables are absent from the API surface; only the server worker route can create/read the active owner’s snapshot. |
+| Snapshot creation concurrency | Submit duplicate and distinct idempotency keys concurrently for one account, then exceed the per-account creation rate. | Same key returns one result; a distinct concurrent key does not create a second building copy; limits return typed retryable responses without partial snapshots. |
+| Snapshot bounds and cleanup | Use an over-record-limit account, an over-byte-limit account, a forced transaction timeout/serialization retry, and an expired snapshot with a failed cleanup attempt. | Each creation fails explicitly without truncation; ready snapshots remain unavailable after expiry even when physical cleanup retries; alert/metric evidence is produced. |
 
 The test suite also asserts that the configured Data API cap is read from `supabase/config.toml` and fixtures remain strictly above it. Tests must not encode 1,000 as an unexplained magic number.
 
@@ -153,6 +182,10 @@ Before changing #2–#6, add a versioned synthetic retrieval corpus and a checke
 
 The baseline must be generated against the current behavior before the retrieval implementation begins. It must explicitly record `not-supported` for a capability the current product lacks; that is evidence of the present boundary, not a zero or a passing result. We will not invent a numeric current result before the runner exists.
 
+The runner uses a versioned retrieval budget of **8 evidence items** and **4,000 evidence tokens** after authorization and before generation. Token counting uses the recorded tokenizer/model configuration. Eligible-evidence recall is `required eligible evidence IDs returned / required eligible evidence IDs in the case`: optional related evidence is not in the denominator. A class score is the arithmetic mean of its case scores; the headline score is a macro-average of the three required evidence classes, so a large highlight fixture cannot drown out reflections or source segments.
+
+The required classes are **source segments**, **highlights** (selection text and note-bearing variants), and **reflections**. The minimum corpus is 12 positive cases per class, including four exact-quote cases and four distractor/near-match cases; six mixed-scope cases; eight authorized no-evidence/withdrawn cases; and eight deterministic exclusion cases split across unauthorized, user-deleted, and revoked access. Each case declares its required IDs, eligible IDs, allowed citation states, and whether abstention is required. Cases have equal weight within their class; no hand-tuned per-case weighting is allowed without an approved fixture-version change.
+
 ### Proposed numeric release thresholds — approval required
 
 These are the numbers to approve in this review. Once approved they become fixture assertions before implementation begins:
@@ -162,18 +195,19 @@ These are the numbers to approve in this review. Once approved they become fixtu
 | Cross-account disclosure | **0** | Deterministic isolation suite. |
 | Invalid citation reference | **0** | Deterministic citation validation suite. |
 | Exact quotation fidelity | **100%** | Every quotation fixture byte-matches its authorized stored evidence. |
-| Eligible-evidence recall | **>= 95%** aggregate and **>= 90%** for every required-evidence class | Expected eligible evidence appears in bounded retrieval results. |
+| Eligible-evidence recall | **>= 95%** macro-average and **>= 90%** for every required-evidence class | Required eligible evidence appears in the fixed eight-item/four-thousand-token retrieval budget. |
 | Irrelevant-source rejection | **>= 95%** | Deliberate distractors are absent where the fixture requires abstention/exclusion. |
-| Correct abstention | **>= 95%** | Approved no-evidence, deleted, withdrawn, and unauthorized cases abstain rather than fabricate. |
+| Model abstention | **>= 95%** | Authorized no-evidence and withdrawn cases abstain rather than fabricate. |
+| Unauthorized/deleted/revoked evidence exclusion | **100%** | Deterministic authorization and citation resolution rejects every unavailable or foreign record before ranking or generation. |
 | Regression tolerance | **0 percentage-point regression** on the deterministic metrics; no unexplained decline on model-dependent aggregates | Compare against the recorded baseline. |
 
-Run every model-dependent case at least three times under the fixed recorded configuration. Report each run, the arithmetic mean, minimum, and pass/fail against the threshold. A deterministic failure, an unapproved threshold, an unmet threshold, or an unexplained regression blocks the retrieval release.
+Every deterministic metric must pass in every run. Run every model-dependent case at least three times under the fixed recorded configuration. For recall, the three-run macro mean must be >=95%, each class mean must be >=90%, every run’s macro score must be >=90%, and every run’s class score must be >=85%. For irrelevant-source rejection and model abstention, the three-run mean must be >=95% and every run must be >=90%. Report each run, class score, mean, minimum, budget consumption, and pass/fail. A deterministic failure, an unapproved threshold, an unmet mean/floor, or an unexplained regression blocks the retrieval release.
 
 ## 6. Implementation slices and review gates
 
-1. **Review this design:** approve inventory details, 24-hour snapshot retention, cursor fields, and benchmark thresholds.
-2. **#7 access path:** migration for deterministic library ordering; server list/snapshot service; library hydration replacement; over-cap, tie, isolation, and interruption fixtures.
-3. **#10 complete export:** add every inventory adapter; export manifest/checksum assembly; cross-collection snapshot and export-coverage fixtures.
+1. **Review this design:** approve inventory details, snapshot access/deletion contract, 24-hour maximum availability, creation bounds, cursor fields, and benchmark thresholds.
+2. **#7 access path:** migration for deterministic library ordering; server list/snapshot service; account-scoped cache/hydration replacement; over-cap, tie, switch, hydration-race, isolation, and interruption fixtures.
+3. **#10 complete export:** add every inventory adapter; export manifest/checksum assembly; cross-collection snapshot, resource-bound, direct-access, and export-coverage fixtures.
 4. **Dependent work only after the above review:** server-side search (#2/#12/#13), typed personal retrieval (#3/#4/#6), and citations (#5/#18).
 
 No release gate is satisfied by this design document alone. The implementation PRs must include the listed fixtures and the evidence they produce.
