@@ -370,6 +370,39 @@ export async function getLibrarySnapshotPage(accountId: string, snapshotId: stri
     }
 }
 
+export async function getLiveLibraryPage(
+    accountId: string,
+    after: { updatedAt: string; contentId: string } | null,
+    pageSize: number,
+) {
+    const client = await getPool().connect();
+    try {
+        await bindRestrictedWorker(client, accountId);
+        const result = await client.query<{
+            content_id: string;
+            is_bookmarked: boolean | null;
+            progress: Record<string, unknown> | null;
+            last_interacted_at: string | null;
+            library_updated_at: string;
+            library_revision: number;
+        }>(
+            `SELECT content_id, is_bookmarked, progress, last_interacted_at, library_updated_at, library_revision
+             FROM public.user_library
+             WHERE user_id = $1
+               AND ($2::timestamptz IS NULL OR (library_updated_at, content_id) < ($2::timestamptz, $3::uuid))
+             ORDER BY library_updated_at DESC, content_id ASC
+             LIMIT $4`,
+            [accountId, after?.updatedAt ?? null, after?.contentId ?? null, pageSize + 1],
+        );
+        const hasNextPage = result.rows.length > pageSize;
+        const rows = result.rows.slice(0, pageSize);
+        return { rows, hasNextPage };
+    } finally {
+        await releaseRestrictedWorker(client);
+        client.release();
+    }
+}
+
 export function resetAccountDataSnapshotPoolForTests() {
     const activePool = pool;
     pool = null;
