@@ -2,8 +2,19 @@
 -- Snapshot payload tables are intentionally private and are never exposed through
 -- the Data API. The web server reaches them only through a direct DB connection.
 
-CREATE SCHEMA IF NOT EXISTS private;
+-- Snapshot copies are isolated from the existing `private` schema. That
+-- schema already contains authenticated vector-search helpers, so revoking
+-- its schema usage would break retrieval.
+CREATE SCHEMA IF NOT EXISTS snapshot_private;
 CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
+DO $$
+BEGIN
+    CREATE ROLE netflux_snapshot_worker NOLOGIN NOINHERIT NOBYPASSRLS;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END;
+$$;
 
 ALTER TABLE public.user_library
     ADD COLUMN IF NOT EXISTS library_updated_at timestamptz,
@@ -82,7 +93,7 @@ DROP FUNCTION IF EXISTS public.assign_user_library_revision();
 CREATE INDEX IF NOT EXISTS idx_user_library_access_order
     ON public.user_library (user_id, library_updated_at DESC, content_id ASC);
 
-CREATE TABLE IF NOT EXISTS private.account_data_snapshot_operations (
+CREATE TABLE IF NOT EXISTS snapshot_private.account_data_snapshot_operations (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     account_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     idempotency_key uuid NOT NULL,
@@ -98,9 +109,9 @@ CREATE TABLE IF NOT EXISTS private.account_data_snapshot_operations (
     UNIQUE (account_id, idempotency_key)
 );
 
-CREATE TABLE IF NOT EXISTS private.account_data_snapshots (
+CREATE TABLE IF NOT EXISTS snapshot_private.account_data_snapshots (
     id uuid PRIMARY KEY,
-    operation_id uuid NOT NULL UNIQUE REFERENCES private.account_data_snapshot_operations(id) ON DELETE CASCADE,
+    operation_id uuid NOT NULL UNIQUE REFERENCES snapshot_private.account_data_snapshot_operations(id) ON DELETE CASCADE,
     account_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     collection_names text[] NOT NULL,
     schema_version integer NOT NULL,
@@ -114,8 +125,8 @@ CREATE TABLE IF NOT EXISTS private.account_data_snapshots (
     expires_at timestamptz NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS private.account_data_snapshot_records (
-    snapshot_id uuid NOT NULL REFERENCES private.account_data_snapshots(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS snapshot_private.account_data_snapshot_records (
+    snapshot_id uuid NOT NULL REFERENCES snapshot_private.account_data_snapshots(id) ON DELETE CASCADE,
     collection_name text NOT NULL,
     ordinal bigint NOT NULL,
     record_id text NOT NULL,
@@ -124,19 +135,55 @@ CREATE TABLE IF NOT EXISTS private.account_data_snapshot_records (
     UNIQUE (snapshot_id, collection_name, record_id)
 );
 
-ALTER TABLE private.account_data_snapshot_operations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE private.account_data_snapshot_operations FORCE ROW LEVEL SECURITY;
-ALTER TABLE private.account_data_snapshots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE private.account_data_snapshots FORCE ROW LEVEL SECURITY;
-ALTER TABLE private.account_data_snapshot_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE private.account_data_snapshot_records FORCE ROW LEVEL SECURITY;
+ALTER TABLE snapshot_private.account_data_snapshot_operations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE snapshot_private.account_data_snapshot_operations FORCE ROW LEVEL SECURITY;
+ALTER TABLE snapshot_private.account_data_snapshots ENABLE ROW LEVEL SECURITY;
+ALTER TABLE snapshot_private.account_data_snapshots FORCE ROW LEVEL SECURITY;
+ALTER TABLE snapshot_private.account_data_snapshot_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE snapshot_private.account_data_snapshot_records FORCE ROW LEVEL SECURITY;
 
-REVOKE ALL ON SCHEMA private FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON ALL TABLES IN SCHEMA private FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON ALL SEQUENCES IN SCHEMA private FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON SCHEMA snapshot_private FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON ALL TABLES IN SCHEMA snapshot_private FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA snapshot_private FROM PUBLIC, anon, authenticated;
+GRANT USAGE ON SCHEMA snapshot_private TO netflux_snapshot_worker;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA snapshot_private TO netflux_snapshot_worker;
+GRANT SELECT ON public.user_library, public.account_library_state TO netflux_snapshot_worker;
+
+CREATE POLICY "Snapshot worker accesses scoped operations"
+    ON snapshot_private.account_data_snapshot_operations FOR ALL
+    TO netflux_snapshot_worker
+    USING (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid)
+    WITH CHECK (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot worker accesses scoped snapshots"
+    ON snapshot_private.account_data_snapshots FOR ALL
+    TO netflux_snapshot_worker
+    USING (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid)
+    WITH CHECK (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot worker accesses scoped records"
+    ON snapshot_private.account_data_snapshot_records FOR ALL
+    TO netflux_snapshot_worker
+    USING (EXISTS (
+        SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
+        WHERE snapshot.id = snapshot_id
+          AND snapshot.account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid
+    ))
+    WITH CHECK (EXISTS (
+        SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
+        WHERE snapshot.id = snapshot_id
+          AND snapshot.account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid
+    ));
+
+CREATE POLICY "Snapshot worker reads scoped library"
+    ON public.user_library FOR SELECT
+    TO netflux_snapshot_worker
+    USING (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot worker reads scoped library state"
+    ON public.account_library_state FOR SELECT
+    TO netflux_snapshot_worker
+    USING (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
 
 CREATE INDEX IF NOT EXISTS idx_account_data_snapshot_operations_recovery
-    ON private.account_data_snapshot_operations (status, lease_expires_at)
+    ON snapshot_private.account_data_snapshot_operations (status, lease_expires_at)
     WHERE status = 'building';
 CREATE INDEX IF NOT EXISTS idx_account_data_snapshots_owner
-    ON private.account_data_snapshots (account_id, expires_at DESC);
+    ON snapshot_private.account_data_snapshots (account_id, expires_at DESC);

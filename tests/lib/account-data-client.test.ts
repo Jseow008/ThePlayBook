@@ -2,7 +2,14 @@ import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchCompleteLibrarySnapshot, LibrarySnapshotClientError } from "@/lib/account-data-client";
 
-const manifestHash = createHash("sha256").update("one\ntwo").digest("hex");
+function recordHash(record: Record<string, unknown>) {
+    const canonical = `{${Object.keys(record).sort().map((key) => `${JSON.stringify(key)}:${JSON.stringify(record[key])}`).join(",")}}`;
+    return createHash("sha256").update(canonical).digest("hex");
+}
+
+const firstRecord = { content_id: "a", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 2 };
+const secondRecord = { content_id: "b", is_bookmarked: false, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 1 };
+const manifestHash = createHash("sha256").update(`${recordHash(firstRecord)}\n${recordHash(secondRecord)}`).digest("hex");
 const manifest = {
     snapshotId: "00000000-0000-4000-8000-000000000001",
     recordCount: 2,
@@ -23,12 +30,12 @@ describe("complete library snapshot hydration", () => {
         const fetchMock = vi.fn()
             .mockResolvedValueOnce(response({ state: "ready", manifest }, 201))
             .mockResolvedValueOnce(response({
-                data: [{ ordinal: 1, payloadHash: "one", content_id: "a", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 2 }],
+                data: [{ ordinal: 1, payloadHash: recordHash(firstRecord), ...firstRecord }],
                 manifest,
                 pageInfo: { hasNextPage: true, endCursor: "next" },
             }))
             .mockResolvedValueOnce(response({
-                data: [{ ordinal: 2, payloadHash: "two", content_id: "b", is_bookmarked: false, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 1 }],
+                data: [{ ordinal: 2, payloadHash: recordHash(secondRecord), ...secondRecord }],
                 manifest,
                 pageInfo: { hasNextPage: false, endCursor: "done" },
             }));
@@ -57,7 +64,6 @@ describe("complete library snapshot hydration", () => {
     it("traverses beyond the configured response cap without dropping timestamp ties", async () => {
         const records = Array.from({ length: 201 }, (_, index) => ({
             ordinal: index + 1,
-            payloadHash: `record-${index + 1}`,
             content_id: `item-${index + 1}`,
             is_bookmarked: index % 2 === 0,
             progress: null,
@@ -65,7 +71,10 @@ describe("complete library snapshot hydration", () => {
             last_interacted_at: "2026-01-01T00:00:00.000Z",
             library_updated_at: "2026-01-01T00:00:00.000Z",
             library_revision: 201 - index,
-        }));
+        })).map((record) => {
+            const { ordinal, ...payload } = record;
+            return { ordinal, ...payload, payloadHash: recordHash(payload) };
+        });
         const largeManifest = {
             ...manifest,
             recordCount: records.length,

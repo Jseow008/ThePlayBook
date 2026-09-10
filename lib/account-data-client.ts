@@ -51,6 +51,19 @@ async function sha256(value: string) {
     return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function canonicalJson(value: unknown): string {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+    const object = value as Record<string, unknown>;
+    return `{${Object.keys(object).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(object[key])}`).join(",")}}`;
+}
+
+function snapshotPayload(record: LibrarySnapshotRecord) {
+    return Object.fromEntries(
+        Object.entries(record).filter(([key]) => key !== "ordinal" && key !== "payloadHash"),
+    );
+}
+
 function assertSnapshotPage(value: unknown): asserts value is SnapshotPageResponse {
     const candidate = value as Partial<SnapshotPageResponse> | null;
     if (!candidate || !Array.isArray(candidate.data) || !candidate.manifest || !candidate.pageInfo) {
@@ -119,7 +132,14 @@ export async function fetchCompleteLibrarySnapshot(): Promise<{
         throw new LibrarySnapshotClientError("The library snapshot did not contain every record exactly once.", "SNAPSHOT_INVALID");
     }
 
-    const manifestHash = await sha256(records.map((record) => record.payloadHash).join("\n"));
+    const receivedPayloadHashes = await Promise.all(records.map(async (record) => {
+        const computed = await sha256(canonicalJson(snapshotPayload(record)));
+        if (computed !== record.payloadHash) {
+            throw new LibrarySnapshotClientError("A library snapshot record failed integrity verification.", "SNAPSHOT_INVALID");
+        }
+        return computed;
+    }));
+    const manifestHash = await sha256(receivedPayloadHashes.join("\n"));
     if (manifestHash !== manifest.manifestHash) {
         throw new LibrarySnapshotClientError("The library snapshot integrity check failed.", "SNAPSHOT_INVALID");
     }

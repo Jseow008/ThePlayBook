@@ -31,6 +31,7 @@
     "database:content-invariants": "node scripts/check-database-content-invariants.mjs",
     "database:legacy-embedding-retirement": "node scripts/check-database-legacy-embedding-retirement.mjs",
     "database:published-at": "node scripts/check-database-published-at.mjs",
+    "database:account-data-snapshots": "node scripts/check-database-account-data-snapshots.mjs",
     "database:rls-policies": "node scripts/check-database-rls-policies.mjs",
     "database:email-rpc-security": "node scripts/check-database-email-rpc-security.mjs",
     "profile:browse-recommendations": "node scripts/profile-browse-recommendations.mjs",

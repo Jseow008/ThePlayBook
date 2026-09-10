@@ -151,6 +151,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const userRef = useRef<User | null>(null);
     const hydrateRunRef = useRef(0);
     const localMutationGenerationRef = useRef(0);
+    const isLoadedRef = useRef(false);
     const didRunLegacyMigrationRef = useRef(false);
 
     const markLocalMutation = useCallback(() => {
@@ -172,6 +173,7 @@ function useReadingProgressController(initialUser?: User | null) {
         setMyListIds([]);
         setProgressMap({});
         setIsLoaded(false);
+        isLoadedRef.current = false;
     }, []);
 
     const loadProgress = useCallback((scope: StorageScope = scopeRef.current) => {
@@ -227,6 +229,7 @@ function useReadingProgressController(initialUser?: User | null) {
         setProgressMap(newProgressMap);
         setMyListIds(readScopedMyList(localStorage, scope));
         setIsLoaded(true);
+        isLoadedRef.current = true;
     }, []);
 
     const insertOrMoveToFront = useCallback((ids: string[], itemId: string) => {
@@ -345,7 +348,7 @@ function useReadingProgressController(initialUser?: User | null) {
         return true;
     }, []);
 
-    const hydrateForUser = useCallback(async (nextUser: User | null) => {
+    const hydrateForUser = useCallback(async (nextUser: User | null, force = false) => {
         if (typeof window === "undefined") return;
 
         const nextScope = getStorageScope(nextUser?.id);
@@ -358,9 +361,10 @@ function useReadingProgressController(initialUser?: User | null) {
         }
 
         if (
-            isLoaded
+            isLoadedRef.current
             && scopeRef.current === nextScope
             && currentUserId === nextUserId
+            && !force
         ) {
             return;
         }
@@ -384,7 +388,17 @@ function useReadingProgressController(initialUser?: User | null) {
             .then((syncSucceeded) => {
                 if (runId !== hydrateRunRef.current) return;
 
-                if (syncSucceeded) loadProgress(nextScope);
+                if (syncSucceeded) {
+                    loadProgress(nextScope);
+                    return;
+                }
+
+                if (
+                    userRef.current?.id === nextUser.id
+                    && localMutationGenerationRef.current !== mutationGeneration
+                ) {
+                    window.setTimeout(() => void hydrateForUser(nextUser, true), 0);
+                }
             })
             .catch((error) => {
                 logRecoverableCloudSync("Fetch complete library snapshot failed", error, {
@@ -392,7 +406,7 @@ function useReadingProgressController(initialUser?: User | null) {
                     userId: nextUser.id,
                 });
             });
-    }, [hydrateCloudSnapshot, isLoaded, loadProgress, resetState]);
+    }, [hydrateCloudSnapshot, loadProgress, resetState]);
 
     useEffect(() => {
         void hydrateForUser(initialUser ?? null);

@@ -66,11 +66,11 @@ let pool: Pool | null = null;
 function getPool() {
     if (pool) return pool;
 
-    const connectionString = process.env.SUPABASE_DB_URL || process.env.DATABASE_URL;
+    const connectionString = process.env.SNAPSHOT_ADMIN_DATABASE_URL;
     if (!connectionString) {
         throw new AccountDataSnapshotError(
             "CONFIGURATION",
-            "Account-data snapshots require SUPABASE_DB_URL or DATABASE_URL on the server.",
+            "Account-data snapshots require SNAPSHOT_ADMIN_DATABASE_URL on the server.",
         );
     }
 
@@ -78,10 +78,33 @@ function getPool() {
     return pool;
 }
 
+async function bindRestrictedWorker(client: PoolClient, accountId: string) {
+    // The login role may only assume this NOLOGIN role. Every data statement
+    // below therefore runs as the restricted worker rather than as postgres.
+    await client.query("SET ROLE netflux_snapshot_worker");
+    await client.query("SELECT set_config('app.snapshot_account_id', $1, false)", [accountId]);
+}
+
+async function releaseRestrictedWorker(client: PoolClient) {
+    await client.query("RESET app.snapshot_account_id").catch(() => undefined);
+    await client.query("RESET ROLE").catch(() => undefined);
+}
+
 function requestFingerprint() {
     return createHash("sha256")
         .update(JSON.stringify({ collections: [LIBRARY_SNAPSHOT_COLLECTION], schemaVersion: LIBRARY_SNAPSHOT_SCHEMA_VERSION }))
         .digest("hex");
+}
+
+function canonicalJson(value: unknown): string {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+    const object = value as Record<string, unknown>;
+    return `{${Object.keys(object).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(object[key])}`).join(",")}}`;
+}
+
+function payloadHash(payload: unknown) {
+    return createHash("sha256").update(canonicalJson(payload)).digest("hex");
 }
 
 function expiresAt() {
@@ -103,7 +126,7 @@ async function getReadyManifest(
         expires_at: string;
     }>(
         `SELECT id, record_count, manifest_hash, reset_epoch, boundary_library_revision, expires_at
-         FROM private.account_data_snapshots
+         FROM snapshot_private.account_data_snapshots
          WHERE id = $1 AND account_id = $2 AND status = 'ready'`,
         [snapshotId, accountId],
     );
@@ -126,15 +149,15 @@ async function getReadyManifest(
 async function cleanupExpiredSnapshots(client: PoolClient) {
     try {
         await client.query(
-            `DELETE FROM private.account_data_snapshots
+            `DELETE FROM snapshot_private.account_data_snapshots
              WHERE expires_at <= now()`,
         );
         await client.query(
-            `DELETE FROM private.account_data_snapshot_operations operation
+            `DELETE FROM snapshot_private.account_data_snapshot_operations operation
              WHERE operation.status <> 'building'
                AND operation.updated_at < now() - interval '25 hours'
                AND NOT EXISTS (
-                   SELECT 1 FROM private.account_data_snapshots snapshot
+                   SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
                    WHERE snapshot.operation_id = operation.id
                )`,
         );
@@ -146,7 +169,7 @@ async function cleanupExpiredSnapshots(client: PoolClient) {
 
 async function persistOperationFailure(client: PoolClient, operationId: string, code: string) {
     await client.query(
-        `UPDATE private.account_data_snapshot_operations
+        `UPDATE snapshot_private.account_data_snapshot_operations
          SET status = 'failed', failure_code = $2, lease_expires_at = NULL, updated_at = now()
          WHERE id = $1`,
         [operationId, code],
@@ -160,8 +183,9 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
     let operation: SnapshotOperationRow | null = null;
 
     try {
+        await bindRestrictedWorker(client, accountId);
         const operationResult = await client.query<SnapshotOperationRow>(
-            `INSERT INTO private.account_data_snapshot_operations
+            `INSERT INTO snapshot_private.account_data_snapshot_operations
                 (account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status, lease_expires_at)
              VALUES ($1, $2, $3, $4, $5, $6, 'building', now() + interval '30 seconds')
              ON CONFLICT (account_id, idempotency_key) DO UPDATE
@@ -184,7 +208,7 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
         const recovered = await getReadyManifest(client, accountId, operation.snapshot_id, true);
         if (recovered) {
             await client.query(
-                `UPDATE private.account_data_snapshot_operations
+                `UPDATE snapshot_private.account_data_snapshot_operations
                  SET status = 'ready', failure_code = NULL, lease_expires_at = NULL, updated_at = now()
                  WHERE id = $1`,
                 [operation.id],
@@ -202,7 +226,7 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
         try {
             await cleanupExpiredSnapshots(client);
             await client.query(
-                `UPDATE private.account_data_snapshot_operations
+                `UPDATE snapshot_private.account_data_snapshot_operations
                  SET status = 'building', lease_expires_at = now() + interval '30 seconds', updated_at = now()
                  WHERE id = $1`,
                 [operation.id],
@@ -221,7 +245,7 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
             const libraryState = state.rows[0] ?? { reset_epoch: 0, current_revision: 0 };
 
             await client.query(
-                `INSERT INTO private.account_data_snapshots
+                `INSERT INTO snapshot_private.account_data_snapshots
                     (id, operation_id, account_id, collection_names, schema_version, reset_epoch, boundary_library_revision, status, expires_at)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, 'building', $8)
                  ON CONFLICT (id) DO NOTHING`,
@@ -229,7 +253,7 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
             );
 
             await client.query(
-                `INSERT INTO private.account_data_snapshot_records (snapshot_id, collection_name, ordinal, record_id, payload)
+                `INSERT INTO snapshot_private.account_data_snapshot_records (snapshot_id, collection_name, ordinal, record_id, payload)
                  SELECT
                     $1,
                     $2,
@@ -249,23 +273,10 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
                 [operation.snapshot_id, LIBRARY_SNAPSHOT_COLLECTION, accountId],
             );
 
-            const totals = await client.query<{ record_count: number; payload_bytes: number; manifest_hash: string }>(
+            const totals = await client.query<{ record_count: number; payload_bytes: number }>(
                 `SELECT COUNT(*)::int AS record_count,
-                        COALESCE(SUM(octet_length(payload::text)), 0)::int AS payload_bytes,
-                        encode(
-                            digest(
-                                COALESCE(
-                                    string_agg(
-                                        encode(extensions.digest(payload::text, 'sha256'), 'hex'),
-                                        E'\\n' ORDER BY ordinal
-                                    ),
-                                    ''
-                                ),
-                                'sha256'
-                            ),
-                            'hex'
-                        ) AS manifest_hash
-                 FROM private.account_data_snapshot_records
+                        COALESCE(SUM(octet_length(payload::text)), 0)::int AS payload_bytes
+                 FROM snapshot_private.account_data_snapshot_records
                  WHERE snapshot_id = $1 AND collection_name = $2`,
                 [operation.snapshot_id, LIBRARY_SNAPSHOT_COLLECTION],
             );
@@ -274,9 +285,18 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
                 throw new AccountDataSnapshotError("TOO_LARGE", "SNAPSHOT_TOO_LARGE");
             }
 
+            const payloads = await client.query<{ payload: unknown }>(
+                `SELECT payload FROM snapshot_private.account_data_snapshot_records
+                 WHERE snapshot_id = $1 AND collection_name = $2 ORDER BY ordinal ASC`,
+                [operation.snapshot_id, LIBRARY_SNAPSHOT_COLLECTION],
+            );
+            const manifestHash = createHash("sha256")
+                .update(payloads.rows.map((row) => payloadHash(row.payload)).join("\n"))
+                .digest("hex");
+
             const retained = await client.query<{ payload_bytes: string }>(
                 `SELECT COALESCE(SUM(payload_bytes), 0)::bigint AS payload_bytes
-                 FROM private.account_data_snapshots
+                 FROM snapshot_private.account_data_snapshots
                  WHERE account_id = $1 AND id <> $2 AND status = 'ready' AND expires_at > now()`,
                 [accountId, operation.snapshot_id],
             );
@@ -286,15 +306,15 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
             }
 
             await client.query(
-                `UPDATE private.account_data_snapshots
+                `UPDATE snapshot_private.account_data_snapshots
                  SET record_count = $2, payload_bytes = $3, manifest_hash = $4, status = 'ready'
                  WHERE id = $1`,
-                [operation.snapshot_id, total.record_count, total.payload_bytes, total.manifest_hash],
+                [operation.snapshot_id, total.record_count, total.payload_bytes, manifestHash],
             );
             await client.query("COMMIT");
 
             await client.query(
-                `UPDATE private.account_data_snapshot_operations
+                `UPDATE snapshot_private.account_data_snapshot_operations
                  SET status = 'ready', failure_code = NULL, lease_expires_at = NULL, updated_at = now()
                  WHERE id = $1`,
                 [operation.id],
@@ -314,6 +334,7 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
             await client.query("SELECT pg_advisory_unlock(hashtext($1))", [`account-data:${accountId}`]).catch(() => undefined);
         }
     } finally {
+        await releaseRestrictedWorker(client);
         client.release();
     }
 }
@@ -321,11 +342,12 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
 export async function getLibrarySnapshotPage(accountId: string, snapshotId: string, afterOrdinal: number, pageSize: number): Promise<LibrarySnapshotPage> {
     const client = await getPool().connect();
     try {
+        await bindRestrictedWorker(client, accountId);
         const manifest = await getReadyManifest(client, accountId, snapshotId);
         if (!manifest) throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
-        const result = await client.query<{ ordinal: string; payload_hash: string; payload: Omit<LibrarySnapshotPage["records"][number], "ordinal" | "payloadHash"> }>(
-            `SELECT ordinal, encode(extensions.digest(payload::text, 'sha256'), 'hex') AS payload_hash, payload
-             FROM private.account_data_snapshot_records
+        const result = await client.query<{ ordinal: string; payload: Omit<LibrarySnapshotPage["records"][number], "ordinal" | "payloadHash"> }>(
+            `SELECT ordinal, payload
+             FROM snapshot_private.account_data_snapshot_records
              WHERE snapshot_id = $1 AND collection_name = $2 AND ordinal > $3
              ORDER BY ordinal ASC
              LIMIT $4`,
@@ -338,11 +360,12 @@ export async function getLibrarySnapshotPage(accountId: string, snapshotId: stri
             records: rows.slice(0, pageSize).map((row) => ({
                 ...row.payload,
                 ordinal: Number(row.ordinal),
-                payloadHash: row.payload_hash,
+                payloadHash: payloadHash(row.payload),
             })),
             hasNextPage,
         };
     } finally {
+        await releaseRestrictedWorker(client);
         client.release();
     }
 }
