@@ -37,10 +37,12 @@ The following decisions are prerequisites, not implementation tasks that can be 
 
 - For an authenticated account, the server is the canonical state. Browser storage is a replica/cache and may never turn a hydration read into a cloud write.
 - Only an explicit user action or a durable queued mutation may change server state. Re-opening an older client must not reassert its cached bookmark, progress, or other local value.
-- Every queued mutation has an immutable client-generated idempotency ID, record type/key, intended change, local creation time, and a server acknowledgement state. Retrying the same mutation cannot apply it twice.
+- Every queued mutation has an immutable client-generated idempotency ID, authenticated account ID, record type/key, intended change, local creation time, applicable base revision, applicable library-reset epoch, and a server acknowledgement state. Retrying the same mutation cannot apply it twice.
+- The server derives the acting account from the authenticated session and uses the queued account ID only as a consistency check; a client-supplied account ID never authorizes a mutation.
 - The client displays one of **synced**, **pending**, or **needs attention** for user knowledge. A failed write, interrupted traversal, or unactionable conflict must never be presented as safely synced.
 - Pending mutations retry after reconnection and on an explicit user retry. They remain durable until acknowledged, explicitly discarded by the user, or superseded by a documented server result.
-- A simultaneous explicit action is serialized by the server. The accepted server revision is authoritative; an automatic hydration path is never a competing mutation. The delivery design must document the user-visible outcome of a stale explicit mutation.
+- A simultaneous explicit action is serialized by the server. The accepted server revision is authoritative; an automatic hydration path is never a competing mutation.
+- The server rejects a queued mutation whose account, base revision, or reset epoch no longer applies, returns the current server state, and does not automatically rebase or replay it. The client marks it **needs attention** and may offer an explicit, newly based user action after refresh. A stale offline save therefore cannot resurrect a later removal or library reset.
 
 ### 1.2 Bookmark removal and reset semantics
 
@@ -64,7 +66,14 @@ The versioned export inventory includes every account-owned record below. The ex
 | Notification preferences and records | `user_notification_preferences`, user-facing `content_request_notifications` | Include user-visible preference and notification information; exclude/reissue secret unsubscribe tokens and internal-only delivery diagnostics. |
 | AI usage metadata | `ai_message_usage` | Include account-scoped feature/timestamp metadata, never raw prompts or private evidence copied into telemetry. |
 
-The export is a completed snapshot traversal, not a best-effort page. If any collection cannot be traversed to completion, the export fails with the affected collection and does not claim success. An export may describe a snapshot boundary; it must not silently mix duplicate or missing rows across pages.
+The export is a completed snapshot traversal, not a best-effort page. It represents the membership and field values of every included collection at one logical snapshot boundary. A record created after that boundary is excluded; a record changed or deleted after it is represented as it was at that boundary. The implementation design must name the mechanism that provides this cross-collection guarantee before export/full-sync work begins. If any collection cannot be traversed to completion or that boundary cannot be maintained, the export fails with the affected collection and does not claim success.
+
+### 1.4 Guest-to-account migration
+
+- Guest storage is never hydrated into the cloud as an implicit write. On sign-in, eligible guest captures migrate through an explicit, durable migration operation.
+- The migration carries a guest-storage identity, destination account ID, immutable migration idempotency ID, source-record identifiers, and the destination account's applicable reset epoch. It cannot overwrite newer authenticated state or reintroduce records cleared after that epoch.
+- The server records the outcome per source record. Retrying a completed or interrupted migration preserves legitimate guest captures exactly once and reports conflicts or skipped records for recovery; it never silently drops them.
+- Fixture coverage includes guest capture → sign in → migration, an interrupted migration retry, and a migration attempted after another session has removed a bookmark or reset the library.
 
 ## 2. Complete-access and pagination contract
 
@@ -81,7 +90,7 @@ The export is a completed snapshot traversal, not a best-effort page. If any col
 
 Interactive lists are eventually consistent: an item created, changed, or removed while a user pages may appear or disappear on a later refresh. The UI deduplicates by stable ID and offers a refresh; it does not claim an immutable snapshot.
 
-Exports and full synchronization have stronger semantics. They use a documented snapshot boundary or a reconciliation pass keyed by server revisions so that each record expected at that boundary is emitted exactly once. A lost page, failed request, expired cursor, or interrupted traversal makes the operation incomplete and user-visible; it cannot produce a “success” result.
+Exports and full synchronization use the single logical snapshot boundary defined above. That boundary covers both membership and field values across every included collection, not merely unique IDs or counts. A lost page, failed request, expired cursor, or interrupted traversal makes the operation incomplete and user-visible; it cannot produce a “success” result.
 
 ## 3. Personal-evidence and citation identity contract
 
@@ -108,13 +117,15 @@ A citation payload identifies, as applicable:
 - a content/segment revision fingerprint or sufficient context snapshot; and
 - one of `available`, `changed`, `withdrawn`, or `unavailable`.
 
-For a changed source, the product identifies that the linked source has changed and preserves the stored personal evidence/context used for the answer. For withdrawn or inaccessible evidence, it explains the state and does not create a deceptive deep link. A full immutable editorial-history system remains deferred; this minimum representation prevents later history work from invalidating citations by design.
+Authorization is checked both when evidence is retrieved and when a citation is resolved. A response-scoped citation reference never grants continuing access by itself. A user-deleted highlight, reflection, note, or synthesis maps to `unavailable`: it is immediately ineligible for retrieval and its stored excerpt is no longer served. A user who no longer has access to an evidence item receives `unavailable` regardless of a previously issued reference.
+
+For a changed source, the product identifies that the linked source has changed and preserves still-owned personal evidence/context used for the answer. For a withdrawn source, it does not serve a current source excerpt or create a source deep link; a separately retained, still-owned personal capture may be shown only as personal evidence with the source marked `withdrawn`. For other inaccessible evidence, it returns `unavailable` without exposing a stored excerpt. A full immutable editorial-history system remains deferred; this minimum representation prevents later history work from invalidating citations by design.
 
 ## 4. Evaluation and acceptance contract
 
 Before changing retrieval behavior, create a versioned synthetic fixture set and record a baseline run. The fixture manifest contains case IDs, expected eligible evidence IDs, expected exact-quote text where applicable, distractors, and approved abstentions. The baseline record includes fixture version, application revision, model/provider configuration, date, and measured result.
 
-The fixture set includes a large library, older highlights, reflections, conflicting user interpretation, identical timestamps, near-identical sources, missing/revoked evidence, a query whose decisive text is beyond the current clipping threshold, and two ordinary accounts.
+The fixture set includes a large library, older highlights, reflections, conflicting user interpretation, identical timestamps, near-identical sources, missing/revoked and user-deleted evidence, a query whose decisive text is beyond the current clipping threshold, two ordinary accounts, and guest-to-account migration cases.
 
 Phase 1 acceptance requires all of the following:
 
@@ -124,9 +135,12 @@ Phase 1 acceptance requires all of the following:
 - An interrupted traversal cannot report success, cannot emit a complete manifest, and leaves a recoverable failure state.
 - Concurrent-change behavior is documented and tested for an interactive list and a completed export/synchronization traversal.
 - Device A save → Device B sync → Device A remove → Device B reopen does not resurrect the bookmark.
+- An offline queued save replayed after another device removes the bookmark or resets the library is rejected/reconciled without resurrecting state; an eligible guest capture migrates exactly once after sign-in, including after an interrupted migration retry.
 - A network interruption leaves user knowledge pending or needing attention until recovery; it is never labeled synced prematurely.
 - Citations resolve only to allowed evidence and explicitly handle changed, withdrawn, and unavailable evidence.
-- Retrieval metrics are compared with the recorded baseline: eligible-evidence recall, exact-quote fidelity, citation validity, irrelevant-source rejection, and correct abstention.
+- The deterministic suite permits zero cross-account disclosures and zero invalid citation references; each exact-quotation fixture must match its stored text exactly.
+- Before the first retrieval release, the approved fixture manifest records numeric release thresholds for eligible-evidence recall, irrelevant-source rejection, and correct abstention. Baseline comparison alone cannot pass the gate.
+- Model-dependent evaluation uses a recorded fixed provider/model configuration and at least three independent runs per case. The record includes every run, aggregate method, and threshold result; deterministic failures, an unmet approved quality threshold, or an unexplained regression block release.
 - The required ordinary-user production-build journey cannot silently skip: capture → later session → retrieve → open evidence → export/reconcile.
 
 ## 5. Finding register
@@ -142,9 +156,9 @@ The owner column assigns an accountable role only. A named owner and target date
 | 5 | Core retrieval: citations | Engineering | #3 and evidence-identity contract | Every citation validates and opens exact allowed evidence. |
 | 6 | Core retrieval: ranking | Engineering | #3 contract | Relevant evidence outside initial client candidates remains eligible. |
 | 7 | Core retrieval: complete access | Engineering | Lifecycle and pagination contracts | Over-cap account remains complete with accurate counts. |
-| 8 | Durability alongside Phase 1 | Engineering | Lifecycle contract | A stale second device cannot resurrect a removed bookmark. |
-| 9 | Durability alongside Phase 1 | Engineering | #8 mutation semantics | Interrupted writes are visible, durable, and recoverable. |
-| 10 | Core retrieval plus durability | Engineering | Lifecycle and pagination contracts | Versioned export includes every inventory record exactly once. |
+| 8 | Durability alongside Phase 1 | Engineering | Lifecycle contract | A stale second device or queued replay cannot resurrect a removed bookmark. |
+| 9 | Durability alongside Phase 1 | Engineering | #8 mutation semantics | Interrupted writes and guest migration are visible, idempotent, durable, and recoverable. |
+| 10 | Core retrieval plus durability | Engineering | Lifecycle and pagination contracts | Versioned export includes every inventory record exactly once at one cross-collection value/membership boundary. |
 | 11 | Pre-implementation contract | Product, Privacy, Engineering | None | Owned-data inventory and control wording are approved and tested. |
 | 12 | Core retrieval: reliable search | Engineering | Search/pagination contract | Concept search returns relevant snippets in relevance order. |
 | 13 | Core retrieval: reliable search | Engineering | Search error contract | Backend failure is retryable, not a successful zero result. |
@@ -152,14 +166,14 @@ The owner column assigns an accountable role only. A named owner and target date
 | 15 | After core correctness | Product, Engineering | Evidence/citation contract | Explicitly saved synthesis is later retrievable with sources. |
 | 16 | After core correctness | Product | #14–#15 pilot design | Optional demo task measures capture then recovery. |
 | 17 | Before expanded publishing | Content operations | #18 minimum contract | Provenance checklist and correction process are recorded. |
-| 18 | Pre-implementation minimum; broader work later | Content operations, Engineering | Evidence-identity contract | Changed source opens with preserved context and clear state. |
+| 18 | Pre-implementation minimum; broader work later | Content operations, Engineering | Evidence-identity contract | Changed source opens with preserved context; deleted or inaccessible evidence is no longer served. |
 | 19 | Release gate for publishing | Content operations, Engineering | Before new/materially edited content is relied on in AI | Indexing state, age target, failure path, and owner are visible. |
 | 20 | Alongside Phase 1: AI safeguards | Engineering | Trusted identity and quota design | Concurrent requests cannot exceed the final quota unit. |
 | 21 | Alongside Phase 1: AI safeguards | Platform engineering | Hosted proxy/header verification | Per-account and abuse buckets are consistent across AI routes. |
 | 22 | Alongside Phase 1: AI safeguards | Engineering, Operations | #20 reservation model | Global/guest budget, kill switch, and measured cost controls work. |
 | 23 | Alongside Phase 1: mutation boundary | Engineering, Security | Lifecycle contract | Every write path is inventoried and bounded at an authoritative layer. |
 | 24 | Alongside Phase 1: graceful failure | Engineering | Retrieval contract | Timeouts, cancellation, and degraded evidence behavior are tested. |
-| 25 | Pre-implementation baseline; ongoing proof | QA, Engineering | Evaluation contract | Versioned corpus and recorded benchmark are maintained. |
+| 25 | Pre-implementation baseline; ongoing proof | QA, Engineering | Evaluation contract | Versioned corpus, recorded benchmark, and approved release thresholds are maintained. |
 | 26 | Alongside Phase 1: journey proof | QA, Engineering | Fixture set | Required ordinary-user production-build journey passes without skips. |
 | 27 | Release gate for changed interactions | QA, Engineering | Citation/notes UI changes | WebKit, keyboard, screen-reader, and text-size checks pass. |
 | 28 | Release gate before launch spike | Platform engineering | Expected-load envelope | Staging workload meets recorded latency, success, and cost targets. |
