@@ -62,7 +62,12 @@ vi.mock("@/lib/supabase/client", () => ({
 }));
 
 vi.mock("@/lib/account-data-client", () => ({
+    LibrarySnapshotClientError: class LibrarySnapshotClientError extends Error {
+        constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE") { super(message); }
+    },
     fetchCompleteLibrarySnapshot: vi.fn(),
+    getLibrarySnapshotIdempotencyKey: vi.fn(() => "00000000-0000-4000-8000-000000000099"),
+    clearLibrarySnapshotIdempotencyKey: vi.fn(),
 }));
 
 selectMock.mockImplementation(() => ({

@@ -31,7 +31,12 @@ import {
 } from "@/lib/local-user-storage";
 import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
 import { captureAnalyticsEvent } from "@/lib/analytics";
-import { fetchCompleteLibrarySnapshot } from "@/lib/account-data-client";
+import {
+    clearLibrarySnapshotIdempotencyKey,
+    fetchCompleteLibrarySnapshot,
+    getLibrarySnapshotIdempotencyKey,
+    LibrarySnapshotClientError,
+} from "@/lib/account-data-client";
 import {
     clearCachedRecommendations,
     clearRecentRecommendations,
@@ -142,6 +147,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const [myListIds, setMyListIds] = useState<string[]>([]);
     const [progressMap, setProgressMap] = useState<Record<string, ReadingProgressData>>({});
     const [isLoaded, setIsLoaded] = useState(false);
+    const [hydrationStatus, setHydrationStatus] = useState<"idle" | "hydrating" | "ready" | "error">("idle");
     const [user, setUser] = useState<User | null>(initialUser ?? null);
     const [storageScope, setStorageScope] = useState<StorageScope>(getStorageScope(initialUser?.id));
     const supabaseRef = useRef(createClient());
@@ -153,6 +159,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const localMutationGenerationRef = useRef(0);
     const isLoadedRef = useRef(false);
     const didRunLegacyMigrationRef = useRef(false);
+    const installedSnapshotStateRef = useRef(new Map<StorageScope, { resetEpoch: number; boundaryRevision: number }>());
 
     const markLocalMutation = useCallback(() => {
         if (userRef.current) localMutationGenerationRef.current += 1;
@@ -322,7 +329,7 @@ function useReadingProgressController(initialUser?: User | null) {
         runId: number,
         mutationGeneration: number,
     ) => {
-        const snapshot = await fetchCompleteLibrarySnapshot();
+        const snapshot = await fetchCompleteLibrarySnapshot(getLibrarySnapshotIdempotencyKey(currentUser.id));
 
         // Do not install a response from an earlier sign-in session or let an
         // older complete snapshot overwrite a local mutation made while it was
@@ -336,6 +343,11 @@ function useReadingProgressController(initialUser?: User | null) {
             return false;
         }
 
+        const installed = installedSnapshotStateRef.current.get(scope);
+        if (installed && snapshot.manifest.resetEpoch < installed.resetEpoch) {
+            throw new Error("Refusing to install a snapshot from before the local reset epoch.");
+        }
+
         clearScopedProgress(localStorage, scope);
         const bookmarkedIds: string[] = [];
         for (const row of snapshot.records) {
@@ -345,6 +357,11 @@ function useReadingProgressController(initialUser?: User | null) {
             }
         }
         writeScopedMyList(localStorage, scope, bookmarkedIds);
+        installedSnapshotStateRef.current.set(scope, {
+            resetEpoch: snapshot.manifest.resetEpoch,
+            boundaryRevision: snapshot.manifest.boundaryLibraryRevision,
+        });
+        clearLibrarySnapshotIdempotencyKey(currentUser.id);
         return true;
     }, []);
 
@@ -380,16 +397,19 @@ function useReadingProgressController(initialUser?: User | null) {
         loadProgress(nextScope);
 
         if (!nextUser) {
+            setHydrationStatus("ready");
             return;
         }
 
         const mutationGeneration = localMutationGenerationRef.current;
+        setHydrationStatus("hydrating");
         void hydrateCloudSnapshot(nextUser, nextScope, runId, mutationGeneration)
             .then((syncSucceeded) => {
                 if (runId !== hydrateRunRef.current) return;
 
                 if (syncSucceeded) {
                     loadProgress(nextScope);
+                    setHydrationStatus("ready");
                     return;
                 }
 
@@ -401,6 +421,10 @@ function useReadingProgressController(initialUser?: User | null) {
                 }
             })
             .catch((error) => {
+                if (error instanceof LibrarySnapshotClientError && error.code === "SNAPSHOT_BUSY") {
+                    clearLibrarySnapshotIdempotencyKey(nextUser.id);
+                }
+                if (runId === hydrateRunRef.current) setHydrationStatus("error");
                 logRecoverableCloudSync("Fetch complete library snapshot failed", error, {
                     scope: nextScope,
                     userId: nextUser.id,
@@ -437,6 +461,32 @@ function useReadingProgressController(initialUser?: User | null) {
             window.removeEventListener("netflux_progress_updated", handleCustomUpdate);
         };
     }, [loadProgress]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const handleLibraryReset = (event: Event) => {
+            const detail = (event as CustomEvent<{
+                scope?: StorageScope;
+                resetEpoch?: number | null;
+                boundaryRevision?: number | null;
+            }>).detail;
+            if (!detail || detail.scope !== scopeRef.current) return;
+
+            // Cancel any traversal that began before the acknowledged reset.
+            // The next authenticated hydration obtains the new epoch instead.
+            hydrateRunRef.current += 1;
+            const prior = installedSnapshotStateRef.current.get(detail.scope);
+            installedSnapshotStateRef.current.set(detail.scope, {
+                resetEpoch: detail.resetEpoch ?? (prior?.resetEpoch ?? 0) + 1,
+                boundaryRevision: detail.boundaryRevision ?? prior?.boundaryRevision ?? 0,
+            });
+            setHydrationStatus("ready");
+        };
+
+        window.addEventListener("netflux_library_reset", handleLibraryReset);
+        return () => window.removeEventListener("netflux_library_reset", handleLibraryReset);
+    }, []);
 
     const removeFromProgress = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
@@ -671,6 +721,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
 
     const refresh = useCallback(() => loadProgress(scopeRef.current), [loadProgress]);
+    const retryHydration = useCallback(() => void hydrateForUser(userRef.current, true), [hydrateForUser]);
 
     return useMemo(() => ({
         inProgressIds,
@@ -678,7 +729,9 @@ function useReadingProgressController(initialUser?: User | null) {
         inProgressCount: inProgressIds.length,
         completedCount: completedIds.length,
         isLoaded,
+        hydrationStatus,
         refresh,
+        retryHydration,
         archiveFromProgressList,
         restoreProgressListArchive,
         removeFromProgress,
@@ -694,7 +747,7 @@ function useReadingProgressController(initialUser?: User | null) {
         totalLibraryItems,
         storageScope,
         user,
-    }), [inProgressIds, completedIds, isLoaded, refresh, archiveFromProgressList,
+    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, refresh, retryHydration, archiveFromProgressList,
         restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
         getProgress, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
         totalLibraryItems, storageScope, user]);

@@ -33,6 +33,26 @@ export class LibrarySnapshotClientError extends Error {
     }
 }
 
+const idempotencyKeyPrefix = "netflux.account-data-snapshot.idempotency.";
+
+/**
+ * Keeps the key across retriable creation requests for one authenticated
+ * account. It is removed only after a manifest has been completely verified,
+ * so a lost ready response cannot create a second operation.
+ */
+export function getLibrarySnapshotIdempotencyKey(accountId: string) {
+    const key = `${idempotencyKeyPrefix}${accountId}`;
+    const existing = sessionStorage.getItem(key);
+    if (existing) return existing;
+    const next = crypto.randomUUID();
+    sessionStorage.setItem(key, next);
+    return next;
+}
+
+export function clearLibrarySnapshotIdempotencyKey(accountId: string) {
+    sessionStorage.removeItem(`${idempotencyKeyPrefix}${accountId}`);
+}
+
 function getErrorCode(payload: unknown) {
     if (!payload || typeof payload !== "object") return "SNAPSHOT_UNAVAILABLE";
     const error = (payload as { error?: { code?: unknown; details?: { snapshot_error?: unknown } } }).error;
@@ -76,11 +96,10 @@ function assertSnapshotPage(value: unknown): asserts value is SnapshotPageRespon
  * validated. Callers must still discard the result when their auth generation
  * changes before installation.
  */
-export async function fetchCompleteLibrarySnapshot(): Promise<{
+export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.randomUUID()): Promise<{
     manifest: Manifest;
     records: LibrarySnapshotRecord[];
 }> {
-    const idempotencyKey = crypto.randomUUID();
     const creation = await fetch("/api/account-data/snapshots", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },

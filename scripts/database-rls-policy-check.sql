@@ -119,9 +119,9 @@ BEGIN
             SELECT count(*)
             FROM pg_policies
             WHERE schemaname = 'public'
-        -- Two account-bound SELECT policies are added for the restricted
-        -- snapshot worker on user_library and account_library_state.
-        ) <> 47
+        -- #7 adds the account-state ownership policy plus five account-bound
+        -- worker policies for reading and reset/revision handling.
+        ) <> 51
 
         UNION ALL
 

@@ -16,6 +16,17 @@ EXCEPTION
 END;
 $$;
 
+-- Cleanup has a separate no-login role. It is the only deliberately
+-- cross-account snapshot actor, used by the authenticated server scheduler;
+-- request workers remain account-bound by RLS.
+DO $$
+BEGIN
+    CREATE ROLE netflux_snapshot_maintenance NOLOGIN NOINHERIT NOBYPASSRLS;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END;
+$$;
+
 ALTER TABLE public.user_library
     ADD COLUMN IF NOT EXISTS library_updated_at timestamptz,
     ADD COLUMN IF NOT EXISTS library_revision bigint NOT NULL DEFAULT 0;
@@ -88,6 +99,29 @@ CREATE TRIGGER assign_user_library_revision
     FOR EACH ROW
     EXECUTE FUNCTION private.assign_user_library_revision();
 
+CREATE OR REPLACE FUNCTION private.advance_user_library_revision_on_delete()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, private, pg_temp
+AS $$
+BEGIN
+    INSERT INTO public.account_library_state (user_id, current_revision)
+    VALUES (OLD.user_id, 1)
+    ON CONFLICT (user_id) DO UPDATE
+    SET current_revision = public.account_library_state.current_revision + 1,
+        updated_at = now();
+    RETURN OLD;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION private.advance_user_library_revision_on_delete() FROM PUBLIC, anon, authenticated;
+DROP TRIGGER IF EXISTS advance_user_library_revision_on_delete ON public.user_library;
+CREATE TRIGGER advance_user_library_revision_on_delete
+    AFTER DELETE ON public.user_library
+    FOR EACH ROW
+    EXECUTE FUNCTION private.advance_user_library_revision_on_delete();
+
 DROP FUNCTION IF EXISTS public.assign_user_library_revision();
 
 CREATE INDEX IF NOT EXISTS idx_user_library_access_order
@@ -147,18 +181,31 @@ REVOKE ALL ON ALL TABLES IN SCHEMA snapshot_private FROM PUBLIC, anon, authentic
 REVOKE ALL ON ALL SEQUENCES IN SCHEMA snapshot_private FROM PUBLIC, anon, authenticated;
 GRANT USAGE ON SCHEMA snapshot_private TO netflux_snapshot_worker;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA snapshot_private TO netflux_snapshot_worker;
-GRANT SELECT ON public.user_library, public.account_library_state TO netflux_snapshot_worker;
+GRANT USAGE ON SCHEMA snapshot_private TO netflux_snapshot_maintenance;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA snapshot_private TO netflux_snapshot_maintenance;
+GRANT SELECT, DELETE ON public.user_library TO netflux_snapshot_worker;
+GRANT SELECT, INSERT, UPDATE ON public.account_library_state TO netflux_snapshot_worker;
 
 CREATE POLICY "Snapshot worker accesses scoped operations"
     ON snapshot_private.account_data_snapshot_operations FOR ALL
     TO netflux_snapshot_worker
     USING (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid)
     WITH CHECK (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot maintenance manages operations"
+    ON snapshot_private.account_data_snapshot_operations FOR ALL
+    TO netflux_snapshot_maintenance
+    USING (true)
+    WITH CHECK (true);
 CREATE POLICY "Snapshot worker accesses scoped snapshots"
     ON snapshot_private.account_data_snapshots FOR ALL
     TO netflux_snapshot_worker
     USING (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid)
     WITH CHECK (account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot maintenance manages snapshots"
+    ON snapshot_private.account_data_snapshots FOR ALL
+    TO netflux_snapshot_maintenance
+    USING (true)
+    WITH CHECK (true);
 CREATE POLICY "Snapshot worker accesses scoped records"
     ON snapshot_private.account_data_snapshot_records FOR ALL
     TO netflux_snapshot_worker
@@ -172,15 +219,33 @@ CREATE POLICY "Snapshot worker accesses scoped records"
         WHERE snapshot.id = snapshot_id
           AND snapshot.account_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid
     ));
+CREATE POLICY "Snapshot maintenance manages records"
+    ON snapshot_private.account_data_snapshot_records FOR ALL
+    TO netflux_snapshot_maintenance
+    USING (true)
+    WITH CHECK (true);
 
 CREATE POLICY "Snapshot worker reads scoped library"
     ON public.user_library FOR SELECT
+    TO netflux_snapshot_worker
+    USING (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot worker resets scoped library"
+    ON public.user_library FOR DELETE
     TO netflux_snapshot_worker
     USING (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
 CREATE POLICY "Snapshot worker reads scoped library state"
     ON public.account_library_state FOR SELECT
     TO netflux_snapshot_worker
     USING (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot worker writes scoped library state"
+    ON public.account_library_state FOR INSERT
+    TO netflux_snapshot_worker
+    WITH CHECK (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
+CREATE POLICY "Snapshot worker updates scoped library state"
+    ON public.account_library_state FOR UPDATE
+    TO netflux_snapshot_worker
+    USING (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid)
+    WITH CHECK (user_id = NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid);
 
 CREATE INDEX IF NOT EXISTS idx_account_data_snapshot_operations_recovery
     ON snapshot_private.account_data_snapshot_operations (status, lease_expires_at)

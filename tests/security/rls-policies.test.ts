@@ -36,7 +36,7 @@ describe("DB-103 RLS policy optimization", () => {
         expect(migration).toContain("ON public.user_highlights\n    TO authenticated");
         expect(migration).toContain("ON public.homepage_section\n    TO authenticated");
         expect(roleMatrix).toContain("forbidden_policy_role");
-        expect(roleMatrix).toContain(") <> 47");
+        expect(roleMatrix).toContain(") <> 51");
     });
 
     it("uses init-plan auth checks and explicit UPDATE invariants", () => {

@@ -33,6 +33,19 @@ BEGIN
 END;
 $catalog$;
 
+-- This is an execution check, rather than a catalog-only assertion: an
+-- ordinary authenticated Data API role cannot enumerate snapshot copies.
+SET LOCAL ROLE authenticated;
+DO $ordinary$
+BEGIN
+    PERFORM 1 FROM snapshot_private.account_data_snapshots;
+    RAISE EXCEPTION 'DB-107 ordinary authenticated role read a snapshot table';
+EXCEPTION
+    WHEN insufficient_privilege THEN NULL;
+END;
+$ordinary$;
+RESET ROLE;
+
 SET LOCAL ROLE netflux_snapshot_worker;
 SELECT set_config('app.snapshot_account_id', '10700000-0000-4000-8000-000000000001', true);
 
