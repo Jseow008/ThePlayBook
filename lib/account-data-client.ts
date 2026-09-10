@@ -1,0 +1,167 @@
+"use client";
+
+export type LibrarySnapshotRecord = {
+    ordinal: number;
+    payloadHash: string;
+    content_id: string;
+    is_bookmarked: boolean | null;
+    progress: Record<string, unknown> | null;
+    last_interacted_at: string | null;
+    library_updated_at: string;
+    library_revision: number;
+};
+
+type Manifest = {
+    snapshotId: string;
+    recordCount: number;
+    manifestHash: string;
+    resetEpoch: number;
+    boundaryLibraryRevision: number;
+    expiresAt: string;
+};
+
+type SnapshotPageResponse = {
+    data: LibrarySnapshotRecord[];
+    manifest: Manifest;
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+};
+
+export class LibrarySnapshotClientError extends Error {
+    constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE") {
+        super(message);
+        this.name = "LibrarySnapshotClientError";
+    }
+}
+
+const idempotencyKeyPrefix = "netflux.account-data-snapshot.idempotency.";
+
+/**
+ * Keeps the key across retriable creation requests for one authenticated
+ * account. It is removed only after a manifest has been completely verified,
+ * so a lost ready response cannot create a second operation.
+ */
+export function getLibrarySnapshotIdempotencyKey(accountId: string) {
+    const key = `${idempotencyKeyPrefix}${accountId}`;
+    const existing = sessionStorage.getItem(key);
+    if (existing) return existing;
+    const next = crypto.randomUUID();
+    sessionStorage.setItem(key, next);
+    return next;
+}
+
+export function clearLibrarySnapshotIdempotencyKey(accountId: string) {
+    sessionStorage.removeItem(`${idempotencyKeyPrefix}${accountId}`);
+}
+
+function getErrorCode(payload: unknown) {
+    if (!payload || typeof payload !== "object") return "SNAPSHOT_UNAVAILABLE";
+    const error = (payload as { error?: { code?: unknown; details?: { snapshot_error?: unknown } } }).error;
+    const snapshotError = error?.details?.snapshot_error;
+    if (typeof snapshotError === "string") return snapshotError;
+    return typeof error?.code === "string" ? error.code : "SNAPSHOT_UNAVAILABLE";
+}
+
+async function responsePayload(response: Response) {
+    return response.json().catch(() => null) as Promise<unknown>;
+}
+
+async function sha256(value: string) {
+    const bytes = new TextEncoder().encode(value);
+    const hash = await crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(hash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function canonicalJson(value: unknown): string {
+    if (value === null || typeof value !== "object") return JSON.stringify(value);
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+    const object = value as Record<string, unknown>;
+    return `{${Object.keys(object).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(object[key])}`).join(",")}}`;
+}
+
+function snapshotPayload(record: LibrarySnapshotRecord) {
+    return Object.fromEntries(
+        Object.entries(record).filter(([key]) => key !== "ordinal" && key !== "payloadHash"),
+    );
+}
+
+function assertSnapshotPage(value: unknown): asserts value is SnapshotPageResponse {
+    const candidate = value as Partial<SnapshotPageResponse> | null;
+    if (!candidate || !Array.isArray(candidate.data) || !candidate.manifest || !candidate.pageInfo) {
+        throw new LibrarySnapshotClientError("The library snapshot response was incomplete.", "SNAPSHOT_INVALID");
+    }
+}
+
+/**
+ * Hydrates only after all pages and the server-issued manifest have been
+ * validated. Callers must still discard the result when their auth generation
+ * changes before installation.
+ */
+export async function fetchCompleteLibrarySnapshot(idempotencyKey = crypto.randomUUID()): Promise<{
+    manifest: Manifest;
+    records: LibrarySnapshotRecord[];
+}> {
+    const creation = await fetch("/api/account-data/snapshots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+        body: JSON.stringify({ idempotencyKey }),
+        cache: "no-store",
+    });
+    const creationPayload = await responsePayload(creation) as {
+        state?: "ready" | "building" | "failed";
+        manifest?: Manifest;
+        snapshotId?: string;
+    } | null;
+
+    if (!creation.ok || creationPayload?.state !== "ready" || !creationPayload.manifest) {
+        throw new LibrarySnapshotClientError(
+            "A complete library snapshot is not available yet. Your existing local library was left unchanged.",
+            getErrorCode(creationPayload),
+        );
+    }
+
+    const manifest = creationPayload.manifest;
+    const records: LibrarySnapshotRecord[] = [];
+    let cursor: string | null = null;
+
+    do {
+        const url = new URL(`/api/account-data/snapshots/${manifest.snapshotId}/user_library`, window.location.origin);
+        url.searchParams.set("limit", "200");
+        if (cursor) url.searchParams.set("cursor", cursor);
+
+        const response = await fetch(url, { cache: "no-store", headers: { "Cache-Control": "no-store" } });
+        const payload = await responsePayload(response);
+        if (!response.ok) {
+            throw new LibrarySnapshotClientError("The complete library snapshot could not be read.", getErrorCode(payload));
+        }
+        assertSnapshotPage(payload);
+        if (payload.manifest.snapshotId !== manifest.snapshotId || payload.manifest.manifestHash !== manifest.manifestHash) {
+            throw new LibrarySnapshotClientError("The library snapshot changed while it was being read.", "SNAPSHOT_INVALID");
+        }
+
+        records.push(...payload.data);
+        cursor = payload.pageInfo.hasNextPage ? payload.pageInfo.endCursor : null;
+        if (payload.pageInfo.hasNextPage && !cursor) {
+            throw new LibrarySnapshotClientError("The library snapshot returned an incomplete page cursor.", "SNAPSHOT_INVALID");
+        }
+    } while (cursor);
+
+    const uniqueIds = new Set(records.map((record) => record.content_id));
+    const strictlyOrdered = records.every((record, index) => record.ordinal === index + 1);
+    if (records.length !== manifest.recordCount || uniqueIds.size !== records.length || !strictlyOrdered) {
+        throw new LibrarySnapshotClientError("The library snapshot did not contain every record exactly once.", "SNAPSHOT_INVALID");
+    }
+
+    const receivedPayloadHashes = await Promise.all(records.map(async (record) => {
+        const computed = await sha256(canonicalJson(snapshotPayload(record)));
+        if (computed !== record.payloadHash) {
+            throw new LibrarySnapshotClientError("A library snapshot record failed integrity verification.", "SNAPSHOT_INVALID");
+        }
+        return computed;
+    }));
+    const manifestHash = await sha256(receivedPayloadHashes.join("\n"));
+    if (manifestHash !== manifest.manifestHash) {
+        throw new LibrarySnapshotClientError("The library snapshot integrity check failed.", "SNAPSHOT_INVALID");
+    }
+
+    return { manifest, records };
+}

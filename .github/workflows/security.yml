@@ -94,6 +94,12 @@ jobs:
           run_with_transient_retry npx supabase start
           run_with_transient_retry npx supabase db reset
 
+          npx supabase status -o env --override-name db.url=SNAPSHOT_WORKER_DATABASE_URL \
+            | sed -nE 's/^SNAPSHOT_WORKER_DATABASE_URL="(.*)"$/SNAPSHOT_WORKER_DATABASE_URL=\1/p' \
+            >> "$GITHUB_ENV"
+          worker_url="$(grep '^SNAPSHOT_WORKER_DATABASE_URL=' "$GITHUB_ENV" | tail -n 1 | cut -d= -f2-)"
+          echo "SNAPSHOT_MAINTENANCE_DATABASE_URL=$worker_url" >> "$GITHUB_ENV"
+
       - name: Supabase SQL drift checks
         run: |
           npm run security:function-acls
@@ -109,6 +115,8 @@ jobs:
           npm run database:legacy-embedding-retirement
           npm run database:highlight-preservation
           npm run database:published-at
+          npm run database:account-data-snapshots
+          npm run database:account-data-snapshot-runtime
           npm run database:email-rpc-security
 
       - name: Security route and static tests

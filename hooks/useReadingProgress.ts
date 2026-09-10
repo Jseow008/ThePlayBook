@@ -22,17 +22,21 @@ import {
     getScopedProgressKeys,
     getStorageScope,
     isScopeStorageEventKey,
-    myListKey,
     parseProgressItemId,
     progressKey,
     readScopedMyList,
     type StorageScope,
     writeScopedMyList,
-    GUEST_STORAGE_SCOPE,
     migrateLegacyStorageToGuest,
 } from "@/lib/local-user-storage";
 import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
 import { captureAnalyticsEvent } from "@/lib/analytics";
+import {
+    clearLibrarySnapshotIdempotencyKey,
+    fetchCompleteLibrarySnapshot,
+    getLibrarySnapshotIdempotencyKey,
+    LibrarySnapshotClientError,
+} from "@/lib/account-data-client";
 import {
     clearCachedRecommendations,
     clearRecentRecommendations,
@@ -53,13 +57,6 @@ export interface ReadingProgressData {
     totalSegments?: number;
     maxSegmentIndex?: number;
     archivedFromLists?: Partial<Record<ProgressLibraryList, boolean>>;
-}
-
-interface UserLibraryRow {
-    content_id: string;
-    is_bookmarked: boolean;
-    progress: ReadingProgressData | null;
-    last_interacted_at: string;
 }
 
 function getProgressLibraryList(data: ReadingProgressData): ProgressLibraryList {
@@ -138,11 +135,6 @@ function hasProgressData(value: ReadingProgressData | null) {
     return Boolean(value && Object.keys(value).length > 0);
 }
 
-function isLocalProgressNewer(localData: ReadingProgressData | null, cloudTimestamp: string | null) {
-    if (!localData?.lastReadAt || !cloudTimestamp) return false;
-    return new Date(localData.lastReadAt).getTime() > new Date(cloudTimestamp).getTime();
-}
-
 function parseProgressTimestamp(value: string) {
     const timestamp = Date.parse(value);
     return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
@@ -155,6 +147,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const [myListIds, setMyListIds] = useState<string[]>([]);
     const [progressMap, setProgressMap] = useState<Record<string, ReadingProgressData>>({});
     const [isLoaded, setIsLoaded] = useState(false);
+    const [hydrationStatus, setHydrationStatus] = useState<"idle" | "hydrating" | "ready" | "error">("idle");
     const [user, setUser] = useState<User | null>(initialUser ?? null);
     const [storageScope, setStorageScope] = useState<StorageScope>(getStorageScope(initialUser?.id));
     const supabaseRef = useRef(createClient());
@@ -163,7 +156,14 @@ function useReadingProgressController(initialUser?: User | null) {
     const scopeRef = useRef<StorageScope>(getStorageScope(null));
     const userRef = useRef<User | null>(null);
     const hydrateRunRef = useRef(0);
+    const localMutationGenerationRef = useRef(0);
+    const isLoadedRef = useRef(false);
     const didRunLegacyMigrationRef = useRef(false);
+    const installedSnapshotStateRef = useRef(new Map<StorageScope, { resetEpoch: number; boundaryRevision: number }>());
+
+    const markLocalMutation = useCallback(() => {
+        if (userRef.current) localMutationGenerationRef.current += 1;
+    }, []);
 
     const readProgressFromScope = useCallback((scope: StorageScope, itemId: string) => {
         try {
@@ -180,6 +180,7 @@ function useReadingProgressController(initialUser?: User | null) {
         setMyListIds([]);
         setProgressMap({});
         setIsLoaded(false);
+        isLoadedRef.current = false;
     }, []);
 
     const loadProgress = useCallback((scope: StorageScope = scopeRef.current) => {
@@ -235,6 +236,7 @@ function useReadingProgressController(initialUser?: User | null) {
         setProgressMap(newProgressMap);
         setMyListIds(readScopedMyList(localStorage, scope));
         setIsLoaded(true);
+        isLoadedRef.current = true;
     }, []);
 
     const insertOrMoveToFront = useCallback((ids: string[], itemId: string) => {
@@ -321,116 +323,49 @@ function useReadingProgressController(initialUser?: User | null) {
         }
     }, [readProgressFromScope, supabase]);
 
-    const importGuestDataToScope = useCallback((scope: StorageScope) => {
-        if (typeof window === "undefined" || scope === GUEST_STORAGE_SCOPE) return false;
+    const hydrateCloudSnapshot = useCallback(async (
+        currentUser: User,
+        scope: StorageScope,
+        runId: number,
+        mutationGeneration: number,
+    ) => {
+        const snapshot = await fetchCompleteLibrarySnapshot(getLibrarySnapshotIdempotencyKey(currentUser.id));
 
-        let importedAny = false;
-
-        getScopedProgressKeys(localStorage, GUEST_STORAGE_SCOPE).forEach((key) => {
-            const itemId = parseProgressItemId(key, GUEST_STORAGE_SCOPE);
-            if (!itemId) return;
-
-            const guestData = readProgressFromScope(GUEST_STORAGE_SCOPE, itemId);
-            const scopedData = readProgressFromScope(scope, itemId);
-
-            if (!guestData) return;
-            if (!scopedData || isLocalProgressNewer(guestData, scopedData.lastReadAt)) {
-                localStorage.setItem(progressKey(scope, itemId), JSON.stringify(guestData));
-                importedAny = true;
-            }
-        });
-
-        const currentMyList = readScopedMyList(localStorage, scope);
-        const guestMyList = readScopedMyList(localStorage, GUEST_STORAGE_SCOPE);
-        const mergedMyList = Array.from(new Set([...currentMyList, ...guestMyList]));
-
-        if (mergedMyList.length !== currentMyList.length) {
-            writeScopedMyList(localStorage, scope, mergedMyList);
-            importedAny = true;
-        }
-
-        return importedAny;
-    }, [readProgressFromScope]);
-
-    const syncCloudForScope = useCallback(async (currentUser: User, scope: StorageScope) => {
-        const { data, error } = await supabase
-            .from("user_library")
-            .select("content_id, is_bookmarked, progress, last_interacted_at")
-            .eq("user_id", currentUser.id);
-
-        if (error || !data) {
-            logRecoverableCloudSync("Fetch cloud progress failed", error ?? { message: "No user_library rows returned" }, {
-                scope,
-                userId: currentUser.id,
-            });
+        // Do not install a response from an earlier sign-in session or let an
+        // older complete snapshot overwrite a local mutation made while it was
+        // loading. A later hydration run reconciles canonical server state.
+        if (
+            runId !== hydrateRunRef.current
+            || userRef.current?.id !== currentUser.id
+            || scopeRef.current !== scope
+            || localMutationGenerationRef.current !== mutationGeneration
+        ) {
             return false;
         }
 
-        const rows = data as unknown as UserLibraryRow[];
-        const cloudContentIds = new Set(rows.map((row) => row.content_id));
-        const mergedMyList = new Set(readScopedMyList(localStorage, scope));
-        let syncSucceeded = true;
-
-        for (const row of rows) {
-            const localData = readProgressFromScope(scope, row.content_id);
-            const cloudProgress = hasProgressData(row.progress) ? row.progress : null;
-            const finalBookmarked = mergedMyList.has(row.content_id) || row.is_bookmarked;
-
-            if (finalBookmarked) {
-                mergedMyList.add(row.content_id);
-            }
-
-            let progressForCloud: ReadingProgressData | null | undefined = undefined;
-
-            if (localData && (!cloudProgress || isLocalProgressNewer(localData, row.last_interacted_at))) {
-                progressForCloud = localData;
-            } else if (cloudProgress) {
-                localStorage.setItem(progressKey(scope, row.content_id), JSON.stringify(cloudProgress));
-            }
-
-            if (progressForCloud !== undefined || finalBookmarked !== row.is_bookmarked) {
-                const didSync = await syncItemToCloud(
-                    currentUser,
-                    scope,
-                    row.content_id,
-                    finalBookmarked,
-                    progressForCloud,
-                );
-                syncSucceeded = didSync && syncSucceeded;
-            }
+        const installed = installedSnapshotStateRef.current.get(scope);
+        if (installed && snapshot.manifest.resetEpoch < installed.resetEpoch) {
+            throw new Error("Refusing to install a snapshot from before the local reset epoch.");
         }
 
-        const localProgressKeys = getScopedProgressKeys(localStorage, scope);
-        for (const key of localProgressKeys) {
-            const itemId = parseProgressItemId(key, scope);
-            if (!itemId || cloudContentIds.has(itemId)) continue;
-
-            const localData = readProgressFromScope(scope, itemId);
-            if (!localData) continue;
-
-            const didSync = await syncItemToCloud(
-                currentUser,
-                scope,
-                itemId,
-                mergedMyList.has(itemId) ? true : undefined,
-                localData,
-            );
-            syncSucceeded = didSync && syncSucceeded;
+        clearScopedProgress(localStorage, scope);
+        const bookmarkedIds: string[] = [];
+        for (const row of snapshot.records) {
+            if (row.is_bookmarked) bookmarkedIds.push(row.content_id);
+            if (hasProgressData(row.progress as ReadingProgressData | null)) {
+                localStorage.setItem(progressKey(scope, row.content_id), JSON.stringify(row.progress));
+            }
         }
+        writeScopedMyList(localStorage, scope, bookmarkedIds);
+        installedSnapshotStateRef.current.set(scope, {
+            resetEpoch: snapshot.manifest.resetEpoch,
+            boundaryRevision: snapshot.manifest.boundaryLibraryRevision,
+        });
+        clearLibrarySnapshotIdempotencyKey(currentUser.id);
+        return true;
+    }, []);
 
-        for (const itemId of mergedMyList) {
-            if (cloudContentIds.has(itemId)) continue;
-
-            const didSync = await syncItemToCloud(currentUser, scope, itemId, true, undefined);
-            syncSucceeded = didSync && syncSucceeded;
-        }
-
-        writeScopedMyList(localStorage, scope, Array.from(mergedMyList));
-
-        return syncSucceeded;
-    }, [readProgressFromScope, supabase, syncItemToCloud]);
-
-    const hydrateForUser = useCallback(async (nextUser: User | null) => {
+    const hydrateForUser = useCallback(async (nextUser: User | null, force = false) => {
         if (typeof window === "undefined") return;
 
         const nextScope = getStorageScope(nextUser?.id);
@@ -443,9 +378,10 @@ function useReadingProgressController(initialUser?: User | null) {
         }
 
         if (
-            isLoaded
+            isLoadedRef.current
             && scopeRef.current === nextScope
             && currentUserId === nextUserId
+            && !force
         ) {
             return;
         }
@@ -458,33 +394,43 @@ function useReadingProgressController(initialUser?: User | null) {
         setUser(nextUser);
         setStorageScope(nextScope);
 
-        let importedGuestData = false;
-
-        if (nextUser) {
-            importedGuestData = importGuestDataToScope(nextScope);
-        }
-
         loadProgress(nextScope);
 
         if (!nextUser) {
+            setHydrationStatus("ready");
             return;
         }
 
-        void syncCloudForScope(nextUser, nextScope)
+        const mutationGeneration = localMutationGenerationRef.current;
+        setHydrationStatus("hydrating");
+        void hydrateCloudSnapshot(nextUser, nextScope, runId, mutationGeneration)
             .then((syncSucceeded) => {
                 if (runId !== hydrateRunRef.current) return;
 
-                if (importedGuestData && syncSucceeded) {
-                    clearScopedProgress(localStorage, GUEST_STORAGE_SCOPE);
-                    localStorage.removeItem(myListKey(GUEST_STORAGE_SCOPE));
+                if (syncSucceeded) {
+                    loadProgress(nextScope);
+                    setHydrationStatus("ready");
+                    return;
                 }
 
-                loadProgress(nextScope);
+                if (
+                    userRef.current?.id === nextUser.id
+                    && localMutationGenerationRef.current !== mutationGeneration
+                ) {
+                    window.setTimeout(() => void hydrateForUser(nextUser, true), 0);
+                }
             })
             .catch((error) => {
-                console.error("Failed to sync reading progress during hydration:", error);
+                if (error instanceof LibrarySnapshotClientError && error.code === "SNAPSHOT_BUSY") {
+                    clearLibrarySnapshotIdempotencyKey(nextUser.id);
+                }
+                if (runId === hydrateRunRef.current) setHydrationStatus("error");
+                logRecoverableCloudSync("Fetch complete library snapshot failed", error, {
+                    scope: nextScope,
+                    userId: nextUser.id,
+                });
             });
-    }, [importGuestDataToScope, isLoaded, loadProgress, resetState, syncCloudForScope]);
+    }, [hydrateCloudSnapshot, loadProgress, resetState]);
 
     useEffect(() => {
         void hydrateForUser(initialUser ?? null);
@@ -516,10 +462,37 @@ function useReadingProgressController(initialUser?: User | null) {
         };
     }, [loadProgress]);
 
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
+        const handleLibraryReset = (event: Event) => {
+            const detail = (event as CustomEvent<{
+                scope?: StorageScope;
+                resetEpoch?: number | null;
+                boundaryRevision?: number | null;
+            }>).detail;
+            if (!detail || detail.scope !== scopeRef.current) return;
+
+            // Cancel any traversal that began before the acknowledged reset.
+            // The next authenticated hydration obtains the new epoch instead.
+            hydrateRunRef.current += 1;
+            const prior = installedSnapshotStateRef.current.get(detail.scope);
+            installedSnapshotStateRef.current.set(detail.scope, {
+                resetEpoch: detail.resetEpoch ?? (prior?.resetEpoch ?? 0) + 1,
+                boundaryRevision: detail.boundaryRevision ?? prior?.boundaryRevision ?? 0,
+            });
+            setHydrationStatus("ready");
+        };
+
+        window.addEventListener("netflux_library_reset", handleLibraryReset);
+        return () => window.removeEventListener("netflux_library_reset", handleLibraryReset);
+    }, []);
+
     const removeFromProgress = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
+        markLocalMutation();
         localStorage.removeItem(progressKey(scope, itemId));
 
         setInProgressIds((prev) => prev.filter((id) => id !== itemId));
@@ -535,7 +508,7 @@ function useReadingProgressController(initialUser?: User | null) {
         }
 
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [syncItemToCloud]);
+    }, [markLocalMutation, syncItemToCloud]);
 
     const clearRecommendationMemory = useCallback((scope: StorageScope) => {
         if (typeof window === "undefined") return;
@@ -552,6 +525,7 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return false;
 
         const scope = scopeRef.current;
+        markLocalMutation();
         localStorage.removeItem(progressKey(scope, itemId));
         clearRecommendationMemory(scope);
 
@@ -589,7 +563,7 @@ function useReadingProgressController(initialUser?: User | null) {
         window.dispatchEvent(new Event("netflux_activity_history_updated"));
 
         return didSyncCloud && didSyncActivity;
-    }, [clearRecommendationMemory, queryClient, syncItemToCloud]);
+    }, [clearRecommendationMemory, markLocalMutation, queryClient, syncItemToCloud]);
 
     const archiveFromProgressList = useCallback((itemId: string, list: ProgressLibraryList) => {
         if (typeof window === "undefined") return;
@@ -597,6 +571,7 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
         if (!currentProgress) return;
+        markLocalMutation();
 
         const nextProgress: ReadingProgressData = {
             ...currentProgress,
@@ -617,7 +592,7 @@ function useReadingProgressController(initialUser?: User | null) {
 
         syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [readProgressFromScope, syncItemToCloud]);
+    }, [markLocalMutation, readProgressFromScope, syncItemToCloud]);
 
     const restoreProgressListArchive = useCallback((itemId: string, list: ProgressLibraryList) => {
         if (typeof window === "undefined") return;
@@ -625,6 +600,7 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
         if (!currentProgress) return;
+        markLocalMutation();
 
         const nextProgress = clearArchiveForList(currentProgress, list);
         localStorage.setItem(progressKey(scope, itemId), JSON.stringify(nextProgress));
@@ -641,7 +617,7 @@ function useReadingProgressController(initialUser?: User | null) {
 
         syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [insertOrMoveToFront, readProgressFromScope, syncItemToCloud]);
+    }, [insertOrMoveToFront, markLocalMutation, readProgressFromScope, syncItemToCloud]);
 
     const addToMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
@@ -649,6 +625,7 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentList = readScopedMyList(localStorage, scope);
         if (currentList.includes(itemId)) return;
+        markLocalMutation();
 
         const newList = [itemId, ...currentList];
         writeScopedMyList(localStorage, scope, newList);
@@ -666,13 +643,14 @@ function useReadingProgressController(initialUser?: User | null) {
                 });
             });
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [syncItemToCloud]);
+    }, [markLocalMutation, syncItemToCloud]);
 
     const removeFromMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
         const currentList = readScopedMyList(localStorage, scope);
+        markLocalMutation();
         const newList = currentList.filter((id) => id !== itemId);
 
         writeScopedMyList(localStorage, scope, newList);
@@ -680,7 +658,7 @@ function useReadingProgressController(initialUser?: User | null) {
 
         syncItemToCloud(userRef.current, scope, itemId, false, undefined);
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [syncItemToCloud]);
+    }, [markLocalMutation, syncItemToCloud]);
 
     const toggleMyList = useCallback((itemId: string) => {
         if (myListIds.includes(itemId)) {
@@ -696,6 +674,7 @@ function useReadingProgressController(initialUser?: User | null) {
 
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
+        markLocalMutation();
         const nextProgressData: ReadingProgressData = data.isCompleted
             ? {
                 ...data,
@@ -735,13 +714,14 @@ function useReadingProgressController(initialUser?: User | null) {
                 });
             });
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [insertOrMoveToFront, readProgressFromScope, syncItemToCloud]);
+    }, [insertOrMoveToFront, markLocalMutation, readProgressFromScope, syncItemToCloud]);
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
     const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);
     const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
 
     const refresh = useCallback(() => loadProgress(scopeRef.current), [loadProgress]);
+    const retryHydration = useCallback(() => void hydrateForUser(userRef.current, true), [hydrateForUser]);
 
     return useMemo(() => ({
         inProgressIds,
@@ -749,7 +729,9 @@ function useReadingProgressController(initialUser?: User | null) {
         inProgressCount: inProgressIds.length,
         completedCount: completedIds.length,
         isLoaded,
+        hydrationStatus,
         refresh,
+        retryHydration,
         archiveFromProgressList,
         restoreProgressListArchive,
         removeFromProgress,
@@ -765,7 +747,7 @@ function useReadingProgressController(initialUser?: User | null) {
         totalLibraryItems,
         storageScope,
         user,
-    }), [inProgressIds, completedIds, isLoaded, refresh, archiveFromProgressList,
+    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, refresh, retryHydration, archiveFromProgressList,
         restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
         getProgress, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
         totalLibraryItems, storageScope, user]);
