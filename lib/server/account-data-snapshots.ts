@@ -90,6 +90,24 @@ async function releaseRestrictedWorker(client: PoolClient) {
     await client.query("RESET ROLE").catch(() => undefined);
 }
 
+async function withRestrictedWorkerTransaction<T>(
+    client: PoolClient,
+    accountId: string,
+    work: () => Promise<T>,
+): Promise<T> {
+    await client.query("BEGIN");
+    try {
+        await client.query("SET LOCAL ROLE netflux_snapshot_worker");
+        await client.query("SELECT set_config('app.snapshot_account_id', $1, true)", [accountId]);
+        const result = await work();
+        await client.query("COMMIT");
+        return result;
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => undefined);
+        throw error;
+    }
+}
+
 function requestFingerprint() {
     return createHash("sha256")
         .update(JSON.stringify({ collections: [LIBRARY_SNAPSHOT_COLLECTION], schemaVersion: LIBRARY_SNAPSHOT_SCHEMA_VERSION }))
@@ -342,10 +360,10 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
 export async function getLibrarySnapshotPage(accountId: string, snapshotId: string, afterOrdinal: number, pageSize: number): Promise<LibrarySnapshotPage> {
     const client = await getPool().connect();
     try {
-        await bindRestrictedWorker(client, accountId);
-        const manifest = await getReadyManifest(client, accountId, snapshotId);
-        if (!manifest) throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
-        const result = await client.query<{ ordinal: string; payload: Omit<LibrarySnapshotPage["records"][number], "ordinal" | "payloadHash"> }>(
+        return await withRestrictedWorkerTransaction(client, accountId, async () => {
+            const manifest = await getReadyManifest(client, accountId, snapshotId);
+            if (!manifest) throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
+            const result = await client.query<{ ordinal: string; payload: Omit<LibrarySnapshotPage["records"][number], "ordinal" | "payloadHash"> }>(
             `SELECT ordinal, payload
              FROM snapshot_private.account_data_snapshot_records
              WHERE snapshot_id = $1 AND collection_name = $2 AND ordinal > $3
@@ -353,17 +371,18 @@ export async function getLibrarySnapshotPage(accountId: string, snapshotId: stri
              LIMIT $4`,
             [snapshotId, LIBRARY_SNAPSHOT_COLLECTION, afterOrdinal, pageSize + 1],
         );
-        const rows = result.rows;
-        const hasNextPage = rows.length > pageSize;
-        return {
-            manifest,
-            records: rows.slice(0, pageSize).map((row) => ({
+            const rows = result.rows;
+            const hasNextPage = rows.length > pageSize;
+            return {
+                manifest,
+                records: rows.slice(0, pageSize).map((row) => ({
                 ...row.payload,
                 ordinal: Number(row.ordinal),
                 payloadHash: payloadHash(row.payload),
             })),
-            hasNextPage,
-        };
+                hasNextPage,
+            };
+        });
     } finally {
         await releaseRestrictedWorker(client);
         client.release();
@@ -377,8 +396,8 @@ export async function getLiveLibraryPage(
 ) {
     const client = await getPool().connect();
     try {
-        await bindRestrictedWorker(client, accountId);
-        const result = await client.query<{
+        return await withRestrictedWorkerTransaction(client, accountId, async () => {
+            const result = await client.query<{
             content_id: string;
             is_bookmarked: boolean | null;
             progress: Record<string, unknown> | null;
@@ -394,9 +413,10 @@ export async function getLiveLibraryPage(
              LIMIT $4`,
             [accountId, after?.updatedAt ?? null, after?.contentId ?? null, pageSize + 1],
         );
-        const hasNextPage = result.rows.length > pageSize;
-        const rows = result.rows.slice(0, pageSize);
-        return { rows, hasNextPage };
+            const hasNextPage = result.rows.length > pageSize;
+            const rows = result.rows.slice(0, pageSize);
+            return { rows, hasNextPage };
+        });
     } finally {
         await releaseRestrictedWorker(client);
         client.release();
