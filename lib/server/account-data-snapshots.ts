@@ -65,20 +65,29 @@ export class AccountDataSnapshotError extends Error {
 }
 
 let pool: Pool | null = null;
+let maintenancePool: Pool | null = null;
 
 function getPool() {
     if (pool) return pool;
 
-    const connectionString = process.env.SNAPSHOT_ADMIN_DATABASE_URL;
+    const connectionString = process.env.SNAPSHOT_WORKER_DATABASE_URL;
     if (!connectionString) {
         throw new AccountDataSnapshotError(
             "CONFIGURATION",
-            "Account-data snapshots require SNAPSHOT_ADMIN_DATABASE_URL on the server.",
+            "Account-data snapshots require SNAPSHOT_WORKER_DATABASE_URL on the server.",
         );
     }
 
     pool = new Pool({ connectionString, max: 4, idleTimeoutMillis: 10_000 });
     return pool;
+}
+
+function getMaintenancePool() {
+    if (maintenancePool) return maintenancePool;
+    const connectionString = process.env.SNAPSHOT_MAINTENANCE_DATABASE_URL;
+    if (!connectionString) throw new AccountDataSnapshotError("CONFIGURATION", "Snapshot maintenance requires SNAPSHOT_MAINTENANCE_DATABASE_URL on the server.");
+    maintenancePool = new Pool({ connectionString, max: 1, idleTimeoutMillis: 10_000 });
+    return maintenancePool;
 }
 
 async function releaseRestrictedWorker(client: PoolClient) {
@@ -231,7 +240,7 @@ async function cleanupExpiredSnapshots(client: PoolClient, accountId: string) {
 }
 
 export async function reconcileExpiredAccountDataSnapshots() {
-    const client = await getPool().connect();
+    const client = await getMaintenancePool().connect();
     try {
         return await withSnapshotMaintenanceTransaction(client, async () => {
             const aborted = await client.query(
@@ -605,6 +614,8 @@ export async function getLiveLibraryPage(
 
 export function resetAccountDataSnapshotPoolForTests() {
     const activePool = pool;
+    const activeMaintenancePool = maintenancePool;
     pool = null;
-    return activePool?.end();
+    maintenancePool = null;
+    return Promise.all([activePool?.end(), activeMaintenancePool?.end()]);
 }

@@ -10,22 +10,24 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 DO $$
 BEGIN
-    CREATE ROLE netflux_snapshot_worker NOLOGIN NOINHERIT NOBYPASSRLS;
+    CREATE ROLE netflux_snapshot_worker LOGIN NOINHERIT NOBYPASSRLS;
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END;
 $$;
+ALTER ROLE netflux_snapshot_worker LOGIN NOINHERIT NOBYPASSRLS;
 
 -- Cleanup has a separate no-login role. It is the only deliberately
 -- cross-account snapshot actor, used by the authenticated server scheduler;
 -- request workers remain account-bound by RLS.
 DO $$
 BEGIN
-    CREATE ROLE netflux_snapshot_maintenance NOLOGIN NOINHERIT NOBYPASSRLS;
+    CREATE ROLE netflux_snapshot_maintenance LOGIN NOINHERIT NOBYPASSRLS;
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END;
 $$;
+ALTER ROLE netflux_snapshot_maintenance LOGIN NOINHERIT NOBYPASSRLS;
 
 ALTER TABLE public.user_library
     ADD COLUMN IF NOT EXISTS library_updated_at timestamptz,

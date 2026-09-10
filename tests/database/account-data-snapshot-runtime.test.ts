@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 
-const databaseUrl = process.env.SNAPSHOT_ADMIN_DATABASE_URL;
+const databaseUrl = process.env.SNAPSHOT_WORKER_DATABASE_URL;
 const describeDatabase = databaseUrl ? describe : describe.skip;
 
 describeDatabase("DB-107 account-data snapshots on a disposable Supabase database", () => {
