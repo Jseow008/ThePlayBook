@@ -2,6 +2,11 @@
 -- This script is transactional and is safe only in the local CI Supabase DB.
 BEGIN;
 
+-- CI's disposable postgres login may assume the restricted worker solely for
+-- this transaction. This grant is rolled back with the fixture and is never a
+-- production privilege change.
+GRANT netflux_snapshot_worker TO postgres;
+
 DO $fixture$
 DECLARE
     account_a uuid := '10700000-0000-4000-8000-000000000001';
@@ -48,6 +53,15 @@ RESET ROLE;
 
 SET LOCAL ROLE netflux_snapshot_worker;
 SELECT set_config('app.snapshot_account_id', '10700000-0000-4000-8000-000000000001', true);
+
+DO $worker_identity$
+BEGIN
+    IF current_user <> 'netflux_snapshot_worker'
+       OR EXISTS (SELECT 1 FROM pg_roles WHERE rolname = current_user AND rolbypassrls) THEN
+        RAISE EXCEPTION 'DB-107 fixture is not executing as a restricted NOBYPASSRLS worker: %', current_user;
+    END IF;
+END;
+$worker_identity$;
 
 DO $worker$
 DECLARE
