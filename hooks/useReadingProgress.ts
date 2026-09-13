@@ -157,12 +157,16 @@ function useReadingProgressController(initialUser?: User | null) {
     const userRef = useRef<User | null>(null);
     const hydrateRunRef = useRef(0);
     const localMutationGenerationRef = useRef(0);
+    const pendingMutationIdsRef = useRef(new Set<string>());
     const isLoadedRef = useRef(false);
     const didRunLegacyMigrationRef = useRef(false);
     const installedSnapshotStateRef = useRef(new Map<StorageScope, { resetEpoch: number; boundaryRevision: number }>());
 
-    const markLocalMutation = useCallback(() => {
-        if (userRef.current) localMutationGenerationRef.current += 1;
+    const markLocalMutation = useCallback((itemId?: string) => {
+        if (userRef.current) {
+            localMutationGenerationRef.current += 1;
+            if (itemId) pendingMutationIdsRef.current.add(itemId);
+        }
     }, []);
 
     const readProgressFromScope = useCallback((scope: StorageScope, itemId: string) => {
@@ -252,6 +256,7 @@ function useReadingProgressController(initialUser?: User | null) {
         progressData?: ReadingProgressData | null,
     ) => {
         if (!currentUser) return true;
+        pendingMutationIdsRef.current.add(itemId);
 
         try {
             let currentBookmarkState = isBookmarked;
@@ -275,6 +280,7 @@ function useReadingProgressController(initialUser?: User | null) {
                     });
                     return false;
                 }
+                pendingMutationIdsRef.current.delete(itemId);
                 return true;
             }
 
@@ -312,6 +318,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 return false;
             }
 
+            pendingMutationIdsRef.current.delete(itemId);
             return true;
         } catch (error) {
             logRecoverableCloudSync("Unexpected cloud sync failure", error, {
@@ -348,6 +355,11 @@ function useReadingProgressController(initialUser?: User | null) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
         }
 
+        const pendingLocalState = [...pendingMutationIdsRef.current].map((itemId) => ({
+            itemId,
+            isBookmarked: readScopedMyList(localStorage, scope).includes(itemId),
+            progress: readProgressFromScope(scope, itemId),
+        }));
         clearScopedProgress(localStorage, scope);
         const bookmarkedIds: string[] = [];
         for (const row of snapshot.records) {
@@ -356,6 +368,13 @@ function useReadingProgressController(initialUser?: User | null) {
                 localStorage.setItem(progressKey(scope, row.content_id), JSON.stringify(row.progress));
             }
         }
+        for (const pending of pendingLocalState) {
+            const index = bookmarkedIds.indexOf(pending.itemId);
+            if (pending.isBookmarked && index === -1) bookmarkedIds.push(pending.itemId);
+            if (!pending.isBookmarked && index !== -1) bookmarkedIds.splice(index, 1);
+            if (pending.progress) localStorage.setItem(progressKey(scope, pending.itemId), JSON.stringify(pending.progress));
+            else localStorage.removeItem(progressKey(scope, pending.itemId));
+        }
         writeScopedMyList(localStorage, scope, bookmarkedIds);
         installedSnapshotStateRef.current.set(scope, {
             resetEpoch: snapshot.manifest.resetEpoch,
@@ -363,7 +382,7 @@ function useReadingProgressController(initialUser?: User | null) {
         });
         clearLibrarySnapshotIdempotencyKey(currentUser.id);
         return true;
-    }, []);
+    }, [readProgressFromScope]);
 
     const hydrateForUser = useCallback(async (nextUser: User | null, force = false) => {
         if (typeof window === "undefined") return;
@@ -492,7 +511,7 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
-        markLocalMutation();
+        markLocalMutation(itemId);
         localStorage.removeItem(progressKey(scope, itemId));
 
         setInProgressIds((prev) => prev.filter((id) => id !== itemId));
@@ -525,7 +544,7 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return false;
 
         const scope = scopeRef.current;
-        markLocalMutation();
+        markLocalMutation(itemId);
         localStorage.removeItem(progressKey(scope, itemId));
         clearRecommendationMemory(scope);
 
@@ -571,7 +590,7 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
         if (!currentProgress) return;
-        markLocalMutation();
+        markLocalMutation(itemId);
 
         const nextProgress: ReadingProgressData = {
             ...currentProgress,
@@ -600,7 +619,7 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
         if (!currentProgress) return;
-        markLocalMutation();
+        markLocalMutation(itemId);
 
         const nextProgress = clearArchiveForList(currentProgress, list);
         localStorage.setItem(progressKey(scope, itemId), JSON.stringify(nextProgress));
@@ -625,7 +644,7 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentList = readScopedMyList(localStorage, scope);
         if (currentList.includes(itemId)) return;
-        markLocalMutation();
+        markLocalMutation(itemId);
 
         const newList = [itemId, ...currentList];
         writeScopedMyList(localStorage, scope, newList);
@@ -650,7 +669,7 @@ function useReadingProgressController(initialUser?: User | null) {
 
         const scope = scopeRef.current;
         const currentList = readScopedMyList(localStorage, scope);
-        markLocalMutation();
+        markLocalMutation(itemId);
         const newList = currentList.filter((id) => id !== itemId);
 
         writeScopedMyList(localStorage, scope, newList);
@@ -674,7 +693,7 @@ function useReadingProgressController(initialUser?: User | null) {
 
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
-        markLocalMutation();
+        markLocalMutation(itemId);
         const nextProgressData: ReadingProgressData = data.isCompleted
             ? {
                 ...data,

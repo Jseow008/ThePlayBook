@@ -17,7 +17,8 @@ describe("Phase 1 #7 account-data snapshot security contract", () => {
         expect(migration).toContain("FORCE ROW LEVEL SECURITY");
         expect(migration).toContain("REVOKE ALL ON SCHEMA snapshot_private FROM PUBLIC, anon, authenticated");
         expect(migration).toContain("REVOKE ALL ON ALL TABLES IN SCHEMA snapshot_private FROM PUBLIC, anon, authenticated");
-        expect(migration).toContain("CREATE ROLE netflux_snapshot_worker NOLOGIN NOINHERIT NOBYPASSRLS");
+        expect(migration).toContain("CREATE ROLE netflux_snapshot_worker LOGIN NOINHERIT NOBYPASSRLS");
+        expect(migration).toContain("ALTER ROLE netflux_snapshot_worker LOGIN NOINHERIT NOBYPASSRLS");
         expect(migration).toContain("TO netflux_snapshot_worker");
     });
 
