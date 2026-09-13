@@ -116,7 +116,7 @@ jobs:
           npm run database:highlight-preservation
           npm run database:published-at
           npm run database:account-data-snapshots
-          npm run database:account-data-snapshot-runtime
+          DB107_WORKER_PASSWORD=ci-db107-worker-password npm run database:account-data-snapshot-runtime
           npm run database:email-rpc-security
 
       - name: Security route and static tests

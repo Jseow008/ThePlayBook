@@ -3,10 +3,14 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 
 const databaseUrl = process.env.SNAPSHOT_WORKER_DATABASE_URL;
+const workerPassword = process.env.DB107_WORKER_PASSWORD;
 const describeDatabase = databaseUrl ? describe : describe.skip;
 
 describeDatabase("DB-107 account-data snapshots on a disposable Supabase database", () => {
     const db = new Pool({ connectionString: databaseUrl, max: 2 });
+    const directWorkerUrl = new URL(databaseUrl ?? "postgresql://netflux_snapshot_worker@127.0.0.1/postgres");
+    directWorkerUrl.username = "netflux_snapshot_worker";
+    directWorkerUrl.password = workerPassword ?? "";
     const accountA = randomUUID();
     const accountB = randomUUID();
     const contentA = randomUUID();
@@ -56,6 +60,21 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         // Simulates a network response lost after the copy transaction commits.
         const retry = await createLibrarySnapshot(accountA, snapshotKey);
         expect(retry).toEqual(first);
+    });
+
+    it("connects directly as the restricted worker and remains account-scoped", async () => {
+        const worker = new Pool({ connectionString: directWorkerUrl.toString(), max: 1 });
+        try {
+            const identity = await worker.query<{ current_user: string; rolbypassrls: boolean }>(
+                "SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user",
+            );
+            expect(identity.rows[0]).toEqual({ current_user: "netflux_snapshot_worker", rolbypassrls: false });
+            await worker.query("SELECT set_config('app.snapshot_account_id', $1, false)", [accountA]);
+            const rows = await worker.query<{ user_id: string }>("SELECT user_id FROM public.user_library");
+            expect(rows.rows).toEqual([{ user_id: accountA }]);
+        } finally {
+            await worker.end();
+        }
     });
 
     it("keeps a snapshot isolated and immutable across saves, removals, and a reset", async () => {

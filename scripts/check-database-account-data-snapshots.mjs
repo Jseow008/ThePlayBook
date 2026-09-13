@@ -12,6 +12,13 @@ if (!container) {
   console.error("DB-107 requires the disposable local Supabase database container.");
   process.exit(1);
 }
+const password = "ci-db107-worker-password";
+const setup = spawnSync("docker", ["exec", container, "psql", "-U", "postgres", "-d", "postgres", "--no-psqlrc", "--set", "ON_ERROR_STOP=1", "-c", `ALTER ROLE netflux_snapshot_worker PASSWORD '${password}'`], { encoding: "utf8" });
+if (setup.status !== 0) {
+  process.stderr.write(setup.stderr ?? "");
+  process.exit(setup.status ?? 1);
+}
+process.env.DB107_WORKER_PASSWORD = password;
 const sql = readFileSync(new URL("./database-account-data-snapshot-check.sql", import.meta.url), "utf8");
 const result = spawnSync("docker", ["exec", "-i", container, "psql", "-U", "postgres", "-d", "postgres", "--no-psqlrc", "--set", "ON_ERROR_STOP=1"], {
   encoding: "utf8",
