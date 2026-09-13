@@ -511,10 +511,20 @@ describe("useReadingProgress", () => {
         expect(localStorage.getItem(myListKey(getStorageScope("user-b")))).toBe(JSON.stringify(["item-b"]));
     });
 
-    it("does not overwrite a local save that occurs during snapshot hydration", async () => {
-        let resolveSnapshot!: (value: unknown) => void;
-        const pendingSnapshot = new Promise((resolve) => { resolveSnapshot = resolve; });
-        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>).mockImplementationOnce(() => pendingSnapshot);
+    it("preserves a save through pending, acknowledged, stale, and current snapshot transitions", async () => {
+        let resolveFirstSnapshot!: (value: unknown) => void;
+        let resolveSave!: (value: unknown) => void;
+        let resolveOlderSnapshot!: (value: unknown) => void;
+        let resolveCurrentSnapshot!: (value: unknown) => void;
+        const firstSnapshot = new Promise((resolve) => { resolveFirstSnapshot = resolve; });
+        const save = new Promise((resolve) => { resolveSave = resolve; });
+        const olderSnapshot = new Promise((resolve) => { resolveOlderSnapshot = resolve; });
+        const currentSnapshot = new Promise((resolve) => { resolveCurrentSnapshot = resolve; });
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
+            .mockImplementationOnce(() => firstSnapshot)
+            .mockImplementationOnce(() => olderSnapshot)
+            .mockImplementationOnce(() => currentSnapshot);
+        upsertMock.mockImplementationOnce(() => save);
 
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
@@ -524,15 +534,27 @@ describe("useReadingProgress", () => {
         act(() => {
             result.current.toggleMyList("new-local-item");
         });
+        await waitFor(() => expect(result.current.myListIds).toEqual(["new-local-item"]));
         await act(async () => {
-            resolveSnapshot({
+            resolveFirstSnapshot({
                 manifest: { snapshotId: "snapshot-old", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 0, expiresAt: "2030-01-01T00:00:00.000Z" },
                 records: [],
             });
         });
-
         expect(result.current.myListIds).toEqual(["new-local-item"]);
-        expect(localStorage.getItem(myListKey(getStorageScope("user-a")))).toBe(JSON.stringify(["new-local-item"]));
+        await act(async () => { resolveSave({ error: null }); });
+
+        act(() => { result.current.retryHydration(); });
+        await act(async () => {
+            resolveOlderSnapshot({ manifest: { snapshotId: "snapshot-stale", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 0, expiresAt: "2030-01-01T00:00:00.000Z" }, records: [] });
+        });
+        expect(result.current.myListIds).toEqual(["new-local-item"]);
+
+        act(() => { result.current.retryHydration(); });
+        await act(async () => {
+            resolveCurrentSnapshot({ manifest: { snapshotId: "snapshot-current", recordCount: 1, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 1, expiresAt: "2030-01-01T00:00:00.000Z" }, records: [{ ordinal: 1, payloadHash: "hash", content_id: "new-local-item", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 1 }] });
+        });
+        expect(result.current.myListIds).toEqual(["new-local-item"]);
     });
 
     it("falls back to the guest flow when auth bootstrap errors", async () => {

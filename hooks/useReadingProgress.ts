@@ -158,6 +158,13 @@ function useReadingProgressController(initialUser?: User | null) {
     const hydrateRunRef = useRef(0);
     const localMutationGenerationRef = useRef(0);
     const pendingMutationIdsRef = useRef(new Set<string>());
+    const acknowledgedMutationOverlaysRef = useRef(new Map<string, {
+        scope: StorageScope;
+        resetEpoch: number;
+        minimumRevision: number;
+        isBookmarked: boolean;
+        progress: ReadingProgressData | null;
+    }>());
     const isLoadedRef = useRef(false);
     const didRunLegacyMigrationRef = useRef(false);
     const installedSnapshotStateRef = useRef(new Map<StorageScope, { resetEpoch: number; boundaryRevision: number }>());
@@ -177,6 +184,18 @@ function useReadingProgressController(initialUser?: User | null) {
             return null;
         }
     }, []);
+
+    const acknowledgeMutation = useCallback((scope: StorageScope, itemId: string) => {
+        const boundary = installedSnapshotStateRef.current.get(scope) ?? { resetEpoch: 0, boundaryRevision: 0 };
+        acknowledgedMutationOverlaysRef.current.set(`${scope}:${itemId}`, {
+            scope,
+            resetEpoch: boundary.resetEpoch,
+            minimumRevision: boundary.boundaryRevision + 1,
+            isBookmarked: readScopedMyList(localStorage, scope).includes(itemId),
+            progress: readProgressFromScope(scope, itemId),
+        });
+        pendingMutationIdsRef.current.delete(itemId);
+    }, [readProgressFromScope]);
 
     const resetState = useCallback(() => {
         setInProgressIds([]);
@@ -280,7 +299,7 @@ function useReadingProgressController(initialUser?: User | null) {
                     });
                     return false;
                 }
-                pendingMutationIdsRef.current.delete(itemId);
+                acknowledgeMutation(scope, itemId);
                 return true;
             }
 
@@ -318,7 +337,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 return false;
             }
 
-            pendingMutationIdsRef.current.delete(itemId);
+            acknowledgeMutation(scope, itemId);
             return true;
         } catch (error) {
             logRecoverableCloudSync("Unexpected cloud sync failure", error, {
@@ -328,7 +347,7 @@ function useReadingProgressController(initialUser?: User | null) {
             });
             return false;
         }
-    }, [readProgressFromScope, supabase]);
+    }, [acknowledgeMutation, readProgressFromScope, supabase]);
 
     const hydrateCloudSnapshot = useCallback(async (
         currentUser: User,
@@ -355,6 +374,19 @@ function useReadingProgressController(initialUser?: User | null) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
         }
 
+        const overlays = [...acknowledgedMutationOverlaysRef.current.entries()]
+            .filter(([, overlay]) => overlay.scope === scope)
+            .flatMap(([key, overlay]) => {
+                if (snapshot.manifest.resetEpoch > overlay.resetEpoch
+                    || (snapshot.manifest.resetEpoch === overlay.resetEpoch && snapshot.manifest.boundaryLibraryRevision >= overlay.minimumRevision)) {
+                    acknowledgedMutationOverlaysRef.current.delete(key);
+                    return [];
+                }
+                if (snapshot.manifest.resetEpoch < overlay.resetEpoch) {
+                    throw new Error("Refusing to install a snapshot from before an acknowledged reset epoch.");
+                }
+                return [{ itemId: key.slice(scope.length + 1), isBookmarked: overlay.isBookmarked, progress: overlay.progress }];
+            });
         const pendingLocalState = [...pendingMutationIdsRef.current].map((itemId) => ({
             itemId,
             isBookmarked: readScopedMyList(localStorage, scope).includes(itemId),
@@ -368,7 +400,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 localStorage.setItem(progressKey(scope, row.content_id), JSON.stringify(row.progress));
             }
         }
-        for (const pending of pendingLocalState) {
+        for (const pending of [...pendingLocalState, ...overlays]) {
             const index = bookmarkedIds.indexOf(pending.itemId);
             if (pending.isBookmarked && index === -1) bookmarkedIds.push(pending.itemId);
             if (!pending.isBookmarked && index !== -1) bookmarkedIds.splice(index, 1);
