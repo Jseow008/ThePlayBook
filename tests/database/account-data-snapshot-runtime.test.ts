@@ -12,6 +12,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     const accountA = randomUUID();
     const accountB = randomUUID();
     const accountC = randomUUID();
+    const accountD = randomUUID();
     const contentA = randomUUID();
     const snapshotKey = randomUUID();
 
@@ -31,8 +32,9 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
              VALUES
                 ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
                 ('00000000-0000-0000-0000-000000000000', $3, 'authenticated', 'authenticated', $4, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
-                ('00000000-0000-0000-0000-000000000000', $5, 'authenticated', 'authenticated', $6, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
-            [accountA, `db107-a-${accountA}@example.invalid`, accountB, `db107-b-${accountB}@example.invalid`, accountC, `db107-c-${accountC}@example.invalid`],
+                ('00000000-0000-0000-0000-000000000000', $5, 'authenticated', 'authenticated', $6, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
+                ('00000000-0000-0000-0000-000000000000', $7, 'authenticated', 'authenticated', $8, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
+            [accountA, `db107-a-${accountA}@example.invalid`, accountB, `db107-b-${accountB}@example.invalid`, accountC, `db107-c-${accountC}@example.invalid`, accountD, `db107-d-${accountD}@example.invalid`],
         );
         await db.query(
             `INSERT INTO public.content_item (id, type, title, status)
@@ -48,7 +50,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
 
     afterAll(async () => {
         await resetAccountDataSnapshotPoolForTests();
-        await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB, accountC]]).catch(() => undefined);
+        await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB, accountC, accountD]]).catch(() => undefined);
         await workerDb.end();
         await db.end();
     });
@@ -202,7 +204,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                     (user_id, content_id, is_bookmarked, library_updated_at, library_revision)
                  SELECT $1, value::uuid, true, '2026-09-14 09:00:00.123456+00'::timestamptz, 1
                  FROM unnest($2::text[]) AS value`,
-                [accountB, contentIds],
+                [accountD, contentIds],
             );
         } finally {
             await db.query("ALTER TABLE public.user_library ENABLE TRIGGER assign_user_library_revision");
@@ -211,7 +213,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         const seen: string[] = [];
         let after: { updatedAt: string; contentId: string } | null = null;
         do {
-            const page = await getLiveLibraryPage(accountB, after, 1);
+            const page = await getLiveLibraryPage(accountD, after, 1);
             const row = page.rows[0];
             if (!row) break;
             expect(row.library_updated_at).toContain(".123456");
