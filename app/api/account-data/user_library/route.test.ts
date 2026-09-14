@@ -41,6 +41,30 @@ describe("GET /api/account-data/user_library", () => {
         expect(getLiveLibraryPage).toHaveBeenCalledTimes(1);
     });
 
+    it("preserves full database timestamp precision in a signed cursor", async () => {
+        const preciseTimestamp = "2026-09-10 12:00:00.123456+00";
+        (getLiveLibraryPage as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            rows: [{
+                content_id: "00000000-0000-4000-8000-000000000001",
+                is_bookmarked: true,
+                progress: null,
+                last_interacted_at: null,
+                library_updated_at: preciseTimestamp,
+                library_revision: 1,
+            }],
+            hasNextPage: true,
+        });
+        const first = await GET(new NextRequest("http://localhost/api/account-data/user_library?limit=1"));
+        const payload = await first.json() as { pageInfo: { endCursor: string } };
+
+        await GET(new NextRequest(`http://localhost/api/account-data/user_library?cursor=${payload.pageInfo.endCursor}`));
+
+        expect(getLiveLibraryPage).toHaveBeenLastCalledWith("account-a", {
+            updatedAt: preciseTimestamp,
+            contentId: "00000000-0000-4000-8000-000000000001",
+        }, 100);
+    });
+
     it("rejects unauthenticated live-list reads", async () => {
         getUser.mockResolvedValue({ data: { user: null } });
         const response = await GET(new NextRequest("http://localhost/api/account-data/user_library"));
