@@ -2,15 +2,13 @@ import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 
-const databaseUrl = process.env.SNAPSHOT_WORKER_DATABASE_URL;
-const workerPassword = process.env.DB107_WORKER_PASSWORD;
-const describeDatabase = databaseUrl ? describe : describe.skip;
+const adminDatabaseUrl = process.env.DB107_ADMIN_DATABASE_URL;
+const workerDatabaseUrl = process.env.SNAPSHOT_WORKER_DATABASE_URL;
+const describeDatabase = adminDatabaseUrl && workerDatabaseUrl ? describe : describe.skip;
 
 describeDatabase("DB-107 account-data snapshots on a disposable Supabase database", () => {
-    const db = new Pool({ connectionString: databaseUrl, max: 2 });
-    const directWorkerUrl = new URL(databaseUrl ?? "postgresql://netflux_snapshot_worker@127.0.0.1/postgres");
-    directWorkerUrl.username = "netflux_snapshot_worker";
-    directWorkerUrl.password = workerPassword ?? "";
+    const db = new Pool({ connectionString: adminDatabaseUrl, max: 2 });
+    const workerDb = new Pool({ connectionString: workerDatabaseUrl, max: 2 });
     const accountA = randomUUID();
     const accountB = randomUUID();
     const contentA = randomUUID();
@@ -49,6 +47,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     afterAll(async () => {
         await resetAccountDataSnapshotPoolForTests();
         await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB]]).catch(() => undefined);
+        await workerDb.end();
         await db.end();
     });
 
@@ -63,18 +62,13 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     });
 
     it("connects directly as the restricted worker and remains account-scoped", async () => {
-        const worker = new Pool({ connectionString: directWorkerUrl.toString(), max: 1 });
-        try {
-            const identity = await worker.query<{ current_user: string; rolbypassrls: boolean }>(
-                "SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user",
-            );
-            expect(identity.rows[0]).toEqual({ current_user: "netflux_snapshot_worker", rolbypassrls: false });
-            await worker.query("SELECT set_config('app.snapshot_account_id', $1, false)", [accountA]);
-            const rows = await worker.query<{ user_id: string }>("SELECT user_id FROM public.user_library");
-            expect(rows.rows).toEqual([{ user_id: accountA }]);
-        } finally {
-            await worker.end();
-        }
+        const identity = await workerDb.query<{ current_user: string; rolbypassrls: boolean }>(
+            "SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user",
+        );
+        expect(identity.rows[0]).toEqual({ current_user: "netflux_snapshot_worker", rolbypassrls: false });
+        await workerDb.query("SELECT set_config('app.snapshot_account_id', $1, false)", [accountA]);
+        const rows = await workerDb.query<{ user_id: string }>("SELECT user_id FROM public.user_library");
+        expect(rows.rows).toEqual([{ user_id: accountA }]);
     });
 
     it("keeps a snapshot isolated and immutable across saves, removals, and a reset", async () => {
@@ -106,10 +100,9 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     it("settles a worker-terminated operation to its stable idempotency outcome", async () => {
         const interruptedKey = randomUUID();
         const interruptedSnapshot = randomUUID();
-        const client = await db.connect();
+        const client = await workerDb.connect();
         try {
             await client.query("BEGIN");
-            await client.query("SET LOCAL ROLE netflux_snapshot_worker");
             await client.query("SELECT set_config('app.snapshot_account_id', $1, true)", [accountB]);
             await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshot_operations
