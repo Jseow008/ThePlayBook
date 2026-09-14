@@ -68,6 +68,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
 
     it("returns an explicit terminal outcome for an expired successful operation", async () => {
         const expiredKey = randomUUID();
+        const expiredOperation = randomUUID();
         const expiredSnapshot = randomUUID();
         const client = await workerDb.connect();
         try {
@@ -75,15 +76,15 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             await client.query("SELECT set_config('app.snapshot_account_id', $1, true)", [accountD]);
             await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshot_operations
-                    (account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status)
-                 VALUES ($1, $2, $3, ARRAY['user_library'], 1, $4, 'ready')`,
-                [accountD, expiredKey, "e77f009786b9269d97558ddef296602fcc43d75fc08fc20bad3777c1ad96fe1b", expiredSnapshot],
+                    (id, account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status)
+                 VALUES ($1, $2, $3, $4, ARRAY['user_library'], 1, $5, 'ready')`,
+                [expiredOperation, accountD, expiredKey, "e77f009786b9269d97558ddef296602fcc43d75fc08fc20bad3777c1ad96fe1b", expiredSnapshot],
             );
             await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshots
                     (id, operation_id, account_id, collection_names, schema_version, reset_epoch, boundary_library_revision, status, expires_at)
-                 VALUES ($1, $1, $2, ARRAY['user_library'], 1, 0, 0, 'ready', now() - interval '1 second')`,
-                [expiredSnapshot, accountD],
+                 VALUES ($1, $2, $3, ARRAY['user_library'], 1, 0, 0, 'ready', now() - interval '1 second')`,
+                [expiredSnapshot, expiredOperation, accountD],
             );
             await client.query("COMMIT");
         } finally {
