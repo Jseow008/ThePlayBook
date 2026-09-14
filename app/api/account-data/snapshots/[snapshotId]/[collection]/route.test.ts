@@ -28,6 +28,21 @@ describe("GET /api/account-data/snapshots/:snapshotId/user_library", () => {
     });
 
     it("binds snapshot reads to the authenticated account", async () => {
+        const record = {
+            ordinal: 1,
+            payloadHash: "payload-hash",
+            content_id: "00000000-0000-4000-8000-000000000010",
+            is_bookmarked: true,
+            progress: null,
+            last_interacted_at: null,
+            library_updated_at: "2026-09-14T09:00:00.123456+00",
+            library_revision: 7,
+        };
+        (getLibrarySnapshotPage as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+            manifest: { snapshotId, recordCount: 1, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 7, expiresAt: "2030-01-01T00:00:00.000Z" },
+            records: [record],
+            hasNextPage: false,
+        });
         const response = await GET(
             new NextRequest(`http://localhost/api/account-data/snapshots/${snapshotId}/user_library`),
             { params: Promise.resolve({ snapshotId, collection: "user_library" }) },
@@ -35,6 +50,7 @@ describe("GET /api/account-data/snapshots/:snapshotId/user_library", () => {
 
         expect(response.status).toBe(200);
         expect(getLibrarySnapshotPage).toHaveBeenCalledWith("account-b", snapshotId, 0, 100);
+        await expect(response.json()).resolves.toMatchObject({ data: [record] });
     });
 
     it("rejects a cursor that was not issued for this account and snapshot", async () => {

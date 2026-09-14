@@ -1,15 +1,8 @@
 "use client";
 
-export type LibrarySnapshotRecord = {
-    ordinal: number;
-    payloadHash: string;
-    content_id: string;
-    is_bookmarked: boolean | null;
-    progress: Record<string, unknown> | null;
-    last_interacted_at: string | null;
-    library_updated_at: string;
-    library_revision: number;
-};
+import type { LibrarySnapshotWireRecord } from "@/lib/account-data-wire";
+
+export type LibrarySnapshotRecord = LibrarySnapshotWireRecord;
 
 type Manifest = {
     snapshotId: string;

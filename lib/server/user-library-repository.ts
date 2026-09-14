@@ -16,12 +16,22 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
+import type { Json } from "@/types/database";
 
 type UserLibraryRow = Database["public"]["Tables"]["user_library"]["Row"];
 type UserLibraryInsert = Database["public"]["Tables"]["user_library"]["Insert"];
 type UserLibraryUpdate = Database["public"]["Tables"]["user_library"]["Update"];
 
 type TypedSupabaseClient = SupabaseClient<any, any, any>;
+type MutationRpc = (
+    functionName: "apply_user_library_mutation",
+    arguments_: Record<string, unknown>,
+) => Promise<{ data: Array<{ reset_epoch: number; library_revision: number }> | null; error: Error | null }>;
+
+export type UserLibraryMutationAcknowledgement = {
+    resetEpoch: number;
+    libraryRevision: number;
+};
 
 // Narrow boundary cast — isolated here so callers are fully typed.
 const userLibraryTable = (client: TypedSupabaseClient) => (client.from("user_library") as any);
@@ -76,4 +86,39 @@ export async function deleteUserLibrary(
         .eq("user_id", userId)
         .eq("content_id", contentId);
     return { error };
+}
+
+/**
+ * Applies a complete library item state and returns the exact account
+ * boundary produced by the same database transaction. This is deliberately
+ * distinct from generic CRUD helpers: hydration reconciliation must never
+ * infer a revision from an older snapshot.
+ */
+export async function commitUserLibraryMutation(
+    client: TypedSupabaseClient,
+    input: {
+        contentId: string;
+        isBookmarked: boolean;
+        progress: Json | null;
+        lastInteractedAt: string;
+        deleteIfEmpty: boolean;
+    },
+): Promise<{ data: UserLibraryMutationAcknowledgement | null; error: Error | null }> {
+    const rpc = client.rpc as unknown as MutationRpc;
+    const { data, error } = await rpc("apply_user_library_mutation", {
+        p_content_id: input.contentId,
+        p_is_bookmarked: input.isBookmarked,
+        p_progress: input.progress,
+        p_last_interacted_at: input.lastInteractedAt,
+        p_delete_if_empty: input.deleteIfEmpty,
+    });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row) return { data: null, error: error as Error | null };
+    return {
+        data: {
+            resetEpoch: Number(row.reset_epoch),
+            libraryRevision: Number(row.library_revision),
+        },
+        error: error as Error | null,
+    };
 }

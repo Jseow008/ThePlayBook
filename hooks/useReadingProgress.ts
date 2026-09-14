@@ -14,7 +14,7 @@ import {
 import { AuthUser as User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import { deleteUserLibrary, upsertUserLibrary } from "@/lib/server/user-library-repository";
+import { commitUserLibraryMutation } from "@/lib/server/user-library-repository";
 import type { Json } from "@/types/database";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
@@ -140,6 +140,18 @@ function parseProgressTimestamp(value: string) {
     return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
 }
 
+type LocalLibraryMutation = {
+    id: string;
+    accountId: string;
+    scope: StorageScope;
+    itemId: string;
+    sequence: number;
+    sessionGeneration: number;
+    isBookmarked: boolean;
+    progress: ReadingProgressData | null;
+    acknowledgement?: { resetEpoch: number; libraryRevision: number };
+};
+
 function useReadingProgressController(initialUser?: User | null) {
     const queryClient = useQueryClient();
     const [inProgressIds, setInProgressIds] = useState<string[]>([]);
@@ -157,23 +169,34 @@ function useReadingProgressController(initialUser?: User | null) {
     const userRef = useRef<User | null>(null);
     const hydrateRunRef = useRef(0);
     const localMutationGenerationRef = useRef(0);
-    const pendingMutationIdsRef = useRef(new Set<string>());
-    const acknowledgedMutationOverlaysRef = useRef(new Map<string, {
-        scope: StorageScope;
-        resetEpoch: number;
-        minimumRevision: number;
-        isBookmarked: boolean;
-        progress: ReadingProgressData | null;
-    }>());
+    const authenticationGenerationRef = useRef(0);
+    const localMutationsRef = useRef(new Map<string, LocalLibraryMutation>());
+    const mutationSequenceRef = useRef(0);
     const isLoadedRef = useRef(false);
     const didRunLegacyMigrationRef = useRef(false);
     const installedSnapshotStateRef = useRef(new Map<StorageScope, { resetEpoch: number; boundaryRevision: number }>());
 
-    const markLocalMutation = useCallback((itemId?: string) => {
-        if (userRef.current) {
-            localMutationGenerationRef.current += 1;
-            if (itemId) pendingMutationIdsRef.current.add(itemId);
-        }
+    const recordLocalMutation = useCallback((
+        scope: StorageScope,
+        itemId: string,
+        isBookmarked: boolean,
+        progress: ReadingProgressData | null,
+    ) => {
+        const currentUser = userRef.current;
+        if (!currentUser) return null;
+        localMutationGenerationRef.current += 1;
+        const mutation: LocalLibraryMutation = {
+            id: crypto.randomUUID(),
+            accountId: currentUser.id,
+            scope,
+            itemId,
+            sequence: ++mutationSequenceRef.current,
+            sessionGeneration: authenticationGenerationRef.current,
+            isBookmarked,
+            progress,
+        };
+        localMutationsRef.current.set(mutation.id, mutation);
+        return mutation.id;
     }, []);
 
     const readProgressFromScope = useCallback((scope: StorageScope, itemId: string) => {
@@ -185,17 +208,11 @@ function useReadingProgressController(initialUser?: User | null) {
         }
     }, []);
 
-    const acknowledgeMutation = useCallback((scope: StorageScope, itemId: string) => {
-        const boundary = installedSnapshotStateRef.current.get(scope) ?? { resetEpoch: 0, boundaryRevision: 0 };
-        acknowledgedMutationOverlaysRef.current.set(`${scope}:${itemId}`, {
-            scope,
-            resetEpoch: boundary.resetEpoch,
-            minimumRevision: boundary.boundaryRevision + 1,
-            isBookmarked: readScopedMyList(localStorage, scope).includes(itemId),
-            progress: readProgressFromScope(scope, itemId),
-        });
-        pendingMutationIdsRef.current.delete(itemId);
-    }, [readProgressFromScope]);
+    const acknowledgeMutation = useCallback((mutationId: string, acknowledgement: { resetEpoch: number; libraryRevision: number }) => {
+        const mutation = localMutationsRef.current.get(mutationId);
+        if (!mutation) return;
+        mutation.acknowledgement = acknowledgement;
+    }, []);
 
     const resetState = useCallback(() => {
         setInProgressIds([]);
@@ -271,73 +288,31 @@ function useReadingProgressController(initialUser?: User | null) {
         currentUser: User | null,
         scope: StorageScope,
         itemId: string,
-        isBookmarked?: boolean,
-        progressData?: ReadingProgressData | null,
+        isBookmarked: boolean,
+        progressData: ReadingProgressData | null,
+        mutationId: string | null,
     ) => {
         if (!currentUser) return true;
-        pendingMutationIdsRef.current.add(itemId);
+        if (!mutationId) return true;
 
         try {
-            let currentBookmarkState = isBookmarked;
-            if (currentBookmarkState === undefined) {
-                currentBookmarkState = readScopedMyList(localStorage, scope).includes(itemId);
-            }
-
-            let currentProgress = progressData;
-            if (currentProgress === undefined) {
-                currentProgress = readProgressFromScope(scope, itemId);
-            }
-
-            if (!currentBookmarkState && currentProgress === null) {
-                const { error } = await deleteUserLibrary(supabase, currentUser.id, itemId);
-
-                if (error) {
-                    logRecoverableCloudSync("Delete cloud progress failed", error, {
-                        itemId,
-                        scope,
-                        userId: currentUser.id,
-                    });
-                    return false;
-                }
-                acknowledgeMutation(scope, itemId);
-                return true;
-            }
-
-            const payload: {
-                user_id: string;
-                content_id: string;
-                last_interacted_at: string;
-                is_bookmarked?: boolean;
-                progress?: ReadingProgressData | null;
-            } = {
-                user_id: currentUser.id,
-                content_id: itemId,
-                last_interacted_at: new Date().toISOString(),
-            };
-
-            if (currentBookmarkState !== undefined) {
-                payload.is_bookmarked = currentBookmarkState;
-            }
-
-            if (currentProgress !== undefined) {
-                payload.progress = currentProgress;
-            }
-
-            const { error } = await upsertUserLibrary(supabase, {
-                ...payload,
-                progress: payload.progress as Json | undefined,
+            const { data, error } = await commitUserLibraryMutation(supabase, {
+                contentId: itemId,
+                isBookmarked,
+                progress: progressData as Json | null,
+                lastInteractedAt: new Date().toISOString(),
+                deleteIfEmpty: !isBookmarked && progressData === null,
             });
 
-            if (error) {
-                logRecoverableCloudSync("Upsert cloud progress failed", error, {
+            if (error || !data) {
+                logRecoverableCloudSync("Commit cloud library mutation failed", error ?? new Error("Missing library acknowledgement"), {
                     itemId,
                     scope,
                     userId: currentUser.id,
                 });
                 return false;
             }
-
-            acknowledgeMutation(scope, itemId);
+            acknowledgeMutation(mutationId, data);
             return true;
         } catch (error) {
             logRecoverableCloudSync("Unexpected cloud sync failure", error, {
@@ -347,7 +322,7 @@ function useReadingProgressController(initialUser?: User | null) {
             });
             return false;
         }
-    }, [acknowledgeMutation, readProgressFromScope, supabase]);
+    }, [acknowledgeMutation, supabase]);
 
     const hydrateCloudSnapshot = useCallback(async (
         currentUser: User,
@@ -374,24 +349,25 @@ function useReadingProgressController(initialUser?: User | null) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
         }
 
-        const overlays = [...acknowledgedMutationOverlaysRef.current.entries()]
-            .filter(([, overlay]) => overlay.scope === scope)
-            .flatMap(([key, overlay]) => {
-                if (snapshot.manifest.resetEpoch > overlay.resetEpoch
-                    || (snapshot.manifest.resetEpoch === overlay.resetEpoch && snapshot.manifest.boundaryLibraryRevision >= overlay.minimumRevision)) {
-                    acknowledgedMutationOverlaysRef.current.delete(key);
+        const mutations = [...localMutationsRef.current.values()]
+            .filter((mutation) => mutation.scope === scope
+                && mutation.accountId === currentUser.id
+                && mutation.sessionGeneration === authenticationGenerationRef.current)
+            .sort((left, right) => left.sequence - right.sequence)
+            .flatMap((mutation) => {
+                const acknowledgement = mutation.acknowledgement;
+                if (!acknowledgement) return [mutation];
+                if (snapshot.manifest.resetEpoch > acknowledgement.resetEpoch
+                    || (snapshot.manifest.resetEpoch === acknowledgement.resetEpoch
+                        && snapshot.manifest.boundaryLibraryRevision >= acknowledgement.libraryRevision)) {
+                    localMutationsRef.current.delete(mutation.id);
                     return [];
                 }
-                if (snapshot.manifest.resetEpoch < overlay.resetEpoch) {
+                if (snapshot.manifest.resetEpoch < acknowledgement.resetEpoch) {
                     throw new Error("Refusing to install a snapshot from before an acknowledged reset epoch.");
                 }
-                return [{ itemId: key.slice(scope.length + 1), isBookmarked: overlay.isBookmarked, progress: overlay.progress }];
+                return [mutation];
             });
-        const pendingLocalState = [...pendingMutationIdsRef.current].map((itemId) => ({
-            itemId,
-            isBookmarked: readScopedMyList(localStorage, scope).includes(itemId),
-            progress: readProgressFromScope(scope, itemId),
-        }));
         clearScopedProgress(localStorage, scope);
         const bookmarkedIds: string[] = [];
         for (const row of snapshot.records) {
@@ -400,12 +376,15 @@ function useReadingProgressController(initialUser?: User | null) {
                 localStorage.setItem(progressKey(scope, row.content_id), JSON.stringify(row.progress));
             }
         }
-        for (const pending of [...pendingLocalState, ...overlays]) {
-            const index = bookmarkedIds.indexOf(pending.itemId);
-            if (pending.isBookmarked && index === -1) bookmarkedIds.push(pending.itemId);
-            if (!pending.isBookmarked && index !== -1) bookmarkedIds.splice(index, 1);
-            if (pending.progress) localStorage.setItem(progressKey(scope, pending.itemId), JSON.stringify(pending.progress));
-            else localStorage.removeItem(progressKey(scope, pending.itemId));
+        // Apply every local mutation in creation order. This makes a newer
+        // pending removal win over an older acknowledged save for the same
+        // item, even when the server responses arrive in the opposite order.
+        for (const mutation of mutations) {
+            const index = bookmarkedIds.indexOf(mutation.itemId);
+            if (mutation.isBookmarked && index === -1) bookmarkedIds.push(mutation.itemId);
+            if (!mutation.isBookmarked && index !== -1) bookmarkedIds.splice(index, 1);
+            if (mutation.progress) localStorage.setItem(progressKey(scope, mutation.itemId), JSON.stringify(mutation.progress));
+            else localStorage.removeItem(progressKey(scope, mutation.itemId));
         }
         writeScopedMyList(localStorage, scope, bookmarkedIds);
         installedSnapshotStateRef.current.set(scope, {
@@ -414,7 +393,7 @@ function useReadingProgressController(initialUser?: User | null) {
         });
         clearLibrarySnapshotIdempotencyKey(currentUser.id);
         return true;
-    }, [readProgressFromScope]);
+    }, []);
 
     const hydrateForUser = useCallback(async (nextUser: User | null, force = false) => {
         if (typeof window === "undefined") return;
@@ -422,6 +401,10 @@ function useReadingProgressController(initialUser?: User | null) {
         const nextScope = getStorageScope(nextUser?.id);
         const currentUserId = userRef.current?.id ?? null;
         const nextUserId = nextUser?.id ?? null;
+
+        if (currentUserId !== nextUserId) {
+            authenticationGenerationRef.current += 1;
+        }
 
         if (!didRunLegacyMigrationRef.current) {
             migrateLegacyStorageToGuest(localStorage);
@@ -472,7 +455,18 @@ function useReadingProgressController(initialUser?: User | null) {
                 }
             })
             .catch((error) => {
-                if (error instanceof LibrarySnapshotClientError && error.code === "SNAPSHOT_BUSY") {
+                // A terminal operation outcome is durable by design. Retrying
+                // it with the same key would only retrieve that same outcome;
+                // discard the key so an explicit retry starts a fresh request.
+                if (error instanceof LibrarySnapshotClientError && new Set([
+                    "SNAPSHOT_BUSY",
+                    "SNAPSHOT_WORKER_INTERRUPTED",
+                    "SNAPSHOT_TIMED_OUT",
+                    "SNAPSHOT_TOO_LARGE",
+                    "SNAPSHOT_ACCOUNT_CAPACITY",
+                    "EXPIRED",
+                    "FAILED",
+                ]).has(error.code)) {
                     clearLibrarySnapshotIdempotencyKey(nextUser.id);
                 }
                 if (runId === hydrateRunRef.current) setHydrationStatus("error");
@@ -543,7 +537,6 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
-        markLocalMutation(itemId);
         localStorage.removeItem(progressKey(scope, itemId));
 
         setInProgressIds((prev) => prev.filter((id) => id !== itemId));
@@ -555,11 +548,13 @@ function useReadingProgressController(initialUser?: User | null) {
         });
 
         if (userRef.current) {
-            syncItemToCloud(userRef.current, scope, itemId, undefined, null);
+            const isBookmarked = readScopedMyList(localStorage, scope).includes(itemId);
+            const mutationId = recordLocalMutation(scope, itemId, isBookmarked, null);
+            syncItemToCloud(userRef.current, scope, itemId, isBookmarked, null, mutationId);
         }
 
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [markLocalMutation, syncItemToCloud]);
+    }, [recordLocalMutation, syncItemToCloud]);
 
     const clearRecommendationMemory = useCallback((scope: StorageScope) => {
         if (typeof window === "undefined") return;
@@ -576,7 +571,6 @@ function useReadingProgressController(initialUser?: User | null) {
         if (typeof window === "undefined") return false;
 
         const scope = scopeRef.current;
-        markLocalMutation(itemId);
         localStorage.removeItem(progressKey(scope, itemId));
         clearRecommendationMemory(scope);
 
@@ -590,7 +584,11 @@ function useReadingProgressController(initialUser?: User | null) {
 
         const currentUser = userRef.current;
         const cloudSync = currentUser
-            ? syncItemToCloud(currentUser, scope, itemId, undefined, null)
+            ? (() => {
+                const isBookmarked = readScopedMyList(localStorage, scope).includes(itemId);
+                return syncItemToCloud(currentUser, scope, itemId, isBookmarked, null,
+                    recordLocalMutation(scope, itemId, isBookmarked, null));
+            })()
             : Promise.resolve(true);
         const activitySync = currentUser
             ? fetch(`/api/activity/history/content/${itemId}`, {
@@ -614,7 +612,7 @@ function useReadingProgressController(initialUser?: User | null) {
         window.dispatchEvent(new Event("netflux_activity_history_updated"));
 
         return didSyncCloud && didSyncActivity;
-    }, [clearRecommendationMemory, markLocalMutation, queryClient, syncItemToCloud]);
+    }, [clearRecommendationMemory, queryClient, recordLocalMutation, syncItemToCloud]);
 
     const archiveFromProgressList = useCallback((itemId: string, list: ProgressLibraryList) => {
         if (typeof window === "undefined") return;
@@ -622,7 +620,6 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
         if (!currentProgress) return;
-        markLocalMutation(itemId);
 
         const nextProgress: ReadingProgressData = {
             ...currentProgress,
@@ -641,9 +638,11 @@ function useReadingProgressController(initialUser?: User | null) {
             setInProgressIds((prev) => prev.filter((id) => id !== itemId));
         }
 
-        syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
+        const isBookmarked = readScopedMyList(localStorage, scope).includes(itemId);
+        syncItemToCloud(userRef.current, scope, itemId, isBookmarked, nextProgress,
+            recordLocalMutation(scope, itemId, isBookmarked, nextProgress));
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [markLocalMutation, readProgressFromScope, syncItemToCloud]);
+    }, [readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
     const restoreProgressListArchive = useCallback((itemId: string, list: ProgressLibraryList) => {
         if (typeof window === "undefined") return;
@@ -651,7 +650,6 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
         if (!currentProgress) return;
-        markLocalMutation(itemId);
 
         const nextProgress = clearArchiveForList(currentProgress, list);
         localStorage.setItem(progressKey(scope, itemId), JSON.stringify(nextProgress));
@@ -666,9 +664,11 @@ function useReadingProgressController(initialUser?: User | null) {
             setCompletedIds((prev) => prev.filter((id) => id !== itemId));
         }
 
-        syncItemToCloud(userRef.current, scope, itemId, undefined, nextProgress);
+        const isBookmarked = readScopedMyList(localStorage, scope).includes(itemId);
+        syncItemToCloud(userRef.current, scope, itemId, isBookmarked, nextProgress,
+            recordLocalMutation(scope, itemId, isBookmarked, nextProgress));
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [insertOrMoveToFront, markLocalMutation, readProgressFromScope, syncItemToCloud]);
+    }, [insertOrMoveToFront, readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
     const addToMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
@@ -676,13 +676,15 @@ function useReadingProgressController(initialUser?: User | null) {
         const scope = scopeRef.current;
         const currentList = readScopedMyList(localStorage, scope);
         if (currentList.includes(itemId)) return;
-        markLocalMutation(itemId);
 
         const newList = [itemId, ...currentList];
         writeScopedMyList(localStorage, scope, newList);
         setMyListIds(newList);
 
-        void syncItemToCloud(userRef.current, scope, itemId, true, undefined)
+        const progress = readProgressFromScope(scope, itemId);
+        const mutationId = recordLocalMutation(scope, itemId, true, progress);
+
+        void syncItemToCloud(userRef.current, scope, itemId, true, progress, mutationId)
             .then((didSync) => {
                 if (!didSync) return;
 
@@ -694,22 +696,23 @@ function useReadingProgressController(initialUser?: User | null) {
                 });
             });
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [markLocalMutation, syncItemToCloud]);
+    }, [readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
     const removeFromMyList = useCallback((itemId: string) => {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
         const currentList = readScopedMyList(localStorage, scope);
-        markLocalMutation(itemId);
         const newList = currentList.filter((id) => id !== itemId);
 
         writeScopedMyList(localStorage, scope, newList);
         setMyListIds(newList);
 
-        syncItemToCloud(userRef.current, scope, itemId, false, undefined);
+        const progress = readProgressFromScope(scope, itemId);
+        syncItemToCloud(userRef.current, scope, itemId, false, progress,
+            recordLocalMutation(scope, itemId, false, progress));
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [markLocalMutation, syncItemToCloud]);
+    }, [readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
     const toggleMyList = useCallback((itemId: string) => {
         if (myListIds.includes(itemId)) {
@@ -725,7 +728,6 @@ function useReadingProgressController(initialUser?: User | null) {
 
         const scope = scopeRef.current;
         const currentProgress = readProgressFromScope(scope, itemId);
-        markLocalMutation(itemId);
         const nextProgressData: ReadingProgressData = data.isCompleted
             ? {
                 ...data,
@@ -751,7 +753,9 @@ function useReadingProgressController(initialUser?: User | null) {
             setCompletedIds((prev) => prev.filter((id) => id !== itemId));
         }
 
-        void syncItemToCloud(userRef.current, scope, itemId, undefined, nextData)
+        const isBookmarked = readScopedMyList(localStorage, scope).includes(itemId);
+        void syncItemToCloud(userRef.current, scope, itemId, isBookmarked, nextData,
+            recordLocalMutation(scope, itemId, isBookmarked, nextData))
             .then((didSync) => {
                 if (!didSync || !nextData.isCompleted || currentProgress?.isCompleted) {
                     return;
@@ -765,7 +769,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 });
             });
         window.dispatchEvent(new Event("netflux_progress_updated"));
-    }, [insertOrMoveToFront, markLocalMutation, readProgressFromScope, syncItemToCloud]);
+    }, [insertOrMoveToFront, readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
     const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);

@@ -2,14 +2,17 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import { Pool, type PoolClient } from "pg";
+import type { LibrarySnapshotWireRecord } from "@/lib/account-data-wire";
 
 export const LIBRARY_SNAPSHOT_COLLECTION = "user_library";
 export const LIBRARY_SNAPSHOT_SCHEMA_VERSION = 1;
-export const LIBRARY_SNAPSHOT_MAX_RECORDS = 1_000;
+export const LIBRARY_SNAPSHOT_MAX_RECORDS = 10_000;
 export const LIBRARY_SNAPSHOT_MAX_BYTES = 25 * 1024 * 1024;
 export const LIBRARY_SNAPSHOT_MAX_ACCOUNT_BYTES = 75 * 1024 * 1024;
 export const LIBRARY_SNAPSHOT_TTL_MS = 24 * 60 * 60 * 1000;
 export const LIBRARY_SNAPSHOT_GLOBAL_CONCURRENCY = 4;
+const LIBRARY_SNAPSHOT_OPERATION_LEASE_MS = 45_000;
+const LIBRARY_SNAPSHOT_OPERATION_DEADLINE_MS = 30_000;
 
 type OperationStatus = "building" | "ready" | "failed" | "aborted";
 
@@ -36,16 +39,7 @@ export type LibrarySnapshotManifest = {
 
 export type LibrarySnapshotPage = {
     manifest: LibrarySnapshotManifest;
-    records: Array<{
-        ordinal: number;
-        payloadHash: string;
-        contentId: string;
-        isBookmarked: boolean | null;
-        progress: Record<string, unknown> | null;
-        lastInteractedAt: string | null;
-        libraryUpdatedAt: string;
-        libraryRevision: number;
-    }>;
+    records: LibrarySnapshotWireRecord[];
     hasNextPage: boolean;
 };
 
@@ -78,7 +72,9 @@ function getPool() {
         );
     }
 
-    pool = new Pool({ connectionString, max: 4, idleTimeoutMillis: 10_000 });
+    // The four active copy slots are enforced by distributed advisory locks;
+    // leave spare connections for lease renewal and recovery.
+    pool = new Pool({ connectionString, max: 6, idleTimeoutMillis: 10_000 });
     return pool;
 }
 
@@ -239,20 +235,86 @@ async function cleanupExpiredSnapshots(client: PoolClient, accountId: string) {
     }
 }
 
+function accountLockName(accountId: string) {
+    return `account-data:${accountId}`;
+}
+
+async function tryAcquireAccountLock(client: PoolClient, accountId: string) {
+    const result = await client.query<{ locked: boolean }>(
+        "SELECT pg_try_advisory_lock(hashtext($1)) AS locked",
+        [accountLockName(accountId)],
+    );
+    return result.rows[0]?.locked === true;
+}
+
+async function releaseAccountLock(client: PoolClient, accountId: string) {
+    await client.query("SELECT pg_advisory_unlock(hashtext($1))", [accountLockName(accountId)]).catch(() => undefined);
+}
+
+function startOperationLeaseRenewal(accountId: string, operationId: string) {
+    let stopped = false;
+    let inFlight: Promise<void> | null = null;
+    const renew = () => {
+        if (stopped || inFlight) return;
+        inFlight = (async () => {
+            const client = await getPool().connect();
+            try {
+                await withRestrictedWorkerTransaction(client, accountId, async () => {
+                    await client.query(
+                        `UPDATE snapshot_private.account_data_snapshot_operations
+                         SET lease_expires_at = now() + interval '45 seconds', updated_at = now()
+                         WHERE id = $1 AND status = 'building'`,
+                        [operationId],
+                    );
+                });
+            } finally {
+                client.release();
+            }
+        })().catch((error) => {
+            console.error("Account-data snapshot lease renewal failed", { operationId, error });
+        }).finally(() => {
+            inFlight = null;
+        });
+    };
+    const timer = setInterval(renew, Math.floor(LIBRARY_SNAPSHOT_OPERATION_LEASE_MS / 3));
+    timer.unref?.();
+    return async () => {
+        stopped = true;
+        clearInterval(timer);
+        await inFlight;
+    };
+}
+
 export async function reconcileExpiredAccountDataSnapshots() {
     const client = await getMaintenancePool().connect();
     try {
         return await withSnapshotMaintenanceTransaction(client, async () => {
-            const aborted = await client.query(
-                `UPDATE snapshot_private.account_data_snapshot_operations
-                 SET status = 'aborted', failure_code = 'SNAPSHOT_WORKER_INTERRUPTED', lease_expires_at = NULL, updated_at = now()
-                 WHERE status = 'building' AND lease_expires_at <= now()
-                   AND NOT EXISTS (
-                       SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
-                       WHERE snapshot.operation_id = account_data_snapshot_operations.id
-                         AND snapshot.status = 'ready'
-                   )`,
+            const expiredOperations = await client.query<{ id: string; account_id: string }>(
+                `SELECT id, account_id
+                 FROM snapshot_private.account_data_snapshot_operations
+                 WHERE status = 'building' AND lease_expires_at <= now()`,
             );
+            let abortedCount = 0;
+            for (const operation of expiredOperations.rows) {
+                if (!await tryAcquireAccountLock(client, operation.account_id)) continue;
+                try {
+                    const aborted = await client.query(
+                        `UPDATE snapshot_private.account_data_snapshot_operations operation
+                         SET status = 'aborted', failure_code = 'SNAPSHOT_WORKER_INTERRUPTED', lease_expires_at = NULL, updated_at = now()
+                         WHERE operation.id = $1
+                           AND operation.status = 'building'
+                           AND operation.lease_expires_at <= now()
+                           AND NOT EXISTS (
+                               SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
+                               WHERE snapshot.operation_id = operation.id AND snapshot.status = 'ready'
+                           )`,
+                        [operation.id],
+                    );
+                    abortedCount += aborted.rowCount ?? 0;
+                } finally {
+                    await releaseAccountLock(client, operation.account_id);
+                }
+            }
             const expired = await client.query(
                 `DELETE FROM snapshot_private.account_data_snapshots WHERE expires_at <= now()`,
             );
@@ -265,7 +327,7 @@ export async function reconcileExpiredAccountDataSnapshots() {
                        WHERE snapshot.operation_id = operation.id
                    )`,
             );
-            return { aborted: aborted.rowCount ?? 0, expired: expired.rowCount ?? 0, pruned: pruned.rowCount ?? 0 };
+            return { aborted: abortedCount, expired: expired.rowCount ?? 0, pruned: pruned.rowCount ?? 0 };
         });
     } finally {
         client.release();
@@ -310,6 +372,13 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
     const fingerprint = requestFingerprint();
     const snapshotId = randomUUID();
     let globalSlot: number | null = null;
+    let stopLeaseRenewal: (() => Promise<void>) | null = null;
+    const startedAt = Date.now();
+    const ensureDeadline = () => {
+        if (Date.now() - startedAt > LIBRARY_SNAPSHOT_OPERATION_DEADLINE_MS) {
+            throw new AccountDataSnapshotError("TIMED_OUT", "SNAPSHOT_TIMED_OUT");
+        }
+    };
 
     try {
         // This commit deliberately precedes the snapshot-copy transaction. It
@@ -364,22 +433,41 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
                 if (row.lease_expires_at && new Date(row.lease_expires_at).getTime() > Date.now()) {
                     return { state: "building" as const, snapshotId: operation.snapshot_id };
                 }
-                // A stale operation is reconciled to a stable terminal result,
-                // never rebuilt under the same idempotency key. The client can
-                // choose a new key to request a fresh snapshot.
-                await client.query(
-                    `UPDATE snapshot_private.account_data_snapshot_operations
-                     SET status = 'aborted', failure_code = 'SNAPSHOT_WORKER_INTERRUPTED', lease_expires_at = NULL, updated_at = now()
-                     WHERE id = $1 AND status = 'building'`,
-                    [operation.id],
-                );
-                return { state: "failed" as const, snapshotId: operation.snapshot_id, code: "SNAPSHOT_WORKER_INTERRUPTED" };
+                return { state: "building" as const, snapshotId: operation.snapshot_id };
             });
-            return existing;
+            if (existing.state !== "building") return existing;
+            // An expired lease alone is not proof that its worker died. Only
+            // the holder of the account lock may complete the operation; if
+            // that lock is live, preserve the stable building outcome.
+            if (!await tryAcquireAccountLock(client, accountId)) return existing;
+            try {
+                return await withRestrictedWorkerTransaction(client, accountId, async () => {
+                    const aborted = await client.query<{ snapshot_id: string }>(
+                        `UPDATE snapshot_private.account_data_snapshot_operations operation
+                         SET status = 'aborted', failure_code = 'SNAPSHOT_WORKER_INTERRUPTED', lease_expires_at = NULL, updated_at = now()
+                         WHERE operation.id = $1
+                           AND operation.status = 'building'
+                           AND operation.lease_expires_at <= now()
+                           AND NOT EXISTS (
+                               SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
+                               WHERE snapshot.operation_id = operation.id AND snapshot.status = 'ready'
+                           )
+                         RETURNING snapshot_id`,
+                        [operation.id],
+                    );
+                    if (aborted.rows[0]) {
+                        return { state: "failed" as const, snapshotId: operation.snapshot_id, code: "SNAPSHOT_WORKER_INTERRUPTED" };
+                    }
+                    const refreshed = await getReadyManifest(client, accountId, operation.snapshot_id, true);
+                    if (refreshed) return { state: "ready" as const, manifest: refreshed };
+                    return { state: "building" as const, snapshotId: operation.snapshot_id };
+                });
+            } finally {
+                await releaseAccountLock(client, accountId);
+            }
         }
 
-        const lockResult = await client.query<{ locked: boolean }>("SELECT pg_try_advisory_lock(hashtext($1)) AS locked", [`account-data:${accountId}`]);
-        if (!lockResult.rows[0]?.locked) {
+        if (!await tryAcquireAccountLock(client, accountId)) {
             await withRestrictedWorkerTransaction(client, accountId, async () => {
                 await persistOperationFailure(client, operation.id, "SNAPSHOT_BUSY");
             });
@@ -387,6 +475,7 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
         }
 
         try {
+            stopLeaseRenewal = startOperationLeaseRenewal(accountId, operation.id);
             globalSlot = await acquireGlobalSnapshotSlot(client);
             if (globalSlot === null) {
                 await withRestrictedWorkerTransaction(client, accountId, async () => {
@@ -397,10 +486,6 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
             await withRestrictedWorkerTransaction(client, accountId, async () => {
                 await cleanupExpiredSnapshots(client, accountId);
             });
-            const startedAt = Date.now();
-            const ensureDeadline = () => {
-                if (Date.now() - startedAt > 30_000) throw new AccountDataSnapshotError("TIMED_OUT", "SNAPSHOT_TIMED_OUT");
-            };
             const snapshotExpiry = expiresAt();
             const manifest = await withRestrictedWorkerSnapshotTransaction(client, accountId, async () => {
                 const state = await client.query<{ reset_epoch: number; current_revision: number }>(
@@ -532,10 +617,11 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
             });
             return { state: "failed", snapshotId: operation.snapshot_id, code };
         } finally {
+            await stopLeaseRenewal?.();
             if (globalSlot !== null) {
                 await client.query("SELECT pg_advisory_unlock($1, $2)", [91_007, globalSlot]).catch(() => undefined);
             }
-            await client.query("SELECT pg_advisory_unlock(hashtext($1))", [`account-data:${accountId}`]).catch(() => undefined);
+            await releaseAccountLock(client, accountId);
         }
     } finally {
         client.release();
@@ -571,12 +657,12 @@ export async function getLibrarySnapshotPage(accountId: string, snapshotId: stri
             return {
                 manifest,
                 records: rows.slice(0, pageSize).map((row) => ({
-                    contentId: row.payload.content_id,
-                    isBookmarked: row.payload.is_bookmarked,
+                    content_id: row.payload.content_id,
+                    is_bookmarked: row.payload.is_bookmarked,
                     progress: row.payload.progress,
-                    lastInteractedAt: row.payload.last_interacted_at,
-                    libraryUpdatedAt: row.payload.library_updated_at,
-                    libraryRevision: row.payload.library_revision,
+                    last_interacted_at: row.payload.last_interacted_at,
+                    library_updated_at: row.payload.library_updated_at,
+                    library_revision: row.payload.library_revision,
                     ordinal: Number(row.ordinal),
                     payloadHash: payloadHash(row.payload),
                 })),
@@ -605,7 +691,8 @@ export async function getLiveLibraryPage(
             library_updated_at: string;
             library_revision: number;
         }>(
-            `SELECT content_id, is_bookmarked, progress, last_interacted_at, library_updated_at, library_revision
+            `SELECT content_id, is_bookmarked, progress, last_interacted_at,
+                    library_updated_at::text AS library_updated_at, library_revision
              FROM public.user_library
              WHERE user_id = $1
                AND (
