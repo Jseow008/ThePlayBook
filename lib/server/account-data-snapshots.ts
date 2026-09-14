@@ -492,6 +492,13 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
                 if (!row || row.status === "failed" || row.status === "aborted") {
                     return { state: "failed" as const, snapshotId: operation.snapshot_id, code: row?.failure_code ?? "SNAPSHOT_FAILED" };
                 }
+                // A completed operation is immutable. Once its only ready
+                // snapshot expires, the same idempotency key cannot be
+                // rebuilt; return a terminal result so the client can make an
+                // explicit fresh attempt with a new key.
+                if (row.status === "ready") {
+                    return { state: "failed" as const, snapshotId: operation.snapshot_id, code: "SNAPSHOT_EXPIRED" };
+                }
                 if (row.lease_expires_at && new Date(row.lease_expires_at).getTime() > Date.now()) {
                     return { state: "building" as const, snapshotId: operation.snapshot_id };
                 }

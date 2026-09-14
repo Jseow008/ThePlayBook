@@ -151,6 +151,22 @@ type LocalLibraryMutation = {
     acknowledgement?: { resetEpoch: number; libraryRevision: number };
 };
 
+const terminalSnapshotOutcomeCodes = new Set([
+    "SNAPSHOT_BUSY",
+    "SNAPSHOT_WORKER_INTERRUPTED",
+    "TIMED_OUT",
+    "SNAPSHOT_TIMED_OUT",
+    "SNAPSHOT_FAILED",
+    "SNAPSHOT_TOO_LARGE",
+    "SNAPSHOT_ACCOUNT_CAPACITY",
+    "SNAPSHOT_CLEANUP_FAILED",
+    "SNAPSHOT_EXPIRED",
+    "IDEMPOTENCY_KEY_REUSED",
+    "NOT_FOUND",
+    "EXPIRED",
+    "FAILED",
+]);
+
 function useReadingProgressController(initialUser?: User | null) {
     const queryClient = useQueryClient();
     const [inProgressIds, setInProgressIds] = useState<string[]>([]);
@@ -337,24 +353,41 @@ function useReadingProgressController(initialUser?: User | null) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
         }
 
-        const mutations = [...localMutationsRef.current.values()]
+        const scopedMutations = [...localMutationsRef.current.values()]
             .filter((mutation) => mutation.scope === scope
                 && mutation.accountId === currentUser.id
                 && mutation.sessionGeneration === authenticationGenerationRef.current)
-            .sort((left, right) => left.sequence - right.sequence)
-            .flatMap((mutation) => {
+            .sort((left, right) => left.sequence - right.sequence);
+        const isAcknowledgementIncluded = (mutation: LocalLibraryMutation) => {
+            const acknowledgement = mutation.acknowledgement;
+            if (!acknowledgement) return false;
+            if (snapshot.manifest.resetEpoch < acknowledgement.resetEpoch) {
+                throw new Error("Refusing to install a snapshot from before an acknowledged reset epoch.");
+            }
+            return snapshot.manifest.resetEpoch > acknowledgement.resetEpoch
+                || snapshot.manifest.boundaryLibraryRevision >= acknowledgement.libraryRevision;
+        };
+        const mutations = scopedMutations.flatMap((mutation) => {
                 const acknowledgement = mutation.acknowledgement;
                 if (!acknowledgement) return [mutation];
-                if (snapshot.manifest.resetEpoch > acknowledgement.resetEpoch
-                    || (snapshot.manifest.resetEpoch === acknowledgement.resetEpoch
-                        && snapshot.manifest.boundaryLibraryRevision >= acknowledgement.libraryRevision)) {
-                    localMutationsRef.current.delete(mutation.id);
-                    return [];
-                }
-                if (snapshot.manifest.resetEpoch < acknowledgement.resetEpoch) {
-                    throw new Error("Refusing to install a snapshot from before an acknowledged reset epoch.");
-                }
-                return [mutation];
+
+                const acknowledgementIncluded = isAcknowledgementIncluded(mutation);
+                if (!acknowledgementIncluded) return [mutation];
+
+                // Do not let a delayed acknowledgement for an older mutation
+                // resurrect state after a newer action is already confirmed by
+                // this snapshot. Keep the newer overlay until every earlier
+                // action for that item is settled (or it is explicitly
+                // superseded by another confirmed action).
+                const hasEarlierUnsettledMutation = scopedMutations.some((candidate) => (
+                    candidate.itemId === mutation.itemId
+                    && candidate.sequence < mutation.sequence
+                    && !isAcknowledgementIncluded(candidate)
+                ));
+                if (hasEarlierUnsettledMutation) return [mutation];
+
+                localMutationsRef.current.delete(mutation.id);
+                return [];
             });
         clearScopedProgress(localStorage, scope);
         const bookmarkedIds: string[] = [];
@@ -446,15 +479,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 // A terminal operation outcome is durable by design. Retrying
                 // it with the same key would only retrieve that same outcome;
                 // discard the key so an explicit retry starts a fresh request.
-                if (error instanceof LibrarySnapshotClientError && new Set([
-                    "SNAPSHOT_BUSY",
-                    "SNAPSHOT_WORKER_INTERRUPTED",
-                    "SNAPSHOT_TIMED_OUT",
-                    "SNAPSHOT_TOO_LARGE",
-                    "SNAPSHOT_ACCOUNT_CAPACITY",
-                    "EXPIRED",
-                    "FAILED",
-                ]).has(error.code)) {
+                if (error instanceof LibrarySnapshotClientError && terminalSnapshotOutcomeCodes.has(error.code)) {
                     clearLibrarySnapshotIdempotencyKey(nextUser.id);
                 }
                 if (runId === hydrateRunRef.current) setHydrationStatus("error");

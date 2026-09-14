@@ -611,9 +611,51 @@ describe("useReadingProgress", () => {
         await act(async () => { resolveRemoval({ resetEpoch: 0, libraryRevision: 2 }); });
     });
 
-    it("uses a fresh snapshot key after a terminal operation outcome", async () => {
+    it("keeps a newer confirmed removal ahead of an older save whose acknowledgement arrives late", async () => {
+        let resolveOlderSave!: (value: unknown) => void;
+        const olderSave = new Promise((resolve) => { resolveOlderSave = resolve; });
+        const emptySnapshot = {
+            manifest: { snapshotId: "base", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 0, expiresAt: "2030-01-01T00:00:00.000Z" },
+            records: [],
+        };
+        const removalSnapshot = {
+            manifest: { snapshotId: "removal-confirmed", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 2, expiresAt: "2030-01-01T00:00:00.000Z" },
+            records: [],
+        };
         (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
-            .mockRejectedValueOnce(new LibrarySnapshotClientError("Worker interrupted", "SNAPSHOT_WORKER_INTERRUPTED"));
+            .mockResolvedValueOnce(emptySnapshot)
+            .mockResolvedValueOnce(removalSnapshot)
+            .mockResolvedValueOnce(removalSnapshot);
+        commitMutationMock
+            .mockImplementationOnce(() => olderSave)
+            .mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 2 });
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+        currentAuthUser = { id: "user-a" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+
+        act(() => result.current.addToMyList("item-reverse-ack"));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        act(() => result.current.removeFromMyList("item-reverse-ack"));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
+
+        // The removal is confirmed by the snapshot while the earlier save's
+        // response is delayed. Its overlay must remain to suppress the save.
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+
+        await act(async () => { resolveOlderSave({ resetEpoch: 0, libraryRevision: 1 }); });
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+    });
+
+    it.each(["TIMED_OUT", "SNAPSHOT_FAILED", "SNAPSHOT_EXPIRED"])("uses a fresh snapshot key after terminal %s outcome", async (code) => {
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
+            .mockRejectedValueOnce(new LibrarySnapshotClientError("Terminal snapshot outcome", code));
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
         currentAuthUser = { id: "user-a" };
