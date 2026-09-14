@@ -74,6 +74,22 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         await workerDb.query("SELECT set_config('app.snapshot_account_id', $1, false)", [accountA]);
         const rows = await workerDb.query<{ user_id: string }>("SELECT user_id FROM public.user_library");
         expect(rows.rows).toEqual([{ user_id: accountA }]);
+
+        await workerDb.query("BEGIN");
+        try {
+            await workerDb.query("SELECT set_config('app.snapshot_account_id', $1, true)", [accountA]);
+            const ownWrite = await workerDb.query(
+                "UPDATE public.user_library SET is_bookmarked = false WHERE user_id = $1 AND content_id = $2",
+                [accountA, contentA],
+            );
+            expect(ownWrite.rowCount).toBe(1);
+            await expect(workerDb.query(
+                "INSERT INTO public.user_library (user_id, content_id, is_bookmarked) VALUES ($1, $2, true)",
+                [accountB, contentA],
+            )).rejects.toMatchObject({ code: "42501" });
+        } finally {
+            await workerDb.query("ROLLBACK");
+        }
     });
 
     it("keeps a snapshot isolated and immutable across saves, removals, and a reset", async () => {

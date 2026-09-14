@@ -81,5 +81,25 @@ BEGIN
 END;
 $worker$;
 
+DO $worker_writes$
+BEGIN
+    UPDATE public.user_library
+    SET is_bookmarked = false
+    WHERE user_id = '10700000-0000-4000-8000-000000000001'
+      AND content_id = '10700000-0000-4000-8000-000000000003';
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'DB-107 worker could not write its bound account library row';
+    END IF;
+
+    BEGIN
+        INSERT INTO public.user_library (user_id, content_id, is_bookmarked)
+        VALUES ('10700000-0000-4000-8000-000000000002', '10700000-0000-4000-8000-000000000003', true);
+        RAISE EXCEPTION 'DB-107 worker wrote a foreign account library row';
+    EXCEPTION
+        WHEN insufficient_privilege THEN NULL;
+    END;
+END;
+$worker_writes$;
+
 RESET ROLE;
 ROLLBACK;
