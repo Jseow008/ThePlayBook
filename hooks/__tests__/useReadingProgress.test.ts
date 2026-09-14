@@ -30,7 +30,7 @@ let currentCloudRows: Array<{
     last_interacted_at: string;
 }> = [];
 const upsertMock = vi.fn();
-const rpcMock = vi.fn();
+const { commitMutationMock } = vi.hoisted(() => ({ commitMutationMock: vi.fn() }));
 const deleteMatchMock = vi.fn();
 const selectMock = vi.fn();
 const eqMock = vi.fn();
@@ -59,8 +59,11 @@ vi.mock("@/lib/supabase/client", () => ({
             getUser: vi.fn(() => Promise.resolve({ data: { user: currentAuthUser }, error: currentAuthError })),
         },
         from: vi.fn(() => userLibraryTable),
-        rpc: rpcMock,
     }),
+}));
+
+vi.mock("@/lib/user-library-mutation-client", () => ({
+    commitUserLibraryMutation: commitMutationMock,
 }));
 
 vi.mock("@/lib/account-data-client", () => ({
@@ -134,7 +137,7 @@ describe("useReadingProgress", () => {
         currentCloudRows = [];
         window.localStorage.clear();
         upsertMock.mockResolvedValue({ error: null });
-        rpcMock.mockResolvedValue({ data: [{ reset_epoch: 0, library_revision: 1 }], error: null });
+        commitMutationMock.mockResolvedValue({ resetEpoch: 0, libraryRevision: 1 });
         deleteMatchMock.mockResolvedValue({ error: null });
         vi.clearAllMocks();
         (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => Promise.resolve({
@@ -527,7 +530,7 @@ describe("useReadingProgress", () => {
             .mockImplementationOnce(() => firstSnapshot)
             .mockImplementationOnce(() => olderSnapshot)
             .mockImplementationOnce(() => currentSnapshot);
-        rpcMock.mockImplementationOnce(() => save);
+        commitMutationMock.mockImplementationOnce(() => save);
 
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
@@ -552,7 +555,7 @@ describe("useReadingProgress", () => {
         // A different device advances the library from revision 10 through
         // 20 before this save commits at 21. The acknowledgement must carry
         // 21—not a client-side guess of 11—so the stale snapshot retains it.
-        await act(async () => { resolveSave({ data: [{ reset_epoch: 0, library_revision: 21 }], error: null }); });
+        await act(async () => { resolveSave({ resetEpoch: 0, libraryRevision: 21 }); });
         await act(async () => {
             resolveOlderSnapshot({ manifest: { snapshotId: "snapshot-stale", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 20, expiresAt: "2030-01-01T00:00:00.000Z" }, records: [] });
         });
@@ -586,8 +589,8 @@ describe("useReadingProgress", () => {
         (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
             .mockResolvedValueOnce(emptySnapshot)
             .mockResolvedValueOnce(savedSnapshot);
-        rpcMock
-            .mockResolvedValueOnce({ data: [{ reset_epoch: 0, library_revision: 1 }], error: null })
+        commitMutationMock
+            .mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 1 })
             .mockImplementationOnce(() => pendingRemoval);
 
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
@@ -597,15 +600,15 @@ describe("useReadingProgress", () => {
         await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
 
         act(() => result.current.addToMyList("item-ordered"));
-        await waitFor(() => expect(rpcMock).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
         act(() => result.current.removeFromMyList("item-ordered"));
-        await waitFor(() => expect(rpcMock).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
 
         act(() => result.current.retryHydration());
         await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
         expect(result.current.myListIds).toEqual([]);
 
-        await act(async () => { resolveRemoval({ data: [{ reset_epoch: 0, library_revision: 2 }], error: null }); });
+        await act(async () => { resolveRemoval({ resetEpoch: 0, libraryRevision: 2 }); });
     });
 
     it("uses a fresh snapshot key after a terminal operation outcome", async () => {

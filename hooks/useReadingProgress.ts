@@ -13,8 +13,7 @@ import {
 } from "react";
 import { AuthUser as User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
-import { createClient } from "@/lib/supabase/client";
-import { commitUserLibraryMutation } from "@/lib/server/user-library-repository";
+import { commitUserLibraryMutation } from "@/lib/user-library-mutation-client";
 import type { Json } from "@/types/database";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
@@ -162,9 +161,6 @@ function useReadingProgressController(initialUser?: User | null) {
     const [hydrationStatus, setHydrationStatus] = useState<"idle" | "hydrating" | "ready" | "error">("idle");
     const [user, setUser] = useState<User | null>(initialUser ?? null);
     const [storageScope, setStorageScope] = useState<StorageScope>(getStorageScope(initialUser?.id));
-    const supabaseRef = useRef(createClient());
-    const supabase = supabaseRef.current;
-
     const scopeRef = useRef<StorageScope>(getStorageScope(null));
     const userRef = useRef<User | null>(null);
     const hydrateRunRef = useRef(0);
@@ -296,7 +292,7 @@ function useReadingProgressController(initialUser?: User | null) {
         if (!mutationId) return true;
 
         try {
-            const { data, error } = await commitUserLibraryMutation(supabase, {
+            const data = await commitUserLibraryMutation({
                 contentId: itemId,
                 isBookmarked,
                 progress: progressData as Json | null,
@@ -304,14 +300,6 @@ function useReadingProgressController(initialUser?: User | null) {
                 deleteIfEmpty: !isBookmarked && progressData === null,
             });
 
-            if (error || !data) {
-                logRecoverableCloudSync("Commit cloud library mutation failed", error ?? new Error("Missing library acknowledgement"), {
-                    itemId,
-                    scope,
-                    userId: currentUser.id,
-                });
-                return false;
-            }
             acknowledgeMutation(mutationId, data);
             return true;
         } catch (error) {
@@ -322,7 +310,7 @@ function useReadingProgressController(initialUser?: User | null) {
             });
             return false;
         }
-    }, [acknowledgeMutation, supabase]);
+    }, [acknowledgeMutation]);
 
     const hydrateCloudSnapshot = useCallback(async (
         currentUser: User,

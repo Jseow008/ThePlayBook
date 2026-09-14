@@ -358,6 +358,68 @@ export async function resetLibraryForAccount(accountId: string) {
     }
 }
 
+/**
+ * Commits a library mutation through the account-bound worker and returns the
+ * exact library boundary from the same transaction. This must remain a
+ * server-only operation: browser clients receive the acknowledgement through
+ * the authenticated route and never get direct access to worker privileges.
+ */
+export async function commitLibraryMutationForAccount(
+    accountId: string,
+    input: {
+        contentId: string;
+        isBookmarked: boolean;
+        progress: unknown | null;
+        lastInteractedAt: string;
+        deleteIfEmpty: boolean;
+    },
+) {
+    const client = await getPool().connect();
+    try {
+        return await withRestrictedWorkerTransaction(client, accountId, async () => {
+            if (input.deleteIfEmpty) {
+                await client.query(
+                    "DELETE FROM public.user_library WHERE user_id = $1 AND content_id = $2",
+                    [accountId, input.contentId],
+                );
+            } else {
+                await client.query(
+                    `INSERT INTO public.user_library
+                        (user_id, content_id, is_bookmarked, progress, last_interacted_at)
+                     VALUES ($1, $2, $3, $4::jsonb, $5::timestamptz)
+                     ON CONFLICT (user_id, content_id) DO UPDATE
+                     SET is_bookmarked = EXCLUDED.is_bookmarked,
+                         progress = EXCLUDED.progress,
+                         last_interacted_at = EXCLUDED.last_interacted_at`,
+                    [
+                        accountId,
+                        input.contentId,
+                        input.isBookmarked,
+                        input.progress === null ? null : JSON.stringify(input.progress),
+                        input.lastInteractedAt,
+                    ],
+                );
+            }
+
+            const state = await client.query<{ reset_epoch: string; current_revision: string }>(
+                `SELECT reset_epoch, current_revision
+                 FROM public.account_library_state
+                 WHERE user_id = $1`,
+                [accountId],
+            );
+            const row = state.rows[0];
+            // A delete of a never-written item is a valid idempotent mutation.
+            if (!row) return { resetEpoch: 0, libraryRevision: 0 };
+            return {
+                resetEpoch: Number(row.reset_epoch),
+                libraryRevision: Number(row.current_revision),
+            };
+        });
+    } finally {
+        client.release();
+    }
+}
+
 async function persistOperationFailure(client: PoolClient, operationId: string, code: string) {
     await client.query(
         `UPDATE snapshot_private.account_data_snapshot_operations

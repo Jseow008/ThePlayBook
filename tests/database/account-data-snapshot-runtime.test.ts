@@ -19,13 +19,14 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     let createLibrarySnapshot: typeof import("@/lib/server/account-data-snapshots").createLibrarySnapshot;
     let getLibrarySnapshotPage: typeof import("@/lib/server/account-data-snapshots").getLibrarySnapshotPage;
     let getLiveLibraryPage: typeof import("@/lib/server/account-data-snapshots").getLiveLibraryPage;
+    let commitLibraryMutationForAccount: typeof import("@/lib/server/account-data-snapshots").commitLibraryMutationForAccount;
     let resetLibraryForAccount: typeof import("@/lib/server/account-data-snapshots").resetLibraryForAccount;
     let resetAccountDataSnapshotPoolForTests: typeof import("@/lib/server/account-data-snapshots").resetAccountDataSnapshotPoolForTests;
 
     beforeAll(async () => {
         // Import after the CI-only URL is available so the server pool cannot
         // accidentally fall back to a linked or production database.
-        ({ createLibrarySnapshot, getLibrarySnapshotPage, getLiveLibraryPage, resetLibraryForAccount, resetAccountDataSnapshotPoolForTests } = await import("@/lib/server/account-data-snapshots"));
+        ({ createLibrarySnapshot, getLibrarySnapshotPage, getLiveLibraryPage, commitLibraryMutationForAccount, resetLibraryForAccount, resetAccountDataSnapshotPoolForTests } = await import("@/lib/server/account-data-snapshots"));
         await db.query(
             `INSERT INTO auth.users
                 (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
@@ -101,31 +102,22 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         expect(Number(current.rows[0]?.current_revision)).toBeGreaterThan(ready.manifest.boundaryLibraryRevision);
     });
 
-    it("returns the authoritative reset epoch and revision from an authenticated mutation", async () => {
-        const client = await db.connect();
-        try {
-            await client.query("BEGIN");
-            await client.query("SET LOCAL ROLE authenticated");
-            await client.query("SELECT set_config('request.jwt.claim.sub', $1, true)", [accountA]);
-            const acknowledgement = await client.query<{ reset_epoch: string; library_revision: string }>(
-                `SELECT * FROM public.apply_user_library_mutation(
-                    $1, true, NULL, now(), false
-                )`,
-                [contentA],
-            );
-            await client.query("COMMIT");
-            const current = await db.query<{ reset_epoch: string; current_revision: string }>(
-                "SELECT reset_epoch, current_revision FROM public.account_library_state WHERE user_id = $1",
-                [accountA],
-            );
-            expect(acknowledgement.rows[0]).toEqual({
-                reset_epoch: current.rows[0]?.reset_epoch,
-                library_revision: current.rows[0]?.current_revision,
-            });
-        } finally {
-            await client.query("ROLLBACK").catch(() => undefined);
-            client.release();
-        }
+    it("returns the authoritative reset epoch and revision from a restricted server mutation", async () => {
+        const acknowledgement = await commitLibraryMutationForAccount(accountA, {
+            contentId: contentA,
+            isBookmarked: true,
+            progress: null,
+            lastInteractedAt: new Date().toISOString(),
+            deleteIfEmpty: false,
+        });
+        const current = await db.query<{ reset_epoch: string; current_revision: string }>(
+            "SELECT reset_epoch, current_revision FROM public.account_library_state WHERE user_id = $1",
+            [accountA],
+        );
+        expect(acknowledgement).toEqual({
+            resetEpoch: Number(current.rows[0]?.reset_epoch),
+            libraryRevision: Number(current.rows[0]?.current_revision),
+        });
     });
 
     it("settles a worker-terminated operation to its stable idempotency outcome", async () => {
