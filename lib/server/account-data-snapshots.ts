@@ -548,7 +548,17 @@ export async function getLibrarySnapshotPage(accountId: string, snapshotId: stri
         return await withRestrictedWorkerTransaction(client, accountId, async () => {
             const manifest = await getReadyManifest(client, accountId, snapshotId);
             if (!manifest) throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
-            const result = await client.query<{ ordinal: string; payload: Omit<LibrarySnapshotPage["records"][number], "ordinal" | "payloadHash"> }>(
+            const result = await client.query<{
+                ordinal: string;
+                payload: {
+                    content_id: string;
+                    is_bookmarked: boolean | null;
+                    progress: Record<string, unknown> | null;
+                    last_interacted_at: string | null;
+                    library_updated_at: string;
+                    library_revision: number;
+                };
+            }>(
             `SELECT ordinal, payload
              FROM snapshot_private.account_data_snapshot_records
              WHERE snapshot_id = $1 AND collection_name = $2 AND ordinal > $3
@@ -561,10 +571,15 @@ export async function getLibrarySnapshotPage(accountId: string, snapshotId: stri
             return {
                 manifest,
                 records: rows.slice(0, pageSize).map((row) => ({
-                ...row.payload,
-                ordinal: Number(row.ordinal),
-                payloadHash: payloadHash(row.payload),
-            })),
+                    contentId: row.payload.content_id,
+                    isBookmarked: row.payload.is_bookmarked,
+                    progress: row.payload.progress,
+                    lastInteractedAt: row.payload.last_interacted_at,
+                    libraryUpdatedAt: row.payload.library_updated_at,
+                    libraryRevision: row.payload.library_revision,
+                    ordinal: Number(row.ordinal),
+                    payloadHash: payloadHash(row.payload),
+                })),
                 hasNextPage,
             };
         });

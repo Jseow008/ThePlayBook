@@ -149,7 +149,8 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     });
 
     it("enforces the distributed four-worker creation admission limit", async () => {
-        const holders = await Promise.all(Array.from({ length: 4 }, () => db.connect()));
+        const lockPool = new Pool({ connectionString: adminDatabaseUrl, max: 4 });
+        const holders = await Promise.all(Array.from({ length: 4 }, () => lockPool.connect()));
         try {
             await Promise.all(holders.map((client, slot) => client.query("SELECT pg_advisory_lock($1, $2)", [91_007, slot])));
             const result = await createLibrarySnapshot(accountA, randomUUID());
@@ -159,6 +160,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                 await client.query("SELECT pg_advisory_unlock($1, $2)", [91_007, slot]).catch(() => undefined);
                 client.release();
             }));
+            await lockPool.end();
         }
     });
 });
