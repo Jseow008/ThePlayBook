@@ -3,9 +3,19 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { Pool, type PoolClient } from "pg";
 import type { LibrarySnapshotWireRecord } from "@/lib/account-data-wire";
+import {
+    ACCOUNT_DATA_SNAPSHOT_COLLECTIONS,
+    type AccountDataSnapshotCollection,
+} from "@/lib/account-data-snapshot-collections";
+
+export { ACCOUNT_DATA_SNAPSHOT_COLLECTIONS, type AccountDataSnapshotCollection } from "@/lib/account-data-snapshot-collections";
 
 export const LIBRARY_SNAPSHOT_COLLECTION = "user_library";
-export const LIBRARY_SNAPSHOT_SCHEMA_VERSION = 1;
+
+// Version two adds the approved complete-export collection inventory. A
+// library-only hydration can still use the same service with its one allowed
+// collection; it simply gets a v2 manifest.
+export const LIBRARY_SNAPSHOT_SCHEMA_VERSION = 2;
 export const LIBRARY_SNAPSHOT_MAX_RECORDS = 10_000;
 export const LIBRARY_SNAPSHOT_MAX_BYTES = 25 * 1024 * 1024;
 export const LIBRARY_SNAPSHOT_MAX_ACCOUNT_BYTES = 75 * 1024 * 1024;
@@ -28,6 +38,11 @@ type SnapshotOperationRow = {
     inserted: boolean;
 };
 
+export type AccountDataSnapshotCollectionManifest = {
+    recordCount: number;
+    manifestHash: string;
+};
+
 export type LibrarySnapshotManifest = {
     snapshotId: string;
     recordCount: number;
@@ -35,6 +50,22 @@ export type LibrarySnapshotManifest = {
     resetEpoch: number;
     boundaryLibraryRevision: number;
     expiresAt: string;
+    schemaVersion?: number;
+    collectionManifests?: Partial<Record<AccountDataSnapshotCollection, AccountDataSnapshotCollectionManifest>>;
+    collectionNames?: AccountDataSnapshotCollection[];
+};
+
+export type AccountDataSnapshotRecord = {
+    ordinal: number;
+    recordId: string;
+    payload: Record<string, unknown>;
+    payloadHash: string;
+};
+
+export type AccountDataSnapshotPage = {
+    manifest: LibrarySnapshotManifest;
+    records: AccountDataSnapshotRecord[];
+    hasNextPage: boolean;
 };
 
 export type LibrarySnapshotPage = {
@@ -144,9 +175,9 @@ async function withSnapshotMaintenanceTransaction<T>(client: PoolClient, work: (
     }
 }
 
-function requestFingerprint() {
+function requestFingerprint(collections: readonly AccountDataSnapshotCollection[]) {
     return createHash("sha256")
-        .update(JSON.stringify({ collections: [LIBRARY_SNAPSHOT_COLLECTION], schemaVersion: LIBRARY_SNAPSHOT_SCHEMA_VERSION }))
+        .update(JSON.stringify({ collections, schemaVersion: LIBRARY_SNAPSHOT_SCHEMA_VERSION }))
         .digest("hex");
 }
 
@@ -155,6 +186,172 @@ function canonicalJson(value: unknown): string {
     if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
     const object = value as Record<string, unknown>;
     return `{${Object.keys(object).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(object[key])}`).join(",")}}`;
+}
+
+/**
+ * Every adapter selects only fields promised by the owned-data inventory. The
+ * query's ordinal is part of the stored immutable snapshot, so export pages
+ * never derive order from a live source table.
+ */
+const snapshotCollectionQueries: Record<AccountDataSnapshotCollection, string> = {
+    preferences: `
+        SELECT p.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY p.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', p.id,
+                   'onboarding_state', p.onboarding_state,
+                   'reader_settings', p.reader_settings,
+                   'created_at', p.created_at,
+                   'updated_at', p.updated_at
+               ) AS payload
+        FROM public.profiles p
+        WHERE p.id = $1`,
+    user_library: `
+        SELECT ul.content_id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY ul.library_updated_at DESC, ul.content_id ASC) AS ordinal,
+               jsonb_build_object(
+                   'content_id', ul.content_id,
+                   'is_bookmarked', ul.is_bookmarked,
+                   'progress', ul.progress,
+                   'last_interacted_at', ul.last_interacted_at,
+                   'library_updated_at', ul.library_updated_at,
+                   'library_revision', ul.library_revision
+               ) AS payload
+        FROM public.user_library ul
+        WHERE ul.user_id = $1`,
+    highlights: `
+        SELECT h.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY h.created_at DESC NULLS LAST, h.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', h.id,
+                   'content_item_id', h.content_item_id,
+                   'segment_id', h.segment_id,
+                   'highlighted_text', h.highlighted_text,
+                   'note_body', h.note_body,
+                   'color', h.color,
+                   'anchor_start', h.anchor_start,
+                   'anchor_end', h.anchor_end,
+                   'created_at', h.created_at,
+                   'updated_at', h.updated_at
+               ) AS payload
+        FROM public.user_highlights h
+        WHERE h.user_id = $1`,
+    reflections: `
+        SELECT r.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY r.updated_at DESC, r.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', r.id,
+                   'content_item_id', r.content_item_id,
+                   'prompt', r.prompt,
+                   'reflection_text', r.reflection_text,
+                   'created_at', r.created_at,
+                   'updated_at', r.updated_at
+               ) AS payload
+        FROM public.user_reflections r
+        WHERE r.user_id = $1`,
+    reading_activity: `
+        SELECT a.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY a.activity_date DESC, a.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', a.id,
+                   'activity_date', a.activity_date,
+                   'duration_seconds', a.duration_seconds,
+                   'pages_read', a.pages_read,
+                   'created_at', a.created_at,
+                   'updated_at', a.updated_at
+               ) AS payload
+        FROM public.reading_activity a
+        WHERE a.user_id = $1`,
+    feedback: `
+        SELECT f.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY f.created_at DESC, f.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', f.id,
+                   'content_id', f.content_id,
+                   'is_positive', f.is_positive,
+                   'reason', f.reason,
+                   'details', f.details,
+                   'created_at', f.created_at
+               ) AS payload
+        FROM public.content_feedback f
+        WHERE f.user_id = $1`,
+    submitted_requests: `
+        SELECT r.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY r.created_at DESC, r.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', r.id,
+                   'title', r.title,
+                   'author', r.author,
+                   'source_url', r.source_url,
+                   'content_type', r.content_type,
+                   'thumbnail_url', r.thumbnail_url,
+                   'status', r.status,
+                   'published_content_id', r.published_content_id,
+                   'created_at', r.created_at,
+                   'updated_at', r.updated_at
+               ) AS payload
+        FROM public.content_requests r
+        WHERE r.submitted_by = $1`,
+    request_votes: `
+        SELECT v.request_id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY v.created_at DESC, v.request_id ASC) AS ordinal,
+               jsonb_build_object(
+                   'request_id', v.request_id,
+                   'created_at', v.created_at
+               ) AS payload
+        FROM public.content_request_votes v
+        WHERE v.user_id = $1`,
+    notification_preferences: `
+        SELECT n.user_id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY n.user_id ASC) AS ordinal,
+               jsonb_build_object(
+                   'request_published_email_enabled', n.request_published_email_enabled,
+                   'created_at', n.created_at,
+                   'updated_at', n.updated_at
+               ) AS payload
+        FROM public.user_notification_preferences n
+        WHERE n.user_id = $1`,
+    request_notifications: `
+        SELECT n.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY n.created_at DESC, n.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', n.id,
+                   'request_id', n.request_id,
+                   'type', n.type,
+                   'status', n.status,
+                   'queued_at', n.queued_at,
+                   'sent_at', n.sent_at,
+                   'skipped_at', n.skipped_at,
+                   'created_at', n.created_at,
+                   'updated_at', n.updated_at
+               ) AS payload
+        FROM public.content_request_notifications n
+        WHERE n.user_id = $1`,
+    ai_usage: `
+        SELECT u.id::text AS record_id,
+               ROW_NUMBER() OVER (ORDER BY u.created_at DESC, u.id ASC) AS ordinal,
+               jsonb_build_object(
+                   'id', u.id,
+                   'feature', u.feature,
+                   'created_at', u.created_at
+               ) AS payload
+        FROM public.ai_message_usage u
+        WHERE u.user_id = $1`,
+};
+
+function snapshotCollectionQuery(collection: AccountDataSnapshotCollection, accountParameter = 1) {
+    // The source adapters use $1 when executed independently for admission.
+    // When nested in the copy INSERT, $1 and $2 belong to the snapshot root
+    // and collection name, so bind the account as $3 instead.
+    return snapshotCollectionQueries[collection].replaceAll("$1", `$${accountParameter}`);
+}
+
+export function normalizeSnapshotCollections(collections: readonly string[] | undefined): AccountDataSnapshotCollection[] {
+    const requested = collections?.length ? new Set(collections) : new Set([LIBRARY_SNAPSHOT_COLLECTION]);
+    if ([...requested].some((collection) => !ACCOUNT_DATA_SNAPSHOT_COLLECTIONS.includes(collection as AccountDataSnapshotCollection))) {
+        throw new AccountDataSnapshotError("FAILED", "SNAPSHOT_COLLECTION_INVALID");
+    }
+    return ACCOUNT_DATA_SNAPSHOT_COLLECTIONS.filter((collection) => requested.has(collection));
 }
 
 function payloadHash(payload: unknown) {
@@ -189,8 +386,12 @@ async function getReadyManifest(
         reset_epoch: number;
         boundary_library_revision: number;
         expires_at: string;
+        schema_version: number;
+        collection_manifests: Record<string, AccountDataSnapshotCollectionManifest> | null;
+        collection_names: AccountDataSnapshotCollection[];
     }>(
-        `SELECT id, record_count, manifest_hash, reset_epoch, boundary_library_revision, expires_at
+        `SELECT id, record_count, manifest_hash, reset_epoch, boundary_library_revision, expires_at,
+                schema_version, collection_manifests, collection_names
          FROM snapshot_private.account_data_snapshots
          WHERE id = $1 AND account_id = $2 AND status = 'ready'`,
         [snapshotId, accountId],
@@ -208,6 +409,9 @@ async function getReadyManifest(
         resetEpoch: Number(row.reset_epoch),
         boundaryLibraryRevision: Number(row.boundary_library_revision),
         expiresAt: new Date(row.expires_at).toISOString(),
+        schemaVersion: Number(row.schema_version),
+        collectionManifests: row.collection_manifests ?? {},
+        collectionNames: row.collection_names,
     };
 }
 
@@ -429,9 +633,14 @@ async function persistOperationFailure(client: PoolClient, operationId: string, 
     );
 }
 
-export async function createLibrarySnapshot(accountId: string, idempotencyKey: string): Promise<CreateLibrarySnapshotResult> {
+export async function createAccountDataSnapshot(
+    accountId: string,
+    idempotencyKey: string,
+    requestedCollections?: readonly string[],
+): Promise<CreateLibrarySnapshotResult> {
     const client = await getPool().connect();
-    const fingerprint = requestFingerprint();
+    const collections = normalizeSnapshotCollections(requestedCollections);
+    const fingerprint = requestFingerprint(collections);
     const snapshotId = randomUUID();
     let globalSlot: number | null = null;
     let stopLeaseRenewal: (() => Promise<void>) | null = null;
@@ -455,7 +664,7 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
              SET idempotency_key = EXCLUDED.idempotency_key
              RETURNING id, snapshot_id, status, failure_code, request_fingerprint, collection_names, schema_version,
                        lease_expires_at, (xmax = 0) AS inserted`,
-                [accountId, idempotencyKey, fingerprint, [LIBRARY_SNAPSHOT_COLLECTION], LIBRARY_SNAPSHOT_SCHEMA_VERSION, snapshotId],
+                [accountId, idempotencyKey, fingerprint, collections, LIBRARY_SNAPSHOT_SCHEMA_VERSION, snapshotId],
             );
             const row = result.rows[0];
             if (!row) throw new AccountDataSnapshotError("FAILED", "Could not create a snapshot operation.");
@@ -465,8 +674,8 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
         if (
             operation.request_fingerprint !== fingerprint
             || operation.schema_version !== LIBRARY_SNAPSHOT_SCHEMA_VERSION
-            || operation.collection_names.length !== 1
-            || operation.collection_names[0] !== LIBRARY_SNAPSHOT_COLLECTION
+            || operation.collection_names.length !== collections.length
+            || operation.collection_names.some((collection, index) => collection !== collections[index])
         ) {
             throw new AccountDataSnapshotError("IDEMPOTENCY_KEY_REUSED", "This idempotency key belongs to a different snapshot request.");
         }
@@ -566,24 +775,23 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
                 const libraryState = state.rows[0] ?? { reset_epoch: 0, current_revision: 0 };
                 ensureDeadline();
 
-                // Admission happens before copying payload rows. Oversized
-                // accounts receive a typed result, never a truncated snapshot.
-                const preflight = await client.query<{ record_count: number; payload_bytes: number }>(
-                `SELECT COUNT(*)::int AS record_count,
-                        COALESCE(SUM(octet_length(jsonb_build_object(
-                            'content_id', ul.content_id,
-                            'is_bookmarked', ul.is_bookmarked,
-                            'progress', ul.progress,
-                            'last_interacted_at', ul.last_interacted_at,
-                            'library_updated_at', ul.library_updated_at,
-                            'library_revision', ul.library_revision
-                        )::text)), 0)::int AS payload_bytes
-                 FROM public.user_library ul
-                 WHERE ul.user_id = $1`,
-                [accountId],
-                );
-                const admission = preflight.rows[0];
-                if (!admission || admission.record_count > LIBRARY_SNAPSHOT_MAX_RECORDS || admission.payload_bytes > LIBRARY_SNAPSHOT_MAX_BYTES) {
+                // Admission happens for every requested collection before any
+                // payload row is copied. The complete-export limit is an
+                // aggregate limit, never a reason to silently omit a tail.
+                let admittedRecords = 0;
+                let admittedBytes = 0;
+                for (const collection of collections) {
+                    const preflight = await client.query<{ record_count: number; payload_bytes: number }>(
+                        `SELECT COUNT(*)::int AS record_count,
+                                COALESCE(SUM(octet_length(payload::text)), 0)::int AS payload_bytes
+                         FROM (${snapshotCollectionQuery(collection)}) AS source`,
+                        [accountId],
+                    );
+                    const admission = preflight.rows[0];
+                    admittedRecords += Number(admission?.record_count ?? 0);
+                    admittedBytes += Number(admission?.payload_bytes ?? 0);
+                }
+                if (admittedRecords > LIBRARY_SNAPSHOT_MAX_RECORDS || admittedBytes > LIBRARY_SNAPSHOT_MAX_BYTES) {
                     throw new AccountDataSnapshotError("TOO_LARGE", "SNAPSHOT_TOO_LARGE");
                 }
                 ensureDeadline();
@@ -593,51 +801,46 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
                     (id, operation_id, account_id, collection_names, schema_version, reset_epoch, boundary_library_revision, status, expires_at)
                  VALUES ($1, $2, $3, $4, $5, $6, $7, 'building', $8)
                  ON CONFLICT (id) DO NOTHING`,
-                [operation.snapshot_id, operation.id, accountId, [LIBRARY_SNAPSHOT_COLLECTION], LIBRARY_SNAPSHOT_SCHEMA_VERSION, libraryState.reset_epoch, libraryState.current_revision, snapshotExpiry],
+                [operation.snapshot_id, operation.id, accountId, collections, LIBRARY_SNAPSHOT_SCHEMA_VERSION, libraryState.reset_epoch, libraryState.current_revision, snapshotExpiry],
                 );
 
-                await client.query(
-                `INSERT INTO snapshot_private.account_data_snapshot_records (snapshot_id, collection_name, ordinal, record_id, payload)
-                 SELECT
-                    $1,
-                    $2,
-                    ROW_NUMBER() OVER (ORDER BY ul.library_updated_at DESC, ul.content_id ASC),
-                    ul.content_id::text,
-                    jsonb_build_object(
-                        'content_id', ul.content_id,
-                        'is_bookmarked', ul.is_bookmarked,
-                        'progress', ul.progress,
-                        'last_interacted_at', ul.last_interacted_at,
-                        'library_updated_at', ul.library_updated_at,
-                        'library_revision', ul.library_revision
-                    )
-                 FROM public.user_library ul
-                 WHERE ul.user_id = $3
-                 ORDER BY ul.library_updated_at DESC, ul.content_id ASC`,
-                [operation.snapshot_id, LIBRARY_SNAPSHOT_COLLECTION, accountId],
-                );
+                for (const collection of collections) {
+                    await client.query(
+                        `INSERT INTO snapshot_private.account_data_snapshot_records (snapshot_id, collection_name, ordinal, record_id, payload)
+                         SELECT $1, $2, source.ordinal, source.record_id, source.payload
+                         FROM (${snapshotCollectionQuery(collection, 3)}) AS source
+                         ORDER BY source.ordinal ASC`,
+                        [operation.snapshot_id, collection, accountId],
+                    );
+                }
                 ensureDeadline();
 
                 const totals = await client.query<{ record_count: number; payload_bytes: number }>(
                 `SELECT COUNT(*)::int AS record_count,
                         COALESCE(SUM(octet_length(payload::text)), 0)::int AS payload_bytes
                  FROM snapshot_private.account_data_snapshot_records
-                 WHERE snapshot_id = $1 AND collection_name = $2`,
-                [operation.snapshot_id, LIBRARY_SNAPSHOT_COLLECTION],
+                 WHERE snapshot_id = $1`,
+                [operation.snapshot_id],
                 );
                 const total = totals.rows[0];
                 if (!total || total.record_count > LIBRARY_SNAPSHOT_MAX_RECORDS || total.payload_bytes > LIBRARY_SNAPSHOT_MAX_BYTES) {
                     throw new AccountDataSnapshotError("TOO_LARGE", "SNAPSHOT_TOO_LARGE");
                 }
 
-                const payloads = await client.query<{ payload: unknown }>(
-                `SELECT payload FROM snapshot_private.account_data_snapshot_records
-                 WHERE snapshot_id = $1 AND collection_name = $2 ORDER BY ordinal ASC`,
-                [operation.snapshot_id, LIBRARY_SNAPSHOT_COLLECTION],
-                );
-                const manifestHash = createHash("sha256")
-                .update(payloads.rows.map((row) => payloadHash(row.payload)).join("\n"))
-                    .digest("hex");
+                const collectionManifests: Partial<Record<AccountDataSnapshotCollection, AccountDataSnapshotCollectionManifest>> = {};
+                const allPayloadHashes: string[] = [];
+                for (const collection of collections) {
+                    const payloads = await client.query<{ payload: unknown }>(
+                        `SELECT payload FROM snapshot_private.account_data_snapshot_records
+                         WHERE snapshot_id = $1 AND collection_name = $2 ORDER BY ordinal ASC`,
+                        [operation.snapshot_id, collection],
+                    );
+                    const hashes = payloads.rows.map((row) => payloadHash(row.payload));
+                    const collectionHash = createHash("sha256").update(hashes.join("\n")).digest("hex");
+                    collectionManifests[collection] = { recordCount: hashes.length, manifestHash: collectionHash };
+                    allPayloadHashes.push(...hashes);
+                }
+                const manifestHash = createHash("sha256").update(allPayloadHashes.join("\n")).digest("hex");
 
                 const retained = await client.query<{ payload_bytes: string }>(
                 `SELECT COALESCE(SUM(payload_bytes), 0)::bigint AS payload_bytes
@@ -653,9 +856,9 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
 
                 await client.query(
                 `UPDATE snapshot_private.account_data_snapshots
-                 SET record_count = $2, payload_bytes = $3, manifest_hash = $4, status = 'ready'
+                 SET record_count = $2, payload_bytes = $3, manifest_hash = $4, collection_manifests = $5, status = 'ready'
                  WHERE id = $1`,
-                [operation.snapshot_id, total.record_count, total.payload_bytes, manifestHash],
+                [operation.snapshot_id, total.record_count, total.payload_bytes, manifestHash, JSON.stringify(collectionManifests)],
                 );
                 return {
                     snapshotId: operation.snapshot_id,
@@ -664,6 +867,9 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
                     resetEpoch: Number(libraryState.reset_epoch),
                     boundaryLibraryRevision: Number(libraryState.current_revision),
                     expiresAt: snapshotExpiry,
+                    schemaVersion: LIBRARY_SNAPSHOT_SCHEMA_VERSION,
+                    collectionManifests,
+                    collectionNames: collections,
                 } satisfies LibrarySnapshotManifest;
             });
 
@@ -697,42 +903,42 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
     }
 }
 
-export async function getLibrarySnapshotPage(accountId: string, snapshotId: string, afterOrdinal: number, pageSize: number): Promise<LibrarySnapshotPage> {
+/** Reads a persisted page for one allowlisted collection. */
+export async function getAccountDataSnapshotPage(
+    accountId: string,
+    snapshotId: string,
+    collection: AccountDataSnapshotCollection,
+    afterOrdinal: number,
+    pageSize: number,
+): Promise<AccountDataSnapshotPage> {
     const client = await getPool().connect();
     try {
         return await withRestrictedWorkerTransaction(client, accountId, async () => {
             const manifest = await getReadyManifest(client, accountId, snapshotId);
             if (!manifest) throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
+            if (manifest.collectionNames && !manifest.collectionNames.includes(collection)) {
+                throw new AccountDataSnapshotError("NOT_FOUND", "This collection was not included in the snapshot.");
+            }
             const result = await client.query<{
                 ordinal: string;
-                payload: {
-                    content_id: string;
-                    is_bookmarked: boolean | null;
-                    progress: Record<string, unknown> | null;
-                    last_interacted_at: string | null;
-                    library_updated_at: string;
-                    library_revision: number;
-                };
+                record_id: string;
+                payload: Record<string, unknown>;
             }>(
-            `SELECT ordinal, payload
+            `SELECT ordinal, record_id, payload
              FROM snapshot_private.account_data_snapshot_records
              WHERE snapshot_id = $1 AND collection_name = $2 AND ordinal > $3
              ORDER BY ordinal ASC
              LIMIT $4`,
-            [snapshotId, LIBRARY_SNAPSHOT_COLLECTION, afterOrdinal, pageSize + 1],
-        );
+            [snapshotId, collection, afterOrdinal, pageSize + 1],
+            );
             const rows = result.rows;
             const hasNextPage = rows.length > pageSize;
             return {
                 manifest,
                 records: rows.slice(0, pageSize).map((row) => ({
-                    content_id: row.payload.content_id,
-                    is_bookmarked: row.payload.is_bookmarked,
-                    progress: row.payload.progress,
-                    last_interacted_at: row.payload.last_interacted_at,
-                    library_updated_at: row.payload.library_updated_at,
-                    library_revision: row.payload.library_revision,
                     ordinal: Number(row.ordinal),
+                    recordId: row.record_id,
+                    payload: row.payload,
                     payloadHash: payloadHash(row.payload),
                 })),
                 hasNextPage,
@@ -742,6 +948,28 @@ export async function getLibrarySnapshotPage(accountId: string, snapshotId: stri
         await releaseRestrictedWorker(client);
         client.release();
     }
+}
+
+export async function createLibrarySnapshot(accountId: string, idempotencyKey: string): Promise<CreateLibrarySnapshotResult> {
+    return createAccountDataSnapshot(accountId, idempotencyKey, [LIBRARY_SNAPSHOT_COLLECTION]);
+}
+
+export async function getLibrarySnapshotPage(accountId: string, snapshotId: string, afterOrdinal: number, pageSize: number): Promise<LibrarySnapshotPage> {
+    const page = await getAccountDataSnapshotPage(accountId, snapshotId, LIBRARY_SNAPSHOT_COLLECTION, afterOrdinal, pageSize);
+    return {
+        manifest: page.manifest,
+        hasNextPage: page.hasNextPage,
+        records: page.records.map((row) => ({
+            content_id: String(row.payload.content_id),
+            is_bookmarked: row.payload.is_bookmarked as boolean | null,
+            progress: row.payload.progress as Record<string, unknown> | null,
+            last_interacted_at: row.payload.last_interacted_at as string | null,
+            library_updated_at: String(row.payload.library_updated_at),
+            library_revision: Number(row.payload.library_revision),
+            ordinal: row.ordinal,
+            payloadHash: row.payloadHash,
+        })),
+    };
 }
 
 export async function getLiveLibraryPage(

@@ -10,6 +10,22 @@ const snapshotService = readFileSync(
     join(process.cwd(), "lib/server/account-data-snapshots.ts"),
     "utf8",
 );
+const completeExportMigration = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260915060000_phase1_complete_account_export.sql"),
+    "utf8",
+);
+const rlsInitplanMigration = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260915144423_phase1_snapshot_rls_initplan.sql"),
+    "utf8",
+);
+const rlsAdvisorFixMigration = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260915150245_phase1_snapshot_rls_advisor_fix.sql"),
+    "utf8",
+);
+const rlsInitplanCastMigration = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260915151951_phase1_snapshot_rls_initplan_cast.sql"),
+    "utf8",
+);
 
 describe("Phase 1 #7 account-data snapshot security contract", () => {
     it("keeps snapshot payloads outside the Data API and fail closed", () => {
@@ -30,5 +46,25 @@ describe("Phase 1 #7 account-data snapshot security contract", () => {
         expect(migration).toContain("CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions");
         expect(snapshotService).toContain("LIBRARY_SNAPSHOT_MAX_ACCOUNT_BYTES");
         expect(snapshotService).toContain("cleanupExpiredSnapshots");
+    });
+
+    it("allows the restricted worker to read only account-scoped export sources", () => {
+        expect(completeExportMigration).toContain("collection_manifests jsonb NOT NULL DEFAULT '{}'::jsonb");
+        for (const collection of ["profiles", "user_highlights", "user_reflections", "reading_activity", "content_feedback", "content_requests", "content_request_votes", "user_notification_preferences", "content_request_notifications", "ai_message_usage"]) {
+            expect(completeExportMigration).toContain(`public.${collection}`);
+        }
+        expect(completeExportMigration).toContain("current_setting('app.snapshot_account_id', true)");
+        expect(snapshotService).toContain("snapshotCollectionQueries");
+        expect(snapshotService).toContain("reflection_text");
+        expect(snapshotService).not.toContain("unsubscribe_token");
+    });
+
+    it("evaluates the snapshot account binding once per protected query", () => {
+        expect(rlsInitplanMigration).toContain("(SELECT NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid)");
+        const optimizedBinding = "(SELECT current_setting('app.snapshot_account_id', true)::uuid)";
+        expect(rlsAdvisorFixMigration).toContain(optimizedBinding);
+        expect(rlsAdvisorFixMigration).not.toContain("NULLIF(current_setting");
+        expect(rlsInitplanCastMigration).toContain("(SELECT current_setting('app.snapshot_account_id', true))::uuid");
+        expect(rlsInitplanCastMigration).not.toContain("current_setting('app.snapshot_account_id', true)::uuid");
     });
 });

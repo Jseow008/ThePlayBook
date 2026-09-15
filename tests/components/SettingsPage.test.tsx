@@ -1,253 +1,332 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { AnchorHTMLAttributes } from "react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SettingsPage from "@/app/(public)/settings/page";
-import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const clearScopedReadingHistoryMock = vi.fn();
-const selectEqMock = vi.fn();
-const deleteEqMock = vi.fn();
-const fromMock = vi.fn((table: string) => ({
-    select: () => ({
-        eq: (column: string, value: string) => selectEqMock(table, column, value),
-    }),
-    delete: () => ({
-        eq: (column: string, value: string) => deleteEqMock(column, value),
-    }),
-}));
-const refreshMock = vi.fn();
-const clearCachedRecommendationsMock = vi.fn();
-const clearCachedBrowseRecommendationsMock = vi.fn();
-const clearRecentRecommendationsMock = vi.fn();
-const toastErrorMock = vi.fn();
-const toastSuccessMock = vi.fn();
-const signOutActionMock = vi.fn();
-const browserSignOutMock = vi.fn();
-const resetLibraryRequestMock = vi.fn();
-let currentUser: { id: string; email?: string; user_metadata?: { full_name?: string } } | null = null;
+const { MockAccountDataExportError, state } = vi.hoisted(() => {
+    class MockAccountDataExportError extends Error {
+        code: string;
 
-vi.mock("next/link", () => ({
-    default: ({ children, href, ...props }: AnchorHTMLAttributes<HTMLAnchorElement>) => (
-        <a href={href} {...props}>
-            {children}
-        </a>
-    ),
-}));
+        constructor(message: string, code = "EXPORT_UNAVAILABLE") {
+            super(message);
+            this.name = "AccountDataExportError";
+            this.code = code;
+        }
+    }
+
+    return {
+        MockAccountDataExportError,
+        state: {
+            currentUser: null as { id: string; email?: string; user_metadata?: { full_name?: string } } | null,
+            authListener: null as ((event: string, session: { user: { id: string; email?: string; user_metadata?: { full_name?: string } } | null } | null) => void) | null,
+            getUser: vi.fn(),
+            onAuthStateChange: vi.fn(),
+            signOut: vi.fn(),
+            signOutAction: vi.fn(),
+            fetchExport: vi.fn(),
+            fetch: vi.fn(),
+            refresh: vi.fn(),
+            clearScopedReadingHistory: vi.fn(),
+            clearCachedRecommendations: vi.fn(),
+            clearCachedBrowseRecommendations: vi.fn(),
+            clearRecentRecommendations: vi.fn(),
+            toastSuccess: vi.fn(),
+            toastError: vi.fn(),
+        },
+    };
+});
 
 vi.mock("@/lib/supabase/client", () => ({
     createClient: () => ({
         auth: {
-            getUser: vi.fn().mockResolvedValue({
-                data: { user: currentUser },
-            }),
-            signOut: browserSignOutMock,
+            getUser: state.getUser,
+            onAuthStateChange: state.onAuthStateChange,
+            updateUser: vi.fn(),
+            signOut: state.signOut,
         },
-        from: fromMock,
     }),
+}));
+
+vi.mock("@/lib/account-data-export-client", () => ({
+    AccountDataExportError: MockAccountDataExportError,
+    fetchVerifiedAccountDataExport: (...args: unknown[]) => state.fetchExport(...args),
 }));
 
 vi.mock("@/hooks/useReadingProgress", () => ({
-    useReadingProgress: () => ({
-        refresh: refreshMock,
-        storageScope: "user:test-user",
-    }),
+    useReadingProgress: () => ({ refresh: state.refresh, storageScope: "user:test-user" }),
 }));
 
-vi.mock("@/lib/actions/auth", () => ({
-    signOutAction: () => signOutActionMock(),
+vi.mock("@tanstack/react-query", () => ({
+    useQueryClient: () => ({ invalidateQueries: vi.fn() }),
 }));
 
-vi.mock("@/lib/local-user-storage", () => ({
-    clearScopedReadingHistory: (...args: unknown[]) => clearScopedReadingHistoryMock(...args),
-}));
-
+vi.mock("@/lib/actions/auth", () => ({ signOutAction: () => state.signOutAction() }));
+vi.mock("@/lib/local-user-storage", () => ({ clearScopedReadingHistory: (...args: unknown[]) => state.clearScopedReadingHistory(...args) }));
 vi.mock("@/lib/recommendation-memory", () => ({
-    clearCachedRecommendations: (...args: unknown[]) => clearCachedRecommendationsMock(...args),
-    clearRecentRecommendations: (...args: unknown[]) => clearRecentRecommendationsMock(...args),
+    clearCachedRecommendations: (...args: unknown[]) => state.clearCachedRecommendations(...args),
+    clearRecentRecommendations: (...args: unknown[]) => state.clearRecentRecommendations(...args),
 }));
-
-vi.mock("@/lib/browse-recommendation-cache", () => ({
-    clearCachedBrowseRecommendations: (...args: unknown[]) => clearCachedBrowseRecommendationsMock(...args),
-}));
+vi.mock("@/lib/browse-recommendation-cache", () => ({ clearCachedBrowseRecommendations: (...args: unknown[]) => state.clearCachedBrowseRecommendations(...args) }));
 
 vi.mock("sonner", () => ({
     toast: {
-        error: (...args: unknown[]) => toastErrorMock(...args),
-        success: (...args: unknown[]) => toastSuccessMock(...args),
+        success: (...args: unknown[]) => state.toastSuccess(...args),
+        error: (...args: unknown[]) => state.toastError(...args),
     },
 }));
 
-function renderSettingsPage() {
-    const queryClient = new QueryClient({
-        defaultOptions: {
-            queries: { retry: false },
-        },
-    });
+vi.mock("next/link", () => ({
+    default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
+        <a href={href} {...props}>{children}</a>
+    ),
+}));
 
-    return render(
-        <QueryClientProvider client={queryClient}>
-            <SettingsPage />
-        </QueryClientProvider>
-    );
+function deferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (error: unknown) => void;
+    const promise = new Promise<T>((nextResolve, nextReject) => {
+        resolve = nextResolve;
+        reject = nextReject;
+    });
+    return { promise, resolve, reject };
 }
 
-describe("SettingsPage", () => {
+const accountA = { id: "account-a", email: "account-a@example.invalid", user_metadata: { full_name: "Account A" } };
+const accountB = { id: "account-b", email: "account-b@example.invalid", user_metadata: { full_name: "Account B" } };
+const verifiedExport = {
+    export_date: "2026-09-15T00:00:00.000Z",
+    schema_version: 2,
+    snapshot: { id: "snapshot-a" },
+    data: { reflections: [] },
+};
+
+describe("settings data export delivery", () => {
+    let createObjectUrl: ReturnType<typeof vi.fn>;
+    let revokeObjectUrl: ReturnType<typeof vi.fn>;
+    let anchorClick: ReturnType<typeof vi.fn<() => void>>;
+
     beforeEach(() => {
         vi.clearAllMocks();
-        currentUser = null;
-        signOutActionMock.mockResolvedValue(undefined);
-        browserSignOutMock.mockResolvedValue({ error: null });
-        selectEqMock.mockResolvedValue({ data: [], error: null });
-        deleteEqMock.mockResolvedValue({ error: null });
-        resetLibraryRequestMock.mockResolvedValue({
-            ok: true,
-            json: async () => ({ data: { resetEpoch: 1, currentRevision: 1 } }),
+        state.currentUser = accountA;
+        state.authListener = null;
+        state.getUser.mockImplementation(async () => ({ data: { user: state.currentUser }, error: null }));
+        state.onAuthStateChange.mockImplementation((listener) => {
+            state.authListener = listener;
+            return { data: { subscription: { unsubscribe: vi.fn() } } };
         });
-        vi.stubGlobal("fetch", resetLibraryRequestMock);
+        state.signOut.mockResolvedValue({ error: null });
+        state.signOutAction.mockResolvedValue(undefined);
+        state.fetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+            if (url === "/api/account-data/reset" && init?.method === "POST") {
+                return new Response(JSON.stringify({ data: { resetEpoch: 1, currentRevision: 1 } }), { status: 200 });
+            }
+            return new Response(JSON.stringify({ data: {} }), { status: 200 });
+        });
+        createObjectUrl = vi.fn(() => "blob:export");
+        revokeObjectUrl = vi.fn();
+        anchorClick = vi.fn<() => void>();
+        Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectUrl });
+        Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectUrl });
+        vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {
+            anchorClick();
+        });
+        vi.spyOn(console, "error").mockImplementation(() => undefined);
+        vi.stubGlobal("fetch", state.fetch);
     });
 
-    it("includes a replay app tour link", async () => {
-        renderSettingsPage();
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
 
-        expect(screen.getByRole("button", { name: /clear reading history/i })).toBeDisabled();
+    async function renderAuthenticatedSettings() {
+        const result = render(<SettingsPage />);
+        const downloadButton = await screen.findByRole("button", { name: /download my data/i });
+        await waitFor(() => expect(downloadButton).toBeEnabled());
+        return { ...result, downloadButton };
+    }
+
+    it("includes a replay app tour link for a guest", async () => {
+        state.currentUser = null;
+        render(<SettingsPage />);
+
         expect(await screen.findByText("Not signed in.")).toBeInTheDocument();
-        expect(screen.getByRole("link", { name: /replay app tour/i })).toHaveAttribute(
-            "href",
-            "/browse?tour=app-v1"
-        );
+        expect(screen.getByRole("link", { name: /replay app tour/i })).toHaveAttribute("href", "/browse?tour=app-v1");
     });
 
-    it("clears local history and recommendation memory when clearing reading history as a guest", async () => {
-        renderSettingsPage();
-
+    it("clears local history and recommendation memory for a guest", async () => {
+        state.currentUser = null;
+        render(<SettingsPage />);
         await screen.findByText("Not signed in.");
 
-        const clearButton = screen.getByRole("button", { name: /clear reading history/i });
-        act(() => {
-            fireEvent.click(clearButton);
-        });
-
+        fireEvent.click(screen.getByRole("button", { name: /clear reading history/i }));
         vi.useFakeTimers();
-        const confirmButton = screen.getByRole("button", { name: /click again to confirm/i });
-        await act(async () => {
-            fireEvent.click(confirmButton);
-            vi.runAllTimers();
-        });
+        try {
+            await act(async () => {
+                fireEvent.click(screen.getByRole("button", { name: /click again to confirm/i }));
+                vi.runAllTimers();
+            });
+        } finally {
+            vi.useRealTimers();
+        }
 
-        expect(clearScopedReadingHistoryMock).toHaveBeenCalledWith(localStorage, "user:test-user");
-        expect(clearCachedRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
-        expect(clearCachedBrowseRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
-        expect(clearRecentRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
-        expect(refreshMock).toHaveBeenCalled();
-        expect(fromMock).not.toHaveBeenCalled();
-        expect(toastSuccessMock).toHaveBeenCalledWith("Reading history cleared");
-        vi.useRealTimers();
+        expect(state.clearScopedReadingHistory).toHaveBeenCalledWith(localStorage, "user:test-user");
+        expect(state.clearCachedRecommendations).toHaveBeenCalledWith(localStorage, "user:test-user");
+        expect(state.clearCachedBrowseRecommendations).toHaveBeenCalledWith(localStorage, "user:test-user");
+        expect(state.clearRecentRecommendations).toHaveBeenCalledWith(localStorage, "user:test-user");
+        expect(state.refresh).toHaveBeenCalled();
+        expect(state.toastSuccess).toHaveBeenCalledWith("Reading history cleared");
     });
 
-    it("clears cloud-backed library rows before clearing local state for signed-in users", async () => {
-        currentUser = {
-            id: "user-123",
-            email: "reader@example.com",
-            user_metadata: { full_name: "Reader" },
-        };
+    it("resets the authenticated library before clearing local state", async () => {
+        state.currentUser = accountA;
+        await renderAuthenticatedSettings();
 
-        renderSettingsPage();
-
-        await screen.findByDisplayValue("reader@example.com");
-
-        act(() => {
-            fireEvent.click(screen.getByRole("button", { name: /clear reading history/i }));
-        });
-
+        fireEvent.click(screen.getByRole("button", { name: /clear reading history/i }));
         vi.useFakeTimers();
-        await act(async () => {
-            fireEvent.click(screen.getByRole("button", { name: /click again to confirm/i }));
-            vi.runAllTimers();
-        });
+        try {
+            await act(async () => {
+                fireEvent.click(screen.getByRole("button", { name: /click again to confirm/i }));
+                vi.runAllTimers();
+            });
+        } finally {
+            vi.useRealTimers();
+        }
 
-        expect(resetLibraryRequestMock).toHaveBeenCalledWith("/api/account-data/reset", { method: "POST" });
-        expect(clearScopedReadingHistoryMock).toHaveBeenCalledWith(localStorage, "user:test-user");
-        expect(clearCachedBrowseRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
-        expect(refreshMock).toHaveBeenCalled();
-        expect(toastSuccessMock).toHaveBeenCalledWith("Reading history cleared");
-        vi.useRealTimers();
+        expect(state.fetch).toHaveBeenCalledWith("/api/account-data/reset", { method: "POST" });
+        expect(state.clearScopedReadingHistory).toHaveBeenCalledWith(localStorage, "user:test-user");
+        expect(state.refresh).toHaveBeenCalled();
+        expect(state.toastSuccess).toHaveBeenCalledWith("Reading history cleared");
     });
 
-    it("does not clear local state when the signed-in cloud reset fails", async () => {
-        currentUser = {
-            id: "user-456",
-            email: "reader2@example.com",
-        };
-        resetLibraryRequestMock.mockResolvedValue({
-            ok: false,
-            json: async () => ({ error: { message: "Reset failed" } }),
-        });
-
-        renderSettingsPage();
-
-        await screen.findByDisplayValue("reader2@example.com");
-
-        act(() => {
-            fireEvent.click(screen.getByRole("button", { name: /clear reading history/i }));
-        });
-
-        vi.useFakeTimers();
-        await act(async () => {
-            fireEvent.click(screen.getByRole("button", { name: /click again to confirm/i }));
-            vi.runAllTimers();
-        });
-
-        expect(clearScopedReadingHistoryMock).not.toHaveBeenCalled();
-        expect(refreshMock).not.toHaveBeenCalled();
-        expect(toastErrorMock).toHaveBeenCalledWith("Reset failed");
-        vi.useRealTimers();
-    });
-
-    it("fails export instead of downloading partial data when any export query errors", async () => {
-        currentUser = {
-            id: "user-789",
-            email: "reader3@example.com",
-        };
-        selectEqMock.mockImplementation((table: string) => {
-            if (table === "reading_activity") {
-                return Promise.resolve({ data: null, error: { message: "Activity export failed" } });
+    it("keeps local history when an authenticated library reset fails", async () => {
+        state.currentUser = accountA;
+        state.fetch.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+            const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+            if (url === "/api/account-data/reset" && init?.method === "POST") {
+                return new Response(JSON.stringify({ error: { message: "Reset failed" } }), { status: 500 });
             }
-
-            return Promise.resolve({ data: [], error: null });
+            return new Response(JSON.stringify({ data: {} }), { status: 200 });
         });
+        await renderAuthenticatedSettings();
 
-        renderSettingsPage();
+        fireEvent.click(screen.getByRole("button", { name: /clear reading history/i }));
+        vi.useFakeTimers();
+        try {
+            await act(async () => {
+                fireEvent.click(screen.getByRole("button", { name: /click again to confirm/i }));
+                vi.runAllTimers();
+            });
+        } finally {
+            vi.useRealTimers();
+        }
 
-        await screen.findByDisplayValue("reader3@example.com");
-
-        await act(async () => {
-            fireEvent.click(screen.getByRole("button", { name: /download my data/i }));
-        });
-
-        expect(toastErrorMock).toHaveBeenCalledWith("Failed to export data");
-        expect(toastSuccessMock).not.toHaveBeenCalledWith("Data export complete");
+        expect(state.clearScopedReadingHistory).not.toHaveBeenCalled();
+        expect(state.refresh).not.toHaveBeenCalled();
+        expect(state.toastError).toHaveBeenCalledWith("Reset failed");
     });
 
     it("recovers the sign-out button when sign-out fails", async () => {
-        currentUser = {
-            id: "user-999",
-            email: "reader4@example.com",
-        };
-        signOutActionMock.mockRejectedValue(new Error("Sign out failed"));
-
-        renderSettingsPage();
-
-        await screen.findByDisplayValue("reader4@example.com");
-
-        const signOutButton = screen.getByRole("button", { name: /sign out/i });
+        state.currentUser = accountA;
+        state.signOutAction.mockRejectedValue(new Error("Sign out failed"));
+        await renderAuthenticatedSettings();
 
         await act(async () => {
-            fireEvent.click(signOutButton);
+            fireEvent.click(screen.getByRole("button", { name: /sign out/i }));
         });
 
-        expect(browserSignOutMock).toHaveBeenCalledTimes(1);
-        expect(toastErrorMock).toHaveBeenCalledWith("Sign out failed");
+        expect(state.signOut).toHaveBeenCalledTimes(1);
+        expect(state.toastError).toHaveBeenCalledWith("Sign out failed");
         expect(screen.getByRole("button", { name: /sign out/i })).not.toBeDisabled();
-        expect(screen.queryByText("Signing out...")).not.toBeInTheDocument();
+    });
+
+    it("fails an unavailable export without creating a download", async () => {
+        state.fetchExport.mockRejectedValue(new Error("Snapshot unavailable"));
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+
+        expect(createObjectUrl).not.toHaveBeenCalled();
+        expect(anchorClick).not.toHaveBeenCalled();
+        expect(state.toastError).toHaveBeenCalledWith("Failed to export data");
+        expect(state.toastSuccess).not.toHaveBeenCalledWith("Data export complete");
+    });
+
+    it("cancels a delayed final response when the account changes before delivery", async () => {
+        const finalResponse = deferred<typeof verifiedExport>();
+        state.fetchExport.mockImplementation(() => finalResponse.promise);
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+        const signal = (state.fetchExport.mock.calls[0]?.[0] as { signal?: AbortSignal }).signal;
+
+        state.currentUser = accountB;
+        act(() => state.authListener?.("SIGNED_IN", { user: accountB }));
+        expect(signal?.aborted).toBe(true);
+
+        await act(async () => {
+            finalResponse.resolve(verifiedExport);
+            await Promise.resolve();
+        });
+
+        expect(createObjectUrl).not.toHaveBeenCalled();
+        expect(anchorClick).not.toHaveBeenCalled();
+        expect(state.toastSuccess).not.toHaveBeenCalledWith("Data export complete");
+    });
+
+    it("rechecks the authenticated account immediately before delivery", async () => {
+        const authRecheck = deferred<{ data: { user: typeof accountA | typeof accountB }; error: null }>();
+        state.fetchExport.mockResolvedValue(verifiedExport);
+        const { downloadButton } = await renderAuthenticatedSettings();
+        const callsBeforeAuthRecheck = state.getUser.mock.calls.length;
+        state.getUser.mockImplementationOnce(() => authRecheck.promise);
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(state.getUser.mock.calls.length).toBeGreaterThan(callsBeforeAuthRecheck));
+
+        state.currentUser = accountB;
+        await act(async () => {
+            authRecheck.resolve({ data: { user: accountB }, error: null });
+            await Promise.resolve();
+        });
+
+        expect(createObjectUrl).not.toHaveBeenCalled();
+        expect(anchorClick).not.toHaveBeenCalled();
+        expect(state.toastSuccess).not.toHaveBeenCalledWith("Data export complete");
+    });
+
+    it("cancels delivery when the settings page unmounts during an export", async () => {
+        const finalResponse = deferred<typeof verifiedExport>();
+        state.fetchExport.mockImplementation(() => finalResponse.promise);
+        const { downloadButton, unmount } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+        const signal = (state.fetchExport.mock.calls[0]?.[0] as { signal?: AbortSignal }).signal;
+        unmount();
+        expect(signal?.aborted).toBe(true);
+
+        await act(async () => {
+            finalResponse.resolve(verifiedExport);
+            await Promise.resolve();
+        });
+
+        expect(createObjectUrl).not.toHaveBeenCalled();
+        expect(anchorClick).not.toHaveBeenCalled();
+    });
+
+    it("does not create a download when a collection traversal is interrupted", async () => {
+        state.fetchExport.mockRejectedValue(new MockAccountDataExportError("Collection traversal interrupted.", "EXPORT_CANCELLED"));
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+
+        expect(createObjectUrl).not.toHaveBeenCalled();
+        expect(anchorClick).not.toHaveBeenCalled();
+        expect(state.toastSuccess).not.toHaveBeenCalledWith("Data export complete");
     });
 });

@@ -3,15 +3,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
+import { ACCOUNT_DATA_SNAPSHOT_COLLECTIONS } from "@/lib/account-data-snapshot-collections";
 import {
     AccountDataSnapshotError,
+    getAccountDataSnapshotPage,
     getLibrarySnapshotPage,
     LIBRARY_SNAPSHOT_COLLECTION,
 } from "@/lib/server/account-data-snapshots";
 
 const ParamsSchema = z.object({
     snapshotId: z.string().uuid(),
-    collection: z.literal(LIBRARY_SNAPSHOT_COLLECTION),
+    collection: z.enum(ACCOUNT_DATA_SNAPSHOT_COLLECTIONS),
 });
 
 const CursorSchema = z.object({ ordinal: z.number().int().min(0) });
@@ -22,20 +24,20 @@ function cursorSecret() {
     return secret;
 }
 
-function signCursor(accountId: string, snapshotId: string, ordinal: number) {
+function signCursor(accountId: string, snapshotId: string, collection: string, ordinal: number) {
     const payload = Buffer.from(JSON.stringify({ ordinal })).toString("base64url");
     const signature = createHmac("sha256", cursorSecret())
-        .update(`${accountId}:${snapshotId}:${payload}`)
+        .update(`${accountId}:${snapshotId}:${collection}:${payload}`)
         .digest("base64url");
     return `${payload}.${signature}`;
 }
 
-function decodeCursor(accountId: string, snapshotId: string, cursor: string | null) {
+function decodeCursor(accountId: string, snapshotId: string, collection: string, cursor: string | null) {
     if (!cursor) return 0;
     const [payload, suppliedSignature] = cursor.split(".");
     if (!payload || !suppliedSignature) throw new Error("Invalid cursor.");
     const expectedSignature = createHmac("sha256", cursorSecret())
-        .update(`${accountId}:${snapshotId}:${payload}`)
+        .update(`${accountId}:${snapshotId}:${collection}:${payload}`)
         .digest("base64url");
     const supplied = Buffer.from(suppliedSignature);
     const expected = Buffer.from(expectedSignature);
@@ -60,19 +62,21 @@ export async function GET(
         const limit = Number.isInteger(requestedLimit) && requestedLimit >= 1 && requestedLimit <= 200 ? requestedLimit : 100;
         let afterOrdinal: number;
         try {
-            afterOrdinal = decodeCursor(user.id, parsedParams.data.snapshotId, request.nextUrl.searchParams.get("cursor"));
+            afterOrdinal = decodeCursor(user.id, parsedParams.data.snapshotId, parsedParams.data.collection, request.nextUrl.searchParams.get("cursor"));
         } catch {
             return apiError("VALIDATION_ERROR", "This snapshot cursor is invalid. Start again.", 400, requestId, { snapshot_error: "CURSOR_INVALID" });
         }
 
-        const page = await getLibrarySnapshotPage(user.id, parsedParams.data.snapshotId, afterOrdinal, limit);
+        const page = parsedParams.data.collection === LIBRARY_SNAPSHOT_COLLECTION
+            ? await getLibrarySnapshotPage(user.id, parsedParams.data.snapshotId, afterOrdinal, limit)
+            : await getAccountDataSnapshotPage(user.id, parsedParams.data.snapshotId, parsedParams.data.collection, afterOrdinal, limit);
         const endOrdinal = page.records.at(-1)?.ordinal;
         return NextResponse.json({
             data: page.records,
             manifest: page.manifest,
             pageInfo: {
                 hasNextPage: page.hasNextPage,
-                endCursor: endOrdinal === undefined ? null : signCursor(user.id, parsedParams.data.snapshotId, endOrdinal),
+                endCursor: endOrdinal === undefined ? null : signCursor(user.id, parsedParams.data.snapshotId, parsedParams.data.collection, endOrdinal),
             },
         });
     } catch (error) {

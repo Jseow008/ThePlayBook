@@ -121,8 +121,9 @@ BEGIN
             WHERE schemaname = 'public'
         -- #7 adds the account-state ownership policy plus seven account-bound
         -- worker policies for snapshot reads, reset/revision handling, and
-        -- server-owned mutation acknowledgements.
-        ) <> 53
+        -- server-owned mutation acknowledgements. #10 then adds ten
+        -- account-bound, restricted-worker read policies for complete export.
+        ) <> 63
 
         UNION ALL
 
