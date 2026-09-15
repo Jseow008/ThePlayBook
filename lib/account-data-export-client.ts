@@ -61,6 +61,14 @@ function responseErrorCode(value: unknown) {
     return typeof detail === "string" ? detail : typeof candidate?.error?.code === "string" ? candidate.error.code : "EXPORT_UNAVAILABLE";
 }
 
+function retryAfterMessage(response: Response) {
+    const seconds = Number(response.headers.get("Retry-After"));
+    if (!Number.isFinite(seconds) || seconds <= 0) return "Too many export requests. Please wait before trying again.";
+
+    const minutes = Math.ceil(seconds / 60);
+    return `Too many export requests. Please try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`;
+}
+
 function assertPage(value: unknown): asserts value is SnapshotPage {
     const page = value as Partial<SnapshotPage> | null;
     if (!page || !Array.isArray(page.data) || !page.manifest || !page.pageInfo) {
@@ -115,7 +123,11 @@ export async function fetchVerifiedAccountDataExport({ signal }: AccountDataExpo
         const creationPayload = await creation.json().catch(() => null) as { state?: string; manifest?: SnapshotManifest } | null;
         throwIfAborted(signal);
         if (!creation.ok || creationPayload?.state !== "ready" || !creationPayload.manifest) {
-            throw new AccountDataExportError("A complete export snapshot is not available yet.", responseErrorCode(creationPayload));
+            const code = responseErrorCode(creationPayload);
+            throw new AccountDataExportError(
+                code === "RATE_LIMITED" ? retryAfterMessage(creation) : "A complete export snapshot is not available yet.",
+                code,
+            );
         }
 
         const manifest = creationPayload.manifest;

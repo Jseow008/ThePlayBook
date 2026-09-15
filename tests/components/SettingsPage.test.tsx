@@ -253,6 +253,20 @@ describe("settings data export delivery", () => {
         expect(state.toastSuccess).not.toHaveBeenCalledWith("Data export complete");
     });
 
+    it("shows the export retry guidance returned by the server", async () => {
+        state.fetchExport.mockRejectedValue(new MockAccountDataExportError(
+            "Too many export requests. Please try again in about 3 minutes.",
+            "RATE_LIMITED",
+        ));
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+
+        expect(state.toastError).toHaveBeenCalledWith("Too many export requests. Please try again in about 3 minutes.");
+        expect(createObjectUrl).not.toHaveBeenCalled();
+    });
+
     it("cancels a delayed final response when the account changes before delivery", async () => {
         const finalResponse = deferred<typeof verifiedExport>();
         state.fetchExport.mockImplementation(() => finalResponse.promise);

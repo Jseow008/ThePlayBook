@@ -18,8 +18,8 @@ function hashText(value: string) {
     return createHash("sha256").update(value).digest("hex");
 }
 
-function response(payload: unknown, status = 200) {
-    return new Response(JSON.stringify(payload), { status, headers: { "Content-Type": "application/json" } });
+function response(payload: unknown, status = 200, headers: HeadersInit = {}) {
+    return new Response(JSON.stringify(payload), { status, headers: { "Content-Type": "application/json", ...headers } });
 }
 
 function fixture() {
@@ -88,6 +88,17 @@ describe("verified account-data export", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         await expect(fetchVerifiedAccountDataExport()).rejects.toBeInstanceOf(AccountDataExportError);
+    });
+
+    it("reports an actionable wait time when the export bucket is rate limited", async () => {
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({
+            error: { code: "RATE_LIMITED", message: "Too many export requests." },
+        }, 429, { "Retry-After": "125" })));
+
+        await expect(fetchVerifiedAccountDataExport()).rejects.toMatchObject({
+            code: "RATE_LIMITED",
+            message: "Too many export requests. Please try again in about 3 minutes.",
+        });
     });
 
     it("does not return a partial export when a collection traversal is interrupted", async () => {
