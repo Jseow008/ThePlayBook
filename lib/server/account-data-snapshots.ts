@@ -339,6 +339,13 @@ const snapshotCollectionQueries: Record<AccountDataSnapshotCollection, string> =
         WHERE u.user_id = $1`,
 };
 
+function snapshotCollectionQuery(collection: AccountDataSnapshotCollection, accountParameter = 1) {
+    // The source adapters use $1 when executed independently for admission.
+    // When nested in the copy INSERT, $1 and $2 belong to the snapshot root
+    // and collection name, so bind the account as $3 instead.
+    return snapshotCollectionQueries[collection].replaceAll("$1", `$${accountParameter}`);
+}
+
 export function normalizeSnapshotCollections(collections: readonly string[] | undefined): AccountDataSnapshotCollection[] {
     const requested = collections?.length ? new Set(collections) : new Set([LIBRARY_SNAPSHOT_COLLECTION]);
     if ([...requested].some((collection) => !ACCOUNT_DATA_SNAPSHOT_COLLECTIONS.includes(collection as AccountDataSnapshotCollection))) {
@@ -777,7 +784,7 @@ export async function createAccountDataSnapshot(
                     const preflight = await client.query<{ record_count: number; payload_bytes: number }>(
                         `SELECT COUNT(*)::int AS record_count,
                                 COALESCE(SUM(octet_length(payload::text)), 0)::int AS payload_bytes
-                         FROM (${snapshotCollectionQueries[collection]}) AS source`,
+                         FROM (${snapshotCollectionQuery(collection)}) AS source`,
                         [accountId],
                     );
                     const admission = preflight.rows[0];
@@ -801,7 +808,7 @@ export async function createAccountDataSnapshot(
                     await client.query(
                         `INSERT INTO snapshot_private.account_data_snapshot_records (snapshot_id, collection_name, ordinal, record_id, payload)
                          SELECT $1, $2, source.ordinal, source.record_id, source.payload
-                         FROM (${snapshotCollectionQueries[collection]}) AS source
+                         FROM (${snapshotCollectionQuery(collection, 3)}) AS source
                          ORDER BY source.ordinal ASC`,
                         [operation.snapshot_id, collection, accountId],
                     );
