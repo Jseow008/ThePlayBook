@@ -1,0 +1,22 @@
+name: Reconcile Account Data Snapshots
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: reconcile-account-data-snapshots
+  cancel-in-progress: false
+
+jobs:
+  reconcile-account-data-snapshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Reconcile expired snapshots
+        run: |
+          curl --fail --show-error --silent \
+            --max-time 240 \
+            -X GET "https://www.netflux.blog/api/admin/account-data-snapshots/process" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

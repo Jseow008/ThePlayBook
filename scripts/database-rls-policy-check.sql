@@ -119,7 +119,10 @@ BEGIN
             SELECT count(*)
             FROM pg_policies
             WHERE schemaname = 'public'
-        ) <> 45
+        -- #7 adds the account-state ownership policy plus seven account-bound
+        -- worker policies for snapshot reads, reset/revision handling, and
+        -- server-owned mutation acknowledgements.
+        ) <> 53
 
         UNION ALL
 

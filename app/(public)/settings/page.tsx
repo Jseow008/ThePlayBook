@@ -207,14 +207,20 @@ export default function SettingsPage() {
             const activeUser = authenticatedUser ?? user;
 
             if (activeUser) {
-                const { error } = await supabase
-                    .from("user_library")
-                    .delete()
-                    .eq("user_id", activeUser.id);
-
-                if (error) {
-                    throw error;
-                }
+                const response = await fetch("/api/account-data/reset", { method: "POST" });
+                const payload = await response.json().catch(() => null) as {
+                    data?: { resetEpoch?: number; currentRevision?: number };
+                    error?: { message?: string };
+                } | null;
+                if (!response.ok) throw new Error(payload?.error?.message || "Failed to reset library");
+                const reset = payload?.data ?? null;
+                window.dispatchEvent(new CustomEvent("netflux_library_reset", {
+                    detail: {
+                        scope: storageScope,
+                        resetEpoch: typeof reset?.resetEpoch === "number" ? reset.resetEpoch : null,
+                        boundaryRevision: typeof reset?.currentRevision === "number" ? reset.currentRevision : null,
+                    },
+                }));
             }
 
             clearScopedReadingHistory(localStorage, storageScope);

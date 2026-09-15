@@ -17,6 +17,7 @@ import {
     myListKey,
     progressKey,
 } from "@/lib/local-user-storage";
+import { clearLibrarySnapshotIdempotencyKey, fetchCompleteLibrarySnapshot, LibrarySnapshotClientError } from "@/lib/account-data-client";
 
 let authStateChangeHandler: ((event: string, session: { user: { id: string } | null } | null) => void) | null = null;
 let currentAuthUser: { id: string } | null = null;
@@ -29,6 +30,7 @@ let currentCloudRows: Array<{
     last_interacted_at: string;
 }> = [];
 const upsertMock = vi.fn();
+const { commitMutationMock } = vi.hoisted(() => ({ commitMutationMock: vi.fn() }));
 const deleteMatchMock = vi.fn();
 const selectMock = vi.fn();
 const eqMock = vi.fn();
@@ -58,6 +60,19 @@ vi.mock("@/lib/supabase/client", () => ({
         },
         from: vi.fn(() => userLibraryTable),
     }),
+}));
+
+vi.mock("@/lib/user-library-mutation-client", () => ({
+    commitUserLibraryMutation: commitMutationMock,
+}));
+
+vi.mock("@/lib/account-data-client", () => ({
+    LibrarySnapshotClientError: class LibrarySnapshotClientError extends Error {
+        constructor(message: string, readonly code = "SNAPSHOT_UNAVAILABLE") { super(message); }
+    },
+    fetchCompleteLibrarySnapshot: vi.fn(),
+    getLibrarySnapshotIdempotencyKey: vi.fn(() => "00000000-0000-4000-8000-000000000099"),
+    clearLibrarySnapshotIdempotencyKey: vi.fn(),
 }));
 
 selectMock.mockImplementation(() => ({
@@ -122,8 +137,31 @@ describe("useReadingProgress", () => {
         currentCloudRows = [];
         window.localStorage.clear();
         upsertMock.mockResolvedValue({ error: null });
+        commitMutationMock.mockResolvedValue({ resetEpoch: 0, libraryRevision: 1 });
         deleteMatchMock.mockResolvedValue({ error: null });
         vi.clearAllMocks();
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => Promise.resolve({
+            manifest: {
+                snapshotId: "snapshot-test",
+                recordCount: currentCloudRows.length,
+                manifestHash: "hash",
+                resetEpoch: 0,
+                boundaryLibraryRevision: 0,
+                expiresAt: "2030-01-01T00:00:00.000Z",
+            },
+            records: currentCloudRows
+                .filter((row) => row.user_id === undefined || row.user_id === currentAuthUser?.id)
+                .map((row, index) => ({
+                    ordinal: index + 1,
+                    payloadHash: `hash-${index}`,
+                    content_id: row.content_id,
+                    is_bookmarked: row.is_bookmarked,
+                    progress: row.progress,
+                    last_interacted_at: row.last_interacted_at,
+                    library_updated_at: row.last_interacted_at,
+                    library_revision: index + 1,
+                })),
+        }));
     });
 
     it("migrates legacy guest storage into scoped guest keys", async () => {
@@ -375,7 +413,7 @@ describe("useReadingProgress", () => {
         consoleErrorSpy.mockRestore();
     });
 
-    it("imports guest data into the first signed-in account and clears guest storage", async () => {
+    it("preserves guest data until the explicit guest-to-account migration runs", async () => {
         const guestProgress = {
             itemId: "item-10",
             completed: ["seg-1"],
@@ -399,13 +437,13 @@ describe("useReadingProgress", () => {
 
         await waitFor(() => expect(result.current.storageScope).toBe(getStorageScope("user-a")));
 
-        expect(result.current.inProgressIds).toEqual(["item-10"]);
-        expect(result.current.myListIds).toEqual(["item-11"]);
-        expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-10"))).not.toBeNull();
-        expect(localStorage.getItem(myListKey(getStorageScope("user-a")))).toBe(JSON.stringify(["item-11"]));
-        expect(localStorage.getItem(progressKey(GUEST_STORAGE_SCOPE, "item-10"))).toBeNull();
-        expect(localStorage.getItem(myListKey(GUEST_STORAGE_SCOPE))).toBeNull();
-        expect(upsertMock).toHaveBeenCalled();
+        await waitFor(() => expect(result.current.myListIds).toEqual([]));
+        expect(result.current.inProgressIds).toEqual([]);
+        expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-10"))).toBeNull();
+        expect(localStorage.getItem(myListKey(getStorageScope("user-a")))).toBe(JSON.stringify([]));
+        expect(localStorage.getItem(progressKey(GUEST_STORAGE_SCOPE, "item-10"))).not.toBeNull();
+        expect(localStorage.getItem(myListKey(GUEST_STORAGE_SCOPE))).toBe(JSON.stringify(["item-11"]));
+        expect(upsertMock).not.toHaveBeenCalled();
     });
 
     it("does not leak account A local data into account B on the same device", async () => {
@@ -440,12 +478,191 @@ describe("useReadingProgress", () => {
 
         await waitFor(() => expect(result.current.storageScope).toBe(getStorageScope("user-b")));
 
+        await waitFor(() => expect(result.current.myListIds).toEqual([]));
         expect(result.current.inProgressIds).toEqual([]);
-        expect(result.current.myListIds).toEqual([]);
         expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-21"))).not.toBeNull();
         expect(localStorage.getItem(myListKey(getStorageScope("user-a")))).toBe(JSON.stringify(["item-22"]));
         expect(localStorage.getItem(progressKey(getStorageScope("user-b"), "item-21"))).toBeNull();
         expect(localStorage.getItem(myListKey(getStorageScope("user-b")))).toBe(JSON.stringify([]));
+    });
+
+    it("discards account A's in-flight snapshot after switching to account B", async () => {
+        let resolveAccountA!: (value: unknown) => void;
+        const accountASnapshot = new Promise((resolve) => { resolveAccountA = resolve; });
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
+            .mockImplementationOnce(() => accountASnapshot)
+            .mockResolvedValueOnce({
+                manifest: { snapshotId: "snapshot-b", recordCount: 1, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 1, expiresAt: "2030-01-01T00:00:00.000Z" },
+                records: [{ ordinal: 1, payloadHash: "hash-b", content_id: "item-b", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 1 }],
+            });
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        currentAuthUser = { id: "user-a" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        currentAuthUser = { id: "user-b" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+
+        await waitFor(() => expect(result.current.myListIds).toEqual(["item-b"]));
+        await act(async () => {
+            resolveAccountA({
+                manifest: { snapshotId: "snapshot-a", recordCount: 1, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 1, expiresAt: "2030-01-01T00:00:00.000Z" },
+                records: [{ ordinal: 1, payloadHash: "hash-a", content_id: "item-a", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 1 }],
+            });
+        });
+
+        expect(result.current.storageScope).toBe(getStorageScope("user-b"));
+        expect(result.current.myListIds).toEqual(["item-b"]);
+        expect(localStorage.getItem(myListKey(getStorageScope("user-b")))).toBe(JSON.stringify(["item-b"]));
+    });
+
+    it("preserves a save through pending, acknowledged, stale, and current snapshot transitions", async () => {
+        let resolveFirstSnapshot!: (value: unknown) => void;
+        let resolveSave!: (value: unknown) => void;
+        let resolveOlderSnapshot!: (value: unknown) => void;
+        let resolveCurrentSnapshot!: (value: unknown) => void;
+        const firstSnapshot = new Promise((resolve) => { resolveFirstSnapshot = resolve; });
+        const save = new Promise((resolve) => { resolveSave = resolve; });
+        const olderSnapshot = new Promise((resolve) => { resolveOlderSnapshot = resolve; });
+        const currentSnapshot = new Promise((resolve) => { resolveCurrentSnapshot = resolve; });
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
+            .mockImplementationOnce(() => firstSnapshot)
+            .mockImplementationOnce(() => olderSnapshot)
+            .mockImplementationOnce(() => currentSnapshot);
+        commitMutationMock.mockImplementationOnce(() => save);
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+
+        currentAuthUser = { id: "user-a" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        await waitFor(() => expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1));
+        act(() => {
+            result.current.toggleMyList("new-local-item");
+        });
+        await waitFor(() => expect(result.current.myListIds).toEqual(["new-local-item"]));
+        await act(async () => {
+            resolveFirstSnapshot({
+                manifest: { snapshotId: "snapshot-old", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 10, expiresAt: "2030-01-01T00:00:00.000Z" },
+                records: [],
+            });
+        });
+        await waitFor(() => expect(result.current.myListIds).toEqual(["new-local-item"]));
+        // The invalidated first traversal schedules a deterministic retry.
+        // Do not start a competing traversal until that retry has begun.
+        await waitFor(() => expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(2));
+        // A different device advances the library from revision 10 through
+        // 20 before this save commits at 21. The acknowledgement must carry
+        // 21—not a client-side guess of 11—so the stale snapshot retains it.
+        await act(async () => { resolveSave({ resetEpoch: 0, libraryRevision: 21 }); });
+        await act(async () => {
+            resolveOlderSnapshot({ manifest: { snapshotId: "snapshot-stale", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 20, expiresAt: "2030-01-01T00:00:00.000Z" }, records: [] });
+        });
+        await waitFor(() => {
+            expect(result.current.hydrationStatus).toBe("ready");
+            expect(result.current.myListIds).toEqual(["new-local-item"]);
+        });
+
+        act(() => { result.current.retryHydration(); });
+        await waitFor(() => expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(3));
+        await act(async () => {
+            resolveCurrentSnapshot({ manifest: { snapshotId: "snapshot-current", recordCount: 1, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 21, expiresAt: "2030-01-01T00:00:00.000Z" }, records: [{ ordinal: 1, payloadHash: "hash", content_id: "new-local-item", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 21 }] });
+        });
+        await waitFor(() => {
+            expect(result.current.hydrationStatus).toBe("ready");
+            expect(result.current.myListIds).toEqual(["new-local-item"]);
+        });
+    });
+
+    it("keeps a newer pending removal ahead of an older acknowledged save during hydration", async () => {
+        let resolveRemoval!: (value: unknown) => void;
+        const pendingRemoval = new Promise((resolve) => { resolveRemoval = resolve; });
+        const emptySnapshot = {
+            manifest: { snapshotId: "base", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 0, expiresAt: "2030-01-01T00:00:00.000Z" },
+            records: [],
+        };
+        const savedSnapshot = {
+            manifest: { snapshotId: "saved", recordCount: 1, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 1, expiresAt: "2030-01-01T00:00:00.000Z" },
+            records: [{ ordinal: 1, payloadHash: "hash", content_id: "item-ordered", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 1 }],
+        };
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce(emptySnapshot)
+            .mockResolvedValueOnce(savedSnapshot);
+        commitMutationMock
+            .mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 1 })
+            .mockImplementationOnce(() => pendingRemoval);
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+        currentAuthUser = { id: "user-a" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+
+        act(() => result.current.addToMyList("item-ordered"));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        act(() => result.current.removeFromMyList("item-ordered"));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
+
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+
+        await act(async () => { resolveRemoval({ resetEpoch: 0, libraryRevision: 2 }); });
+    });
+
+    it("keeps a newer confirmed removal ahead of an older save whose acknowledgement arrives late", async () => {
+        let resolveOlderSave!: (value: unknown) => void;
+        const olderSave = new Promise((resolve) => { resolveOlderSave = resolve; });
+        const emptySnapshot = {
+            manifest: { snapshotId: "base", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 0, expiresAt: "2030-01-01T00:00:00.000Z" },
+            records: [],
+        };
+        const removalSnapshot = {
+            manifest: { snapshotId: "removal-confirmed", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 2, expiresAt: "2030-01-01T00:00:00.000Z" },
+            records: [],
+        };
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
+            .mockResolvedValueOnce(emptySnapshot)
+            .mockResolvedValueOnce(removalSnapshot)
+            .mockResolvedValueOnce(removalSnapshot);
+        commitMutationMock
+            .mockImplementationOnce(() => olderSave)
+            .mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 2 });
+
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+        currentAuthUser = { id: "user-a" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+
+        act(() => result.current.addToMyList("item-reverse-ack"));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        act(() => result.current.removeFromMyList("item-reverse-ack"));
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
+
+        // The removal is confirmed by the snapshot while the earlier save's
+        // response is delayed. Its overlay must remain to suppress the save.
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+
+        await act(async () => { resolveOlderSave({ resetEpoch: 0, libraryRevision: 1 }); });
+        act(() => result.current.retryHydration());
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.myListIds).toEqual([]);
+    });
+
+    it.each(["TIMED_OUT", "SNAPSHOT_FAILED", "SNAPSHOT_EXPIRED"])("uses a fresh snapshot key after terminal %s outcome", async (code) => {
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
+            .mockRejectedValueOnce(new LibrarySnapshotClientError("Terminal snapshot outcome", code));
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+        currentAuthUser = { id: "user-a" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("error"));
+        expect(clearLibrarySnapshotIdempotencyKey).toHaveBeenCalledWith("user-a");
     });
 
     it("falls back to the guest flow when auth bootstrap errors", async () => {
@@ -462,7 +679,7 @@ describe("useReadingProgress", () => {
         expect(result.current.user).toBeNull();
     });
 
-    it("keeps local progress and downgrades recoverable cloud sync failures to warnings", async () => {
+    it("keeps guest progress and downgrades snapshot failures to warnings", async () => {
         const consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
         const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
         const guestProgress = {
@@ -479,8 +696,7 @@ describe("useReadingProgress", () => {
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
         currentAuthUser = { id: "user-a" };
-        currentCloudRows = [];
-        upsertMock.mockResolvedValue({ error: {} });
+        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Snapshot unavailable"));
 
         await act(async () => {
             authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser });
@@ -488,12 +704,12 @@ describe("useReadingProgress", () => {
 
         await waitFor(() => expect(result.current.storageScope).toBe(getStorageScope("user-a")));
 
-        expect(result.current.inProgressIds).toEqual(["item-31"]);
-        expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-31"))).not.toBeNull();
+        expect(result.current.inProgressIds).toEqual([]);
+        expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-31"))).toBeNull();
+        expect(localStorage.getItem(progressKey(GUEST_STORAGE_SCOPE, "item-31"))).not.toBeNull();
         expect(consoleWarnSpy).toHaveBeenCalledWith(
-            "[ReadingProgress] Upsert cloud progress failed",
+            "[ReadingProgress] Fetch complete library snapshot failed",
             expect.objectContaining({
-                itemId: "item-31",
                 scope: getStorageScope("user-a"),
                 userId: "user-a",
                 error: expect.any(Object),
@@ -505,7 +721,7 @@ describe("useReadingProgress", () => {
         consoleErrorSpy.mockRestore();
     });
 
-    it("loads only the signed-in user's cloud rows during hydration", async () => {
+    it("installs only the signed-in user's server snapshot during hydration", async () => {
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
 
@@ -545,7 +761,7 @@ describe("useReadingProgress", () => {
 
         await waitFor(() => expect(result.current.storageScope).toBe(getStorageScope("user-a")));
 
-        expect(eqMock).toHaveBeenCalledWith("user_id", "user-a");
+        expect(fetchCompleteLibrarySnapshot).toHaveBeenCalled();
         expect(result.current.inProgressIds).toEqual(["item-own"]);
         expect(result.current.myListIds).toEqual([]);
         expect(localStorage.getItem(progressKey(getStorageScope("user-a"), "item-own"))).not.toBeNull();

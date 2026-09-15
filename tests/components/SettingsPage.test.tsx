@@ -23,6 +23,7 @@ const toastErrorMock = vi.fn();
 const toastSuccessMock = vi.fn();
 const signOutActionMock = vi.fn();
 const browserSignOutMock = vi.fn();
+const resetLibraryRequestMock = vi.fn();
 let currentUser: { id: string; email?: string; user_metadata?: { full_name?: string } } | null = null;
 
 vi.mock("next/link", () => ({
@@ -98,6 +99,11 @@ describe("SettingsPage", () => {
         browserSignOutMock.mockResolvedValue({ error: null });
         selectEqMock.mockResolvedValue({ data: [], error: null });
         deleteEqMock.mockResolvedValue({ error: null });
+        resetLibraryRequestMock.mockResolvedValue({
+            ok: true,
+            json: async () => ({ data: { resetEpoch: 1, currentRevision: 1 } }),
+        });
+        vi.stubGlobal("fetch", resetLibraryRequestMock);
     });
 
     it("includes a replay app tour link", async () => {
@@ -159,8 +165,7 @@ describe("SettingsPage", () => {
             vi.runAllTimers();
         });
 
-        expect(fromMock).toHaveBeenCalledWith("user_library");
-        expect(deleteEqMock).toHaveBeenCalledWith("user_id", "user-123");
+        expect(resetLibraryRequestMock).toHaveBeenCalledWith("/api/account-data/reset", { method: "POST" });
         expect(clearScopedReadingHistoryMock).toHaveBeenCalledWith(localStorage, "user:test-user");
         expect(clearCachedBrowseRecommendationsMock).toHaveBeenCalledWith(localStorage, "user:test-user");
         expect(refreshMock).toHaveBeenCalled();
@@ -173,7 +178,10 @@ describe("SettingsPage", () => {
             id: "user-456",
             email: "reader2@example.com",
         };
-        deleteEqMock.mockResolvedValue({ error: { message: "Delete failed" } });
+        resetLibraryRequestMock.mockResolvedValue({
+            ok: false,
+            json: async () => ({ error: { message: "Reset failed" } }),
+        });
 
         renderSettingsPage();
 
@@ -191,7 +199,7 @@ describe("SettingsPage", () => {
 
         expect(clearScopedReadingHistoryMock).not.toHaveBeenCalled();
         expect(refreshMock).not.toHaveBeenCalled();
-        expect(toastErrorMock).toHaveBeenCalledWith("Delete failed");
+        expect(toastErrorMock).toHaveBeenCalledWith("Reset failed");
         vi.useRealTimers();
     });
 

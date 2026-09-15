@@ -94,8 +94,16 @@ jobs:
           run_with_transient_retry npx supabase start
           run_with_transient_retry npx supabase db reset
 
+          npx supabase status -o env --override-name db.url=DB107_ADMIN_DATABASE_URL \
+            | sed -nE 's/^DB107_ADMIN_DATABASE_URL="(.*)"$/DB107_ADMIN_DATABASE_URL=\1/p' \
+            >> "$GITHUB_ENV"
+
       - name: Supabase SQL drift checks
         run: |
+          # This password exists only for the lifecycle of the disposable
+          # database container. It is never persisted or printed.
+          export DB107_WORKER_PASSWORD="$(node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('base64url'))")"
+          export SNAPSHOT_WORKER_DATABASE_URL="$(node -e "const url = new URL(process.env.DB107_ADMIN_DATABASE_URL); url.username = 'netflux_snapshot_worker'; url.password = process.env.DB107_WORKER_PASSWORD; process.stdout.write(url.toString())")"
           npm run security:function-acls
           npm run security:new-object-access
           npm run security:admin-rpc-acls
@@ -109,6 +117,8 @@ jobs:
           npm run database:legacy-embedding-retirement
           npm run database:highlight-preservation
           npm run database:published-at
+          npm run database:account-data-snapshots
+          npm run database:account-data-snapshot-runtime
           npm run database:email-rpc-security
 
       - name: Security route and static tests
