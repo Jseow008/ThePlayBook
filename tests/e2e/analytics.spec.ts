@@ -165,10 +165,12 @@ test.describe("PostHog analytics verification", () => {
             })
             .toBeGreaterThan(0);
 
-        const browseLink = page.locator('a[href="/browse"]:visible').first();
+        const browseLink = page.getByRole("link", { name: "Explore a Summary" });
         await expect(browseLink).toBeVisible();
-        await browseLink.click();
-        await expect(page).toHaveURL(/\/browse$/);
+        await Promise.all([
+            page.waitForURL(/\/browse$/, { timeout: 15_000 }),
+            browseLink.click(),
+        ]);
         await expect
             .poll(() => events.filter((event) => isPageviewEvent(event) && eventPath(event) === "/browse").length, {
                 timeout: 20_000,
