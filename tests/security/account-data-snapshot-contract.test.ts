@@ -14,6 +14,10 @@ const completeExportMigration = readFileSync(
     join(process.cwd(), "supabase/migrations/20260915060000_phase1_complete_account_export.sql"),
     "utf8",
 );
+const rlsInitplanMigration = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260915144423_phase1_snapshot_rls_initplan.sql"),
+    "utf8",
+);
 
 describe("Phase 1 #7 account-data snapshot security contract", () => {
     it("keeps snapshot payloads outside the Data API and fail closed", () => {
@@ -45,5 +49,11 @@ describe("Phase 1 #7 account-data snapshot security contract", () => {
         expect(snapshotService).toContain("snapshotCollectionQueries");
         expect(snapshotService).toContain("reflection_text");
         expect(snapshotService).not.toContain("unsubscribe_token");
+    });
+
+    it("evaluates the snapshot account binding once per protected query", () => {
+        const accountBinding = "(SELECT NULLIF(current_setting('app.snapshot_account_id', true), '')::uuid)";
+        expect(rlsInitplanMigration).toContain(accountBinding);
+        expect(rlsInitplanMigration).not.toMatch(/= NULLIF\(current_setting\('app\.snapshot_account_id'/);
     });
 });
