@@ -101,7 +101,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         await db.query(
             `INSERT INTO public.content_requests
                 (id, title, normalized_title, content_type, submitted_by, status)
-             VALUES ($1, 'Export request', 'export request', 'book', $2, 'requested')`,
+             VALUES ($1, 'Export request', 'export request', 'book', $2, 'pending')`,
             [requestExport, accountExport],
         );
         await db.query(
