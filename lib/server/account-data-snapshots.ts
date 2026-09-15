@@ -869,6 +869,7 @@ export async function createAccountDataSnapshot(
                     expiresAt: snapshotExpiry,
                     schemaVersion: LIBRARY_SNAPSHOT_SCHEMA_VERSION,
                     collectionManifests,
+                    collectionNames: collections,
                 } satisfies LibrarySnapshotManifest;
             });
 
