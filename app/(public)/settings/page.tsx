@@ -202,7 +202,7 @@ export default function SettingsPage() {
                 return;
             }
             console.error("Export error:", err);
-            toast.error("Failed to export data");
+            toast.error(err instanceof AccountDataExportError ? err.message : "Failed to export data");
         } finally {
             if (activeExportRef.current === activeExport) {
                 activeExportRef.current = null;

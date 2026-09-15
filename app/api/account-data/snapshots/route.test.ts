@@ -47,6 +47,10 @@ describe("POST /api/account-data/snapshots", () => {
 
         expect(response.status).toBe(201);
         expect(createAccountDataSnapshot).toHaveBeenCalledWith("account-a", "00000000-0000-4000-8000-000000000001", undefined);
+        expect(strictPublicRateLimit).toHaveBeenCalledWith(expect.any(NextRequest), expect.objectContaining({
+            limit: 6,
+            key: "account-data-snapshot",
+        }));
     });
 
     it("bounds snapshot creation per authenticated account", async () => {
@@ -78,5 +82,30 @@ describe("POST /api/account-data/snapshots", () => {
             "00000000-0000-4000-8000-000000000002",
             ["user_library", "reflections"],
         );
+    });
+
+    it("keeps a complete account export in a separately bounded account bucket", async () => {
+        (createAccountDataSnapshot as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+            state: "ready",
+            manifest: { snapshotId: "snapshot-export", recordCount: 2, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 1, expiresAt: "2030-01-01T00:00:00.000Z" },
+        });
+
+        const response = await POST(new NextRequest("http://localhost/api/account-data/snapshots", {
+            method: "POST",
+            body: JSON.stringify({
+                idempotencyKey: "00000000-0000-4000-8000-000000000003",
+                collections: [
+                    "preferences", "user_library", "highlights", "reflections", "reading_activity", "feedback",
+                    "submitted_requests", "request_votes", "notification_preferences", "request_notifications", "ai_usage",
+                ],
+            }),
+        }));
+
+        expect(response.status).toBe(201);
+        expect(strictPublicRateLimit).toHaveBeenCalledWith(expect.any(NextRequest), expect.objectContaining({
+            limit: 2,
+            key: "account-data-export-snapshot",
+            identifier: "account-a",
+        }));
     });
 });
