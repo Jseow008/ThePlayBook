@@ -22,6 +22,10 @@ const rlsAdvisorFixMigration = readFileSync(
     join(process.cwd(), "supabase/migrations/20260915150245_phase1_snapshot_rls_advisor_fix.sql"),
     "utf8",
 );
+const rlsInitplanCastMigration = readFileSync(
+    join(process.cwd(), "supabase/migrations/20260915151951_phase1_snapshot_rls_initplan_cast.sql"),
+    "utf8",
+);
 
 describe("Phase 1 #7 account-data snapshot security contract", () => {
     it("keeps snapshot payloads outside the Data API and fail closed", () => {
@@ -60,5 +64,7 @@ describe("Phase 1 #7 account-data snapshot security contract", () => {
         const optimizedBinding = "(SELECT current_setting('app.snapshot_account_id', true)::uuid)";
         expect(rlsAdvisorFixMigration).toContain(optimizedBinding);
         expect(rlsAdvisorFixMigration).not.toContain("NULLIF(current_setting");
+        expect(rlsInitplanCastMigration).toContain("(SELECT current_setting('app.snapshot_account_id', true))::uuid");
+        expect(rlsInitplanCastMigration).not.toContain("current_setting('app.snapshot_account_id', true)::uuid");
     });
 });
