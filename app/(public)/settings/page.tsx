@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { Bell, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, CirclePlay } from "lucide-react";
@@ -14,7 +14,13 @@ import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/o
 import { clearScopedReadingHistory } from "@/lib/local-user-storage";
 import { clearCachedRecommendations, clearRecentRecommendations } from "@/lib/recommendation-memory";
 import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
-import { fetchVerifiedAccountDataExport } from "@/lib/account-data-export-client";
+import { AccountDataExportError, fetchVerifiedAccountDataExport } from "@/lib/account-data-export-client";
+
+type ActiveExport = {
+    accountId: string;
+    authGeneration: number;
+    controller: AbortController;
+};
 
 export default function SettingsPage() {
     const supabase = createClient();
@@ -29,6 +35,9 @@ export default function SettingsPage() {
     const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
     const [isSavingNotifications, setIsSavingNotifications] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const authenticatedAccountRef = useRef<string | null>(null);
+    const authGenerationRef = useRef(0);
+    const activeExportRef = useRef<ActiveExport | null>(null);
 
     const [isSigningOut, setIsSigningOut] = useState(false);
     const [isClearing, setIsClearing] = useState(false);
@@ -39,16 +48,57 @@ export default function SettingsPage() {
 
     useEffect(() => {
         let mounted = true;
+
+        const cancelActiveExport = () => {
+            const activeExport = activeExportRef.current;
+            if (!activeExport) return;
+            activeExport.controller.abort();
+            activeExportRef.current = null;
+            if (mounted) setIsExporting(false);
+        };
+
+        const applyAuthenticatedUser = (nextUser: User | null) => {
+            // Treat every Auth event as a new authentication generation. A
+            // completed export from an earlier session must never be offered
+            // after sign-out, an account switch, or a refreshed session.
+            authGenerationRef.current += 1;
+            authenticatedAccountRef.current = nextUser?.id ?? null;
+            cancelActiveExport();
+            if (!mounted) return;
+            setUser(nextUser);
+            setDisplayName(nextUser?.user_metadata?.full_name || "");
+        };
+
         async function loadUser() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (mounted && user) {
-                setUser(user);
-                setDisplayName(user.user_metadata?.full_name || "");
+            const initialGeneration = authGenerationRef.current;
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                // Do not let an older getUser response overwrite a later
+                // authentication event.
+                if (mounted && authGenerationRef.current === initialGeneration) {
+                    applyAuthenticatedUser(user);
+                }
+            } finally {
+                if (mounted) setIsLoadingAuth(false);
             }
-            if (mounted) setIsLoadingAuth(false);
         }
+
         loadUser();
-        return () => { mounted = false; };
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            applyAuthenticatedUser(session?.user ?? null);
+            if (mounted) setIsLoadingAuth(false);
+        });
+
+        return () => {
+            mounted = false;
+            const activeExport = activeExportRef.current;
+            if (activeExport) {
+                activeExport.controller.abort();
+                activeExportRef.current = null;
+            }
+            subscription.unsubscribe();
+        };
     }, [supabase]);
 
     useEffect(() => {
@@ -103,9 +153,37 @@ export default function SettingsPage() {
 
     const handleExportData = async () => {
         if (!user) return;
+        const activeExport: ActiveExport = {
+            accountId: user.id,
+            authGeneration: authGenerationRef.current,
+            controller: new AbortController(),
+        };
+        activeExportRef.current = activeExport;
         setIsExporting(true);
+
+        const ensureExportIsCurrent = () => {
+            if (
+                activeExport.controller.signal.aborted
+                || activeExportRef.current !== activeExport
+                || authenticatedAccountRef.current !== activeExport.accountId
+                || authGenerationRef.current !== activeExport.authGeneration
+            ) {
+                throw new AccountDataExportError("The data export was cancelled because the signed-in account changed.", "EXPORT_CANCELLED");
+            }
+        };
+
         try {
-            const exportData = await fetchVerifiedAccountDataExport();
+            const exportData = await fetchVerifiedAccountDataExport({ signal: activeExport.controller.signal });
+            ensureExportIsCurrent();
+
+            // Auth events are asynchronous. Confirm the server-authenticated
+            // account immediately before producing a browser download as a
+            // final guard against a response that arrived during a switch.
+            const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+            if (authError || currentUser?.id !== activeExport.accountId) {
+                throw new AccountDataExportError("The data export was cancelled because the signed-in account changed.", "EXPORT_CANCELLED");
+            }
+            ensureExportIsCurrent();
 
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
@@ -120,10 +198,16 @@ export default function SettingsPage() {
 
             toast.success("Data export complete");
         } catch (err) {
+            if (err instanceof AccountDataExportError && err.code === "EXPORT_CANCELLED") {
+                return;
+            }
             console.error("Export error:", err);
             toast.error("Failed to export data");
         } finally {
-            setIsExporting(false);
+            if (activeExportRef.current === activeExport) {
+                activeExportRef.current = null;
+                setIsExporting(false);
+            }
         }
     };
 

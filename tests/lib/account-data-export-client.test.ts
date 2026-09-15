@@ -89,4 +89,35 @@ describe("verified account-data export", () => {
 
         await expect(fetchVerifiedAccountDataExport()).rejects.toBeInstanceOf(AccountDataExportError);
     });
+
+    it("does not return a partial export when a collection traversal is interrupted", async () => {
+        const { manifest, collectionRecords } = fixture();
+        const controller = new AbortController();
+        const interruptedCollection = "reflections";
+        const interruptedIndex = ACCOUNT_DATA_EXPORT_COLLECTIONS.indexOf(interruptedCollection);
+        const fetchMock = vi.fn().mockResolvedValueOnce(response({ state: "ready", manifest }, 201));
+
+        for (const collection of ACCOUNT_DATA_EXPORT_COLLECTIONS) {
+            if (collection === interruptedCollection) {
+                fetchMock.mockImplementationOnce((_input: RequestInfo | URL, init?: RequestInit) => new Promise<Response>((_resolve, reject) => {
+                    init?.signal?.addEventListener("abort", () => {
+                        reject(new DOMException("The request was aborted.", "AbortError"));
+                    }, { once: true });
+                }));
+                continue;
+            }
+            fetchMock.mockResolvedValueOnce(response({
+                data: [collectionRecords[collection][0]],
+                manifest,
+                pageInfo: { hasNextPage: false, endCursor: null },
+            }));
+        }
+        vi.stubGlobal("fetch", fetchMock);
+
+        const exported = fetchVerifiedAccountDataExport({ signal: controller.signal });
+        await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(interruptedIndex + 2));
+        controller.abort();
+
+        await expect(exported).rejects.toMatchObject({ code: "EXPORT_CANCELLED" });
+    });
 });

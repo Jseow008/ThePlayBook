@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Pool } from "pg";
+import type { AccountDataSnapshotCollection } from "@/lib/account-data-snapshot-collections";
 
 const adminDatabaseUrl = process.env.DB107_ADMIN_DATABASE_URL;
 const workerDatabaseUrl = process.env.SNAPSHOT_WORKER_DATABASE_URL;
@@ -14,8 +15,12 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     const accountC = randomUUID();
     const accountD = randomUUID();
     const accountExport = randomUUID();
+    const accountCrossCollectionExport = randomUUID();
     const contentA = randomUUID();
     const contentExport = randomUUID();
+    const crossCollectionContentIds = Array.from({ length: 201 }, () => randomUUID());
+    const crossCollectionAddedLibraryContentId = randomUUID();
+    const crossCollectionAddedReflectionContentId = randomUUID();
     const requestExport = randomUUID();
     const segmentExport = randomUUID();
     const snapshotKey = randomUUID();
@@ -131,8 +136,20 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     afterAll(async () => {
         await resetAccountDataSnapshotPoolForTests();
         await db.query("DELETE FROM public.content_requests WHERE id = $1", [requestExport]).catch(() => undefined);
-        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [[contentA, contentExport]]).catch(() => undefined);
-        await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB, accountC, accountD, accountExport]]).catch(() => undefined);
+        await db.query(
+            "DELETE FROM public.content_item WHERE id = ANY($1::uuid[])",
+            [[
+                contentA,
+                contentExport,
+                ...crossCollectionContentIds,
+                crossCollectionAddedLibraryContentId,
+                crossCollectionAddedReflectionContentId,
+            ]],
+        ).catch(() => undefined);
+        await db.query(
+            "DELETE FROM auth.users WHERE id = ANY($1::uuid[])",
+            [[accountA, accountB, accountC, accountD, accountExport, accountCrossCollectionExport]],
+        ).catch(() => undefined);
         await workerDb.end();
         await db.end();
     });
@@ -239,6 +256,177 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         expect(recordsByCollection.get("request_notifications")?.[0]?.payload).not.toHaveProperty("provider_message_id");
         expect(recordsByCollection.get("request_notifications")?.[0]?.payload).not.toHaveProperty("last_error");
         expect(recordsByCollection.get("submitted_requests")?.[0]?.payload).not.toHaveProperty("normalized_title");
+    });
+
+    it("delivers the persisted cross-collection boundary across multiple pages while source records change", async () => {
+        const { fetchVerifiedAccountDataExport } = await import("@/lib/account-data-export-client");
+        const crossCollectionEmail = `db107-cross-export-${accountCrossCollectionExport}@example.invalid`;
+
+        await db.query(
+            `INSERT INTO auth.users
+                (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+             VALUES
+                ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
+            [accountCrossCollectionExport, crossCollectionEmail],
+        );
+        await db.query(
+            `INSERT INTO public.content_item (id, type, title, status)
+             SELECT source.content_id::uuid, 'article', 'DB-107 cross-collection export ' || source.ordinal, 'verified'
+             FROM unnest($1::text[]) WITH ORDINALITY AS source(content_id, ordinal)`,
+            [crossCollectionContentIds],
+        );
+        await db.query(
+            `INSERT INTO public.user_library (user_id, content_id, is_bookmarked, progress)
+             SELECT $1, source.content_id::uuid, true, jsonb_build_object('itemId', source.ordinal::text, 'isCompleted', false)
+             FROM unnest($2::text[]) WITH ORDINALITY AS source(content_id, ordinal)`,
+            [accountCrossCollectionExport, crossCollectionContentIds],
+        );
+        await db.query(
+            `INSERT INTO public.user_reflections (user_id, content_item_id, prompt, reflection_text)
+             SELECT $1, source.content_id::uuid, 'Boundary prompt ' || source.ordinal, 'Boundary reflection ' || source.ordinal
+             FROM unnest($2::text[]) WITH ORDINALITY AS source(content_id, ordinal)`,
+            [accountCrossCollectionExport, crossCollectionContentIds],
+        );
+
+        const pageCounts = new Map<string, number>();
+        let sourceMutatedDuringTraversal = false;
+        const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+            const requestUrl = new URL(
+                typeof input === "string" ? input : input instanceof URL ? input.href : input.url,
+                window.location.origin,
+            );
+            const method = init?.method ?? (typeof input === "object" && "method" in input ? input.method : "GET");
+
+            if (requestUrl.pathname === "/api/account-data/snapshots" && method === "POST") {
+                const body = JSON.parse(String(init?.body ?? "{}")) as {
+                    idempotencyKey: string;
+                    collections: string[];
+                };
+                const created = await createAccountDataSnapshot(
+                    accountCrossCollectionExport,
+                    body.idempotencyKey,
+                    body.collections,
+                );
+                if (created.state !== "ready") {
+                    const code = created.state === "failed" ? created.code : "SNAPSHOT_BUILDING";
+                    return new Response(JSON.stringify({ error: { details: { snapshot_error: code } } }), { status: 503 });
+                }
+                return new Response(JSON.stringify({ state: "ready", manifest: created.manifest }), { status: 201 });
+            }
+
+            const [, api, accountData, snapshots, snapshotId, collection] = requestUrl.pathname.split("/");
+            if (api !== "api" || accountData !== "account-data" || snapshots !== "snapshots" || !snapshotId || !collection) {
+                return new Response("Not found", { status: 404 });
+            }
+
+            const afterOrdinal = Number(requestUrl.searchParams.get("cursor") ?? "0");
+            const page = collection === "user_library"
+                ? await getLibrarySnapshotPage(accountCrossCollectionExport, snapshotId, afterOrdinal, 200)
+                : await getAccountDataSnapshotPage(
+                    accountCrossCollectionExport,
+                    snapshotId,
+                    collection as AccountDataSnapshotCollection,
+                    afterOrdinal,
+                    200,
+                );
+            pageCounts.set(collection, (pageCounts.get(collection) ?? 0) + 1);
+
+            if (collection === "user_library" && afterOrdinal === 0 && !sourceMutatedDuringTraversal) {
+                sourceMutatedDuringTraversal = true;
+                await db.query(
+                    `INSERT INTO public.content_item (id, type, title, status)
+                     VALUES
+                        ($1, 'article', 'DB-107 cross-collection library addition', 'verified'),
+                        ($2, 'article', 'DB-107 cross-collection reflection addition', 'verified')`,
+                    [crossCollectionAddedLibraryContentId, crossCollectionAddedReflectionContentId],
+                );
+                await db.query(
+                    "UPDATE public.user_library SET is_bookmarked = false WHERE user_id = $1 AND content_id = $2",
+                    [accountCrossCollectionExport, crossCollectionContentIds[0]],
+                );
+                await db.query(
+                    "DELETE FROM public.user_library WHERE user_id = $1 AND content_id = $2",
+                    [accountCrossCollectionExport, crossCollectionContentIds[1]],
+                );
+                await db.query(
+                    "INSERT INTO public.user_library (user_id, content_id, is_bookmarked) VALUES ($1, $2, true)",
+                    [accountCrossCollectionExport, crossCollectionAddedLibraryContentId],
+                );
+                await db.query(
+                    "UPDATE public.user_reflections SET reflection_text = 'Changed after the export boundary.' WHERE user_id = $1 AND content_item_id = $2",
+                    [accountCrossCollectionExport, crossCollectionContentIds[2]],
+                );
+                await db.query(
+                    "DELETE FROM public.user_reflections WHERE user_id = $1 AND content_item_id = $2",
+                    [accountCrossCollectionExport, crossCollectionContentIds[3]],
+                );
+                await db.query(
+                    "INSERT INTO public.user_reflections (user_id, content_item_id, prompt, reflection_text) VALUES ($1, $2, 'Added after boundary', 'This must not appear in the export.')",
+                    [accountCrossCollectionExport, crossCollectionAddedReflectionContentId],
+                );
+            }
+
+            const endOrdinal = page.records.at(-1)?.ordinal;
+            return new Response(JSON.stringify({
+                data: page.records,
+                manifest: page.manifest,
+                pageInfo: {
+                    hasNextPage: page.hasNextPage,
+                    endCursor: endOrdinal === undefined ? null : String(endOrdinal),
+                },
+            }), { status: 200 });
+        });
+
+        vi.stubGlobal("fetch", fetchMock);
+        try {
+            const exported = await fetchVerifiedAccountDataExport();
+
+            expect(sourceMutatedDuringTraversal).toBe(true);
+            expect(pageCounts.get("user_library")).toBe(2);
+            expect(pageCounts.get("reflections")).toBe(2);
+            expect(exported.data.user_library).toHaveLength(201);
+            expect(exported.data.reflections).toHaveLength(201);
+            expect(exported.snapshot.collection_manifests.user_library).toMatchObject({ recordCount: 201 });
+            expect(exported.snapshot.collection_manifests.reflections).toMatchObject({ recordCount: 201 });
+            expect(exported.data.user_library.find((record) => record.content_id === crossCollectionContentIds[0])).toMatchObject({
+                content_id: crossCollectionContentIds[0],
+                is_bookmarked: true,
+            });
+            expect(exported.data.user_library.find((record) => record.content_id === crossCollectionContentIds[1])).toMatchObject({
+                content_id: crossCollectionContentIds[1],
+                is_bookmarked: true,
+            });
+            expect(exported.data.user_library.some((record) => record.content_id === crossCollectionAddedLibraryContentId)).toBe(false);
+            expect(exported.data.reflections.find((record) => record.content_item_id === crossCollectionContentIds[2])).toMatchObject({
+                reflection_text: "Boundary reflection 3",
+            });
+            expect(exported.data.reflections.some((record) => record.content_item_id === crossCollectionContentIds[3])).toBe(true);
+            expect(exported.data.reflections.some((record) => record.content_item_id === crossCollectionAddedReflectionContentId)).toBe(false);
+
+            const sourceLibrary = await db.query<{ content_id: string; is_bookmarked: boolean }>(
+                "SELECT content_id, is_bookmarked FROM public.user_library WHERE user_id = $1 AND content_id = ANY($2::uuid[])",
+                [accountCrossCollectionExport, [crossCollectionContentIds[0], crossCollectionContentIds[1], crossCollectionAddedLibraryContentId]],
+            );
+            expect(sourceLibrary.rows).toContainEqual({ content_id: crossCollectionContentIds[0], is_bookmarked: false });
+            expect(sourceLibrary.rows.some((row) => row.content_id === crossCollectionContentIds[1])).toBe(false);
+            expect(sourceLibrary.rows).toContainEqual({ content_id: crossCollectionAddedLibraryContentId, is_bookmarked: true });
+
+            const sourceReflections = await db.query<{ content_item_id: string; reflection_text: string }>(
+                "SELECT content_item_id, reflection_text FROM public.user_reflections WHERE user_id = $1 AND content_item_id = ANY($2::uuid[])",
+                [accountCrossCollectionExport, [crossCollectionContentIds[2], crossCollectionContentIds[3], crossCollectionAddedReflectionContentId]],
+            );
+            expect(sourceReflections.rows).toContainEqual({
+                content_item_id: crossCollectionContentIds[2],
+                reflection_text: "Changed after the export boundary.",
+            });
+            expect(sourceReflections.rows.some((row) => row.content_item_id === crossCollectionContentIds[3])).toBe(false);
+            expect(sourceReflections.rows).toContainEqual({
+                content_item_id: crossCollectionAddedReflectionContentId,
+                reflection_text: "This must not appear in the export.",
+            });
+        } finally {
+            vi.unstubAllGlobals();
+        }
     });
 
     it("keeps a snapshot isolated and immutable across saves, removals, and a reset", async () => {
