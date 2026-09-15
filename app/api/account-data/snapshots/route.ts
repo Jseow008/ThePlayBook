@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
-import { createLibrarySnapshot, AccountDataSnapshotError } from "@/lib/server/account-data-snapshots";
+import { ACCOUNT_DATA_SNAPSHOT_COLLECTIONS } from "@/lib/account-data-snapshot-collections";
+import { createAccountDataSnapshot, AccountDataSnapshotError } from "@/lib/server/account-data-snapshots";
 import { rateLimitFailureResponseWithTelemetry, strictPublicRateLimit } from "@/lib/server/rate-limit";
 
 const CreateSnapshotSchema = z.object({
     idempotencyKey: z.string().uuid().optional(),
+    collections: z.array(z.enum(ACCOUNT_DATA_SNAPSHOT_COLLECTIONS)).min(1).max(ACCOUNT_DATA_SNAPSHOT_COLLECTIONS.length).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -41,7 +43,7 @@ export async function POST(request: NextRequest) {
         const parsed = CreateSnapshotSchema.safeParse(body);
         if (!parsed.success) return apiError("VALIDATION_ERROR", "Invalid snapshot request.", 400, requestId);
 
-        const result = await createLibrarySnapshot(user.id, parsed.data.idempotencyKey ?? randomUUID());
+        const result = await createAccountDataSnapshot(user.id, parsed.data.idempotencyKey ?? randomUUID(), parsed.data.collections);
         if (result.state === "building") {
             return NextResponse.json({ state: result.state, snapshotId: result.snapshotId }, { status: 202 });
         }

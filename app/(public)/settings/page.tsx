@@ -14,6 +14,7 @@ import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/o
 import { clearScopedReadingHistory } from "@/lib/local-user-storage";
 import { clearCachedRecommendations, clearRecentRecommendations } from "@/lib/recommendation-memory";
 import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
+import { fetchVerifiedAccountDataExport } from "@/lib/account-data-export-client";
 
 export default function SettingsPage() {
     const supabase = createClient();
@@ -104,26 +105,7 @@ export default function SettingsPage() {
         if (!user) return;
         setIsExporting(true);
         try {
-            const [libraryRes, activityRes, feedbackRes, highlightsRes] = await Promise.all([
-                supabase.from("user_library").select("*").eq("user_id", user.id),
-                supabase.from("reading_activity").select("*").eq("user_id", user.id),
-                supabase.from("content_feedback").select("*").eq("user_id", user.id),
-                supabase.from("user_highlights").select("*").eq("user_id", user.id),
-            ]);
-
-            const exportError = libraryRes.error ?? activityRes.error ?? feedbackRes.error ?? highlightsRes.error;
-            if (exportError) {
-                throw exportError;
-            }
-
-            const exportData = {
-                export_date: new Date().toISOString(),
-                user: { id: user.id, email: user.email, name: user.user_metadata?.full_name },
-                library: libraryRes.data || [],
-                activity: activityRes.data || [],
-                feedback: feedbackRes.data || [],
-                notes_and_highlights: highlightsRes.data || [],
-            };
+            const exportData = await fetchVerifiedAccountDataExport();
 
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
@@ -431,7 +413,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                     <p className="font-medium text-foreground">Download My Data</p>
-                                    <p className="text-sm text-muted-foreground">Export your reading history, library, notes, and highlights to a JSON file</p>
+                                    <p className="text-sm text-muted-foreground">Export your library, reading history, notes, reflections, preferences, and request activity to a JSON file</p>
                                 </div>
                             </div>
                         </button>

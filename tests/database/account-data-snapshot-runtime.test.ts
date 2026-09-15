@@ -13,10 +13,16 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     const accountB = randomUUID();
     const accountC = randomUUID();
     const accountD = randomUUID();
+    const accountExport = randomUUID();
     const contentA = randomUUID();
+    const contentExport = randomUUID();
+    const requestExport = randomUUID();
+    const segmentExport = randomUUID();
     const snapshotKey = randomUUID();
 
     let createLibrarySnapshot: typeof import("@/lib/server/account-data-snapshots").createLibrarySnapshot;
+    let createAccountDataSnapshot: typeof import("@/lib/server/account-data-snapshots").createAccountDataSnapshot;
+    let getAccountDataSnapshotPage: typeof import("@/lib/server/account-data-snapshots").getAccountDataSnapshotPage;
     let getLibrarySnapshotPage: typeof import("@/lib/server/account-data-snapshots").getLibrarySnapshotPage;
     let getLiveLibraryPage: typeof import("@/lib/server/account-data-snapshots").getLiveLibraryPage;
     let commitLibraryMutationForAccount: typeof import("@/lib/server/account-data-snapshots").commitLibraryMutationForAccount;
@@ -26,7 +32,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     beforeAll(async () => {
         // Import after the CI-only URL is available so the server pool cannot
         // accidentally fall back to a linked or production database.
-        ({ createLibrarySnapshot, getLibrarySnapshotPage, getLiveLibraryPage, commitLibraryMutationForAccount, resetLibraryForAccount, resetAccountDataSnapshotPoolForTests } = await import("@/lib/server/account-data-snapshots"));
+        ({ createLibrarySnapshot, createAccountDataSnapshot, getAccountDataSnapshotPage, getLibrarySnapshotPage, getLiveLibraryPage, commitLibraryMutationForAccount, resetLibraryForAccount, resetAccountDataSnapshotPoolForTests } = await import("@/lib/server/account-data-snapshots"));
         await db.query(
             `INSERT INTO auth.users
                 (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
@@ -34,8 +40,9 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                 ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
                 ('00000000-0000-0000-0000-000000000000', $3, 'authenticated', 'authenticated', $4, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
                 ('00000000-0000-0000-0000-000000000000', $5, 'authenticated', 'authenticated', $6, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
-                ('00000000-0000-0000-0000-000000000000', $7, 'authenticated', 'authenticated', $8, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
-            [accountA, `db107-a-${accountA}@example.invalid`, accountB, `db107-b-${accountB}@example.invalid`, accountC, `db107-c-${accountC}@example.invalid`, accountD, `db107-d-${accountD}@example.invalid`],
+                ('00000000-0000-0000-0000-000000000000', $7, 'authenticated', 'authenticated', $8, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
+                ('00000000-0000-0000-0000-000000000000', $9, 'authenticated', 'authenticated', $10, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
+            [accountA, `db107-a-${accountA}@example.invalid`, accountB, `db107-b-${accountB}@example.invalid`, accountC, `db107-c-${accountC}@example.invalid`, accountD, `db107-d-${accountD}@example.invalid`, accountExport, `db107-export-${accountExport}@example.invalid`],
         );
         await db.query(
             `INSERT INTO public.content_item (id, type, title, status)
@@ -43,15 +50,89 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             [contentA],
         );
         await db.query(
+            `INSERT INTO public.content_item (id, type, title, status)
+             VALUES ($1, 'article', 'DB-107 export', 'verified')`,
+            [contentExport],
+        );
+        await db.query(
             `INSERT INTO public.user_library (user_id, content_id, is_bookmarked, progress)
              VALUES ($1, $2, true, '{"itemId":"fixture-a","isCompleted":false}'::jsonb)`,
             [accountA, contentA],
+        );
+
+        await db.query(
+            `INSERT INTO public.profiles (id, email, onboarding_state, reader_settings)
+             VALUES ($1, $2, '{"completed":true}'::jsonb, '{"fontSize":"large"}'::jsonb)
+             ON CONFLICT (id) DO UPDATE
+             SET onboarding_state = EXCLUDED.onboarding_state, reader_settings = EXCLUDED.reader_settings`,
+            [accountExport, `db107-export-${accountExport}@example.invalid`],
+        );
+        await db.query(
+            `INSERT INTO public.segment (id, item_id, order_index, markdown_body)
+             VALUES ($1, $2, 1, 'Export fixture segment')`,
+            [segmentExport, contentExport],
+        );
+        await db.query(
+            `INSERT INTO public.user_library (user_id, content_id, is_bookmarked, progress)
+             VALUES ($1, $2, true, '{"itemId":"export","isCompleted":true}'::jsonb)`,
+            [accountExport, contentExport],
+        );
+        await db.query(
+            `INSERT INTO public.user_highlights
+                (user_id, content_item_id, segment_id, highlighted_text, note_body, color, anchor_start, anchor_end)
+             VALUES ($1, $2, $3, 'Export highlight', 'Export note', 'blue', 3, 19)`,
+            [accountExport, contentExport, segmentExport],
+        );
+        await db.query(
+            `INSERT INTO public.user_reflections (user_id, content_item_id, prompt, reflection_text)
+             VALUES ($1, $2, 'What changed?', 'The complete-export reflection fixture.')`,
+            [accountExport, contentExport],
+        );
+        await db.query(
+            `INSERT INTO public.reading_activity (user_id, activity_date, duration_seconds, pages_read)
+             VALUES ($1, '2026-09-15', 42, 3)`,
+            [accountExport],
+        );
+        await db.query(
+            `INSERT INTO public.content_feedback (user_id, content_id, is_positive, reason, details)
+             VALUES ($1, $2, true, 'useful', 'Complete-export fixture')`,
+            [accountExport, contentExport],
+        );
+        await db.query(
+            `INSERT INTO public.content_requests
+                (id, title, normalized_title, content_type, submitted_by, status)
+             VALUES ($1, 'Export request', 'export request', 'book', $2, 'requested')`,
+            [requestExport, accountExport],
+        );
+        await db.query(
+            `INSERT INTO public.content_request_votes (user_id, request_id)
+             VALUES ($1, $2)`,
+            [accountExport, requestExport],
+        );
+        await db.query(
+            `INSERT INTO public.user_notification_preferences
+                (user_id, request_published_email_enabled, unsubscribe_token)
+             VALUES ($1, false, 'db107-export-private-unsubscribe-token-000000000000000000000000')`,
+            [accountExport],
+        );
+        await db.query(
+            `INSERT INTO public.content_request_notifications
+                (request_id, user_id, type, status, provider_message_id, last_error)
+             VALUES ($1, $2, 'published', 'sent', 'provider-private-id', 'private operational error')`,
+            [requestExport, accountExport],
+        );
+        await db.query(
+            `INSERT INTO public.ai_message_usage (user_id, feature)
+             VALUES ($1, 'ask-library')`,
+            [accountExport],
         );
     });
 
     afterAll(async () => {
         await resetAccountDataSnapshotPoolForTests();
-        await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB, accountC, accountD]]).catch(() => undefined);
+        await db.query("DELETE FROM public.content_requests WHERE id = $1", [requestExport]).catch(() => undefined);
+        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [[contentA, contentExport]]).catch(() => undefined);
+        await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [[accountA, accountB, accountC, accountD, accountExport]]).catch(() => undefined);
         await workerDb.end();
         await db.end();
     });
@@ -77,13 +158,13 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshot_operations
                     (id, account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status)
-                 VALUES ($1, $2, $3, $4, ARRAY['user_library'], 1, $5, 'ready')`,
-                [expiredOperation, accountD, expiredKey, "e77f009786b9269d97558ddef296602fcc43d75fc08fc20bad3777c1ad96fe1b", expiredSnapshot],
+                 VALUES ($1, $2, $3, $4, ARRAY['user_library'], 2, $5, 'ready')`,
+                [expiredOperation, accountD, expiredKey, "98692345147acfc80c5cc4ff030f6584620e93fc6b5b4bdde1ac88d265c5be62", expiredSnapshot],
             );
             await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshots
                     (id, operation_id, account_id, collection_names, schema_version, reset_epoch, boundary_library_revision, status, expires_at)
-                 VALUES ($1, $2, $3, ARRAY['user_library'], 1, 0, 0, 'ready', now() - interval '1 second')`,
+                 VALUES ($1, $2, $3, ARRAY['user_library'], 2, 0, 0, 'ready', now() - interval '1 second')`,
                 [expiredSnapshot, expiredOperation, accountD],
             );
             await client.query("COMMIT");
@@ -123,6 +204,41 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         } finally {
             await workerDb.query("ROLLBACK");
         }
+    });
+
+    it("exports every approved owned-data collection exactly once without private operational fields", async () => {
+        const { ACCOUNT_DATA_EXPORT_COLLECTIONS } = await import("@/lib/account-data-snapshot-collections");
+        const result = await createAccountDataSnapshot(accountExport, randomUUID(), ACCOUNT_DATA_EXPORT_COLLECTIONS);
+        expect(result.state).toBe("ready");
+        if (result.state !== "ready") return;
+
+        expect(Object.keys(result.manifest.collectionManifests ?? {}).sort()).toEqual([...ACCOUNT_DATA_EXPORT_COLLECTIONS].sort());
+        expect(result.manifest.recordCount).toBe(11);
+
+        const recordsByCollection = new Map<string, Array<{ recordId: string; payload: Record<string, unknown> }>>();
+        for (const collection of ACCOUNT_DATA_EXPORT_COLLECTIONS) {
+            const page = await getAccountDataSnapshotPage(accountExport, result.manifest.snapshotId, collection, 0, 200);
+            const expected = result.manifest.collectionManifests?.[collection];
+            expect(page.records).toHaveLength(expected?.recordCount ?? -1);
+            expect(new Set(page.records.map((record) => record.recordId)).size).toBe(page.records.length);
+            expect(page.records.map((record) => record.ordinal)).toEqual(page.records.map((_, index) => index + 1));
+            recordsByCollection.set(collection, page.records);
+        }
+
+        expect(recordsByCollection.get("reflections")?.[0]?.payload).toMatchObject({
+            prompt: "What changed?",
+            reflection_text: "The complete-export reflection fixture.",
+        });
+        expect(recordsByCollection.get("preferences")?.[0]?.payload).toMatchObject({
+            onboarding_state: { completed: true },
+            reader_settings: { fontSize: "large" },
+        });
+        expect(recordsByCollection.get("preferences")?.[0]?.payload).not.toHaveProperty("role");
+        expect(recordsByCollection.get("preferences")?.[0]?.payload).not.toHaveProperty("is_internal");
+        expect(recordsByCollection.get("notification_preferences")?.[0]?.payload).not.toHaveProperty("unsubscribe_token");
+        expect(recordsByCollection.get("request_notifications")?.[0]?.payload).not.toHaveProperty("provider_message_id");
+        expect(recordsByCollection.get("request_notifications")?.[0]?.payload).not.toHaveProperty("last_error");
+        expect(recordsByCollection.get("submitted_requests")?.[0]?.payload).not.toHaveProperty("normalized_title");
     });
 
     it("keeps a snapshot isolated and immutable across saves, removals, and a reset", async () => {
@@ -179,8 +295,8 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshot_operations
                     (account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status, lease_expires_at)
-                 VALUES ($1, $2, $3, ARRAY['user_library'], 1, $4, 'building', now() - interval '1 second')`,
-                [accountB, interruptedKey, "e77f009786b9269d97558ddef296602fcc43d75fc08fc20bad3777c1ad96fe1b", interruptedSnapshot],
+                 VALUES ($1, $2, $3, ARRAY['user_library'], 2, $4, 'building', now() - interval '1 second')`,
+                [accountB, interruptedKey, "98692345147acfc80c5cc4ff030f6584620e93fc6b5b4bdde1ac88d265c5be62", interruptedSnapshot],
             );
             await client.query("COMMIT");
         } finally {
@@ -206,8 +322,8 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshot_operations
                     (account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status, lease_expires_at)
-                 VALUES ($1, $2, $3, ARRAY['user_library'], 1, $4, 'building', now() - interval '1 second')`,
-                [accountA, activeKey, "e77f009786b9269d97558ddef296602fcc43d75fc08fc20bad3777c1ad96fe1b", activeSnapshot],
+                 VALUES ($1, $2, $3, ARRAY['user_library'], 2, $4, 'building', now() - interval '1 second')`,
+                [accountA, activeKey, "98692345147acfc80c5cc4ff030f6584620e93fc6b5b4bdde1ac88d265c5be62", activeSnapshot],
             );
             await client.query("COMMIT");
         } finally {
