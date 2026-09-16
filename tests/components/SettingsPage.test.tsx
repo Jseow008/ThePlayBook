@@ -31,20 +31,22 @@ const { MockAccountDataExportError, state } = vi.hoisted(() => {
             clearRecentRecommendations: vi.fn(),
             toastSuccess: vi.fn(),
             toastError: vi.fn(),
+            captureAnalyticsEvent: vi.fn(),
         },
     };
 });
 
-vi.mock("@/lib/supabase/client", () => ({
-    createClient: () => ({
+vi.mock("@/lib/supabase/client", () => {
+    const client = {
         auth: {
             getUser: state.getUser,
             onAuthStateChange: state.onAuthStateChange,
             updateUser: vi.fn(),
             signOut: state.signOut,
         },
-    }),
-}));
+    };
+    return { createClient: () => client };
+});
 
 vi.mock("@/lib/account-data-export-client", () => ({
     AccountDataExportError: MockAccountDataExportError,
@@ -73,6 +75,9 @@ vi.mock("sonner", () => ({
         error: (...args: unknown[]) => state.toastError(...args),
     },
 }));
+vi.mock("@/lib/analytics", () => ({
+    captureAnalyticsEvent: (...args: unknown[]) => state.captureAnalyticsEvent(...args),
+}));
 
 vi.mock("next/link", () => ({
     default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
@@ -97,6 +102,7 @@ const verifiedExport = {
     schema_version: 2,
     snapshot: { id: "snapshot-a" },
     data: { reflections: [] },
+    timings: { snapshotPreparationMs: 10, collectionRetrievalMs: 20, verificationMs: 30 },
 };
 
 describe("settings data export delivery", () => {
@@ -265,6 +271,66 @@ describe("settings data export delivery", () => {
 
         expect(state.toastError).toHaveBeenCalledWith("Too many export requests. Please try again in about 3 minutes.");
         expect(createObjectUrl).not.toHaveBeenCalled();
+    });
+
+    it("shows factual export progress while preparation and verification are underway", async () => {
+        const pendingExport = deferred<typeof verifiedExport>();
+        state.fetchExport.mockImplementation(() => pendingExport.promise);
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+        const options = state.fetchExport.mock.calls[0]?.[0] as {
+            onProgress?: (progress: { phase: string; completedCollections: number; totalCollections: number; completedRecords: number; totalRecords: number | null }) => void;
+        };
+
+        act(() => options.onProgress?.({ phase: "downloading", completedCollections: 3, totalCollections: 11, completedRecords: 0, totalRecords: 242 }));
+        expect(screen.getByText("Downloading 3 of 11 data categories…")).toBeInTheDocument();
+
+        act(() => options.onProgress?.({ phase: "verifying", completedCollections: 0, totalCollections: 11, completedRecords: 115, totalRecords: 242 }));
+        expect(screen.getByText("Verifying 115 of 242 records…")).toBeInTheDocument();
+
+    });
+
+    it("ignores progress reported by an export cancelled after an account switch", async () => {
+        const pendingExport = deferred<typeof verifiedExport>();
+        state.fetchExport.mockImplementation(() => pendingExport.promise);
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+        const options = state.fetchExport.mock.calls[0]?.[0] as {
+            onProgress?: (progress: { phase: string; completedCollections: number; totalCollections: number; completedRecords: number; totalRecords: number | null }) => void;
+        };
+
+        state.currentUser = accountB;
+        act(() => state.authListener?.("SIGNED_IN", { user: accountB }));
+        act(() => options.onProgress?.({ phase: "verifying", completedCollections: 0, totalCollections: 11, completedRecords: 115, totalRecords: 242 }));
+
+        expect(screen.queryByText("Verifying 115 of 242 records…")).not.toBeInTheDocument();
+    });
+
+    it("renders the file-creation stage before completing the browser download", async () => {
+        const animationFrames: FrameRequestCallback[] = [];
+        vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => {
+            animationFrames.push(callback);
+            return animationFrames.length;
+        }));
+        state.fetchExport.mockResolvedValue(verifiedExport);
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        expect(await screen.findByText("Creating your JSON file…")).toBeInTheDocument();
+        expect(anchorClick).not.toHaveBeenCalled();
+
+        await act(async () => {
+            animationFrames.shift()?.(0);
+            await Promise.resolve();
+            animationFrames.shift()?.(16);
+            await Promise.resolve();
+        });
+
+        await waitFor(() => expect(anchorClick).toHaveBeenCalledTimes(1));
     });
 
     it("cancels a delayed final response when the account changes before delivery", async () => {

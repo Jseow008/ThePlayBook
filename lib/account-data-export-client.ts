@@ -40,6 +40,23 @@ export class AccountDataExportError extends Error {
 
 export type AccountDataExportOptions = {
     signal?: AbortSignal;
+    onProgress?: (progress: AccountDataExportProgress) => void;
+};
+
+export type AccountDataExportPhase = "preparing" | "downloading" | "verifying";
+
+export type AccountDataExportProgress = {
+    phase: AccountDataExportPhase;
+    completedCollections: number;
+    totalCollections: number;
+    completedRecords: number;
+    totalRecords: number | null;
+};
+
+export type AccountDataExportTimings = {
+    snapshotPreparationMs: number;
+    collectionRetrievalMs: number;
+    verificationMs: number;
 };
 
 function canonicalJson(value: unknown): string {
@@ -109,9 +126,17 @@ function toExportRecord(collection: AccountDataSnapshotCollection, value: unknow
  * per-collection manifest is verified. It intentionally never falls back to
  * direct browser table reads or a best-effort partial result.
  */
-export async function fetchVerifiedAccountDataExport({ signal }: AccountDataExportOptions = {}) {
+export async function fetchVerifiedAccountDataExport({ signal, onProgress }: AccountDataExportOptions = {}) {
     try {
         throwIfAborted(signal);
+        const startedAt = performance.now();
+        onProgress?.({
+            phase: "preparing",
+            completedCollections: 0,
+            totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+            completedRecords: 0,
+            totalRecords: null,
+        });
         const idempotencyKey = crypto.randomUUID();
         const creation = await fetch("/api/account-data/snapshots", {
             method: "POST",
@@ -131,8 +156,18 @@ export async function fetchVerifiedAccountDataExport({ signal }: AccountDataExpo
         }
 
         const manifest = creationPayload.manifest;
+        const snapshotPreparationMs = performance.now() - startedAt;
+        const retrievalStartedAt = performance.now();
+        let completedCollections = 0;
+        onProgress?.({
+            phase: "downloading",
+            completedCollections,
+            totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+            completedRecords: 0,
+            totalRecords: manifest.recordCount,
+        });
         const data: Record<AccountDataSnapshotCollection, Record<string, unknown>[]> = {} as Record<AccountDataSnapshotCollection, Record<string, unknown>[]>;
-        const allPayloadHashes: string[] = [];
+        const recordsByCollection = new Map<AccountDataSnapshotCollection, ExportRecord[]>();
 
         for (const collection of ACCOUNT_DATA_EXPORT_COLLECTIONS) {
             const expected = manifest.collectionManifests?.[collection];
@@ -158,6 +193,33 @@ export async function fetchVerifiedAccountDataExport({ signal }: AccountDataExpo
                 if (payload.pageInfo.hasNextPage && !cursor) throw new AccountDataExportError("The export page cursor was incomplete.", "SNAPSHOT_INVALID");
             } while (cursor);
 
+            recordsByCollection.set(collection, records);
+            completedCollections += 1;
+            onProgress?.({
+                phase: "downloading",
+                completedCollections,
+                totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+                completedRecords: 0,
+                totalRecords: manifest.recordCount,
+            });
+        }
+
+        const collectionRetrievalMs = performance.now() - retrievalStartedAt;
+        const verificationStartedAt = performance.now();
+        let completedRecords = 0;
+        onProgress?.({
+            phase: "verifying",
+            completedCollections: 0,
+            totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+            completedRecords,
+            totalRecords: manifest.recordCount,
+        });
+        const allPayloadHashes: string[] = [];
+        for (const collection of ACCOUNT_DATA_EXPORT_COLLECTIONS) {
+            throwIfAborted(signal);
+            const expected = manifest.collectionManifests?.[collection];
+            const records = recordsByCollection.get(collection);
+            if (!expected || !records) throw new AccountDataExportError(`The ${collection} export manifest is missing.`, "SNAPSHOT_INVALID");
             const uniqueIds = new Set(records.map((record) => record.recordId));
             const ordered = records.every((record, index) => record.ordinal === index + 1);
             if (records.length !== expected.recordCount || uniqueIds.size !== records.length || !ordered) {
@@ -165,19 +227,32 @@ export async function fetchVerifiedAccountDataExport({ signal }: AccountDataExpo
             }
             const hashes = await Promise.all(records.map(async (record) => {
                 const computed = await sha256(canonicalJson(record.payload));
+                throwIfAborted(signal);
                 if (computed !== record.payloadHash) throw new AccountDataExportError(`The ${collection} export failed integrity verification.`, "SNAPSHOT_INVALID");
                 return computed;
             }));
+            throwIfAborted(signal);
             if (await sha256(hashes.join("\n")) !== expected.manifestHash) {
                 throw new AccountDataExportError(`The ${collection} export manifest failed integrity verification.`, "SNAPSHOT_INVALID");
             }
+            throwIfAborted(signal);
             allPayloadHashes.push(...hashes);
             data[collection] = records.map((record) => record.payload);
+            completedRecords += records.length;
+            onProgress?.({
+                phase: "verifying",
+                completedCollections: 0,
+                totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+                completedRecords,
+                totalRecords: manifest.recordCount,
+            });
         }
 
         if (allPayloadHashes.length !== manifest.recordCount || await sha256(allPayloadHashes.join("\n")) !== manifest.manifestHash) {
             throw new AccountDataExportError("The complete export manifest failed integrity verification.", "SNAPSHOT_INVALID");
         }
+
+        const verificationMs = performance.now() - verificationStartedAt;
 
         throwIfAborted(signal);
 
@@ -192,6 +267,11 @@ export async function fetchVerifiedAccountDataExport({ signal }: AccountDataExpo
                 collection_manifests: manifest.collectionManifests,
             },
             data,
+            timings: {
+                snapshotPreparationMs,
+                collectionRetrievalMs,
+                verificationMs,
+            } satisfies AccountDataExportTimings,
         };
     } catch (error) {
         if (signal?.aborted) {

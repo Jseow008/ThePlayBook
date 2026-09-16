@@ -67,11 +67,26 @@ describe("verified account-data export", () => {
         }
         vi.stubGlobal("fetch", fetchMock);
 
-        const result = await fetchVerifiedAccountDataExport();
+        const progress = vi.fn();
+        const result = await fetchVerifiedAccountDataExport({ onProgress: progress });
 
         expect(fetchMock).toHaveBeenCalledTimes(ACCOUNT_DATA_EXPORT_COLLECTIONS.length + 1);
         expect(result.data.reflections).toEqual([{ id: "reflections-1", reflection_text: "The required reflection." }]);
         expect(Object.keys(result.data).sort()).toEqual([...ACCOUNT_DATA_EXPORT_COLLECTIONS].sort());
+        expect(result.timings.snapshotPreparationMs).toBeGreaterThanOrEqual(0);
+        expect(result.timings.collectionRetrievalMs).toBeGreaterThanOrEqual(0);
+        expect(result.timings.verificationMs).toBeGreaterThanOrEqual(0);
+        expect(progress).toHaveBeenCalledWith(expect.objectContaining({ phase: "preparing", totalRecords: null }));
+        expect(progress).toHaveBeenCalledWith(expect.objectContaining({
+            phase: "downloading",
+            completedCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+            totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+        }));
+        expect(progress).toHaveBeenCalledWith(expect.objectContaining({
+            phase: "verifying",
+            completedRecords: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+            totalRecords: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+        }));
     });
 
     it("rejects a record whose received field value no longer matches its hash", async () => {

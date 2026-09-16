@@ -117,6 +117,14 @@ export interface AnalyticsEventPropertiesByName {
     share_method?: "native" | "copy_link" | "download" | "qr";
     share_target?: string;
   };
+  account_data_export_completed: AnalyticsCommonProperties & {
+    source: string;
+    snapshot_preparation_ms: number;
+    collection_retrieval_ms: number;
+    verification_ms: number;
+    file_creation_ms: number;
+    total_ms: number;
+  };
 }
 
 export type AnalyticsEvent = keyof AnalyticsEventPropertiesByName;
@@ -250,6 +258,14 @@ export const ANALYTICS_EVENT_CONTRACTS = {
     description: "User initiates a share action.",
     requiredProperties: ["source"],
     allowedProperties: eventProperties(["share_method", "share_target"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_only",
+  },
+  account_data_export_completed: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "User completes a verified personal-data export. Never include exported values, IDs, or collection counts.",
+    requiredProperties: ["source", "snapshot_preparation_ms", "collection_retrieval_ms", "verification_ms", "file_creation_ms", "total_ms"],
+    allowedProperties: eventProperties(["snapshot_preparation_ms", "collection_retrieval_ms", "verification_ms", "file_creation_ms", "total_ms"]),
     privacy: "behavioral_metadata",
     delivery: "client_only",
   },
