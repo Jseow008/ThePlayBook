@@ -112,6 +112,7 @@ describe("launch validation scripts", () => {
             "HEALTH_CHECK_SECRET=test-health-secret",
             "ADMIN_ALLOWED_IPS=203.0.113.42,2001:db8::1",
             "ANONYMOUS_ACTIVITY_SECRET=test-anonymous-activity-secret",
+            "CATALOG_SEARCH_CURSOR_SECRET=test-catalog-search-cursor-secret",
         ].join("\n"));
 
         const result = await runNodeScript(

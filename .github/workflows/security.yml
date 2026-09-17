@@ -37,6 +37,8 @@ jobs:
       ADMIN_ALLOWED_IPS: 127.0.0.1
       ANONYMOUS_ACTIVITY_SECRET: dummy-activity-secret
       ANTHROPIC_API_KEY: dummy-anthropic-key
+      CATALOG_SEARCH_CURSOR_SECRET: ci-catalog-search-cursor-secret
+      ACCOUNT_DATA_CURSOR_SECRET: ci-account-data-cursor-secret
       SUPABASE_LOCAL: "1"
 
     steps:
@@ -122,6 +124,7 @@ jobs:
           npm run database:published-at
           npm run database:account-data-snapshots
           npm run database:account-data-snapshot-runtime
+          npm run database:catalog-search-runtime
           npm run database:email-rpc-security
 
       - name: Security route and static tests

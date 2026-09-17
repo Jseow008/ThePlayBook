@@ -1,0 +1,58 @@
+{
+  "fixtureVersion": "search-baseline-v1",
+  "applicationCommit": "142a84ea290246f84f4ddc06d6362b8f4e3efba9",
+  "applicationRef": "origin/main",
+  "recordedAt": "2026-09-17",
+  "runner": {
+    "kind": "source-verified baseline",
+    "configuration": {
+      "catalog": "PostgREST ilike over content_item.title, author, category; created_at DESC, id DESC",
+      "notes": "first 30 highlights, then browser-side literal substring/filter/sort"
+    }
+  },
+  "cases": [
+    {
+      "id": "title-exact",
+      "kind": "title",
+      "expectedCapability": "supported",
+      "result": "supported",
+      "evidence": "catalog query includes title.ilike"
+    },
+    {
+      "id": "author-exact",
+      "kind": "author",
+      "expectedCapability": "supported",
+      "result": "supported",
+      "evidence": "catalog query includes author.ilike"
+    },
+    {
+      "id": "segment-concept",
+      "kind": "segment-body",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "catalog query does not join or query segment"
+    },
+    {
+      "id": "paraphrase",
+      "kind": "semantic",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "catalog query has no semantic retrieval path"
+    },
+    {
+      "id": "misspelling",
+      "kind": "typo-tolerance",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "catalog query has no trigram or spelling path"
+    },
+    {
+      "id": "old-notes-match",
+      "kind": "notes-completeness",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "filters execute after the initial 30-highlight page reaches the browser"
+    }
+  ],
+  "aggregateMethod": "Each capability is recorded as supported or not-supported from the exact baseline implementation. No unavailable capability is assigned a passing numeric score."
+}

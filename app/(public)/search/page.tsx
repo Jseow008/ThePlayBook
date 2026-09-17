@@ -34,7 +34,7 @@ import {
 } from "./search-components";
 
 interface SearchPageProps {
-    searchParams: Promise<{ q?: string; category?: string; type?: string; sort?: string; page?: string }>;
+    searchParams: Promise<{ q?: string; category?: string; type?: string; sort?: string; page?: string; cursor?: string }>;
 }
 
 interface CategoryStat {
@@ -61,7 +61,7 @@ function buildNormalizedTopics(categoryStats: CategoryStat[]) {
 }
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
-    const { q: query, category, type, sort, page } = await searchParams;
+    const { q: query, category, type, sort, page, cursor } = await searchParams;
     const selectedType = normalizeType(type);
     const selectedTypeParam = selectedType ?? undefined;
     const selectedSort = normalizeCatalogSort(sort);
@@ -71,7 +71,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const canonicalCategory = aliasCategory ?? getCanonicalContentCategory(normalizedCategory);
 
     if (aliasCategory) {
-        redirect(buildSearchHref({ query, category: aliasCategory, type: selectedTypeParam, sort: selectedSort, page: selectedPage }));
+        redirect(buildSearchHref({ query, category: aliasCategory, type: selectedTypeParam, sort: selectedSort, page: selectedPage, cursor }));
     }
 
     const hasContentSearch = (query?.trim().length ?? 0) > 0;
@@ -269,7 +269,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                             categoryLabel={selectedTopicLabel}
                             categoryValues={selectedTopicValues}
                             type={selectedTypeParam}
-                            page={selectedPage}
+                            cursor={cursor}
                         />
                     </Suspense>
                 ) : selectedSort === "recent" ? (

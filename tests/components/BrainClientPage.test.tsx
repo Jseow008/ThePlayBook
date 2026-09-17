@@ -9,6 +9,7 @@ const {
     deleteReflectionMock,
     updateReflectionMock,
     fetchNextPageMock,
+    useInfiniteHighlightsMock,
     toastSuccessMock,
     toastErrorMock,
     infiniteHighlightsState,
@@ -21,6 +22,7 @@ const {
     deleteReflectionMock: vi.fn(),
     updateReflectionMock: vi.fn(),
     fetchNextPageMock: vi.fn(),
+    useInfiniteHighlightsMock: vi.fn(),
     toastSuccessMock: vi.fn(),
     toastErrorMock: vi.fn(),
     infiniteHighlightsState: {
@@ -56,7 +58,10 @@ const routerReplaceMock = vi.fn();
 const routerPushMock = vi.fn();
 
 vi.mock("@/hooks/useHighlights", () => ({
-    useInfiniteHighlights: () => infiniteHighlightsState.value,
+    useInfiniteHighlights: (...args: unknown[]) => {
+        useInfiniteHighlightsMock(...args);
+        return infiniteHighlightsState.value;
+    },
     useDeleteHighlight: () => ({
         mutateAsync: deleteHighlightMock,
         isPending: false,
@@ -292,7 +297,7 @@ describe("BrainClientPage", () => {
         });
     });
 
-    it("filters by search, type, and color and supports inline two-step deletion", async () => {
+    it("sends search, type, and color to the server query before paging and supports inline two-step deletion", async () => {
         deleteHighlightMock.mockResolvedValue("highlight-1");
 
         render(<BrainClientPage initialPage={initialPage} />);
@@ -300,11 +305,12 @@ describe("BrainClientPage", () => {
         fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], {
             target: { value: "second" },
         });
-        expect(screen.getByText(/second highlight/i)).toBeInTheDocument();
-        expect(screen.queryByText(/highlighted passage/i)).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(useInfiniteHighlightsMock).toHaveBeenLastCalledWith(undefined, expect.objectContaining({ query: "second" }));
+        });
 
         fireEvent.click(screen.getAllByRole("button", { name: "Notes" })[0]);
-        expect(screen.queryByText("A second highlight")).not.toBeInTheDocument();
+        expect(useInfiniteHighlightsMock).toHaveBeenLastCalledWith(undefined, expect.objectContaining({ itemType: "note" }));
 
         fireEvent.change(screen.getAllByPlaceholderText(/search notes/i)[0], {
             target: { value: "" },
@@ -314,8 +320,7 @@ describe("BrainClientPage", () => {
             target: { value: "blue" },
         });
 
-        expect(screen.getByText(/highlighted passage/i)).toBeInTheDocument();
-        expect(screen.queryByText(/second highlight/i)).not.toBeInTheDocument();
+        expect(useInfiniteHighlightsMock).toHaveBeenLastCalledWith(undefined, expect.objectContaining({ color: "blue" }));
 
         fireEvent.click(screen.getByLabelText("Delete note"));
 

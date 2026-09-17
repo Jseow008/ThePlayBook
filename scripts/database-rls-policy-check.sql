@@ -123,7 +123,9 @@ BEGIN
         -- worker policies for snapshot reads, reset/revision handling, and
         -- server-owned mutation acknowledgements. #10 then adds ten
         -- account-bound, restricted-worker read policies for complete export.
-        ) <> 63
+        -- Catalog search adds one explicit deny policy to make the private
+        -- projection fail closed even if a browser grant is introduced later.
+        ) <> 64
 
         UNION ALL
 

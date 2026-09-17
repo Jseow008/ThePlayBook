@@ -11,6 +11,13 @@ BEGIN
       ('unsubscribe_email_subscription_by_token', 'p_token text'),
       ('unsubscribe_request_published_notifications_by_token', 'p_token text')
   ),
+  public_catalog_search_definer_functions(function_name, arguments) AS (
+    VALUES
+      -- This is the only reviewed exception: its fixed projection contains
+      -- public catalog fields only, while its backing table stays inaccessible
+      -- through the Data API. Keep this exact signature narrow.
+      ('search_catalog', 'p_query text, p_categories text[], p_type content_type, p_after_rank numeric, p_after_content_id uuid, p_before_rank numeric, p_before_content_id uuid, p_limit integer')
+  ),
   definer_functions AS (
     SELECT
       p.oid,
@@ -20,12 +27,20 @@ BEGIN
       pg_get_function_result(p.oid) AS result_type,
       pg_get_functiondef(p.oid) AS definition,
       p.proconfig,
+      p.proacl,
+      p.proowner,
       EXISTS (
         SELECT 1
         FROM service_role_only_definer_functions service_only
         WHERE service_only.function_name = p.proname
           AND service_only.arguments = pg_get_function_identity_arguments(p.oid)
-      ) AS is_service_role_only_definer
+      ) AS is_service_role_only_definer,
+      EXISTS (
+        SELECT 1
+        FROM public_catalog_search_definer_functions catalog_search
+        WHERE catalog_search.function_name = p.proname
+          AND catalog_search.arguments = pg_get_function_identity_arguments(p.oid)
+      ) AS is_public_catalog_search_definer
     FROM pg_proc p
     INNER JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public'
@@ -51,6 +66,7 @@ BEGIN
       arguments
     FROM definer_functions
     WHERE has_function_privilege('anon', oid, 'EXECUTE')
+      AND NOT is_public_catalog_search_definer
 
     UNION ALL
 
@@ -61,6 +77,7 @@ BEGIN
       arguments
     FROM definer_functions
     WHERE has_function_privilege('authenticated', oid, 'EXECUTE')
+      AND NOT is_public_catalog_search_definer
 
     UNION ALL
 
@@ -86,6 +103,7 @@ BEGIN
     FROM definer_functions
     WHERE result_type <> 'trigger'
       AND NOT is_service_role_only_definer
+      AND NOT is_public_catalog_search_definer
       AND NOT (
         definition ILIKE '%auth.role() <> ''service_role''%'
         OR definition ILIKE '%auth.role() != ''service_role''%'
@@ -105,6 +123,59 @@ BEGIN
     FROM definer_functions
     WHERE is_service_role_only_definer
       AND NOT has_function_privilege('service_role', oid, 'EXECUTE')
+
+    UNION ALL
+
+    SELECT
+      'public_catalog_search_missing_anon_execute' AS violation,
+      schema_name,
+      function_name,
+      arguments
+    FROM definer_functions
+    WHERE is_public_catalog_search_definer
+      AND NOT has_function_privilege('anon', oid, 'EXECUTE')
+
+    UNION ALL
+
+    SELECT
+      'public_catalog_search_missing_authenticated_execute' AS violation,
+      schema_name,
+      function_name,
+      arguments
+    FROM definer_functions
+    WHERE is_public_catalog_search_definer
+      AND NOT has_function_privilege('authenticated', oid, 'EXECUTE')
+
+    UNION ALL
+
+    SELECT
+      'public_catalog_search_executable_by_public' AS violation,
+      schema_name,
+      function_name,
+      arguments
+    FROM definer_functions
+    WHERE is_public_catalog_search_definer
+      AND EXISTS (
+        SELECT 1
+        FROM aclexplode(coalesce(proacl, acldefault('f', proowner))) AS acl
+        WHERE acl.grantee = 0
+          AND acl.privilege_type = 'EXECUTE'
+      )
+
+    UNION ALL
+
+    SELECT
+      'public_catalog_search_missing_fixed_projection' AS violation,
+      schema_name,
+      function_name,
+      arguments
+    FROM definer_functions
+    WHERE is_public_catalog_search_definer
+      AND (
+        definition ~* E'\\mselect\\s+\\*\\M'
+        OR definition !~* E'returns\\s+table\\s*\\('
+        OR definition !~* E'catalog_search_document'
+      )
 
     UNION ALL
 

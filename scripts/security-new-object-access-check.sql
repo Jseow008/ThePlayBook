@@ -51,6 +51,14 @@ DECLARE
             ('match_library_segments_gemini', 'query_embedding vector, match_threshold double precision, match_count integer, p_user_id uuid, p_boost_completed boolean', 'authenticated'),
             ('match_recommendations', 'seed_ids uuid[], exclude_ids uuid[], match_count integer', 'anon'),
             ('match_recommendations', 'seed_ids uuid[], exclude_ids uuid[], match_count integer', 'authenticated'),
+            -- Reviewed public catalog RPC: it returns a fixed public-content
+            -- projection and is separately checked for its definer safeguards.
+            ('search_catalog', 'p_query text, p_categories text[], p_type content_type, p_after_rank numeric, p_after_content_id uuid, p_before_rank numeric, p_before_content_id uuid, p_limit integer', 'anon'),
+            ('search_catalog', 'p_query text, p_categories text[], p_type content_type, p_after_rank numeric, p_after_content_id uuid, p_before_rank numeric, p_before_content_id uuid, p_limit integer', 'authenticated'),
+            -- Account-bound Notes search is security invoker and intentionally
+            -- available only to the authenticated caller whose RLS context
+            -- scopes its fixed projection.
+            ('search_user_highlights', 'p_query text, p_content_item_id uuid, p_item_type text, p_color text, p_sort text, p_after_created_at timestamp with time zone, p_after_id uuid, p_limit integer', 'authenticated'),
             ('set_onboarding_state', 'p_tour text, p_version text, p_status text', 'authenticated')
     ),
     -- These two legacy read-only RPCs still have redundant PUBLIC grants in

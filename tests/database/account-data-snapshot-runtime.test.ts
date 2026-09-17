@@ -142,6 +142,10 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         );
     });
 
+    // The admission-cap fixture deliberately creates 10,001 real catalog
+    // rows. Search-document triggers maintain their private projection for
+    // each row, so a disposable CI database may legitimately need longer
+    // than Vitest's default cleanup budget to remove that fixture.
     afterAll(async () => {
         await resetAccountDataSnapshotPoolForTests();
         await db.query("DELETE FROM public.content_requests WHERE id = $1", [requestExport]).catch(() => undefined);
@@ -161,7 +165,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         ).catch(() => undefined);
         await workerDb.end();
         await db.end();
-    });
+    }, 30_000);
 
     it("recovers a lost ready response without creating a second snapshot", async () => {
         const first = await createLibrarySnapshot(accountA, snapshotKey);
@@ -752,7 +756,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             [result.snapshotId],
         );
         expect(Number(copies.rows[0]?.count)).toBe(0);
-    });
+    }, 30_000);
 
     it("enforces the distributed four-worker creation admission limit", async () => {
         const lockPool = new Pool({ connectionString: adminDatabaseUrl, max: 4 });

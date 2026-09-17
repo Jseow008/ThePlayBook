@@ -1,4 +1,4 @@
-import { useAuthUser } from "@/hooks/useAuthUser";
+import { useAuthSessionIdentity, useAuthUser } from "@/hooks/useAuthUser";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import type { UserHighlight } from "@/types/database";
 import type { HighlightRangeRelationship } from "@/lib/highlight-ranges";
@@ -27,9 +27,19 @@ export interface HighlightsPage {
     nextCursor: string | null;
 }
 
+export class HighlightSearchRequestError extends Error {
+    constructor(public readonly status: number) {
+        super(status === 401 ? "Your signed-in session has changed. Please sign in again." : "Failed to fetch highlights");
+    }
+}
+
 interface UseInfiniteHighlightsOptions {
     initialPage?: HighlightsPage;
     enabled?: boolean;
+    query?: string;
+    itemType?: "note" | "highlight";
+    color?: "yellow" | "blue" | "green" | "pink" | "purple" | "red";
+    sort?: "newest" | "oldest";
 }
 
 // ----------------------------------------------------------------------------
@@ -73,21 +83,29 @@ export function useHighlights(contentItemId?: string, options?: UseHighlightsOpt
 // Fetch Infinite Highlights
 // ----------------------------------------------------------------------------
 export function useInfiniteHighlights(contentItemId?: string, options?: UseInfiniteHighlightsOptions) {
+    const { user, sessionEpoch } = useAuthSessionIdentity();
+    const query = options?.query?.trim() ?? "";
+    const itemType = options?.itemType;
+    const color = options?.color;
+    const sort = options?.sort ?? "newest";
     return useInfiniteQuery({
-        queryKey: ["highlights", "infinite", contentItemId],
+        queryKey: ["highlights", "infinite", user?.id ?? null, sessionEpoch, contentItemId ?? null, query, itemType ?? null, color ?? null, sort],
         queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<HighlightsPage> => {
-            let url = contentItemId
-                ? `/api/library/highlights?content_item_id=${contentItemId}&limit=30`
-                : "/api/library/highlights?limit=30";
+            const params = new URLSearchParams({ limit: "30", sort });
+            if (contentItemId) params.set("content_item_id", contentItemId);
+            if (query) params.set("q", query);
+            if (itemType) params.set("type", itemType);
+            if (color) params.set("color", color);
 
             if (pageParam) {
-                url += `&cursor=${encodeURIComponent(pageParam)}`;
+                params.set("cursor", pageParam);
             }
+
+            const url = `/api/library/highlights?${params.toString()}`;
 
             const res = await fetch(url);
             if (!res.ok) {
-                if (res.status === 401) return { data: [], nextCursor: null }; // Not logged in
-                throw new Error("Failed to fetch highlights");
+                throw new HighlightSearchRequestError(res.status);
             }
 
             return await res.json();
@@ -98,7 +116,7 @@ export function useInfiniteHighlights(contentItemId?: string, options?: UseInfin
                 pageParams: [null],
             }
             : undefined,
-        enabled: options?.enabled,
+        enabled: Boolean(user) && options?.enabled !== false,
         initialPageParam: null as string | null,
         getNextPageParam: (lastPage) => lastPage.nextCursor,
     });

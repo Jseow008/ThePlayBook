@@ -3,7 +3,7 @@ import type { ElementType, ReactElement, ReactNode } from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock, setQueryData } = vi.hoisted(() => {
+const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock, searchCatalogMock } = vi.hoisted(() => {
     let latestQueryBuilder: Record<string, ReturnType<typeof vi.fn>> | null = null;
     let queryData: Array<Record<string, unknown>> = [{ id: "matched-result", title: "Matched Result" }];
 
@@ -44,10 +44,8 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
             latestQueryBuilder = null;
             queryData = [{ id: "matched-result", title: "Matched Result" }];
         },
-        setQueryData: (nextData: Array<Record<string, unknown>>) => {
-            queryData = nextData;
-        },
         routerPushMock: vi.fn(),
+        searchCatalogMock: vi.fn(),
         redirectMock: vi.fn((url: string) => {
             throw new Error(`NEXT_REDIRECT:${url}`);
         }),
@@ -99,6 +97,12 @@ vi.mock("@/lib/supabase/public-server", () => ({
     }),
 }));
 
+vi.mock("@/lib/server/catalog-search", () => ({
+    CatalogSearchError: class CatalogSearchError extends Error {},
+    normalizeCatalogSearchQuery: (value: string | undefined) => (value ?? "").trim().replace(/\s+/g, " ").slice(0, 160),
+    searchCatalog: searchCatalogMock,
+}));
+
 vi.mock("@/components/ui/SearchInput", () => ({
     SearchInput: () => <div data-testid="search-input">Search Input</div>,
 }));
@@ -107,7 +111,7 @@ vi.mock("@/components/ui/ContentCard", () => ({
     ContentCard: ({ item }: { item: { title: string } }) => <div>{item.title}</div>,
 }));
 
-type SearchParams = { q?: string; category?: string; type?: string; sort?: string; page?: string };
+type SearchParams = { q?: string; category?: string; type?: string; sort?: string; page?: string; cursor?: string };
 const suspenseType = Symbol.for("react.suspense") as unknown as ElementType;
 
 function replaceAsyncResultsWithFallback(node: ReactNode): ReactNode {
@@ -212,6 +216,24 @@ describe("SearchPage", () => {
         resetSupabaseMocks();
         routerPushMock.mockReset();
         redirectMock.mockClear();
+        searchCatalogMock.mockResolvedValue({
+            outcome: "results",
+            results: [{
+                id: "matched-result",
+                type: "book",
+                title: "Matched Result",
+                author: null,
+                category: "Business",
+                cover_image_url: null,
+                duration_seconds: null,
+                audio_url: null,
+                created_at: "2026-09-17T00:00:00.000Z",
+                quick_mode_json: {},
+                rank: 1,
+                snippet: { source: "Summary", text: "A matching snippet", highlights: [] },
+            }],
+            pageInfo: { nextCursor: null, previousCursor: null, page: 1 },
+        });
         rpcMock.mockImplementation((fn: string, args?: Record<string, unknown>) => {
             if (fn === "get_category_stats") {
                 return Promise.resolve({
@@ -326,32 +348,40 @@ describe("SearchPage", () => {
         expect(fromMock).not.toHaveBeenCalled();
     });
 
-    it("uses the main results query for text search and applies the type filter", async () => {
+    it("uses the indexed search service for text search and applies the type filter", async () => {
         await runSearchResultsFromPage({ q: "focus", type: "podcast" });
 
-        const queryBuilder = getLatestQueryBuilder();
         expect(rpcMock).toHaveBeenCalledWith("get_category_stats");
         expect(rpcMock).not.toHaveBeenCalledWith("get_trending_content", expect.anything());
-        expect(queryBuilder?.eq).toHaveBeenCalledWith("type", "podcast");
-        expect(queryBuilder?.or).toHaveBeenCalledWith("title.ilike.%focus%,author.ilike.%focus%,category.ilike.%focus%");
-        expect(queryBuilder?.range).toHaveBeenCalledWith(0, 19);
-        expect(queryBuilder?.order).toHaveBeenNthCalledWith(1, "created_at", { ascending: false });
-        expect(queryBuilder?.order).toHaveBeenNthCalledWith(2, "id", { ascending: false });
+        expect(searchCatalogMock).toHaveBeenCalledWith({
+            query: "focus",
+            categories: [],
+            type: "podcast",
+            cursor: null,
+        });
     });
 
-    it("retrieves the next non-overlapping search page and preserves its filters in pagination links", async () => {
-        const results = await runSearchResultsFromPage({ q: "focus", type: "book", page: "2" });
-        const queryBuilder = getLatestQueryBuilder();
+    it("binds the next search page to its opaque cursor and preserves its filters in pagination links", async () => {
+        searchCatalogMock.mockResolvedValueOnce({
+            outcome: "results",
+            results: [{
+                id: "matched-result", type: "book", title: "Matched Result", author: null, category: "Business", cover_image_url: null,
+                duration_seconds: null, audio_url: null, created_at: "2026-09-17T00:00:00.000Z", quick_mode_json: {}, rank: 1,
+                snippet: { source: "Summary", text: "A matching snippet", highlights: [] },
+            }],
+            pageInfo: { nextCursor: "next-cursor", previousCursor: "previous-cursor", page: 2 },
+        });
+        const results = await runSearchResultsFromPage({ q: "focus", type: "book", cursor: "current-cursor" });
 
-        expect(queryBuilder?.range).toHaveBeenCalledWith(20, 39);
+        expect(searchCatalogMock).toHaveBeenCalledWith(expect.objectContaining({ cursor: "current-cursor", type: "book" }));
 
         await act(async () => {
             render(results);
         });
 
-        expect(screen.getByRole("link", { name: "Previous" })).toHaveAttribute("href", "/search?q=focus&type=book");
-        expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/search?q=focus&type=book&page=3");
-        expect(screen.getByText("Page 2 of 3")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Previous" })).toHaveAttribute("href", "/search?q=focus&type=book&cursor=previous-cursor");
+        expect(screen.getByRole("link", { name: "Next" })).toHaveAttribute("href", "/search?q=focus&type=book&cursor=next-cursor");
+        expect(screen.getByText("Page 2")).toBeInTheDocument();
     });
 
     it("does not show a request-summary action when search has matching results", async () => {
@@ -361,20 +391,20 @@ describe("SearchPage", () => {
             render(results);
         });
 
-        expect(screen.getByText('41 results for "focus" (book)')).toBeInTheDocument();
+        expect(screen.getByText('1 result on this page for "focus" (book)')).toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /request a summary/i })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name: /request this summary/i })).not.toBeInTheDocument();
     });
 
     it("shows a request-summary action when search has zero results", async () => {
-        setQueryData([]);
+        searchCatalogMock.mockResolvedValueOnce({ outcome: "no_results", results: [], pageInfo: { nextCursor: null, previousCursor: null, page: 1 } });
         const results = await runSearchResultsFromPage({ q: "focus", type: "book" });
 
         await act(async () => {
             render(results);
         });
 
-        expect(screen.getByText('0 results for "focus" (book)')).toBeInTheDocument();
+        expect(screen.getByText('0 results on this page for "focus" (book)')).toBeInTheDocument();
         expect(screen.getByRole("link", { name: /request this summary/i })).toHaveAttribute(
             "href",
             "/requests?prefill=focus&type=book"
@@ -498,20 +528,16 @@ describe("SearchPage", () => {
         });
     });
 
-    it("quotes search values with reserved punctuation in the PostgREST or filter", async () => {
+    it("passes reserved punctuation to the parameterized search service", async () => {
         await runSearchResultsFromPage({ q: "focus, deep" });
 
-        const queryBuilder = getLatestQueryBuilder();
-        expect(queryBuilder?.or).toHaveBeenCalledWith('title.ilike."%focus, deep%",author.ilike."%focus, deep%",category.ilike."%focus, deep%"');
+        expect(searchCatalogMock).toHaveBeenCalledWith(expect.objectContaining({ query: "focus, deep" }));
     });
 
-    it("escapes SQL wildcard characters before building the PostgREST search filter", async () => {
+    it("passes SQL wildcard characters as data to the parameterized search service", async () => {
         await runSearchResultsFromPage({ q: "100%_focus" });
 
-        const queryBuilder = getLatestQueryBuilder();
-        expect(queryBuilder?.or).toHaveBeenCalledWith(
-            "title.ilike.%100\\%\\_focus%,author.ilike.%100\\%\\_focus%,category.ilike.%100\\%\\_focus%"
-        );
+        expect(searchCatalogMock).toHaveBeenCalledWith(expect.objectContaining({ query: "100%_focus" }));
     });
 
     it("keeps the search input stack layer above the filter row", async () => {
