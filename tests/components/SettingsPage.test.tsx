@@ -310,6 +310,25 @@ describe("settings data export delivery", () => {
         expect(screen.queryByText("Verifying 115 of 242 records…")).not.toBeInTheDocument();
     });
 
+    it("keeps an in-flight export active when a token refresh keeps the same account", async () => {
+        const pendingExport = deferred<typeof verifiedExport>();
+        state.fetchExport.mockImplementation(() => pendingExport.promise);
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+        const options = state.fetchExport.mock.calls[0]?.[0] as {
+            signal?: AbortSignal;
+            onProgress?: (progress: { phase: string; completedCollections: number; totalCollections: number; completedRecords: number; totalRecords: number | null }) => void;
+        };
+
+        act(() => state.authListener?.("TOKEN_REFRESHED", { user: accountA }));
+        expect(options.signal?.aborted).toBe(false);
+
+        act(() => options.onProgress?.({ phase: "downloading", completedCollections: 7, totalCollections: 11, completedRecords: 0, totalRecords: 242 }));
+        expect(screen.getByText("Downloading 7 of 11 data categories…")).toBeInTheDocument();
+    });
+
     it("renders the file-creation stage before completing the browser download", async () => {
         const animationFrames: FrameRequestCallback[] = [];
         vi.stubGlobal("requestAnimationFrame", vi.fn((callback: FrameRequestCallback) => {
