@@ -89,6 +89,10 @@ BEGIN
       AND NOT (
         definition ILIKE '%auth.role() <> ''service_role''%'
         OR definition ILIKE '%auth.role() != ''service_role''%'
+        -- Some hardened functions read the signed JWT role directly. Match
+        -- that full reviewed guard, not independent fragments elsewhere in a
+        -- function body.
+        OR definition ~* E'coalesce\\s*\\(\\s*auth\\.jwt\\(\\)\\s*->>\\s*''role''\\s*,\\s*''''\\s*\\)\\s*(<>|!=)\\s*''service_role'''
       )
 
     UNION ALL
