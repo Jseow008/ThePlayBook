@@ -17,7 +17,7 @@ const { MockAccountDataExportError, state } = vi.hoisted(() => {
         MockAccountDataExportError,
         state: {
             currentUser: null as { id: string; email?: string; user_metadata?: { full_name?: string } } | null,
-            authListener: null as ((event: string, session: { user: { id: string; email?: string; user_metadata?: { full_name?: string } } | null } | null) => void) | null,
+            authListener: null as ((event: string, session: { user: { id: string; email?: string; user_metadata?: { full_name?: string } } | null; access_token?: string; refresh_token?: string } | null) => void) | null,
             getUser: vi.fn(),
             getClaims: vi.fn(),
             onAuthStateChange: vi.fn(),
@@ -357,6 +357,65 @@ describe("settings data export delivery", () => {
 
         expect(state.fetchExport.mock.calls[0]?.[0]).toMatchObject({ resumeSnapshotId: snapshotId });
         expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBe(snapshotId);
+    });
+
+    it("preserves a stored export reference through a real-shaped initial-session callback", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000015";
+        const initialUser = deferred<{ data: { user: typeof accountA }; error: null }>();
+        const initialClaims = deferred<{ data: { claims: { sub: string; session_id: string } }; error: null }>();
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        state.getUser.mockImplementationOnce(() => initialUser.promise);
+        state.getClaims.mockImplementationOnce(() => initialClaims.promise);
+
+        render(<SettingsPage />);
+        await waitFor(() => expect(state.authListener).not.toBeNull());
+        await act(async () => {
+            state.authListener?.("INITIAL_SESSION", {
+                user: accountA,
+                access_token: "initial-access-token",
+                refresh_token: "initial-refresh-token",
+            });
+            await Promise.resolve();
+        });
+        await act(async () => {
+            initialClaims.resolve({ data: { claims: { sub: accountA.id, session_id: accountASessionId } }, error: null });
+            await Promise.resolve();
+        });
+
+        expect(await screen.findByText("Resume data export")).toBeInTheDocument();
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBe(snapshotId);
+
+        await act(async () => {
+            initialUser.resolve({ data: { user: accountA }, error: null });
+            await Promise.resolve();
+        });
+    });
+
+    it("discards a stale claims result that finishes after a newer login", async () => {
+        const staleClaims = deferred<{ data: { claims: { sub: string; session_id: string } }; error: null }>();
+        const currentClaims = deferred<{ data: { claims: { sub: string; session_id: string } }; error: null }>();
+        await renderAuthenticatedSettings();
+        state.getClaims.mockImplementationOnce(() => staleClaims.promise).mockImplementationOnce(() => currentClaims.promise);
+
+        await act(async () => {
+            state.authListener?.("TOKEN_REFRESHED", { user: accountA });
+            await Promise.resolve();
+        });
+        await act(async () => {
+            state.authListener?.("SIGNED_IN", { user: accountB });
+            await Promise.resolve();
+        });
+        await act(async () => {
+            currentClaims.resolve({ data: { claims: { sub: accountB.id, session_id: accountBSessionId } }, error: null });
+            await Promise.resolve();
+        });
+        expect(await screen.findByDisplayValue("Account B")).toBeInTheDocument();
+
+        await act(async () => {
+            staleClaims.resolve({ data: { claims: { sub: accountA.id, session_id: accountASessionId } }, error: null });
+            await Promise.resolve();
+        });
+        expect(screen.getByDisplayValue("Account B")).toBeInTheDocument();
     });
 
     it("offers a new export after an unavailable resume reference is rejected", async () => {

@@ -92,6 +92,7 @@ export default function SettingsPage() {
     const authenticatedAccountRef = useRef<string | null>(null);
     const authenticatedSessionRef = useRef<string | null>(null);
     const authGenerationRef = useRef(0);
+    const authResolutionSequenceRef = useRef(0);
     const hasResolvedInitialAuthRef = useRef(false);
     const activeExportRef = useRef<ActiveExport | null>(null);
 
@@ -120,7 +121,8 @@ export default function SettingsPage() {
             }
         };
 
-        const applyAuthenticatedUser = async (nextUser: User | null) => {
+        const applyAuthenticatedUser = async (nextUser: User | null, resolutionSequence: number) => {
+            if (!mounted || resolutionSequence !== authResolutionSequenceRef.current) return;
             let nextAccountId: string | null = null;
             let nextSessionId: string | null = null;
 
@@ -129,15 +131,21 @@ export default function SettingsPage() {
                 // user object carried by a browser auth event. `session_id`
                 // stays stable across ordinary refreshes but changes on a
                 // replacement login for the same account.
-                const { data, error } = await supabase.auth.getClaims();
-                const claims = data?.claims;
-                if (!error && claims?.sub === nextUser.id && typeof claims.session_id === "string") {
-                    nextAccountId = nextUser.id;
-                    nextSessionId = claims.session_id;
+                try {
+                    const { data, error } = await supabase.auth.getClaims();
+                    const claims = data?.claims;
+                    if (!error && claims?.sub === nextUser.id && typeof claims.session_id === "string") {
+                        nextAccountId = nextUser.id;
+                        nextSessionId = claims.session_id;
+                    }
+                } catch {
+                    // Treat an unavailable or unverifiable token as signed out.
                 }
             }
 
-            if (!mounted) return;
+            // A previous refresh can finish after logout or a newer login.
+            // Only the latest requested resolution is allowed to commit state.
+            if (!mounted || resolutionSequence !== authResolutionSequenceRef.current) return;
             const accountChanged = authenticatedAccountRef.current !== nextAccountId;
             const sessionChanged = !accountChanged
                 && authenticatedSessionRef.current !== null
@@ -160,34 +168,31 @@ export default function SettingsPage() {
             }
             setUser(nextAccountId ? nextUser : null);
             setDisplayName(nextAccountId ? nextUser?.user_metadata?.full_name || "" : "");
+            hasResolvedInitialAuthRef.current = true;
+            setIsLoadingAuth(false);
         };
 
         async function loadUser() {
-            const initialGeneration = authGenerationRef.current;
+            const resolutionSequence = ++authResolutionSequenceRef.current;
             try {
                 const { data: { user } } = await supabase.auth.getUser();
-                // Do not let an older getUser response overwrite a later
-                // authentication event.
-                if (mounted && authGenerationRef.current === initialGeneration) {
-                    await applyAuthenticatedUser(user);
-                }
-            } finally {
-                hasResolvedInitialAuthRef.current = true;
-                if (mounted) setIsLoadingAuth(false);
+                await applyAuthenticatedUser(user, resolutionSequence);
+            } catch {
+                await applyAuthenticatedUser(null, resolutionSequence);
             }
         }
 
         loadUser();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            void applyAuthenticatedUser(session?.user ?? null);
-            hasResolvedInitialAuthRef.current = true;
-            if (mounted) setIsLoadingAuth(false);
+            const resolutionSequence = ++authResolutionSequenceRef.current;
+            void applyAuthenticatedUser(session?.user ?? null, resolutionSequence);
         });
 
         return () => {
             mounted = false;
             authGenerationRef.current += 1;
+            authResolutionSequenceRef.current += 1;
             const activeExport = activeExportRef.current;
             if (activeExport) {
                 activeExport.controller.abort();

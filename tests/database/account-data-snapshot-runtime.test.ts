@@ -1,11 +1,19 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { Pool } from "pg";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { AccountDataSnapshotCollection } from "@/lib/account-data-snapshot-collections";
+import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
+import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
 const adminDatabaseUrl = process.env.DB107_ADMIN_DATABASE_URL;
 const workerDatabaseUrl = process.env.SNAPSHOT_WORKER_DATABASE_URL;
+const supabaseApiUrl = process.env.DB107_SUPABASE_URL;
+const supabaseAnonKey = process.env.DB107_SUPABASE_ANON_KEY;
 const describeDatabase = adminDatabaseUrl && workerDatabaseUrl ? describe : describe.skip;
+const itWithAuthRuntime = supabaseApiUrl && supabaseAnonKey ? it : it.skip;
+
+vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 
 describeDatabase("DB-107 account-data snapshots on a disposable Supabase database", () => {
     const db = new Pool({ connectionString: adminDatabaseUrl, max: 2 });
@@ -282,6 +290,51 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         await resetLibraryForAccount(accountC);
         await expect(getAccountDataSnapshotManifest(accountC, result.manifest.snapshotId, creatingSession)).rejects.toMatchObject({ code: "INVALIDATED" });
         await expect(getAccountDataSnapshotPage(accountC, result.manifest.snapshotId, "user_library", 0, 200, creatingSession)).rejects.toMatchObject({ code: "INVALIDATED" });
+    });
+
+    itWithAuthRuntime("rejects a revoked Supabase Auth session before a snapshot page can be authorized", async () => {
+        const email = `db107-revoked-${randomUUID()}@example.invalid`;
+        const password = "db107-disposable-auth-fixture";
+        const sessionClient = createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        let userId: string | null = null;
+        try {
+            const signedUp = await sessionClient.auth.signUp({ email, password });
+            expect(signedUp.error).toBeNull();
+            userId = signedUp.data.user?.id ?? null;
+            const session = signedUp.data.session;
+            expect(session).not.toBeNull();
+            if (!session || !userId) return;
+
+            const staleSessionClient = createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
+                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+            });
+            await staleSessionClient.auth.setSession({
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+            });
+            const revokingClient = createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
+                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+            });
+            await revokingClient.auth.setSession({
+                access_token: session.access_token,
+                refresh_token: session.refresh_token,
+            });
+            const revoked = await revokingClient.auth.signOut({ scope: "global" });
+            expect(revoked.error).toBeNull();
+
+            const rejectedByAuth = await staleSessionClient.auth.getUser();
+            expect(rejectedByAuth.data.user).toBeNull();
+            expect(rejectedByAuth.error).not.toBeNull();
+
+            (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ auth: staleSessionClient.auth });
+            await expect(getVerifiedAccountDataSession()).resolves.toBeNull();
+        } finally {
+            if (userId) {
+                await db.query("DELETE FROM auth.users WHERE id = $1", [userId]);
+            }
+        }
     });
 
     it("rejects resumed snapshot reads after expiry and account deletion", async () => {

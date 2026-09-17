@@ -2,9 +2,9 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "@/app/api/account-data/snapshots/[snapshotId]/[collection]/route";
 import { getAccountDataSnapshotPage, getLibrarySnapshotPage } from "@/lib/server/account-data-snapshots";
-import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
+import { createClient } from "@/lib/supabase/server";
 
-vi.mock("@/lib/server/account-data-snapshot-auth", () => ({ getVerifiedAccountDataSession: vi.fn() }));
+vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/server/account-data-snapshots", () => ({
     LIBRARY_SNAPSHOT_COLLECTION: "user_library",
     AccountDataSnapshotError: class AccountDataSnapshotError extends Error {},
@@ -14,10 +14,14 @@ vi.mock("@/lib/server/account-data-snapshots", () => ({
 
 describe("GET /api/account-data/snapshots/:snapshotId/user_library", () => {
     const snapshotId = "00000000-0000-4000-8000-000000000001";
+    const getUser = vi.fn();
+    const getClaims = vi.fn();
     beforeEach(() => {
         vi.clearAllMocks();
         process.env.ACCOUNT_DATA_CURSOR_SECRET = "test-secret";
-        (getVerifiedAccountDataSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ accountId: "account-b", sessionId: "00000000-0000-4000-8000-000000000011" });
+        (createClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ auth: { getUser, getClaims } });
+        getUser.mockResolvedValue({ data: { user: { id: "account-b" } }, error: null });
+        getClaims.mockResolvedValue({ data: { claims: { sub: "account-b", session_id: "00000000-0000-4000-8000-000000000011" } }, error: null });
         (getLibrarySnapshotPage as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
             manifest: { snapshotId, recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 0, expiresAt: "2030-01-01T00:00:00.000Z" },
             records: [],
@@ -56,8 +60,11 @@ describe("GET /api/account-data/snapshots/:snapshotId/user_library", () => {
         await expect(response.json()).resolves.toMatchObject({ data: [record] });
     });
 
-    it("rejects a subsequent page read when authentication no longer verifies the session", async () => {
-        (getVerifiedAccountDataSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    it("rejects a subsequent page read when Supabase Auth reports a revoked session", async () => {
+        getUser.mockResolvedValueOnce({
+            data: { user: null },
+            error: { message: "Auth session missing!", status: 401, code: "session_not_found" },
+        });
 
         const response = await GET(
             new NextRequest(`http://localhost/api/account-data/snapshots/${snapshotId}/user_library`),
@@ -65,6 +72,7 @@ describe("GET /api/account-data/snapshots/:snapshotId/user_library", () => {
         );
 
         expect(response.status).toBe(401);
+        expect(getClaims).not.toHaveBeenCalled();
         expect(getLibrarySnapshotPage).not.toHaveBeenCalled();
         expect(getAccountDataSnapshotPage).not.toHaveBeenCalled();
     });
