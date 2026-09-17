@@ -56,6 +56,19 @@ describe("GET /api/account-data/snapshots/:snapshotId/user_library", () => {
         await expect(response.json()).resolves.toMatchObject({ data: [record] });
     });
 
+    it("rejects a subsequent page read when authentication no longer verifies the session", async () => {
+        (getVerifiedAccountDataSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+
+        const response = await GET(
+            new NextRequest(`http://localhost/api/account-data/snapshots/${snapshotId}/user_library`),
+            { params: Promise.resolve({ snapshotId, collection: "user_library" }) },
+        );
+
+        expect(response.status).toBe(401);
+        expect(getLibrarySnapshotPage).not.toHaveBeenCalled();
+        expect(getAccountDataSnapshotPage).not.toHaveBeenCalled();
+    });
+
     it("rejects a cursor that was not issued for this account and snapshot", async () => {
         const response = await GET(
             new NextRequest(`http://localhost/api/account-data/snapshots/${snapshotId}/user_library?cursor=forged.signature`),

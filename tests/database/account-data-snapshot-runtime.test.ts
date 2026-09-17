@@ -277,8 +277,53 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         });
         await expect(getAccountDataSnapshotManifest(accountC, result.manifest.snapshotId, otherSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
         await expect(getAccountDataSnapshotManifest(accountB, result.manifest.snapshotId, creatingSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
+        await expect(getAccountDataSnapshotPage(accountC, result.manifest.snapshotId, "user_library", 0, 200, otherSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
+        await expect(getAccountDataSnapshotPage(accountB, result.manifest.snapshotId, "user_library", 0, 200, creatingSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
         await resetLibraryForAccount(accountC);
         await expect(getAccountDataSnapshotManifest(accountC, result.manifest.snapshotId, creatingSession)).rejects.toMatchObject({ code: "INVALIDATED" });
+        await expect(getAccountDataSnapshotPage(accountC, result.manifest.snapshotId, "user_library", 0, 200, creatingSession)).rejects.toMatchObject({ code: "INVALIDATED" });
+    });
+
+    it("rejects resumed snapshot reads after expiry and account deletion", async () => {
+        const { ACCOUNT_DATA_EXPORT_COLLECTIONS } = await import("@/lib/account-data-snapshot-collections");
+        const expirySession = randomUUID();
+        const expired = await createAccountDataSnapshot(
+            accountA,
+            randomUUID(),
+            ACCOUNT_DATA_EXPORT_COLLECTIONS,
+            { resumeSessionId: expirySession },
+        );
+        expect(expired.state).toBe("ready");
+        if (expired.state !== "ready") return;
+
+        await db.query(
+            "UPDATE snapshot_private.account_data_snapshots SET expires_at = now() - interval '1 second' WHERE id = $1",
+            [expired.manifest.snapshotId],
+        );
+        await expect(getAccountDataSnapshotManifest(accountA, expired.manifest.snapshotId, expirySession)).rejects.toMatchObject({ code: "EXPIRED" });
+        await expect(getAccountDataSnapshotPage(accountA, expired.manifest.snapshotId, "user_library", 0, 200, expirySession)).rejects.toMatchObject({ code: "EXPIRED" });
+
+        const deletedAccount = randomUUID();
+        const deletedSession = randomUUID();
+        await db.query(
+            `INSERT INTO auth.users
+                (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+             VALUES
+                ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
+            [deletedAccount, `db107-deleted-${deletedAccount}@example.invalid`],
+        );
+        const deleted = await createAccountDataSnapshot(
+            deletedAccount,
+            randomUUID(),
+            ACCOUNT_DATA_EXPORT_COLLECTIONS,
+            { resumeSessionId: deletedSession },
+        );
+        expect(deleted.state).toBe("ready");
+        if (deleted.state !== "ready") return;
+
+        await db.query("DELETE FROM auth.users WHERE id = $1", [deletedAccount]);
+        await expect(getAccountDataSnapshotManifest(deletedAccount, deleted.manifest.snapshotId, deletedSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
+        await expect(getAccountDataSnapshotPage(deletedAccount, deleted.manifest.snapshotId, "user_library", 0, 200, deletedSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
     });
 
     it("delivers the persisted cross-collection boundary across multiple pages while source records change", async () => {
@@ -464,12 +509,12 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         // retain exactly its boundary state.
         await db.query("UPDATE public.user_library SET is_bookmarked = false WHERE user_id = $1 AND content_id = $2", [accountA, contentA]);
         await db.query("DELETE FROM public.user_library WHERE user_id = $1 AND content_id = $2", [accountA, contentA]);
-        await resetLibraryForAccount(accountA);
-
         const page = await getLibrarySnapshotPage(accountA, ready.manifest.snapshotId, 0, 200);
         expect(page.records).toHaveLength(1);
         expect(page.records[0]?.content_id).toBe(contentA);
         expect(page.records[0]?.is_bookmarked).toBe(true);
+        await resetLibraryForAccount(accountA);
+        await expect(getLibrarySnapshotPage(accountA, ready.manifest.snapshotId, 0, 200)).rejects.toMatchObject({ code: "INVALIDATED" });
         const current = await db.query<{ reset_epoch: string; current_revision: string }>(
             "SELECT reset_epoch, current_revision FROM public.account_library_state WHERE user_id = $1",
             [accountA],
@@ -637,11 +682,12 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
 
         const result = await createLibrarySnapshot(accountC, randomUUID());
         expect(result).toMatchObject({ state: "failed", code: "SNAPSHOT_TOO_LARGE" });
+        if (result.state !== "failed") return;
         const copies = await db.query<{ count: string }>(
             `SELECT count(*) FROM snapshot_private.account_data_snapshot_records records
              JOIN snapshot_private.account_data_snapshots snapshots ON snapshots.id = records.snapshot_id
-             WHERE snapshots.account_id = $1`,
-            [accountC],
+             WHERE snapshots.id = $1`,
+            [result.snapshotId],
         );
         expect(Number(copies.rows[0]?.count)).toBe(0);
     });

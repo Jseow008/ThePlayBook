@@ -20,6 +20,7 @@ import { ACCOUNT_DATA_EXPORT_COLLECTIONS } from "@/lib/account-data-snapshot-col
 
 type ActiveExport = {
     accountId: string;
+    sessionId: string;
     authGeneration: number;
     controller: AbortController;
 };
@@ -89,6 +90,7 @@ export default function SettingsPage() {
     const [resumableExportSnapshotId, setResumableExportSnapshotId] = useState<string | null>(null);
     const [resumeUnavailable, setResumeUnavailable] = useState(false);
     const authenticatedAccountRef = useRef<string | null>(null);
+    const authenticatedSessionRef = useRef<string | null>(null);
     const authGenerationRef = useRef(0);
     const hasResolvedInitialAuthRef = useRef(false);
     const activeExportRef = useRef<ActiveExport | null>(null);
@@ -118,26 +120,46 @@ export default function SettingsPage() {
             }
         };
 
-        const applyAuthenticatedUser = (nextUser: User | null) => {
-            const nextAccountId = nextUser?.id ?? null;
-            // A token refresh keeps the same authenticated account. It must
-            // not cancel a valid, in-flight export: the export routes and the
-            // final pre-download check still authenticate the current user.
-            // Only losing the account or switching to another account starts
-            // a new generation and makes an earlier export unsafe to deliver.
-            if (authenticatedAccountRef.current !== nextAccountId) {
+        const applyAuthenticatedUser = async (nextUser: User | null) => {
+            let nextAccountId: string | null = null;
+            let nextSessionId: string | null = null;
+
+            if (nextUser) {
+                // Verify the current token's claims instead of trusting the
+                // user object carried by a browser auth event. `session_id`
+                // stays stable across ordinary refreshes but changes on a
+                // replacement login for the same account.
+                const { data, error } = await supabase.auth.getClaims();
+                const claims = data?.claims;
+                if (!error && claims?.sub === nextUser.id && typeof claims.session_id === "string") {
+                    nextAccountId = nextUser.id;
+                    nextSessionId = claims.session_id;
+                }
+            }
+
+            if (!mounted) return;
+            const accountChanged = authenticatedAccountRef.current !== nextAccountId;
+            const sessionChanged = !accountChanged
+                && authenticatedSessionRef.current !== null
+                && authenticatedSessionRef.current !== nextSessionId;
+            // A token refresh preserves the same session ID and can continue.
+            // Losing the account, switching accounts, or replacing a session
+            // starts a new generation and makes an earlier export unsafe.
+            if (accountChanged || sessionChanged) {
                 const isInitialAuthentication = !hasResolvedInitialAuthRef.current && authenticatedAccountRef.current === null;
                 authGenerationRef.current += 1;
                 authenticatedAccountRef.current = nextAccountId;
+                authenticatedSessionRef.current = nextSessionId;
                 cancelActiveExport();
                 if (!isInitialAuthentication) {
                     clearResumableExportSnapshotId();
                     setResumableExportSnapshotId(null);
                 }
+            } else {
+                authenticatedSessionRef.current = nextSessionId;
             }
-            if (!mounted) return;
-            setUser(nextUser);
-            setDisplayName(nextUser?.user_metadata?.full_name || "");
+            setUser(nextAccountId ? nextUser : null);
+            setDisplayName(nextAccountId ? nextUser?.user_metadata?.full_name || "" : "");
         };
 
         async function loadUser() {
@@ -147,7 +169,7 @@ export default function SettingsPage() {
                 // Do not let an older getUser response overwrite a later
                 // authentication event.
                 if (mounted && authGenerationRef.current === initialGeneration) {
-                    applyAuthenticatedUser(user);
+                    await applyAuthenticatedUser(user);
                 }
             } finally {
                 hasResolvedInitialAuthRef.current = true;
@@ -158,13 +180,14 @@ export default function SettingsPage() {
         loadUser();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            applyAuthenticatedUser(session?.user ?? null);
+            void applyAuthenticatedUser(session?.user ?? null);
             hasResolvedInitialAuthRef.current = true;
             if (mounted) setIsLoadingAuth(false);
         });
 
         return () => {
             mounted = false;
+            authGenerationRef.current += 1;
             const activeExport = activeExportRef.current;
             if (activeExport) {
                 activeExport.controller.abort();
@@ -228,9 +251,11 @@ export default function SettingsPage() {
         if (!user) return;
         const activeExport: ActiveExport = {
             accountId: user.id,
+            sessionId: authenticatedSessionRef.current ?? "",
             authGeneration: authGenerationRef.current,
             controller: new AbortController(),
         };
+        if (!activeExport.sessionId) return;
         activeExportRef.current = activeExport;
         setIsExporting(true);
         setExportProgress({
@@ -247,6 +272,7 @@ export default function SettingsPage() {
                 activeExport.controller.signal.aborted
                 || activeExportRef.current !== activeExport
                 || authenticatedAccountRef.current !== activeExport.accountId
+                || authenticatedSessionRef.current !== activeExport.sessionId
                 || authGenerationRef.current !== activeExport.authGeneration
             ) {
                 throw new AccountDataExportError("The data export was cancelled because the signed-in account changed.", "EXPORT_CANCELLED");
@@ -258,6 +284,7 @@ export default function SettingsPage() {
                 activeExport.controller.signal.aborted
                 || activeExportRef.current !== activeExport
                 || authenticatedAccountRef.current !== activeExport.accountId
+                || authenticatedSessionRef.current !== activeExport.sessionId
                 || authGenerationRef.current !== activeExport.authGeneration
             ) return;
             setExportProgress(progress);
@@ -277,11 +304,18 @@ export default function SettingsPage() {
             });
             ensureExportIsCurrent();
 
-            // Auth events are asynchronous. Confirm the server-authenticated
-            // account immediately before producing a browser download as a
-            // final guard against a response that arrived during a switch.
+            // Auth events are asynchronous. Confirm both the server-authenticated
+            // account and session immediately before producing a browser download.
             const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-            if (authError || currentUser?.id !== activeExport.accountId) {
+            const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+            const claims = claimsData?.claims;
+            if (
+                authError
+                || claimsError
+                || currentUser?.id !== activeExport.accountId
+                || claims?.sub !== activeExport.accountId
+                || claims?.session_id !== activeExport.sessionId
+            ) {
                 throw new AccountDataExportError("The data export was cancelled because the signed-in account changed.", "EXPORT_CANCELLED");
             }
             ensureExportIsCurrent();
