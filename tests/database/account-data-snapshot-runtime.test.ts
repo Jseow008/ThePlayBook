@@ -295,9 +295,15 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     itWithAuthRuntime("rejects a revoked Supabase Auth session before a snapshot page can be authorized", async () => {
         const email = `db107-revoked-${randomUUID()}@example.invalid`;
         const password = "db107-disposable-auth-fixture";
-        const sessionClient = createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
-            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        const createDisposableAuthClient = () => createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
+            auth: {
+                storageKey: `db107-revoked-session-${randomUUID()}`,
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false,
+            },
         });
+        const sessionClient = createDisposableAuthClient();
         let userId: string | null = null;
         try {
             const signedUp = await sessionClient.auth.signUp({ email, password });
@@ -307,16 +313,12 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             expect(session).not.toBeNull();
             if (!session || !userId) return;
 
-            const staleSessionClient = createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
-                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-            });
+            const staleSessionClient = createDisposableAuthClient();
             await staleSessionClient.auth.setSession({
                 access_token: session.access_token,
                 refresh_token: session.refresh_token,
             });
-            const revokingClient = createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
-                auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-            });
+            const revokingClient = createDisposableAuthClient();
             await revokingClient.auth.setSession({
                 access_token: session.access_token,
                 refresh_token: session.refresh_token,
