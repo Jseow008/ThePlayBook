@@ -85,12 +85,17 @@ export default function SettingsPage() {
         };
 
         const applyAuthenticatedUser = (nextUser: User | null) => {
-            // Treat every Auth event as a new authentication generation. A
-            // completed export from an earlier session must never be offered
-            // after sign-out, an account switch, or a refreshed session.
-            authGenerationRef.current += 1;
-            authenticatedAccountRef.current = nextUser?.id ?? null;
-            cancelActiveExport();
+            const nextAccountId = nextUser?.id ?? null;
+            // A token refresh keeps the same authenticated account. It must
+            // not cancel a valid, in-flight export: the export routes and the
+            // final pre-download check still authenticate the current user.
+            // Only losing the account or switching to another account starts
+            // a new generation and makes an earlier export unsafe to deliver.
+            if (authenticatedAccountRef.current !== nextAccountId) {
+                authGenerationRef.current += 1;
+                authenticatedAccountRef.current = nextAccountId;
+                cancelActiveExport();
+            }
             if (!mounted) return;
             setUser(nextUser);
             setDisplayName(nextUser?.user_metadata?.full_name || "");
