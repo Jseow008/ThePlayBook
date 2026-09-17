@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/account-data/snapshots/route";
-import { createClient } from "@/lib/supabase/server";
 import { createAccountDataSnapshot } from "@/lib/server/account-data-snapshots";
 import { strictPublicRateLimit } from "@/lib/server/rate-limit";
+import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
-vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/server/account-data-snapshot-auth", () => ({ getVerifiedAccountDataSession: vi.fn() }));
 vi.mock("@/lib/server/account-data-snapshots", () => ({
     AccountDataSnapshotError: class AccountDataSnapshotError extends Error {},
     createAccountDataSnapshot: vi.fn(),
@@ -16,17 +16,14 @@ vi.mock("@/lib/server/rate-limit", () => ({
 }));
 
 describe("POST /api/account-data/snapshots", () => {
-    const getUser = vi.fn();
-
     beforeEach(() => {
         vi.clearAllMocks();
-        (createClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ auth: { getUser } });
-        getUser.mockResolvedValue({ data: { user: { id: "account-a" } } });
+        (getVerifiedAccountDataSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ accountId: "account-a", sessionId: "00000000-0000-4000-8000-000000000010" });
         (strictPublicRateLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ success: true });
     });
 
     it("does not create a snapshot before authentication", async () => {
-        getUser.mockResolvedValueOnce({ data: { user: null } });
+        (getVerifiedAccountDataSession as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
         const response = await POST(new NextRequest("http://localhost/api/account-data/snapshots", { method: "POST" }));
 
@@ -46,7 +43,7 @@ describe("POST /api/account-data/snapshots", () => {
         }));
 
         expect(response.status).toBe(201);
-        expect(createAccountDataSnapshot).toHaveBeenCalledWith("account-a", "00000000-0000-4000-8000-000000000001", undefined);
+        expect(createAccountDataSnapshot).toHaveBeenCalledWith("account-a", "00000000-0000-4000-8000-000000000001", undefined, undefined);
         expect(strictPublicRateLimit).toHaveBeenCalledWith(expect.any(NextRequest), expect.objectContaining({
             limit: 6,
             key: "account-data-snapshot",
@@ -81,6 +78,7 @@ describe("POST /api/account-data/snapshots", () => {
             "account-a",
             "00000000-0000-4000-8000-000000000002",
             ["user_library", "reflections"],
+            undefined,
         );
     });
 
@@ -107,5 +105,11 @@ describe("POST /api/account-data/snapshots", () => {
             key: "account-data-export-snapshot",
             identifier: "account-a",
         }));
+        expect(createAccountDataSnapshot).toHaveBeenCalledWith(
+            "account-a",
+            "00000000-0000-4000-8000-000000000003",
+            expect.any(Array),
+            { resumeSessionId: "00000000-0000-4000-8000-000000000010" },
+        );
     });
 });

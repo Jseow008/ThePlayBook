@@ -17,8 +17,9 @@ const { MockAccountDataExportError, state } = vi.hoisted(() => {
         MockAccountDataExportError,
         state: {
             currentUser: null as { id: string; email?: string; user_metadata?: { full_name?: string } } | null,
-            authListener: null as ((event: string, session: { user: { id: string; email?: string; user_metadata?: { full_name?: string } } | null } | null) => void) | null,
+            authListener: null as ((event: string, session: { user: { id: string; email?: string; user_metadata?: { full_name?: string } } | null; access_token?: string; refresh_token?: string } | null) => void) | null,
             getUser: vi.fn(),
+            getClaims: vi.fn(),
             onAuthStateChange: vi.fn(),
             signOut: vi.fn(),
             signOutAction: vi.fn(),
@@ -40,6 +41,7 @@ vi.mock("@/lib/supabase/client", () => {
     const client = {
         auth: {
             getUser: state.getUser,
+            getClaims: state.getClaims,
             onAuthStateChange: state.onAuthStateChange,
             updateUser: vi.fn(),
             signOut: state.signOut,
@@ -97,6 +99,8 @@ function deferred<T>() {
 
 const accountA = { id: "account-a", email: "account-a@example.invalid", user_metadata: { full_name: "Account A" } };
 const accountB = { id: "account-b", email: "account-b@example.invalid", user_metadata: { full_name: "Account B" } };
+const accountASessionId = "00000000-0000-4000-8000-000000000101";
+const accountBSessionId = "00000000-0000-4000-8000-000000000102";
 const verifiedExport = {
     export_date: "2026-09-15T00:00:00.000Z",
     schema_version: 2,
@@ -112,9 +116,14 @@ describe("settings data export delivery", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        sessionStorage.clear();
         state.currentUser = accountA;
         state.authListener = null;
         state.getUser.mockImplementation(async () => ({ data: { user: state.currentUser }, error: null }));
+        state.getClaims.mockImplementation(async () => ({
+            data: { claims: state.currentUser ? { sub: state.currentUser.id, session_id: state.currentUser.id === accountA.id ? accountASessionId : accountBSessionId } : null },
+            error: null,
+        }));
         state.onAuthStateChange.mockImplementation((listener) => {
             state.authListener = listener;
             return { data: { subscription: { unsubscribe: vi.fn() } } };
@@ -147,7 +156,7 @@ describe("settings data export delivery", () => {
 
     async function renderAuthenticatedSettings() {
         const result = render(<SettingsPage />);
-        const downloadButton = await screen.findByRole("button", { name: /download my data/i });
+        const downloadButton = await screen.findByRole("button", { name: /download my data|resume data export/i });
         await waitFor(() => expect(downloadButton).toBeEnabled());
         return { ...result, downloadButton };
     }
@@ -304,7 +313,10 @@ describe("settings data export delivery", () => {
         };
 
         state.currentUser = accountB;
-        act(() => state.authListener?.("SIGNED_IN", { user: accountB }));
+        await act(async () => {
+            state.authListener?.("SIGNED_IN", { user: accountB });
+            await Promise.resolve();
+        });
         act(() => options.onProgress?.({ phase: "verifying", completedCollections: 0, totalCollections: 11, completedRecords: 115, totalRecords: 242 }));
 
         expect(screen.queryByText("Verifying 115 of 242 records…")).not.toBeInTheDocument();
@@ -322,11 +334,120 @@ describe("settings data export delivery", () => {
             onProgress?: (progress: { phase: string; completedCollections: number; totalCollections: number; completedRecords: number; totalRecords: number | null }) => void;
         };
 
-        act(() => state.authListener?.("TOKEN_REFRESHED", { user: accountA }));
+        await act(async () => {
+            state.authListener?.("TOKEN_REFRESHED", { user: accountA });
+            await Promise.resolve();
+        });
         expect(options.signal?.aborted).toBe(false);
 
         act(() => options.onProgress?.({ phase: "downloading", completedCollections: 7, totalCollections: 11, completedRecords: 0, totalRecords: 242 }));
         expect(screen.getByText("Downloading 7 of 11 data categories…")).toBeInTheDocument();
+    });
+
+    it("resumes a stored export reference without storing any payload", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000012";
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        const pendingExport = deferred<typeof verifiedExport>();
+        state.fetchExport.mockImplementation(() => pendingExport.promise);
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        expect(await screen.findByText("Resume data export")).toBeInTheDocument();
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+
+        expect(state.fetchExport.mock.calls[0]?.[0]).toMatchObject({ resumeSnapshotId: snapshotId });
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBe(snapshotId);
+    });
+
+    it("preserves a stored export reference through a real-shaped initial-session callback", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000015";
+        const initialUser = deferred<{ data: { user: typeof accountA }; error: null }>();
+        const initialClaims = deferred<{ data: { claims: { sub: string; session_id: string } }; error: null }>();
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        state.getUser.mockImplementationOnce(() => initialUser.promise);
+        state.getClaims.mockImplementationOnce(() => initialClaims.promise);
+
+        render(<SettingsPage />);
+        await waitFor(() => expect(state.authListener).not.toBeNull());
+        await act(async () => {
+            state.authListener?.("INITIAL_SESSION", {
+                user: accountA,
+                access_token: "initial-access-token",
+                refresh_token: "initial-refresh-token",
+            });
+            await Promise.resolve();
+        });
+        await act(async () => {
+            initialClaims.resolve({ data: { claims: { sub: accountA.id, session_id: accountASessionId } }, error: null });
+            await Promise.resolve();
+        });
+
+        expect(await screen.findByText("Resume data export")).toBeInTheDocument();
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBe(snapshotId);
+
+        await act(async () => {
+            initialUser.resolve({ data: { user: accountA }, error: null });
+            await Promise.resolve();
+        });
+    });
+
+    it("discards a stale claims result that finishes after a newer login", async () => {
+        const staleClaims = deferred<{ data: { claims: { sub: string; session_id: string } }; error: null }>();
+        const currentClaims = deferred<{ data: { claims: { sub: string; session_id: string } }; error: null }>();
+        await renderAuthenticatedSettings();
+        state.getClaims.mockImplementationOnce(() => staleClaims.promise).mockImplementationOnce(() => currentClaims.promise);
+
+        await act(async () => {
+            state.authListener?.("TOKEN_REFRESHED", { user: accountA });
+            await Promise.resolve();
+        });
+        await act(async () => {
+            state.authListener?.("SIGNED_IN", { user: accountB });
+            await Promise.resolve();
+        });
+        await act(async () => {
+            currentClaims.resolve({ data: { claims: { sub: accountB.id, session_id: accountBSessionId } }, error: null });
+            await Promise.resolve();
+        });
+        expect(await screen.findByDisplayValue("Account B")).toBeInTheDocument();
+
+        await act(async () => {
+            staleClaims.resolve({ data: { claims: { sub: accountA.id, session_id: accountASessionId } }, error: null });
+            await Promise.resolve();
+        });
+        expect(screen.getByDisplayValue("Account B")).toBeInTheDocument();
+    });
+
+    it("offers a new export after an unavailable resume reference is rejected", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000013";
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        state.fetchExport.mockRejectedValue(new MockAccountDataExportError(
+            "This previous export is no longer available. Start a new export.",
+            "EXPIRED",
+        ));
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(screen.getByText("Start a new export")).toBeInTheDocument());
+
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBeNull();
+        expect(state.toastError).toHaveBeenCalledWith("This previous export is no longer available. Start a new export.");
+    });
+
+    it("clears an export reference when a guest signs in to another account", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000014";
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        state.currentUser = null;
+        render(<SettingsPage />);
+        await screen.findByText("Not signed in.");
+
+        state.currentUser = accountB;
+        await act(async () => {
+            state.authListener?.("SIGNED_IN", { user: accountB });
+            await Promise.resolve();
+        });
+
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBeNull();
     });
 
     it("renders the file-creation stage before completing the browser download", async () => {
@@ -362,7 +483,10 @@ describe("settings data export delivery", () => {
         const signal = (state.fetchExport.mock.calls[0]?.[0] as { signal?: AbortSignal }).signal;
 
         state.currentUser = accountB;
-        act(() => state.authListener?.("SIGNED_IN", { user: accountB }));
+        await act(async () => {
+            state.authListener?.("SIGNED_IN", { user: accountB });
+            await Promise.resolve();
+        });
         expect(signal?.aborted).toBe(true);
 
         await act(async () => {
@@ -389,6 +513,34 @@ describe("settings data export delivery", () => {
         state.currentUser = accountB;
         await act(async () => {
             authRecheck.resolve({ data: { user: accountB }, error: null });
+            await Promise.resolve();
+        });
+
+        expect(createObjectUrl).not.toHaveBeenCalled();
+        expect(anchorClick).not.toHaveBeenCalled();
+        expect(state.toastSuccess).not.toHaveBeenCalledWith("Data export complete");
+    });
+
+    it("cancels a delayed final page when the same account receives a replacement session", async () => {
+        const claimsRecheck = deferred<{ data: { claims: { sub: string; session_id: string } }; error: null }>();
+        state.fetchExport.mockResolvedValue(verifiedExport);
+        const { downloadButton } = await renderAuthenticatedSettings();
+        const claimsBeforeFinalRecheck = state.getClaims.mock.calls.length;
+        state.getClaims.mockImplementationOnce(() => claimsRecheck.promise);
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.getClaims.mock.calls.length).toBeGreaterThan(claimsBeforeFinalRecheck));
+
+        state.getClaims.mockResolvedValue({
+            data: { claims: { sub: accountA.id, session_id: accountBSessionId } },
+            error: null,
+        });
+        await act(async () => {
+            state.authListener?.("SIGNED_IN", { user: accountA });
+            await Promise.resolve();
+        });
+        await act(async () => {
+            claimsRecheck.resolve({ data: { claims: { sub: accountA.id, session_id: accountBSessionId } }, error: null });
             await Promise.resolve();
         });
 

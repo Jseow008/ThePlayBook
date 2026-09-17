@@ -81,7 +81,7 @@ export type CreateLibrarySnapshotResult =
 
 export class AccountDataSnapshotError extends Error {
     constructor(
-        readonly code: "CONFIGURATION" | "NOT_FOUND" | "EXPIRED" | "TOO_LARGE" | "TIMED_OUT" | "IDEMPOTENCY_KEY_REUSED" | "FAILED",
+        readonly code: "CONFIGURATION" | "NOT_FOUND" | "EXPIRED" | "INVALIDATED" | "TOO_LARGE" | "TIMED_OUT" | "IDEMPOTENCY_KEY_REUSED" | "FAILED",
         message: string,
     ) {
         super(message);
@@ -378,6 +378,8 @@ async function getReadyManifest(
     accountId: string,
     snapshotId: string,
     allowExpired = false,
+    resumeSessionId?: string,
+    requireResumeSession = false,
 ): Promise<LibrarySnapshotManifest | null> {
     const result = await client.query<{
         id: string;
@@ -389,18 +391,31 @@ async function getReadyManifest(
         schema_version: number;
         collection_manifests: Record<string, AccountDataSnapshotCollectionManifest> | null;
         collection_names: AccountDataSnapshotCollection[];
+        resume_session_id: string | null;
     }>(
         `SELECT id, record_count, manifest_hash, reset_epoch, boundary_library_revision, expires_at,
-                schema_version, collection_manifests, collection_names
+                schema_version, collection_manifests, collection_names, resume_session_id
          FROM snapshot_private.account_data_snapshots
-         WHERE id = $1 AND account_id = $2 AND status = 'ready'`,
-        [snapshotId, accountId],
+         WHERE id = $1
+           AND account_id = $2
+           AND status = 'ready'
+           AND (resume_session_id IS NULL OR resume_session_id = $3::uuid)`,
+        [snapshotId, accountId, resumeSessionId ?? null],
     );
     const row = result.rows[0];
     if (!row || !row.manifest_hash) return null;
+    if (requireResumeSession && !row.resume_session_id) return null;
     if (new Date(row.expires_at).getTime() <= Date.now()) {
         if (allowExpired) return null;
         throw new AccountDataSnapshotError("EXPIRED", "This account-data snapshot has expired.");
+    }
+    const state = await client.query<{ reset_epoch: number }>(
+        `SELECT reset_epoch FROM public.account_library_state WHERE user_id = $1`,
+        [accountId],
+    );
+    const currentResetEpoch = Number(state.rows[0]?.reset_epoch ?? 0);
+    if (currentResetEpoch !== Number(row.reset_epoch)) {
+        throw new AccountDataSnapshotError("INVALIDATED", "This account-data snapshot was invalidated by a library reset.");
     }
     return {
         snapshotId: row.id,
@@ -637,6 +652,7 @@ export async function createAccountDataSnapshot(
     accountId: string,
     idempotencyKey: string,
     requestedCollections?: readonly string[],
+    options?: { resumeSessionId?: string },
 ): Promise<CreateLibrarySnapshotResult> {
     const client = await getPool().connect();
     const collections = normalizeSnapshotCollections(requestedCollections);
@@ -682,7 +698,7 @@ export async function createAccountDataSnapshot(
 
         if (!operation.inserted) {
             const existing = await withRestrictedWorkerTransaction(client, accountId, async () => {
-                const manifest = await getReadyManifest(client, accountId, operation.snapshot_id, true);
+                const manifest = await getReadyManifest(client, accountId, operation.snapshot_id, true, options?.resumeSessionId);
                 if (manifest) {
                     await client.query(
                         `UPDATE snapshot_private.account_data_snapshot_operations
@@ -736,7 +752,7 @@ export async function createAccountDataSnapshot(
                     if (aborted.rows[0]) {
                         return { state: "failed" as const, snapshotId: operation.snapshot_id, code: "SNAPSHOT_WORKER_INTERRUPTED" };
                     }
-                    const refreshed = await getReadyManifest(client, accountId, operation.snapshot_id, true);
+                    const refreshed = await getReadyManifest(client, accountId, operation.snapshot_id, true, options?.resumeSessionId);
                     if (refreshed) return { state: "ready" as const, manifest: refreshed };
                     return { state: "building" as const, snapshotId: operation.snapshot_id };
                 });
@@ -798,10 +814,10 @@ export async function createAccountDataSnapshot(
 
                 await client.query(
                 `INSERT INTO snapshot_private.account_data_snapshots
-                    (id, operation_id, account_id, collection_names, schema_version, reset_epoch, boundary_library_revision, status, expires_at)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'building', $8)
+                    (id, operation_id, account_id, collection_names, schema_version, reset_epoch, boundary_library_revision, status, expires_at, resume_session_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, 'building', $8, $9::uuid)
                  ON CONFLICT (id) DO NOTHING`,
-                [operation.snapshot_id, operation.id, accountId, collections, LIBRARY_SNAPSHOT_SCHEMA_VERSION, libraryState.reset_epoch, libraryState.current_revision, snapshotExpiry],
+                [operation.snapshot_id, operation.id, accountId, collections, LIBRARY_SNAPSHOT_SCHEMA_VERSION, libraryState.reset_epoch, libraryState.current_revision, snapshotExpiry, options?.resumeSessionId ?? null],
                 );
 
                 for (const collection of collections) {
@@ -910,11 +926,12 @@ export async function getAccountDataSnapshotPage(
     collection: AccountDataSnapshotCollection,
     afterOrdinal: number,
     pageSize: number,
+    resumeSessionId?: string,
 ): Promise<AccountDataSnapshotPage> {
     const client = await getPool().connect();
     try {
         return await withRestrictedWorkerTransaction(client, accountId, async () => {
-            const manifest = await getReadyManifest(client, accountId, snapshotId);
+            const manifest = await getReadyManifest(client, accountId, snapshotId, false, resumeSessionId);
             if (!manifest) throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
             if (manifest.collectionNames && !manifest.collectionNames.includes(collection)) {
                 throw new AccountDataSnapshotError("NOT_FOUND", "This collection was not included in the snapshot.");
@@ -954,8 +971,22 @@ export async function createLibrarySnapshot(accountId: string, idempotencyKey: s
     return createAccountDataSnapshot(accountId, idempotencyKey, [LIBRARY_SNAPSHOT_COLLECTION]);
 }
 
-export async function getLibrarySnapshotPage(accountId: string, snapshotId: string, afterOrdinal: number, pageSize: number): Promise<LibrarySnapshotPage> {
-    const page = await getAccountDataSnapshotPage(accountId, snapshotId, LIBRARY_SNAPSHOT_COLLECTION, afterOrdinal, pageSize);
+export async function getAccountDataSnapshotManifest(accountId: string, snapshotId: string, resumeSessionId: string): Promise<LibrarySnapshotManifest> {
+    const client = await getPool().connect();
+    try {
+        return await withRestrictedWorkerTransaction(client, accountId, async () => {
+            const manifest = await getReadyManifest(client, accountId, snapshotId, false, resumeSessionId, true);
+            if (!manifest) throw new AccountDataSnapshotError("NOT_FOUND", "Snapshot not found.");
+            return manifest;
+        });
+    } finally {
+        await releaseRestrictedWorker(client);
+        client.release();
+    }
+}
+
+export async function getLibrarySnapshotPage(accountId: string, snapshotId: string, afterOrdinal: number, pageSize: number, resumeSessionId?: string): Promise<LibrarySnapshotPage> {
+    const page = await getAccountDataSnapshotPage(accountId, snapshotId, LIBRARY_SNAPSHOT_COLLECTION, afterOrdinal, pageSize, resumeSessionId);
     return {
         manifest: page.manifest,
         hasNextPage: page.hasNextPage,

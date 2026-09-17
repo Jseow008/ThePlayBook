@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { ACCOUNT_DATA_SNAPSHOT_COLLECTIONS } from "@/lib/account-data-snapshot-collections";
 import {
@@ -10,6 +9,7 @@ import {
     getLibrarySnapshotPage,
     LIBRARY_SNAPSHOT_COLLECTION,
 } from "@/lib/server/account-data-snapshots";
+import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
 const ParamsSchema = z.object({
     snapshotId: z.string().uuid(),
@@ -54,35 +54,34 @@ export async function GET(
         const parsedParams = ParamsSchema.safeParse(await params);
         if (!parsedParams.success) return apiError("VALIDATION_ERROR", "Invalid snapshot path.", 400, requestId);
 
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return apiError("UNAUTHORIZED", "Sign in to synchronize your library.", 401, requestId);
+        const session = await getVerifiedAccountDataSession();
+        if (!session) return apiError("UNAUTHORIZED", "Sign in to synchronize your library.", 401, requestId);
 
         const requestedLimit = Number.parseInt(request.nextUrl.searchParams.get("limit") ?? "100", 10);
         const limit = Number.isInteger(requestedLimit) && requestedLimit >= 1 && requestedLimit <= 200 ? requestedLimit : 100;
         let afterOrdinal: number;
         try {
-            afterOrdinal = decodeCursor(user.id, parsedParams.data.snapshotId, parsedParams.data.collection, request.nextUrl.searchParams.get("cursor"));
+            afterOrdinal = decodeCursor(session.accountId, parsedParams.data.snapshotId, parsedParams.data.collection, request.nextUrl.searchParams.get("cursor"));
         } catch {
             return apiError("VALIDATION_ERROR", "This snapshot cursor is invalid. Start again.", 400, requestId, { snapshot_error: "CURSOR_INVALID" });
         }
 
         const page = parsedParams.data.collection === LIBRARY_SNAPSHOT_COLLECTION
-            ? await getLibrarySnapshotPage(user.id, parsedParams.data.snapshotId, afterOrdinal, limit)
-            : await getAccountDataSnapshotPage(user.id, parsedParams.data.snapshotId, parsedParams.data.collection, afterOrdinal, limit);
+            ? await getLibrarySnapshotPage(session.accountId, parsedParams.data.snapshotId, afterOrdinal, limit, session.sessionId)
+            : await getAccountDataSnapshotPage(session.accountId, parsedParams.data.snapshotId, parsedParams.data.collection, afterOrdinal, limit, session.sessionId);
         const endOrdinal = page.records.at(-1)?.ordinal;
         return NextResponse.json({
             data: page.records,
             manifest: page.manifest,
             pageInfo: {
                 hasNextPage: page.hasNextPage,
-                endCursor: endOrdinal === undefined ? null : signCursor(user.id, parsedParams.data.snapshotId, parsedParams.data.collection, endOrdinal),
+                endCursor: endOrdinal === undefined ? null : signCursor(session.accountId, parsedParams.data.snapshotId, parsedParams.data.collection, endOrdinal),
             },
         });
     } catch (error) {
         if (error instanceof AccountDataSnapshotError) {
-            const status = error.code === "NOT_FOUND" ? 404 : error.code === "EXPIRED" ? 410 : 503;
-            return apiError(error.code === "NOT_FOUND" || error.code === "EXPIRED" ? "NOT_FOUND" : "INTERNAL_ERROR", error.message, status, requestId, {
+            const status = error.code === "NOT_FOUND" ? 404 : error.code === "EXPIRED" || error.code === "INVALIDATED" ? 410 : 503;
+            return apiError(error.code === "NOT_FOUND" || error.code === "EXPIRED" || error.code === "INVALIDATED" ? "NOT_FOUND" : "INTERNAL_ERROR", error.message, status, requestId, {
                 snapshot_error: error.code,
             });
         }

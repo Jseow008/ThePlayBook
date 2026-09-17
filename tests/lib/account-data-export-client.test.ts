@@ -116,6 +116,40 @@ describe("verified account-data export", () => {
         });
     });
 
+    it("resumes a valid snapshot without creating another export", async () => {
+        const { manifest, collectionRecords } = fixture();
+        const fetchMock = vi.fn().mockResolvedValueOnce(response({ manifest }));
+        for (const collection of ACCOUNT_DATA_EXPORT_COLLECTIONS) {
+            fetchMock.mockResolvedValueOnce(response({
+                data: [collectionRecords[collection][0]],
+                manifest,
+                pageInfo: { hasNextPage: false, endCursor: null },
+            }));
+        }
+        vi.stubGlobal("fetch", fetchMock);
+        const onSnapshotReady = vi.fn();
+
+        await fetchVerifiedAccountDataExport({ resumeSnapshotId: manifest.snapshotId, onSnapshotReady });
+
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(`/api/account-data/snapshots/${manifest.snapshotId}`);
+        expect(fetchMock.mock.calls.some((call) => call[0] === "/api/account-data/snapshots")).toBe(false);
+        expect(onSnapshotReady).toHaveBeenCalledWith({ snapshotId: manifest.snapshotId, expiresAt: manifest.expiresAt });
+    });
+
+    it("refuses an expired resume reference without creating a new export", async () => {
+        const { manifest } = fixture();
+        const fetchMock = vi.fn().mockResolvedValue(response({
+            error: { code: "NOT_FOUND", details: { snapshot_error: "EXPIRED" } },
+        }, 410));
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(fetchVerifiedAccountDataExport({ resumeSnapshotId: manifest.snapshotId })).rejects.toMatchObject({
+            code: "EXPIRED",
+            message: "This previous export is no longer available. Start a new export.",
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
     it("does not return a partial export when a collection traversal is interrupted", async () => {
         const { manifest, collectionRecords } = fixture();
         const controller = new AbortController();
