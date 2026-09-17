@@ -330,6 +330,13 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
 
             (createServerSupabaseClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ auth: staleSessionClient.auth });
             await expect(getVerifiedAccountDataSession()).resolves.toBeNull();
+            const { GET } = await import("@/app/api/account-data/snapshots/[snapshotId]/[collection]/route");
+            const { NextRequest } = await import("next/server");
+            const response = await GET(
+                new NextRequest("http://localhost/api/account-data/snapshots/00000000-0000-4000-8000-000000000021/user_library"),
+                { params: Promise.resolve({ snapshotId: "00000000-0000-4000-8000-000000000021", collection: "user_library" }) },
+            );
+            expect(response.status).toBe(401);
         } finally {
             if (userId) {
                 await db.query("DELETE FROM auth.users WHERE id = $1", [userId]);
