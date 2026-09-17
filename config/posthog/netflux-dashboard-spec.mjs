@@ -12,6 +12,7 @@ const PRODUCT_EVENTS = [
   "ai_chat_started",
   "search_performed",
   "share_clicked",
+  "account_data_export_completed",
   "email_subscribed",
 ];
 
@@ -99,6 +100,7 @@ const requiredPropertyRules = [
   "(event = 'search_performed' AND (properties.source IS NULL OR properties.query_present IS NULL))",
   "(event = 'library_saved' AND properties.content_id IS NULL)",
   "(event = 'share_clicked' AND properties.source IS NULL)",
+  "(event = 'account_data_export_completed' AND (properties.source IS NULL OR properties.snapshot_preparation_ms IS NULL OR properties.collection_retrieval_ms IS NULL OR properties.verification_ms IS NULL OR properties.file_creation_ms IS NULL OR properties.total_ms IS NULL))",
 ].join("\n    OR ");
 
 export const netfluxPostHogDashboards = [

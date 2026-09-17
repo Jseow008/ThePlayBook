@@ -14,13 +14,36 @@ import { APP_ONBOARDING_QUERY_PARAM, APP_ONBOARDING_REPLAY_VALUE } from "@/lib/o
 import { clearScopedReadingHistory } from "@/lib/local-user-storage";
 import { clearCachedRecommendations, clearRecentRecommendations } from "@/lib/recommendation-memory";
 import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
-import { AccountDataExportError, fetchVerifiedAccountDataExport } from "@/lib/account-data-export-client";
+import { captureAnalyticsEvent } from "@/lib/analytics";
+import { AccountDataExportError, fetchVerifiedAccountDataExport, type AccountDataExportProgress } from "@/lib/account-data-export-client";
+import { ACCOUNT_DATA_EXPORT_COLLECTIONS } from "@/lib/account-data-snapshot-collections";
 
 type ActiveExport = {
     accountId: string;
     authGeneration: number;
     controller: AbortController;
 };
+
+type VisibleExportProgress = AccountDataExportProgress | {
+    phase: "saving";
+    completedCollections: number;
+    totalCollections: number;
+    completedRecords: number;
+    totalRecords: number;
+};
+
+function exportProgressMessage(progress: VisibleExportProgress) {
+    if (progress.phase === "preparing") return "Preparing a complete snapshot of your data…";
+    if (progress.phase === "downloading") return `Downloading ${progress.completedCollections} of ${progress.totalCollections} data categories…`;
+    if (progress.phase === "verifying") return `Verifying ${progress.completedRecords} of ${progress.totalRecords} records…`;
+    return "Creating your JSON file…";
+}
+
+function waitForBrowserPaint() {
+    return new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+}
 
 export default function SettingsPage() {
     const supabase = createClient();
@@ -35,6 +58,7 @@ export default function SettingsPage() {
     const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
     const [isSavingNotifications, setIsSavingNotifications] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+    const [exportProgress, setExportProgress] = useState<VisibleExportProgress | null>(null);
     const authenticatedAccountRef = useRef<string | null>(null);
     const authGenerationRef = useRef(0);
     const activeExportRef = useRef<ActiveExport | null>(null);
@@ -54,7 +78,10 @@ export default function SettingsPage() {
             if (!activeExport) return;
             activeExport.controller.abort();
             activeExportRef.current = null;
-            if (mounted) setIsExporting(false);
+            if (mounted) {
+                setIsExporting(false);
+                setExportProgress(null);
+            }
         };
 
         const applyAuthenticatedUser = (nextUser: User | null) => {
@@ -160,6 +187,14 @@ export default function SettingsPage() {
         };
         activeExportRef.current = activeExport;
         setIsExporting(true);
+        setExportProgress({
+            phase: "preparing",
+            completedCollections: 0,
+            totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+            completedRecords: 0,
+            totalRecords: null,
+        });
+        const exportStartedAt = performance.now();
 
         const ensureExportIsCurrent = () => {
             if (
@@ -172,8 +207,21 @@ export default function SettingsPage() {
             }
         };
 
+        const updateExportProgress = (progress: AccountDataExportProgress) => {
+            if (
+                activeExport.controller.signal.aborted
+                || activeExportRef.current !== activeExport
+                || authenticatedAccountRef.current !== activeExport.accountId
+                || authGenerationRef.current !== activeExport.authGeneration
+            ) return;
+            setExportProgress(progress);
+        };
+
         try {
-            const exportData = await fetchVerifiedAccountDataExport({ signal: activeExport.controller.signal });
+            const exportData = await fetchVerifiedAccountDataExport({
+                signal: activeExport.controller.signal,
+                onProgress: updateExportProgress,
+            });
             ensureExportIsCurrent();
 
             // Auth events are asynchronous. Confirm the server-authenticated
@@ -185,6 +233,20 @@ export default function SettingsPage() {
             }
             ensureExportIsCurrent();
 
+            setExportProgress({
+                phase: "saving",
+                completedCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+                totalCollections: ACCOUNT_DATA_EXPORT_COLLECTIONS.length,
+                completedRecords: exportData.snapshot.collection_manifests
+                    ? Object.values(exportData.snapshot.collection_manifests).reduce((total, collection) => total + collection.recordCount, 0)
+                    : 0,
+                totalRecords: exportData.snapshot.collection_manifests
+                    ? Object.values(exportData.snapshot.collection_manifests).reduce((total, collection) => total + collection.recordCount, 0)
+                    : 0,
+            });
+            await waitForBrowserPaint();
+            ensureExportIsCurrent();
+            const fileCreationStartedAt = performance.now();
             const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
@@ -196,6 +258,15 @@ export default function SettingsPage() {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
+            const fileCreationMs = performance.now() - fileCreationStartedAt;
+            captureAnalyticsEvent("account_data_export_completed", {
+                source: "settings",
+                snapshot_preparation_ms: Math.round(exportData.timings.snapshotPreparationMs),
+                collection_retrieval_ms: Math.round(exportData.timings.collectionRetrievalMs),
+                verification_ms: Math.round(exportData.timings.verificationMs),
+                file_creation_ms: Math.round(fileCreationMs),
+                total_ms: Math.round(performance.now() - exportStartedAt),
+            });
             toast.success("Data export complete");
         } catch (err) {
             if (err instanceof AccountDataExportError && err.code === "EXPORT_CANCELLED") {
@@ -207,6 +278,7 @@ export default function SettingsPage() {
             if (activeExportRef.current === activeExport) {
                 activeExportRef.current = null;
                 setIsExporting(false);
+                setExportProgress(null);
             }
         }
     };
@@ -497,7 +569,9 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                     <p className="font-medium text-foreground">Download My Data</p>
-                                    <p className="text-sm text-muted-foreground">Export your library, reading history, notes, reflections, preferences, and request activity to a JSON file</p>
+                                    <p className="text-sm text-muted-foreground" aria-live="polite">
+                                        {exportProgress ? exportProgressMessage(exportProgress) : "Export your library, reading history, notes, reflections, preferences, and request activity to a JSON file"}
+                                    </p>
                                 </div>
                             </div>
                         </button>
