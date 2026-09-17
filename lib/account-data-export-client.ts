@@ -41,6 +41,9 @@ export class AccountDataExportError extends Error {
 export type AccountDataExportOptions = {
     signal?: AbortSignal;
     onProgress?: (progress: AccountDataExportProgress) => void;
+    /** An opaque server-created snapshot reference; it contains no payload. */
+    resumeSnapshotId?: string;
+    onSnapshotReady?: (snapshot: Pick<SnapshotManifest, "snapshotId" | "expiresAt">) => void;
 };
 
 export type AccountDataExportPhase = "preparing" | "downloading" | "verifying";
@@ -86,6 +89,13 @@ function retryAfterMessage(response: Response) {
     return `Too many export requests. Please try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`;
 }
 
+function unavailableResumeMessage(code: string) {
+    if (code === "EXPIRED" || code === "INVALIDATED" || code === "NOT_FOUND") {
+        return "This previous export is no longer available. Start a new export.";
+    }
+    return "This export cannot be resumed in the current session. Start a new export.";
+}
+
 function assertPage(value: unknown): asserts value is SnapshotPage {
     const page = value as Partial<SnapshotPage> | null;
     if (!page || !Array.isArray(page.data) || !page.manifest || !page.pageInfo) {
@@ -126,7 +136,7 @@ function toExportRecord(collection: AccountDataSnapshotCollection, value: unknow
  * per-collection manifest is verified. It intentionally never falls back to
  * direct browser table reads or a best-effort partial result.
  */
-export async function fetchVerifiedAccountDataExport({ signal, onProgress }: AccountDataExportOptions = {}) {
+export async function fetchVerifiedAccountDataExport({ signal, onProgress, resumeSnapshotId, onSnapshotReady }: AccountDataExportOptions = {}) {
     try {
         throwIfAborted(signal);
         const startedAt = performance.now();
@@ -137,25 +147,41 @@ export async function fetchVerifiedAccountDataExport({ signal, onProgress }: Acc
             completedRecords: 0,
             totalRecords: null,
         });
-        const idempotencyKey = crypto.randomUUID();
-        const creation = await fetch("/api/account-data/snapshots", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-            body: JSON.stringify({ idempotencyKey, collections: ACCOUNT_DATA_EXPORT_COLLECTIONS }),
-            cache: "no-store",
-            signal,
-        });
-        const creationPayload = await creation.json().catch(() => null) as { state?: string; manifest?: SnapshotManifest } | null;
-        throwIfAborted(signal);
-        if (!creation.ok || creationPayload?.state !== "ready" || !creationPayload.manifest) {
-            const code = responseErrorCode(creationPayload);
-            throw new AccountDataExportError(
-                code === "RATE_LIMITED" ? retryAfterMessage(creation) : "A complete export snapshot is not available yet.",
-                code,
-            );
+        let manifest: SnapshotManifest;
+        if (resumeSnapshotId) {
+            const resume = await fetch(`/api/account-data/snapshots/${encodeURIComponent(resumeSnapshotId)}`, {
+                cache: "no-store",
+                headers: { "Cache-Control": "no-store" },
+                signal,
+            });
+            const resumePayload = await resume.json().catch(() => null) as { manifest?: SnapshotManifest } | null;
+            throwIfAborted(signal);
+            if (!resume.ok || !resumePayload?.manifest) {
+                const code = responseErrorCode(resumePayload);
+                throw new AccountDataExportError(unavailableResumeMessage(code), code);
+            }
+            manifest = resumePayload.manifest;
+        } else {
+            const idempotencyKey = crypto.randomUUID();
+            const creation = await fetch("/api/account-data/snapshots", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+                body: JSON.stringify({ idempotencyKey, collections: ACCOUNT_DATA_EXPORT_COLLECTIONS }),
+                cache: "no-store",
+                signal,
+            });
+            const creationPayload = await creation.json().catch(() => null) as { state?: string; manifest?: SnapshotManifest } | null;
+            throwIfAborted(signal);
+            if (!creation.ok || creationPayload?.state !== "ready" || !creationPayload.manifest) {
+                const code = responseErrorCode(creationPayload);
+                throw new AccountDataExportError(
+                    code === "RATE_LIMITED" ? retryAfterMessage(creation) : "A complete export snapshot is not available yet.",
+                    code,
+                );
+            }
+            manifest = creationPayload.manifest;
         }
-
-        const manifest = creationPayload.manifest;
+        onSnapshotReady?.({ snapshotId: manifest.snapshotId, expiresAt: manifest.expiresAt });
         const snapshotPreparationMs = performance.now() - startedAt;
         const retrievalStartedAt = performance.now();
         let completedCollections = 0;

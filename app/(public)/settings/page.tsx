@@ -32,6 +32,33 @@ type VisibleExportProgress = AccountDataExportProgress | {
     totalRecords: number;
 };
 
+const RESUMABLE_ACCOUNT_EXPORT_STORAGE_KEY = "netflux.account-data-export.resume.v1";
+
+function readResumableExportSnapshotId() {
+    try {
+        const snapshotId = window.sessionStorage.getItem(RESUMABLE_ACCOUNT_EXPORT_STORAGE_KEY);
+        return snapshotId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(snapshotId) ? snapshotId : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeResumableExportSnapshotId(snapshotId: string) {
+    try {
+        window.sessionStorage.setItem(RESUMABLE_ACCOUNT_EXPORT_STORAGE_KEY, snapshotId);
+    } catch {
+        // Resume is optional; exporting still works when browser storage is unavailable.
+    }
+}
+
+function clearResumableExportSnapshotId() {
+    try {
+        window.sessionStorage.removeItem(RESUMABLE_ACCOUNT_EXPORT_STORAGE_KEY);
+    } catch {
+        // Nothing to clear when browser storage is unavailable.
+    }
+}
+
 function exportProgressMessage(progress: VisibleExportProgress) {
     if (progress.phase === "preparing") return "Preparing a complete snapshot of your data…";
     if (progress.phase === "downloading") return `Downloading ${progress.completedCollections} of ${progress.totalCollections} data categories…`;
@@ -59,8 +86,11 @@ export default function SettingsPage() {
     const [isSavingNotifications, setIsSavingNotifications] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
     const [exportProgress, setExportProgress] = useState<VisibleExportProgress | null>(null);
+    const [resumableExportSnapshotId, setResumableExportSnapshotId] = useState<string | null>(null);
+    const [resumeUnavailable, setResumeUnavailable] = useState(false);
     const authenticatedAccountRef = useRef<string | null>(null);
     const authGenerationRef = useRef(0);
+    const hasResolvedInitialAuthRef = useRef(false);
     const activeExportRef = useRef<ActiveExport | null>(null);
 
     const [isSigningOut, setIsSigningOut] = useState(false);
@@ -69,6 +99,10 @@ export default function SettingsPage() {
     const [isDeletingNotes, setIsDeletingNotes] = useState(false);
     const [isConfirmingNotesDeletion, setIsConfirmingNotesDeletion] = useState(false);
     const [notesDeletionConfirmation, setNotesDeletionConfirmation] = useState("");
+
+    useEffect(() => {
+        setResumableExportSnapshotId(readResumableExportSnapshotId());
+    }, []);
 
     useEffect(() => {
         let mounted = true;
@@ -92,9 +126,14 @@ export default function SettingsPage() {
             // Only losing the account or switching to another account starts
             // a new generation and makes an earlier export unsafe to deliver.
             if (authenticatedAccountRef.current !== nextAccountId) {
+                const isInitialAuthentication = !hasResolvedInitialAuthRef.current && authenticatedAccountRef.current === null;
                 authGenerationRef.current += 1;
                 authenticatedAccountRef.current = nextAccountId;
                 cancelActiveExport();
+                if (!isInitialAuthentication) {
+                    clearResumableExportSnapshotId();
+                    setResumableExportSnapshotId(null);
+                }
             }
             if (!mounted) return;
             setUser(nextUser);
@@ -111,6 +150,7 @@ export default function SettingsPage() {
                     applyAuthenticatedUser(user);
                 }
             } finally {
+                hasResolvedInitialAuthRef.current = true;
                 if (mounted) setIsLoadingAuth(false);
             }
         }
@@ -119,6 +159,7 @@ export default function SettingsPage() {
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             applyAuthenticatedUser(session?.user ?? null);
+            hasResolvedInitialAuthRef.current = true;
             if (mounted) setIsLoadingAuth(false);
         });
 
@@ -183,7 +224,7 @@ export default function SettingsPage() {
         }
     };
 
-    const handleExportData = async () => {
+    const handleExportData = async (resumeSnapshotId?: string) => {
         if (!user) return;
         const activeExport: ActiveExport = {
             accountId: user.id,
@@ -226,6 +267,13 @@ export default function SettingsPage() {
             const exportData = await fetchVerifiedAccountDataExport({
                 signal: activeExport.controller.signal,
                 onProgress: updateExportProgress,
+                resumeSnapshotId,
+                onSnapshotReady: ({ snapshotId }) => {
+                    if (activeExportRef.current !== activeExport || activeExport.controller.signal.aborted) return;
+                    writeResumableExportSnapshotId(snapshotId);
+                    setResumableExportSnapshotId(snapshotId);
+                    setResumeUnavailable(false);
+                },
             });
             ensureExportIsCurrent();
 
@@ -262,6 +310,9 @@ export default function SettingsPage() {
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+            clearResumableExportSnapshotId();
+            setResumableExportSnapshotId(null);
+            setResumeUnavailable(false);
 
             const fileCreationMs = performance.now() - fileCreationStartedAt;
             captureAnalyticsEvent("account_data_export_completed", {
@@ -276,6 +327,15 @@ export default function SettingsPage() {
         } catch (err) {
             if (err instanceof AccountDataExportError && err.code === "EXPORT_CANCELLED") {
                 return;
+            }
+            if (
+                resumeSnapshotId
+                && err instanceof AccountDataExportError
+                && ["NOT_FOUND", "EXPIRED", "INVALIDATED", "UNAUTHORIZED", "FORBIDDEN"].includes(err.code)
+            ) {
+                clearResumableExportSnapshotId();
+                setResumableExportSnapshotId(null);
+                setResumeUnavailable(true);
             }
             console.error("Export error:", err);
             toast.error(err instanceof AccountDataExportError ? err.message : "Failed to export data");
@@ -564,7 +624,7 @@ export default function SettingsPage() {
                     </h2>
                     <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
                         <button
-                            onClick={handleExportData}
+                            onClick={() => handleExportData(resumableExportSnapshotId ?? undefined)}
                             disabled={isExporting || isLoadingAuth || !user}
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
                         >
@@ -573,13 +633,42 @@ export default function SettingsPage() {
                                     {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                                 </div>
                                 <div>
-                                    <p className="font-medium text-foreground">Download My Data</p>
+                                    <p className="font-medium text-foreground">
+                                        {resumableExportSnapshotId ? "Resume data export" : resumeUnavailable ? "Start a new export" : "Download My Data"}
+                                    </p>
                                     <p className="text-sm text-muted-foreground" aria-live="polite">
-                                        {exportProgress ? exportProgressMessage(exportProgress) : "Export your library, reading history, notes, reflections, preferences, and request activity to a JSON file"}
+                                        {exportProgress
+                                            ? exportProgressMessage(exportProgress)
+                                            : resumableExportSnapshotId
+                                                ? "Finish downloading your existing verified export without using another export request"
+                                                : resumeUnavailable
+                                                    ? "The previous export is no longer available. Create a new verified export."
+                                                    : "Export your library, reading history, notes, reflections, preferences, and request activity to a JSON file"}
                                     </p>
                                 </div>
                             </div>
                         </button>
+                        {resumableExportSnapshotId && !isExporting && (
+                            <button
+                                onClick={() => {
+                                    clearResumableExportSnapshotId();
+                                    setResumableExportSnapshotId(null);
+                                    setResumeUnavailable(false);
+                                    void handleExportData();
+                                }}
+                                className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-secondary rounded-lg text-muted-foreground">
+                                        <Download className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-foreground">Start a new export</p>
+                                        <p className="text-sm text-muted-foreground">Discard this export reference and create a new snapshot.</p>
+                                    </div>
+                                </div>
+                            </button>
+                        )}
                         <button
                             onClick={handleClearHistory}
                             disabled={isClearing || isLoadingAuth}

@@ -27,6 +27,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
 
     let createLibrarySnapshot: typeof import("@/lib/server/account-data-snapshots").createLibrarySnapshot;
     let createAccountDataSnapshot: typeof import("@/lib/server/account-data-snapshots").createAccountDataSnapshot;
+    let getAccountDataSnapshotManifest: typeof import("@/lib/server/account-data-snapshots").getAccountDataSnapshotManifest;
     let getAccountDataSnapshotPage: typeof import("@/lib/server/account-data-snapshots").getAccountDataSnapshotPage;
     let getLibrarySnapshotPage: typeof import("@/lib/server/account-data-snapshots").getLibrarySnapshotPage;
     let getLiveLibraryPage: typeof import("@/lib/server/account-data-snapshots").getLiveLibraryPage;
@@ -37,7 +38,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     beforeAll(async () => {
         // Import after the CI-only URL is available so the server pool cannot
         // accidentally fall back to a linked or production database.
-        ({ createLibrarySnapshot, createAccountDataSnapshot, getAccountDataSnapshotPage, getLibrarySnapshotPage, getLiveLibraryPage, commitLibraryMutationForAccount, resetLibraryForAccount, resetAccountDataSnapshotPoolForTests } = await import("@/lib/server/account-data-snapshots"));
+        ({ createLibrarySnapshot, createAccountDataSnapshot, getAccountDataSnapshotManifest, getAccountDataSnapshotPage, getLibrarySnapshotPage, getLiveLibraryPage, commitLibraryMutationForAccount, resetLibraryForAccount, resetAccountDataSnapshotPoolForTests } = await import("@/lib/server/account-data-snapshots"));
         await db.query(
             `INSERT INTO auth.users
                 (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
@@ -256,6 +257,28 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         expect(recordsByCollection.get("request_notifications")?.[0]?.payload).not.toHaveProperty("provider_message_id");
         expect(recordsByCollection.get("request_notifications")?.[0]?.payload).not.toHaveProperty("last_error");
         expect(recordsByCollection.get("submitted_requests")?.[0]?.payload).not.toHaveProperty("normalized_title");
+    });
+
+    it("allows a complete export to resume only in its creating session and invalidates it after reset", async () => {
+        const { ACCOUNT_DATA_EXPORT_COLLECTIONS } = await import("@/lib/account-data-snapshot-collections");
+        const creatingSession = randomUUID();
+        const otherSession = randomUUID();
+        const result = await createAccountDataSnapshot(
+            accountC,
+            randomUUID(),
+            ACCOUNT_DATA_EXPORT_COLLECTIONS,
+            { resumeSessionId: creatingSession },
+        );
+        expect(result.state).toBe("ready");
+        if (result.state !== "ready") return;
+
+        await expect(getAccountDataSnapshotManifest(accountC, result.manifest.snapshotId, creatingSession)).resolves.toMatchObject({
+            snapshotId: result.manifest.snapshotId,
+        });
+        await expect(getAccountDataSnapshotManifest(accountC, result.manifest.snapshotId, otherSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
+        await expect(getAccountDataSnapshotManifest(accountB, result.manifest.snapshotId, creatingSession)).rejects.toMatchObject({ code: "NOT_FOUND" });
+        await resetLibraryForAccount(accountC);
+        await expect(getAccountDataSnapshotManifest(accountC, result.manifest.snapshotId, creatingSession)).rejects.toMatchObject({ code: "INVALIDATED" });
     });
 
     it("delivers the persisted cross-collection boundary across multiple pages while source records change", async () => {

@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { ACCOUNT_DATA_SNAPSHOT_COLLECTIONS, type AccountDataSnapshotCollection } from "@/lib/account-data-snapshot-collections";
 import { createAccountDataSnapshot, AccountDataSnapshotError } from "@/lib/server/account-data-snapshots";
 import { rateLimitFailureResponseWithTelemetry, strictPublicRateLimit } from "@/lib/server/rate-limit";
+import { getVerifiedAccountDataSession } from "@/lib/server/account-data-snapshot-auth";
 
 const CreateSnapshotSchema = z.object({
     idempotencyKey: z.string().uuid().optional(),
@@ -22,9 +22,8 @@ function isCompleteAccountExport(collections: readonly AccountDataSnapshotCollec
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return apiError("UNAUTHORIZED", "Sign in to synchronize your library.", 401, requestId);
+        const session = await getVerifiedAccountDataSession();
+        if (!session) return apiError("UNAUTHORIZED", "Sign in to synchronize your library.", 401, requestId);
 
         const body = await request.json().catch(() => ({}));
         const parsed = CreateSnapshotSchema.safeParse(body);
@@ -38,7 +37,7 @@ export async function POST(request: NextRequest) {
             limit: completeExport ? 2 : 6,
             windowMs: 60 * 60 * 1000,
             key: completeExport ? "account-data-export-snapshot" : "account-data-snapshot",
-            identifier: user.id,
+            identifier: session.accountId,
             routeLabel: completeExport ? "account-data-export-snapshot" : "account-data-snapshot",
         });
         if (!limit.success) {
@@ -48,7 +47,7 @@ export async function POST(request: NextRequest) {
                 result: limit,
                 route: "POST /api/account-data/snapshots",
                 category: "public",
-                userId: user.id,
+                userId: session.accountId,
                 authState: "authenticated",
                 message: completeExport
                     ? "Too many export requests. Please wait before trying again."
@@ -56,7 +55,12 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        const result = await createAccountDataSnapshot(user.id, parsed.data.idempotencyKey ?? randomUUID(), parsed.data.collections);
+        const result = await createAccountDataSnapshot(
+            session.accountId,
+            parsed.data.idempotencyKey ?? randomUUID(),
+            parsed.data.collections,
+            completeExport ? { resumeSessionId: session.sessionId } : undefined,
+        );
         if (result.state === "building") {
             return NextResponse.json({ state: result.state, snapshotId: result.snapshotId }, { status: 202 });
         }

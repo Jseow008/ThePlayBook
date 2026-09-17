@@ -112,6 +112,7 @@ describe("settings data export delivery", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        sessionStorage.clear();
         state.currentUser = accountA;
         state.authListener = null;
         state.getUser.mockImplementation(async () => ({ data: { user: state.currentUser }, error: null }));
@@ -147,7 +148,7 @@ describe("settings data export delivery", () => {
 
     async function renderAuthenticatedSettings() {
         const result = render(<SettingsPage />);
-        const downloadButton = await screen.findByRole("button", { name: /download my data/i });
+        const downloadButton = await screen.findByRole("button", { name: /download my data|resume data export/i });
         await waitFor(() => expect(downloadButton).toBeEnabled());
         return { ...result, downloadButton };
     }
@@ -327,6 +328,50 @@ describe("settings data export delivery", () => {
 
         act(() => options.onProgress?.({ phase: "downloading", completedCollections: 7, totalCollections: 11, completedRecords: 0, totalRecords: 242 }));
         expect(screen.getByText("Downloading 7 of 11 data categories…")).toBeInTheDocument();
+    });
+
+    it("resumes a stored export reference without storing any payload", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000012";
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        const pendingExport = deferred<typeof verifiedExport>();
+        state.fetchExport.mockImplementation(() => pendingExport.promise);
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        expect(await screen.findByText("Resume data export")).toBeInTheDocument();
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(state.fetchExport).toHaveBeenCalledTimes(1));
+
+        expect(state.fetchExport.mock.calls[0]?.[0]).toMatchObject({ resumeSnapshotId: snapshotId });
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBe(snapshotId);
+    });
+
+    it("offers a new export after an unavailable resume reference is rejected", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000013";
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        state.fetchExport.mockRejectedValue(new MockAccountDataExportError(
+            "This previous export is no longer available. Start a new export.",
+            "EXPIRED",
+        ));
+        const { downloadButton } = await renderAuthenticatedSettings();
+
+        fireEvent.click(downloadButton);
+        await waitFor(() => expect(screen.getByText("Start a new export")).toBeInTheDocument());
+
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBeNull();
+        expect(state.toastError).toHaveBeenCalledWith("This previous export is no longer available. Start a new export.");
+    });
+
+    it("clears an export reference when a guest signs in to another account", async () => {
+        const snapshotId = "00000000-0000-4000-8000-000000000014";
+        sessionStorage.setItem("netflux.account-data-export.resume.v1", snapshotId);
+        state.currentUser = null;
+        render(<SettingsPage />);
+        await screen.findByText("Not signed in.");
+
+        state.currentUser = accountB;
+        act(() => state.authListener?.("SIGNED_IN", { user: accountB }));
+
+        expect(sessionStorage.getItem("netflux.account-data-export.resume.v1")).toBeNull();
     });
 
     it("renders the file-creation stage before completing the browser download", async () => {
