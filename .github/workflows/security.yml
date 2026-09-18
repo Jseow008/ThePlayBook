@@ -120,6 +120,8 @@ jobs:
 
       - name: Supabase SQL drift checks
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
+        env:
+          PERSONAL_RETRIEVAL_QUALITY_REPORT: ${{ runner.temp }}/personal-retrieval-quality.json
         run: |
           # This password exists only for the lifecycle of the disposable
           # database container. It is never persisted or printed.
@@ -144,6 +146,15 @@ jobs:
           npm run database:personal-evidence-runtime
           npm run database:personal-retrieval-quality-runtime
           npm run database:email-rpc-security
+
+      - name: Retain personal retrieval evidence
+        if: always() && (steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false')
+        uses: actions/upload-artifact@v4
+        with:
+          name: personal-retrieval-quality-${{ github.sha }}
+          path: ${{ runner.temp }}/personal-retrieval-quality.json
+          # Earlier setup/security failures may prevent the runner from starting.
+          if-no-files-found: ignore
 
       - name: Security route and static tests
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
