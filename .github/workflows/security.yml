@@ -140,6 +140,60 @@ jobs:
       - name: Security route and static tests
         run: npm run test:security
 
+  search-baseline-evidence:
+    if: github.event_name == 'workflow_dispatch'
+    name: Search Baseline Evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout evidence runner
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install runner dependencies
+        run: npm ci
+
+      - name: Start disposable Supabase
+        run: |
+          npx supabase start
+          npx supabase status -o env \
+            --override-name db.url=DB107_ADMIN_DATABASE_URL \
+            --override-name api.url=DB107_SUPABASE_URL \
+            --override-name auth.anon_key=DB107_SUPABASE_ANON_KEY \
+            | sed -nE 's/^(DB107_(ADMIN_DATABASE_URL|SUPABASE_URL|SUPABASE_ANON_KEY))="(.*)"$/\1=\3/p' \
+            >> "$GITHUB_ENV"
+
+      - name: Execute frozen baseline
+        env:
+          SEARCH_BASELINE_WORKTREE: "1"
+          SEARCH_BASELINE_COMMIT: 142a84ea290246f84f4ddc06d6362b8f4e3efba9
+          SEARCH_BASELINE_EVIDENCE_PATH: ${{ runner.temp }}/search-baseline-v1.json
+        run: |
+          baseline_dir="$RUNNER_TEMP/netflux-search-baseline"
+          git worktree add --detach "$baseline_dir" "$SEARCH_BASELINE_COMMIT"
+          mkdir -p "$baseline_dir/tests/baseline"
+          cp tests/baseline/search-baseline-runtime.test.ts "$baseline_dir/tests/baseline/search-baseline-runtime.test.ts"
+          cd "$baseline_dir"
+          npm ci
+          npx supabase db reset
+          npx vitest run tests/baseline/search-baseline-runtime.test.ts
+
+      - name: Retain baseline result record
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: search-baseline-v1-142a84e
+          path: ${{ runner.temp }}/search-baseline-v1.json
+          if-no-files-found: error
+
   production-verification:
     if: github.event_name == 'workflow_dispatch' && inputs.base_url != ''
     name: Production Verification
