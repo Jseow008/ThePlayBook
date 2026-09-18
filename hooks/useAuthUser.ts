@@ -7,6 +7,7 @@ import { resolveAuthUserResult } from "@/lib/supabase/auth-errors";
 
 const AUTH_CONTEXT_MISSING = Symbol("AUTH_CONTEXT_MISSING");
 const AuthUserContext = createContext<User | null | undefined | typeof AUTH_CONTEXT_MISSING>(AUTH_CONTEXT_MISSING);
+const AuthSessionEpochContext = createContext<number>(0);
 
 export function AuthUserProvider({
     children,
@@ -17,6 +18,7 @@ export function AuthUserProvider({
 }) {
     const [user, setUser] = useState<User | null | undefined>(initialUser);
     const [hasHydrated, setHasHydrated] = useState(false);
+    const [sessionEpoch, setSessionEpoch] = useState(0);
 
     useEffect(() => {
         setUser(initialUser);
@@ -46,6 +48,11 @@ export function AuthUserProvider({
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             if (!isMounted) return;
             setUser(session?.user ?? null);
+            // A token refresh keeps the same authenticated session. A sign-in,
+            // sign-out, or replacement session gets a new cache generation.
+            if (_event !== "TOKEN_REFRESHED") {
+                setSessionEpoch((current) => current + 1);
+            }
         });
 
         return () => {
@@ -56,7 +63,11 @@ export function AuthUserProvider({
 
     const contextUser = hasHydrated ? user : initialUser;
 
-    return createElement(AuthUserContext.Provider, { value: contextUser }, children);
+    return createElement(
+        AuthUserContext.Provider,
+        { value: contextUser },
+        createElement(AuthSessionEpochContext.Provider, { value: sessionEpoch }, children),
+    );
 }
 
 export function useAuthUser() {
@@ -67,4 +78,11 @@ export function useAuthUser() {
     }
 
     return user;
+}
+
+export function useAuthSessionIdentity() {
+    return {
+        user: useAuthUser(),
+        sessionEpoch: useContext(AuthSessionEpochContext),
+    };
 }

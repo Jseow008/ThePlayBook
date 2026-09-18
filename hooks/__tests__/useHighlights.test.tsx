@@ -7,10 +7,15 @@ import {
     HighlightConflictError,
     useCreateHighlight,
     useHighlights,
+    useInfiniteHighlights,
+    type HighlightsPage,
 } from "@/hooks/useHighlights";
 
-const { mockUser } = vi.hoisted(() => ({ mockUser: vi.fn() }));
-vi.mock("@/hooks/useAuthUser", () => ({ useAuthUser: mockUser }));
+const { mockUser, mockSessionIdentity } = vi.hoisted(() => ({ mockUser: vi.fn(), mockSessionIdentity: vi.fn() }));
+vi.mock("@/hooks/useAuthUser", () => ({
+    useAuthUser: mockUser,
+    useAuthSessionIdentity: mockSessionIdentity,
+}));
 
 function createWrapper() {
     const queryClient = new QueryClient({
@@ -32,6 +37,7 @@ describe("useHighlights", () => {
 
     beforeEach(() => {
         mockUser.mockReturnValue({ id: "user-1" });
+        mockSessionIdentity.mockReturnValue({ user: { id: "user-1" }, sessionEpoch: 0 });
         fetchMock.mockReset();
         fetchMock.mockResolvedValue({
             ok: true,
@@ -61,6 +67,56 @@ describe("useHighlights", () => {
         expect(requestUrl.pathname).toBe("/api/library/highlights");
         expect(requestUrl.searchParams.get("content_item_id")).toBe("content-1");
         expect(requestUrl.searchParams.get("limit")).toBe("50");
+    });
+
+    it("aborts and discards an in-flight page when the authenticated account changes", async () => {
+        const pageFor = (id: string): HighlightsPage => ({
+            data: [{
+                id,
+                user_id: id === "highlight-a" ? "user-1" : "user-2",
+                content_item_id: "content-1",
+                segment_id: null,
+                anchor_start: null,
+                anchor_end: null,
+                highlighted_text: `Highlight ${id}`,
+                note_body: null,
+                color: "yellow",
+                created_at: "2026-09-18T00:00:00.000Z",
+                updated_at: null,
+                content_item: null,
+                segment: null,
+            }],
+            nextCursor: null,
+        });
+        let resolveFirstResponse: ((value: { ok: boolean; json: () => Promise<HighlightsPage> }) => void) | undefined;
+        let firstSignal: AbortSignal | undefined;
+        fetchMock
+            .mockImplementationOnce((_url: string, init?: RequestInit) => new Promise((resolve) => {
+                firstSignal = init?.signal ?? undefined;
+                resolveFirstResponse = resolve;
+            }))
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => pageFor("highlight-b"),
+            });
+
+        const { result, rerender } = renderHook(() => useInfiniteHighlights(), { wrapper: createWrapper() });
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+        mockSessionIdentity.mockReturnValue({ user: { id: "user-2" }, sessionEpoch: 1 });
+        rerender();
+
+        await waitFor(() => expect(firstSignal?.aborted).toBe(true));
+        resolveFirstResponse?.({
+            ok: true,
+            json: async () => pageFor("highlight-a"),
+        });
+
+        await waitFor(() => {
+            expect(fetchMock).toHaveBeenCalledTimes(2);
+            expect(result.current.data?.pages[0]?.data.map((highlight) => highlight.id)).toEqual(["highlight-b"]);
+        });
+        expect(result.current.data?.pages.flatMap((page) => page.data).map((highlight) => highlight.id)).not.toContain("highlight-a");
     });
 
     it("returns an existing disposition for an exact duplicate", async () => {

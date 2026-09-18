@@ -73,6 +73,7 @@ const VIRTUALIZATION_MIN_ITEMS = 60;
 const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
 const VIRTUAL_OVERSCAN_PX = 720;
+const NO_HIGHLIGHTS: HighlightWithContent[] = [];
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
 const TYPE_FILTER_OPTIONS: Array<{ value: ItemTypeFilter; label: string }> = [
     { value: "all", label: "All" },
@@ -866,6 +867,13 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const updateHighlight = useUpdateHighlight();
     const deleteReflection = useDeleteReflection();
     const updateReflection = useUpdateReflection();
+    const highlightItemType = selectedType === "note" || selectedType === "highlight" ? selectedType : undefined;
+    const highlightColor = selectedType === "reflection" || selectedColor === "all" ? undefined : selectedColor;
+    const highlightSearchIsDefault = !debouncedSearchQuery.trim()
+        && selectedItem === DEFAULT_SELECTED_ITEM
+        && !highlightItemType
+        && !highlightColor
+        && sortBy === DEFAULT_SORT;
     const {
         data,
         fetchNextPage,
@@ -873,7 +881,15 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         isFetchingNextPage,
         isLoading,
         isError,
-    } = useInfiniteHighlights(undefined, { initialPage });
+        refetch: retryHighlights,
+    } = useInfiniteHighlights(selectedItem === DEFAULT_SELECTED_ITEM ? undefined : selectedItem, {
+        initialPage: highlightSearchIsDefault && initialPage.data.length > 0 ? initialPage : undefined,
+        enabled: selectedType !== "reflection",
+        query: debouncedSearchQuery,
+        itemType: highlightItemType,
+        color: highlightColor,
+        sort: sortBy,
+    });
     const {
         data: reflections = initialReflections,
         isLoading: reflectionsLoading,
@@ -881,8 +897,8 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     } = useReflections(undefined, initialReflections);
 
     const highlights = useMemo(
-        () => data?.pages.flatMap((page) => page.data) ?? initialPage.data,
-        [data, initialPage.data]
+        () => data?.pages.flatMap((page) => page.data) ?? (highlightSearchIsDefault ? initialPage.data : []),
+        [data, highlightSearchIsDefault, initialPage.data]
     );
 
     useEffect(() => {
@@ -1041,36 +1057,22 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
         return Array.from(map.values());
     }, [highlights, reflections]);
 
-    const filteredHighlights = useMemo(() => {
-        const normalizedQuery = searchQuery.trim().toLowerCase();
-
-        return [...highlights]
-            .filter((highlight) => {
-                const noteText = highlight.note_body?.trim() || null;
-                const itemType = noteText ? "note" : "highlight";
-                const normalizedColor = normalizeHighlightColor(highlight.color);
-
-                const matchesSearch =
-                    !normalizedQuery
-                    || highlight.highlighted_text.toLowerCase().includes(normalizedQuery)
-                    || noteText?.toLowerCase().includes(normalizedQuery)
-                    || highlight.content_item?.title.toLowerCase().includes(normalizedQuery)
-                    || highlight.segment?.title?.toLowerCase().includes(normalizedQuery);
-
-                const matchesItem = selectedItem === "all" || highlight.content_item?.id === selectedItem;
-                const matchesType = selectedType === "all" || (selectedType !== "reflection" && itemType === selectedType);
-                const matchesColor = selectedColor === "all" || normalizedColor === selectedColor;
-
-                return matchesSearch && matchesItem && matchesType && matchesColor;
-            })
-            .sort((left, right) => {
-                const leftDate = new Date(left.created_at || 0).getTime();
-                const rightDate = new Date(right.created_at || 0).getTime();
-                return sortBy === "newest" ? rightDate - leftDate : leftDate - rightDate;
-            });
-    }, [highlights, searchQuery, selectedItem, selectedType, selectedColor, sortBy]);
+    // Highlight filters are applied by the account-bound API before paging.
+    // Do not re-filter loaded pages locally: that would present partial results
+    // as a complete note search.
+    // Highlights may remain in React Query's cache when its query is disabled.
+    // Reflections are deliberately a separate, incomplete surface in this
+    // delivery, so never render cached highlights under that selected filter.
+    const filteredHighlights = selectedType === "reflection" ? NO_HIGHLIGHTS : highlights;
 
     const filteredReflections = useMemo(() => {
+        const canShowUnfilteredReflections = !searchQuery.trim()
+            && selectedItem === DEFAULT_SELECTED_ITEM
+            && selectedColor === DEFAULT_SELECTED_COLOR
+            && sortBy === DEFAULT_SORT
+            && (selectedType === "all" || selectedType === "reflection");
+        if (!canShowUnfilteredReflections) return [];
+
         const normalizedQuery = searchQuery.trim().toLowerCase();
 
         return [...reflections]
@@ -1087,7 +1089,9 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                 const rightDate = new Date(right.created_at).getTime();
                 return sortBy === "newest" ? rightDate - leftDate : leftDate - rightDate;
             });
-    }, [reflections, searchQuery, selectedItem, selectedType, sortBy]);
+    }, [reflections, searchQuery, selectedItem, selectedType, selectedColor, sortBy]);
+    const reflectionSearchUnavailable = selectedType === "reflection"
+        && (Boolean(searchQuery.trim()) || selectedItem !== DEFAULT_SELECTED_ITEM || selectedColor !== DEFAULT_SELECTED_COLOR || sortBy !== DEFAULT_SORT);
 
     const shouldVirtualize = filteredHighlights.length >= VIRTUALIZATION_MIN_ITEMS;
 
@@ -1810,7 +1814,19 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                             </div>
                         ) : isError || reflectionsError ? (
                             <div className="rounded-2xl border border-white/10 bg-card/20 px-6 py-16 text-center text-muted-foreground">
-                                Failed to load notes.
+                                <p>Failed to load notes. Your filters are still applied.</p>
+                                <button
+                                    type="button"
+                                    onClick={() => { void retryHighlights(); }}
+                                    className="mt-4 inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-foreground/85 transition-colors hover:bg-card/50 hover:text-foreground"
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        ) : reflectionSearchUnavailable ? (
+                            <div className="rounded-2xl border border-white/10 bg-card/20 px-6 py-16 text-center text-muted-foreground">
+                                <h3 className="text-lg font-medium text-foreground">Reflection search is not available yet</h3>
+                                <p className="mx-auto mt-2 max-w-md">Highlights and notes are searched across your library. Reflections are kept outside this focused delivery.</p>
                             </div>
                         ) : filteredEntryCount === 0 ? (
                             <div className="rounded-2xl border border-dashed border-white/10 bg-card/20 px-6 py-16 text-center text-muted-foreground">

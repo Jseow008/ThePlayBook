@@ -1,7 +1,7 @@
 import { ContentCard } from "@/components/ui/ContentCard";
 import { SearchAnalyticsTracker } from "@/app/(public)/search/SearchAnalyticsTracker";
 import { createPublicServerClient } from "@/lib/supabase/public-server";
-import { escapePostgrestLikeValue } from "@/lib/postgrest-filters";
+import { CatalogSearchError, searchCatalog, type CatalogSearchResult } from "@/lib/server/catalog-search";
 import type { ContentItem, ContentType } from "@/types/database";
 import { ArrowLeft, ArrowRight, Clock3, Search } from "lucide-react";
 import Link from "next/link";
@@ -47,12 +47,14 @@ export function buildSearchHref({
     type,
     sort,
     page,
+    cursor,
 }: {
     query?: string;
     category?: string;
     type?: string;
     sort?: CatalogSort;
     page?: number;
+    cursor?: string | null;
 }) {
     const params = new URLSearchParams();
 
@@ -74,6 +76,10 @@ export function buildSearchHref({
 
     if (sort !== "popular" && page && page > 1) {
         params.set("page", String(page));
+    }
+
+    if (query?.trim() && cursor) {
+        params.set("cursor", cursor);
     }
 
     const search = params.toString();
@@ -143,17 +149,42 @@ export async function RecentCatalog({
     );
 }
 
-export function ContentGrid({ items }: { items: ContentItem[] }) {
+function SearchSnippet({ result }: { result: CatalogSearchResult }) {
+    const ranges = result.snippet.highlights;
+    const parts: Array<{ text: string; highlighted: boolean }> = [];
+    let cursor = 0;
+    for (const range of ranges) {
+        if (range.start > cursor) parts.push({ text: result.snippet.text.slice(cursor, range.start), highlighted: false });
+        parts.push({ text: result.snippet.text.slice(range.start, range.end), highlighted: true });
+        cursor = range.end;
+    }
+    if (cursor < result.snippet.text.length) parts.push({ text: result.snippet.text.slice(cursor), highlighted: false });
+
+    return (
+        <p className="line-clamp-3 px-1 text-sm leading-6 text-muted-foreground">
+            {parts.map((part, index) => part.highlighted
+                ? <mark key={index} className="rounded bg-primary/20 px-0.5 text-foreground">{part.text}</mark>
+                : <span key={index}>{part.text}</span>)}
+        </p>
+    );
+}
+
+export function ContentGrid({ items }: { items: Array<ContentItem | CatalogSearchResult> }) {
     return (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 md:gap-6 lg:grid-cols-4 xl:grid-cols-4">
-            {items.map((item, index) => (
-                <ContentCard
-                    key={item.id}
-                    item={item}
-                    titleDensity="app-compact"
-                    priority={index === 0}
-                />
-            ))}
+            {items.map((item, index) => {
+                const searchResult = "snippet" in item ? item : null;
+                return (
+                    <div key={item.id} className="min-w-0 space-y-2">
+                        <ContentCard
+                            item={item}
+                            titleDensity="app-compact"
+                            priority={index === 0}
+                        />
+                        {searchResult ? <SearchSnippet result={searchResult} /> : null}
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -228,111 +259,107 @@ export async function SearchResults({
     categoryLabel,
     categoryValues,
     type,
-    page,
+    cursor,
 }: {
     query?: string;
     categoryLabel?: string;
     categoryValues?: string[];
     type?: string;
-    page: number;
+    cursor?: string;
 }) {
-    const supabase = createPublicServerClient();
     const normalizedType = normalizeType(type);
     const trimmedQuery = query?.trim() ?? "";
     const normalizedCategoryValues = categoryValues?.filter(Boolean) ?? [];
-    const offset = (page - 1) * CATALOG_PAGE_SIZE;
-
-    let results: ContentItem[] = [];
     const hasQuery = trimmedQuery.length > 0;
-    const hasSearch = hasQuery || normalizedCategoryValues.length > 0;
+    const filtersCount = Number(normalizedCategoryValues.length > 0) + Number(Boolean(normalizedType));
 
-    if (hasSearch) {
-        let queryBuilder = supabase
-            .from("content_item")
-            .select(CONTENT_CARD_SELECT, { count: "exact" })
-            .eq("status", "verified")
-            .is("deleted_at", null)
-            .order("created_at", { ascending: false })
-            .order("id", { ascending: false })
-            .range(offset, offset + CATALOG_PAGE_SIZE - 1);
-
-        if (normalizedCategoryValues.length === 1) {
-            queryBuilder = queryBuilder.eq("category", normalizedCategoryValues[0]);
-        } else if (normalizedCategoryValues.length > 1) {
-            queryBuilder = queryBuilder.in("category", normalizedCategoryValues);
-        }
-
-        if (normalizedType) {
-            queryBuilder = queryBuilder.eq("type", normalizedType);
-        }
-
-        if (hasQuery) {
-            const searchTerm = escapePostgrestLikeValue(trimmedQuery);
-            queryBuilder = queryBuilder.or(`title.ilike.${searchTerm},author.ilike.${searchTerm},category.ilike.${searchTerm}`);
-        }
-
-        const { data, count } = await queryBuilder;
-        results = (data || []) as ContentItem[];
-
-        const totalItems = count ?? results.length;
-        const totalPages = Math.max(1, Math.ceil(totalItems / CATALOG_PAGE_SIZE));
+    try {
+        const response = await searchCatalog({
+            query: trimmedQuery,
+            categories: normalizedCategoryValues,
+            type: normalizedType ?? null,
+            cursor: cursor ?? null,
+        });
 
         return renderSearchResults({
-            results,
-            totalItems,
-            totalPages,
-            page,
+            results: response.results,
+            pageInfo: response.pageInfo,
+            outcome: response.outcome,
             query,
             categoryLabel,
-            categoryValues: normalizedCategoryValues,
             normalizedType,
             hasQuery,
             queryLength: trimmedQuery.length,
             requestQuery: trimmedQuery,
+            filtersCount,
         });
-    }
+    } catch (error) {
+        const message = error instanceof CatalogSearchError && error.code === "CURSOR_INVALID"
+            ? "This search page is no longer valid. Start the search again."
+            : "Search is temporarily unavailable. Your query and filters are still here—please try again.";
+        const requestId = error instanceof CatalogSearchError ? error.requestId : undefined;
 
-    return null;
+        return (
+            <div className="animate-in fade-in duration-500">
+                <SearchAnalyticsTracker
+                    queryPresent={hasQuery}
+                    queryLength={trimmedQuery.length}
+                    resultCount={0}
+                    filtersCount={filtersCount}
+                    outcome="failed"
+                />
+                <div className="rounded-2xl border border-border bg-card/35 px-6 py-12 text-center">
+                    <Search className="mx-auto size-9 text-muted-foreground" />
+                    <h2 className="mt-4 text-lg font-semibold text-foreground">Search needs another try</h2>
+                    <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">{message}</p>
+                    {requestId ? <p className="mt-3 text-xs text-muted-foreground">Reference: {requestId}</p> : null}
+                    <Link
+                        href={buildSearchHref({ query, category: categoryLabel, type: normalizedType })}
+                        className="focus-ring mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                        Retry search
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 }
 
 function renderSearchResults({
     results,
-    totalItems,
-    totalPages,
-    page,
+    pageInfo,
+    outcome,
     query,
     categoryLabel,
-    categoryValues,
     normalizedType,
     hasQuery,
     queryLength,
     requestQuery,
+    filtersCount,
 }: {
-    results: ContentItem[];
-    totalItems: number;
-    totalPages: number;
-    page: number;
+    results: CatalogSearchResult[];
+    pageInfo: { nextCursor: string | null; previousCursor: string | null; page: number };
+    outcome: "results" | "no_results" | "input_empty";
     query?: string;
     categoryLabel?: string;
-    categoryValues: string[];
     normalizedType?: ContentType;
     hasQuery: boolean;
     queryLength: number;
     requestQuery: string;
+    filtersCount: number;
 }) {
-    const filtersCount = Number(categoryValues.length > 0) + Number(Boolean(normalizedType));
-
     return (
         <div className="animate-in fade-in duration-500">
             <SearchAnalyticsTracker
                 queryPresent={hasQuery}
                 queryLength={hasQuery ? queryLength : undefined}
-                resultCount={totalItems}
+                resultCount={results.length}
                 filtersCount={filtersCount}
+                outcome={outcome}
             />
             <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <p className="text-muted-foreground text-lg font-medium">
-                    {totalItems} result{totalItems !== 1 ? "s" : ""}
+                    {outcome === "input_empty" ? "Use a more specific search term" : `${results.length} result${results.length !== 1 ? "s" : ""} on this page`}
                     {query && ` for "${query}"`}
                     {categoryLabel && ` in ${categoryLabel}`}
                     {normalizedType && ` (${normalizedType})`}
@@ -342,25 +369,23 @@ function renderSearchResults({
             {results.length > 0 ? (
                 <>
                     <ContentGrid items={results} />
-                    <CatalogPagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        query={query}
-                        category={categoryLabel}
-                        type={normalizedType}
-                    />
+                    <SearchCursorPagination query={query} category={categoryLabel} type={normalizedType} pageInfo={pageInfo} />
                 </>
             ) : (
                 <div className="text-center py-2 md:py-20 animate-in fade-in zoom-in-95 duration-300">
                     <div className="hidden md:inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border">
                         <Search className="size-9 md:size-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-1 md:mb-2">No results found</h3>
+                    <h3 className="text-xl font-semibold text-foreground mb-1 md:mb-2">
+                        {outcome === "input_empty" ? "Try a more specific search" : "No results found"}
+                    </h3>
                     <p className="text-sm md:text-base text-muted-foreground max-w-sm mx-auto mb-3 md:mb-6">
-                        We couldn&apos;t find anything matching that title, author, category, or filter.
+                        {outcome === "input_empty"
+                            ? "Try a more specific word or phrase."
+                            : "We couldn&apos;t find anything matching that title, author, category, or filter."}
                     </p>
                     <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                        {hasQuery ? (
+                        {outcome !== "input_empty" && hasQuery ? (
                             <Link
                                 href={buildRequestHref({ query: requestQuery, type: normalizedType })}
                                 className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -379,6 +404,42 @@ function renderSearchResults({
                 </div>
             )}
         </div>
+    );
+}
+
+function SearchCursorPagination({
+    query,
+    category,
+    type,
+    pageInfo,
+}: {
+    query?: string;
+    category?: string;
+    type?: ContentType;
+    pageInfo: { nextCursor: string | null; previousCursor: string | null; page: number };
+}) {
+    if (!pageInfo.nextCursor && !pageInfo.previousCursor) return null;
+
+    return (
+        <nav aria-label="Search result pagination" className="mt-10 flex items-center justify-center gap-4">
+            <Link
+                href={pageInfo.previousCursor ? buildSearchHref({ query, category, type, cursor: pageInfo.previousCursor }) : "#"}
+                aria-disabled={!pageInfo.previousCursor}
+                className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${pageInfo.previousCursor ? "bg-secondary/30 text-foreground hover:bg-secondary/50" : "pointer-events-none text-muted-foreground opacity-40"}`}
+            >
+                <ArrowLeft className="size-4" />
+                Previous
+            </Link>
+            <span className="text-sm text-muted-foreground">Page {pageInfo.page}</span>
+            <Link
+                href={pageInfo.nextCursor ? buildSearchHref({ query, category, type, cursor: pageInfo.nextCursor }) : "#"}
+                aria-disabled={!pageInfo.nextCursor}
+                className={`focus-ring inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors ${pageInfo.nextCursor ? "bg-secondary/30 text-foreground hover:bg-secondary/50" : "pointer-events-none text-muted-foreground opacity-40"}`}
+            >
+                Next
+                <ArrowRight className="size-4" />
+            </Link>
+        </nav>
     );
 }
 

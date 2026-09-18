@@ -1,0 +1,60 @@
+{
+  "fixtureVersion": "search-baseline-v1",
+  "applicationCommit": "142a84ea290246f84f4ddc06d6362b8f4e3efba9",
+  "applicationRef": "origin/main",
+  "recordedAt": "2026-09-18",
+  "runner": {
+    "kind": "executed clean-worktree baseline",
+    "workflowRun": "https://github.com/Jseow008/ThePlayBook/actions/runs/35326303504",
+    "executedAt": "2026-09-18T08:52:23.707Z",
+    "configuration": {
+      "catalog": "real local Supabase query through the baseline SearchResults server component",
+      "notes": "baseline useInfiniteHighlights against a controlled two-page response with the matching note on page two"
+    }
+  },
+  "cases": [
+    {
+      "id": "title-exact",
+      "kind": "title",
+      "expectedCapability": "supported",
+      "result": "supported",
+      "evidence": "Baseline SearchResults returned the seeded title item."
+    },
+    {
+      "id": "author-exact",
+      "kind": "author",
+      "expectedCapability": "supported",
+      "result": "supported",
+      "evidence": "Baseline SearchResults returned the seeded author item."
+    },
+    {
+      "id": "segment-concept",
+      "kind": "segment-body",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "Baseline SearchResults did not return the seeded segment-only concept."
+    },
+    {
+      "id": "paraphrase",
+      "kind": "semantic",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "Baseline lexical fields did not return the synthetic paraphrase case."
+    },
+    {
+      "id": "misspelling",
+      "kind": "typo-tolerance",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "Baseline lexical fields did not return the synthetic misspelling case."
+    },
+    {
+      "id": "old-notes-match",
+      "kind": "notes-completeness",
+      "expectedCapability": "not-supported",
+      "result": "not-supported",
+      "evidence": "The controlled backend's page two contains a matching note, but baseline Notes made only its unfiltered first-page request and did not contain that record."
+    }
+  ],
+  "aggregateMethod": "Each capability is recorded as supported or not-supported by the executed frozen implementation. No unavailable capability is assigned a passing numeric score."
+}

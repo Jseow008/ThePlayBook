@@ -105,6 +105,36 @@ export interface AnalyticsEventPropertiesByName {
     result_count?: number;
     filters_count?: number;
   };
+  search_results: AnalyticsCommonProperties & {
+    source: string;
+    search_scope: "content" | "notes" | "library" | "global";
+    query_present: boolean;
+    query_length?: number;
+    result_count: number;
+    filters_count?: number;
+  };
+  search_no_results: AnalyticsCommonProperties & {
+    source: string;
+    search_scope: "content" | "notes" | "library" | "global";
+    query_present: boolean;
+    query_length?: number;
+    filters_count?: number;
+  };
+  search_input_empty: AnalyticsCommonProperties & {
+    source: string;
+    search_scope: "content" | "notes" | "library" | "global";
+    query_present: boolean;
+    query_length?: number;
+    filters_count?: number;
+  };
+  search_failed: AnalyticsCommonProperties & {
+    source: string;
+    search_scope: "content" | "notes" | "library" | "global";
+    query_present: boolean;
+    query_length?: number;
+    filters_count?: number;
+    failure_kind: "unavailable" | "invalid_input";
+  };
   library_saved: AnalyticsCommonProperties & {
     content_id: string;
     content_type?: string;
@@ -242,6 +272,38 @@ export const ANALYTICS_EVENT_CONTRACTS = {
       "result_count",
       "filters_count",
     ]),
+    privacy: "behavioral_metadata",
+    delivery: "client_intent_server_truth",
+  },
+  search_results: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A catalog or notes search returned one or more results. Do not include raw query text.",
+    requiredProperties: ["source", "search_scope", "query_present", "result_count"],
+    allowedProperties: eventProperties(["search_scope", "query_present", "query_length", "result_count", "filters_count"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_intent_server_truth",
+  },
+  search_no_results: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A catalog or notes search completed with no results. Do not include raw query text.",
+    requiredProperties: ["source", "search_scope", "query_present"],
+    allowedProperties: eventProperties(["search_scope", "query_present", "query_length", "filters_count"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_intent_server_truth",
+  },
+  search_input_empty: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A catalog query parsed to no searchable terms. Do not include raw query text.",
+    requiredProperties: ["source", "search_scope", "query_present"],
+    allowedProperties: eventProperties(["search_scope", "query_present", "query_length", "filters_count"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_intent_server_truth",
+  },
+  search_failed: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A catalog or notes search could not complete. Do not include raw query text or error details.",
+    requiredProperties: ["source", "search_scope", "query_present", "failure_kind"],
+    allowedProperties: eventProperties(["search_scope", "query_present", "query_length", "filters_count", "failure_kind"]),
     privacy: "behavioral_metadata",
     delivery: "client_intent_server_truth",
   },

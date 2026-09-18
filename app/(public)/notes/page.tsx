@@ -29,45 +29,21 @@ export default async function BrainPage({ searchParams }: BrainPageProps) {
         redirect(buildLoginHref(loginTarget));
     }
 
-    const [{ data: highlights, error }, { data: reflections, error: reflectionsError }] = await Promise.all([
-        supabase
-        .from("user_highlights")
-        .select(`
-            id,
-            segment_id,
-            anchor_start,
-            anchor_end,
-            highlighted_text,
-            note_body,
-            color,
-            created_at,
-            content_item ( id, title, author, cover_image_url ),
-            segment ( id, title )
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(30),
-        supabase
+    const { data: reflections, error: reflectionsError } = await supabase
         .from("user_reflections")
         .select("id, content_item_id, prompt, reflection_text, created_at, updated_at, content_item ( id, title, author, cover_image_url )")
         .eq("user_id", user.id)
-        .order("created_at", { ascending: false }),
-    ]);
-
-    if (error) {
-        console.error("Failed to load brain highlights:", error);
-    }
+        .order("created_at", { ascending: false });
 
     if (reflectionsError) {
         console.error("Failed to load reflections:", reflectionsError);
     }
 
     const initialPage: HighlightsPage = {
-        data: (highlights || []) as HighlightsPage["data"],
-        nextCursor:
-            highlights && highlights.length === 30
-                ? (highlights[highlights.length - 1] as { created_at?: string | null })?.created_at ?? null
-                : null,
+        // Highlights now load through the account-bound, signed-cursor API so
+        // search and filters are applied before traversal.
+        data: [],
+        nextCursor: null,
     };
 
     return (

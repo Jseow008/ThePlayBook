@@ -75,4 +75,38 @@ describe("sanitizeAnalyticsProperties", () => {
 
         warnSpy.mockRestore();
     });
+
+    it("keeps successful, empty, and failed search outcomes distinguishable without raw queries", () => {
+        expect(sanitizeAnalyticsProperties("search_results", {
+            source: "search_results",
+            search_scope: "content",
+            query_present: true,
+            result_count: 3,
+            query: "do not retain this",
+        } as never)).toMatchObject({ result_count: 3 });
+
+        expect(sanitizeAnalyticsProperties("search_no_results", {
+            source: "search_results",
+            search_scope: "content",
+            query_present: true,
+        })).toMatchObject({ search_scope: "content" });
+
+        expect(sanitizeAnalyticsProperties("search_input_empty", {
+            source: "search_results",
+            search_scope: "content",
+            query_present: true,
+            query_length: 10,
+            query: "the and or",
+        } as never)).toMatchObject({
+            search_scope: "content",
+            query_length: 10,
+        });
+
+        expect(sanitizeAnalyticsProperties("search_failed", {
+            source: "search_results",
+            search_scope: "content",
+            query_present: true,
+            failure_kind: "unavailable",
+        })).toMatchObject({ failure_kind: "unavailable" });
+    });
 });
