@@ -19,8 +19,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
       CATALOG_SEARCH_CURSOR_SECRET: ci-catalog-search-cursor-secret
-      NEXT_PUBLIC_SITE_URL: http://localhost:3100
-      NEXT_PUBLIC_APP_URL: http://localhost:3100
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
       PLAYWRIGHT_SERVER_MODE: production
     steps:
       - name: Checkout
@@ -87,6 +87,8 @@ jobs:
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run build
         env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3100
+          NEXT_PUBLIC_APP_URL: http://localhost:3100
           NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
           NEXT_PUBLIC_POSTHOG_HOST: /flux
           NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"
@@ -99,6 +101,8 @@ jobs:
         if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npx playwright test
         env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3100
+          NEXT_PUBLIC_APP_URL: http://localhost:3100
           NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
           NEXT_PUBLIC_POSTHOG_HOST: /flux
           NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"
