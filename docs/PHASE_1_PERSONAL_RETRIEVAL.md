@@ -21,10 +21,11 @@ AI review passed its Library answer's grounding and personal/source attribution.
 The visible answer cites the highlight, so it alone does not establish current
 editorial-source selection; that is measured separately by the database cases.
 It also exposed dormant Notes storage left by Settings sign-out. The shared auth
-listener now clears those Notes keys even when the Notes panel is unmounted;
-focused tests pass and a no-provider browser confirmation is pending. Preserve
-the original journey and its limitations in
-`evidence/final-build-auth-retrieval-journey-v2.json`.
+listener now clears those Notes keys even when the Notes panel is unmounted.
+Focused tests and a final-build, no-provider Settings sign-out check pass; unrelated
+storage remains intact. The original journey and its limitations remain in
+`evidence/final-build-auth-retrieval-journey-v2.json`, with the correction verified
+in `evidence/dormant-notes-logout-browser-smoke-v1.json`.
 
 Production preflight found no model mismatch: unset model overrides use the
 benchmarked Anthropic defaults, and the Gemini/Anthropic credentials are present.
