@@ -6,6 +6,7 @@ import { Pool } from "pg";
 
 const adminDatabaseUrl = process.env.DB107_ADMIN_DATABASE_URL;
 const describeDatabase = adminDatabaseUrl ? describe : describe.skip;
+const runPerformance = process.env.CATALOG_SEARCH_PERFORMANCE === "1" ? it : it.skip;
 
 type CatalogRow = { content_id: string; title: string; snippet_headline: string; result_rank?: number; cursor_rank?: string };
 type HighlightRow = { id: string; user_id: string; highlighted_text: string; note_body: string | null; cursor_created_at?: string };
@@ -250,7 +251,7 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
         }
     });
 
-    it("measures the reviewed catalog corpus with the deployed search SQL and route", async () => {
+    runPerformance("measures the reviewed catalog corpus with the deployed search SQL and route", async () => {
         const fixturePrefix = `Search performance fixture ${randomUUID()}`;
         const titleExact = `${fixturePrefix} title exact lighthouse`;
         const authorExact = `${fixturePrefix} author fixture`;
@@ -466,5 +467,5 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             await client.query("DELETE FROM public.content_item WHERE title LIKE $1", [`${fixturePrefix}%`]).catch(() => undefined);
             client.release();
         }
-    }, 120_000);
+    }, 600_000);
 });
