@@ -12,6 +12,18 @@ or replace it with the easier explicitly named-distractor score. See
 `tests/fixtures/retrieval/PROVIDER_SELECTION_FAILURE_AUDIT.md` for the failure
 ledger, semantic errors, fixture ambiguities, and proposed versioned repair.
 
+The independently reviewed v2 corpus is also frozen and its first execution fails
+the same relevance gate: 174/174 database cases completed, required-evidence recall
+is 100% in every class/run, exact quotations are 36/36, and forbidden-record and
+revoked-session checks pass. Zero-extra-ID rejection is 165/174 (94.8276%), below
+95%. Nine results across four questions add irrelevant evidence. This is a failure,
+not a rounded pass. The raw selector decisions and actual database replay are
+preserved in `tests/fixtures/retrieval/provider-selections-v2.json` and
+`tests/fixtures/retrieval/evidence/database-quality-v2.json`. No final-answer
+provider calls were started for this failed candidate. V2 is not an apples-to-apples
+improvement claim over v1, whose known fixture ambiguities and failures remain
+recorded. Neither corpus may be relabeled to match model output.
+
 The real authenticated browser journey saved and later retrieved a highlight,
 attached note and reflection, reopened the existing reader, and downloaded a
 verified export containing them. It preceded the final worker/session fixes and
