@@ -4,6 +4,36 @@ Status: implementation checkpoint; **held, not ready to merge or deploy**.
 
 ## Current verification decision
 
+The v4 selector passes the frozen v2 database retrieval gates. All 174 case-runs
+completed with exact provider-request hashes verified: required-evidence recall
+is 100% in every class/run, zero-extra-ID rejection is 171/174 (98.2759%), exact
+stored quotations are 36/36, and actual forbidden-ID/session checks pass. Each
+run includes one irrelevant additional personal capture for the Willow editorial
+question; those three misses remain recorded. All requested comparison facets
+and required field text survived composition. These are retrieval results, not a
+final-answer quality pass: answer generation, token proof and independent answer
+review remain in progress. Evidence is in `provider-selections-v2-selector-v4.json`
+and `evidence/database-quality-v2-selector-v4.json` under the retrieval fixtures.
+
+The final-code browser journey at `87599d1` passed capture, actual indexing,
+reflection-only exact retrieval, reader reopening and verified export. Independent
+AI review passed its Library answer's grounding and personal/source attribution.
+The visible answer cites the highlight, so it alone does not establish current
+editorial-source selection; that is measured separately by the database cases.
+It also exposed dormant Notes storage left by Settings sign-out. The shared auth
+listener now clears those Notes keys even when the Notes panel is unmounted;
+focused tests pass and a no-provider browser confirmation is pending. Preserve
+the original journey and its limitations in
+`evidence/final-build-auth-retrieval-journey-v2.json`.
+
+Production preflight found no model mismatch: unset model overrides use the
+benchmarked Anthropic defaults, and the Gemini/Anthropic credentials are present.
+`CRON_SECRET` is missing from Production and must be provisioned consistently with
+the GitHub worker secret before rollout. No production settings were changed by
+that read-only preflight.
+
+### Preserved earlier failures
+
 The frozen v1 quality gate fails. All 174 database case-runs executed with recorded
 real-provider decisions: required-evidence recall is 97.53%, exact stored quotes
 36/36, and explicit forbidden-record/session checks pass. Irrelevant-evidence
@@ -119,8 +149,10 @@ made the expected selections in all 21 raw responses, including three eight-reco
 comparisons, but its initial short-string schema rejected one 351-character
 explanation. All 21 saved responses conform under the documented larger string
 bounds; that offline check made no provider calls and is not a benchmark pass.
-The original 20/21 validated result remains preserved. New exact-configuration
-provider execution and the unchanged frozen benchmark gates are still required.
+The original 20/21 validated result remains preserved. Subsequent exact-configuration
+execution completed 168 selector calls without retries or failures (1,056,615 input
+and 32,693 output tokens). The unchanged frozen retrieval gates passed as recorded
+above; final-answer gates remain separate.
 
 Retrieval requests record one admitted AI usage event before paid provider work,
 including quotations, abstentions, cancellation, and failed attempts. Generation
