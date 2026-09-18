@@ -1,5 +1,5 @@
 import "server-only";
-import { PERSONAL_RETRIEVAL_RULES, exactPersonalQuoteField, personalSelectionCandidates, materializePersonalSelection, type retrievePersonalEvidence } from "@/lib/server/personal-retrieval";
+import { PERSONAL_RETRIEVAL_RULES, GROUNDED_ANSWER_FOCUS, exactPersonalQuoteField, personalSelectionCandidates, materializePersonalSelection, type retrievePersonalEvidence } from "@/lib/server/personal-retrieval";
 
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -170,5 +170,5 @@ ${PERSONAL_RETRIEVAL_RULES}
 - If passage evidence is thin for a reading_advisor question, still make a qualified recommendation from metadata, statuses, authors, and categories instead of repeatedly apologizing.
 - Never invent sources, authors, progress, or themes.
 - If metadata is empty, say so plainly.
-- Keep answers short and structured. Use bullets for lists. Do not write a long essay unless asked.`;
+- Keep answers short and structured. Use bullets for lists. Do not write a long essay unless asked.\n\n${GROUNDED_ANSWER_FOCUS}`;
 }

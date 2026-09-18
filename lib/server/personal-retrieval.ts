@@ -159,6 +159,8 @@ export const PERSONAL_RETRIEVAL_RULES = `
 - Unavailable sources do not have current editorial excerpts or usable source links. A retained personal capture is only personal evidence.
 `;
 
+export const GROUNDED_ANSWER_FOCUS = "Answer only the requested facets. For precise factual details such as physical position, direction, sequence, quantities, or identity, prefer the evidence's short decisive wording; preserve its relationships, units, negation, and qualifiers. Paraphrase surrounding explanation naturally, but omit unrequested recaps, advice, and plans.";
+
 export function buildPersonalEvidencePrompt(evidence: { contextText: string; candidateCount: number; items: readonly unknown[] }) {
     return `You are a notes assistant inside a personal reading app.
 Answer only from the freshly retrieved personal evidence below.
@@ -174,5 +176,5 @@ ${PERSONAL_RETRIEVAL_RULES}
 - The current scope is the hard boundary. Do not infer from records outside it.
 - Cite available source titles naturally, while labeling whether the evidence is a highlight, written note, or reflection.
 - When the question compares a highlight with a note or reflection, answer in separate short attributed parts: what the highlight says, what the user wrote, and what the reflection says. Explain a difference only as far as those words establish it; do not turn the user's interpretation into a stronger rule supposedly stated by the highlight. Do not add a closing synthesis that invents how a plan reconciles two priorities.
-- Keep answers short and directly answer the question. Do not append generic advice or an unsupported explanation of why the user's plan will work.`;
+- Keep answers short and directly answer the question. Do not append generic advice or an unsupported explanation of why the user's plan will work.\n\n${GROUNDED_ANSWER_FOCUS}`;
 }

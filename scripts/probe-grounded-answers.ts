@@ -53,6 +53,14 @@ async function main() {
         conditions: { baseline: 1, candidate: 3 }, maximumOutputTokens: prepared.reduce((n, item) => n + item.maxOutputTokens * 4, 0),
         retries: 0, timeoutMs: 60_000, prepared, appendix: fixture.proposedPromptAppendix, releaseGate: "Not established by development probes." };
     if (!process.argv.includes("--execute")) { console.log(JSON.stringify(plan, null, 2)); return; }
+    // Archive guard: changed production prompts require a new, independently reviewed development version.
+    const frozenProductionHashes: Record<string, string> = {
+    "lib/server/personal-evidence-ranking.ts": "4cd8d31356c369cf3c0e4bd5b1e6cf010a98d015b9fcdcaf2d7fca8eb23be15d",
+    "lib/server/personal-retrieval.ts": "034166595633a176c2bfb7dd3a3882b3e5097d7135041559ddfd53a3f05c995b",
+    "lib/server/library-evidence.ts": "a7d14adf62318e349210ed4179bebd95a1a30b7949c60749bd4a927adda21bfc",
+    "lib/server/retrieval-generation.ts": "a9e4f6af42c980a16b3c4895ba817e0d44518592ee904a8ca2e2c45b31c56dfa"
+};
+    if (Object.entries(frozenProductionHashes).some(([path, hash]) => moduleHashes[path] !== hash)) throw new Error("Archived development baseline changed; create a new reviewed probe version");
     const expectedHash = process.argv.find(a => a.startsWith("--fixture-sha="))?.slice(14);
     if (expectedHash !== plan.fixtureSha256 || !fixture.status.includes("frozen") || prepared.length !== 6) throw new Error("Explicit frozen fixture hash required");
     const output = process.argv.find(a => a.startsWith("--output="))?.slice(9);

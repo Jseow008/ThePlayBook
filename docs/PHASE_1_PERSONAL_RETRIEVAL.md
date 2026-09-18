@@ -25,8 +25,14 @@ detail, and one Sonnet answer added unsupported event timing. All 11 applicable
 answers preserved attached-note attribution. Neither stronger-model assumptions
 nor passing retrieval scores excuse those factual changes. The original raw
 artifact, failure provenance and response-bound review remain under `evidence/`;
-the 60 unexecuted model answers are not counted as passes. A bounded correction
-is being tested on separate development examples before any new holdout execution.
+the 60 unexecuted model answers are not counted as passes. A narrow answer-prompt
+appendix now asks for precise evidence wording and omits unrequested recaps. Before
+adoption, six separately authored development cases passed one baseline and three
+candidate runs each (24 real provider calls, independently reviewed). Those examples
+establish non-regression, not a holdout pass. The raw development answers and review
+are preserved as `grounded-answer-development-v1.json` and
+`grounded-answer-development-review-v1.json`. A new final-answer execution is required
+for the changed prompt; existing selector decisions and embeddings remain reusable.
 
 The final-code browser journey at `87599d1` passed capture, actual indexing,
 reflection-only exact retrieval, reader reopening and verified export. Independent
