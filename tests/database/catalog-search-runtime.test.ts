@@ -278,7 +278,7 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             await client.query("BEGIN");
             await client.query("SET LOCAL session_replication_role = 'replica'");
             await client.query(
-                `INSERT INTO public.content_item (id, type, title, author, category, status, quick_mode_json)
+                `INSERT INTO public.content_item (id, type, title, author, category, status, quick_mode_json, published_at)
                  SELECT
                     gen_random_uuid(),
                     CASE WHEN ordinal = 6 THEN 'podcast'::public.content_type ELSE 'article'::public.content_type END,
@@ -290,7 +290,8 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                     CASE WHEN ordinal = 2 THEN $3 ELSE 'Performance noise author ' || ordinal END,
                     CASE WHEN ordinal = 6 THEN 'SearchPerformanceFiltered' ELSE 'SearchPerformanceNoise' END,
                     'verified',
-                    '{}'::jsonb
+                    '{}'::jsonb,
+                    now()
                  FROM generate_series(1, 10000) AS generated(ordinal)`,
                 [fixturePrefix, titleExact, authorExact],
             );

@@ -2,12 +2,14 @@
   "fixtureVersion": "search-baseline-v1",
   "applicationCommit": "142a84ea290246f84f4ddc06d6362b8f4e3efba9",
   "applicationRef": "origin/main",
-  "recordedAt": "2026-09-17",
+  "recordedAt": "2026-09-18",
   "runner": {
-    "kind": "source-verified baseline",
+    "kind": "executed clean-worktree baseline",
+    "workflowRun": "https://github.com/Jseow008/ThePlayBook/actions/runs/35321936482",
+    "executedAt": "2026-09-18T08:00:56.491Z",
     "configuration": {
-      "catalog": "PostgREST ilike over content_item.title, author, category; created_at DESC, id DESC",
-      "notes": "first 30 highlights, then browser-side literal substring/filter/sort"
+      "catalog": "real local Supabase query through the baseline SearchResults server component",
+      "notes": "baseline useInfiniteHighlights first-page behavior with a controlled 31-record response"
     }
   },
   "cases": [
@@ -16,43 +18,43 @@
       "kind": "title",
       "expectedCapability": "supported",
       "result": "supported",
-      "evidence": "catalog query includes title.ilike"
+      "evidence": "Baseline SearchResults returned the seeded title item."
     },
     {
       "id": "author-exact",
       "kind": "author",
       "expectedCapability": "supported",
       "result": "supported",
-      "evidence": "catalog query includes author.ilike"
+      "evidence": "Baseline SearchResults returned the seeded author item."
     },
     {
       "id": "segment-concept",
       "kind": "segment-body",
       "expectedCapability": "not-supported",
       "result": "not-supported",
-      "evidence": "catalog query does not join or query segment"
+      "evidence": "Baseline SearchResults did not return the seeded segment-only concept."
     },
     {
       "id": "paraphrase",
       "kind": "semantic",
       "expectedCapability": "not-supported",
       "result": "not-supported",
-      "evidence": "catalog query has no semantic retrieval path"
+      "evidence": "Baseline lexical fields did not return the synthetic paraphrase case."
     },
     {
       "id": "misspelling",
       "kind": "typo-tolerance",
       "expectedCapability": "not-supported",
       "result": "not-supported",
-      "evidence": "catalog query has no trigram or spelling path"
+      "evidence": "Baseline lexical fields did not return the synthetic misspelling case."
     },
     {
       "id": "old-notes-match",
       "kind": "notes-completeness",
       "expectedCapability": "not-supported",
       "result": "not-supported",
-      "evidence": "filters execute after the initial 30-highlight page reaches the browser"
+      "evidence": "Baseline Notes loaded only the initial 30-record page; the controlled later match was not present."
     }
   ],
-  "aggregateMethod": "Each capability is recorded as supported or not-supported from the exact baseline implementation. No unavailable capability is assigned a passing numeric score."
+  "aggregateMethod": "Each capability is recorded as supported or not-supported by the executed frozen implementation. No unavailable capability is assigned a passing numeric score."
 }
