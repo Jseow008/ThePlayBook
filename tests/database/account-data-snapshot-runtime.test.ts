@@ -343,7 +343,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     });
 
     itWithAuthRuntime("rejects a revoked Supabase Auth session before a snapshot page can be authorized", async () => {
-        const email = `db107-revoked-${randomUUID()}@example.invalid`;
+        const email = `db107-revoked-${randomUUID()}@example.com`;
         const password = "db107-disposable-auth-fixture";
         const createDisposableAuthClient = () => createSupabaseClient(supabaseApiUrl!, supabaseAnonKey!, {
             auth: {
