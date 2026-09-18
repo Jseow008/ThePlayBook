@@ -6,6 +6,11 @@ on:
       - main
   pull_request:
 
+# Superseded PR verification can stop; main/manual runs retain unique groups.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -19,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -26,25 +33,40 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Classify verification scope
+        id: scope
+        continue-on-error: true
+        run: node scripts/classify-ci-changes.mjs
+
+      - name: Validate route-shell policy
+        run: node scripts/check-route-shell-policy.mjs
+
       - name: Install dependencies
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm ci
 
       - name: Dependency posture
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run check:dependency-posture
 
       - name: Lint
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run lint
 
       - name: Typecheck
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run typecheck
 
       - name: Test (Unit)
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run test
 
       - name: Setup local Supabase
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npx supabase start
 
       - name: Export local Supabase environment
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         shell: bash
         run: |
           set -euo pipefail
@@ -61,6 +83,7 @@ jobs:
           printf '%s\n' "$exported_environment" >> "$GITHUB_ENV"
 
       - name: Build
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run build
         env:
           NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
@@ -68,9 +91,11 @@ jobs:
           NEXT_PUBLIC_POSTHOG_CAPTURE_BOT_EVENTS: "true"
 
       - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
+        run: npx playwright install --with-deps chromium
 
       - name: Test (E2E)
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npx playwright test
         env:
           NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: phc_ci_e2e
@@ -79,7 +104,7 @@ jobs:
 
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && (steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false')
         with:
           name: playwright-report
           path: playwright-report/

@@ -109,13 +109,22 @@ npm run validate:launch-env
 HEALTH_CHECK_SECRET=... npm run check:deployment-health -- --url https://<your-production-domain>
 ```
 
-CI runs:
+For application changes, CI runs:
 
 - lint
 - TypeScript typecheck
 - Vitest
 - Next.js build
 - Playwright
+
+CI classifies documentation-only changes before starting expensive validation. Only the explicit documentation allowlist qualifies; an unknown path, a mixed change, or unavailable comparison evidence takes the full validation path. Required `validate` and `Security Validation` checks still report a result, including the classification reason. Documentation-only classification does not waive production migration or deployment gates.
+
+The first CI efficiency pass keeps all browser projects, assertions, and application/security test coverage. It changes scheduling and execution only:
+
+- New pull-request commits cancel superseded runs for that same pull request. Main-branch and manual runs are not cancelled by later runs.
+- Browser installation includes Chromium only, matching all currently configured browser projects. The iPhone/iPad project names describe viewport emulation, not WebKit coverage.
+
+Validate workflow changes with both documentation-only and full application paths. Production-mode browser execution needs disposable equivalents of the production services, including the rate-limit backend, before replacing the current development-server suite. Broader viewport selection, security-check consolidation, and performance-job scheduling also require separate measured changes; they are not part of this first pass.
 
 Relevant config:
 
