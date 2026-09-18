@@ -73,6 +73,12 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
              VALUES ($1, $2, true, '{"itemId":"fixture-a","isCompleted":false}'::jsonb)`,
             [accountA, contentA],
         );
+        await db.query(
+            `INSERT INTO public.account_library_state (user_id)
+             VALUES ($1)
+             ON CONFLICT (user_id) DO NOTHING`,
+            [accountB],
+        );
 
         await db.query(
             `INSERT INTO public.profiles (id, email, onboarding_state, reader_settings)
@@ -126,8 +132,8 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         await db.query(
             `INSERT INTO public.user_notification_preferences
                 (user_id, request_published_email_enabled, unsubscribe_token)
-             VALUES ($1, false, 'db107-export-private-unsubscribe-token-000000000000000000000000')`,
-            [accountExport],
+             VALUES ($1, false, $2)`,
+            [accountExport, `db107-export-private-unsubscribe-token-${accountExport}`],
         );
         await db.query(
             `INSERT INTO public.content_request_notifications
@@ -206,6 +212,40 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         });
     });
 
+    it("denies browser roles direct account-library-state access", async () => {
+        const effectiveAccess = await db.query<{
+            role_name: string;
+            can_access: boolean;
+        }>(
+            `SELECT role_name,
+                    has_table_privilege(
+                        role_name,
+                        'public.account_library_state',
+                        'SELECT, INSERT, UPDATE, DELETE'
+                    ) AS can_access
+             FROM (VALUES ('anon'::name), ('authenticated'::name)) AS browser_roles(role_name)
+             ORDER BY role_name`,
+        );
+        expect(effectiveAccess.rows).toEqual([
+            { role_name: "anon", can_access: false },
+            { role_name: "authenticated", can_access: false },
+        ]);
+
+        for (const roleName of ["anon", "authenticated"] as const) {
+            const client = await db.connect();
+            try {
+                await client.query("BEGIN");
+                await client.query(`SET LOCAL ROLE ${roleName}`);
+                await expect(
+                    client.query("SELECT user_id FROM public.account_library_state LIMIT 1"),
+                ).rejects.toMatchObject({ code: "42501" });
+            } finally {
+                await client.query("ROLLBACK").catch(() => undefined);
+                client.release();
+            }
+        }
+    });
+
     it("connects directly as the restricted worker and remains account-scoped", async () => {
         const identity = await workerDb.query<{ current_user: string; rolbypassrls: boolean }>(
             "SELECT current_user, rolbypassrls FROM pg_roles WHERE rolname = current_user",
@@ -223,6 +263,16 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                 [accountA, contentA],
             );
             expect(ownWrite.rowCount).toBe(1);
+            const ownStateWrite = await workerDb.query(
+                "UPDATE public.account_library_state SET current_revision = current_revision + 1 WHERE user_id = $1",
+                [accountA],
+            );
+            expect(ownStateWrite.rowCount).toBe(1);
+            const otherStateWrite = await workerDb.query(
+                "UPDATE public.account_library_state SET current_revision = current_revision + 1 WHERE user_id = $1",
+                [accountB],
+            );
+            expect(otherStateWrite.rowCount).toBe(0);
             await expect(workerDb.query(
                 "INSERT INTO public.user_library (user_id, content_id, is_bookmarked) VALUES ($1, $2, true)",
                 [accountB, contentA],
