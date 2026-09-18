@@ -132,8 +132,8 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         await db.query(
             `INSERT INTO public.user_notification_preferences
                 (user_id, request_published_email_enabled, unsubscribe_token)
-             VALUES ($1, false, 'db107-export-private-unsubscribe-token-000000000000000000000000')`,
-            [accountExport],
+             VALUES ($1, false, $2)`,
+            [accountExport, `db107-export-private-unsubscribe-token-${accountExport}`],
         );
         await db.query(
             `INSERT INTO public.content_request_notifications
