@@ -4,6 +4,22 @@ Status: implementation checkpoint; **held, not ready to merge or deploy**.
 
 ## Current verification decision
 
+**The complete answer-v2 execution fails grounding and is not approved for release.**
+All 174 case-runs completed, including 90 actual model answers across three runs,
+with no provider failure or retry. Independent AI review found 86/90 grounded and
+90/90 covering the requested facets. All three Rowan source-guidance answers add
+or reverse causal claims in an optional personal reflection; one Juniper answer
+adds an unsupported concluding generalization and timing. These failures occur
+after correct evidence retrieval. They are not excused by the passing recall,
+quotation, abstention, access-control, or measured token-budget results.
+
+The answer-v2 raw JSON is preserved losslessly in
+`evidence/final-generation-v2-selector-v4-answer-v2.json.gz`; its provenance file
+binds the frozen corpus, updated database capture, provider counters, independent
+reviews, and failed score. The scoring command exits 1. All 90 responses were
+reviewed, with no selective rerun or automatic self-grade. The current decision
+is to stop prompt-only iterations and settle the response contract below.
+
 The v4 selector passes the frozen v2 database retrieval gates. All 174 case-runs
 completed with exact provider-request hashes verified: required-evidence recall
 is 100% in every class/run, zero-extra-ID rejection is 171/174 (98.2759%), exact
@@ -31,8 +47,9 @@ adoption, six separately authored development cases passed one baseline and thre
 candidate runs each (24 real provider calls, independently reviewed). Those examples
 establish non-regression, not a holdout pass. The raw development answers and review
 are preserved as `grounded-answer-development-v1.json` and
-`grounded-answer-development-review-v1.json`. A new final-answer execution is required
-for the changed prompt; existing selector decisions and embeddings remain reusable.
+`grounded-answer-development-review-v1.json`. The changed prompt then underwent the
+complete answer-v2 execution above. Existing selector decisions and embeddings
+were reused with exact request-hash verification; all 90 final answers were new.
 
 The final-code browser journey at `87599d1` passed capture, actual indexing,
 reflection-only exact retrieval, reader reopening and verified export. Independent
@@ -94,6 +111,31 @@ their own quality evidence.
 No production migration, deployment, or release approval is recorded here.
 The scheduled snapshot-maintenance failure remains explicitly deferred.
 
+
+## Proposed answer boundary — product decision pending
+
+The recommended first-release alternative is concise, attributed evidence extracts.
+Keep the verified retrieval, selection, eight-record/4,000-byte composition bound,
+and deterministic exact-quote/no-evidence branches. For matched evidence, a shared
+server renderer would display the already selected authoritative field spans with
+fixed editorial/highlight/attached-note/reflection labels. Reflection prompts would
+not be presented as answer facts. No final model-authored factual prose, causal
+recap, or inferred recommendation would be delivered. This avoids adding a second
+verification model or another provider call.
+
+This is a capability tradeoff, not an equivalent prompt fix: comparisons can show
+the requested records side by side, but conversational synthesis and novel
+inferences would be deferred. Relevance and requested-facet completeness still
+need independent evaluation. The benchmark adapter must assess the actual served
+extracts across all three recorded selector runs and require independent review;
+zero final-generation calls must not silently remove the answer-quality gate.
+The current corpus, thresholds, failed outputs, and attribution requirements stay
+unchanged. This alternative has been proposed to the user but is not implemented.
+
+A paid hosted rehearsal has not run. Its unused private preparation directory was
+removed; no hosted project was created. The recorded read-only preflight is not a
+hosted release pass. Production remains unchanged, and both the product decision
+and the hosted-project price acknowledgment remain pending.
 
 ## User-visible behavior
 

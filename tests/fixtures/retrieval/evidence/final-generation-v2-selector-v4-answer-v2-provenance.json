@@ -1,0 +1,29 @@
+{
+  "version": "personal-retrieval-generation-attempt-provenance-v1",
+  "artifact": "final-generation-v2-selector-v4-answer-v2.json.gz",
+  "uncompressedSha256": "d76a92409126fa72949de36eb464f25b773511903881aace563266e8652ebeb4",
+  "compressedSha256": "4b5827e89093f631ae804b8a79180051ffe0e4d7cecc7fb441cae67c3b3408ce",
+  "uncompressedBytes": 429955,
+  "corpusSha256": "dd866de9d24c712e929085f240ca5a47760cab74ef15f4a60d829bc937d58608",
+  "captureSha256": "88ab485f07c5838efa5a45f6a3a18f22905ebf1c36547e724ec7877aa2386c25",
+  "status": "measurement-and-independent-review-complete-quality-failed",
+  "completeRecords": 174,
+  "completeModelAnswers": 90,
+  "providerRequests": 164,
+  "retryEvents": 0,
+  "generationInputTokens": 112200,
+  "generationOutputTokens": 6844,
+  "counters": {
+    "generationAttempts": 90,
+    "reservedGenerationTokens": 757800
+  },
+  "failure": null,
+  "noEvidenceStructuralZeroRecords": 42,
+  "releasePass": false,
+  "reviewStatus": "All 90 model answers independently AI-reviewed: 86 grounded, 90 complete. Four grounding failures remain across three runs. No quality retries; release held.",
+  "reviewArtifact": "final-answer-v2-selector-v4-answer-v2-reviews.json",
+  "reviewSha256": "ce0ac2950324de0d0e330f56bc3b0282766b452d16e7a7d591c73f69ea28fceb",
+  "scoreArtifact": "final-answer-v2-selector-v4-answer-v2-score.json",
+  "scoreSha256": "577cb1f048232e7ffbf224bc8cc6e7233a1e57eaa2efb98ce3cf973915914362",
+  "scoreExitCode": 1
+}
