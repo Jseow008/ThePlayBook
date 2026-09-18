@@ -129,6 +129,11 @@ async function main() {
     const fixture = readSelectorDevelopmentFixture("selector-precision-v1.json");
     if (fixture.sha256 !== FIXTURE_SHA256) throw new Error("Frozen development fixture changed");
     const requests = fixture.cases.map(testCase => buildWitnessRequest(testCase));
+    // This experiment is archived. A changed production prompt is a new experiment,
+    // not permission to spend on an unrecorded variant of the original run.
+    if (process.argv.includes("--execute") && requests[0].systemPromptSha256 !== "4ab5fe792ea0a3088af84b0afa0d0aae65d721f3fcb7adc44b019308ebe91cda") {
+        throw new Error("Archived experiment prompt changed; use the recorded checkout or a new version");
+    }
     const plan = { version: WITNESS_EXPERIMENT_CONFIG.version, fixtureSha256: fixture.sha256, modelConfig: WITNESS_EXPERIMENT_CONFIG,
         expectedCases: 18, systemPromptSha256: requests[0].systemPromptSha256,
         moduleSha256: sha(readFileSync(resolve("tests/fixtures/retrieval/development/selector-witness-experiment.ts"))),

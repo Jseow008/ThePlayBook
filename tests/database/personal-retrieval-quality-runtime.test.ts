@@ -18,7 +18,7 @@ import {
     type PersonalEvidenceSelectionCandidate, type PersonalEvidenceSelectionGenerator,
 } from "@/lib/server/personal-evidence-selector";
 import {
-    readFrozenCorpus, expandedEvidence, readDatabaseVectorFixture, corpusHash, productionRetrievalHashes, databaseGenerationInputHash, fixtureSupportOutcomes, QUALITY_CONFIG,
+    readFrozenCorpus, expandedEvidence, readDatabaseVectorFixture, corpusHash, productionRetrievalHashes, databaseGenerationInputHash, fixtureSupportOutcomes, validateRecordedProviderSelectionOutput, QUALITY_CONFIG,
     type FixtureCase, type FixtureEvidence, type VectorBank,
 } from "../../scripts/evaluate-personal-retrieval";
 
@@ -27,10 +27,10 @@ const databaseUrl = process.env.DB107_ADMIN_DATABASE_URL;
 const apiUrl = process.env.DB107_SUPABASE_URL;
 const anonKey = process.env.DB107_SUPABASE_ANON_KEY;
 const vectorsPath = resolve(process.env.PERSONAL_RETRIEVAL_VECTOR_FIXTURE ?? `tests/fixtures/retrieval/provider-vectors-${corpusVersion}.json`);
-const reportPath = resolve(process.env.PERSONAL_RETRIEVAL_QUALITY_REPORT ?? (corpusVersion === "v1" ? "artifacts/personal-retrieval-database-quality.json" : "artifacts/personal-retrieval-database-quality-v2.json"));
+const reportPath = resolve(process.env.PERSONAL_RETRIEVAL_QUALITY_REPORT ?? (corpusVersion === "v1" ? "artifacts/personal-retrieval-database-quality.json" : "artifacts/personal-retrieval-database-quality-v2-selector-v4.json"));
 const captureSelectionInputs = process.env.CAPTURE_PERSONAL_SELECTION_INPUTS === "1";
-const selectionInputsPath = resolve(process.env.PERSONAL_SELECTION_INPUTS_PATH ?? (corpusVersion === "v1" ? "artifacts/personal-selection-inputs.json" : "artifacts/personal-selection-inputs-v2.json"));
-const selectionFixturePath = resolve(process.env.PERSONAL_SELECTION_FIXTURE ?? `tests/fixtures/retrieval/provider-selections-${corpusVersion}.json`);
+const selectionInputsPath = resolve(process.env.PERSONAL_SELECTION_INPUTS_PATH ?? (corpusVersion === "v1" ? "artifacts/personal-selection-inputs.json" : "artifacts/personal-selection-inputs-v2-selector-v4.json"));
+const selectionFixturePath = resolve(process.env.PERSONAL_SELECTION_FIXTURE ?? (corpusVersion === "v1" ? "tests/fixtures/retrieval/provider-selections-v1.json" : "tests/fixtures/retrieval/provider-selections-v2-selector-v4.json"));
 const selectionModelConfig = PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG;
 const configured = Boolean(databaseUrl && apiUrl && anonKey && existsSync(vectorsPath));
 if (process.env.PERSONAL_RETRIEVAL_QUALITY_RUNTIME_REQUIRED === "1" && !configured) {
@@ -62,12 +62,12 @@ type CapturedSelection = {
     diagnosticOnlyAllCandidateIds: string[];
 };
 type RecordedSelection = {
-    caseId: string; run: number; inputSha256: string; output: { ids: string[] };
+    caseId: string; run: number; inputSha256: string; output: { ids: string[] }; providerOutput: unknown;
     usage: Awaited<ReturnType<PersonalEvidenceSelectionGenerator>>["usage"];
     model: string; provider: string;
 };
 type SelectionFixture = {
-    version: "personal-retrieval-provider-selections-v1"; corpusSha256: string; vectorFixtureSha256: string;
+    version: "personal-retrieval-provider-selections-v2"; corpusSha256: string; vectorFixtureSha256: string;
     modelConfig: typeof selectionModelConfig; records: RecordedSelection[];
 };
 function makeClient() {
@@ -125,7 +125,7 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
         if (!captureSelectionInputs) {
             if (!existsSync(selectionFixturePath)) throw new Error("Actual provider selector decisions are required. Capture mode is diagnostic only and cannot pass the quality gate.");
             selectionFixture = JSON.parse(readFileSync(selectionFixturePath, "utf8")) as SelectionFixture;
-            if (selectionFixture.version !== "personal-retrieval-provider-selections-v1"
+            if (selectionFixture.version !== "personal-retrieval-provider-selections-v2"
                 || selectionFixture.corpusSha256 !== corpusSha256 || selectionFixture.vectorFixtureSha256 !== vectorFixtureSha256
                 || JSON.stringify(selectionFixture.modelConfig) !== JSON.stringify(selectionModelConfig)
                 || !Array.isArray(selectionFixture.records)) throw new Error("Recorded selector fixture configuration does not match the frozen corpus, vectors, or model configuration.");
@@ -297,14 +297,14 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
             capturedSelections.set(testCase.id, { caseId: testCase.id, inputSha256, request,
                 candidateFixtureIds: Object.fromEntries(candidateIds.map((id) => [id, originalId(id)])),
                 diagnosticOnlyAllCandidateIds: candidateIds });
-            if (captureSelectionInputs) return { output: { ids: [] } };
+            if (captureSelectionInputs) return { output: { requestedFacets: [testCase.query], assessments: [] } };
             const records = selectionFixture!.records.filter((record) => record.caseId === testCase.id && record.run === run);
             if (records.length !== 1 || records[0].inputSha256 !== inputSha256
                 || records[0].model !== selectionModelConfig.model || records[0].provider !== selectionModelConfig.provider) {
                 throw new Error(`Actual selector decision missing or mismatched for ${testCase.id} run ${run}.`);
             }
             const record = records[0];
-            return { output: record.output, usage: record.usage, model: record.model, provider: record.provider };
+            return { output: validateRecordedProviderSelectionOutput(record, actualRequest), usage: record.usage, model: record.model, provider: record.provider };
         };
     }
     async function evaluate(testCase: FixtureCase, run: number): Promise<Result> {

@@ -1,3 +1,4 @@
+import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { loadSelectedPersonalEvidence, recheckPersonalEvidenceCandidates } from '@/lib/server/personal-evidence-candidates';
 import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady } from '@/lib/server/personal-retrieval';
@@ -14,12 +15,12 @@ const supabase = { auth: { getUser }, rpc } as unknown as Parameters<typeof retr
 const ready = (matches: unknown[] = []) => ({ status: 'ready', total_records: matches.length ? 1 : 0, ready_records: matches.length ? 1 : 0, pending_records: 0, failed_records: 0, matches });
 const match = (field = 'reflectionText') => ({ evidence_type: 'reflection', evidence_id: id, revision, field, chunk_index: 0, start_offset: 0, end_offset: 14, similarity: .9 });
 const reflection = { type: 'reflection', evidenceId: `reflection:${id}`, id, userId: 'owner', prompt: 'My prompt', reflectionText: 'Stored answer.', fingerprint: 'current', source: null, sourceStatus: 'unavailable' } as PersonalEvidenceCandidate;
-const selectionGenerator = vi.fn(async () => ({ output: { ids: [`reflection:${id}`] } }));
+const selectionGenerator = vi.fn(async () => ({ output: structuralSelectionOutput([`reflection:${id}`]) }));
 const request = (question: string) => ({ selectionGenerator, supabase, userId: 'owner', scope, question, signal: new AbortController().signal, queryEmbedding: Array.from({ length: 768 }, (_, index) => index === 0 ? 1 : 0) });
 
 beforeEach(() => {
     vi.clearAllMocks();
-    selectionGenerator.mockImplementation(async () => ({ output: { ids: [`reflection:${id}`] } }));
+    selectionGenerator.mockImplementation(async () => ({ output: structuralSelectionOutput([`reflection:${id}`]) }));
     vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([]);
     vi.mocked(recheckPersonalEvidenceCandidates).mockResolvedValue([]);
     rpc.mockReturnValue({ abortSignal });
@@ -75,7 +76,7 @@ describe('indexed personal retrieval orchestration', () => {
         const result = await retrievePersonalEvidence({ ...request('Summarize that idea.'), semanticQuestion,
             selectionGenerator: async (selectionRequest) => {
                 expect(JSON.parse(selectionRequest.prompt)).toMatchObject({ question: semanticQuestion, exactQuote: false });
-                return { output: { ids: [`reflection:${id}`] } };
+                return { output: structuralSelectionOutput([`reflection:${id}`]) };
             },
         });
         expect(result.quoteField).toBeUndefined();
@@ -116,7 +117,7 @@ describe('indexed personal retrieval orchestration', () => {
     it('fails closed when the selector invents an unauthorized ID or fails', async () => {
         abortSignal.mockResolvedValue({ data: ready([match()]), error: null });
         vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([reflection]);
-        selectionGenerator.mockResolvedValueOnce({ output: { ids: ['reflection:another-account'] } });
+        selectionGenerator.mockResolvedValueOnce({ output: structuralSelectionOutput(['reflection:another-account']) });
         await expect(retrievePersonalEvidence(request('Question'))).rejects.toThrow('INVALID_SELECTION');
         selectionGenerator.mockRejectedValueOnce(new Error('provider failed'));
         await expect(retrievePersonalEvidence(request('Question'))).rejects.toThrow('UNAVAILABLE');

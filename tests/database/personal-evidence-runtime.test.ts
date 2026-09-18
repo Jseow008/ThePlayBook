@@ -1,3 +1,4 @@
+import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -494,7 +495,7 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
                 expect((await revoker.auth.signOut({ scope: "global" })).error).toBeNull();
                 await expect(assertActivePersonalRetrievalSession({ supabase, scope: allScope, signal: request.signal }))
                     .rejects.toThrow("RETRIEVAL_SESSION_OR_INDEX_CHANGED");
-                return { output: { ids: [payload.candidates[0].id] } };
+                return { output: structuralSelectionOutput([payload.candidates[0].id]) };
             },
         })).rejects.toThrow("Personal evidence search failed");
         expect(selectionCalled).toBe(true);

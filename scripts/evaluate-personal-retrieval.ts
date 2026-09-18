@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 import { parse } from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 import { createAnthropic } from "@ai-sdk/anthropic";
-import { generateText, Output, type LanguageModelUsage } from "ai";
+import { generateText, Output, NoObjectGeneratedError, type LanguageModelUsage } from "ai";
 import { detectAskIntent, getAnthropicModelName, getOutputTokenCap, getNotesOutputTokenCap, getNotesAnthropicModelName } from "../lib/server/retrieval-generation";
 import type { PersonalEvidenceScope, PersonalEvidenceCandidate } from "../lib/personal-evidence";
 import {
@@ -23,8 +23,8 @@ import { composeLibraryEvidence, buildLibraryEvidencePrompt, type LibrarySourceE
 import { exactPersonalQuoteField, buildPersonalEvidencePrompt } from "../lib/server/personal-retrieval";
 import {
     PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG, PERSONAL_EVIDENCE_SELECTOR_LIMITS,
-    canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash, selectPersonalEvidence, PersonalEvidenceSelectionError,
-    type CanonicalPersonalEvidenceSelectionRequest, type PersonalEvidenceSelectionCandidate,
+    canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash, selectPersonalEvidence, derivePersonalEvidenceSelectionIds, PersonalEvidenceSelectionError,
+    type CanonicalPersonalEvidenceSelectionRequest, type PersonalEvidenceSelectionCandidate, type PersonalEvidenceSelectionRequest,
 } from "../lib/server/personal-evidence-selector";
 
 // Vitest's browser-like project config rewrites import.meta.url; the CLI uses its real module path.
@@ -488,6 +488,7 @@ class ProbeFailure extends Error {
 export function safeProviderFailure(error: unknown): { code: string; status?: number; retryAfterMs?: number; errorName?: string; transportCode?: string } {
     if (error instanceof ProbeFailure) return { code: error.code, status: error.status, retryAfterMs: error.retryAfterMs };
     if (error instanceof PersonalEvidenceSelectionError) return { code: error.code };
+    if (NoObjectGeneratedError.isInstance(error)) return { code: "SELECTOR_INVALID_STRUCTURED_OUTPUT" };
     if (!error || typeof error !== "object") return { code: "PROVIDER_FAILURE" };
     const value = error as { status?: unknown; statusCode?: unknown; code?: unknown; name?: unknown; cause?: { code?: unknown }; responseHeaders?: Record<string, string>; message?: string };
     const httpStatus = (candidate: unknown) => typeof candidate === "number" && Number.isInteger(candidate) && candidate >= 400 && candidate <= 599 ? candidate : undefined;
@@ -516,6 +517,7 @@ export class ProviderScheduler {
     requests = 0;
     events: ProviderEvent[] = [];
     private nextAt = 0;
+    constructor(private readonly maxRetries: number = QUALITY_CONFIG.maxRetries) {}
     async run<T>(kind: string, action: () => Promise<T>): Promise<T> {
         for (let attempt = 0; ; attempt++) {
             if (this.requests >= QUALITY_CONFIG.maxProviderRequestsIncludingRetries) throw new ProbeFailure("REQUEST_BUDGET_EXHAUSTED");
@@ -531,7 +533,7 @@ export class ProviderScheduler {
                 this.events.push({ kind, attempt, outcome: safe.code, durationMs: Math.round(performance.now() - started), status: safe.status, retryAfterMs: safe.retryAfterMs,
                     errorName: safe.errorName, transportCode: safe.transportCode });
                 // Never retry ambiguous generation/network failures. Only explicit rate limits receive a bounded retry.
-                if (safe.status !== 429 || attempt >= QUALITY_CONFIG.maxRetries) throw new ProbeFailure(safe.code, safe.status, safe.retryAfterMs);
+                if (safe.status !== 429 || attempt >= this.maxRetries) throw new ProbeFailure(safe.code, safe.status, safe.retryAfterMs);
                 const delay = safe.retryAfterMs ?? 30_000 * (attempt + 1);
                 if (delay > QUALITY_CONFIG.maxRetryWaitMs) throw new ProbeFailure("PROVIDER_RETRY_DELAY_EXCEEDS_LIMIT", 429, delay);
                 this.nextAt = Date.now() + Math.max(QUALITY_CONFIG.minimumRequestSpacingMs, delay);
@@ -737,9 +739,32 @@ export function readCapturedSelectorInputs(corpus: Corpus, path: string, vectorF
 }
 export type ProviderSelectorRecord = {
     caseId: string; run: number; inputSha256: string; outcome: "complete" | "error";
-    output: { ids: string[] } | null; usage?: Partial<LanguageModelUsage>; model: string; provider: string;
-    rawText?: string; responseId?: string; durationMs: number; errorCode?: string;
+    output: { ids: string[] } | null; providerOutput?: unknown; usage?: Partial<LanguageModelUsage>; model: string; provider: string;
+    rawText?: string; rawTextTruncated?: boolean; rawTextBytes?: number; rawTextSha256?: string; responseId?: string; durationMs: number; errorCode?: string;
 };
+/** Replay the raw model judgment through production validation; IDs alone are insufficient evidence. */
+export function validateRecordedProviderSelectionOutput(
+    record: Pick<ProviderSelectorRecord, "output" | "providerOutput">,
+    request: Pick<PersonalEvidenceSelectionRequest, "schema">,
+): unknown {
+    if (!record.providerOutput || !record.output || !Array.isArray(record.output.ids)) throw new ProbeFailure("SELECTOR_RAW_OUTPUT_REQUIRED");
+    const ids = derivePersonalEvidenceSelectionIds(record.providerOutput, request);
+    if (JSON.stringify(ids) !== JSON.stringify(record.output.ids)) throw new ProbeFailure("SELECTOR_DERIVED_IDS_MISMATCH");
+    return record.providerOutput;
+}
+export function safeSelectorOutputFailure(error: unknown) {
+    if (!NoObjectGeneratedError.isInstance(error)) return undefined;
+    const raw = typeof error.text === "string" ? error.text : "";
+    const bytes = Buffer.from(raw, "utf8"); const truncated = bytes.length > 256 * 1024;
+    let text = truncated ? bytes.subarray(0, 256 * 1024).toString("utf8") : raw;
+    while (Buffer.byteLength(text, "utf8") > 256 * 1024) text = text.slice(0, -1);
+    const count = (value: unknown): number | undefined => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : undefined;
+    const usage: Partial<LanguageModelUsage> = { inputTokens: count(error.usage?.inputTokens), outputTokens: count(error.usage?.outputTokens), totalTokens: count(error.usage?.totalTokens) };
+    let output: unknown = null;
+    if (!truncated) { try { output = JSON.parse(text); } catch { /* Retain raw synthetic model output, not an invented structure. */ } }
+    return { text, output, responseId: typeof error.response?.id === "string" && /^[A-Za-z0-9_:-]{1,200}$/.test(error.response.id) ? error.response.id : "unavailable",
+        usage, rawTextTruncated: truncated, rawTextBytes: bytes.length, rawTextSha256: sha(raw) };
+}
 export function selectorOnlyMetrics(corpus: Corpus, inputs: CapturedSelectorInputs, records: ProviderSelectorRecord[]) {
     const results = Array.from({ length: SELECTOR_EVALUATION_LIMITS.runs }, (_, index) => {
         const run = index + 1;
@@ -769,6 +794,7 @@ export function selectorOnlyMetrics(corpus: Corpus, inputs: CapturedSelectorInpu
 export function capturedSelectorPlan(inputs: CapturedSelectorInputs) {
     return { mode: "offline-selector-plan-no-provider-requests", modelConfig: PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG,
         cases: inputs.records.length, runs: SELECTOR_EVALUATION_LIMITS.runs, plannedGenerationCalls: inputs.records.length * SELECTOR_EVALUATION_LIMITS.runs,
+        maximumOutputTokensPlanned: inputs.records.length * SELECTOR_EVALUATION_LIMITS.runs * PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG.maxOutputTokens,
         revokedCaseIds: inputs.revokedCaseIds, deterministicEmptyCaseIds: inputs.deterministicEmptyCaseIds,
         maximumCandidates: Math.max(0, ...inputs.records.map((item) => item.request.outputSchema.allowedIds.length)),
         maximumPromptBytes: Math.max(0, ...inputs.records.map((item) => Buffer.byteLength(item.request.system + item.request.prompt, "utf8"))),
@@ -783,14 +809,14 @@ async function executeCapturedSelectors(corpus: Corpus, inputPath: string, vecto
     const keys = loadKeys(envFile, { gemini: false, anthropic: true });
     const anthropic = createAnthropic({ apiKey: keys.anthropic! });
     const config = PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG;
-    const scheduler = new ProviderScheduler();
+    const scheduler = new ProviderScheduler(0);
     const records: ProviderSelectorRecord[] = [];
     const totals = { attempts: 0, inputTokens: 0, outputTokens: 0, totalTokens: 0 };
     const startedAt = new Date().toISOString();
     let failure: ReturnType<typeof safeProviderFailure> | null = null;
     mkdirSync(dirname(outputPath), { recursive: true });
     const save = () => writeFileSync(outputPath, JSON.stringify({
-        version: "personal-retrieval-provider-selections-v1", mode: "actual-provider-on-captured-production-inputs",
+        version: "personal-retrieval-provider-selections-v2", mode: "actual-provider-on-captured-production-inputs",
         corpusSha256: corpusHash(corpus), vectorFixtureSha256: inputs.vectorFixtureSha256, modelConfig: config,
         captureFileSha256: capture.sha256, capturedInputs: inputs.records,
         revokedCaseIds: inputs.revokedCaseIds, deterministicEmptyCaseIds: inputs.deterministicEmptyCaseIds,
@@ -808,7 +834,7 @@ async function executeCapturedSelectors(corpus: Corpus, inputPath: string, vecto
         for (let run = 1; run <= SELECTOR_EVALUATION_LIMITS.runs; run++) for (const input of inputs.records) {
             const parsed = JSON.parse(input.request.prompt) as { question: string; exactQuote: boolean; candidates: PersonalEvidenceSelectionCandidate[] };
             const started = performance.now();
-            let rawResult: { text: string; responseId: string; usage: Partial<LanguageModelUsage> } | undefined;
+            let rawResult: { text: string; output: unknown; responseId: string; usage: Partial<LanguageModelUsage>; rawTextTruncated?: boolean; rawTextBytes?: number; rawTextSha256?: string } | undefined;
             const record: ProviderSelectorRecord = { caseId: input.caseId, run, inputSha256: input.inputSha256, outcome: "error", output: null,
                 model: config.model, provider: config.provider, durationMs: 0 };
             try {
@@ -819,21 +845,34 @@ async function executeCapturedSelectors(corpus: Corpus, inputPath: string, vecto
                         return await selectPersonalEvidence({ ...parsed, generate: async (request) => {
                             if (personalEvidenceSelectionRequestHash(request, config) !== input.inputSha256) throw new ProbeFailure("SELECTOR_PRODUCTION_REQUEST_CHANGED");
                             totals.attempts++;
+                            let usageCounted = false;
                             try {
                                 const generated = await generateText({ model: anthropic(config.model), system: request.system, prompt: request.prompt,
                                     output: Output.object({ schema: request.schema }), maxOutputTokens: request.maxOutputTokens,
                                     maxRetries: 0, abortSignal: request.signal });
                                 const usage = generated.usage;
+                                rawResult = { text: generated.text, output: generated.output, responseId: generated.response.id,
+                                    usage: { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, totalTokens: usage.totalTokens,
+                                        inputTokenDetails: usage.inputTokenDetails, outputTokenDetails: usage.outputTokenDetails } };
                                 if (!Number.isSafeInteger(usage.inputTokens) || !Number.isSafeInteger(usage.outputTokens)
                                     || usage.inputTokens! < 0 || usage.outputTokens! < 0) throw new ProbeFailure("SELECTOR_ACTUAL_USAGE_MISSING");
                                 totals.inputTokens += usage.inputTokens!; totals.outputTokens += usage.outputTokens!;
                                 totals.totalTokens += usage.totalTokens ?? usage.inputTokens! + usage.outputTokens!;
-                                rawResult = { text: generated.text, responseId: generated.response.id,
-                                    usage: { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, totalTokens: usage.totalTokens,
-                                        inputTokenDetails: usage.inputTokenDetails, outputTokenDetails: usage.outputTokenDetails } };
+                                usageCounted = true;
                                 if (generated.response.modelId !== config.model) throw new ProbeFailure("SELECTOR_PROVIDER_MODEL_MISMATCH");
                                 return { output: generated.output, usage: rawResult.usage, model: generated.response.modelId, provider: config.provider };
-                            } catch (error) { safeFailure = safeProviderFailure(error); throw error; }
+                            } catch (error) {
+                                const failedOutput = safeSelectorOutputFailure(error);
+                                if (failedOutput) {
+                                    rawResult = failedOutput;
+                                    if (!usageCounted) {
+                                        totals.inputTokens += failedOutput.usage.inputTokens ?? 0;
+                                        totals.outputTokens += failedOutput.usage.outputTokens ?? 0;
+                                        totals.totalTokens += failedOutput.usage.totalTokens ?? (failedOutput.usage.inputTokens ?? 0) + (failedOutput.usage.outputTokens ?? 0);
+                                    }
+                                }
+                                safeFailure = safeProviderFailure(error); throw error;
+                            }
                         } });
                     } catch (error) {
                         if (error instanceof PersonalEvidenceSelectionError && ["DEADLINE_EXCEEDED", "CANCELLED"].includes(error.code)) throw error;
@@ -842,12 +881,13 @@ async function executeCapturedSelectors(corpus: Corpus, inputPath: string, vecto
                     }
                 });
                 if (!rawResult) throw new ProbeFailure("SELECTOR_RAW_RESULT_MISSING");
-                record.output = { ids: result.ids }; record.usage = rawResult.usage;
+                record.output = { ids: result.ids }; record.providerOutput = rawResult.output; record.usage = rawResult.usage;
                 record.rawText = rawResult.text; record.responseId = rawResult.responseId; record.outcome = "complete";
             } catch (error) {
                 record.errorCode = safeProviderFailure(error).code;
                 record.durationMs = Math.round(performance.now() - started);
-                if (rawResult) { record.rawText = rawResult.text; record.usage = rawResult.usage; record.responseId = rawResult.responseId; }
+                if (rawResult) { record.providerOutput = rawResult.output; record.rawText = rawResult.text; record.usage = rawResult.usage; record.responseId = rawResult.responseId;
+                    record.rawTextTruncated = rawResult.rawTextTruncated; record.rawTextBytes = rawResult.rawTextBytes; record.rawTextSha256 = rawResult.rawTextSha256; }
                 records.push(record); save(); throw error;
             }
             record.durationMs = Math.round(performance.now() - started); records.push(record); save();

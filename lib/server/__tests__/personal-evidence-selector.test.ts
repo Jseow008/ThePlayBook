@@ -1,8 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
+import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
 import {
-    PERSONAL_EVIDENCE_SELECTOR_LIMITS, PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION,
+    PERSONAL_EVIDENCE_SELECTOR_LIMITS, PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION, PERSONAL_EVIDENCE_SELECTION_OUTPUT_SCHEMA_VERSION,
     buildPersonalEvidenceSelectionRequest, canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash,
-    selectPersonalEvidence, type PersonalEvidenceSelectionCandidate, type PersonalEvidenceSelectionGenerator,
+    derivePersonalEvidenceSelectionIds, selectPersonalEvidence, type PersonalEvidenceSelectionCandidate, type PersonalEvidenceSelectionGenerator,
+    type PersonalEvidenceSelectionOutput,
 } from "../personal-evidence-selector";
 
 const providerMocks = vi.hoisted(() => ({ generateText: vi.fn(), anthropic: vi.fn(), openai: vi.fn() }));
@@ -21,7 +24,7 @@ const reflection = (): PersonalEvidenceSelectionCandidate => ({ id: "reflection:
 const source = (): PersonalEvidenceSelectionCandidate => ({ id: "source_segment:available-3", type: "source_segment", title: "Current editorial source",
     fields: [{ name: "sourceText", text: "Listening carefully can reveal what help someone actually wants." }] });
 const generation = (ids: string[] = []): PersonalEvidenceSelectionGenerator => vi.fn(async () => ({
-    output: { ids }, model: "structural-test-model", provider: "structural-test",
+    output: structuralSelectionOutput(ids), model: "structural-test-model", provider: "structural-test",
     usage: { inputTokens: 130, outputTokens: 8, totalTokens: 138 },
 }));
 
@@ -55,6 +58,9 @@ describe("bounded semantic evidence selector", () => {
         expect(request.system).toContain("Separate mentions of its two endpoints do not establish a connection");
         expect(request.system).toContain("remove any candidate whose removal would leave all requested facets equally supported");
         expect(request.system).toContain("retain every distinct requested side of a comparison");
+        expect(request.system).toContain("never stored evidence");
+        expect(request.system).toContain("A matching title can identify the requested source");
+        expect(createHash("sha256").update(request.system).digest("hex")).toBe("54ef00d5a59ff24c88c608bfcdfa822ac019fd77f47e5e5e57c91ad15df2a309");
         expect(JSON.parse(request.prompt).candidates).toEqual(candidates);
     });
 
@@ -112,11 +118,15 @@ describe("bounded semantic evidence selector", () => {
 
     it.each([
         undefined,
-        { ids: ["invented-or-other-account"] },
-        { ids: ["highlight:owned-1", "highlight:owned-1"] },
-        { ids: ["highlight:owned-1"], quote: "Model-generated text is forbidden" },
+        { ids: ["highlight:owned-1"] }, // Legacy IDs-only output is no longer accepted.
+        structuralSelectionOutput(["invented-or-other-account"]),
+        structuralSelectionOutput(["highlight:owned-1", "highlight:owned-1"]),
+        { ...structuralSelectionOutput(["highlight:owned-1"]), quote: "Model-generated text is forbidden" },
         { ids: "highlight:owned-1" },
         { ids: [123] },
+        { requestedFacets: [], assessments: [] },
+        { requestedFacets: [" "], assessments: [] },
+        { requestedFacets: ["Question"], assessments: [{ id: "highlight:owned-1", verdict: "direct" }] },
     ])("fails closed for malformed, unknown, duplicate, or extra output fields", async (output) => {
         await expect(selectPersonalEvidence({ question: "Find evidence", candidates: [highlight()], generate: async () => ({ output }) }))
             .rejects.toMatchObject({ code: "INVALID_SELECTION" });
@@ -129,7 +139,7 @@ describe("bounded semantic evidence selector", () => {
         expect(result.ids).toEqual([reflection().id]);
         const request = vi.mocked(generate).mock.calls[0][0];
         expect(JSON.parse(request.prompt)).toMatchObject({ exactQuote: true, maximumSelected: 1 });
-        expect(request.schema.safeParse({ ids: candidates.map((item) => item.id) }).success).toBe(false);
+        expect(request.schema.safeParse(structuralSelectionOutput(candidates.map((item) => item.id))).success).toBe(false);
         await expect(selectPersonalEvidence({ question: "Quote exactly", candidates, exactQuote: true, generate: generation(candidates.map((item) => item.id)) }))
             .rejects.toMatchObject({ code: "INVALID_SELECTION" });
     });
@@ -146,7 +156,7 @@ describe("bounded semantic evidence selector", () => {
 
     it("normalizes missing/invalid usage as unknown rather than fabricating token counts", async () => {
         const result = await selectPersonalEvidence({ question: "Find evidence", candidates: [highlight()],
-            generate: async () => ({ output: { ids: [] }, usage: { inputTokens: Number.NaN, outputTokens: -4, totalTokens: undefined } }) });
+            generate: async () => ({ output: structuralSelectionOutput([]), usage: { inputTokens: Number.NaN, outputTokens: -4, totalTokens: undefined } }) });
         expect(result.usage).toEqual({ inputTokens: null, outputTokens: null, totalTokens: null, cachedInputTokens: null });
     });
 
@@ -161,8 +171,53 @@ describe("bounded semantic evidence selector", () => {
         expect(quote.canonical.outputSchema.maximumSelected).toBe(1);
         expect(personalEvidenceSelectionRequestHash(quote.request)).not.toBe(hash);
         expect(() => canonicalPersonalEvidenceSelectionRequest({ ...built.canonical, system: "Changed system" })).toThrow();
-        expect(() => canonicalPersonalEvidenceSelectionRequest({ ...built.canonical, outputSchema: { allowedIds: ["other"], maximumSelected: 8 } })).toThrow();
+        expect(built.canonical.outputSchema).toMatchObject({ version: PERSONAL_EVIDENCE_SELECTION_OUTPUT_SCHEMA_VERSION,
+            additionalProperties: false, requestedFacets: { minItems: 1, maxItems: 8, items: { minLength: 1, maxLength: 2000, nonBlank: true } },
+            assessments: { minItems: 0, maxItems: 8, uniqueIds: true, items: { additionalProperties: false,
+                required: ["id", "requestedFacet", "supportSummary", "constraintCheck", "verdict"],
+                properties: { verdict: { enum: ["direct", "adjacent", "not_established", "contradicts_requested_claim"] } } } } });
+        expect(() => canonicalPersonalEvidenceSelectionRequest({ ...built.canonical, outputSchema: { ...built.canonical.outputSchema, allowedIds: ["other"] } })).toThrow();
+        const changedBound = { ...built.canonical.outputSchema, requestedFacets: { ...built.canonical.outputSchema.requestedFacets,
+            items: { ...built.canonical.outputSchema.requestedFacets.items, maxLength: 300 } } };
+        expect(() => canonicalPersonalEvidenceSelectionRequest({ ...built.canonical, outputSchema: changedBound as typeof built.canonical.outputSchema })).toThrow();
         expect(() => canonicalPersonalEvidenceSelectionRequest({ ...built.canonical, prompt: "null" })).toThrow();
+    });
+
+    it("derives only direct IDs while keeping all assessment prose private", async () => {
+        const candidates = [highlight(), reflection(), source()];
+        const output: PersonalEvidenceSelectionOutput = structuralSelectionOutput(candidates.map(item => item.id));
+        output.requestedFacets = ["Private internal facet"];
+        output.assessments[0].verdict = "adjacent";
+        output.assessments[1].verdict = "not_established";
+        output.assessments[2].supportSummary = "Private internal assessment that must not reach the answer generator";
+        const result = await selectPersonalEvidence({ question: "Find support", candidates, generate: async () => ({ output }) });
+        expect(result.ids).toEqual([source().id]);
+        expect(result).not.toHaveProperty("assessments");
+        expect(result).not.toHaveProperty("requestedFacets");
+        expect(JSON.stringify(result)).not.toContain("Private internal");
+        const request = buildPersonalEvidenceSelectionRequest({ question: "Find support", candidates }).request;
+        expect(derivePersonalEvidenceSelectionIds(output, request)).toEqual([source().id]);
+        output.assessments[2].verdict = "contradicts_requested_claim";
+        expect(derivePersonalEvidenceSelectionIds(output, request)).toEqual([]);
+        output.assessments.push(output.assessments[0]);
+        expect(() => derivePersonalEvidenceSelectionIds(output, request)).toThrow("INVALID_SELECTION");
+    });
+
+    it("accepts2000-character internal explanations and rejects malformed fields without heuristic rewriting", () => {
+        const request = buildPersonalEvidenceSelectionRequest({ question: "Find support", candidates: [highlight()] }).request;
+        const output = structuralSelectionOutput([highlight().id]);
+        output.requestedFacets = ["f".repeat(2000)];
+        output.assessments[0].requestedFacet = "q".repeat(2000);
+        output.assessments[0].supportSummary = "s".repeat(2000);
+        output.assessments[0].constraintCheck = "c".repeat(2000);
+        expect(derivePersonalEvidenceSelectionIds(output, request)).toEqual([highlight().id]);
+        for (const field of ["requestedFacet", "supportSummary", "constraintCheck"] as const) {
+            expect(() => derivePersonalEvidenceSelectionIds({ ...output, assessments: [{ ...output.assessments[0], [field]: "x".repeat(2001) }] }, request)).toThrow("INVALID_SELECTION");
+        }
+        expect(() => derivePersonalEvidenceSelectionIds({ ...output, requestedFacets: ["x".repeat(2001)] }, request)).toThrow("INVALID_SELECTION");
+        expect(() => derivePersonalEvidenceSelectionIds({ ...output, requestedFacets: Array(9).fill("A facet") }, request)).toThrow("INVALID_SELECTION");
+        expect(() => derivePersonalEvidenceSelectionIds({ ...output, assessments: [{ ...output.assessments[0], supportSummary: " " }] }, request)).toThrow("INVALID_SELECTION");
+        expect(() => derivePersonalEvidenceSelectionIds({ ...output, assessments: [{ ...output.assessments[0], verdict: "maybe" }] }, request)).toThrow("INVALID_SELECTION");
     });
 });
 
@@ -201,14 +256,14 @@ describe("selector deadlines and cancellation", () => {
 });
 
 describe("existing provider configuration and AI SDK6 structured output", () => {
-    const sdkResult = () => ({ output: { ids: [highlight().id] }, usage: { inputTokens: 55, outputTokens: 7, totalTokens: 62 }, response: { modelId: "actual-provider-model" } });
+    const sdkResult = () => ({ output: structuralSelectionOutput([highlight().id]), usage: { inputTokens: 55, outputTokens: 7, totalTokens: 62 }, response: { modelId: "actual-provider-model" } });
 
     it("uses Anthropic Haiku by default, structured output, no SDK retries and the bounded abort signal", async () => {
         vi.stubEnv("ANTHROPIC_API_KEY", "dummy-key-never-sent");
         providerMocks.generateText.mockResolvedValue(sdkResult());
         const result = await selectPersonalEvidence({ question: "Find evidence", candidates: [highlight()] });
         expect(providerMocks.generateText).toHaveBeenCalledWith(expect.objectContaining({
-            model: { provider: "anthropic", modelId: "claude-haiku-4-5-20251001" }, maxRetries: 0, maxOutputTokens: 700,
+            model: { provider: "anthropic", modelId: "claude-haiku-4-5-20251001" }, maxRetries: 0, maxOutputTokens: 1600,
             abortSignal: expect.any(AbortSignal), output: expect.objectContaining({ name: "object" }),
         }));
         expect(result.provider).toBe("anthropic");

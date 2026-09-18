@@ -1,17 +1,18 @@
 import { getNotesAnthropicModelName, detectAskIntent, getAnthropicModelName, getOutputTokenCap, getNotesOutputTokenCap } from "../../../lib/server/retrieval-generation";
 /** Structural harness tests. These never call a model or establish semantic quality. */
+import { NoObjectGeneratedError } from "ai";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-    authorizedFixtureRows, fixtureExclusionPass, qualityScoreExitCode, createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
+    safeSelectorOutputFailure, validateRecordedProviderSelectionOutput, authorizedFixtureRows, fixtureExclusionPass, qualityScoreExitCode, createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
     retrieveFixtureCase, safeProviderFailure, scopedRows, scoreQuality, QUALITY_CONFIG, ProviderScheduler,
     readCapturedSelectorInputs, capturedSelectorPlan, selectorOnlyMetrics, FROZEN_CORPUS_SHA256,
     type Adjudication, type FixtureCase, type FixtureEvidence, type Corpus, type QualityRecord, type VectorBank, type CapturedSelectorInputs,
 } from "../../../scripts/evaluate-personal-retrieval";
-import { buildPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash, PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG }
+import { selectPersonalEvidence, buildPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash, PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG }
     from "../../../lib/server/personal-evidence-selector";
 
 const corpus = readFrozenCorpus();
@@ -427,5 +428,62 @@ describe("v2 final-scoring authorization oracle", () => {
         expect(fixtureExclusionPass(input, testCase, { selectedIds: ["reflection"], contextText: "", responseText: null })).toBe(false);
         expect(authorizedFixtureRows(input, { ...testCase, request: { ...testCase.request, sessionState: "revoked" } })).toEqual([]);
         expect(fixtureExclusionPass(input, { ...testCase, request: { ...testCase.request, notesScope: { version: 1, itemType: "note" } } }, { selectedIds: ["highlight"], contextText: "", responseText: null })).toBe(false);
+    });
+});
+
+describe("v4 recorded selector judgments", () => {
+    const candidates = ["a", "b"].map((id) => ({ id, type: "highlight" as const, title: "Neutral entry", fields: [{ name: "highlightedText" as const, text: `Stored field ${id}` }] }));
+    const question = "Which stored field establishes the requested fact?";
+    const assessment = (id: string, verdict: "direct" | "adjacent") => ({ id, requestedFacet: "requested fact", supportSummary: "Synthetic structural assessment", constraintCheck: "Synthetic identity check", verdict });
+    it("replays the exact structured judgments and derives only direct IDs through production code", async () => {
+        const providerOutput = { requestedFacets: ["requested fact"], assessments: [assessment("b", "adjacent"), assessment("a", "direct")] };
+        const request = buildPersonalEvidenceSelectionRequest({ question, candidates }).request;
+        const validated = validateRecordedProviderSelectionOutput({ output: { ids: ["a"] }, providerOutput }, request);
+        expect(validated).toBe(providerOutput);
+        const result = await selectPersonalEvidence({ question, candidates, generate: async () => ({ output: validated }) });
+        expect(result.ids).toEqual(["a"]);
+        expect(providerOutput.assessments).toHaveLength(2);
+    });
+    it("rejects legacy IDs-only fixtures and derived IDs that disagree with judgments", () => {
+        const request = buildPersonalEvidenceSelectionRequest({ question, candidates }).request;
+        expect(() => validateRecordedProviderSelectionOutput({ output: { ids: ["a"] } }, request)).toThrow("SELECTOR_RAW_OUTPUT_REQUIRED");
+        expect(() => validateRecordedProviderSelectionOutput({ output: { ids: ["a"] }, providerOutput: { requestedFacets: ["requested fact"], assessments: [assessment("a", "adjacent")] } }, request)).toThrow("SELECTOR_DERIVED_IDS_MISMATCH");
+        expect(() => validateRecordedProviderSelectionOutput({ output: { ids: [] }, providerOutput: { requestedFacets: ["requested fact"], assessments: [assessment("unknown", "direct")] } }, request)).toThrow();
+    });
+    it("hash-binds the complete canonical schema and output budget", () => {
+        const prepared = buildPersonalEvidenceSelectionRequest({ question, candidates });
+        const hash = personalEvidenceSelectionRequestHash(prepared.canonical);
+        expect(hash).toMatch(/^[a-f0-9]{64}$/);
+        expect(prepared.canonical.maxOutputTokens).toBe(1600);
+        Object.assign(prepared.canonical.outputSchema, { unexpectedWeakenedSchema: true });
+        expect(() => personalEvidenceSelectionRequestHash(prepared.canonical)).toThrow();
+    });
+});
+
+describe("safe paid selector failure evidence", () => {
+    function errorWith(text: string) {
+        return new NoObjectGeneratedError({ text, message: "private provider message must not be persisted", cause: new Error("private cause"),
+            response: { id: "msg_synthetic", modelId: "synthetic-model", timestamp: new Date(0), headers: { authorization: "never-persist-secret" } },
+            usage: { inputTokens: 123, outputTokens: 45, totalTokens: 168,
+                inputTokenDetails: { noCacheTokens: 123, cacheReadTokens: 0, cacheWriteTokens: 0 }, outputTokenDetails: { textTokens: 45, reasoningTokens: 0 } }, finishReason: "length" });
+    }
+    it("retains synthetic model output and paid usage without error metadata or credentials", () => {
+        const text = '{"requestedFacets":["Synthetic facet"],"assessments":[]}';
+        const result = safeSelectorOutputFailure(errorWith(text));
+        expect(result).toMatchObject({ text, output: { requestedFacets: ["Synthetic facet"], assessments: [] }, usage: { inputTokens: 123, outputTokens: 45, totalTokens: 168 }, rawTextTruncated: false });
+        expect(result?.rawTextSha256).toBe(hash(text));
+        expect(JSON.stringify(result)).not.toMatch(/never-persist-secret|private provider|private cause|authorization/);
+        expect(safeSelectorOutputFailure(new Error("private ordinary failure"))).toBeUndefined();
+    });
+    it("bounds raw text while retaining original hash/length and never invents a parsed output", () => {
+        const text = "x".repeat(300_000); const result = safeSelectorOutputFailure(errorWith(text))!;
+        expect(Buffer.byteLength(result.text)).toBe(256 * 1024);
+        expect(result).toMatchObject({ output: null, rawTextTruncated: true, rawTextBytes: 300_000, rawTextSha256: hash(text) });
+        expect(Buffer.byteLength(safeSelectorOutputFailure(errorWith("界".repeat(100_000)))!.text)).toBeLessThanOrEqual(256 * 1024);
+    });
+    it("does not retry a rate-limited selector acquisition", async () => {
+        const action = vi.fn(async () => { throw { statusCode: 429 }; });
+        await expect(new ProviderScheduler(0).run("anthropic-selector", action)).rejects.toMatchObject({ status: 429 });
+        expect(action).toHaveBeenCalledTimes(1);
     });
 });

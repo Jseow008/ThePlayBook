@@ -80,8 +80,8 @@ outcomes. Raw acquisition JSON is preserved losslessly in the compressed evidenc
 files; their compressed/original hashes are recorded in the provenance manifest.
 
 The selector's current model/configuration comes from the production helper:
-Haiku 4.5, prompt V3, at most 96 intermediate candidates, 256 KiB complete candidate
-blocks, a 20-second deadline and 700 output tokens. Its evaluation is capped at
+Haiku 4.5, prompt V4, at most 96 intermediate candidates, 256 KiB complete candidate
+blocks, a 20-second deadline and 1,600 output tokens. Its evaluation is capped at
 200 attempts and two million measured input tokens. Actual three-run calls are
 never copied to simulate independent runs. Provider failures stop and checkpoint
 the batch, rather than becoming successful abstentions.
@@ -98,6 +98,6 @@ price estimate is supplied.
 
 The earlier full-scope rank-all diagnostic is retained only to reproduce the
 recorded development failure. It does not invoke the production retrieval RPCs,
-prove real authorization, or satisfy the current release gate. Historical V1
+prove real authorization, or satisfy the current release gate. Historical V1 and the failed V2 selector-V3
 outputs remain bound to their original prompt/model; they cannot be replayed as
 if produced by a changed selector.

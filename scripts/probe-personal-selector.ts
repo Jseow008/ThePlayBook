@@ -98,7 +98,7 @@ async function main() {
     const modelConfig = selectorDevelopmentModelConfig(process.argv.find(arg => arg.startsWith("--model="))?.slice("--model=".length));
     if (!process.argv.includes("--execute")) {
         console.log(JSON.stringify({ mode: "plan", fixtureSha256: fixture.sha256, modelConfig, caseIds: fixture.cases.map(item => item.id),
-            maximumProviderCalls: 6, maximumOutputTokensPerCall: 700, providerCallsMade: 0 }, null, 2));
+            maximumProviderCalls: 6, maximumOutputTokensPerCall: modelConfig.maxOutputTokens, providerCallsMade: 0 }, null, 2));
     } else {
         const output = process.argv.find(arg => arg.startsWith("--output="))?.slice("--output=".length);
         if (!output) throw new Error("Explicit --output path required for a provider run");

@@ -99,12 +99,29 @@ from assistant history or an export snapshot. Incomplete indexing and provider o
 database failures are explicit retryable failures, never successful empty results.
 
 The selector receives complete candidate span blocks, bounded to 96 candidates and
-256 KiB including titles/field labels. It has a 20-second deadline, 700 output-token
+256 KiB including titles/field labels. It has a 20-second deadline, 1,600 output-token
 limit, no automatic retry or request-time provider fallback, and may return no
 relevant evidence. Its IDs are validated against the authorized input. Provider
 failure is an explicit retrieval failure, never an empty answer. Exact quotation
 uses semantic target selection followed by the stored field, not generated wording.
 Selector input/usage is a separate intermediate cost from the final answer budget.
+The v4 candidate uses one structured relevance-assessment call. It identifies the
+requested facets, briefly assesses support and constraints, and derives IDs only
+from direct-support verdicts. These generated assessments are internal judgments:
+they are neither stored evidence nor passed to answer generation or the client.
+Unknown/duplicate IDs and malformed output fail explicitly. Internal strings have
+a 2,000-character bound; the model's total output limit and eight-assessment limit
+remain enforced. This replaces an ID-only response, not authorization checks.
+
+This design was selected through separate development probes. A strict quotation-
+witness variant was rejected after only 12/18 valid responses. The simpler variant
+made the expected selections in all 21 raw responses, including three eight-record
+comparisons, but its initial short-string schema rejected one 351-character
+explanation. All 21 saved responses conform under the documented larger string
+bounds; that offline check made no provider calls and is not a benchmark pass.
+The original 20/21 validated result remains preserved. New exact-configuration
+provider execution and the unchanged frozen benchmark gates are still required.
+
 Retrieval requests record one admitted AI usage event before paid provider work,
 including quotations, abstentions, cancellation, and failed attempts. Generation
 does not charge the same retrieval request again. Existing quota checking and

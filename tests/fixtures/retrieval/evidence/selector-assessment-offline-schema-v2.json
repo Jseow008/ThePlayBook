@@ -1,0 +1,392 @@
+{
+  "version": "selector-assessment-offline-revalidation-v2",
+  "mode": "offline-only revalidation of raw saved DEVELOPMENT responses",
+  "providerCallsMade": 0,
+  "sourceArtifact": "selector-assessment-development-v1.json",
+  "sourceArtifactSha256": "9a29b6573296be092f137f7ef4d979f765376b6caa30d61b328c021cfe743095",
+  "sourceSystemPromptSha256": "54ef00d5a59ff24c88c608bfcdfa822ac019fd77f47e5e5e57c91ad15df2a309",
+  "sourceProviderSchemaVersion": "selector-reasoned-assessment-schema-v1",
+  "revalidationSchemaVersion": "selector-reasoned-assessment-schema-v2",
+  "revalidationSchemaLimits": {
+    "internalStringCharacters": 2000,
+    "requestedFacets": 8,
+    "assessments": 8
+  },
+  "revalidationModuleSha256": "19f3bb04296a4519b044b8d967bc9fa5d61ff9894074a4a26473eaf4c5fe8cf5",
+  "schemaDelta": {
+    "requestedFacetsItemCharacters": {
+      "from": 240,
+      "to": 2000
+    },
+    "requestedFacetCharacters": {
+      "from": 240,
+      "to": 2000
+    },
+    "supportSummaryCharacters": {
+      "from": 300,
+      "to": 2000
+    },
+    "constraintCheckCharacters": {
+      "from": 300,
+      "to": 2000
+    },
+    "otherSchemaAndSelectionRules": "unchanged"
+  },
+  "originalResult": {
+    "validAndPassing": 20,
+    "total": 21,
+    "changed": false,
+    "originalFailure": "Run3 named-organization-not-established: constraintCheck351characters exceeded300."
+  },
+  "offlineResult": {
+    "valid": 21,
+    "expectedIdsAgreement": 21,
+    "total": 21
+  },
+  "actualProviderOutputBudget": {
+    "sourceMaxOutputTokens": 1600,
+    "sourceMaximumObservedOutputTokens": 712,
+    "changed": false
+  },
+  "records": [
+    {
+      "run": 1,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "sourceInputSha256": "a44ecff5a80b2af8584d4fc386acff261e0e9341e09a67d412c19a6a739cb054",
+      "rawResponseSha256": "d09088168da76191c8a709fb4f1b052542b7ca3853625b118eff7e38b2584d19",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p02"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 1,
+      "caseId": "same-name-different-profession",
+      "sourceInputSha256": "401ec587f128c29244e14e66c29cf8aa93e6bda370b7ba13fa87003915ba0b38",
+      "rawResponseSha256": "de80cda14ee95fbd060d1ff24313979bd68d04e19c080e621704e3dc92bcb1fa",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p06"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 1,
+      "caseId": "named-organization-not-established",
+      "sourceInputSha256": "f703bbf15eab95f7105021d617ff04619ab1704fe5d0df4cdbfdf043183d01d7",
+      "rawResponseSha256": "67cc93a3dbc0313d7dd1bd82df33a93ad91f7e854eb15c5cfae1357bb05498be",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 1,
+      "caseId": "unsupported-causal-connection",
+      "sourceInputSha256": "53144d0259b2e1c90e413ced78e97b6fd2bf1587a66a0cd0cf3a41b355c6bfe7",
+      "rawResponseSha256": "b182c795d08dd66264d8e9e04b0629f76872e35599a300e4bacca6c6febda6cc",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 1,
+      "caseId": "three-requested-comparison-facets",
+      "sourceInputSha256": "a15f00d9f2d8f076efc0c2ec1bdf1b0fca28f49b46015efd772594163a0c96dc",
+      "rawResponseSha256": "00e45f24ea37706111f1021bdcd1da37a083c5f81896da09f532d03ee25c9282",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 1,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "sourceInputSha256": "3c669872bc599ebc302f0db068920f3706a6658482bf5990117ae56bee69fc63",
+      "rawResponseSha256": "ba2911e59bc8b35c55bb6f9ab2dcda7d654429f839850b3c00b26b2a4058821b",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p18",
+        "p19"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 1,
+      "caseId": "eight-greenhouse-procedures",
+      "sourceInputSha256": "eb03d28504004eb800aa3d09bde5b44f148e2f5bb0cfc3add5357547a80714a9",
+      "rawResponseSha256": "1f9c4de8b3e2a4e4bf54a8173a24afdef52253a063f1454acae4f622ef3504c8",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 2,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "sourceInputSha256": "a44ecff5a80b2af8584d4fc386acff261e0e9341e09a67d412c19a6a739cb054",
+      "rawResponseSha256": "eb0127cf278507387143e02b8a23d307b7be822cbc0c131d1bfe9de5fedd55a1",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p02"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 2,
+      "caseId": "same-name-different-profession",
+      "sourceInputSha256": "401ec587f128c29244e14e66c29cf8aa93e6bda370b7ba13fa87003915ba0b38",
+      "rawResponseSha256": "fd08ef281d194e65fa0a4744c15e2c6725e98ac5a3d500b13ef15b6c9f10ffd6",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p06"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 2,
+      "caseId": "named-organization-not-established",
+      "sourceInputSha256": "f703bbf15eab95f7105021d617ff04619ab1704fe5d0df4cdbfdf043183d01d7",
+      "rawResponseSha256": "6f1ae06fd67b10f416acbd3f86f6674aba20fca08117455ef08772def72d32cb",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 2,
+      "caseId": "unsupported-causal-connection",
+      "sourceInputSha256": "53144d0259b2e1c90e413ced78e97b6fd2bf1587a66a0cd0cf3a41b355c6bfe7",
+      "rawResponseSha256": "29558db34f2d020c878f4e9ea8dba33df4d5e2e1a34acdeba6e8000b8bf5a6e5",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 2,
+      "caseId": "three-requested-comparison-facets",
+      "sourceInputSha256": "a15f00d9f2d8f076efc0c2ec1bdf1b0fca28f49b46015efd772594163a0c96dc",
+      "rawResponseSha256": "45ab52f48192f3fc59deb363c11c0b8510c864fcadbc2254e09afb00eb165a39",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 2,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "sourceInputSha256": "3c669872bc599ebc302f0db068920f3706a6658482bf5990117ae56bee69fc63",
+      "rawResponseSha256": "e810458c595c9539809aa3fc10226c184b443078eeda12513c60ef853e9b3d51",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p18",
+        "p19"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 2,
+      "caseId": "eight-greenhouse-procedures",
+      "sourceInputSha256": "eb03d28504004eb800aa3d09bde5b44f148e2f5bb0cfc3add5357547a80714a9",
+      "rawResponseSha256": "a6761e52d7d70a1c42d7bed5f0a1a82172da5b4f9a243b8737371d9a3873f825",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 3,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "sourceInputSha256": "a44ecff5a80b2af8584d4fc386acff261e0e9341e09a67d412c19a6a739cb054",
+      "rawResponseSha256": "e2321ba5e25595095d68bcb43ec285ce61db16491662fb5dc2484500d2a2ab1c",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p02"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 3,
+      "caseId": "same-name-different-profession",
+      "sourceInputSha256": "401ec587f128c29244e14e66c29cf8aa93e6bda370b7ba13fa87003915ba0b38",
+      "rawResponseSha256": "82500849745f7a49305c35ec6a43ea1743a6ca369ca3a6da95c055c386637fef",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p06"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 3,
+      "caseId": "named-organization-not-established",
+      "sourceInputSha256": "f703bbf15eab95f7105021d617ff04619ab1704fe5d0df4cdbfdf043183d01d7",
+      "rawResponseSha256": "58335ffcfe99ca9648f21591b758c5ffb933217d24529debbb3142b14a225de7",
+      "originalOutcome": "invalid_structured_output",
+      "originalPassed": false,
+      "offlineValid": true,
+      "offlineSelectedIds": [],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 3,
+      "caseId": "unsupported-causal-connection",
+      "sourceInputSha256": "53144d0259b2e1c90e413ced78e97b6fd2bf1587a66a0cd0cf3a41b355c6bfe7",
+      "rawResponseSha256": "b5afb360a4c19cf2c47b409822d7d40469cd278ed2eabe4242061629bf6e9e75",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 3,
+      "caseId": "three-requested-comparison-facets",
+      "sourceInputSha256": "a15f00d9f2d8f076efc0c2ec1bdf1b0fca28f49b46015efd772594163a0c96dc",
+      "rawResponseSha256": "13c523d2c112d20bbd7e0324784a36e49138d47b4a0b3cd874cdd3112338b0a7",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 3,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "sourceInputSha256": "3c669872bc599ebc302f0db068920f3706a6658482bf5990117ae56bee69fc63",
+      "rawResponseSha256": "02b8e19eb4f0145d263010150066e25c25a957529c719def96c6f9a7d8786e32",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "p18",
+        "p19"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    },
+    {
+      "run": 3,
+      "caseId": "eight-greenhouse-procedures",
+      "sourceInputSha256": "eb03d28504004eb800aa3d09bde5b44f148e2f5bb0cfc3add5357547a80714a9",
+      "rawResponseSha256": "13933c9d69570ced0653589c860399d043e1edad4cf8c36b2d0c147845562e7f",
+      "originalOutcome": "complete",
+      "originalPassed": true,
+      "offlineValid": true,
+      "offlineSelectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "offlineExpectedIdsAgreement": true,
+      "validationError": null,
+      "validationIssues": []
+    }
+  ],
+  "limitations": [
+    "No response was regenerated with the new schema; future provider behavior with this schema remains untested.",
+    "Only internal-string length bounds changed. Unknown and duplicate IDs, invalid enums, blank or missing fields, object strictness, array limits, and final direct-ID derivation remain unchanged.",
+    "A structure check cannot prove semantic support. Generated assessments remain internal model judgments, not stored evidence.",
+    "The original20/21 result and previous failed evaluations are preserved; this offline development exercise is not a held-out benchmark pass."
+  ]
+}

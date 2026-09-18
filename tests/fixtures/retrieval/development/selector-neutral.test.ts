@@ -1,3 +1,4 @@
+import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
 import { describe, expect, it, vi } from "vitest";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,23 +27,23 @@ describe("neutral-title selector development harness (structural proof only)", (
             expect(prompt).not.toHaveProperty("expectedIds");
             expect(prompt).not.toHaveProperty("caseId");
             expect(prompt.candidates).toEqual(testCase.candidates);
-            return { output: { ids: testCase.expectedIds }, usage: { inputTokens: 200, outputTokens: 12, totalTokens: 212 }, model: "structural-mock", provider: "injected" };
+            return { output: structuralSelectionOutput(testCase.expectedIds), usage: { inputTokens: 200, outputTokens: 12, totalTokens: 212 }, model: "structural-mock", provider: "injected" };
         });
         const result = await runSelectorDevelopmentProbe({ generate });
         expect(generate).toHaveBeenCalledTimes(6);
         expect(result.passedCases).toBe(6);
         expect(result.evidenceKind).toContain("structural proof only");
-        expect(result.records[0]).toMatchObject({ rawSyntheticOutput: { ids: ["c02"] }, usage: { totalTokens: 212 } });
+        expect(result.records[0]).toMatchObject({ rawSyntheticOutput: structuralSelectionOutput(["c02"]), usage: { totalTokens: 212 } });
         expect(result.pricing.estimatedUsd).toBeNull();
         expect(result.records[0].inputSha256).toMatch(/^[0-9a-f]{64}$/);
         expect(result.records[0].systemPromptSha256).toMatch(/^[0-9a-f]{64}$/);
     });
     it("does not manufacture a pass when a valid but irrelevant ID is selected", async () => {
-        const result = await runSelectorDevelopmentProbe({ cases: [fixture.cases[0]], generate: async () => ({ output: { ids: ["c01"] } }) });
+        const result = await runSelectorDevelopmentProbe({ cases: [fixture.cases[0]], generate: async () => ({ output: structuralSelectionOutput(["c01"]) }) });
         expect(result.records[0]).toMatchObject({ outcome: "complete", passed: false, selectedIds: ["c01"] });
     });
     it("binds the explicit diagnostic model to the request hash without changing its prompt or fixture", async () => {
-        const generate: PersonalEvidenceSelectionGenerator = async () => ({ output: { ids: [] } });
+        const generate: PersonalEvidenceSelectionGenerator = async () => ({ output: structuralSelectionOutput([]) });
         const baseline = await runSelectorDevelopmentProbe({ cases: [fixture.cases[0]], generate });
         const comparison = await runSelectorDevelopmentProbe({ cases: [fixture.cases[0]], generate, model: "claude-sonnet-4-6" });
         expect(comparison.modelConfig.model).toBe("claude-sonnet-4-6");
@@ -54,11 +55,11 @@ describe("neutral-title selector development harness (structural proof only)", (
         expect(() => selectorDevelopmentModelConfig("unapproved-model")).toThrow();
     });
     it("stops after a rejected or unavailable provider response and retains the failure denominator", async () => {
-        const generate = vi.fn<PersonalEvidenceSelectionGenerator>(async () => ({ output: { ids: ["invented-id"] } }));
+        const generate = vi.fn<PersonalEvidenceSelectionGenerator>(async () => ({ output: structuralSelectionOutput(["invented-id"]) }));
         const result = await runSelectorDevelopmentProbe({ generate });
         expect(generate).toHaveBeenCalledTimes(1);
         expect(result).toMatchObject({ expectedCases: 6, completedCases: 1, passedCases: 0 });
-        expect(result.records[0]).toMatchObject({ error: "INVALID_SELECTION", rawSyntheticOutput: { ids: ["invented-id"] } });
+        expect(result.records[0]).toMatchObject({ error: "INVALID_SELECTION", rawSyntheticOutput: structuralSelectionOutput(["invented-id"]) });
     });
     it("accepts only the two independent development fixtures and preserves multi-facet and abstention cases", () => {
         const precision = readSelectorDevelopmentFixture("selector-precision-v1.json");
@@ -81,7 +82,7 @@ describe("neutral-title selector development harness (structural proof only)", (
             let call = 0;
             const generate = vi.fn<PersonalEvidenceSelectionGenerator>(async () => {
                 expect(JSON.parse(readFileSync(destination, "utf8")).records).toHaveLength(call);
-                return { output: { ids: fixture.cases[call++].expectedIds }, usage: { inputTokens: 100, outputTokens: 8, totalTokens: 108 } };
+                return { output: structuralSelectionOutput(fixture.cases[call++].expectedIds), usage: { inputTokens: 100, outputTokens: 8, totalTokens: 108 } };
             });
             const result = await runSelectorDevelopmentProbe({ cases: fixture.cases.slice(0, 2), generate, onProgress: progress });
             expect(result.actualCalls).toBe(2);

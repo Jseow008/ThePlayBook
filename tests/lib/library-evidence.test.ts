@@ -1,3 +1,4 @@
+import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
 import { describe, expect, it, vi } from 'vitest';
 import { composeLibraryEvidence, selectLibraryEvidence, loadLibrarySourceEvidence, type LibrarySourceEvidence } from '@/lib/server/library-evidence';
 import type { rankPersonalEvidence } from '@/lib/server/personal-evidence-ranking';
@@ -68,7 +69,7 @@ describe('joint semantic evidence selection', () => {
     it('selects a lower-vector-ranked relevant source and expands its exact stored text', async () => {
         const correct = source('correct', 'Complete stored source, including its ending.', .6);
         correct.span = { text: 'Complete stored source', start: 0, end: 22 };
-        const generate = vi.fn(async () => ({ output: { ids: ['source_segment:correct'] } }));
+        const generate = vi.fn(async () => ({ output: structuralSelectionOutput(['source_segment:correct']) }));
         const result = await selectLibraryEvidence({ personal: emptyPersonal(), sources: [source('glossary', 'A shared word definition.', .99), correct],
             question: 'Quote the passage about the stored source exactly.', signal: new AbortController().signal, selectionGenerator: generate });
         expect(result.exactQuote).toBe(correct.text);
@@ -78,13 +79,13 @@ describe('joint semantic evidence selection', () => {
     it('keeps provider selection order instead of resorting by vector similarity', async () => {
         const result = await selectLibraryEvidence({ personal: emptyPersonal(), sources: [source('high', 'Related detail.', .99), source('low', 'Core answer.', .6)],
             question: 'Explain the answer.', signal: new AbortController().signal,
-            selectionGenerator: async () => ({ output: { ids: ['source_segment:low', 'source_segment:high'] } }) });
+            selectionGenerator: async () => ({ output: structuralSelectionOutput(['source_segment:low', 'source_segment:high']) }) });
         expect(result.evidenceIds).toEqual(['source_segment:low', 'source_segment:high']);
     });
     it('does not replace a semantic abstention with vector matches', async () => {
         const result = await selectLibraryEvidence({ personal: emptyPersonal(), sources: [source('unrelated', 'A generic passage.')],
             question: 'What is my private booking reference?', signal: new AbortController().signal,
-            selectionGenerator: async () => ({ output: { ids: [] } }) });
+            selectionGenerator: async () => ({ output: structuralSelectionOutput([]) }) });
         expect(result.evidenceIds).toEqual([]);
         expect(result.exactQuote).toBeNull();
         expect(result.contextText).toBe('');
@@ -95,7 +96,7 @@ describe('joint semantic evidence selection', () => {
             question: 'Summarize that idea.', semanticQuestion, signal: new AbortController().signal,
             selectionGenerator: async (request) => {
                 expect(JSON.parse(request.prompt)).toMatchObject({ question: semanticQuestion, exactQuote: false });
-                return { output: { ids: ['source_segment:current'] } };
+                return { output: structuralSelectionOutput(['source_segment:current']) };
             },
         });
         expect(result.exactQuote).toBeNull();
