@@ -7,7 +7,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-    safeSelectorOutputFailure, validateRecordedProviderSelectionOutput, authorizedFixtureRows, fixtureExclusionPass, qualityScoreExitCode, createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
+    emptyEvidenceMeasurement, readGenerationContinuation, safeSelectorOutputFailure, validateRecordedProviderSelectionOutput, authorizedFixtureRows, fixtureExclusionPass, qualityScoreExitCode, createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
     retrieveFixtureCase, safeProviderFailure, scopedRows, scoreQuality, QUALITY_CONFIG, ProviderScheduler,
     readCapturedSelectorInputs, capturedSelectorPlan, selectorOnlyMetrics, FROZEN_CORPUS_SHA256,
     type Adjudication, type FixtureCase, type FixtureEvidence, type Corpus, type QualityRecord, type VectorBank, type CapturedSelectorInputs,
@@ -302,6 +302,21 @@ describe("production database generation capture validation", () => {
             expectedCases: records.length, executedCases: records.length, records };
         const save = () => writeFileSync(path, JSON.stringify(artifact)); save(); return { path, artifact, save };
     }
+    it("reuses only a verified complete prefix and rejects ambiguous paid failures", () => {
+        const fixture = captureFile(); const capture = readDatabaseGenerationInputs(corpus, fixture.path);
+        const first = capture.artifact.records[0]; const last = capture.artifact.records[1];
+        const measurement = { count: 1, cacheHit: false, source: "provider-count-tokens-this-execution", inputSha256: createHash("sha256").update(JSON.stringify({ model: first.generationInput!.model, messages: [{ role: "user", content: " " }] })).digest("hex") };
+        const complete = { caseId: first.caseId, run: first.run, outcome: "complete", selectedIds: [], contextText: "", responseText: "No evidence.", branch: "no_evidence", modelCalled: false, evidenceTokenCount: 1, tokenMeasurements: { evidence: measurement } };
+        const failed = { caseId: last.caseId, run: last.run, outcome: "error", selectedIds: [], contextText: "", responseText: "No evidence.", branch: "no_evidence", modelCalled: false, evidenceTokenCount: null, errorCode: "TOKEN_COUNT_FAILED" };
+        const artifact = { ...databaseGenerationPlan(corpus, capture), mode: "actual-generation-from-production-database-capture", productionHashes: capture.artifact.productionHashes, records: [complete, failed], counters: { generationAttempts: 0, reservedGenerationTokens: 0 }, events: [{ kind: "anthropic-token-count", attempt: 0, outcome: "success", durationMs: 1 }, { kind: "anthropic-token-count", attempt: 0, outcome: "TOKEN_COUNT_FAILED", status: 400, durationMs: 1 }], failure: { code: "TOKEN_COUNT_FAILED", status: 400 } };
+        const path = fixture.path + ".previous"; const save = () => writeFileSync(path, JSON.stringify(artifact)); save();
+        const resumed = readGenerationContinuation(corpus, capture, path);
+        expect(resumed.records).toEqual([complete]); expect(resumed.events).toHaveLength(2); expect(resumed.previousFailure).toEqual(artifact.failure);
+        failed.modelCalled = true; save(); expect(() => readGenerationContinuation(corpus, capture, path)).toThrow("CONTINUATION_INVALID"); failed.modelCalled = false;
+        artifact.inputSha256 = "a".repeat(64); save(); expect(() => readGenerationContinuation(corpus, capture, path)).toThrow("CONTINUATION_INVALID"); artifact.inputSha256 = capture.sha256;
+        artifact.counters.generationAttempts = 1; save(); expect(() => readGenerationContinuation(corpus, capture, path)).toThrow("CONTINUATION_INVALID"); artifact.counters.generationAttempts = 0;
+        complete.responseText = "Changed text"; save(); expect(() => readGenerationContinuation(corpus, capture, path)).toThrow("CONTINUATION_INVALID");
+    });
     it("has a network-free plan bound to complete production replay", () => {
         const fetch = vi.fn(); vi.stubGlobal("fetch", fetch); const fixture = captureFile();
         const capture = readDatabaseGenerationInputs(corpus, fixture.path);
@@ -486,4 +501,11 @@ describe("safe paid selector failure evidence", () => {
         await expect(new ProviderScheduler(0).run("anthropic-selector", action)).rejects.toMatchObject({ status: 429 });
         expect(action).toHaveBeenCalledTimes(1);
     });
+});
+
+it("uses an explicit structural zero only when no evidence or model request exists", () => {
+    expect(emptyEvidenceMeasurement("no_evidence", "", [])).toMatchObject({ count: 0, cacheHit: false, source: "no-evidence-no-model-request" });
+    expect(emptyEvidenceMeasurement("model", "", [])).toBeNull();
+    expect(emptyEvidenceMeasurement("no_evidence", "stored evidence", [])).toBeNull();
+    expect(emptyEvidenceMeasurement("no_evidence", "", ["capture-id"])).toBeNull();
 });

@@ -11,9 +11,22 @@ stored quotations are 36/36, and actual forbidden-ID/session checks pass. Each
 run includes one irrelevant additional personal capture for the Willow editorial
 question; those three misses remain recorded. All requested comparison facets
 and required field text survived composition. These are retrieval results, not a
-final-answer quality pass: answer generation, token proof and independent answer
-review remain in progress. Evidence is in `provider-selections-v2-selector-v4.json`
+final-answer quality pass. Evidence is in `provider-selections-v2-selector-v4.json`
 and `evidence/database-quality-v2-selector-v4.json` under the retrieval fixtures.
+
+The first answer-generation batch is preserved and held: 30 actual model answers
+completed before the measurement runner submitted an invalid empty message to
+the provider's token-count endpoint. The corrected runner records an explicit
+structural zero when no evidence message or model request exists. It can resume
+this precise operational failure without repeating confirmed model responses,
+but continuation is paused for a separate quality reason. Independent review
+found 28/30 answers grounded and 30/30 complete: one Haiku answer changed a spatial
+detail, and one Sonnet answer added unsupported event timing. All 11 applicable
+answers preserved attached-note attribution. Neither stronger-model assumptions
+nor passing retrieval scores excuse those factual changes. The original raw
+artifact, failure provenance and response-bound review remain under `evidence/`;
+the 60 unexecuted model answers are not counted as passes. A bounded correction
+is being tested on separate development examples before any new holdout execution.
 
 The final-code browser journey at `87599d1` passed capture, actual indexing,
 reflection-only exact retrieval, reader reopening and verified export. Independent

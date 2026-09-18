@@ -963,7 +963,7 @@ export function databaseGenerationPlan(corpus: Corpus, capture: ReturnType<typeo
         config: QUALITY_CONFIG, independentAdjudication: "Required separately, with reviewer kind and rubric/response hashes. Independent AI review is reported as AI, never human.",
         boundaries: "Uses captured production DB retrieval and exact generation prompts. No rank-all diagnostic adapter. No automatic release pass." };
 }
-export type TokenMeasurement = { count: number; cacheHit: boolean; inputSha256: string; source: "provider-count-tokens-this-execution" };
+export type TokenMeasurement = { count: number; cacheHit: boolean; inputSha256: string; source: "provider-count-tokens-this-execution" | "no-evidence-no-model-request" };
 /** Execution-local only; model + exact provider request body determine cache identity. */
 export function createExecutionTokenCounter(measure: (model: string, system: string | undefined, text: string) => Promise<number>) {
     const cache = new Map<string, number>();
@@ -978,22 +978,82 @@ export function createExecutionTokenCounter(measure: (model: string, system: str
         return { count, cacheHit: false, inputSha256, source: "provider-count-tokens-this-execution" };
     };
 }
-async function executeDatabaseGeneration(corpus: Corpus, inputPath: string, outputPath: string, envFile: string) {
+/** There is no evidence message to tokenize in this deterministic branch. */
+export function emptyEvidenceMeasurement(branch: string, text: string, selectedIds: readonly string[]): TokenMeasurement | null {
+    if (branch !== "no_evidence" || text !== "" || selectedIds.length !== 0) return null;
+    return { count: 0, cacheHit: false, inputSha256: sha(JSON.stringify({ branch, evidenceMessage: null, modelRequest: null })), source: "no-evidence-no-model-request" };
+}
+export function readGenerationContinuation(corpus: Corpus, capture: ReturnType<typeof readDatabaseGenerationInputs>, path: string) {
+    const raw = readFileSync(path, "utf8");
+    const previous = JSON.parse(raw) as { mode: string; corpusSha256: string; inputSha256: string; config: unknown;
+        productionHashes: Record<string, string>; records: QualityRecord[]; events: ProviderEvent[];
+        counters: { generationAttempts: number; reservedGenerationTokens: number }; failure: { code: string; status: number }; continuation?: unknown };
+    const reject = () => { throw new ProbeFailure("GENERATION_CONTINUATION_INVALID_OR_AMBIGUOUS"); };
+    if (previous.mode !== "actual-generation-from-production-database-capture" || previous.corpusSha256 !== corpusHash(corpus)
+        || previous.inputSha256 !== capture.sha256 || JSON.stringify(previous.config) !== JSON.stringify(QUALITY_CONFIG)
+        || JSON.stringify(previous.productionHashes) !== JSON.stringify(capture.artifact.productionHashes)
+        || previous.continuation || !Array.isArray(previous.records) || previous.records.length < 1
+        || previous.records.length > capture.artifact.records.length || !Array.isArray(previous.events)
+        || previous.failure?.code !== "TOKEN_COUNT_FAILED" || previous.failure.status !== 400) reject();
+    let attempts = 0; let reserved = 0;
+    previous.records.forEach((record, index) => {
+        const source = capture.artifact.records[index]; const input = source.generationInput;
+        if (record.caseId !== source.caseId || record.run !== source.run || record.contextText !== source.contextText
+            || JSON.stringify(record.selectedIds) !== JSON.stringify(source.selectedIds) || record.branch !== (input?.branch ?? "no_evidence")) reject();
+        if (index === previous.records.length - 1) {
+            if (record.outcome !== "error" || record.errorCode !== "TOKEN_COUNT_FAILED" || record.modelCalled || record.modelResult
+                || record.evidenceTokenCount !== null || record.tokenMeasurements?.evidence
+                || !emptyEvidenceMeasurement(record.branch, record.contextText, record.selectedIds)) reject();
+            return;
+        }
+        if (record.outcome !== "complete" || record.errorCode || !Number.isInteger(record.evidenceTokenCount) || record.evidenceTokenCount! < 0) reject();
+        if (input?.branch === "model") {
+            const result = record.modelResult;
+            if (!record.modelCalled || !result || result.modelId !== input.model || result.text !== record.responseText
+                || !result.responseId || ![result.inputTokens, result.outputTokens, result.totalTokens].every((v) => Number.isInteger(v) && v! >= 0)
+                || !record.tokenMeasurements?.prompt || result.promptCountEstimate !== record.tokenMeasurements.prompt.count) reject();
+            attempts++; reserved += QUALITY_CONFIG.maxSinglePromptTokens + input.maxOutputTokens;
+        } else if (record.modelCalled || record.modelResult || record.responseText !== (source.deniedRevokedSession ? "Request rejected: revoked session." : input?.deterministicText)) reject();
+        if (!source.deniedRevokedSession) {
+            for (const [kind, measurement] of Object.entries(record.tokenMeasurements ?? {})) {
+                const expected = sha(JSON.stringify({ model: input!.model, ...(kind === "prompt" ? { system: input!.system } : {}),
+                    messages: [{ role: "user", content: (kind === "prompt" ? input!.query : source.contextText) || " " }] }));
+                if (!measurement || measurement.source !== "provider-count-tokens-this-execution" || measurement.inputSha256 !== expected
+                    || !Number.isInteger(measurement.count) || measurement.count < 0) reject();
+            }
+            if (record.tokenMeasurements?.evidence?.count !== record.evidenceTokenCount) reject();
+        }
+    });
+    const events = previous.events;
+    if (previous.counters?.generationAttempts !== attempts || previous.counters.reservedGenerationTokens !== reserved
+        || events.length > QUALITY_CONFIG.maxProviderRequestsIncludingRetries
+        || events.filter((event) => event.kind === "anthropic-generation").length !== attempts
+        || events.some((event, index) => !["anthropic-generation", "anthropic-token-count"].includes(event.kind)
+            || event.attempt !== 0 || !Number.isFinite(event.durationMs) || event.durationMs < 0
+            || (index === events.length - 1 ? event.kind !== "anthropic-token-count" || event.outcome !== "TOKEN_COUNT_FAILED" || event.status !== 400 : event.outcome !== "success"))) reject();
+    return { sourceSha256: sha(raw), records: previous.records.slice(0, -1), counters: previous.counters, events,
+        previousFailure: previous.failure, retriedRecord: previous.records.at(-1)!, remainingModelCalls: capture.artifact.records.slice(previous.records.length - 1).filter((r) => r.generationInput?.branch === "model").length };
+}
+async function executeDatabaseGeneration(corpus: Corpus, inputPath: string, outputPath: string, envFile: string, resumePath?: string) {
     const capture = readDatabaseGenerationInputs(corpus, inputPath);
     if (existsSync(outputPath)) throw new ProbeFailure("OUTPUT_ALREADY_EXISTS_USE_NEW_PATH");
+    const continuation = resumePath ? readGenerationContinuation(corpus, capture, resumePath) : null;
     mkdirSync(dirname(outputPath), { recursive: true });
     const keys = loadKeys(envFile, { gemini: false, anthropic: true }); const anthropic = createAnthropic({ apiKey: keys.anthropic });
-    const scheduler = new ProviderScheduler(); const records: QualityRecord[] = [];
+    const scheduler = new ProviderScheduler(); const records: QualityRecord[] = continuation ? [...continuation.records] : [];
+    if (continuation) { scheduler.events = [...continuation.events]; scheduler.requests = continuation.events.length; }
     const measuredTokens = createExecutionTokenCounter((model, system, text) => scheduler.run("anthropic-token-count", () => countTokens(keys.anthropic!, model, system, text)));
-    const counters = { generationAttempts: 0, reservedGenerationTokens: 0 }; let failure: ReturnType<typeof safeProviderFailure> | null = null;
+    const counters = continuation ? { ...continuation.counters } : { generationAttempts: 0, reservedGenerationTokens: 0 }; let failure: ReturnType<typeof safeProviderFailure> | null = null;
     const save = () => writeFileSync(outputPath, JSON.stringify({ ...databaseGenerationPlan(corpus, capture),
         mode: "actual-generation-from-production-database-capture", productionHashes: capture.artifact.productionHashes,
+        generationHarnessSha256: sha(readFileSync(SCRIPT_PATH, "utf8")),
+        continuation: continuation ? { sourceSha256: continuation.sourceSha256, reusedCompleteRecords: continuation.records.length, previousFailure: continuation.previousFailure, retriedRecord: continuation.retriedRecord, tokenCache: "new execution; copied records retain original measurement provenance" } : undefined,
         records, counters, events: scheduler.events, failure, score: scoreQuality(corpus, records, [], true),
         reviewInstructions: "Every generated response requires response-SHA-bound independent review with reviewerKind human or ai, independent=true and rubricSha256 matching this frozen corpus. Require answerComplete=true only when the answer covers every requested facet (including personal comparisons), as well as grounded=true. A grounded source-only answer to a requested personal comparison is incomplete. Never label AI review as human or use the generator to silently grade itself.",
     }, null, 2) + "\n");
     save();
     try {
-        for (const source of capture.artifact.records) {
+        for (const source of capture.artifact.records.slice(continuation?.records.length ?? 0)) {
             const input = source.generationInput;
             const record: QualityRecord = { caseId: source.caseId, run: source.run, outcome: "error", selectedIds: source.selectedIds,
                 contextText: source.contextText, responseText: input?.deterministicText ?? null, branch: input?.branch ?? "no_evidence",
@@ -1001,7 +1061,7 @@ async function executeDatabaseGeneration(corpus: Corpus, inputPath: string, outp
             try {
                 if (source.deniedRevokedSession) { record.evidenceTokenCount = 0; record.responseText = "Request rejected: revoked session."; }
                 else if (input) {
-                    record.tokenMeasurements = { evidence: await measuredTokens(input.model, undefined, source.contextText) };
+                    record.tokenMeasurements = { evidence: emptyEvidenceMeasurement(input.branch, source.contextText, source.selectedIds) ?? await measuredTokens(input.model, undefined, source.contextText) };
                     record.evidenceTokenCount = record.tokenMeasurements.evidence!.count;
                     if (record.evidenceTokenCount > QUALITY_CONFIG.evidenceTokens) throw new ProbeFailure("EVIDENCE_TOKEN_BUDGET_EXCEEDED");
                     if (input.branch === "model") {
@@ -1027,7 +1087,7 @@ async function executeDatabaseGeneration(corpus: Corpus, inputPath: string, outp
             records.push(record); save();
         }
     } catch (error) { failure = safeProviderFailure(error); save(); throw error; }
-    finally { readDatabaseGenerationInputs(corpus, inputPath); }
+    finally { readDatabaseGenerationInputs(corpus, inputPath); if (resumePath && sha(readFileSync(resumePath, "utf8")) !== continuation!.sourceSha256) throw new ProbeFailure("GENERATION_CONTINUATION_SOURCE_CHANGED"); }
 }
 
 async function main() {
@@ -1036,11 +1096,13 @@ async function main() {
     const databaseResults = args.find((arg) => arg.startsWith("--database-results="))?.slice("--database-results=".length);
     if (databaseResults) {
         const capture = readDatabaseGenerationInputs(corpus, resolve(databaseResults));
-        if (!args.includes("--execute")) { console.log(JSON.stringify(databaseGenerationPlan(corpus, capture), null, 2)); return; }
+        const resumePath = args.find((arg) => arg.startsWith("--resume-generation-from="))?.slice("--resume-generation-from=".length);
+        const continuation = resumePath ? readGenerationContinuation(corpus, capture, resolve(resumePath)) : null;
+        if (!args.includes("--execute")) { console.log(JSON.stringify({ ...databaseGenerationPlan(corpus, capture), continuation: continuation ? { sourceSha256: continuation.sourceSha256, reusedCompleteRecords: continuation.records.length, remainingModelCalls: continuation.remainingModelCalls, cumulativeCounters: continuation.counters, priorProviderRequests: continuation.events.length } : null }, null, 2)); return; }
         const output = args.find((arg) => arg.startsWith("--output="))?.slice("--output=".length);
         if (!output) throw new ProbeFailure("EXPLICIT_NEW_OUTPUT_PATH_REQUIRED");
         const envFile = args.find((arg) => arg.startsWith("--env-file="))?.slice("--env-file=".length) ?? resolve(ROOT, ".env.local");
-        await executeDatabaseGeneration(corpus, resolve(databaseResults), resolve(output), resolve(envFile)); return;
+        await executeDatabaseGeneration(corpus, resolve(databaseResults), resolve(output), resolve(envFile), resumePath ? resolve(resumePath) : undefined); return;
     }
     const selectorInputs = args.find((arg) => arg.startsWith("--selector-inputs="))?.slice("--selector-inputs=".length);
     if (selectorInputs) {
