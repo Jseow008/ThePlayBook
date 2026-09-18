@@ -109,13 +109,23 @@ npm run validate:launch-env
 HEALTH_CHECK_SECRET=... npm run check:deployment-health -- --url https://<your-production-domain>
 ```
 
-CI runs:
+For application changes, CI runs:
 
 - lint
 - TypeScript typecheck
 - Vitest
 - Next.js build
 - Playwright
+
+CI classifies documentation-only changes before starting expensive validation. Only the explicit documentation allowlist qualifies; an unknown path, a mixed change, or unavailable comparison evidence takes the full validation path. Required `validate` and `Security Validation` checks still report a result, including the classification reason. Documentation-only classification does not waive production migration or deployment gates.
+
+The first CI efficiency pass keeps all browser projects, assertions, and application/security test coverage. It changes scheduling and execution only:
+
+- New pull-request commits cancel superseded runs for that same pull request. Main-branch and manual runs are not cancelled by later runs.
+- Browser installation includes Chromium only, matching all currently configured browser projects. The iPhone/iPad project names describe viewport emulation, not WebKit coverage.
+- CI sets `PLAYWRIGHT_SERVER_MODE=production` so Playwright starts the preceding `npm run build` artifact with `npm run start -- --port 3100`. It does not set `PLAYWRIGHT_TEST`, which would select the separate development output directory. Ordinary local Playwright runs retain their development-server behavior; `PLAYWRIGHT_BASE_URL` still selects an already running server.
+
+Validate workflow changes with both documentation-only and full application paths. Broader viewport selection, security-check consolidation, and performance-job scheduling require separate measured changes; they are not part of this first pass.
 
 Relevant config:
 

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3100';
+const useProductionServer = process.env.PLAYWRIGHT_SERVER_MODE === 'production';
 
 export default defineConfig({
     testDir: './tests/e2e',
@@ -64,8 +65,12 @@ export default defineConfig({
     webServer: process.env.PLAYWRIGHT_BASE_URL
         ? undefined
         : {
-            command: 'npm run dev -- --port 3100',
-            env: { PLAYWRIGHT_TEST: '1' },
+            command: useProductionServer
+                ? 'npm run start -- --port 3100'
+                : 'npm run dev -- --port 3100',
+            // Production mode consumes the normal .next artifact built by CI.
+            // PLAYWRIGHT_TEST selects a separate development output directory.
+            env: useProductionServer ? undefined : { PLAYWRIGHT_TEST: '1' },
             url: baseURL,
             reuseExistingServer: false,
         },

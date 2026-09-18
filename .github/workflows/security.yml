@@ -14,6 +14,11 @@ on:
   schedule:
     - cron: "17 12 * * *"
 
+# Superseded PR verification can stop; main/manual runs retain unique groups.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   security-gate:
     if: github.event_name != 'schedule'
@@ -58,19 +63,29 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Classify verification scope
+        id: scope
+        continue-on-error: true
+        run: node scripts/classify-ci-changes.mjs
+
       - name: Install dependencies
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm ci
 
       - name: Production dependency audit
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run security:audit
 
       - name: Validate launch environment
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run validate:launch-env
 
       - name: Validate unique migration versions
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run check:migration-versions
 
       - name: Setup local Supabase
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: |
           set -o pipefail
 
@@ -104,6 +119,7 @@ jobs:
             >> "$GITHUB_ENV"
 
       - name: Supabase SQL drift checks
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: |
           # This password exists only for the lifecycle of the disposable
           # database container. It is never persisted or printed.
@@ -128,6 +144,7 @@ jobs:
           npm run database:email-rpc-security
 
       - name: Security route and static tests
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm run test:security
 
   catalog-search-evidence:
@@ -145,6 +162,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -152,10 +171,17 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Classify verification scope
+        id: scope
+        continue-on-error: true
+        run: node scripts/classify-ci-changes.mjs
+
       - name: Install dependencies
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: npm ci
 
       - name: Prepare disposable Supabase
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         run: |
           npx supabase start
           npx supabase db reset
@@ -167,13 +193,14 @@ jobs:
             >> "$GITHUB_ENV"
 
       - name: Run catalog search evidence
+        if: steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false'
         env:
           CATALOG_SEARCH_PERFORMANCE: "1"
           CATALOG_SEARCH_EVIDENCE_PATH: ${{ runner.temp }}/catalog-search-evidence.json
         run: npm run database:catalog-search-runtime
 
       - name: Retain catalog search evidence
-        if: always()
+        if: always() && (steps.scope.outcome != 'success' || steps.scope.outputs.run_full != 'false')
         uses: actions/upload-artifact@v4
         with:
           name: catalog-search-evidence-${{ github.sha }}
