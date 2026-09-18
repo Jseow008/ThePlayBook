@@ -167,7 +167,7 @@ function ScopeChangedBanner({
                         Scope changed
                     </p>
                     <p className="mt-1 text-xs leading-relaxed text-foreground/78">
-                        Your filters changed. This chat is still grounded in the earlier notes snapshot.
+                        Your filters changed. This chat still searches using its earlier filters.
                     </p>
                 </div>
 

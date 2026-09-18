@@ -247,6 +247,19 @@ describe("captured production selector protocol", () => {
         expect(fetch).not.toHaveBeenCalled();
         expect(() => readCapturedSelectorInputs(corpus, saved(input), "b".repeat(64))).toThrow("SELECTOR_CAPTURE_CONFIGURATION_MISMATCH");
     });
+    it("accepts production unavailable-title only for a retained capture whose source is withdrawn", () => {
+        const input = captured(); const fixture = structuredClone(corpus);
+        for (const record of input.records) {
+            const request = JSON.parse(record.request.prompt);
+            request.candidates[0].title = "Source unavailable";
+            record.request = buildPersonalEvidenceSelectionRequest(request).canonical;
+            record.inputSha256 = personalEvidenceSelectionRequestHash(record.request);
+        }
+        expect(() => readCapturedSelectorInputs(fixture, saved(input))).toThrow("SELECTOR_CAPTURE_NON_SYNTHETIC_TITLE");
+        const id = Object.values(input.records[0].candidateFixtureIds)[0];
+        fixture.evidence.find((row) => row.id === id)!.lifecycle = { record: "present", source: "withdrawn" };
+        expect(readCapturedSelectorInputs(fixture, saved(input)).artifact.records).toHaveLength(56);
+    });
     it("rejects missing cases and stale request hashes instead of shrinking the benchmark", () => {
         const missing = captured(); missing.records.pop();
         expect(() => readCapturedSelectorInputs(corpus, saved(missing))).toThrow("SELECTOR_CAPTURE_INCOMPLETE");

@@ -1,4 +1,19 @@
-# Personal retrieval evidence v1
+# Personal retrieval evidence
+
+The current holdout is the independently reviewed, frozen `corpus-v2.json`.
+`benchmark-v2-contract.md` records its actual product scopes, lifecycle rules,
+relevance rubric, unchanged numeric thresholds, and pre-acquisition review.
+V1 and its failed results remain preserved; V2 is a separate measurement, not a
+relabeled V1 pass. `PROVIDER_QUALITY_HARNESS.md` explains acquisition, real-database
+replay, and independent answer assessment.
+
+Raw V2 vector-acquisition responses are compressed without changing their JSON
+bytes. `evidence/vector-acquisition-provenance-v2.json` records both compressed and
+original hashes. The original failed attempt and successful bounded continuation
+are separate records. Decompress them to inspect the actual provider vectors and
+attempt counters; the normalized vector fixture is what the database runner uses.
+
+## Preserved V1 baseline
 
 `corpus-v1.json` freezes 58 cases: 12 positive cases for each of source segments,
 highlights (including written notes), and reflections; six mixed-scope cases;
