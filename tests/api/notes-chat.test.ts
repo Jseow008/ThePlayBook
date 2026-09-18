@@ -9,6 +9,8 @@ import { checkAiUsageQuota, recordGeneratedAiMessage } from "@/lib/server/ai-usa
 import { streamText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 
+const readySessionStatus = { status: "ready", total_records: 0, ready_records: 0, pending_records: 0, failed_records: 0 };
+
 vi.mock('@/lib/server/personal-retrieval', async (importOriginal) => ({
     ...await importOriginal<typeof import('@/lib/server/personal-retrieval')>(),
     retrievePersonalEvidence: vi.fn(),
@@ -62,6 +64,7 @@ describe("Notes chat API", () => {
     afterEach(() => vi.unstubAllEnvs());
     const mockUser = { id: "user-123" };
     const mockAuthUser = vi.fn();
+    const sessionStatusQuery = { abortSignal: vi.fn() };
     const highlightQuery = {
         select: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
@@ -73,11 +76,13 @@ describe("Notes chat API", () => {
     const mockSupabaseClient = {
         auth: { getUser: mockAuthUser },
         from: vi.fn().mockReturnValue(highlightQuery),
+        rpc: vi.fn().mockReturnValue(sessionStatusQuery),
     };
 
     beforeEach(() => {
         vi.clearAllMocks();
         vi.mocked(retrievePersonalEvidence).mockReset();
+        sessionStatusQuery.abortSignal.mockReset().mockResolvedValue({ data: readySessionStatus, error: null });
         vi.mocked(retrievePersonalEvidence).mockResolvedValue({
             items: [{ exactQuote: null }], contextText: 'Verified written note: discipline and focus.', candidateCount: 1201,
         } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
@@ -123,6 +128,55 @@ describe("Notes chat API", () => {
         expect(res.status).toBe(401);
         const json = await res.json();
         expect(json.error.message).toContain("Ask These Notes");
+        expect(mockSupabaseClient.rpc).not.toHaveBeenCalled();
+    });
+
+    it("rejects a revoked live session before quota checks, charging or retrieval despite getUser succeeding", async () => {
+        sessionStatusQuery.abortSignal.mockResolvedValueOnce({ data: null, error: { code: "42501" } });
+        const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({
+            messages: [{ role: "user", content: "Summarize these notes" }], scope: { version: 1, itemType: "all" },
+        }) }));
+        expect(response.status).toBe(401);
+        expect((await response.json()).error.code).toBe("UNAUTHORIZED");
+        expect(mockAuthUser).toHaveBeenCalledOnce();
+        expect(mockSupabaseClient.rpc).toHaveBeenCalledWith("personal_evidence_index_status", { p_scope: { version: 1, itemType: "all" } });
+        expect(checkAiUsageQuota).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(retrievePersonalEvidence).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+        expect(anthropic).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { data: null, error: { code: "57014" } },
+        { data: {}, error: null },
+    ])("returns retryable failure before quota or provider work when session verification fails", async (status) => {
+        sessionStatusQuery.abortSignal.mockResolvedValueOnce(status);
+        const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({
+            messages: [{ role: "user", content: "Summarize these notes" }], scope: { version: 1, itemType: "all" },
+        }) }));
+        expect(response.status).toBe(503);
+        expect((await response.json()).error.code).toBe("RETRIEVAL_UNAVAILABLE");
+        expect(checkAiUsageQuota).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(retrievePersonalEvidence).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { status: "pending", total_records: 2, ready_records: 1, pending_records: 1, failed_records: 0 },
+        { status: "failed", total_records: 2, ready_records: 1, pending_records: 0, failed_records: 1 },
+    ])("admits a valid session whose global index is $status so scoped retrieval decides readiness", async (data) => {
+        sessionStatusQuery.abortSignal.mockResolvedValueOnce({ data, error: null });
+        const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({
+            messages: [{ role: "user", content: "Summarize these notes" }], scope: { version: 1, itemType: "reflection" },
+        }) }));
+        expect(response.status).toBe(200);
+        expect(checkAiUsageQuota).toHaveBeenCalledOnce();
+        expect(recordGeneratedAiMessage).toHaveBeenCalledOnce();
+        expect(retrievePersonalEvidence).toHaveBeenCalledOnce();
+        expect(sessionStatusQuery.abortSignal.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(checkAiUsageQuota).mock.invocationCallOrder[0]);
+        expect(retrievePersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({ scope: { version: 1, itemType: "reflection" } }));
     });
 
     it("validates the scoped payload", async () => {
@@ -383,7 +437,10 @@ describe('Notes retrieval delivery boundary', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         process.env.ANTHROPIC_API_KEY = 'test-key'; process.env.GEMINI_API_KEY = 'test-key';
-        vi.mocked(createClient).mockResolvedValue({ auth: { getUser: async () => ({ data: { user: { id: 'ordinary-a' } }, error: null }) } } as unknown as Awaited<ReturnType<typeof createClient>>);
+        vi.mocked(createClient).mockResolvedValue({
+            auth: { getUser: async () => ({ data: { user: { id: 'ordinary-a' } }, error: null }) },
+            rpc: vi.fn(() => ({ abortSignal: vi.fn().mockResolvedValue({ data: readySessionStatus, error: null }) })),
+        } as unknown as Awaited<ReturnType<typeof createClient>>);
         vi.mocked(rateLimit).mockResolvedValue({ success: true });
         vi.mocked(checkAiUsageQuota).mockResolvedValue({ allowed: true, windows: [] } as unknown as Awaited<ReturnType<typeof checkAiUsageQuota>>);
         vi.mocked(retrievePersonalEvidence).mockReset();

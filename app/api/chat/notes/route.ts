@@ -13,6 +13,7 @@ import { PersonalEvidenceScopeSchema } from "@/lib/personal-evidence";
 import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady, buildPersonalEvidencePrompt } from "@/lib/server/personal-retrieval";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
+import { assertActiveChatSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 
 export const maxDuration = 60;
 
@@ -96,6 +97,18 @@ export async function POST(req: NextRequest) {
                 authState: "authenticated",
                 message: "Too many requests. Please wait a moment.",
             });
+        }
+
+        // getUser can accept a revoked but unexpired JWT. Verify the live
+        // session before quota admission, usage charging, or provider work.
+        try {
+            await assertActiveChatSession({ supabase, signal: req.signal });
+        } catch (error) {
+            if (error instanceof ChatSessionValidationError && error.code === "UNAUTHORIZED") {
+                return apiError("UNAUTHORIZED", "Your chat session has ended. Please sign in again.", 401, requestId);
+            }
+            logApiError({ requestId, route: "/api/chat/notes", message: "Could not verify the live chat session", error });
+            return apiError("RETRIEVAL_UNAVAILABLE", "Your chat session could not be verified. Please retry.", 503, requestId);
         }
 
         const provider = process.env.AI_PROVIDER || "anthropic";
