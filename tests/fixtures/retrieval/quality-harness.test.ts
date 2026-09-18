@@ -6,7 +6,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-    createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
+    qualityScoreExitCode, createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
     retrieveFixtureCase, safeProviderFailure, scopedRows, scoreQuality, QUALITY_CONFIG, ProviderScheduler,
     readCapturedSelectorInputs, capturedSelectorPlan, selectorOnlyMetrics, FROZEN_CORPUS_SHA256,
     type Adjudication, type Corpus, type QualityRecord, type VectorBank, type CapturedSelectorInputs,
@@ -362,4 +362,29 @@ it("caches only identical token-count requests within one execution and records 
     await count("model-b", "system", "question"); await count("model-a", "changed", "question"); await count("model-a", "system", "changed");
     expect(provider).toHaveBeenCalledTimes(4);
     await createExecutionTokenCounter(provider)("model-a", "system", "question"); expect(provider).toHaveBeenCalledTimes(5);
+});
+
+describe("quality CLI exit status", () => {
+    it("returns zero only for complete passing quality evidence", () => {
+        const records = perfectStructuralRecords();
+        const review = reviewsFor(records).map((item) => ({ ...item, reviewerKind: "ai" as const,
+            independent: true, answerComplete: true, rubricSha256: FROZEN_CORPUS_SHA256 }));
+        const score = scoreQuality(corpus, records, review, true);
+        expect(score.providerDiagnosticVerdict).toBe("THRESHOLDS_MET_IN_DIAGNOSTIC_ONLY");
+        expect(qualityScoreExitCode(score)).toBe(0);
+    });
+    it("returns nonzero for failed thresholds without suppressing the score", () => {
+        const records = perfectStructuralRecords(); records[0].selectedIds = [];
+        records[0].responseText = "Wrong exact quote";
+        const score = scoreQuality(corpus, records, reviewsFor(records));
+        expect(score.providerDiagnosticVerdict).toBe("FAILED"); expect(qualityScoreExitCode(score)).toBe(1);
+        expect(JSON.parse(JSON.stringify(score)).aggregate.exactQuoteFidelity).toBeLessThan(1);
+    });
+    it("returns nonzero for incomplete and invalid evidence", () => {
+        const records = perfectStructuralRecords();
+        expect(qualityScoreExitCode(scoreQuality(corpus, records.slice(1), reviewsFor(records)))).toBe(1);
+        expect(qualityScoreExitCode(scoreQuality(corpus, records))).toBe(1);
+        for (const value of [null, undefined, {}, { providerDiagnosticVerdict: "THRESHOLDS_MET_IN_DIAGNOSTIC_ONLY" }])
+            expect(qualityScoreExitCode(value)).toBe(1);
+    });
 });

@@ -426,6 +426,16 @@ export function scoreQuality(corpus: Corpus, records: QualityRecord[], reviews: 
             "Exact quote and empty-evidence branches are repeated deterministic outcomes, not claimed as independent Anthropic generations."] };
 }
 
+/** CLI status is fail-closed; emitted JSON remains the full reviewable evidence. */
+export function qualityScoreExitCode(value: unknown): 0 | 1 {
+    if (!value || typeof value !== "object") return 1;
+    const score = value as Partial<ReturnType<typeof scoreQuality>>;
+    return score.complete === true && score.numericalThresholdsPass === true && score.tokenProofComplete === true
+        && score.actualGenerationUsageComplete === true && score.answerReview?.allGrounded === true
+        && score.answerReview?.allAnswerComplete === true && score.answerReview.reviewed === score.answerReview.required
+        && score.providerDiagnosticVerdict === "THRESHOLDS_MET_IN_DIAGNOSTIC_ONLY" ? 0 : 1;
+}
+
 class ProbeFailure extends Error {
     constructor(readonly code: string, readonly status?: number, readonly retryAfterMs?: number) { super(code); }
 }
@@ -966,7 +976,9 @@ async function main() {
         if (artifact.corpusSha256 !== corpusHash(corpus)) throw new ProbeFailure("SCORE_CORPUS_HASH_MISMATCH");
         const reviewsPath = args.find((arg) => arg.startsWith("--reviews="))?.slice("--reviews=".length);
         const reviews = reviewsPath ? JSON.parse(readFileSync(resolve(reviewsPath), "utf8")) as Adjudication[] : [];
-        console.log(JSON.stringify(scoreQuality(corpus, artifact.records, reviews, artifact.mode === "actual-generation-from-production-database-capture"), null, 2));
+        const score = scoreQuality(corpus, artifact.records, reviews, artifact.mode === "actual-generation-from-production-database-capture");
+        console.log(JSON.stringify(score, null, 2));
+        process.exitCode = qualityScoreExitCode(score);
         return;
     }
     if (!args.includes("--execute")) { console.log(JSON.stringify(plan(corpus), null, 2)); return; }
