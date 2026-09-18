@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Pool } from "pg";
 
@@ -7,6 +9,16 @@ const describeDatabase = adminDatabaseUrl ? describe : describe.skip;
 
 type CatalogRow = { content_id: string; title: string; snippet_headline: string; result_rank?: number; cursor_rank?: string };
 type HighlightRow = { id: string; user_id: string; highlighted_text: string; note_body: string | null; cursor_created_at?: string };
+type ExplainRow = { "QUERY PLAN": unknown };
+
+function percentile(samples: number[], percentileValue: number) {
+    const sorted = [...samples].sort((left, right) => left - right);
+    return sorted[Math.max(0, Math.ceil(sorted.length * percentileValue) - 1)] ?? 0;
+}
+
+function planUsesSearchIndex(plan: unknown) {
+    return JSON.stringify(plan).includes("catalog_search_document_vector_idx");
+}
 
 describeDatabase("catalog and notes search on a disposable Supabase database", () => {
     const db = new Pool({ connectionString: adminDatabaseUrl, max: 2 });
@@ -166,7 +178,11 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
     it("finds an old saved idea on the first filtered page and traverses timestamp ties without duplicates", async () => {
         const matchingHighlight = randomUUID();
         const tiedHighlightIds = Array.from({ length: 35 }, () => randomUUID());
-        const noiseRows = Array.from({ length: 101 }, () => randomUUID());
+        // This is deliberately larger than the configured 1,000-record Data
+        // API cap. The only matching note lives after that old client-side
+        // boundary and must still be found by the server-side query.
+        const noiseRows = Array.from({ length: 1_001 }, () => randomUUID());
+        const readerHighlightIds = Array.from({ length: 51 }, () => randomUUID());
         await db.query(
             `INSERT INTO public.user_highlights (id, user_id, content_item_id, highlighted_text, note_body, color, created_at)
              SELECT value::uuid, $1, $2, 'unrelated saved passage ' || ordinality, NULL, 'blue', now() - interval '1 day'
@@ -183,6 +199,12 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
              SELECT value::uuid, $1, $2, 'identical timestamp search fixture', 'yellow', '2026-09-01T00:00:00.123456Z'::timestamptz
              FROM unnest($3::text[]) AS generated(value)`,
             [accountA, contentSegment, tiedHighlightIds],
+        );
+        await db.query(
+            `INSERT INTO public.user_highlights (id, user_id, content_item_id, highlighted_text, color, created_at)
+             SELECT value::uuid, $1, $2, 'reader page highlight ' || ordinality, 'pink', now() - interval '3 days'
+             FROM unnest($3::text[]) WITH ORDINALITY AS generated(value, ordinality)`,
+            [accountA, contentSegment, readerHighlightIds],
         );
 
         const client = await db.connect();
@@ -214,9 +236,216 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
             const pagedIds = [...first.rows.slice(0, 30), ...second.rows].map((row) => row.id);
             expect(pagedIds).toHaveLength(35);
             expect(new Set(pagedIds)).toHaveLength(35);
+
+            const readerPage = await client.query<HighlightRow>(
+                `SELECT id, user_id, highlighted_text, note_body
+                 FROM public.search_user_highlights(NULL, $1, 'highlight', 'pink', 'newest', NULL, NULL, 51)`,
+                [contentSegment],
+            );
+            expect(readerPage.rows).toHaveLength(51);
+            expect(new Set(readerPage.rows.map((row) => row.id))).toEqual(new Set(readerHighlightIds));
         } finally {
             await client.query("ROLLBACK");
             client.release();
         }
     });
+
+    it("measures the reviewed catalog corpus with the deployed search SQL and route", async () => {
+        const fixturePrefix = `Search performance fixture ${randomUUID()}`;
+        const titleExact = `${fixturePrefix} title exact lighthouse`;
+        const authorExact = `${fixturePrefix} author fixture`;
+        const quotedBody = "quoted body juniper evidence";
+        const unquotedBody = "unquoted body cedar evidence";
+        const broadBody = "broad constellation evidence";
+        const filteredBody = "filtered archive evidence";
+        const querySet = [
+            { id: "title-exact", query: "title exact lighthouse", expectedTitle: titleExact, maxRank: 1 },
+            { id: "author-exact", query: "author fixture", expectedAuthor: authorExact, maxRank: 3 },
+            { id: "quoted-body-concept", query: `"${quotedBody}"`, expectedBody: quotedBody, maxRank: 3 },
+            { id: "unquoted-body-concept", query: unquotedBody, expectedBody: unquotedBody, maxRank: 3 },
+            { id: "broad-concept", query: broadBody, maxRank: null },
+            { id: "filtered", query: filteredBody, expectedBody: filteredBody, maxRank: 3, category: "SearchPerformanceFiltered" },
+            { id: "empty-result", query: "absent tungsten search token", maxRank: null },
+        ];
+        const client = await db.connect();
+        let committed = false;
+
+        try {
+            // The fixture is inserted into the disposable database only. It
+            // deliberately bypasses maintenance triggers during bulk setup,
+            // then writes the same server-owned projection those triggers
+            // produce. Querying still goes through public.search_catalog.
+            await client.query("BEGIN");
+            await client.query("SET LOCAL session_replication_role = 'replica'");
+            await client.query(
+                `INSERT INTO public.content_item (id, type, title, author, category, status, quick_mode_json)
+                 SELECT
+                    gen_random_uuid(),
+                    CASE WHEN ordinal = 6 THEN 'podcast'::public.content_type ELSE 'article'::public.content_type END,
+                    CASE
+                        WHEN ordinal = 1 THEN $2
+                        WHEN ordinal IN (3, 4, 5, 6) THEN $1 || ' content ' || ordinal
+                        ELSE $1 || ' noise ' || ordinal
+                    END,
+                    CASE WHEN ordinal = 2 THEN $3 ELSE 'Performance noise author ' || ordinal END,
+                    CASE WHEN ordinal = 6 THEN 'SearchPerformanceFiltered' ELSE 'SearchPerformanceNoise' END,
+                    'verified',
+                    '{}'::jsonb
+                 FROM generate_series(1, 10000) AS generated(ordinal)`,
+                [fixturePrefix, titleExact, authorExact],
+            );
+            await client.query(
+                `INSERT INTO public.segment (id, item_id, order_index, title, markdown_body)
+                 SELECT
+                    gen_random_uuid(),
+                    ci.id,
+                    segment_ordinal - 1,
+                    'Performance segment ' || segment_ordinal,
+                    CASE
+                        WHEN ci.title = $2 AND segment_ordinal = 1 THEN $3
+                        WHEN ci.title = $1 || ' content 4' AND segment_ordinal = 1 THEN $4
+                        WHEN ci.title = $1 || ' content 5' AND segment_ordinal = 1 THEN $5
+                        WHEN ci.title = $1 || ' content 6' AND segment_ordinal = 1 THEN $6
+                        WHEN segment_ordinal = 1 AND mod(abs(hashtext(ci.id::text)), 100) = 0 THEN $7
+                        ELSE 'unrelated catalog fixture text ' || segment_ordinal
+                    END
+                 FROM public.content_item AS ci
+                 CROSS JOIN generate_series(1, 10) AS generated(segment_ordinal)
+                 WHERE ci.title LIKE $1 || '%'`,
+                [fixturePrefix, titleExact, quotedBody, unquotedBody, broadBody, filteredBody, broadBody],
+            );
+            await client.query("SET LOCAL session_replication_role = 'origin'");
+            await client.query(
+                `INSERT INTO public.catalog_search_document
+                    (source_kind, source_id, content_id, segment_id, source_order, search_vector, snippet_text, snippet_label)
+                 SELECT
+                    'metadata', ci.id, ci.id, NULL, 0,
+                    setweight(to_tsvector('english', ci.title), 'A')
+                    || setweight(to_tsvector('english', ci.author), 'B')
+                    || setweight(to_tsvector('english', ci.category), 'C'),
+                    ci.title || ' ' || ci.author,
+                    'Summary'
+                 FROM public.content_item AS ci
+                 WHERE ci.title LIKE $1 || '%'`,
+                [fixturePrefix],
+            );
+            await client.query(
+                `INSERT INTO public.catalog_search_document
+                    (source_kind, source_id, content_id, segment_id, source_order, search_vector, snippet_text, snippet_label)
+                 SELECT
+                    'segment', s.id, s.item_id, s.id, s.order_index + 1,
+                    setweight(to_tsvector('english', s.title), 'B')
+                    || setweight(to_tsvector('english', s.markdown_body), 'D'),
+                    s.markdown_body,
+                    s.title
+                 FROM public.segment AS s
+                 INNER JOIN public.content_item AS ci ON ci.id = s.item_id
+                 WHERE ci.title LIKE $1 || '%'`,
+                [fixturePrefix],
+            );
+            await client.query("COMMIT");
+            committed = true;
+            await client.query("ANALYZE public.catalog_search_document");
+
+            const expectedIds = new Map<string, string>();
+            for (const queryCase of querySet) {
+                if (queryCase.expectedTitle) {
+                    const result = await client.query<{ id: string }>("SELECT id FROM public.content_item WHERE title = $1", [queryCase.expectedTitle]);
+                    expectedIds.set(queryCase.id, result.rows[0]!.id);
+                } else if (queryCase.expectedAuthor) {
+                    const result = await client.query<{ id: string }>("SELECT id FROM public.content_item WHERE author = $1", [queryCase.expectedAuthor]);
+                    expectedIds.set(queryCase.id, result.rows[0]!.id);
+                } else if (queryCase.expectedBody) {
+                    const result = await client.query<{ id: string }>(
+                        `SELECT ci.id
+                         FROM public.content_item AS ci
+                         INNER JOIN public.segment AS s ON s.item_id = ci.id
+                         WHERE s.markdown_body = $1
+                         LIMIT 1`,
+                        [queryCase.expectedBody],
+                    );
+                    expectedIds.set(queryCase.id, result.rows[0]!.id);
+                }
+            }
+
+            const plans: Record<string, unknown> = {};
+            const databaseSamples: Record<string, number[]> = {};
+            for (const queryCase of querySet) {
+                const plan = await client.query<ExplainRow>(
+                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+                     SELECT d.content_id
+                     FROM public.catalog_search_document AS d
+                     WHERE d.search_vector @@ websearch_to_tsquery('english', $1)
+                     LIMIT 20`,
+                    [queryCase.query],
+                );
+                plans[queryCase.id] = plan.rows[0]!["QUERY PLAN"];
+                expect(planUsesSearchIndex(plans[queryCase.id])).toBe(true);
+
+                const samples: number[] = [];
+                for (let run = 0; run < 30; run += 1) {
+                    const startedAt = performance.now();
+                    const result = await client.query<CatalogRow>(
+                        `SELECT content_id, title, snippet_headline
+                         FROM public.search_catalog($1, $2::text[], NULL::public.content_type, NULL, NULL, NULL, NULL, 21)`,
+                        [queryCase.query, queryCase.category ? [queryCase.category] : []],
+                    );
+                    samples.push(performance.now() - startedAt);
+
+                    const expectedId = expectedIds.get(queryCase.id);
+                    if (expectedId && queryCase.maxRank !== null) {
+                        const rank = result.rows.findIndex((row) => row.content_id === expectedId) + 1;
+                        expect(rank).toBeGreaterThan(0);
+                        expect(rank).toBeLessThanOrEqual(queryCase.maxRank);
+                    }
+                    if (queryCase.id === "empty-result") expect(result.rows).toEqual([]);
+                }
+                databaseSamples[queryCase.id] = samples;
+                expect(percentile(samples, 0.95)).toBeLessThanOrEqual(300);
+                expect(percentile(samples, 0.99)).toBeLessThanOrEqual(500);
+            }
+
+            // Load the actual route only after replacing the disposable CI
+            // values. The route uses the same server module and public RPC
+            // path as production; no test record is sent to production.
+            process.env.NEXT_PUBLIC_SUPABASE_URL = process.env.DB107_SUPABASE_URL;
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.DB107_SUPABASE_ANON_KEY;
+            process.env.CATALOG_SEARCH_CURSOR_SECRET ??= "catalog-search-runtime-secret";
+            const [{ GET }, { NextRequest }] = await Promise.all([
+                import("@/app/api/catalog/search/route"),
+                import("next/server"),
+            ]);
+            const routeSamples: number[] = [];
+            for (const queryCase of querySet) {
+                for (let run = 0; run < 30; run += 1) {
+                    const params = new URLSearchParams({ q: queryCase.query });
+                    if (queryCase.category) params.set("category", queryCase.category);
+                    const startedAt = performance.now();
+                    const response = await GET(new NextRequest(`http://localhost/api/catalog/search?${params.toString()}`));
+                    routeSamples.push(performance.now() - startedAt);
+                    expect(response.status).toBe(200);
+                }
+            }
+            expect(percentile(routeSamples, 0.95)).toBeLessThanOrEqual(750);
+
+            const evidence = {
+                fixtureVersion: "catalog-search-performance-v1",
+                corpus: { verifiedContentItems: 10000, activeSegments: 100000 },
+                databaseSamples,
+                databaseP95Ms: Object.fromEntries(Object.entries(databaseSamples).map(([id, samples]) => [id, percentile(samples, 0.95)])),
+                databaseP99Ms: Object.fromEntries(Object.entries(databaseSamples).map(([id, samples]) => [id, percentile(samples, 0.99)])),
+                routeP95Ms: percentile(routeSamples, 0.95),
+                plans,
+            };
+            console.info(`[catalog-search-evidence] ${JSON.stringify(evidence)}`);
+            if (process.env.CATALOG_SEARCH_EVIDENCE_PATH) {
+                await mkdir(dirname(process.env.CATALOG_SEARCH_EVIDENCE_PATH), { recursive: true });
+                await writeFile(process.env.CATALOG_SEARCH_EVIDENCE_PATH, JSON.stringify(evidence, null, 2));
+            }
+        } finally {
+            if (!committed) await client.query("ROLLBACK").catch(() => undefined);
+            await client.query("DELETE FROM public.content_item WHERE title LIKE $1", [`${fixturePrefix}%`]).catch(() => undefined);
+            client.release();
+        }
+    }, 180_000);
 });

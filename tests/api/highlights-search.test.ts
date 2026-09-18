@@ -74,6 +74,18 @@ describe("GET /api/library/highlights search cursors", () => {
         }));
     });
 
+    it("keeps the reader's 50-highlight page intact and exposes its continuation", async () => {
+        mocks.rpc.mockResolvedValueOnce({ data: Array.from({ length: 51 }, (_, index) => searchRow(index + 1)), error: null });
+
+        const response = await GET(new NextRequest("http://localhost/api/library/highlights?limit=50"));
+        const body = await response.json() as { data: unknown[]; nextCursor: string | null };
+
+        expect(response.status).toBe(200);
+        expect(body.data).toHaveLength(50);
+        expect(body.nextCursor).toEqual(expect.any(String));
+        expect(mocks.rpc).toHaveBeenCalledWith("search_user_highlights", expect.objectContaining({ p_limit: 51 }));
+    });
+
     it("does not turn an authorization failure into an empty page", async () => {
         mocks.getVerifiedAccountDataSession.mockResolvedValue(null);
         const response = await GET(new NextRequest("http://localhost/api/library/highlights?q=saved"));

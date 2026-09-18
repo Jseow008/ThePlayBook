@@ -34,6 +34,19 @@ export function SearchAnalyticsTracker({
         }
 
         lastTrackedKeyRef.current = key;
+        if (outcome === "input_empty") {
+            captureAnalyticsEvent("search_input_empty", {
+                source: "search_results",
+                route: "/search",
+                search_scope: "content",
+                query_present: queryPresent,
+                query_length: queryLength,
+                filters_count: filtersCount,
+                user_state: "anonymous",
+            });
+            return;
+        }
+
         captureAnalyticsEvent("search_performed", {
             source: "search_results",
             route: "/search",

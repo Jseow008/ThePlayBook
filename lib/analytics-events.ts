@@ -120,6 +120,13 @@ export interface AnalyticsEventPropertiesByName {
     query_length?: number;
     filters_count?: number;
   };
+  search_input_empty: AnalyticsCommonProperties & {
+    source: string;
+    search_scope: "content" | "notes" | "library" | "global";
+    query_present: boolean;
+    query_length?: number;
+    filters_count?: number;
+  };
   search_failed: AnalyticsCommonProperties & {
     source: string;
     search_scope: "content" | "notes" | "library" | "global";
@@ -279,6 +286,14 @@ export const ANALYTICS_EVENT_CONTRACTS = {
   search_no_results: {
     schemaVersion: ANALYTICS_SCHEMA_VERSION,
     description: "A catalog or notes search completed with no results. Do not include raw query text.",
+    requiredProperties: ["source", "search_scope", "query_present"],
+    allowedProperties: eventProperties(["search_scope", "query_present", "query_length", "filters_count"]),
+    privacy: "behavioral_metadata",
+    delivery: "client_intent_server_truth",
+  },
+  search_input_empty: {
+    schemaVersion: ANALYTICS_SCHEMA_VERSION,
+    description: "A catalog query parsed to no searchable terms. Do not include raw query text.",
     requiredProperties: ["source", "search_scope", "query_present"],
     allowedProperties: eventProperties(["search_scope", "query_present", "query_length", "filters_count"]),
     privacy: "behavioral_metadata",

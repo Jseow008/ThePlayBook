@@ -492,7 +492,9 @@ AS $$
         CASE WHEN p_sort = 'oldest' THEN id END ASC,
         CASE WHEN p_sort <> 'oldest' THEN created_at END DESC,
         CASE WHEN p_sort <> 'oldest' THEN id END ASC
-    LIMIT greatest(1, least(coalesce(p_limit, 30), 31));
+    -- The reader already requests up to 50 highlights. Keep an extra row for
+    -- keyset continuation without silently truncating that existing consumer.
+    LIMIT greatest(1, least(coalesce(p_limit, 30), 101));
 $$;
 
 REVOKE ALL ON FUNCTION public.search_user_highlights(text, uuid, text, text, text, timestamptz, uuid, integer)

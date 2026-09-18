@@ -347,6 +347,33 @@ describe("BrainClientPage", () => {
         expect(screen.getAllByLabelText("Filter highlights by color")[0]).toHaveValue("all");
     });
 
+    it("does not render a retained highlights cache in the Reflections view", () => {
+        reflectionsState.value = [{
+            id: "reflection-1",
+            user_id: "user-1",
+            content_item_id: "content-1",
+            prompt: "What do you remember?",
+            reflection_text: "A saved reflection remains visible.",
+            created_at: "2026-03-12T12:00:00.000Z",
+            updated_at: null,
+            content_item: {
+                id: "content-1",
+                title: "Can't Hurt Me",
+                author: "David Goggins",
+                cover_image_url: null,
+            },
+        }];
+
+        // The query's cached page remains populated here even though the
+        // selected type disables its request. This is the state reached after
+        // changing from a loaded highlights view to Reflections.
+        searchParamsState.value = "type=reflection";
+        render(<BrainClientPage initialPage={initialPage} />);
+
+        expect(screen.getByText("A saved reflection remains visible.")).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /note from introduction/i })).not.toBeInTheDocument();
+    });
+
     it("loads more notes when another page is available", async () => {
         render(<BrainClientPage initialPage={initialPage} />);
 

@@ -90,7 +90,7 @@ export function useInfiniteHighlights(contentItemId?: string, options?: UseInfin
     const sort = options?.sort ?? "newest";
     return useInfiniteQuery({
         queryKey: ["highlights", "infinite", user?.id ?? null, sessionEpoch, contentItemId ?? null, query, itemType ?? null, color ?? null, sort],
-        queryFn: async ({ pageParam }: { pageParam: string | null }): Promise<HighlightsPage> => {
+        queryFn: async ({ pageParam, signal }: { pageParam: string | null; signal: AbortSignal }): Promise<HighlightsPage> => {
             const params = new URLSearchParams({ limit: "30", sort });
             if (contentItemId) params.set("content_item_id", contentItemId);
             if (query) params.set("q", query);
@@ -103,7 +103,10 @@ export function useInfiniteHighlights(contentItemId?: string, options?: UseInfin
 
             const url = `/api/library/highlights?${params.toString()}`;
 
-            const res = await fetch(url);
+            // React Query aborts this signal when the authenticated cache key
+            // changes. Consuming it prevents a late page from an earlier
+            // account/session being installed after the switch.
+            const res = await fetch(url, { signal });
             if (!res.ok) {
                 throw new HighlightSearchRequestError(res.status);
             }

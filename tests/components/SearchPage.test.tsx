@@ -1,9 +1,9 @@
 import { Children, act, cloneElement, isValidElement } from "react";
 import type { ElementType, ReactElement, ReactNode } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock, searchCatalogMock } = vi.hoisted(() => {
+const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPushMock, redirectMock, searchCatalogMock, captureAnalyticsEventMock } = vi.hoisted(() => {
     let latestQueryBuilder: Record<string, ReturnType<typeof vi.fn>> | null = null;
     let queryData: Array<Record<string, unknown>> = [{ id: "matched-result", title: "Matched Result" }];
 
@@ -46,6 +46,7 @@ const { rpcMock, fromMock, getLatestQueryBuilder, resetSupabaseMocks, routerPush
         },
         routerPushMock: vi.fn(),
         searchCatalogMock: vi.fn(),
+        captureAnalyticsEventMock: vi.fn(),
         redirectMock: vi.fn((url: string) => {
             throw new Error(`NEXT_REDIRECT:${url}`);
         }),
@@ -109,6 +110,10 @@ vi.mock("@/components/ui/SearchInput", () => ({
 
 vi.mock("@/components/ui/ContentCard", () => ({
     ContentCard: ({ item }: { item: { title: string } }) => <div>{item.title}</div>,
+}));
+
+vi.mock("@/lib/analytics", () => ({
+    captureAnalyticsEvent: captureAnalyticsEventMock,
 }));
 
 type SearchParams = { q?: string; category?: string; type?: string; sort?: string; page?: string; cursor?: string };
@@ -409,6 +414,22 @@ describe("SearchPage", () => {
             "href",
             "/requests?prefill=focus&type=book"
         );
+    });
+
+    it("renders stop-word-only input as an input outcome without a request action or zero-result event", async () => {
+        searchCatalogMock.mockResolvedValueOnce({ outcome: "input_empty", results: [], pageInfo: { nextCursor: null, previousCursor: null, page: 1 } });
+        const results = await runSearchResultsFromPage({ q: "the and or" });
+
+        await act(async () => {
+            render(results);
+        });
+
+        expect(screen.getByRole("heading", { name: "Try a more specific search" })).toBeInTheDocument();
+        expect(screen.queryByRole("heading", { name: "No results found" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /request this summary/i })).not.toBeInTheDocument();
+        await waitFor(() => expect(captureAnalyticsEventMock).toHaveBeenCalledWith("search_input_empty", expect.any(Object)));
+        expect(captureAnalyticsEventMock).not.toHaveBeenCalledWith("search_no_results", expect.any(Object));
+        expect(captureAnalyticsEventMock).not.toHaveBeenCalledWith("search_performed", expect.any(Object));
     });
 
     it("uses the recent catalog query for category pages and still applies the type filter", async () => {

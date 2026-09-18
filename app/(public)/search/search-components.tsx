@@ -376,14 +376,16 @@ function renderSearchResults({
                     <div className="hidden md:inline-flex items-center justify-center p-6 bg-secondary/30 rounded-full mb-6 border border-border">
                         <Search className="size-9 md:size-10 text-muted-foreground" />
                     </div>
-                    <h3 className="text-xl font-semibold text-foreground mb-1 md:mb-2">No results found</h3>
+                    <h3 className="text-xl font-semibold text-foreground mb-1 md:mb-2">
+                        {outcome === "input_empty" ? "Try a more specific search" : "No results found"}
+                    </h3>
                     <p className="text-sm md:text-base text-muted-foreground max-w-sm mx-auto mb-3 md:mb-6">
                         {outcome === "input_empty"
                             ? "Try a more specific word or phrase."
                             : "We couldn&apos;t find anything matching that title, author, category, or filter."}
                     </p>
                     <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                        {hasQuery ? (
+                        {outcome !== "input_empty" && hasQuery ? (
                             <Link
                                 href={buildRequestHref({ query: requestQuery, type: normalizedType })}
                                 className="focus-ring inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90"

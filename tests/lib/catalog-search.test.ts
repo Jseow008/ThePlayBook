@@ -86,4 +86,50 @@ describe("catalog search server contract", () => {
             results: [],
         });
     });
+
+    it("traverses forward and backward pages without dropping the directional look-ahead row", async () => {
+        const makeRows = (first: number, last: number, descending = false) => Array.from(
+            { length: last - first + 1 },
+            (_, offset) => {
+                const index = descending ? last - offset : first + offset;
+                return {
+                    ...row,
+                    content_id: `00000000-0000-0000-0000-${String(index).padStart(12, "0")}`,
+                    title: `Result ${index}`,
+                    result_rank: 100 - index,
+                    cursor_rank: String(100 - index),
+                };
+            },
+        );
+
+        // PostgreSQL returns a backwards page in reverse display order. The
+        // second backwards response includes its look-ahead row; the first
+        // one does not, because page one has no earlier page.
+        rpc
+            .mockResolvedValueOnce({ data: makeRows(1, 21), error: null })
+            .mockResolvedValueOnce({ data: makeRows(21, 41), error: null })
+            .mockResolvedValueOnce({ data: makeRows(41, 55), error: null })
+            .mockResolvedValueOnce({ data: makeRows(20, 40, true), error: null })
+            .mockResolvedValueOnce({ data: makeRows(1, 20, true), error: null })
+            .mockResolvedValueOnce({ data: makeRows(21, 41), error: null });
+
+        const pageOne = await searchCatalog({ query: "searchable" });
+        const pageTwo = await searchCatalog({ query: "searchable", cursor: pageOne.pageInfo.nextCursor });
+        const pageThree = await searchCatalog({ query: "searchable", cursor: pageTwo.pageInfo.nextCursor });
+        const pageTwoAgain = await searchCatalog({ query: "searchable", cursor: pageThree.pageInfo.previousCursor });
+        const pageOneAgain = await searchCatalog({ query: "searchable", cursor: pageTwoAgain.pageInfo.previousCursor });
+        const pageTwoFinal = await searchCatalog({ query: "searchable", cursor: pageOneAgain.pageInfo.nextCursor });
+
+        expect(pageOne.results.map((result) => result.title)).toEqual(Array.from({ length: 20 }, (_, index) => `Result ${index + 1}`));
+        expect(pageTwo.results.map((result) => result.title)).toEqual(Array.from({ length: 20 }, (_, index) => `Result ${index + 21}`));
+        expect(pageThree.results.map((result) => result.title)).toEqual(Array.from({ length: 15 }, (_, index) => `Result ${index + 41}`));
+        expect(pageTwoAgain.results.map((result) => result.title)).toEqual(pageTwo.results.map((result) => result.title));
+        expect(pageOneAgain.results.map((result) => result.title)).toEqual(pageOne.results.map((result) => result.title));
+        expect(pageTwoFinal.results.map((result) => result.title)).toEqual(pageTwo.results.map((result) => result.title));
+        expect(pageOne.pageInfo.previousCursor).toBeNull();
+        expect(pageOneAgain.pageInfo.previousCursor).toBeNull();
+        expect(pageOneAgain.pageInfo.nextCursor).toEqual(expect.any(String));
+        expect(pageTwoAgain.pageInfo.nextCursor).toEqual(expect.any(String));
+        expect(pageTwoAgain.pageInfo.previousCursor).toEqual(expect.any(String));
+    });
 });

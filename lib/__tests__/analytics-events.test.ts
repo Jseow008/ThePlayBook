@@ -91,6 +91,17 @@ describe("sanitizeAnalyticsProperties", () => {
             query_present: true,
         })).toMatchObject({ search_scope: "content" });
 
+        expect(sanitizeAnalyticsProperties("search_input_empty", {
+            source: "search_results",
+            search_scope: "content",
+            query_present: true,
+            query_length: 10,
+            query: "the and or",
+        } as never)).toMatchObject({
+            search_scope: "content",
+            query_length: 10,
+        });
+
         expect(sanitizeAnalyticsProperties("search_failed", {
             source: "search_results",
             search_scope: "content",

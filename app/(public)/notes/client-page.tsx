@@ -73,6 +73,7 @@ const VIRTUALIZATION_MIN_ITEMS = 60;
 const VIRTUAL_ROW_ESTIMATE = 224;
 const VIRTUAL_ROW_GAP = 12;
 const VIRTUAL_OVERSCAN_PX = 720;
+const NO_HIGHLIGHTS: HighlightWithContent[] = [];
 const NOTE_EDITOR_COLORS: HighlightColor[] = ["yellow", "blue", "green", "red", "purple"];
 const TYPE_FILTER_OPTIONS: Array<{ value: ItemTypeFilter; label: string }> = [
     { value: "all", label: "All" },
@@ -1059,7 +1060,10 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     // Highlight filters are applied by the account-bound API before paging.
     // Do not re-filter loaded pages locally: that would present partial results
     // as a complete note search.
-    const filteredHighlights = highlights;
+    // Highlights may remain in React Query's cache when its query is disabled.
+    // Reflections are deliberately a separate, incomplete surface in this
+    // delivery, so never render cached highlights under that selected filter.
+    const filteredHighlights = selectedType === "reflection" ? NO_HIGHLIGHTS : highlights;
 
     const filteredReflections = useMemo(() => {
         const canShowUnfilteredReflections = !searchQuery.trim()

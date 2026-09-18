@@ -205,9 +205,14 @@ export async function searchCatalog(input: {
         return { outcome: "input_empty", results: [], pageInfo: { nextCursor: null, previousCursor: null, page: 1 } };
     }
 
-    const rawRows = cursor?.direction === "before" ? [...(data ?? [])].reverse() : data ?? [];
-    const hasMore = rawRows.length > PAGE_SIZE;
-    const rows = rawRows.slice(0, PAGE_SIZE).filter((row): row is SearchRow & { content_id: string; content_type: ContentType; title: string; created_at: string; result_rank: number; cursor_rank: string } => (
+    // The query for a previous page is intentionally ordered in the reverse
+    // direction in PostgreSQL. Drop its look-ahead row before restoring the
+    // display order: reversing first would drop the closest result instead.
+    const returnedRows = data ?? [];
+    const hasLookAheadRow = returnedRows.length > PAGE_SIZE;
+    const pageRows = returnedRows.slice(0, PAGE_SIZE);
+    const orderedRows = cursor?.direction === "before" ? [...pageRows].reverse() : pageRows;
+    const rows = orderedRows.filter((row): row is SearchRow & { content_id: string; content_type: ContentType; title: string; created_at: string; result_rank: number; cursor_rank: string } => (
         row.query_state === "results" && Boolean(row.content_id && row.content_type && row.title && row.created_at && row.result_rank !== null && row.cursor_rank)
     ));
     const page = cursor?.direction === "before" ? Math.max(1, cursor.page - 1) : (cursor?.page ?? 1);
@@ -242,12 +247,20 @@ export async function searchCatalog(input: {
     }));
     const first = rows.at(0);
     const last = rows.at(-1);
+    const hasPreviousPage = cursor?.direction === "before"
+        ? hasLookAheadRow
+        : Boolean(cursor);
+    // A backwards request always came from a later page, so its restored page
+    // can move forward again even when the backwards query has no look-ahead.
+    const hasNextPage = cursor?.direction === "before"
+        ? true
+        : hasLookAheadRow;
     return {
         outcome: results.length > 0 ? "results" : "no_results",
         results,
         pageInfo: {
-            nextCursor: hasMore && last ? encodeCursor({ version: CURSOR_VERSION, queryHash: hash, categories, type, direction: "after", rank: last.cursor_rank, contentId: last.content_id, page: page + 1 }) : null,
-            previousCursor: page > 1 && first ? encodeCursor({ version: CURSOR_VERSION, queryHash: hash, categories, type, direction: "before", rank: first.cursor_rank, contentId: first.content_id, page }) : null,
+            nextCursor: hasNextPage && last ? encodeCursor({ version: CURSOR_VERSION, queryHash: hash, categories, type, direction: "after", rank: last.cursor_rank, contentId: last.content_id, page: page + 1 }) : null,
+            previousCursor: hasPreviousPage && first ? encodeCursor({ version: CURSOR_VERSION, queryHash: hash, categories, type, direction: "before", rank: first.cursor_rank, contentId: first.content_id, page }) : null,
             page,
         },
     };

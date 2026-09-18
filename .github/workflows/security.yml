@@ -104,6 +104,8 @@ jobs:
             >> "$GITHUB_ENV"
 
       - name: Supabase SQL drift checks
+        env:
+          CATALOG_SEARCH_EVIDENCE_PATH: ${{ runner.temp }}/catalog-search-evidence.json
         run: |
           # This password exists only for the lifecycle of the disposable
           # database container. It is never persisted or printed.
@@ -126,6 +128,14 @@ jobs:
           npm run database:account-data-snapshot-runtime
           npm run database:catalog-search-runtime
           npm run database:email-rpc-security
+
+      - name: Retain catalog search evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: catalog-search-evidence-${{ github.sha }}
+          path: ${{ runner.temp }}/catalog-search-evidence.json
+          if-no-files-found: warn
 
       - name: Security route and static tests
         run: npm run test:security
