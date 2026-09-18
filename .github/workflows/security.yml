@@ -141,6 +141,8 @@ jobs:
           npm run database:account-data-snapshots
           npm run database:account-data-snapshot-runtime
           npm run database:catalog-search-runtime
+          npm run database:personal-evidence-runtime
+          npm run database:personal-retrieval-quality-runtime
           npm run database:email-rpc-security
 
       - name: Security route and static tests

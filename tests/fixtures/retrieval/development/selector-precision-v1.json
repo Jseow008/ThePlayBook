@@ -1,0 +1,75 @@
+{
+  "version": "selector-precision-development-v1",
+  "purpose": "Independent synthetic DEVELOPMENT cases for direct support, identity, and comparison coverage. Expected IDs are assertions only. This is not a holdout or release gate.",
+  "cases": [
+    {
+      "id": "specific-procedure-with-adjacent-advice",
+      "question": "Which procedure did I save for reducing odor in the compost bin without changing the collection schedule?",
+      "exactQuote": false,
+      "expectedIds": ["p02"],
+      "candidates": [
+        {"id":"p01","type":"source_segment","title":"Reading 62","fields":[{"name":"sourceText","text":"Collection schedules affect the time food scraps spend in bins. In warm months the neighborhood switched from weekly collection to collection every other day."}]},
+        {"id":"p02","type":"highlight","title":"Reading 18","fields":[{"name":"highlightedText","text":"Keep the same collection day, but after each food-scrap addition cover it with a dry layer of shredded cardboard and mix the upper layer to admit air. This prevents the wet, airless pockets that create strong odors."}]},
+        {"id":"p03","type":"reflection","title":"Journal 43","fields":[{"name":"prompt","text":"What would improve the compost system?"},{"name":"reflectionText","text":"I moved the bin beside the gate so I no longer carry it through the vegetable beds on collection morning."}]},
+        {"id":"p04","type":"source_segment","title":"Reading 77","fields":[{"name":"sourceText","text":"Compost returns nutrients to soil and reduces the amount of household material sent to landfill. Gardeners should choose a container size appropriate for the household."}]}
+      ]
+    },
+    {
+      "id": "same-name-different-profession",
+      "question": "What queue rule did harbor engineer Rowan Pike recommend for allocating a single loading berth?",
+      "exactQuote": false,
+      "expectedIds": ["p06"],
+      "candidates": [
+        {"id":"p05","type":"source_segment","title":"Reading 26","fields":[{"name":"sourceText","text":"Organizational psychologist Rowan Pike recommends assigning scarce opportunities to whoever has waited longest. She applies this rule to promotion interviews and employee training places."}]},
+        {"id":"p06","type":"source_segment","title":"Reading 54","fields":[{"name":"sourceText","text":"Harbor engineer Rowan Pike assigns the loading berth only after the vessel reports ready cargo and a confirmed tug slot. Arrival time breaks ties between vessels that satisfy both conditions."}]},
+        {"id":"p07","type":"highlight","title":"Notebook 12","fields":[{"name":"highlightedText","text":"An unnamed marina manager reserves one berth for emergency repairs. The arrival queue is used for all other vessels."}]}
+      ]
+    },
+    {
+      "id": "named-organization-not-established",
+      "question": "What application deadline did the Eastbank Ceramic Guild announce for its 2027 apprentice program?",
+      "exactQuote": false,
+      "expectedIds": [],
+      "candidates": [
+        {"id":"p08","type":"source_segment","title":"Reading 35","fields":[{"name":"sourceText","text":"The Eastbank Ceramic Museum will accept applications for its 2027 apprentice program until 14 March. Applicants should include three photographs of recent work."}]},
+        {"id":"p09","type":"highlight","title":"Notebook 68","fields":[{"name":"highlightedText","text":"The Westbank Ceramic Guild closes applications for its 2027 apprentice program on 19 April."}]},
+        {"id":"p10","type":"reflection","title":"Journal 21","fields":[{"name":"prompt","text":"What did you learn about Eastbank?"},{"name":"reflectionText","text":"I need to check which institution runs the apprentice program. I have not confirmed whether the museum and guild are connected."}]}
+      ]
+    },
+    {
+      "id": "unsupported-causal-connection",
+      "question": "Which of my saved notes says that changing the museum's lighting caused the increase in visitor donations?",
+      "exactQuote": false,
+      "expectedIds": [],
+      "candidates": [
+        {"id":"p11","type":"highlight","title":"Notebook 47","fields":[{"name":"highlightedText","text":"The museum replaced overhead fluorescent lighting with adjustable LED fixtures in June."},{"name":"noteBody","text":"The display labels became easier to read after the lighting change."}]},
+        {"id":"p12","type":"reflection","title":"Journal 74","fields":[{"name":"prompt","text":"What changed in June?"},{"name":"reflectionText","text":"Visitor donations increased that month. Several changes happened together, and I have no evidence showing which change caused the increase."}]},
+        {"id":"p13","type":"source_segment","title":"Reading 09","fields":[{"name":"sourceText","text":"Well-lit exhibition spaces can make a museum visit more comfortable. Donation income is also influenced by fundraising campaigns and attendance."}]}
+      ]
+    },
+    {
+      "id": "three-requested-comparison-facets",
+      "question": "Compare the current guide's tire-pressure rule, my objection in the attached note, and what I experienced on a rainy commute.",
+      "exactQuote": false,
+      "expectedIds": ["p14", "p15", "p16"],
+      "candidates": [
+        {"id":"p14","type":"source_segment","title":"Reading 81","fields":[{"name":"sourceText","text":"Use the upper end of the tire manufacturer's permitted pressure range for every paved-road commute. The guide recommends this rule regardless of rain."}]},
+        {"id":"p15","type":"highlight","title":"Reading 81","fields":[{"name":"highlightedText","text":"Use the upper end of the tire manufacturer's permitted pressure range for every paved-road commute."},{"name":"noteBody","text":"I disagree with making this universal. On wet cobblestones, a slightly lower permitted pressure gives me a more controlled ride; the safe choice also depends on load and tire width."}]},
+        {"id":"p16","type":"reflection","title":"Journal 16","fields":[{"name":"prompt","text":"What did the commute teach you?"},{"name":"reflectionText","text":"During Tuesday's rain I reduced pressure within the manufacturer's range. The bicycle felt less skittish over the cobblestones, although I did not measure grip or stopping distance."}]},
+        {"id":"p17","type":"reflection","title":"Journal 93","fields":[{"name":"prompt","text":"How will you improve the commute?"},{"name":"reflectionText","text":"I am testing the riverside route because it has fewer traffic lights than the main road."}]}
+      ]
+    },
+    {
+      "id": "note-exception-with-irrelevant-similar-reflection",
+      "question": "How does my attached note qualify the current author's rule about refusing every unscheduled repair request?",
+      "exactQuote": false,
+      "expectedIds": ["p18", "p19"],
+      "candidates": [
+        {"id":"p18","type":"source_segment","title":"Reading 32","fields":[{"name":"sourceText","text":"A repair workshop should reject every unscheduled repair request until its booked jobs are finished. The author allows no exceptions to this scheduling rule."}]},
+        {"id":"p19","type":"highlight","title":"Reading 32","fields":[{"name":"highlightedText","text":"Reject every unscheduled repair request until booked jobs are finished."},{"name":"noteBody","text":"I would make an exception for a failed wheelchair brake. Immediate safety should take priority over keeping the booking order intact."}]},
+        {"id":"p20","type":"reflection","title":"Journal 58","fields":[{"name":"prompt","text":"What did you think about the repair schedule?"},{"name":"reflectionText","text":"I like getting a text message when my booked repair is complete because it saves an unnecessary trip to the workshop."}]},
+        {"id":"p21","type":"source_segment","title":"Reading 64","fields":[{"name":"sourceText","text":"Workshops can reduce scheduling confusion by giving customers printed estimates and collecting a reliable contact number."}]}
+      ]
+    }
+  ]
+}

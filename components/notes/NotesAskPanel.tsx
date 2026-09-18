@@ -27,6 +27,7 @@ import {
     readNotesChatSession,
     writeNotesChatSession,
 } from "@/lib/notes-chat-session";
+import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 
 const chatTransport = new TextStreamChatTransport({ api: "/api/chat/notes" });
@@ -105,9 +106,6 @@ function getScopeTokens(scopeSummary: string): string[] {
         .filter(Boolean);
 }
 
-function getNotesLabel(count: number): string {
-    return `${count} ${count === 1 ? "note" : "notes"} in scope`;
-}
 
 function ScopeOverview({
     scope,
@@ -119,7 +117,7 @@ function ScopeOverview({
     className?: string;
 }) {
     const scopeTokens = getScopeTokens(scope.summary);
-    const isTruncated = scope.totalMatches > scope.noteCount;
+
 
     return (
         <section
@@ -134,7 +132,7 @@ function ScopeOverview({
                     Current scope
                 </p>
                 <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
-                    {getNotesLabel(scope.noteCount)}
+                    {scope.scope ? "Matching saved captures" : "Adjust Notes filters"}
                 </span>
                 {scopeTokens.map((token) => (
                     <span
@@ -144,11 +142,6 @@ function ScopeOverview({
                         {token}
                     </span>
                 ))}
-                {isTruncated && (
-                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
-                        Using {scope.noteCount} most recent
-                    </span>
-                )}
             </div>
         </section>
     );
@@ -191,12 +184,20 @@ function ScopeChangedBanner({
     );
 }
 
-export function NotesAskPanel({
+export function NotesAskPanel(props: NotesAskPanelProps) {
+    const { ownerKey, isCurrent, resolved } = useVerifiedChatSession();
+    if (!ownerKey) return <p role="status" className="p-4 text-sm text-muted-foreground">{resolved ? <Link href="/login">Sign in to start a private chat.</Link> : "Verifying your chat session…"}</p>;
+    return <VerifiedNotesAskPanel key={ownerKey} {...props} ownerKey={ownerKey} isCurrent={isCurrent} />;
+}
+
+function VerifiedNotesAskPanel({
     currentScope,
     onClose,
     mobile = false,
     variant = "default",
-}: NotesAskPanelProps) {
+    ownerKey,
+    isCurrent,
+}: NotesAskPanelProps & { ownerKey: string; isCurrent: (key: string) => boolean }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [input, setInput] = useState("");
@@ -211,9 +212,12 @@ export function NotesAskPanel({
         setMessages,
         status,
         error,
+        stop,
     } = useChat<UIMessage>({
         transport: chatTransport,
     });
+
+    useEffect(() => () => { void stop?.(); }, [stop]);
 
     useEffect(() => {
         if (messages.length === 0 && hasHydratedSessionRef.current) {
@@ -226,7 +230,7 @@ export function NotesAskPanel({
             return;
         }
 
-        const restoredSession = readNotesChatSession(currentScope.signature);
+        const restoredSession = readNotesChatSession(ownerKey, currentScope.signature);
         if (restoredSession) {
             setActiveScope(restoredSession.activeScope);
             setMessages(restoredSession.messages);
@@ -235,7 +239,7 @@ export function NotesAskPanel({
         }
 
         hasHydratedSessionRef.current = true;
-    }, [currentScope, setMessages]);
+    }, [currentScope, setMessages, ownerKey]);
 
     useEffect(() => {
         if (!(variant === "sidebar" && !mobile) || messages.length > 0) {
@@ -248,19 +252,19 @@ export function NotesAskPanel({
             return;
         }
 
-        const persistenceKeys = [activeScope.signature, currentScope.signature];
+        if (!isCurrent(ownerKey)) return;
 
         if (messages.length === 0) {
-            clearNotesChatSession(currentScope.signature);
+            clearNotesChatSession(ownerKey, currentScope.signature);
             return;
         }
 
-        writeNotesChatSession(persistenceKeys, {
+        writeNotesChatSession(ownerKey, {
             activeScope,
             messages,
             updatedAt: Date.now(),
         });
-    }, [activeScope, currentScope.signature, messages]);
+    }, [activeScope, currentScope.signature, messages, ownerKey, isCurrent]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -276,10 +280,8 @@ export function NotesAskPanel({
     const hasScopeChanged = messages.length > 0 && activeScope.signature !== currentScope.signature;
     const isSidebar = variant === "sidebar" && !mobile;
     const isPage = variant === "page";
-    const notesLabel = getNotesLabel(activeScope.noteCount);
-    const composerPlaceholder = activeScope.highlightIds.length === 0
-        ? "No notes in scope. Adjust your filters first."
-        : `Ask about the ${activeScope.noteCount === 1 ? "note" : "notes"} in this scope...`;
+    const notesLabel = activeScope.scope ? "Matching saved captures" : "Adjust Notes filters";
+    const composerPlaceholder = activeScope.invalidReason || "Ask about saved captures matching this scope…";
     const visibleStarterPrompts = isSidebar && !showAllStarterPrompts
         ? STARTER_PROMPTS.slice(0, 2)
         : STARTER_PROMPTS;
@@ -314,7 +316,7 @@ export function NotesAskPanel({
 
     const sendPrompt = async (text: string) => {
         const trimmed = text.trim();
-        if (!trimmed || isStreaming || activeScope.highlightIds.length === 0) {
+        if (!trimmed || isStreaming || !activeScope.scope || !isCurrent(ownerKey)) {
             return;
         }
 
@@ -328,7 +330,7 @@ export function NotesAskPanel({
             { text: trimmed },
             {
                 body: {
-                    highlightIds: activeScope.highlightIds,
+                    scope: activeScope.scope,
                     scopeLabel: activeScope.summary,
                 },
             }
@@ -346,7 +348,7 @@ export function NotesAskPanel({
     };
 
     const startNewChat = () => {
-        clearNotesChatSession([activeScope.signature, currentScope.signature]);
+        clearNotesChatSession(ownerKey, [activeScope.signature, currentScope.signature]);
         setInput("");
         setShowAllStarterPrompts(false);
         setActiveScope(currentScope);
@@ -398,9 +400,8 @@ export function NotesAskPanel({
             title="Ask These Notes"
             assistantLabel="Ask These Notes"
             scopeSummary={activeScope.summary}
-            noteCount={activeScope.noteCount}
             messages={displayMessages}
-            disabled={isStreaming}
+            disabled={isStreaming || !activeScope.scope}
             className={isSidebar ? "px-3 py-1.5 text-[0.72rem]" : undefined}
         />
     ) : null;
@@ -442,7 +443,7 @@ export function NotesAskPanel({
                                                             type="button"
                                                             onClick={() => void sendPrompt(prompt)}
                                                             className="rounded-full border border-border/70 bg-background/75 px-3 py-1.5 text-[0.72rem] text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50 sm:px-3.5 sm:py-2 sm:text-xs"
-                                                            disabled={isStreaming || activeScope.highlightIds.length === 0}
+                                                            disabled={isStreaming || !activeScope.scope}
                                                         >
                                                             {prompt}
                                                         </button>
@@ -568,11 +569,6 @@ export function NotesAskPanel({
                                 <span className="rounded-full border border-border/70 bg-card/60 px-2.5 py-1 text-[0.68rem] font-medium text-foreground/88">
                                     {notesLabel}
                                 </span>
-                                {activeScope.totalMatches > activeScope.noteCount && (
-                                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
-                                        Using {activeScope.noteCount} most recent
-                                    </span>
-                                )}
                             </div>
                             <div className="flex items-center gap-2">
                                 {exportButton}
@@ -600,12 +596,12 @@ export function NotesAskPanel({
                                     }
                                 }}
                                 aria-label="Ask a question about these notes"
-                                disabled={activeScope.highlightIds.length === 0}
+                                disabled={isStreaming || !activeScope.scope}
                             />
                             <div className="mb-2 mr-2">
                                 <button
                                     type="submit"
-                                    disabled={!input.trim() || isStreaming || activeScope.highlightIds.length === 0}
+                                    disabled={!input.trim() || isStreaming || !activeScope.scope}
                                     className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                                     aria-label="Send notes question"
                                 >
@@ -618,9 +614,7 @@ export function NotesAskPanel({
                             </div>
                         </form>
                         <p className="mt-2 text-center text-[0.6rem] text-muted-foreground opacity-60">
-                            {activeScope.highlightIds.length === 0
-                                ? "No notes are currently in scope. Adjust the notes filters to enable Ask."
-                                : "Notes-scoped assistant · Grounded only in the notes currently in scope."}
+                            { "Notes-scoped assistant · Grounded only in the notes currently in scope."}
                         </p>
                     </div>
                 </div>
@@ -660,9 +654,8 @@ export function NotesAskPanel({
                                     title="Ask These Notes"
                                     assistantLabel="Ask These Notes"
                                     scopeSummary={activeScope.summary}
-                                    noteCount={activeScope.noteCount}
                                     messages={displayMessages}
-                                    disabled={isStreaming}
+                                    disabled={isStreaming || !activeScope.scope}
                                     variant="icon"
                                 />
                             )}
@@ -700,7 +693,7 @@ export function NotesAskPanel({
                                 <button
                                     type="button"
                                     onClick={startNewChat}
-                                    disabled={isStreaming}
+                                    disabled={isStreaming || !activeScope.scope}
                                     className={newChatActionClassName}
                                 >
                                     <Plus className="size-3.5" />
@@ -773,7 +766,7 @@ export function NotesAskPanel({
                                                     "rounded-full border border-border/70 bg-background/75 px-3 py-1.5 text-xs text-foreground/85 transition-all hover:border-primary/35 hover:bg-primary/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50",
                                                     isSidebar && "px-3.5 py-2 text-[0.76rem]"
                                                 )}
-                                                disabled={isStreaming || activeScope.highlightIds.length === 0}
+                                                disabled={isStreaming || !activeScope.scope}
                                             >
                                                 {prompt}
                                             </button>
@@ -923,17 +916,12 @@ export function NotesAskPanel({
                                 {activeScope.summary.trim() || "All content"}
                             </span>
                         )}
-                        {activeScope.totalMatches > activeScope.noteCount && (
-                            <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[0.68rem] font-medium text-primary">
-                                Using {activeScope.noteCount} most recent
-                            </span>
-                        )}
                     </div>
                     {isSidebar && !isEmptyState ? (
                         <button
                             type="button"
                             onClick={startNewChat}
-                            disabled={isStreaming}
+                            disabled={isStreaming || !activeScope.scope}
                             className={newChatActionClassName}
                         >
                             <Plus className="size-3.5" />
@@ -964,12 +952,12 @@ export function NotesAskPanel({
                             }
                         }}
                         aria-label="Ask a question about the notes in view"
-                        disabled={activeScope.highlightIds.length === 0}
+                        disabled={isStreaming || !activeScope.scope}
                     />
                     <div className="mb-2 mr-2">
                         <button
                             type="submit"
-                            disabled={!input.trim() || isStreaming || activeScope.highlightIds.length === 0}
+                            disabled={!input.trim() || isStreaming || !activeScope.scope}
                             className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                             aria-label="Send notes question"
                         >
@@ -983,9 +971,7 @@ export function NotesAskPanel({
                 </form>
                 <p className="mt-2 flex items-center gap-1.5 text-[0.65rem] font-medium text-muted-foreground opacity-65">
                     <BookOpen className="size-3" />
-                    {activeScope.highlightIds.length === 0
-                        ? "No notes are currently in scope. Adjust the notes filters to enable Ask."
-                        : isSidebar
+                    { isSidebar
                             ? "Grounded only in the notes currently in scope."
                             : "Notes-scoped assistant · grounded only in the notes currently in scope."}
                 </p>

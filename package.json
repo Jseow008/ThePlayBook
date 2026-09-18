@@ -34,6 +34,8 @@
     "database:account-data-snapshots": "node scripts/check-database-account-data-snapshots.mjs",
     "database:account-data-snapshot-runtime": "vitest run tests/database/account-data-snapshot-runtime.test.ts",
     "database:catalog-search-runtime": "vitest run tests/database/catalog-search-runtime.test.ts",
+    "database:personal-evidence-runtime": "PERSONAL_EVIDENCE_RUNTIME_REQUIRED=1 vitest run tests/database/personal-evidence-runtime.test.ts",
+    "database:personal-retrieval-quality-runtime": "PERSONAL_RETRIEVAL_QUALITY_RUNTIME_REQUIRED=1 vitest run tests/database/personal-retrieval-quality-runtime.test.ts",
     "database:rls-policies": "node scripts/check-database-rls-policies.mjs",
     "database:email-rpc-security": "node scripts/check-database-email-rpc-security.mjs",
     "profile:browse-recommendations": "node scripts/profile-browse-recommendations.mjs",

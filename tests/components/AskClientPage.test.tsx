@@ -3,7 +3,11 @@ import { AskClientPage } from "@/app/(public)/ask/client-page";
 import { useChat } from "@ai-sdk/react";
 import { vi } from "vitest";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
-import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
+import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-scope";
+
+vi.mock("@/hooks/useVerifiedChatSession", () => ({
+    useVerifiedChatSession: () => ({ ownerKey: "account-a:session-a", isCurrent: () => true }),
+}));
 
 const {
     scrollIntoViewMock,
@@ -185,16 +189,15 @@ describe("AskClientPage", () => {
         expect(notesAskPanelMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 currentScope: expect.objectContaining({
-                    noteCount: 1,
-                    totalMatches: 1,
-                    summary: "All content",
+                    scope: { version: 1, itemType: "all" },
+                    summary: "All saved highlights, notes, and reflections",
                 }),
                 variant: "page",
             })
         );
     });
 
-    it("labels the default notes scope as most recent when more notes exist", () => {
+    it("keeps default scope complete regardless of the loaded page", () => {
         const initialNotesPage = {
             data: Array.from({ length: 30 }, (_, index) => ({
                 id: `highlight-${index + 1}`,
@@ -219,9 +222,8 @@ describe("AskClientPage", () => {
         expect(notesAskPanelMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 currentScope: expect.objectContaining({
-                    noteCount: 30,
-                    totalMatches: 31,
-                    summary: "Most recent notes",
+                    scope: { version: 1, itemType: "all" },
+                    summary: "All saved highlights, notes, and reflections",
                 }),
                 variant: "page",
             })
@@ -260,13 +262,7 @@ describe("AskClientPage", () => {
     });
 
     it("passes a provided notes scope through to the full-screen notes panel", () => {
-        const initialNotesScope = {
-            highlightIds: ["highlight-7", "highlight-8"],
-            noteCount: 2,
-            totalMatches: 6,
-            summary: 'search: "discipline"',
-            signature: "scope-discipline",
-        };
+        const initialNotesScope = createNotesChatScope({ version: 1, itemType: "reflection", filterQuery: "discipline" }, 'search: "discipline"');
 
         render(
             <AskClientPage
@@ -278,11 +274,9 @@ describe("AskClientPage", () => {
         expect(notesAskPanelMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 currentScope: expect.objectContaining({
-                    highlightIds: ["highlight-7", "highlight-8"],
-                    noteCount: 2,
-                    totalMatches: 6,
+                    scope: initialNotesScope.scope,
                     summary: 'search: "discipline"',
-                    signature: "scope-discipline",
+                    signature: initialNotesScope.signature,
                 }),
                 variant: "page",
             })

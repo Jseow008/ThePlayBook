@@ -1067,6 +1067,10 @@ export type Database = {
       }
     }
     Functions: {
+      acquire_personal_evidence_worker: {
+        Args: { p_lease_seconds?: number }
+        Returns: Json
+      }
       admin_finalize_narration_generation: {
         Args: {
           p_audio_url: string
@@ -1110,6 +1114,36 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      claim_personal_evidence_index: {
+        Args: {
+          p_lease_seconds?: number
+          p_limit?: number
+          p_worker_token: string
+        }
+        Returns: Json
+      }
+      complete_personal_evidence_index: {
+        Args: {
+          p_chunks: Json
+          p_evidence_id: string
+          p_evidence_type: string
+          p_lease_token: string
+          p_revision: string
+        }
+        Returns: boolean
+      }
+      fail_personal_evidence_index: {
+        Args: {
+          p_evidence_id: string
+          p_evidence_type: string
+          p_lease_token: string
+          p_rate_limited?: boolean
+          p_retry_after_seconds?: number
+          p_revision: string
+          p_terminal?: boolean
+        }
+        Returns: boolean
       }
       get_admin_ai_readiness_summary: {
         Args: never
@@ -1257,6 +1291,16 @@ export type Database = {
           similarity: number
         }[]
       }
+      match_personal_evidence: {
+        Args: {
+          p_field?: string
+          p_match_count?: number
+          p_min_similarity?: number
+          p_query_embedding: string
+          p_scope: Json
+        }
+        Returns: Json
+      }
       match_recommendations: {
         Args: {
           exclude_ids?: string[]
@@ -1284,9 +1328,18 @@ export type Database = {
           updated_at: string
         }[]
       }
+      personal_evidence_index_status: { Args: { p_scope: Json }; Returns: Json }
       queue_content_request_published_notifications: {
         Args: { p_request_id: string }
         Returns: number
+      }
+      release_personal_evidence_worker: {
+        Args: { p_worker_token: string }
+        Returns: boolean
+      }
+      seed_personal_evidence_index: {
+        Args: { p_limit?: number }
+        Returns: Json
       }
       set_onboarding_state: {
         Args: { p_status: string; p_tour: string; p_version: string }

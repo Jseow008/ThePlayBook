@@ -398,9 +398,7 @@ describe("BrainClientPage", () => {
         expect(notesAskPanelMock).toHaveBeenCalledWith(
             expect.objectContaining({
                 currentScope: expect.objectContaining({
-                    noteCount: 3,
-                    totalMatches: 3,
-                    highlightIds: ["highlight-1", "highlight-2", "highlight-3"],
+                    scope: { version: 1, itemType: "all" },
                     summary: "All content",
                 }),
                 onClose: expect.any(Function),

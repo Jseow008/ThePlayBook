@@ -16,7 +16,6 @@ const allowedAsAnyCounts = new Map([
   ["app/api/admin/embeddings/sync-segments/route.ts", 1],
   ["app/api/admin/embeddings/sync/route.ts", 1],
   ["app/api/admin/launch-readiness/route.ts", 1],
-  ["app/api/chat/route.ts", 1],
   ["app/api/content-requests/[id]/vote/route.ts", 3],
   ["app/api/content-requests/route.ts", 2],
   ["app/api/feedback/content/route.ts", 1],

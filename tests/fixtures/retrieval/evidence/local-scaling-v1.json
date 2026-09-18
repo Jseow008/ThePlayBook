@@ -1,0 +1,47 @@
+{
+  "version": "personal-evidence-local-scaling-v1",
+  "boundaries": [
+    "Disposable local database, synthetic one-hot vectors; no semantic quality claim.",
+    "Ordinary authenticated Data API requests exercise the actual deployed candidate function.",
+    "Single-process timings on local hardware are not a hosted production latency or concurrency guarantee."
+  ],
+  "tiers": [
+    {
+      "records": 1000,
+      "apiDurationsMs": [
+        47.32,
+        17.48,
+        20.02,
+        16.16
+      ],
+      "sqlExecutionMs": 13.276,
+      "completeRecords": 1000,
+      "oldLateTargetReturned": null
+    },
+    {
+      "records": 10001,
+      "apiDurationsMs": [
+        136.62,
+        129.08,
+        118.31,
+        124.95
+      ],
+      "sqlExecutionMs": 119.906,
+      "completeRecords": 10001,
+      "oldLateTargetReturned": null
+    },
+    {
+      "records": 20001,
+      "apiDurationsMs": [
+        235.75,
+        213.38,
+        220.84,
+        218.04
+      ],
+      "sqlExecutionMs": 215.896,
+      "completeRecords": 20001,
+      "oldLateTargetReturned": true
+    }
+  ],
+  "directAuthenticatedRequestsAccepted": 12
+}

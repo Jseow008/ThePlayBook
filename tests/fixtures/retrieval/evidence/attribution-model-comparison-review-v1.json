@@ -1,0 +1,130 @@
+{
+  "version": "attribution-model-comparison-review-v1",
+  "reviewerKind": "independent_ai",
+  "reviewerRole": "backend_audit: not the response generator or attribution prompt author",
+  "scope": "Manual independent review of six supplied DEVELOPMENT responses against the stored highlight, user note, reflection, and review criteria; no additional provider calls; no new holdout opened.",
+  "records": [
+    {
+      "sourceArtifact": "attribution-development-v3.json",
+      "sourceArtifactSha256": "e6ac222d6e687880b593d6ded8e01f810c7ba44645689fec929a66b00f8c7b51",
+      "run": 1,
+      "modelId": "claude-haiku-4-5-20251001",
+      "responseSha256": "ace95e14c3a0d1930139e6dde6c8a0147c3b008d6453cb0ea6b820db3930d56a",
+      "reviewerKind": "independent_ai",
+      "outcome": "pass",
+      "attribution": {
+        "highlight": "pass",
+        "userNote": "pass",
+        "reflection": "pass"
+      },
+      "unsupportedInference": "none material",
+      "rationale": "The response attributes the uninterrupted-hour recommendation to the highlight, the refusal-of-every-interruption wording to the user, and the concrete tomorrow plan to the reflection. It explicitly says caregiving priorities are not addressed by the source. Describing the plan as a commitment to the core practice is a modest paraphrase of the recorded first-hour drafting plan, not a new claim that it resolves caregiving or guarantees a benefit.",
+      "limitation": "The closing implementation framing is interpretive and unnecessary, but does not invent an absolute source rule or a material causal benefit."
+    },
+    {
+      "sourceArtifact": "attribution-development-v3.json",
+      "sourceArtifactSha256": "e6ac222d6e687880b593d6ded8e01f810c7ba44645689fec929a66b00f8c7b51",
+      "run": 2,
+      "modelId": "claude-haiku-4-5-20251001",
+      "responseSha256": "8c2ea271b728e92e5a4d5d2a33e21373f7a449a3de1c2ba77c0ca964379c7e82",
+      "reviewerKind": "independent_ai",
+      "outcome": "fail",
+      "attribution": {
+        "highlight": "fail",
+        "userNote": "pass",
+        "reflection": "pass"
+      },
+      "unsupportedInference": "implicit stronger source rule",
+      "rationale": "After accurately attributing the user note, the response calls the focus recommendation blanket advice without marking that stronger characterization as the user’s interpretation. The stored highlight does not establish refusal of every interruption. The final paragraph appropriately states that the relationship between tomorrow’s plan and caregiving is not established.",
+      "problematicExcerpts": [
+        "You're identifying a circumstance where the blanket advice doesn't apply."
+      ]
+    },
+    {
+      "sourceArtifact": "attribution-development-v3.json",
+      "sourceArtifactSha256": "e6ac222d6e687880b593d6ded8e01f810c7ba44645689fec929a66b00f8c7b51",
+      "run": 3,
+      "modelId": "claude-haiku-4-5-20251001",
+      "responseSha256": "6099b46e075e2aceb6faadb81eac3f6bb7a278b9ef3cee5b64e732bb3e0bbd95",
+      "reviewerKind": "independent_ai",
+      "outcome": "fail",
+      "attribution": {
+        "highlight": "fail",
+        "userNote": "pass",
+        "reflection": "pass"
+      },
+      "unsupportedInference": "universal source rule and unsupported reconciliation",
+      "rationale": "The phrases its absolute approach and blanket rule attribute a stronger universal policy to the highlight than its words establish. The closing sentence also claims the plan preserves focus while accommodating interruption circumstances; that causal reconciliation is not stated in the reflection.",
+      "problematicExcerpts": [
+        "qualifies the focus advice by disagreeing with its absolute approach",
+        "where the blanket rule doesn't apply",
+        "This approach preserves dedicated focus time while removing the phone as a source of interruptions—rather than attempting to block all interruptions regardless of circumstance."
+      ]
+    },
+    {
+      "sourceArtifact": "attribution-model-comparison-v1.json",
+      "sourceArtifactSha256": "aaf11c7b9ce97c016b482b02b4982e207ffe2132627502a3a868e5c52d4162f1",
+      "run": 1,
+      "modelId": "claude-sonnet-4-6",
+      "responseSha256": "50736c8387b96c8f1a5ad7a206750f3788ff9634aa6d0c0458ea3e2a7ca65593",
+      "reviewerKind": "independent_ai",
+      "outcome": "pass",
+      "attribution": {
+        "highlight": "pass",
+        "userNote": "pass",
+        "reflection": "pass"
+      },
+      "unsupportedInference": "none material",
+      "rationale": "The response keeps the highlight, written note, and reflection in separately attributed parts. It accurately reports the focus-hour and notification advice, labels refusing every interruption as the user’s interpretation, explicitly notes that the highlight does not address exceptions, and restates the recorded tomorrow plan without inventing a causal reconciliation or benefit."
+    },
+    {
+      "sourceArtifact": "attribution-model-comparison-v1.json",
+      "sourceArtifactSha256": "aaf11c7b9ce97c016b482b02b4982e207ffe2132627502a3a868e5c52d4162f1",
+      "run": 2,
+      "modelId": "claude-sonnet-4-6",
+      "responseSha256": "8b9069fb88554522413409cbee2f73f9aa872c965c9ca22b15adeaea07542452",
+      "reviewerKind": "independent_ai",
+      "outcome": "pass",
+      "attribution": {
+        "highlight": "pass",
+        "userNote": "pass",
+        "reflection": "pass"
+      },
+      "unsupportedInference": "none material",
+      "rationale": "The response keeps the highlight, written note, and reflection in separately attributed parts. It accurately reports the focus-hour and notification advice, labels refusing every interruption as the user’s interpretation, explicitly notes that the highlight does not address exceptions, and restates the recorded tomorrow plan without inventing a causal reconciliation or benefit."
+    },
+    {
+      "sourceArtifact": "attribution-model-comparison-v1.json",
+      "sourceArtifactSha256": "aaf11c7b9ce97c016b482b02b4982e207ffe2132627502a3a868e5c52d4162f1",
+      "run": 3,
+      "modelId": "claude-sonnet-4-6",
+      "responseSha256": "754c1941964ef4d5d32e5dca48b868f7552db920910d0405f621cde5b7556bc0",
+      "reviewerKind": "independent_ai",
+      "outcome": "pass",
+      "attribution": {
+        "highlight": "pass",
+        "userNote": "pass",
+        "reflection": "pass"
+      },
+      "unsupportedInference": "none material",
+      "rationale": "The response keeps the highlight, written note, and reflection in separately attributed parts. It accurately reports the focus-hour and notification advice, labels refusing every interruption as the user’s interpretation, explicitly notes that the highlight does not address exceptions, and restates the recorded tomorrow plan without inventing a causal reconciliation or benefit."
+    }
+  ],
+  "summary": {
+    "haiku": {
+      "reviewed": 3,
+      "passed": 1,
+      "failed": 2
+    },
+    "sonnet": {
+      "reviewed": 3,
+      "passed": 3,
+      "failed": 0
+    }
+  },
+  "limitations": [
+    "Three repetitions of one synthetic question per model cannot establish general answer quality or production reliability.",
+    "This review judges meaning and attribution; no automated lexical test was substituted for reading the responses.",
+    "The frozen v1 retrieval failure and future held-out gates remain unchanged."
+  ]
+}

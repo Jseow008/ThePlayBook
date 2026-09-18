@@ -1,0 +1,223 @@
+{
+  "version": "selector-neutral-development-v1",
+  "fixtureSha256": "3818e51b309420d806ce806c68d15ec771a7dab48b34d50b792c2c8706c9f7e9",
+  "evidenceKind": "real-provider development diagnostic",
+  "expectedCases": 6,
+  "completedCases": 6,
+  "passedCases": 6,
+  "actualCalls": 6,
+  "pricing": {
+    "estimatedUsd": null,
+    "reason": "Report measured token usage; no unverified model price or fabricated cost estimate."
+  },
+  "releaseGate": "Not established. Frozen corpus, three-run quality, database authorization and answer attribution gates remain separate.",
+  "records": [
+    {
+      "caseId": "action-vs-definition",
+      "outcome": "complete",
+      "passed": true,
+      "expectedIds": [
+        "c02"
+      ],
+      "selectedIds": [
+        "c02"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "c02"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 953,
+        "outputTokens": 11,
+        "totalTokens": 964,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v2",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 626,
+        "promptBytes": 3459,
+        "selectedCount": 1,
+        "durationMs": 1570.289916,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "conflicting-attached-note",
+      "outcome": "complete",
+      "passed": true,
+      "expectedIds": [
+        "c04",
+        "c05"
+      ],
+      "selectedIds": [
+        "c05",
+        "c04"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "c05",
+          "c04"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 985,
+        "outputTokens": 14,
+        "totalTokens": 999,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v2",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 762,
+        "promptBytes": 3592,
+        "selectedCount": 2,
+        "durationMs": 893.1433750000001,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "prompt-is-not-answer",
+      "outcome": "complete",
+      "passed": true,
+      "expectedIds": [
+        "c08"
+      ],
+      "selectedIds": [
+        "c08"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "c08"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 921,
+        "outputTokens": 11,
+        "totalTokens": 932,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v2",
+      "stats": {
+        "candidateCount": 2,
+        "candidateBytes": 525,
+        "promptBytes": 3330,
+        "selectedCount": 1,
+        "durationMs": 907.4118330000001,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "exact-passage-target",
+      "outcome": "complete",
+      "passed": true,
+      "expectedIds": [
+        "c10"
+      ],
+      "selectedIds": [
+        "c10"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "c10"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 938,
+        "outputTokens": 11,
+        "totalTokens": 949,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v2",
+      "stats": {
+        "candidateCount": 2,
+        "candidateBytes": 615,
+        "promptBytes": 3475,
+        "selectedCount": 1,
+        "durationMs": 879.5958329999999,
+        "modelCalled": true,
+        "exactQuote": true
+      }
+    },
+    {
+      "caseId": "unsupported-question",
+      "outcome": "complete",
+      "passed": true,
+      "expectedIds": [],
+      "selectedIds": [],
+      "rawSyntheticOutput": {
+        "ids": []
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 894,
+        "outputTokens": 8,
+        "totalTokens": 902,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v2",
+      "stats": {
+        "candidateCount": 2,
+        "candidateBytes": 402,
+        "promptBytes": 3200,
+        "selectedCount": 0,
+        "durationMs": 956.0714159999998,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "embedded-instruction",
+      "outcome": "complete",
+      "passed": true,
+      "expectedIds": [
+        "c14"
+      ],
+      "selectedIds": [
+        "c14"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "c14"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 972,
+        "outputTokens": 11,
+        "totalTokens": 983,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v2",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 726,
+        "promptBytes": 3550,
+        "selectedCount": 1,
+        "durationMs": 846.3618749999996,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    }
+  ]
+}

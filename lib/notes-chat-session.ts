@@ -1,95 +1,50 @@
-import { z } from "zod";
-import type { UIMessage } from "ai";
-import type { NotesChatScopePayload } from "@/lib/notes-chat-scope";
+import { z } from 'zod';
+import type { UIMessage } from 'ai';
+import { parseNotesChatScope, serializeNotesChatScope, type NotesChatScopePayload } from '@/lib/notes-chat-scope';
 
-const NOTES_CHAT_SESSION_STORAGE_PREFIX = "netflux_notes_chat_session:v1:";
+const PREFIX = 'netflux_notes_chat_session:v2:';
+const LEGACY_PREFIX = 'netflux_notes_chat_session:v1:';
+const MessageSchema = z.object({ id: z.string(), role: z.string(), parts: z.array(z.unknown()).optional() }).passthrough();
+const SessionSchema = z.object({ ownerKey: z.string(), activeScope: z.unknown(), messages: z.array(MessageSchema), updatedAt: z.number() });
+export interface NotesChatSessionPayload { activeScope: NotesChatScopePayload; messages: UIMessage[]; updatedAt: number }
 
-const NotesChatScopeSchema = z.object({
-    highlightIds: z.array(z.string()),
-    noteCount: z.number(),
-    totalMatches: z.number(),
-    summary: z.string(),
-    signature: z.string(),
-});
-
-const NotesChatMessageSchema = z.object({
-    id: z.string(),
-    role: z.string(),
-    parts: z.array(z.unknown()).optional(),
-    content: z.unknown().optional(),
-    metadata: z.unknown().optional(),
-}).passthrough();
-
-const NotesChatSessionSchema = z.object({
-    activeScope: NotesChatScopeSchema,
-    messages: z.array(NotesChatMessageSchema),
-    updatedAt: z.number(),
-});
-
-export interface NotesChatSessionPayload {
-    activeScope: NotesChatScopePayload;
-    messages: UIMessage[];
-    updatedAt: number;
+export function getNotesChatStorageKey(ownerKey: string, signature: string): string {
+    return `${PREFIX}${encodeURIComponent(ownerKey)}:${encodeURIComponent(signature)}`;
 }
-
-export function getNotesChatStorageKey(signature: string): string {
-    return `${NOTES_CHAT_SESSION_STORAGE_PREFIX}${signature}`;
-}
-
-export function readNotesChatSession(signature: string): NotesChatSessionPayload | null {
-    if (typeof window === "undefined" || !signature) {
-        return null;
-    }
-
-    const raw = window.sessionStorage.getItem(getNotesChatStorageKey(signature));
-    if (!raw) {
-        return null;
-    }
-
+export function clearLegacyNotesChatSessions(): void {
+    if (typeof window === 'undefined') return;
     try {
-        const parsed = NotesChatSessionSchema.safeParse(JSON.parse(raw));
-        if (!parsed.success) {
-            window.sessionStorage.removeItem(getNotesChatStorageKey(signature));
-            return null;
-        }
-
-        return {
-            activeScope: parsed.data.activeScope,
-            messages: parsed.data.messages as UIMessage[],
-            updatedAt: parsed.data.updatedAt,
-        };
-    } catch {
-        window.sessionStorage.removeItem(getNotesChatStorageKey(signature));
-        return null;
-    }
+        for (const key of Object.keys(window.sessionStorage)) if (key.startsWith(LEGACY_PREFIX)) window.sessionStorage.removeItem(key);
+    } catch { /* Unavailable storage does not prevent chatting. */ }
 }
-
-export function writeNotesChatSession(
-    signatures: string[],
-    payload: NotesChatSessionPayload,
-): void {
-    if (typeof window === "undefined") {
-        return;
-    }
-
-    const uniqueSignatures = Array.from(new Set(signatures.filter(Boolean)));
-    if (uniqueSignatures.length === 0) {
-        return;
-    }
-
-    const serialized = JSON.stringify(payload);
-    uniqueSignatures.forEach((signature) => {
-        window.sessionStorage.setItem(getNotesChatStorageKey(signature), serialized);
-    });
+export function clearNotesChatOwner(ownerKey: string): void {
+    if (typeof window === 'undefined') return;
+    try {
+        const prefix = `${PREFIX}${encodeURIComponent(ownerKey)}:`;
+        for (const key of Object.keys(window.sessionStorage)) if (key.startsWith(prefix)) window.sessionStorage.removeItem(key);
+    } catch { /* Storage may be disabled. */ }
 }
-
-export function clearNotesChatSession(signatures: string | string[]): void {
-    if (typeof window === "undefined") {
-        return;
-    }
-
-    const signatureList = Array.isArray(signatures) ? signatures : [signatures];
-    Array.from(new Set(signatureList.filter(Boolean))).forEach((signature) => {
-        window.sessionStorage.removeItem(getNotesChatStorageKey(signature));
-    });
+export function readNotesChatSession(ownerKey: string, signature: string): NotesChatSessionPayload | null {
+    if (typeof window === 'undefined' || !ownerKey || !signature) return null;
+    try {
+        const raw = window.sessionStorage.getItem(getNotesChatStorageKey(ownerKey, signature));
+        if (!raw) return null;
+        const parsed = SessionSchema.safeParse(JSON.parse(raw));
+        if (!parsed.success || parsed.data.ownerKey !== ownerKey) return null;
+        const activeScope = parseNotesChatScope(JSON.stringify(parsed.data.activeScope));
+        if (!activeScope || activeScope.signature !== signature) return null;
+        return { activeScope, messages: parsed.data.messages as UIMessage[], updatedAt: parsed.data.updatedAt };
+    } catch { return null; }
+}
+export function writeNotesChatSession(ownerKey: string, payload: NotesChatSessionPayload): void {
+    if (typeof window === 'undefined' || !ownerKey) return;
+    try {
+        window.sessionStorage.setItem(getNotesChatStorageKey(ownerKey, payload.activeScope.signature), JSON.stringify({ ...payload, activeScope: JSON.parse(serializeNotesChatScope(payload.activeScope)), ownerKey }));
+    } catch { /* Persistence is optional. */ }
+}
+export function clearNotesChatSession(ownerKey: string, signatures: string | string[]): void {
+    if (typeof window === 'undefined') return;
+    try {
+        for (const signature of typeof signatures === 'string' ? [signatures] : signatures) window.sessionStorage.removeItem(getNotesChatStorageKey(ownerKey, signature));
+    } catch { /* Storage may be disabled. */ }
 }

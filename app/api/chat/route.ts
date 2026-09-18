@@ -1,3 +1,5 @@
+import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
+import { assertActivePersonalRetrievalSession } from "@/lib/server/personal-retrieval-session";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
@@ -9,7 +11,13 @@ import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/r
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import { GoogleGenAI } from "@google/genai";
-import { buildLibraryMetadataContext, getLibraryItemStatus, type LibraryItemRow } from "@/lib/server/library-snapshot";
+import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/library-snapshot";
+
+import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady, ALL_PERSONAL_EVIDENCE } from "@/lib/server/personal-retrieval";
+import { loadLibrarySourceEvidence, rankLibrarySourceSpans, selectLibraryEvidence, buildLibraryEvidencePrompt } from "@/lib/server/library-evidence";
+import { recheckPersonalEvidenceCandidates } from "@/lib/server/personal-evidence-candidates";
+import { retrievalTextResponse } from "@/lib/server/retrieval-response";
+import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
 
 export const maxDuration = 60; // Allow 60s max for AI response
 
@@ -23,51 +31,10 @@ const ChatRequestSchema = z.object({
     messages: z.array(ChatMessageSchema).min(1).max(20),
 });
 
-const MAX_HISTORY_MESSAGES = 4;
 const MAX_TOTAL_MESSAGE_CHARS = 12_000;
-const MAX_CONTEXT_CHARS = 9_000;
-const MAX_LIBRARY_CONTEXT_CHARS = 6_000;
-const MAX_OUTPUT_TOKENS = {
-    library_metadata: 250,
-    content_synthesis: 450,
-    hybrid: 500,
-    reading_advisor: 550,
-} as const;
-const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
-const DEFAULT_COMPLEX_ASK_MODEL = "claude-sonnet-4-6";
-const RETIRED_ANTHROPIC_MODEL_REPLACEMENTS: Record<string, string> = {
-    "claude-sonnet-4-20250514": DEFAULT_COMPLEX_ASK_MODEL,
-};
 const CHAT_STREAM_ERROR_MESSAGE = "Something went wrong. Please try asking again.";
 const EMBEDDING_MODEL = "gemini-embedding-001";
 const EMBEDDING_DIMENSIONS = 768;
-const PRIMARY_MATCH_THRESHOLD = 0.65;
-const FALLBACK_MATCH_THRESHOLD = 0.55;
-const MATCH_COUNT = 3;
-const ADVISOR_MATCH_COUNT = 12;
-type SegmentWithTitle = {
-    id: string;
-    markdown_body: string;
-    content_item: { title: string | null } | Array<{ title: string | null }> | null;
-};
-type AskIntent = "library_metadata" | "content_synthesis" | "hybrid" | "reading_advisor";
-
-function getOutputTokenCap(intent: AskIntent): number {
-    return MAX_OUTPUT_TOKENS[intent];
-}
-
-function shouldUseComplexAskModel(intent: AskIntent) {
-    return intent === "content_synthesis" || intent === "hybrid" || intent === "reading_advisor";
-}
-
-function getAnthropicModelName(intent: AskIntent) {
-    const configuredModel = shouldUseComplexAskModel(intent)
-        ? process.env.AI_COMPLEX_MODEL || DEFAULT_COMPLEX_ASK_MODEL
-        : process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
-
-    return RETIRED_ANTHROPIC_MODEL_REPLACEMENTS[configuredModel] || configuredModel;
-}
-
 function getMessageText(message: Record<string, unknown>): string {
     if (Array.isArray(message.parts)) {
         return message.parts
@@ -106,199 +73,6 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
             content: getMessageText(message).trim(),
         }))
         .filter((message) => message.content.length > 0);
-}
-
-function detectAskIntent(query: string): AskIntent {
-    const normalized = query.toLowerCase();
-    const advisorPatterns = [
-        /\brecommend\b/,
-        /\brecommendation\b/,
-        /\bsuggest\b/,
-        /\bsuggestion\b/,
-        /\bnext (?:book|read|item|source)\b/,
-        /\bwhat should i read next\b/,
-        /\bwhat (?:book|item|source) should i read\b/,
-        /\bbased on my completed\b/,
-        /\bbased on what i(?:'ve| have) (?:read|completed|finished)\b/,
-        /\bwhat does my library say about me\b/,
-        /\bmy interests\b/,
-        /\bmy taste\b/,
-        /\breading taste\b/,
-        /\breader profile\b/,
-        /\brecurring themes\b/,
-    ];
-    const metadataPatterns = [
-        /\bwhat have i read\b/,
-        /\bwhat have i saved\b/,
-        /\bcompleted\b/,
-        /\bfinish(?:ed)?\b/,
-        /\bhow many\b/,
-        /\bwhich authors?\b/,
-        /\blist\b/,
-        /\bwhat books?\b/,
-        /\bmy library\b/,
-        /\bmy saved books?\b/,
-        /\bmy saved items?\b/,
-        /\bsaved sources?\b/,
-        /\bin progress\b/,
-    ];
-    const synthesisPatterns = [
-        /\btheme\b/,
-        /\bthemes\b/,
-        /\bcompare\b/,
-        /\bperspective\b/,
-        /\bperspectives\b/,
-        /\bsummar(?:ize|ise)\b/,
-        /\boverlap\b/,
-        /\bcontrast\b/,
-        /\brelevant\b/,
-        /\bwhy\b/,
-        /\bidea\b/,
-        /\bideas\b/,
-        /\bdiscipline\b/,
-        /\bhabit\b/,
-        /\bmeaning\b/,
-        /\bconcept\b/,
-        /\bpatterns?\b/,
-    ];
-
-    const advisorHits = advisorPatterns.filter((pattern) => pattern.test(normalized)).length;
-    if (advisorHits > 0) {
-        return "reading_advisor";
-    }
-
-    const metadataHits = metadataPatterns.filter((pattern) => pattern.test(normalized)).length;
-    const synthesisHits = synthesisPatterns.filter((pattern) => pattern.test(normalized)).length;
-
-    if (metadataHits > 0 && synthesisHits === 0) {
-        return "library_metadata";
-    }
-
-    if (synthesisHits > 0 && metadataHits === 0) {
-        return "content_synthesis";
-    }
-
-    return "hybrid";
-}
-
-async function fetchRelevantSegments(
-    supabase: Awaited<ReturnType<typeof createClient>>,
-    userId: string,
-    queryEmbedding: number[],
-    options: {
-        matchCount?: number;
-        boostCompleted?: boolean;
-        libraryItems?: LibraryItemRow[];
-    } = {}
-): Promise<{
-    contextText: string;
-    retrievalStatus: "matched" | "no_match" | "not_initialized";
-}> {
-    const matchCount = options.matchCount ?? MATCH_COUNT;
-    const thresholds = [PRIMARY_MATCH_THRESHOLD, FALLBACK_MATCH_THRESHOLD];
-    let segmentResults: Array<{ segment_id: string; content_item_id: string; similarity: number }> = [];
-
-    for (const threshold of thresholds) {
-        const { data, error } = await (supabase.rpc as any)("match_library_segments_gemini", {
-            query_embedding: JSON.stringify(queryEmbedding),
-            match_threshold: threshold,
-            match_count: matchCount,
-            p_user_id: userId,
-            p_boost_completed: Boolean(options.boostCompleted),
-        });
-
-        if (error) {
-            throw error;
-        }
-
-        const matches = (data ?? []) as Array<{ segment_id: string; content_item_id: string; similarity: number }>;
-        if (matches.length > 0) {
-            segmentResults = matches;
-            break;
-        }
-    }
-
-    if (segmentResults.length === 0) {
-        return {
-            contextText: "",
-            retrievalStatus: "no_match",
-        };
-    }
-
-    const segmentIds = segmentResults.map((segment) => segment.segment_id);
-    const { data: segments, error: segFetchError } = await supabase
-        .from("segment")
-        .select("id, markdown_body, content_item ( title )")
-        .in("id", segmentIds);
-
-    if (segFetchError) {
-        throw segFetchError;
-    }
-
-    const segmentRows = (segments ?? []) as SegmentWithTitle[];
-    const segmentMap = new Map(segmentRows.map((segment) => [segment.id, segment]));
-    const libraryItemMap = new Map((options.libraryItems ?? []).map((item) => [item.content_id, item]));
-
-    let orderedContext = "";
-    let includedCount = 0;
-
-    for (const segmentResult of segmentResults) {
-        const segment = segmentMap.get(segmentResult.segment_id);
-        if (!segment) {
-            continue;
-        }
-
-        const contentItem = Array.isArray(segment.content_item)
-            ? segment.content_item[0]
-            : segment.content_item;
-        const title = contentItem?.title || "Unknown Source";
-        const libraryItem = libraryItemMap.get(segmentResult.content_item_id);
-        const status = libraryItem ? getLibraryItemStatus(libraryItem) : "saved";
-        const entry = [
-            `[Source ${includedCount + 1}: "${title}" | status: ${status} | similarity: ${segmentResult.similarity.toFixed(3)}]`,
-            segment.markdown_body,
-        ].join("\n");
-        const separator = orderedContext ? "\n\n---\n\n" : "";
-        const remainingChars = MAX_CONTEXT_CHARS - orderedContext.length - separator.length;
-
-        if (remainingChars <= 0) {
-            break;
-        }
-
-        orderedContext += `${separator}${entry.length > remainingChars ? entry.slice(0, remainingChars).trimEnd() : entry}`;
-        includedCount += 1;
-
-        if (entry.length > remainingChars) {
-            break;
-        }
-    }
-
-    return {
-        contextText: orderedContext,
-        retrievalStatus: orderedContext ? "matched" : "no_match",
-    };
-}
-
-function shouldBoostCompletedForIntent(intent: AskIntent, query: string) {
-    return intent === "reading_advisor" && /\bcompleted|finished|read\b/i.test(query);
-}
-
-function buildRetrievalFallbackText(retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized", intent: AskIntent) {
-    if (retrievalStatus === "skipped" && intent === "reading_advisor") {
-        return "Retrieved passages were not available for this recommendation request. Answer from library metadata and clearly say the recommendation is based on titles, authors, statuses, and categories.";
-    }
-
-    if (retrievalStatus === "not_initialized") {
-        return "Retrieved passages are not initialized yet. Only library metadata is available for this request.";
-    }
-
-    if (retrievalStatus === "no_match") {
-        return intent === "reading_advisor"
-            ? "Matching saved passages were limited for this recommendation request. Still answer from library metadata and clearly say the recommendation is based mostly on titles, authors, statuses, and categories."
-            : "Matching saved passages were limited for this topic. Answer from library metadata first and explicitly note that passage evidence is limited.";
-    }
-
-    return "Retrieved passages were not needed for this question.";
 }
 
 export async function POST(req: NextRequest) {
@@ -385,8 +159,7 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
-        const trimmedMessages = messages.slice(-MAX_HISTORY_MESSAGES);
-        const lastMessage = trimmedMessages[trimmedMessages.length - 1];
+        const lastMessage = messages[messages.length - 1];
         if (!lastMessage || lastMessage.role !== "user") {
             recordAiRouteAbuse({
                 signal: "ai_invalid_payload",
@@ -418,11 +191,14 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
         }
 
+        const questionContext = contextualizeUserQuestion(messages);
+        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "ui");
         const provider = process.env.AI_PROVIDER || "anthropic";
         const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
         const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
         const hasGemini = Boolean(process.env.GEMINI_API_KEY);
-        const intent = detectAskIntent(userQuery);
+        const detectedIntent = detectAskIntent(userQuery);
+        const intent = questionContext.requiresPassageEvidence && detectedIntent === "library_metadata" ? "hybrid" : detectedIntent;
 
         if (!hasAnthropic && !hasOpenAI) {
             logApiError({ requestId, route: "/api/chat", message: "No AI provider configured", error: new Error("Missing env") });
@@ -460,6 +236,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        const retrievalUsageRecorded = intent !== "library_metadata" && hasGemini;
+        if (retrievalUsageRecorded) {
+            // One admitted retrieval attempt includes embedding/selection, even when
+            // it ends in a direct quote, abstention, provider failure or cancellation.
+            await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
+        }
+        const retrievalSignal = AbortSignal.any([req.signal, AbortSignal.timeout(35_000)]);
         const libraryPromise = supabase
             .from("user_library")
             .select(`
@@ -472,10 +255,10 @@ export async function POST(req: NextRequest) {
             .eq("user_id", user.id)
             .order("last_interacted_at", { ascending: false });
         const embeddingPromise = intent !== "library_metadata" && hasGemini
-            ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! }).models.embedContent({
+            ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { retryOptions: { attempts: 1 } } }).models.embedContent({
                 model: EMBEDDING_MODEL,
-                contents: userQuery,
-                config: { outputDimensionality: EMBEDDING_DIMENSIONS },
+                contents: questionContext.semanticQuestion,
+                config: { outputDimensionality: EMBEDDING_DIMENSIONS, abortSignal: retrievalSignal },
             }).then(
                 (response) => ({ response, error: null as unknown }),
                 (error: unknown) => ({ response: null, error }),
@@ -496,62 +279,61 @@ export async function POST(req: NextRequest) {
 
         let retrievalContext = "";
         let retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
-
         if (intent !== "library_metadata" && hasGemini) {
             if (embeddingResult.error) {
                 logApiError({ requestId, route: "/api/chat", message: "Gemini embedding API error", error: embeddingResult.error });
-                return apiError("INTERNAL_ERROR", "Ask My Library retrieval is temporarily unavailable. Please try again later.", 500, requestId);
+                return apiError("RETRIEVAL_UNAVAILABLE", "Ask My Library retrieval is temporarily unavailable. Please retry.", 503, requestId);
             }
             const queryEmbedding = embeddingResult.response?.embeddings?.[0]?.values;
-
-            if (!queryEmbedding || queryEmbedding.length !== EMBEDDING_DIMENSIONS) {
-                logApiError({
-                    requestId,
-                    route: "/api/chat",
-                    message: "Invalid Gemini embedding response structure",
-                    error: new Error(`Expected ${EMBEDDING_DIMENSIONS} dimensions`),
-                });
-                return apiError("INTERNAL_ERROR", "Ask My Library retrieval is temporarily unavailable. Please try again later.", 500, requestId);
+            if (!queryEmbedding || queryEmbedding.length !== EMBEDDING_DIMENSIONS || !queryEmbedding.every(Number.isFinite)) {
+                return apiError("RETRIEVAL_UNAVAILABLE", "Ask My Library retrieval is temporarily unavailable. Please retry.", 503, requestId);
             }
-
             try {
-                const retrievalResult = await fetchRelevantSegments(supabase, user.id, queryEmbedding, {
-                    matchCount: intent === "reading_advisor" ? ADVISOR_MATCH_COUNT : MATCH_COUNT,
-                    boostCompleted: shouldBoostCompletedForIntent(intent, userQuery),
-                    libraryItems,
+                const signal = retrievalSignal;
+                const personal = await retrievePersonalEvidence({
+                    supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
+                    question: userQuery, semanticQuestion: questionContext.semanticQuestion,
+                    queryEmbedding, signal, implicitHighlightQuote: false, deferSelection: true,
                 });
-                retrievalContext = retrievalResult.contextText;
-                retrievalStatus = retrievalResult.retrievalStatus;
+                // Query current source membership after personal ranking, so a reset,
+                // removal, or withdrawal during retrieval does not reuse old passages.
+                const sources = await loadLibrarySourceEvidence({
+                    supabase, userId: user.id, queryEmbedding,
+                    boostCompleted: shouldBoostCompletedForIntent(intent, userQuery), signal,
+                });
+                const rankedSources = await rankLibrarySourceSpans({ sources, userId: user.id, queryEmbedding, signal });
+                const selected = await selectLibraryEvidence({ personal, sources: rankedSources, question: userQuery,
+                    semanticQuestion: questionContext.semanticQuestion, signal });
+                // Embedding and selection may be slow: revalidate both classes at the final delivery boundary.
+                await recheckPersonalEvidenceCandidates({ supabase, userId: user.id, scope: ALL_PERSONAL_EVIDENCE,
+                    candidates: selected.personal.items.map((item) => item.evidence), signal });
+                const freshSources = await loadLibrarySourceEvidence({ supabase, userId: user.id, queryEmbedding,
+                    boostCompleted: shouldBoostCompletedForIntent(intent, userQuery), signal });
+                if (selected.sources.some((source) => !freshSources.some((fresh) => fresh.id === source.id && fresh.fingerprint === source.fingerprint))) {
+                    throw new Error("Source evidence changed during retrieval");
+                }
+                await assertActivePersonalRetrievalSession({ supabase, scope: ALL_PERSONAL_EVIDENCE, signal });
+                const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
+                signal.throwIfAborted();
+                if (authError || currentUser?.id !== user.id) throw new Error("RETRIEVAL_AUTH_CHANGED");
+                if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui");
+                if (selected.quoteTooLarge) return retrievalTextResponse("The matching stored passage is too long to quote completely here. Open the source to read its full text.", "ui");
+                const context = selected;
+                retrievalContext = context.contextText;
+                retrievalStatus = context.evidenceIds.length ? "matched" : "no_match";
+                if (retrievalStatus === "no_match" && intent !== "reading_advisor") {
+                    return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui");
+                }
             } catch (error) {
-                logApiError({ requestId, route: "/api/chat", message: "Vector search or segment fetch failed", error });
-                return apiError("INTERNAL_ERROR", "Failed to search your library. Please try again.", 500, requestId);
+                if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
+                logApiError({ requestId, route: "/api/chat", message: "Complete library evidence retrieval failed", error });
+                return apiError("RETRIEVAL_UNAVAILABLE", "Your library evidence could not be searched completely. Please retry or ask a more specific question.", 503, requestId);
             }
         }
 
         const retrievalContextForPrompt = retrievalContext || buildRetrievalFallbackText(retrievalStatus, intent);
 
-        const systemPrompt = `You are Ask My Library.
-Answer only from the evidence below.
-
-Library metadata:
-${metadataContext}
-
-Retrieved passages:
-${retrievalContextForPrompt}
-
-Intent: ${intent}
-
-Rules:
-- Use metadata for inventory, counts, titles, authors, and reading status.
-- Use retrieved passages for themes, comparisons, and content-based reasoning.
-- For hybrid questions, combine both. If passages are limited, answer from metadata first and say passage evidence is limited.
-- For reading_advisor questions, recommend only from eligible next-read candidates explicitly listed in Library metadata.
-- UNDER NO CIRCUMSTANCES recommend a book, article, author, or source that is not explicitly listed in the provided library metadata.
-- If there are no good internal-library matches, say so and ask the user whether they want broader discovery outside their library.
-- If passage evidence is thin for a reading_advisor question, still make a qualified recommendation from metadata, statuses, authors, and categories instead of repeatedly apologizing.
-- Never invent sources, authors, progress, or themes.
-- If metadata is empty, say so plainly.
-- Keep answers short and structured. Use bullets for lists. Do not write a long essay unless asked.`;
+        const systemPrompt = buildLibraryEvidencePrompt(metadataContext, retrievalContextForPrompt, intent);
 
         let aiModel;
 
@@ -569,12 +351,13 @@ Rules:
         const result = streamText({
             model: aiModel,
             system: systemPrompt,
-            messages: trimmedMessages,
+            messages: [{ role: "user", content: questionContext.semanticQuestion }],
+            abortSignal: req.signal,
             maxOutputTokens: getOutputTokenCap(intent),
             experimental_transform: smoothStream({ delayInMs: 6 }),
             onFinish: async () => {
                 try {
-                    await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
+                    if (!retrievalUsageRecorded) await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
                 } catch (error) {
                     logApiError({ requestId, route: "/api/chat", message: "Failed to record AI usage", error });
                 }

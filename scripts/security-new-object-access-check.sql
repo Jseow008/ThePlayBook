@@ -59,6 +59,9 @@ DECLARE
             -- available only to the authenticated caller whose RLS context
             -- scopes its fixed projection.
             ('search_user_highlights', 'p_query text, p_content_item_id uuid, p_item_type text, p_color text, p_sort text, p_after_created_at timestamp with time zone, p_after_id uuid, p_limit integer', 'authenticated'),
+            -- Owner-derived, read-only personal retrieval wrappers; private vectors remain inaccessible.
+            ('personal_evidence_index_status', 'p_scope jsonb', 'authenticated'),
+            ('match_personal_evidence', 'p_scope jsonb, p_query_embedding vector, p_match_count integer, p_min_similarity double precision, p_field text', 'authenticated'),
             ('set_onboarding_state', 'p_tour text, p_version text, p_status text', 'authenticated')
     ),
     -- These two legacy read-only RPCs still have redundant PUBLIC grants in

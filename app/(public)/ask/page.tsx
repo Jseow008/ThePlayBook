@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AskClientPage } from "./client-page";
-import type { HighlightsPage } from "@/hooks/useHighlights";
 import { buildLoginHref } from "@/lib/auth-redirect";
 import { buildLibrarySnapshot, type LibraryItemRow, type LibrarySnapshot } from "@/lib/server/library-snapshot";
 import { parseNotesChatScope } from "@/lib/notes-chat-scope";
@@ -49,7 +48,11 @@ export default async function AskPage({ searchParams }: AskPageProps) {
         redirect(buildLoginHref(loginTarget));
     }
 
-    let initialNotesPage: HighlightsPage | undefined;
+    if (resolvedSearchParams?.notesScope && !initialNotesScope) {
+        // Old ID-only links must not silently become an account-wide scope.
+        redirect("/notes?ask=1&restart=1");
+    }
+
     let initialLibrarySnapshot: LibrarySnapshot | undefined;
 
     const libraryPromise = supabase
@@ -63,32 +66,7 @@ export default async function AskPage({ searchParams }: AskPageProps) {
         `)
         .eq("user_id", user.id)
         .order("last_interacted_at", { ascending: false });
-    const highlightsPromise = scope === "notes" && !initialNotesScope
-        ? supabase
-            .from("user_highlights")
-            .select(`
-                id,
-                user_id,
-                content_item_id,
-                segment_id,
-                anchor_start,
-                anchor_end,
-                highlighted_text,
-                note_body,
-                color,
-                created_at,
-                updated_at,
-                content_item ( id, title, author, cover_image_url ),
-                segment ( id, title )
-            `)
-            .eq("user_id", user.id)
-            .order("created_at", { ascending: false })
-            .limit(30)
-        : Promise.resolve({ data: null, error: null });
-    const [
-        { data: libraryRows, error: libraryError },
-        { data: highlights, error: highlightsError },
-    ] = await Promise.all([libraryPromise, highlightsPromise]);
+    const { data: libraryRows, error: libraryError } = await libraryPromise;
 
     if (libraryError) {
         console.error("Failed to load ask library snapshot:", libraryError);
@@ -96,27 +74,14 @@ export default async function AskPage({ searchParams }: AskPageProps) {
         initialLibrarySnapshot = buildLibrarySnapshot((libraryRows || []) as LibraryItemRow[]);
     }
 
-    if (scope === "notes" && !initialNotesScope) {
-        if (highlightsError) {
-            console.error("Failed to load ask notes highlights:", highlightsError);
-        }
-
-        initialNotesPage = {
-            data: (highlights || []) as HighlightsPage["data"],
-            nextCursor:
-                highlights && highlights.length === 30
-                    ? (highlights[highlights.length - 1] as { created_at?: string | null })?.created_at ?? null
-                    : null,
-        };
-    }
 
     return (
         <AskClientPage
             returnTo={returnTo}
             scope={scope}
-            initialNotesPage={initialNotesPage}
             initialNotesScope={initialNotesScope ?? undefined}
             initialLibrarySnapshot={initialLibrarySnapshot}
+            initialAccountId={user.id}
         />
     );
 }
