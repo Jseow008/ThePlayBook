@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
@@ -203,6 +203,8 @@ function VerifiedNotesAskPanel({
     const [input, setInput] = useState("");
     const [showAllStarterPrompts, setShowAllStarterPrompts] = useState(false);
     const [activeScope, setActiveScope] = useState<NotesChatScope>(currentScope);
+    const chatInstanceId = useId();
+    const [chatGeneration, setChatGeneration] = useState(0);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const hasHydratedSessionRef = useRef(false);
 
@@ -214,6 +216,7 @@ function VerifiedNotesAskPanel({
         error,
         stop,
     } = useChat<UIMessage>({
+        id: `${chatInstanceId}:${chatGeneration}`,
         transport: chatTransport,
     });
 
@@ -343,16 +346,20 @@ function VerifiedNotesAskPanel({
     };
 
     const syncToCurrentScope = () => {
+        // A cleared message array does not stop SDK stream writes. Abort the old
+        // request and replace its Chat instance so even queued late chunks stay
+        // attached to the old scope rather than the newly selected transcript.
+        void stop?.();
         setActiveScope(currentScope);
         setMessages([]);
+        setChatGeneration((generation) => generation + 1);
     };
 
     const startNewChat = () => {
         clearNotesChatSession(ownerKey, [activeScope.signature, currentScope.signature]);
         setInput("");
         setShowAllStarterPrompts(false);
-        setActiveScope(currentScope);
-        setMessages([]);
+        syncToCurrentScope();
 
         if (textareaRef.current) {
             textareaRef.current.style.height = "auto";

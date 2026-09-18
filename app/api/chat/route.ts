@@ -1,5 +1,5 @@
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
-import { assertActivePersonalRetrievalSession } from "@/lib/server/personal-retrieval-session";
+import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
@@ -104,6 +104,23 @@ export async function POST(req: NextRequest) {
                 message: "Too many requests. Please wait a moment.",
             });
         }
+
+        // getUser can accept a revoked but unexpired JWT. Every private branch,
+        // including inventory and metadata-only recommendations, needs a live session.
+        const validateChatSession = async () => {
+            try {
+                await assertActiveChatSession({ supabase, signal: req.signal });
+                return null;
+            } catch (error) {
+                if (error instanceof ChatSessionValidationError && error.code === "UNAUTHORIZED") {
+                    return apiError("UNAUTHORIZED", "Your chat session has ended. Please sign in again.", 401, requestId);
+                }
+                logApiError({ requestId, route: "/api/chat", message: "Could not verify the live chat session", error });
+                return apiError("RETRIEVAL_UNAVAILABLE", "Your chat session could not be verified. Please retry.", 503, requestId);
+            }
+        };
+        const sessionFailure = await validateChatSession();
+        if (sessionFailure) return sessionFailure;
 
         // --- Parse & Validate Body ---
         let body: unknown;
@@ -331,6 +348,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // Retrieval already rechecks its session at delivery. Metadata branches
+        // must also reject revocation that happened while loading the library.
+        if (retrievalStatus === "skipped") {
+            const finalSessionFailure = await validateChatSession();
+            if (finalSessionFailure) return finalSessionFailure;
+        }
         const retrievalContextForPrompt = retrievalContext || buildRetrievalFallbackText(retrievalStatus, intent);
 
         const systemPrompt = buildLibraryEvidencePrompt(metadataContext, retrievalContextForPrompt, intent);
