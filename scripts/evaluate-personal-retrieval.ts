@@ -332,6 +332,55 @@ export function fixtureSupportOutcomes(testCase: FixtureCase, selectedIds: reado
         forbiddenIdsExcluded: !(testCase.forbiddenIds ?? []).some((id) => selectedIds.includes(id)),
         interpretation: "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof." };
 }
+/** V2 authorization oracle mirrors frozen fixture data and the actual request, never relevance labels. */
+export function authorizedFixtureRows(corpus: Corpus, testCase: FixtureCase): FixtureEvidence[] {
+    if (!testCase.request) return scopedRows(corpus.evidence, testCase.scope);
+    const request = testCase.request;
+    if (request.sessionState !== "valid") return [];
+    const rows = expandedEvidence(corpus);
+    const sourceUnavailable = (contentId: string) => rows.some((row) => row.contentId === contentId
+        && (row.lifecycle?.source === "withdrawn" || row.type === "source_segment" && row.state === "withdrawn"));
+    const contents = new Map(rows.map((row) => [row.contentId, row.title]));
+    const segmentTitles = new Map<string, string>();
+    for (const row of [...rows.filter((row) => row.type === "source_segment"), ...rows.filter((row) => row.type !== "source_segment")])
+        if (row.segmentId && !segmentTitles.has(row.segmentId)) segmentTitles.set(row.segmentId, row.title);
+    return rows.filter((row) => {
+        if (row.accountId !== request.accountId || (row.lifecycle ? row.lifecycle.record !== "present" : row.state === "user_deleted")) return false;
+        if (row.type === "source_segment") return request.surface === "library" && !sourceUnavailable(row.contentId);
+        if (request.surface === "library") return true;
+        const scope = request.notesScope;
+        if (!scope || scope.contentItemId && scope.contentItemId !== row.contentId) return false;
+        const note = Boolean(row.note?.trim());
+        if (scope.itemType === "reflection" && row.type !== "reflection"
+            || scope.itemType === "note" && (row.type !== "highlight" || !note)
+            || scope.itemType === "highlight" && (row.type !== "highlight" || note)) return false;
+        // The frozen DB adapter seeds highlights yellow; reflections never match color filters.
+        if (scope.color && (row.type !== "highlight" || scope.color !== "yellow")) return false;
+        const query = scope.filterQuery?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
+        if (!query) return true;
+        const metadata = sourceUnavailable(row.contentId) ? [] : [contents.get(row.contentId) ?? "",
+            row.type === "highlight" && row.segmentId ? segmentTitles.get(row.segmentId) ?? "" : ""];
+        // Fixture authors are null. SQL matches literal substrings, not semantic query terms.
+        const fields = row.type === "highlight" ? [row.text, row.note ?? "", ...metadata] : [row.text, row.prompt ?? "", ...metadata];
+        return fields.some((field) => field.toLowerCase().includes(query));
+    });
+}
+export function fixtureExclusionPass(corpus: Corpus, testCase: FixtureCase, record: Pick<QualityRecord, "selectedIds" | "contextText" | "responseText">): boolean {
+    if (!testCase.request) {
+        const allowed = new Set(scopedRows(corpus.evidence, testCase.scope).map((row) => row.id));
+        const text = `${record.contextText}\n${record.responseText ?? ""}`;
+        return record.selectedIds.every((id) => id.startsWith("noise-") || allowed.has(id))
+            && corpus.evidence.filter((row) => row.accountId !== "account-a" || row.state !== "available")
+                .every((row) => !record.selectedIds.includes(row.id) && !text.includes(row.text));
+    }
+    const allowed = authorizedFixtureRows(corpus, testCase); const ids = new Set(allowed.map((row) => row.id));
+    if (!record.selectedIds.every((id) => ids.has(id))) return false;
+    const fields = (row: FixtureEvidence) => [row.text, row.note ?? "", row.prompt ?? ""].filter((field) => field.trim().length > 0);
+    const authorizedText = allowed.flatMap(fields); const text = `${record.contextText}\n${record.responseText ?? ""}`;
+    // Shared wording cannot identify a forbidden origin; selected IDs and independent attribution review disambiguate it.
+    return expandedEvidence(corpus).filter((row) => !ids.has(row.id)).every((row) => fields(row).every((field) =>
+        authorizedText.some((allowedField) => allowedField.includes(field)) || !text.includes(field)));
+}
 export function scoreQuality(corpus: Corpus, records: QualityRecord[], reviews: Adjudication[] = [], requireIndependentReview = false) {
     const expected = corpus.cases.length * QUALITY_CONFIG.runs;
     const keys = new Set(records.map((record) => `${record.run}:${record.caseId}`));
@@ -339,7 +388,6 @@ export function scoreQuality(corpus: Corpus, records: QualityRecord[], reviews: 
     const complete = records.length === expected && keys.size === expected && valid.length === expected;
     const reviewFor = (record: QualityRecord) => reviews.find((review) => review.caseId === record.caseId && review.run === record.run
         && (!requireIndependentReview || ((review.reviewerKind === "human" || review.reviewerKind === "ai") && review.independent === true && review.rubricSha256 === corpusHash(corpus))) && review.reviewer.trim() && review.responseSha256 === sha(record.responseText ?? ""));
-    const forbidden = corpus.evidence.filter((row) => row.accountId !== "account-a" || row.state !== "available");
     const results = Array.from({ length: QUALITY_CONFIG.runs }, (_, index) => {
         const run = index + 1;
         const runRecords = valid.filter((record) => record.run === run);
@@ -369,10 +417,7 @@ export function scoreQuality(corpus: Corpus, records: QualityRecord[], reviews: 
         const exclusion = ratio(corpus.cases.filter((item) => {
             const record = lookup(item);
             if (!record) return false;
-            const allowed = new Set(scopedRows(corpus.evidence, item.scope).map((row) => row.id));
-            const text = `${record.contextText}\n${record.responseText ?? ""}`;
-            return record.selectedIds.every((id) => id.startsWith("noise-") || allowed.has(id))
-                && forbidden.every((row) => !record.selectedIds.includes(row.id) && !text.includes(row.text));
+            return fixtureExclusionPass(corpus, item, record);
         }).length, corpus.cases.length);
         return { run, perClass, recallMacro: CLASSES.reduce((sum, type) => sum + perClass[type].rate!, 0) / CLASSES.length,
             irrelevantRejection: rejection, abstention, exactQuoteFidelity: exact, forbiddenEvidenceExclusion: exclusion };

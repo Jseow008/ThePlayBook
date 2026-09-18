@@ -6,10 +6,10 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-    qualityScoreExitCode, createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
+    authorizedFixtureRows, fixtureExclusionPass, qualityScoreExitCode, createExecutionTokenCounter, fixtureSupportOutcomes, productionRetrievalHashes, databaseGenerationInputHash, readDatabaseGenerationInputs, databaseGenerationPlan, databaseVectorFixture, embeddingInputs, expandedEvidence, plan, readAcquisitionCheckpoint, readDatabaseVectorFixture, readFrozenCorpus,
     retrieveFixtureCase, safeProviderFailure, scopedRows, scoreQuality, QUALITY_CONFIG, ProviderScheduler,
     readCapturedSelectorInputs, capturedSelectorPlan, selectorOnlyMetrics, FROZEN_CORPUS_SHA256,
-    type Adjudication, type Corpus, type QualityRecord, type VectorBank, type CapturedSelectorInputs,
+    type Adjudication, type FixtureCase, type FixtureEvidence, type Corpus, type QualityRecord, type VectorBank, type CapturedSelectorInputs,
 } from "../../../scripts/evaluate-personal-retrieval";
 import { buildPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash, PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG }
     from "../../../lib/server/personal-evidence-selector";
@@ -386,5 +386,46 @@ describe("quality CLI exit status", () => {
         expect(qualityScoreExitCode(scoreQuality(corpus, records))).toBe(1);
         for (const value of [null, undefined, {}, { providerDiagnosticVerdict: "THRESHOLDS_MET_IN_DIAGNOSTIC_ONLY" }])
             expect(qualityScoreExitCode(value)).toBe(1);
+    });
+});
+
+describe("v2 final-scoring authorization oracle", () => {
+    function fixture() {
+        const source: FixtureEvidence = { ...readFrozenCorpus("v2").evidence.find((row) => row.type === "source_segment")!, id: "source", contentId: "content-a", segmentId: "segment-a", title: "Current source title", text: "Stored shared passage.", state: "available", lifecycle: { record: "present" as const, source: "available" as const } };
+        const highlight = { ...source, id: "highlight", type: "highlight" as const, note: null, prompt: null };
+        const note = { ...highlight, id: "note", text: "Different selected words.", note: "A private qualifying note." };
+        const reflection = { ...highlight, id: "reflection", type: "reflection" as const, segmentId: null, text: "Actual reflected answer.", prompt: "Question prompt" };
+        const input: Corpus = { ...readFrozenCorpus("v2"), evidence: [source, highlight, note, reflection], corpusExpansion: { ...corpus.corpusExpansion, noisePerPersonalClass: 0 } };
+        const testCase = { ...input.cases[0], request: { surface: "notes" as const, accountId: "account-a" as const, sessionState: "valid" as const, notesScope: { version: 1 as const, itemType: "all" as const } } };
+        return { input, testCase, source, highlight, note, reflection };
+    }
+    it("enforces actual Notes item type, color, content and literal filter constraints", () => {
+        const { input, testCase } = fixture();
+        const selected = (scope: NonNullable<FixtureCase["request"]>["notesScope"]) => authorizedFixtureRows(input, { ...testCase, request: { ...testCase.request, notesScope: scope } }).map((row) => row.id);
+        expect(selected({ version: 1, itemType: "all" })).toEqual(["highlight", "note", "reflection"]);
+        expect(selected({ version: 1, itemType: "highlight" })).toEqual(["highlight"]);
+        expect(selected({ version: 1, itemType: "note" })).toEqual(["note"]);
+        expect(selected({ version: 1, itemType: "reflection" })).toEqual(["reflection"]);
+        expect(selected({ version: 1, itemType: "all", color: "yellow" })).toEqual(["highlight", "note"]);
+        expect(selected({ version: 1, itemType: "all", color: "blue" })).toEqual([]);
+        expect(selected({ version: 1, itemType: "all", contentItemId: "other-content" })).toEqual([]);
+        expect(selected({ version: 1, itemType: "all", filterQuery: "  PRIVATE   qualifying " })).toEqual(["note"]);
+        expect(selected({ version: 1, itemType: "all", filterQuery: "%" })).toEqual([]);
+    });
+    it("retains owned capture wording after source withdrawal without allowing the source ID", () => {
+        const { input, testCase, source } = fixture(); source.lifecycle = { record: "present", source: "withdrawn" };
+        const library: FixtureCase = { ...testCase, request: { ...testCase.request, surface: "library", notesScope: null } };
+        expect(fixtureExclusionPass(input, library, { selectedIds: ["highlight"], contextText: "Stored shared passage.", responseText: "Stored shared passage." })).toBe(true);
+        expect(fixtureExclusionPass(input, library, { selectedIds: ["source"], contextText: "Stored shared passage.", responseText: null })).toBe(false);
+        expect(authorizedFixtureRows(input, { ...testCase, request: { ...testCase.request, notesScope: { version: 1, itemType: "all", filterQuery: "Current source title" } } })).toEqual([]);
+    });
+    it("rejects revoked requests, deleted/other-account IDs and unique forbidden field text", () => {
+        const { input, testCase, note, reflection } = fixture();
+        note.lifecycle = { record: "user_deleted", source: "available" }; reflection.accountId = "account-b";
+        expect(authorizedFixtureRows(input, testCase).map((row) => row.id)).toEqual(["highlight"]);
+        expect(fixtureExclusionPass(input, testCase, { selectedIds: ["highlight"], contextText: "A private qualifying note.", responseText: null })).toBe(false);
+        expect(fixtureExclusionPass(input, testCase, { selectedIds: ["reflection"], contextText: "", responseText: null })).toBe(false);
+        expect(authorizedFixtureRows(input, { ...testCase, request: { ...testCase.request, sessionState: "revoked" } })).toEqual([]);
+        expect(fixtureExclusionPass(input, { ...testCase, request: { ...testCase.request, notesScope: { version: 1, itemType: "note" } } }, { selectedIds: ["highlight"], contextText: "", responseText: null })).toBe(false);
     });
 });
