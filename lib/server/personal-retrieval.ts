@@ -27,8 +27,8 @@ export class PersonalEvidenceIndexNotReady extends Error {
 /** Only the latest question controls quotation mode; history cannot enable it. */
 export function exactPersonalQuoteField(question: string) {
     if (!/\b(exact (?:quote|wording|text|passage)|verbatim|word[ -]for[ -]word|quote)\b/i.test(question)) return undefined;
-    if (/\b(reflection|reflected)\b/i.test(question)) return "reflectionText" as const;
-    if (/\b(note|wrote|commentary)\b/i.test(question)) return "noteBody" as const;
+    if (/\b(reflections?|reflected)\b/i.test(question)) return "reflectionText" as const;
+    if (/\b(notes?|wrote|commentary)\b/i.test(question)) return "noteBody" as const;
     return "highlightedText" as const;
 }
 

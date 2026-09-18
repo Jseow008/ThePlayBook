@@ -65,6 +65,41 @@ describe('indexed personal retrieval orchestration', () => {
         expect(rpc).toHaveBeenCalledWith('match_personal_evidence', expect.objectContaining({ p_field: 'reflectionText', p_match_count: 32 }));
         expect(result.items[0].exactQuote).toBe('Stored answer.');
     });
+    it.each([true, false])('routes plural notes to the attached note in all scope (implicit personal quotation: %s)', async (implicitHighlightQuote) => {
+        const highlightedText = 'The copied source recommends silence.';
+        const noteBody = 'My own note: discussion helped me understand.';
+        const highlight = { type: 'highlight', evidenceId: `highlight:${id}`, id, userId: 'owner',
+            highlightedText, noteBody, fingerprint: 'current', source: null, sourceStatus: 'unavailable',
+        } as PersonalEvidenceCandidate;
+        abortSignal.mockResolvedValue({ data: ready([
+            { ...match('highlightedText'), evidence_type: 'highlight', end_offset: highlightedText.length },
+            { ...match('noteBody'), evidence_type: 'highlight', end_offset: noteBody.length },
+        ]), error: null });
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([highlight]);
+        selectionGenerator.mockResolvedValue({ output: structuralSelectionOutput([`highlight:${id}`]) });
+
+        const result = await retrievePersonalEvidence({ ...request('Quote my notes about understanding exactly.'), implicitHighlightQuote });
+
+        expect(rpc).toHaveBeenCalledTimes(2);
+        for (const [, args] of rpc.mock.calls) expect(args).toMatchObject({ p_scope: scope, p_field: 'noteBody' });
+        expect(result.quoteField).toBe('noteBody');
+        expect(result.items[0].exactQuote).toBe(noteBody);
+        expect(result.items[0].spans).toEqual([expect.objectContaining({ field: 'noteBody', text: noteBody })]);
+        expect(result.contextText).not.toContain(highlightedText);
+    });
+    it.each([true, false])('routes plural reflections to the stored answer in all scope (implicit personal quotation: %s)', async (implicitHighlightQuote) => {
+        abortSignal.mockResolvedValue({ data: ready([match(), { ...match('prompt'), end_offset: 'My prompt'.length }]), error: null });
+        vi.mocked(loadSelectedPersonalEvidence).mockResolvedValue([reflection]);
+
+        const result = await retrievePersonalEvidence({ ...request('Quote my reflections about attention exactly.'), implicitHighlightQuote });
+
+        expect(rpc).toHaveBeenCalledTimes(2);
+        for (const [, args] of rpc.mock.calls) expect(args).toMatchObject({ p_scope: scope, p_field: 'reflectionText' });
+        expect(result.quoteField).toBe('reflectionText');
+        expect(result.items[0].exactQuote).toBe('Stored answer.');
+        expect(result.items[0].spans).toEqual([expect.objectContaining({ field: 'reflectionText', text: 'Stored answer.' })]);
+        expect(result.contextText).not.toContain('My prompt');
+    });
     it('does not interpret an editorial quotation as a personal highlight request', async () => {
         await retrievePersonalEvidence({ ...request('Quote the source passage'), implicitHighlightQuote: false });
         expect(rpc).toHaveBeenCalledWith('match_personal_evidence', expect.objectContaining({ p_field: undefined }));
