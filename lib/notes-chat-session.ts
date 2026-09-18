@@ -17,6 +17,14 @@ export function clearLegacyNotesChatSessions(): void {
         for (const key of Object.keys(window.sessionStorage)) if (key.startsWith(LEGACY_PREFIX)) window.sessionStorage.removeItem(key);
     } catch { /* Unavailable storage does not prevent chatting. */ }
 }
+export function clearAllNotesChatSessions(): void {
+    if (typeof window === 'undefined') return;
+    try {
+        for (const key of Object.keys(window.sessionStorage)) {
+            if (key.startsWith(PREFIX) || key.startsWith(LEGACY_PREFIX)) window.sessionStorage.removeItem(key);
+        }
+    } catch { /* Unavailable storage must not prevent sign-out. */ }
+}
 export function clearNotesChatOwner(ownerKey: string): void {
     if (typeof window === 'undefined') return;
     try {
