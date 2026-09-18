@@ -378,9 +378,9 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                 }
             }
 
-            const plans: Record<string, unknown> = {};
+            const plans: Record<string, { natural: unknown; indexUsable: unknown }> = {};
             for (const queryCase of querySet) {
-                const plan = await client.query<ExplainRow>(
+                const naturalPlan = await client.query<ExplainRow>(
                     `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
                      SELECT d.content_id
                      FROM public.catalog_search_document AS d
@@ -388,8 +388,25 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                      LIMIT 20`,
                     [queryCase.query],
                 );
-                plans[queryCase.id] = plan.rows[0]!["QUERY PLAN"];
-                expect(planUsesSearchIndex(plans[queryCase.id])).toBe(true);
+                // Preserve the planner's natural decision (including a
+                // sequential scan for a broad query), then prove the intended
+                // GIN index is valid and usable without making the measured
+                // production calls rely on that planner override.
+                await client.query("SET enable_seqscan = off");
+                const indexUsablePlan = await client.query<ExplainRow>(
+                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+                     SELECT d.content_id
+                     FROM public.catalog_search_document AS d
+                     WHERE d.search_vector @@ websearch_to_tsquery('english', $1)
+                     LIMIT 20`,
+                    [queryCase.query],
+                );
+                await client.query("RESET enable_seqscan");
+                plans[queryCase.id] = {
+                    natural: naturalPlan.rows[0]!["QUERY PLAN"],
+                    indexUsable: indexUsablePlan.rows[0]!["QUERY PLAN"],
+                };
+                expect(planUsesSearchIndex(plans[queryCase.id].indexUsable), queryCase.id).toBe(true);
 
                 const result = await client.query<CatalogRow>(
                     `SELECT content_id, title, snippet_headline
