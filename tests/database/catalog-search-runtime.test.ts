@@ -54,6 +54,29 @@ function planNodeTypes(plan: unknown): string[] {
     return [...nodeTypes].sort();
 }
 
+function sequentialScanDetails(plan: unknown) {
+    const scans: Array<{ relation: string | null; filter: string | null; actualRows: number | null; rowsRemoved: number | null }> = [];
+    const visit = (value: unknown) => {
+        if (Array.isArray(value)) {
+            value.forEach(visit);
+            return;
+        }
+        if (!value || typeof value !== "object") return;
+        const record = value as Record<string, unknown>;
+        if (record["Node Type"] === "Seq Scan") {
+            scans.push({
+                relation: typeof record["Relation Name"] === "string" ? record["Relation Name"] : null,
+                filter: typeof record.Filter === "string" ? record.Filter : null,
+                actualRows: typeof record["Actual Rows"] === "number" ? record["Actual Rows"] : null,
+                rowsRemoved: typeof record["Rows Removed by Filter"] === "number" ? record["Rows Removed by Filter"] : null,
+            });
+        }
+        Object.values(record).forEach(visit);
+    };
+    visit(plan);
+    return scans;
+}
+
 describeDatabase("catalog and notes search on a disposable Supabase database", () => {
     const db = new Pool({ connectionString: adminDatabaseUrl, max: 2 });
     const accountA = randomUUID();
@@ -493,8 +516,18 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                 functionPlan: unknown;
                 componentNatural: unknown;
                 forcedIndexDiagnostic: unknown;
-                naturalPlanSummary: { usesSearchIndex: boolean; hasSequentialScan: boolean; nodeTypes: string[] };
-                forcedIndexDiagnosticSummary: { usesSearchIndex: boolean; hasSequentialScan: boolean; nodeTypes: string[] };
+                naturalPlanSummary: {
+                    usesSearchIndex: boolean;
+                    hasSequentialScan: boolean;
+                    nodeTypes: string[];
+                    sequentialScans: Array<{ relation: string | null; filter: string | null; actualRows: number | null; rowsRemoved: number | null }>;
+                };
+                forcedIndexDiagnosticSummary: {
+                    usesSearchIndex: boolean;
+                    hasSequentialScan: boolean;
+                    nodeTypes: string[];
+                    sequentialScans: Array<{ relation: string | null; filter: string | null; actualRows: number | null; rowsRemoved: number | null }>;
+                };
             }> = {};
             const benchmarkCases: Array<{
                 id: string;
@@ -554,11 +587,13 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                         usesSearchIndex: planUsesSearchIndex(natural),
                         hasSequentialScan: planHasSequentialScan(natural),
                         nodeTypes: planNodeTypes(natural),
+                        sequentialScans: sequentialScanDetails(natural),
                     },
                     forcedIndexDiagnosticSummary: {
                         usesSearchIndex: planUsesSearchIndex(forced),
                         hasSequentialScan: planHasSequentialScan(forced),
                         nodeTypes: planNodeTypes(forced),
+                        sequentialScans: sequentialScanDetails(forced),
                     },
                 };
 

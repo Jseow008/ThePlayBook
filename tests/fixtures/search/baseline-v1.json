@@ -5,11 +5,11 @@
   "recordedAt": "2026-09-18",
   "runner": {
     "kind": "executed clean-worktree baseline",
-    "workflowRun": "https://github.com/Jseow008/ThePlayBook/actions/runs/35321936482",
-    "executedAt": "2026-09-18T08:00:56.491Z",
+    "workflowRun": "https://github.com/Jseow008/ThePlayBook/actions/runs/35326303504",
+    "executedAt": "2026-09-18T08:52:23.707Z",
     "configuration": {
       "catalog": "real local Supabase query through the baseline SearchResults server component",
-      "notes": "baseline useInfiniteHighlights first-page behavior with a controlled 31-record response"
+      "notes": "baseline useInfiniteHighlights against a controlled two-page response with the matching note on page two"
     }
   },
   "cases": [
@@ -53,7 +53,7 @@
       "kind": "notes-completeness",
       "expectedCapability": "not-supported",
       "result": "not-supported",
-      "evidence": "Baseline Notes loaded only the initial 30-record page; the controlled later match was not present."
+      "evidence": "The controlled backend's page two contains a matching note, but baseline Notes made only its unfiltered first-page request and did not contain that record."
     }
   ],
   "aggregateMethod": "Each capability is recorded as supported or not-supported by the executed frozen implementation. No unavailable capability is assigned a passing numeric score."
