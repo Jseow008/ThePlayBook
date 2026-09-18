@@ -1,0 +1,520 @@
+{
+  "version": "selector-witness-development-review-v1",
+  "sourceArtifact": "selector-witness-development-v1.json",
+  "sourceSha256": "8c561b4a596018f1858f210be3d81c4637466dc02efbd47e8b92dbedcb5e4538",
+  "method": "Diagnostic raw IDs are derived only from model assessments marked direct whose emitted constraint checks are all supported, before exact-quote, entity, completeness or question-span validation. Expected IDs are comparison assertions only. Raw agreement is not a valid response and does not override errors.",
+  "priorBaseline": {
+    "artifact": "selector-precision-correction-v3.json",
+    "calls": 6,
+    "passedCases": 5,
+    "expectedCases": 6,
+    "positiveTargetRecall": {
+      "hits": 7,
+      "total": 7
+    },
+    "abstentionCases": {
+      "passed": 1,
+      "total": 2
+    },
+    "comparisonLimit": "One prior run of the same six development cases versus three repetitions; not statistical or held-out evidence."
+  },
+  "summary": {
+    "calls": 18,
+    "validResponses": 12,
+    "invalidResponses": 6,
+    "validatedPassedCases": 12,
+    "totalCases": 18,
+    "rawDecisionAgreementCases": 18,
+    "positiveTargetRecall": {
+      "validatedHits": 8,
+      "rawHits": 21,
+      "total": 21,
+      "errorsCountAsNoDeliveredTargets": true
+    },
+    "abstentionCases": {
+      "validatedPassed": 6,
+      "total": 6
+    },
+    "usage": {
+      "inputTokens": 52875,
+      "outputTokens": 5069,
+      "totalTokens": 57944
+    },
+    "latencyMs": {
+      "min": 2019.5023329999967,
+      "p50": 2934.977292000003,
+      "p95": 7891.802958,
+      "max": 7891.802958,
+      "mean": 3830.3207707222236
+    },
+    "maxOutputTokensObserved": 429,
+    "outputTokenCap": 1600,
+    "largestSelectedSet": 3
+  },
+  "caseResults": [
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        }
+      ]
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": false,
+          "error": "INVALID_ENTITY_WITNESS",
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 3,
+          "validatedPass": false,
+          "error": "INVALID_QUESTION_SPAN",
+          "rawDecisionAgreement": true
+        }
+      ]
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        }
+      ]
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        }
+      ]
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": false,
+          "error": "INVALID_WITNESS",
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 2,
+          "validatedPass": false,
+          "error": "INVALID_WITNESS",
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 3,
+          "validatedPass": false,
+          "error": "MISSING_CONSTRAINT_CHECK",
+          "rawDecisionAgreement": true
+        }
+      ]
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 2,
+          "validatedPass": false,
+          "error": "INVALID_ENTITY_WITNESS",
+          "rawDecisionAgreement": true
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "error": null,
+          "rawDecisionAgreement": true
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "run": 1,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [
+        "p02"
+      ],
+      "validatedPass": true,
+      "expectedIds": [
+        "p02"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p02"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "f7e0cf754c449406da88176f3b797a026bcb2cb39ac16c70262b0a5253b4dd53",
+      "inputSha256": "ec445d844e0b6293827a2e54b6665289f03e1575ce308548bceed8a55f3b797a"
+    },
+    {
+      "run": 1,
+      "caseId": "same-name-different-profession",
+      "validationOutcome": "invalid_assessment",
+      "validationError": "INVALID_ENTITY_WITNESS",
+      "validatedSelectedIds": null,
+      "validatedPass": false,
+      "expectedIds": [
+        "p06"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p06"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "247b05b9ab6858ea8b38efd17a0d66ea2d889bd9ef3d08e41735823c1623fe14",
+      "inputSha256": "c322058ad9b9b79d99146d9b5976bb03db07f06b38331ec4a8ddb895d3b4d37b"
+    },
+    {
+      "run": 1,
+      "caseId": "named-organization-not-established",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [],
+      "validatedPass": true,
+      "expectedIds": [],
+      "diagnosticRawDirectSupportedIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "4304cb2b6a07a675e37d3f2806d54f7b7a50d06bafb95f7ecaeb3e1437afef66",
+      "inputSha256": "60ee9136947cd81c6325700ffb8740f4c2dbcb610c94cc8a3833045a58211bd3"
+    },
+    {
+      "run": 1,
+      "caseId": "unsupported-causal-connection",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [],
+      "validatedPass": true,
+      "expectedIds": [],
+      "diagnosticRawDirectSupportedIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "ae7449f9bc8be7c019abd45d26d969464c3eba9573b13e9c57a9eff93c393d06",
+      "inputSha256": "e194f99713fccc98a4bfe7a1b44831777df7c66695a47b8ff143334c2d6cd182"
+    },
+    {
+      "run": 1,
+      "caseId": "three-requested-comparison-facets",
+      "validationOutcome": "invalid_assessment",
+      "validationError": "INVALID_WITNESS",
+      "validatedSelectedIds": null,
+      "validatedPass": false,
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "7830e8497b41e332a81c779e4a641d3b5f19caf753fa3046c3fd75dccbd37ebc",
+      "inputSha256": "2cf3c40b12faf6971521df34aed501b23325d5ed9018b8a251860aa4a1370259"
+    },
+    {
+      "run": 1,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [
+        "p18",
+        "p19"
+      ],
+      "validatedPass": true,
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "1f3c0f50a66d95f2a5ee9978adcbc32816e78956979fd1102e31e48a2a227926",
+      "inputSha256": "09ac9eb25bd36777133f7716e3b20cfa87a599ad56f5cd8617077682146f48a1"
+    },
+    {
+      "run": 2,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [
+        "p02"
+      ],
+      "validatedPass": true,
+      "expectedIds": [
+        "p02"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p02"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "bf2cf7692ca970a933946249319427b66ae98cbd8fdde7423afd7dbfb8b2d3bc",
+      "inputSha256": "ec445d844e0b6293827a2e54b6665289f03e1575ce308548bceed8a55f3b797a"
+    },
+    {
+      "run": 2,
+      "caseId": "same-name-different-profession",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [
+        "p06"
+      ],
+      "validatedPass": true,
+      "expectedIds": [
+        "p06"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p06"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "c1623980db0369dcad68952ff97fb2268e063f0e0335040f49c0860e707a979d",
+      "inputSha256": "c322058ad9b9b79d99146d9b5976bb03db07f06b38331ec4a8ddb895d3b4d37b"
+    },
+    {
+      "run": 2,
+      "caseId": "named-organization-not-established",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [],
+      "validatedPass": true,
+      "expectedIds": [],
+      "diagnosticRawDirectSupportedIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "0f63c9bba18c06b20c0ff2e04f14d78bb5790f1644f86bdb7c3549b3bfad2d46",
+      "inputSha256": "60ee9136947cd81c6325700ffb8740f4c2dbcb610c94cc8a3833045a58211bd3"
+    },
+    {
+      "run": 2,
+      "caseId": "unsupported-causal-connection",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [],
+      "validatedPass": true,
+      "expectedIds": [],
+      "diagnosticRawDirectSupportedIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "502e8061ca92e7e8718a5d2da3457c40774b82a5d6ad972e49778149c210a990",
+      "inputSha256": "e194f99713fccc98a4bfe7a1b44831777df7c66695a47b8ff143334c2d6cd182"
+    },
+    {
+      "run": 2,
+      "caseId": "three-requested-comparison-facets",
+      "validationOutcome": "invalid_assessment",
+      "validationError": "INVALID_WITNESS",
+      "validatedSelectedIds": null,
+      "validatedPass": false,
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "57f308cba45bb9696a161622c0bd2e2abddb03e48aa96b1fac175df09c8bd2f5",
+      "inputSha256": "2cf3c40b12faf6971521df34aed501b23325d5ed9018b8a251860aa4a1370259"
+    },
+    {
+      "run": 2,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "validationOutcome": "invalid_assessment",
+      "validationError": "INVALID_ENTITY_WITNESS",
+      "validatedSelectedIds": null,
+      "validatedPass": false,
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "f06b71dc66e14fa57e3475bcee9cfe1f95f3db0c46ce1b57587578f9490b6b28",
+      "inputSha256": "09ac9eb25bd36777133f7716e3b20cfa87a599ad56f5cd8617077682146f48a1"
+    },
+    {
+      "run": 3,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [
+        "p02"
+      ],
+      "validatedPass": true,
+      "expectedIds": [
+        "p02"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p02"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "91ecb3fb12c3211bfedebc75c950e40856247633450eb509957be8a39551f74f",
+      "inputSha256": "ec445d844e0b6293827a2e54b6665289f03e1575ce308548bceed8a55f3b797a"
+    },
+    {
+      "run": 3,
+      "caseId": "same-name-different-profession",
+      "validationOutcome": "invalid_assessment",
+      "validationError": "INVALID_QUESTION_SPAN",
+      "validatedSelectedIds": null,
+      "validatedPass": false,
+      "expectedIds": [
+        "p06"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p06"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "fe09d02f092f274cb66b2dc634bdd98805929cf84db8cf9126af939cf652d0b5",
+      "inputSha256": "c322058ad9b9b79d99146d9b5976bb03db07f06b38331ec4a8ddb895d3b4d37b"
+    },
+    {
+      "run": 3,
+      "caseId": "named-organization-not-established",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [],
+      "validatedPass": true,
+      "expectedIds": [],
+      "diagnosticRawDirectSupportedIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "4e7aee4fac22e2bca077e6c78fcc76d2603a3ceb3e499b7bef83c999cc24078a",
+      "inputSha256": "60ee9136947cd81c6325700ffb8740f4c2dbcb610c94cc8a3833045a58211bd3"
+    },
+    {
+      "run": 3,
+      "caseId": "unsupported-causal-connection",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [],
+      "validatedPass": true,
+      "expectedIds": [],
+      "diagnosticRawDirectSupportedIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "502e8061ca92e7e8718a5d2da3457c40774b82a5d6ad972e49778149c210a990",
+      "inputSha256": "e194f99713fccc98a4bfe7a1b44831777df7c66695a47b8ff143334c2d6cd182"
+    },
+    {
+      "run": 3,
+      "caseId": "three-requested-comparison-facets",
+      "validationOutcome": "invalid_assessment",
+      "validationError": "MISSING_CONSTRAINT_CHECK",
+      "validatedSelectedIds": null,
+      "validatedPass": false,
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "160d12d6317ac05dfd7f2083002e79596070bec21f395809caa773eaf4a0a671",
+      "inputSha256": "2cf3c40b12faf6971521df34aed501b23325d5ed9018b8a251860aa4a1370259"
+    },
+    {
+      "run": 3,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "validationOutcome": "complete",
+      "validationError": null,
+      "validatedSelectedIds": [
+        "p18",
+        "p19"
+      ],
+      "validatedPass": true,
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDirectSupportedIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawOutputSha256": "b75b70c8927a504b541ec4f12973d2daaf473c42627804175af792e20eae0d08",
+      "inputSha256": "09ac9eb25bd36777133f7716e3b20cfa87a599ad56f5cd8617077682146f48a1"
+    }
+  ],
+  "limitations": [
+    "The experiment is development-only, with the same six cases repeated three times; no new holdout was read.",
+    "Raw semantic-choice agreement does not establish that every constraint was extracted or supported. Missing checks can still yield apparent raw agreement.",
+    "A model may omit or misclassify an entity; the validator cannot deterministically recognize every semantic constraint.",
+    "Field-only witnesses reject identities available solely in candidate titles, outside supplied excerpts, or through supported aliases.",
+    "Only up to three selected records were exercised. A1600-token cap is not demonstrated sufficient for eight-record comparisons.",
+    "Literal witness generation added false operational failures. Do not adopt this validator as production-ready.",
+    "Any production experiment needs versioned canonical witness/reason schema and raw structured outputs preserved through capture and replay; derived IDs cannot stand in for raw proof."
+  ],
+  "recommendation": "Do not integrate this literal-witness validator. The raw decisions support further consideration of a simpler structured relevance decision without generated verbatim quotation checks, but no further calls or production edits were performed."
+}
