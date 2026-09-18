@@ -162,6 +162,38 @@ DECLARE
 
     UNION ALL
 
+    -- The library state row is an internal revision/reset boundary. It must
+    -- stay unreachable through the Data API even if a future change attempts
+    -- to make that harmless-looking table an expected browser surface.
+    SELECT pg_catalog.format(
+        'account_library_state_browser_access: %s',
+        browser_role.role_name
+    ) AS failure
+    FROM (VALUES ('anon'), ('authenticated')) AS browser_role(role_name)
+    WHERE pg_catalog.has_table_privilege(
+        browser_role.role_name,
+        'public.account_library_state',
+        'SELECT, INSERT, UPDATE, DELETE'
+    )
+
+    UNION ALL
+
+    SELECT 'account_library_state_public_grant' AS failure
+    WHERE EXISTS (
+        SELECT 1
+        FROM pg_catalog.pg_class relation
+        INNER JOIN pg_catalog.pg_namespace namespace
+            ON namespace.oid = relation.relnamespace
+        CROSS JOIN LATERAL pg_catalog.aclexplode(
+            COALESCE(relation.relacl, pg_catalog.acldefault('r', relation.relowner))
+        ) AS grant_entry
+        WHERE namespace.nspname = 'public'
+          AND relation.relname = 'account_library_state'
+          AND grant_entry.grantee = 0
+    )
+
+    UNION ALL
+
     SELECT pg_catalog.format(
         'public_view_not_security_invoker: public.%I',
         c.relname
