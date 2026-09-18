@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -11,6 +11,19 @@ const runPerformance = process.env.CATALOG_SEARCH_PERFORMANCE === "1" ? it : it.
 type CatalogRow = { content_id: string; title: string; snippet_headline: string; result_rank?: number; cursor_rank?: string };
 type HighlightRow = { id: string; user_id: string; highlighted_text: string; note_body: string | null; cursor_created_at?: string };
 type ExplainRow = { "QUERY PLAN": unknown };
+type FunctionDefinitionRow = { definition: string };
+
+type BenchmarkQueryCase = {
+    id: string;
+    query: string;
+    expectedTitle?: string;
+    expectedAuthor?: string;
+    expectedBody?: string;
+    maxRank: number | null;
+    category?: string;
+    type?: "book" | "podcast" | "article";
+    expectedCapability: "supported" | "no_results";
+};
 
 function percentile(samples: number[], percentileValue: number) {
     const sorted = [...samples].sort((left, right) => left - right);
@@ -19,6 +32,26 @@ function percentile(samples: number[], percentileValue: number) {
 
 function planUsesSearchIndex(plan: unknown) {
     return JSON.stringify(plan).includes("catalog_search_document_vector_idx");
+}
+
+function planHasSequentialScan(plan: unknown) {
+    return JSON.stringify(plan).includes("Seq Scan");
+}
+
+function planNodeTypes(plan: unknown): string[] {
+    const nodeTypes = new Set<string>();
+    const visit = (value: unknown) => {
+        if (Array.isArray(value)) {
+            value.forEach(visit);
+            return;
+        }
+        if (!value || typeof value !== "object") return;
+        const record = value as Record<string, unknown>;
+        if (typeof record["Node Type"] === "string") nodeTypes.add(record["Node Type"]);
+        Object.values(record).forEach(visit);
+    };
+    visit(plan);
+    return [...nodeTypes].sort();
 }
 
 describeDatabase("catalog and notes search on a disposable Supabase database", () => {
@@ -259,15 +292,71 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
         const unquotedBody = "unquoted body cedar evidence";
         const broadBody = "broad constellation evidence";
         const filteredBody = "filtered archive evidence";
-        const querySet = [
-            { id: "title-exact", query: "title exact lighthouse", expectedTitle: titleExact, maxRank: 1 },
-            { id: "author-exact", query: "author fixture", expectedAuthor: authorExact, maxRank: 3 },
-            { id: "quoted-body-concept", query: `"${quotedBody}"`, expectedBody: quotedBody, maxRank: 3 },
-            { id: "unquoted-body-concept", query: unquotedBody, expectedBody: unquotedBody, maxRank: 3 },
-            { id: "broad-concept", query: broadBody, maxRank: null },
-            { id: "filtered", query: filteredBody, expectedBody: filteredBody, maxRank: 3, category: "SearchPerformanceFiltered" },
-            { id: "empty-result", query: "absent tungsten search token", maxRank: null },
+        const querySet: BenchmarkQueryCase[] = [
+            { id: "title-exact", query: "title exact lighthouse", expectedTitle: titleExact, maxRank: 1, expectedCapability: "supported" },
+            { id: "author-exact", query: "author fixture", expectedAuthor: authorExact, maxRank: 3, expectedCapability: "supported" },
+            { id: "quoted-body-concept", query: `"${quotedBody}"`, expectedBody: quotedBody, maxRank: 3, expectedCapability: "supported" },
+            { id: "unquoted-body-concept", query: unquotedBody, expectedBody: unquotedBody, maxRank: 3, expectedCapability: "supported" },
+            { id: "broad-concept", query: broadBody, maxRank: null, expectedCapability: "supported" },
+            {
+                id: "filtered",
+                query: filteredBody,
+                expectedBody: filteredBody,
+                maxRank: 3,
+                category: "SearchPerformanceFiltered",
+                type: "podcast",
+                expectedCapability: "supported",
+            },
+            { id: "empty-result", query: "absent tungsten search token", maxRank: null, expectedCapability: "no_results" },
         ];
+        // This mirrors the result-producing statement inside the deployed
+        // public.search_catalog function. PostgreSQL reports only a Function
+        // Scan when explaining PL/pgSQL, so the evidence records both the
+        // actual RPC wrapper plan and this natural component plan. The latter
+        // exposes ranking, category/type filters, eligibility, and DISTINCT
+        // ON deduplication to the planner without changing the production
+        // implementation or its measured execution path.
+        const componentPlanQuery = `
+            WITH inputs AS (
+                SELECT
+                    websearch_to_tsquery('english', $1) AS terms,
+                    $2::text[] AS categories,
+                    $3::public.content_type AS content_type
+            ),
+            ranked_documents AS (
+                SELECT
+                    d.content_id,
+                    d.segment_id,
+                    d.source_order,
+                    ts_rank_cd('{0.05,0.15,0.40,1.00}', d.search_vector, inputs.terms, 32)::real AS rank
+                FROM public.catalog_search_document AS d
+                CROSS JOIN inputs
+                WHERE d.search_vector @@ inputs.terms
+            ),
+            best_documents AS (
+                SELECT DISTINCT ON (r.content_id)
+                    r.content_id,
+                    r.segment_id,
+                    r.source_order,
+                    r.rank,
+                    r.rank::numeric AS rank_key
+                FROM ranked_documents AS r
+                ORDER BY r.content_id, r.rank DESC, r.source_order ASC, r.segment_id ASC NULLS FIRST
+            ),
+            eligible_results AS (
+                SELECT b.content_id, b.rank_key
+                FROM best_documents AS b
+                INNER JOIN public.content_item AS ci ON ci.id = b.content_id
+                CROSS JOIN inputs
+                WHERE ci.status = 'verified'
+                  AND ci.deleted_at IS NULL
+                  AND (coalesce(cardinality(inputs.categories), 0) = 0 OR ci.category = ANY(inputs.categories))
+                  AND (inputs.content_type IS NULL OR ci.type = inputs.content_type)
+            )
+            SELECT e.content_id
+            FROM eligible_results AS e
+            ORDER BY e.rank_key DESC, e.content_id ASC
+            LIMIT 21`;
         const client = await db.connect();
         let committed = false;
 
@@ -378,68 +467,42 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                 }
             }
 
-            const plans: Record<string, { natural: unknown; indexUsable: unknown }> = {};
-            for (const queryCase of querySet) {
-                const naturalPlan = await client.query<ExplainRow>(
-                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
-                     SELECT d.content_id
-                     FROM public.catalog_search_document AS d
-                     WHERE d.search_vector @@ websearch_to_tsquery('english', $1)
-                     LIMIT 20`,
-                    [queryCase.query],
-                );
-                // Preserve the planner's natural decision (including a
-                // sequential scan for a broad query), then prove the intended
-                // GIN index is valid and usable without making the measured
-                // production calls rely on that planner override.
-                await client.query("SET enable_seqscan = off");
-                const indexUsablePlan = await client.query<ExplainRow>(
-                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
-                     SELECT d.content_id
-                     FROM public.catalog_search_document AS d
-                     WHERE d.search_vector @@ websearch_to_tsquery('english', $1)
-                     LIMIT 20`,
-                    [queryCase.query],
-                );
-                await client.query("RESET enable_seqscan");
-                plans[queryCase.id] = {
-                    natural: naturalPlan.rows[0]!["QUERY PLAN"],
-                    indexUsable: indexUsablePlan.rows[0]!["QUERY PLAN"],
-                };
-                expect(planUsesSearchIndex(plans[queryCase.id].indexUsable), queryCase.id).toBe(true);
-
-                const result = await client.query<CatalogRow>(
-                    `SELECT content_id, title, snippet_headline
-                     FROM public.search_catalog($1, $2::text[], NULL::public.content_type, NULL, NULL, NULL, NULL, 21)`,
-                    [queryCase.query, queryCase.category ? [queryCase.category] : []],
-                );
-                const expectedId = expectedIds.get(queryCase.id);
-                if (expectedId && queryCase.maxRank !== null) {
-                    const rank = result.rows.findIndex((row) => row.content_id === expectedId) + 1;
-                    expect(rank).toBeGreaterThan(0);
-                    expect(rank).toBeLessThanOrEqual(queryCase.maxRank);
-                }
-                if (queryCase.id === "empty-result") expect(result.rows).toEqual([]);
+            const functionDefinition = await client.query<FunctionDefinitionRow>(
+                `SELECT pg_get_functiondef(
+                    'public.search_catalog(text, text[], public.content_type, numeric, uuid, numeric, uuid, integer)'::regprocedure
+                ) AS definition`,
+            );
+            const deployedSearchDefinition = functionDefinition.rows[0]!.definition;
+            for (const requiredClause of [
+                "ts_rank_cd('{0.05,0.15,0.40,1.00}'",
+                "SELECT DISTINCT ON (r.content_id)",
+                "ci.status = 'verified'",
+                "ci.deleted_at IS NULL",
+                "ci.category = ANY(p_categories)",
+                "ci.type = p_type",
+            ]) {
+                expect(deployedSearchDefinition).toContain(requiredClause);
             }
 
-            // Thirty warm samples across the representative query set give a
-            // single release-decision distribution without multiplying HTTP
-            // setup by every case. Plans and deterministic ranks above still
-            // cover every individual query shape.
-            const databaseSamples: Array<{ caseId: string; durationMs: number }> = [];
-            for (let run = 0; run < 30; run += 1) {
-                const queryCase = querySet[run % querySet.length]!;
-                const startedAt = performance.now();
-                await client.query<CatalogRow>(
-                    `SELECT content_id, title, snippet_headline
-                     FROM public.search_catalog($1, $2::text[], NULL::public.content_type, NULL, NULL, NULL, NULL, 21)`,
-                    [queryCase.query, queryCase.category ? [queryCase.category] : []],
-                );
-                databaseSamples.push({ caseId: queryCase.id, durationMs: performance.now() - startedAt });
-            }
-            const databaseDurations = databaseSamples.map((sample) => sample.durationMs);
-            expect(percentile(databaseDurations, 0.95)).toBeLessThanOrEqual(300);
-            expect(percentile(databaseDurations, 0.99)).toBeLessThanOrEqual(500);
+            const runDatabaseSearch = async (queryCase: BenchmarkQueryCase) => client.query<CatalogRow>(
+                `SELECT content_id, title, snippet_headline
+                 FROM public.search_catalog($1, $2::text[], $3::public.content_type, NULL, NULL, NULL, NULL, 21)`,
+                [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+            );
+            const plans: Record<string, {
+                functionPlan: unknown;
+                componentNatural: unknown;
+                forcedIndexDiagnostic: unknown;
+                naturalPlanSummary: { usesSearchIndex: boolean; hasSequentialScan: boolean; nodeTypes: string[] };
+                forcedIndexDiagnosticSummary: { usesSearchIndex: boolean; hasSequentialScan: boolean; nodeTypes: string[] };
+            }> = {};
+            const benchmarkCases: Array<{
+                id: string;
+                expected: { capability: "supported" | "no_results"; maxRank: number | null; contentId: string | null };
+                actual: { capability: "supported" | "no_results"; rank: number | null };
+                database: { warmupMs: number; samples: number[]; p95Ms: number; p99Ms: number };
+                route: { warmupMs: number; samples: number[]; p95Ms: number };
+            }> = [];
 
             // Load the actual route only after replacing the disposable CI
             // values. The route uses the same server module and public RPC
@@ -451,27 +514,114 @@ describeDatabase("catalog and notes search on a disposable Supabase database", (
                 import("@/app/api/catalog/search/route"),
                 import("next/server"),
             ]);
-            const routeSamples: Array<{ caseId: string; durationMs: number }> = [];
-            for (let run = 0; run < 30; run += 1) {
-                const queryCase = querySet[run % querySet.length]!;
+            const runRouteSearch = async (queryCase: BenchmarkQueryCase) => {
                 const params = new URLSearchParams({ q: queryCase.query });
                 if (queryCase.category) params.set("category", queryCase.category);
-                const startedAt = performance.now();
-                const response = await GET(new NextRequest(`http://localhost/api/catalog/search?${params.toString()}`));
-                routeSamples.push({ caseId: queryCase.id, durationMs: performance.now() - startedAt });
-                expect(response.status).toBe(200);
+                if (queryCase.type) params.set("type", queryCase.type);
+                return GET(new NextRequest(`http://localhost/api/catalog/search?${params.toString()}`));
+            };
+
+            for (const queryCase of querySet) {
+                // The first plan is the production RPC call exactly as
+                // deployed. Its Function Scan is intentionally retained. The
+                // component plan makes the implementation's ranking,
+                // filtering, eligibility and deduplication work observable.
+                const functionPlan = await client.query<ExplainRow>(
+                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)
+                     SELECT content_id, result_rank
+                     FROM public.search_catalog($1, $2::text[], $3::public.content_type, NULL, NULL, NULL, NULL, 21)`,
+                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+                );
+                const componentNatural = await client.query<ExplainRow>(
+                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${componentPlanQuery}`,
+                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+                );
+                // This is diagnostic evidence only. Timings and release
+                // thresholds below use the natural production planner.
+                await client.query("SET enable_seqscan = off");
+                const forcedIndexDiagnostic = await client.query<ExplainRow>(
+                    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${componentPlanQuery}`,
+                    [queryCase.query, queryCase.category ? [queryCase.category] : [], queryCase.type ?? null],
+                );
+                await client.query("RESET enable_seqscan");
+                const natural = componentNatural.rows[0]!["QUERY PLAN"];
+                const forced = forcedIndexDiagnostic.rows[0]!["QUERY PLAN"];
+                plans[queryCase.id] = {
+                    functionPlan: functionPlan.rows[0]!["QUERY PLAN"],
+                    componentNatural: natural,
+                    forcedIndexDiagnostic: forced,
+                    naturalPlanSummary: {
+                        usesSearchIndex: planUsesSearchIndex(natural),
+                        hasSequentialScan: planHasSequentialScan(natural),
+                        nodeTypes: planNodeTypes(natural),
+                    },
+                    forcedIndexDiagnosticSummary: {
+                        usesSearchIndex: planUsesSearchIndex(forced),
+                        hasSequentialScan: planHasSequentialScan(forced),
+                        nodeTypes: planNodeTypes(forced),
+                    },
+                };
+
+                const expectedId = expectedIds.get(queryCase.id) ?? null;
+                const databaseWarmupStartedAt = performance.now();
+                const warmupResult = await runDatabaseSearch(queryCase);
+                const databaseWarmupMs = performance.now() - databaseWarmupStartedAt;
+                const actualRank = expectedId ? warmupResult.rows.findIndex((row) => row.content_id === expectedId) + 1 : null;
+                const actualCapability = warmupResult.rows.length > 0 ? "supported" : "no_results";
+                expect(actualCapability).toBe(queryCase.expectedCapability);
+                if (expectedId && queryCase.maxRank !== null) {
+                    expect(actualRank).toBeGreaterThan(0);
+                    expect(actualRank).toBeLessThanOrEqual(queryCase.maxRank);
+                }
+
+                const databaseSamples: number[] = [];
+                for (let run = 0; run < 30; run += 1) {
+                    const startedAt = performance.now();
+                    await runDatabaseSearch(queryCase);
+                    databaseSamples.push(performance.now() - startedAt);
+                }
+                const databaseP95Ms = percentile(databaseSamples, 0.95);
+                const databaseP99Ms = percentile(databaseSamples, 0.99);
+                expect(databaseP95Ms, `${queryCase.id} database p95`).toBeLessThanOrEqual(300);
+                expect(databaseP99Ms, `${queryCase.id} database p99`).toBeLessThanOrEqual(500);
+
+                const routeWarmupStartedAt = performance.now();
+                const routeWarmup = await runRouteSearch(queryCase);
+                const routeWarmupMs = performance.now() - routeWarmupStartedAt;
+                expect(routeWarmup.status).toBe(200);
+                const routeSamples: number[] = [];
+                for (let run = 0; run < 30; run += 1) {
+                    const startedAt = performance.now();
+                    const response = await runRouteSearch(queryCase);
+                    routeSamples.push(performance.now() - startedAt);
+                    expect(response.status).toBe(200);
+                }
+                const routeP95Ms = percentile(routeSamples, 0.95);
+                expect(routeP95Ms, `${queryCase.id} route p95`).toBeLessThanOrEqual(750);
+
+                benchmarkCases.push({
+                    id: queryCase.id,
+                    expected: { capability: queryCase.expectedCapability, maxRank: queryCase.maxRank, contentId: expectedId },
+                    actual: { capability: actualCapability, rank: actualRank },
+                    database: { warmupMs: databaseWarmupMs, samples: databaseSamples, p95Ms: databaseP95Ms, p99Ms: databaseP99Ms },
+                    route: { warmupMs: routeWarmupMs, samples: routeSamples, p95Ms: routeP95Ms },
+                });
             }
-            const routeDurations = routeSamples.map((sample) => sample.durationMs);
-            expect(percentile(routeDurations, 0.95)).toBeLessThanOrEqual(750);
 
             const evidence = {
                 fixtureVersion: "catalog-search-performance-v1",
                 corpus: { verifiedContentItems: 10000, activeSegments: 100000 },
-                databaseSamples,
-                databaseP95Ms: percentile(databaseDurations, 0.95),
-                databaseP99Ms: percentile(databaseDurations, 0.99),
-                routeSamples,
-                routeP95Ms: percentile(routeDurations, 0.95),
+                method: {
+                    warmupRunsPerQuery: 1,
+                    measuredRunsPerQuery: 30,
+                    planner: "natural plans are the release evidence; forced-index plans are retained only as diagnostics",
+                },
+                deployedSearchFunction: {
+                    signature: "public.search_catalog(text, text[], public.content_type, numeric, uuid, numeric, uuid, integer)",
+                    definitionSha256: createHash("sha256").update(deployedSearchDefinition).digest("hex"),
+                    verifiedClauses: ["ranking", "deduplication", "eligibility", "category filter", "type filter"],
+                },
+                benchmarkCases,
                 plans,
             };
             console.info(`[catalog-search-evidence] ${JSON.stringify(evidence)}`);

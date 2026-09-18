@@ -29,7 +29,7 @@ const report: {
         executedAt: new Date().toISOString(),
         configuration: {
             catalog: "real local Supabase query through the baseline SearchResults server component",
-            notes: "baseline useInfiniteHighlights first-page behavior with a controlled 31-record response",
+            notes: "baseline useInfiniteHighlights against a controlled two-page response with the matching note on page two",
         },
     },
     cases: [],
@@ -114,13 +114,33 @@ describeBaseline("executed search baseline", () => {
     });
 
     it("executes the baseline Notes first-page behavior", async () => {
-        const fetchMock = vi.fn(async () => ({
-            ok: true,
-            json: async () => ({
-                data: Array.from({ length: 30 }, (_, index) => ({ id: `noise-${index}` })),
+        const laterMatchingRecord = {
+            id: "old-match-after-page-one",
+            highlighted_text: "A durable old idea",
+            note_body: "The only beyond-page-one matching note",
+        };
+        const pages = {
+            initial: {
+                data: Array.from({ length: 30 }, (_, index) => ({
+                    id: `noise-${index}`,
+                    highlighted_text: "unrelated saved passage",
+                    note_body: null,
+                })),
                 nextCursor: "next-page",
-            }),
-        }));
+            },
+            "next-page": {
+                data: [laterMatchingRecord],
+                nextCursor: null,
+            },
+        };
+        const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+            const url = new URL(String(input), "http://localhost");
+            const cursor = url.searchParams.get("cursor");
+            return {
+                ok: true,
+                json: async () => cursor ? pages["next-page"] : pages.initial,
+            };
+        });
         vi.stubGlobal("fetch", fetchMock);
         const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
         const wrapper = ({ children }: { children: ReactChildren }) => createElement(QueryClientProvider, { client: queryClient }, children);
@@ -128,7 +148,17 @@ describeBaseline("executed search baseline", () => {
         const { result } = renderHook(() => useInfiniteHighlights(), { wrapper });
 
         await waitFor(() => expect(result.current.data?.pages[0]?.data).toHaveLength(30));
+        // The backend fixture really does contain the matching record. The
+        // frozen implementation makes only an unfiltered first-page request,
+        // so its old Notes search cannot discover it without a later scroll.
+        expect(pages["next-page"].data).toContainEqual(laterMatchingRecord);
+        expect(new URL(String(fetchMock.mock.calls[0]![0]), "http://localhost").searchParams.get("q")).toBeNull();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
         expect(result.current.data?.pages[0]?.data.map((row) => row.id)).not.toContain("old-match-after-page-one");
-        report.cases.push({ id: "old-notes-match", result: "not-supported", evidence: "Baseline Notes loaded only the initial 30-record page; the controlled later match was not present." });
+        report.cases.push({
+            id: "old-notes-match",
+            result: "not-supported",
+            evidence: "The controlled backend's page two contains a matching note, but baseline Notes made only its unfiltered first-page request and did not contain that record.",
+        });
     });
 });
