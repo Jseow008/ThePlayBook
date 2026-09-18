@@ -40,11 +40,13 @@ storage remains intact. The original journey and its limitations remain in
 `evidence/final-build-auth-retrieval-journey-v2.json`, with the correction verified
 in `evidence/dormant-notes-logout-browser-smoke-v1.json`.
 
-Production preflight found no model mismatch: unset model overrides use the
-benchmarked Anthropic defaults, and the Gemini/Anthropic credentials are present.
-`CRON_SECRET` is missing from Production and must be provisioned consistently with
-the GitHub worker secret before rollout. No production settings were changed by
-that read-only preflight.
+Production environment metadata confirms the model overrides are absent, so the
+candidate uses the benchmarked Anthropic defaults. Gemini/Anthropic credentials
+are present. `CRON_SECRET` exists in both Vercel Production and GitHub Actions;
+an earlier missing-secret report was incorrect because environment downloads omit
+sensitive values. Metadata proves presence, not equality of the two values. The
+authenticated worker smoke remains a rollout check; no rotation is justified by
+this preflight and no production settings were changed.
 
 ### Preserved earlier failures
 
