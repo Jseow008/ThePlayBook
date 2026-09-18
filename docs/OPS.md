@@ -123,9 +123,8 @@ The first CI efficiency pass keeps all browser projects, assertions, and applica
 
 - New pull-request commits cancel superseded runs for that same pull request. Main-branch and manual runs are not cancelled by later runs.
 - Browser installation includes Chromium only, matching all currently configured browser projects. The iPhone/iPad project names describe viewport emulation, not WebKit coverage.
-- CI sets `PLAYWRIGHT_SERVER_MODE=production` so Playwright starts the preceding `npm run build` artifact with `npm run start -- --port 3100`. It does not set `PLAYWRIGHT_TEST`, which would select the separate development output directory. Ordinary local Playwright runs retain their development-server behavior; `PLAYWRIGHT_BASE_URL` still selects an already running server.
 
-Validate workflow changes with both documentation-only and full application paths. Broader viewport selection, security-check consolidation, and performance-job scheduling require separate measured changes; they are not part of this first pass.
+Validate workflow changes with both documentation-only and full application paths. Production-mode browser execution needs disposable equivalents of the production services, including the rate-limit backend, before replacing the current development-server suite. Broader viewport selection, security-check consolidation, and performance-job scheduling also require separate measured changes; they are not part of this first pass.
 
 Relevant config:
 
