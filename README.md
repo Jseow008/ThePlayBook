@@ -6,6 +6,8 @@ Netflux turns books, podcasts, articles, and videos into summaries, highlights, 
 
 ## What Ships Today
 
+Recent delivery boundaries and unfinished work are tracked in [release status](docs/STATUS.md). This overview is not a fresh production verification.
+
 - Public landing page, browse feed, search, focus mode, preview pages, reader pages, and public series pages
 - Explicit weekly email subscription flow with subscription status and unsubscribe-token support
 - Authenticated library features: saved items, continue reading, completed history, notes, ask, profile, and settings
@@ -48,28 +50,19 @@ Then point `.env.local` at either:
 - a local Supabase CLI stack, or
 - a hosted Supabase project
 
-The app expects at least:
+Use [.env.example](.env.example) as the maintained configuration template and [OPS environment guidance](docs/OPS.md#12-environment-variables) for runtime and production requirements. Configure the values for the features you exercise:
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-SUPABASE_SERVICE_KEY=...
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-AI_PROVIDER=anthropic
-AI_MODEL=claude-haiku-4-5-20251001
-AI_COMPLEX_MODEL=claude-sonnet-4-6
-ANTHROPIC_API_KEY=...
-GEMINI_API_KEY=...
-```
+| Feature | Required configuration |
+| --- | --- |
+| Supabase/auth and site metadata | Public Supabase URL/anon key, elevated server key where required, site URL |
+| Library hydration and export | `SNAPSHOT_WORKER_DATABASE_URL`, `ACCOUNT_DATA_CURSOR_SECRET` |
+| Snapshot maintenance | `SNAPSHOT_MAINTENANCE_DATABASE_URL`, `CRON_SECRET` |
+| Catalog search cursors | `CATALOG_SEARCH_CURSOR_SECRET` |
+| Notes search cursors | `ACCOUNT_DATA_CURSOR_SECRET` |
+| AI generation/retrieval | Configured generation provider key and `GEMINI_API_KEY`; model settings are in the template |
+| Production rate limiting and operations | Upstash credentials and applicable health/admin/notification settings listed in OPS |
 
-Optional:
-
-```env
-OPENAI_API_KEY=...
-OPENAI_FALLBACK_MODEL=gpt-4o-mini
-UPSTASH_REDIS_REST_URL=...
-UPSTASH_REDIS_REST_TOKEN=...
-```
+Snapshot connections use the provisioned restricted worker/maintenance roles. These URLs and cursor secrets are server-only; never add a `NEXT_PUBLIC_` prefix or commit real values. Optional providers and telemetry settings are documented in the template.
 
 Start the app:
 
@@ -84,7 +77,7 @@ npx supabase start
 npx supabase db reset
 ```
 
-If you are targeting a hosted project, apply migrations through the linked project instead.
+For hosted databases, follow the [isolated database release workflow](docs/OPS.md#22-disposable-hosted-database-verification). A linked project may be production; linking alone is not authorization to apply migrations.
 
 ## Useful Scripts
 
@@ -105,19 +98,13 @@ components/           UI, reader, notes, focus, admin, and provider components
 hooks/                Auth, highlights, reader settings, reading progress, media-query helpers
 lib/                  Supabase clients, server helpers, AI support, rate limiting, domain utilities
 supabase/migrations/  Database schema history, RLS, RPCs, and embedding support
-tests/                Playwright coverage
+tests/                Unit, component, API, database, security, and Playwright coverage
 docs/                 Architecture, ops, API, design, and implementation notes
 ```
 
 ## Documentation
 
-- [docs/POSITIONING.md](./docs/POSITIONING.md)
-- [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
-- [docs/API_SPECS.md](./docs/API_SPECS.md)
-- [docs/OPS.md](./docs/OPS.md)
-- [docs/DESIGN.md](./docs/DESIGN.md)
-- [docs/BRAND_GUIDELINES.md](./docs/BRAND_GUIDELINES.md)
-- [docs/AGENT.md](./docs/AGENT.md)
+Start with the [documentation map](docs/INDEX.md). It identifies the owner for implementation status, architecture/API behavior, design, operations, contracts, and historical evidence. Agent working rules are in [AGENTS.md](AGENTS.md).
 
 ## Design-System Note
 

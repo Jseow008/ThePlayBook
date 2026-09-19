@@ -1,7 +1,7 @@
 # DESIGN.md: Netflux Design Notes
 
-> **Status:** Active  
-> **Brand Identity:** For overarching, platform-agnostic branding rules (Mobile, Social Media), see [BRAND_GUIDELINES.md](./BRAND_GUIDELINES.md).
+> **Status:** Active
+> **Brand Identity:** For visual identity and direction for native/social assets, see [BRAND_GUIDELINES.md](./BRAND_GUIDELINES.md). Web implementation takes precedence over those reference treatments.
 > **Constraint:** The shipped source of truth for the **Web App** is the current app implementation, especially `app/globals.css` and existing components.
 
 ## 1. Design System Baseline
@@ -18,7 +18,7 @@ Core tokens live in `app/globals.css` and are exposed through semantic CSS varia
 - `--muted`
 - reader-specific text variables and theme overrides
 
-The main app shell renders with the dark theme by default.
+The main public app shell renders with the dark theme by default. Admin uses its existing light shell; the reader offers scoped dark, light, and sepia themes. Preserve these exceptions. Admin layout rules live in [ADMIN_RESPONSIVE_PATTERNS.md](./ADMIN_RESPONSIVE_PATTERNS.md).
 
 ## 2. Typography
 
@@ -57,7 +57,7 @@ It now ships as a marketing/editorial composition with:
 - horizontally scrolling featured reads strip with compact domain filters
 - final CTA
 
-Landing positioning should preserve Netflux as a summary-first knowledge system: summaries are the front door, while the retention layer is library, highlights, saved ideas, search, and AI retrieval. Do not reduce the page to a generic "read less" or summary-app pitch.
+Landing messaging follows [POSITIONING.md](./POSITIONING.md), including its distinction between shipped capabilities and product goals. This design document does not maintain a separate copy bank.
 
 Primary source: `components/ui/LandingPage.tsx`
 
@@ -139,13 +139,15 @@ Current `/notes` behavior includes:
 - search across notes, highlights, content items, and sections
 - filter controls for content item, type, color, and sort
 - removable filter chips
-- scoped “Ask These Notes” assistant grounded only in the current note scope
+- “Ask These Notes” with a displayed scope snapshot and a prompt to update that scope when filters change
 - deep links back into `/read/[id]?highlightId=...`
 
 Primary sources:
 
 - `app/(public)/notes/client-page.tsx`
 - `components/notes/NotesAskPanel.tsx`
+
+These describe the main-release UI at `6bfdb99`; they are not a guarantee of complete semantic retrieval over all personal evidence. The typed personal-retrieval candidate at `cd2c7fd` is held and is not live. See [STATUS.md](./STATUS.md) for release status.
 
 ## 6. Motion and Interaction
 
@@ -163,7 +165,7 @@ Common patterns:
 When docs and artifacts disagree, prefer:
 
 1. `app/globals.css`
-2. active components in `components/ui`, `components/reader`, and `components/notes`
+2. active components for the relevant surface, including `components/ui`, `components/reader`, `components/notes`, and `components/admin`
 3. this file
 
-`design-system/netflux/*` should be treated as reference-only material for assistants and design exploration, not as the live product design authority.
+[AGENTS.md](../AGENTS.md) owns assistant workflow and UI-change guardrails. [UI_UX_PRO_MAX.md](./UI_UX_PRO_MAX.md) covers optional local tooling. Any locally generated `design-system/netflux/*` artifacts are reference material, not live product authority or guaranteed checkout assets.

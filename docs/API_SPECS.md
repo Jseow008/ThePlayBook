@@ -1,7 +1,9 @@
 # API_SPECS.md: Netflux API Surface
 
 > **Status:** Active  
-> **Purpose:** Describe the route handlers that currently exist under `app/api`.
+> **Purpose:** Describe the principal route handlers under `app/api`. Access/export, reflection, and search entries were reconciled against `6bfdb99` on 19 September 2026; this is not an exhaustive fresh audit of every endpoint.
+
+The source handlers and their schemas own exact payloads. See [STATUS.md](STATUS.md) for unmerged work: the typed personal-retrieval candidate is held and its new chat contract is not documented as shipped here.
 
 ## 1. Conventions
 
@@ -24,6 +26,8 @@ Auth tiers used below:
 - `public`: no session required
 - `auth`: authenticated user required
 - `admin`: authenticated user with `profiles.role = 'admin'`
+- `session`: verified authenticated account and live session for snapshot access
+- `cron`: server credential; never a browser API
 
 ## 2. Chat APIs
 
@@ -91,6 +95,14 @@ Legacy clients may still send `bookTitle`, but new clients should send `contentT
 | `/api/library/bookmarks` | `POST`, `DELETE` | `auth` | Add/remove a bookmarked item. |
 | `/api/library/highlights` | `GET`, `POST` | `auth` | List or create highlights. |
 | `/api/library/highlights/[id]` | `PATCH`, `DELETE` | `auth` | Update note body/color or delete a highlight. |
+| `/api/library/reflections` | `GET`, `POST` | `auth` | List owned reflections or save one for a content item. |
+| `/api/library/reflections/[id]` | `PATCH`, `DELETE` | `auth` | Edit reflection text or delete the owned reflection. |
+| `/api/account-data/snapshots` | `POST` | `session` | Create/reconcile an idempotent snapshot operation. |
+| `/api/account-data/snapshots/[snapshotId]` | `GET` | `session` | Resume lookup: return an existing verified export manifest, never create another export. |
+| `/api/account-data/snapshots/[snapshotId]/[collection]` | `GET` | `session` | Read one authorized snapshot page. |
+| `/api/account-data/user_library` | `GET` | `auth` | Live keyset-paginated library listing; separate from immutable export traversal. |
+| `/api/account-data/user_library/mutation` | `POST` | `auth` | Commit a library mutation and return server revision/reset acknowledgment. |
+| `/api/account-data/reset` | `POST` | `auth` | Reset account library data through the restricted worker. |
 | `/api/feedback/content` | `GET`, `POST`, `DELETE` | `auth` for writes | Read/save/remove a user’s content feedback. |
 
 ### 3.1 Activity
@@ -158,11 +170,17 @@ Create request:
 }
 ```
 
-List query params:
+List/search query params:
 
 - `content_item_id`
+- `q`: normalized search text, at most 160 characters
+- `type`: `highlight` or `note`
+- `color`
+- `sort`: `oldest` or default `newest`
 - `cursor`
 - `limit`
+
+The `search_user_highlights` RPC applies owner scope, query, and filters before pagination. Search failure is an error, not a successful empty result. This improves Notes search; it does not replace the existing chat request's `highlightIds` boundary. The [route schema](../app/api/library/highlights/route.ts) owns filter validation and limits.
 
 Update request for `/api/library/highlights/[id]`:
 
@@ -205,11 +223,32 @@ Delete request:
 }
 ```
 
+### 3.5 Account-data access, export, and resume
+
+`POST /api/account-data/snapshots` accepts optional `idempotencyKey` (UUID) and `collections`. Omitted collections default to the library-only snapshot. Complete export must explicitly request all entries in [the collection registry](../lib/account-data-snapshot-collections.ts): preferences, library, highlights, reflections, reading activity, feedback, submitted requests, votes, notification preferences, request notifications, and AI usage.
+
+Responses distinguish `201 { state, manifest }` from `202 { state: "building", snapshotId }`. Failed creation returns an error; retries must follow the idempotency contract rather than assume a new snapshot was created. Full exports and library hydration use separate creation allowances.
+
+`GET /api/account-data/snapshots/[snapshotId]` returns `{ manifest }` after ownership, resume-session, availability, reset, and expiry checks. It returns `401` without a verified session, `404` for a missing/inaccessible snapshot, or `410` for expiry/invalidation; the error details include `snapshot_error`. It is an export-resume lookup, not a generic poll that creates work. The browser may retain an opaque snapshot ID; it does not retain the exported payload for resume.
+
+Page reads accept `cursor` and `limit` (default 100, valid range 1–200), returning `{ data, manifest, pageInfo: { hasNextPage, endCursor } }`. Cursors bind to the account, snapshot, and collection. Complete export traverses every collection/page and verifies the manifest before file creation. Normal token refresh preserves the same session; logout, account/session replacement, reset, authorization loss, and expiry invalidate or cancel resume/delivery.
+
+The live-list route returns `{ data, pageInfo }` using its own cursor, with the same default/range for `limit`; it does not provide an immutable export boundary. Mutation requests contain `contentId`, `isBookmarked`, `progress`, `lastInteractedAt`, and `deleteIfEmpty`, returning `data.resetEpoch` and `data.libraryRevision`. Reset returns `data.resetEpoch` and `data.currentRevision`. These route acknowledgments are not a claim that every broader offline/conflict requirement is complete.
+
+Sources: [snapshot creation](../app/api/account-data/snapshots/route.ts), [snapshot server](../lib/server/account-data-snapshots.ts), [session validation](../lib/server/account-data-snapshot-auth.ts), and [client export](../lib/account-data-export-client.ts). The [reviewed design](PHASE_1_ACCESS_PATH_DESIGN.md) owns acceptance obligations.
+
+### 3.6 Reflections
+
+`GET /api/library/reflections` returns `{ data }` for the authenticated owner, optionally filtered by `content_item_id`. This route is not a complete paginated export API; use snapshot traversal for complete export coverage.
+
+`POST` accepts `content_item_id`, a nonblank `prompt` (up to 500 characters), and nonblank `reflection_text` (up to 1,000 characters). It upserts the account/content-item reflection. `PATCH /api/library/reflections/[id]` accepts `reflection_text`; `DELETE` removes the owned row. See [the collection handler](../app/api/library/reflections/route.ts) for the authoritative schema. Reflection CRUD does not establish typed reflection retrieval into chat.
+
 ## 4. Public Product APIs
 
 | Route | Method | Auth | Purpose |
 | --- | --- | --- | --- |
 | `/api/content/batch` | `POST` | `public` | Fetch multiple verified content items by ID. |
+| `/api/catalog/search` | `GET` | `public` | Indexed lexical catalog search with ranking, snippets, and signed pagination. |
 | `/api/focus` | `POST` | `public` | Return personalized, quick-mode-ready focus feed items with a discovery fallback. |
 | `/api/recommendations` | `POST` | `public` | RPC-backed recommendations based on completed IDs. |
 | `/api/health` | `GET` | `public liveness`; detailed via `HEALTH_CHECK_SECRET` | Deployment health checker. Anonymous callers receive only process liveness and never trigger DB checks; detailed env/database readiness requires `Authorization: Bearer <HEALTH_CHECK_SECRET>` or `x-health-check-secret` and uses cached, fail-fast DB probes. |
@@ -258,6 +297,18 @@ The legacy `GET` variant remains available for generic callers and accepts `limi
 `seedIds` drives recommendation retrieval. `completedIds` and `excludeIds` are excluded from the result set. If `seedIds` is omitted, the route falls back to `completedIds` for backward compatibility.
 
 Returns the reranked result of the `match_recommendations` RPC.
+
+### 4.4 `/api/catalog/search`
+
+Accepts `q`, optional `category`, optional `type` (`book`, `podcast`, or `article` in the current route schema), and an opaque `cursor`. The server normalizes the query and returns:
+
+```text
+{ outcome: "results" | "no_results" | "input_empty", results, pageInfo: { nextCursor, previousCursor, page } }
+```
+
+Results carry relevance rank and a snippet with text plus highlight offsets; render the text safely, not as trusted HTML. Query/filter-bound keyset cursors reject incompatible or invalid traversal with `400`. Search failures return a retryable `503`, never `no_results`. The private search projection is refreshed transactionally with content changes; traversal is eventually consistent, not an export snapshot. This is lexical search with no AI-generation dependency.
+
+Sources: [route validation](../app/api/catalog/search/route.ts) and [search implementation](../lib/server/catalog-search.ts).
 
 ## 5. Email Subscription APIs
 
@@ -312,7 +363,9 @@ Required email-template rule: every future weekly email must embed the `GET` uns
 
 ## 6. Admin APIs
 
-All admin routes are protected by session + role checks.
+`GET /api/admin/account-data-snapshots/process` is a `cron` maintenance route protected by the server credential. It reconciles expired operations/snapshots and prunes eligible records; route presence does not prove scheduled production execution. The reported maintenance failure remains deferred in [STATUS.md](STATUS.md#deferred-and-separately-open).
+
+The admin routes in the table below are protected by session + role checks; the maintenance route above uses its separate cron credential.
 
 | Route | Method | Purpose |
 | --- | --- | --- |

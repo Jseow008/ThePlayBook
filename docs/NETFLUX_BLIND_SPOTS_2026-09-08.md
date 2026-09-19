@@ -1,5 +1,8 @@
 # Netflux blind-spot audit
 
+**Document type:** Historical audit, observed 8 September 2026. Original findings and proposed acceptance checks are preserved below. They are not a current inventory of unresolved bugs. See the [32-finding delivery register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register) and [release status](STATUS.md) for subsequent work. This housekeeping pass does not rerun the audit.
+
+
 Date: 8 September 2026
 
 Baseline: freshly fetched `origin/main`, commit `7920a97`

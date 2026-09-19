@@ -1,8 +1,15 @@
 # Netflux Security Remediation Plan
 
-This document is the source of truth for pre-production security work. Do not ship production until all P0 items are complete and verified. P1 items should be complete before public launch unless explicitly risk-accepted.
+This document tracks security remediation decisions, acceptance criteria, and dated implementation evidence. Do not ship production until all P0 items are complete and verified. P1 items should be complete before public launch unless explicitly risk-accepted.
 
-Last updated: 2026-06-23
+Evidence dates: primarily 2026-06-21 through 2026-06-24, with DB-106 verification recorded on 2026-07-22. No new production verification is asserted by this documentation reconciliation.
+
+## Navigation and current procedure ownership
+
+- Use [OPS.md](./OPS.md#ci-security-gates) for current CI/deployment enforcement and its [production verification checklist](./OPS.md#production-verification-checklist) for release procedures.
+- Use [DATABASE_PRODUCTION_READINESS.md](./DATABASE_PRODUCTION_READINESS.md#master-work-tracker) for database workstream status, remaining Auth/operational controls, and approved recovery-policy decisions.
+- Completed items below preserve their original issue, commands, and verification evidence as of the stated date. An original finding is not a claim that the exposure is still present; an applied migration is not an instruction to reapply it. New database changes follow the [OPS release gate](./OPS.md#22-disposable-hosted-database-verification), including explicit production authorization.
+- The report-only CSP trial still requires production report review before enforcement; its pending status below is unchanged. Follow the [risk acceptance log](#risk-acceptance-log) for accepted exceptions and the [documentation index](./INDEX.md) for related owners.
 
 ## Operating Rules
 
@@ -10,7 +17,7 @@ Last updated: 2026-06-23
 - Prefer defense in depth: route auth, database grants, RLS, and runtime guards should all agree.
 - Do not rely on service-role access from public endpoints unless there is no safer alternative.
 - Every remediation must include verification: automated test, Supabase advisor result, direct SQL assertion, or runtime smoke test.
-- Record any risk acceptance in this file with owner, date, reason, and revisit date.
+- Record security-specific risk acceptance in this file with owner, date, reason, and revisit date. Cross-reference database recovery decisions from the owning database tracker rather than duplicating their terms here.
 
 ## P0: Production Blockers
 
@@ -264,7 +271,7 @@ Implementation notes:
 - Authenticated direct table privileges were removed from `email_subscription`; authenticated `user_notification_preferences` access is limited to own-row `SELECT`, `INSERT`, and `UPDATE`.
 - Subscription writes are constrained by database-side email/source/length validation and idempotent `ON CONFLICT (email_normalized)` resubscribe behavior.
 - Unsubscribe writes are token-scoped, validate hex tokens, and intentionally return generic success without revealing whether a token matched a row.
-- The initial June posture used exact public-definer allowlist entries. The DB-106 review on 2026-07-22 found that direct Data API calls could bypass application rate limits and telemetry, so that exception is being retired rather than renewed.
+- The initial June posture used exact public-definer allowlist entries. The DB-106 review on 2026-07-22 found that direct Data API calls could bypass application rate limits and telemetry, and that exception was retired by DB-106 rather than renewed.
 - DB-106 moved the three fixed calls behind `lib/server/email-subscription-rpcs.ts`, revoked RPC execution from `PUBLIC`, `anon`, and `authenticated`, and retained only `service_role`. The handlers still never receive a generic database client.
 - Added route tests for valid token, invalid token, duplicate subscription behavior through the idempotent RPC, malformed payloads, RPC failure handling, and rate limiting on the request-published unsubscribe endpoint.
 - Production migration `20260722124111_restrict_public_email_rpcs.sql` removed all six `anon_security_definer_function_executable` and `authenticated_security_definer_function_executable` warnings. A direct anonymous Data API call is rejected, the server-controlled unsubscribe paths return generic HTTP 200 for a well-formed no-match token, and `npm run security:function-acls` blocks future public-definer drift.
@@ -478,7 +485,7 @@ Implementation notes:
 
 ### 13. Lock down embedding maintenance RPC exposure
 
-Issue: Cross-checking P1 admin `SECURITY DEFINER` guards found that some embedding-related maintenance RPCs are not `SECURITY DEFINER`, but still have broad execute grants. In particular, legacy `get_segments_missing_embeddings(integer)` is currently callable by `PUBLIC`, `anon`, and `authenticated`. This is not part of the admin-definer guard requirement, but it is still an unnecessary maintenance surface.
+Original issue (before the 2026-06-24 remediation): Cross-checking P1 admin `SECURITY DEFINER` guards found that some embedding-related maintenance RPCs are not `SECURITY DEFINER`, but still have broad execute grants. In particular, legacy `get_segments_missing_embeddings(integer)` was callable by `PUBLIC`, `anon`, and `authenticated`. This is not part of the admin-definer guard requirement, but it is still an unnecessary maintenance surface.
 
 Status: Complete on 2026-06-24.
 
@@ -506,7 +513,7 @@ Acceptance criteria:
 Implementation notes:
 
 - Added and applied `supabase/migrations/20260624083713_lock_down_embedding_rpc_exposure.sql` to linked Supabase project `xmuqsgfxuaaophxnwure`.
-- `supabase db push --dry-run` remains blocked by pre-existing remote migration-history drift, so the migration SQL was applied with `supabase db query --file`.
+- Historical execution on 2026-06-24: `supabase db push --dry-run` was blocked by remote migration-history drift, so the migration SQL was applied with `supabase db query --file`. DB-001 subsequently reconciled that history on 2026-07-15. This records a completed action, not a current workaround; any new drift reopens DB-001 and blocks later database deployments.
 - Revoked `EXECUTE` on embedding maintenance and coverage RPCs from `PUBLIC`, `anon`, and `authenticated`; granted those RPCs only to `service_role`.
 - Fully reset public match RPC grants by revoking from `PUBLIC`, `anon`, and `authenticated`, then granting back only to `authenticated` and `service_role`.
 - Preserved item 12's matching architecture: public `SECURITY INVOKER` wrappers continue to delegate privileged embedding reads to guarded private `SECURITY DEFINER` helpers with explicit user-boundary and verified-content filters.
@@ -518,7 +525,7 @@ Implementation notes:
   - `anon` cannot execute `match_library_segments(...)` or `match_library_segments_gemini(...)`.
   - `authenticated` and `service_role` can execute the public match RPCs.
   - all five reviewed public RPCs have fixed `search_path`.
-- Supabase security advisors no longer report mutable `search_path` for embedding RPCs; remaining advisor findings are tracked by other remediation items or intentional token/email public RPC allowlists.
+- The 2026-06-24 advisor verification no longer reported mutable `search_path` for embedding RPCs. The token/email public-RPC exceptions remaining at that time were subsequently removed by DB-106 on 2026-07-22; see item 6.
 - `npm run security:embedding-table-reads`, `npm run security:function-acls`, targeted API/security tests, and `npm run typecheck` pass.
 
 ### 14. Controlled dependency remediation
@@ -713,12 +720,14 @@ Implementation notes:
   - `auth_leaked_password_protection` is not allowlisted.
 - Added static regression coverage in `tests/security/security-gates.test.ts`.
 
-Required deployment setting:
+Current deployment requirement (enforcement recorded on 2026-07-15):
 
-- Configure GitHub branch protection or Vercel deployment protection so production deploys require the `Security Validation` job from `.github/workflows/security.yml`.
+- Preserve both GitHub and Vercel enforcement of the required `validate` and `Security Validation` checks. [OPS.md: CI Security Gates](./OPS.md#ci-security-gates) owns the current procedure and records the completed setup; do not treat the original June setup requirement as unfinished work.
 - Do not use Supabase advisor freshness as the real-time PR blocker; use the local SQL drift checks for that.
 
-Security gate commands:
+Historical implementation command list (2026-06-24):
+
+Use the maintained [OPS security-gate commands](./OPS.md#ci-security-gates) for current runs; this list records the original implementation and does not replace newer checks.
 
 - `npm run security:audit`
 - `npm run validate:launch-env`
@@ -820,6 +829,8 @@ Verification:
 
 ## Verification Checklist Before Production
 
+The checklist below states the security acceptance requirements; [OPS.md](./OPS.md#production-verification-checklist) owns the current execution procedure, environment requirements, and CI/manual invocation. Unchecked entries are requirements to verify for a release, not claims that a previous release failed or authorization to run production operations during documentation work.
+
 - [ ] `npm run verify:production -- --env-file <production-env> --base-url https://<deployment-domain>` passes.
 - [ ] Supabase security advisor has no unaccepted warnings for function ACLs, public definer functions, mutable search paths, or public bucket listing.
 - [ ] Direct SQL confirms admin RPCs are not executable by `PUBLIC`, `anon`, or `authenticated` through `npm run security:admin-rpc-acls`.
@@ -842,7 +853,9 @@ Implementation:
 
 ## Risk Acceptance Log
 
-No accepted risks yet.
+No separate security-specific exception is recorded in this log. Database recovery risk decisions are recorded in the [database decision log](./DATABASE_PRODUCTION_READINESS.md#decision-log), including the 2026-08-25 acceptance of the 24-hour database RPO and deferred PITR/recurring off-platform copies. That entry owns the rationale, repository-owner accountability, compensating backups, and revisit triggers. The Pro-backup restore, alerting, and remaining DB-107/DB-203 work stay open.
+
+The historical public token/email RPC exceptions were retired by DB-106 on 2026-07-22; they are not current risk acceptances.
 
 Use this format when needed:
 

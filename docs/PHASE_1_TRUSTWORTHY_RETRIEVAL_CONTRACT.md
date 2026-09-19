@@ -1,6 +1,6 @@
 # Phase 1: trustworthy retrieval and operational readiness
 
-**Status:** Proposed contract — requires product and technical approval before dependent implementation
+**Status:** Reviewed Phase 1 contract and delivery register. Individual deliveries and open decisions are tracked below; approval of the contract does not close every finding or authorize production changes.
 
 **Date:** 9 September 2026
 **Source:** [Blind-spot audit](./NETFLUX_BLIND_SPOTS_2026-09-08.md)
@@ -9,7 +9,7 @@
 
 Phase 1 makes one promise dependable: an ordinary user can save an idea, return later on another session or device, recover the correct owned evidence, and open the supporting passage without the system silently omitting data or overstating certainty.
 
-This is a contract and roadmap, not an authorization to change production data, hosted settings, or user-facing behavior. The contracts below are decisions that must be approved before their dependent implementation begins. Operational drills, AI safeguards, and later product experiments may proceed independently and do not block the first complete-access change.
+This is a contract and roadmap, not an authorization to change production data, hosted settings, or user-facing behavior. The contracts below define decisions that require approval before dependent implementation. Reviewed access/export decisions are recorded in [#134](https://github.com/Jseow008/ThePlayBook/pull/134) and [#136](https://github.com/Jseow008/ThePlayBook/pull/136); remaining work retains its applicable decision gates. Operational drills, AI safeguards, and later product experiments may proceed independently and do not block the first complete-access change.
 
 Phase 1 has four delivery tracks:
 
@@ -22,7 +22,7 @@ The following remain outside the Phase 1 delivery scope unless their listed trig
 
 ## Approval gates
 
-The following decisions are prerequisites, not implementation tasks that can be inferred during coding:
+The following are prerequisites. Preserve their approval provenance; do not reopen an already approved decision solely because this design document predates implementation, and do not infer approval for unresolved scope during coding:
 
 | Contract | Required decision | Unblocks |
 | --- | --- | --- |
@@ -145,42 +145,42 @@ Phase 1 acceptance requires all of the following:
 
 ## 5. Finding register
 
-The owner column assigns an accountable role only. A named owner and target date must replace it before the corresponding work starts.
+The owner column assigns an accountable role only. A named owner and target date must be recorded before the corresponding work starts; missing ownership metadata is not supplied or waived by this housekeeping pass. Delivery status was reconciled against main `6bfdb99` and the held branch checkpoint on 19 September 2026. “Merged” records a scoped implementation, not a fresh production smoke or blanket closure of its acceptance criteria. “Pending” means no closure evidence is recorded here, not proof that no related code exists. See [STATUS.md](STATUS.md) for release boundaries.
 
-| # | Workstream / timing | Accountable role | Dependency or release gate | Acceptance evidence |
-| --- | --- | --- | --- | --- |
-| 1 | Immediate claim correction; later validation | Product | Do not rely on unsupported exclusivity claims | Public claims are qualified; comparative task study is defined. |
-| 2 | Core retrieval: reliable search | Engineering | Complete-access contract | Old matching notes appear without loading earlier pages. |
-| 3 | Core retrieval: typed evidence | Engineering | Evidence-identity contract | Library answers retrieve owned highlights/notes and distinguish them from sources. |
-| 4 | Core retrieval: typed evidence | Engineering | #3 contract | Reflection-only and mixed scopes retrieve only allowed records. |
-| 5 | Core retrieval: citations | Engineering | #3 and evidence-identity contract | Every citation validates and opens exact allowed evidence. |
-| 6 | Core retrieval: ranking | Engineering | #3 contract | Relevant evidence outside initial client candidates remains eligible. |
-| 7 | Core retrieval: complete access | Engineering | Lifecycle and pagination contracts | Over-cap account remains complete with accurate counts. |
-| 8 | Durability alongside Phase 1 | Engineering | Lifecycle contract | A stale second device or queued replay cannot resurrect a removed bookmark. |
-| 9 | Durability alongside Phase 1 | Engineering | #8 mutation semantics | Interrupted writes and guest migration are visible, idempotent, durable, and recoverable. |
-| 10 | Core retrieval plus durability | Engineering | Lifecycle and pagination contracts | Versioned export includes every inventory record exactly once at one cross-collection value/membership boundary. |
-| 11 | Pre-implementation contract | Product, Privacy, Engineering | None | Owned-data inventory and control wording are approved and tested. |
-| 12 | Core retrieval: reliable search | Engineering | Search/pagination contract | Concept search returns relevant snippets in relevance order. |
-| 13 | Core retrieval: reliable search | Engineering | Search error contract | Backend failure is retryable, not a successful zero result. |
-| 14 | After core correctness | Product | #29 outcome measurement | Revisit pilot shows measured useful recovery. |
-| 15 | After core correctness | Product, Engineering | Evidence/citation contract | Explicitly saved synthesis is later retrievable with sources. |
-| 16 | After core correctness | Product | #14–#15 pilot design | Optional demo task measures capture then recovery. |
-| 17 | Before expanded publishing | Content operations | #18 minimum contract | Provenance checklist and correction process are recorded. |
-| 18 | Pre-implementation minimum; broader work later | Content operations, Engineering | Evidence-identity contract | Changed source opens with preserved context; deleted or inaccessible evidence is no longer served. |
-| 19 | Release gate for publishing | Content operations, Engineering | Before new/materially edited content is relied on in AI | Indexing state, age target, failure path, and owner are visible. |
-| 20 | Alongside Phase 1: AI safeguards | Engineering | Trusted identity and quota design | Concurrent requests cannot exceed the final quota unit. |
-| 21 | Alongside Phase 1: AI safeguards | Platform engineering | Hosted proxy/header verification | Per-account and abuse buckets are consistent across AI routes. |
-| 22 | Alongside Phase 1: AI safeguards | Engineering, Operations | #20 reservation model | Global/guest budget, kill switch, and measured cost controls work. |
-| 23 | Alongside Phase 1: mutation boundary | Engineering, Security | Lifecycle contract | Every write path is inventoried and bounded at an authoritative layer. |
-| 24 | Alongside Phase 1: graceful failure | Engineering | Retrieval contract | Timeouts, cancellation, and degraded evidence behavior are tested. |
-| 25 | Pre-implementation baseline; ongoing proof | QA, Engineering | Evaluation contract | Versioned corpus, recorded benchmark, and approved release thresholds are maintained. |
-| 26 | Alongside Phase 1: journey proof | QA, Engineering | Fixture set | Required ordinary-user production-build journey passes without skips. |
-| 27 | Release gate for changed interactions | QA, Engineering | Citation/notes UI changes | WebKit, keyboard, screen-reader, and text-size checks pass. |
-| 28 | Release gate before launch spike | Platform engineering | Expected-load envelope | Staging workload meets recorded latency, success, and cost targets. |
-| 29 | Alongside Phase 1: measurement | Product analytics | #25 event definitions | Capture-to-retrieval and return cohorts are measured without raw text. |
-| 30 | Operational readiness | Security, Operations | Applicable production authorization | Read-only Auth/recovery review has current signed-off evidence. |
-| 31 | Operational readiness | Operations | Current backup posture | Isolated restore meets approved RTO and verifies Storage behavior. |
-| 32 | Operational readiness | Operations | Alert ownership | Alert delivery through acknowledgement and response ownership are proven. |
+| # | Workstream / timing | Accountable role | Dependency or release gate | Acceptance evidence | Delivery status / implementation evidence |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Immediate claim correction; later validation | Product | Do not rely on unsupported exclusivity claims | Public claims are qualified; comparative task study is defined. | Documentation claims qualified in this cleanup; competitive validation pending. |
+| 2 | Core retrieval: reliable search | Engineering | Complete-access contract | Old matching notes appear without loading earlier pages. | Merged [#145](https://github.com/Jseow008/ThePlayBook/pull/145). |
+| 3 | Core retrieval: typed evidence | Engineering | Evidence-identity contract | Library answers retrieve owned highlights/notes and distinguish them from sources. | Held typed-retrieval candidate; see [status](STATUS.md#held-work--not-on-main). |
+| 4 | Core retrieval: typed evidence | Engineering | #3 contract | Reflection-only and mixed scopes retrieve only allowed records. | Held with #3. |
+| 5 | Core retrieval: citations | Engineering | #3 and evidence-identity contract | Every citation validates and opens exact allowed evidence. | Pending after typed retrieval. |
+| 6 | Core retrieval: ranking | Engineering | #3 contract | Relevant evidence outside initial client candidates remains eligible. | Held with #3. |
+| 7 | Core retrieval: complete access | Engineering | Lifecycle and pagination contracts | Over-cap account remains complete with accurate counts. | Access foundation merged [#137](https://github.com/Jseow008/ThePlayBook/pull/137); live-list acceptance remains separate from export. |
+| 8 | Durability alongside Phase 1 | Engineering | Lifecycle contract | A stale second device or queued replay cannot resurrect a removed bookmark. | Broader durability acceptance pending; snapshot overlays do not close this finding. |
+| 9 | Durability alongside Phase 1 | Engineering | #8 mutation semantics | Interrupted writes and guest migration are visible, idempotent, durable, and recoverable. | Durable offline queue and migration acceptance pending. |
+| 10 | Core retrieval plus durability | Engineering | Lifecycle and pagination contracts | Versioned export includes every inventory record exactly once at one cross-collection value/membership boundary. | Export/resume merged [#138](https://github.com/Jseow008/ThePlayBook/pull/138), [#142](https://github.com/Jseow008/ThePlayBook/pull/142). |
+| 11 | Pre-implementation contract | Product, Privacy, Engineering | None | Owned-data inventory and control wording are approved and tested. | Access/export inventory reviewed in #136; broader deletion policy remains open. |
+| 12 | Core retrieval: reliable search | Engineering | Search/pagination contract | Concept search returns relevant snippets in relevance order. | Merged [#145](https://github.com/Jseow008/ThePlayBook/pull/145). |
+| 13 | Core retrieval: reliable search | Engineering | Search error contract | Backend failure is retryable, not a successful zero result. | Merged [#145](https://github.com/Jseow008/ThePlayBook/pull/145). |
+| 14 | After core correctness | Product | #29 outcome measurement | Revisit pilot shows measured useful recovery. | Deferred until core correctness. |
+| 15 | After core correctness | Product, Engineering | Evidence/citation contract | Explicitly saved synthesis is later retrievable with sources. | Deferred until core correctness. |
+| 16 | After core correctness | Product | #14–#15 pilot design | Optional demo task measures capture then recovery. | Deferred until core correctness. |
+| 17 | Before expanded publishing | Content operations | #18 minimum contract | Provenance checklist and correction process are recorded. | Deferred broader publishing/history work. |
+| 18 | Pre-implementation minimum; broader work later | Content operations, Engineering | Evidence-identity contract | Changed source opens with preserved context; deleted or inaccessible evidence is no longer served. | Minimum evidence contract reviewed; implementation/history coverage pending. |
+| 19 | Release gate for publishing | Content operations, Engineering | Before new/materially edited content is relied on in AI | Indexing state, age target, failure path, and owner are visible. | Publishing readiness acceptance pending. |
+| 20 | Alongside Phase 1: AI safeguards | Engineering | Trusted identity and quota design | Concurrent requests cannot exceed the final quota unit. | Pending dedicated safeguards evidence. |
+| 21 | Alongside Phase 1: AI safeguards | Platform engineering | Hosted proxy/header verification | Per-account and abuse buckets are consistent across AI routes. | Pending dedicated safeguards evidence. |
+| 22 | Alongside Phase 1: AI safeguards | Engineering, Operations | #20 reservation model | Global/guest budget, kill switch, and measured cost controls work. | Pending dedicated safeguards evidence. |
+| 23 | Alongside Phase 1: mutation boundary | Engineering, Security | Lifecycle contract | Every write path is inventoried and bounded at an authoritative layer. | Pending mutation-inventory acceptance. |
+| 24 | Alongside Phase 1: graceful failure | Engineering | Retrieval contract | Timeouts, cancellation, and degraded evidence behavior are tested. | Partial route handling exists; full acceptance pending. |
+| 25 | Pre-implementation baseline; ongoing proof | QA, Engineering | Evaluation contract | Versioned corpus, recorded benchmark, and approved release thresholds are maintained. | Candidate benchmark complete but grounding failed; see [held status](STATUS.md#held-work--not-on-main). |
+| 26 | Alongside Phase 1: journey proof | QA, Engineering | Fixture set | Required ordinary-user production-build journey passes without skips. | Scoped export/journey proof recorded; full retrieval release proof pending. |
+| 27 | Release gate for changed interactions | QA, Engineering | Citation/notes UI changes | WebKit, keyboard, screen-reader, and text-size checks pass. | Viewport coverage exists; WebKit/accessibility gate not closed here. |
+| 28 | Release gate before launch spike | Platform engineering | Expected-load envelope | Staging workload meets recorded latency, success, and cost targets. | Pending recorded capacity proof for the release workload. |
+| 29 | Alongside Phase 1: measurement | Product analytics | #25 event definitions | Capture-to-retrieval and return cohorts are measured without raw text. | Pending retrieval-outcome acceptance; activity analytics are not its substitute. |
+| 30 | Operational readiness | Security, Operations | Applicable production authorization | Read-only Auth/recovery review has current signed-off evidence. | Pending current sign-off; retain dated security evidence. |
+| 31 | Operational readiness | Operations | Current backup posture | Isolated restore meets approved RTO and verifies Storage behavior. | Historical backup/restore evidence retained; current-posture drill remains open. |
+| 32 | Operational readiness | Operations | Alert ownership | Alert delivery through acknowledgement and response ownership are proven. | Pending delivery/ownership proof; snapshot-maintenance incident remains deferred. |
 
 ## Implementation order
 

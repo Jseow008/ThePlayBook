@@ -1,7 +1,7 @@
 # Netflux Database Production Readiness
 
-Status: Active
-Last verified: 2026-07-25
+Status: Active implementation tracker
+Latest recorded operational verification: 2026-08-25 (Pro plan and backup inventory only; other evidence is dated below)
 Scope: Supabase Postgres, Auth, Storage, database-facing application paths, migrations, backup, recovery, and operational readiness.
 
 This document is the single implementation tracker for making the Netflux database reproducible, recoverable, secure, and safe to evolve. It does not replace:
@@ -9,6 +9,14 @@ This document is the single implementation tracker for making the Netflux databa
 - [`SECURITY_REMEDIATION.md`](./SECURITY_REMEDIATION.md), which records the broader security program.
 - [`OPS.md`](./OPS.md), which documents deployment, verification, monitoring, and recovery procedures.
 - [`CATEGORY_TAXONOMY.md`](./CATEGORY_TAXONOMY.md), which owns category-model decisions.
+
+## How to use this tracker
+
+- Start with the [master work tracker](#master-work-tracker) for recorded workstream status and the [decision log](#decision-log) for approved risk decisions.
+- Use [OPS.md](./OPS.md#22-disposable-hosted-database-verification) for the current database release procedure, including the reviewed dry-run and explicit production authorization.
+- The [baseline](#verified-baseline), completed work-item evidence, and [work log](#work-log) describe checks performed on their stated dates. They are not a fresh production audit or instructions to reapply completed migrations.
+- Current open launch work is DB-003 (Pro-backup restore proof and alert delivery), DB-107 (remaining Auth/network controls), and DB-203 (remaining operational verification and monitoring). Read each acceptance list before closing it.
+- This documentation reconciliation adds no production verification. See the [documentation index](./INDEX.md) for related document ownership.
 
 ## Working rules
 
@@ -42,13 +50,15 @@ Netflux is database-production-ready only when all of the following are true:
 - `supabase db push --dry-run` succeeds and reports no unintended pending migrations.
 - Editing or deleting editorial content cannot silently destroy user highlights, notes, or library data.
 - No production API exposes an unintended privileged function, table, view, or Storage operation.
-- Database and Storage backups exist outside the live project, and a restore drill has passed.
+- Recovery meets the approved [DB-003 policy](#recovery-objectives-and-retention-policy), including its explicitly accepted early-stage external-copy/PITR exceptions. Historical independent database/Storage copies and the local restore drill are recorded; the retained Pro-backup restore drill remains open.
 - The Supabase plan, database capacity, Storage capacity, and connection strategy support expected production usage.
 - Critical query paths have appropriate indexes and pass representative load tests.
 - Advisor warnings are resolved or explicitly risk-accepted with an owner and review date.
 - Monitoring and alerting exist for database health, failed jobs, capacity, security events, and recovery failures.
 
 ## Verified baseline
+
+This is a historical baseline, not the current plan or a current inventory. Pro superseded the Free-plan entry on 2026-08-25; see [DB-003](#db-003-establish-production-plan-backup-storage-backup-and-restore-readiness).
 
 The core data snapshot was collected read-only on 2026-07-14; migration parity and security-advisor counts were reverified on 2026-07-22; database size and Storage inventory were reverified during the 2026-07-25 recovery-point refresh. Counts will change over time.
 
@@ -69,11 +79,13 @@ The core data snapshot was collected read-only on 2026-07-14; migration parity a
 
 ## Master work tracker
 
+Statuses below reconcile the dated evidence already recorded in this document, most recently the 2026-08-25 operational entries. “Verified” retains its work-item verification date; it does not imply a new check.
+
 | ID     | Priority | Workstream                                                               | Status                                                          | Production gate |
 | ------ | -------- | ------------------------------------------------------------------------ | --------------------------------------------------------------- | --------------- |
 | DB-001 | P0       | Reconcile migration history and establish a replayable schema            | Verified                                                        | Yes             |
 | DB-002 | P0       | Preserve highlights during segment and content updates                   | Verified                                                        | Yes             |
-| DB-003 | P0       | Establish production plan, backup, Storage backup, and restore readiness | In progress — restore proven; paid retention and alerts pending | Yes             |
+| DB-003 | P0       | Establish production plan, backup, Storage backup, and restore readiness | In progress — Pro backups verified; Pro restore and alerts pending | Yes             |
 | DB-004 | P0       | Prove a staging or disposable-environment release workflow               | Verified                                                        | Yes             |
 | DB-101 | P1       | Correct the Gemini vector index/operator mismatch                        | Verified                                                        | Yes             |
 | DB-102 | P1       | Retire or redirect broken legacy embedding RPCs                          | Verified                                                        | Yes             |
@@ -81,10 +93,10 @@ The core data snapshot was collected read-only on 2026-07-14; migration parity a
 | DB-104 | P1       | Add missing foreign-key indexes                                          | Verified                                                        | Yes             |
 | DB-105 | P1       | Add core database constraints and invariants                             | Verified                                                        | Yes             |
 | DB-106 | P1       | Review public email/token RPC risk acceptance                            | Verified                                                        | Yes             |
-| DB-107 | P1       | Configure production Auth, database, and network controls                | Not started                                                     | Yes             |
+| DB-107 | P1       | Configure production Auth, database, and network controls                | In progress                                                     | Yes             |
 | DB-201 | P2       | Repair minor data inconsistencies                                        | Not started                                                     | No              |
 | DB-202 | P2       | Decide long-term content revision and taxonomy models                    | Not started                                                     | No              |
-| DB-203 | P2       | Add capacity, query, and recovery monitoring                             | Not started                                                     | Yes             |
+| DB-203 | P2       | Add capacity, query, and recovery monitoring                             | In progress                                                     | Yes             |
 
 ## P0 — Production blockers
 
@@ -389,9 +401,11 @@ The existing embedding-preservation code is useful evidence for identifying stab
 
 ### DB-003: Establish production plan, backup, Storage backup, and restore readiness
 
-Status: In progress — Pro daily database backups are verified; recovery targets, independent Storage verification, a local restore drill, production bucket controls, and a fresh 2026-07-25 manual recovery point are complete. The remaining proof is a restore from the Pro backup posture, plus proportionate capacity/cost alerts.
+Status: In progress — Pro daily database backups were verified on 2026-08-25; recovery targets, independent Storage verification, a local restore drill, production bucket controls, and the historical 2026-07-25 manual recovery point are complete. The remaining proof is a restore from the Pro backup posture, plus proportionate capacity/cost alerts.
 
 #### Evidence
+
+These records are dated observations. July statements about missing hosted retention or required recurring external copies describe the posture at that time; the 2026-08-25 recovery policy below supersedes those requirements.
 
 - The linked organization is on the Pro plan as of 2026-08-25. The production project is `ACTIVE_HEALTHY`.
 - Production contains 1,013 Storage objects: 261 in `audio` and 752 in `media`, totaling 1,222,139,218 bytes (approximately 1.22 GB) as of the 2026-07-25 recovery-point refresh.
@@ -440,11 +454,12 @@ The production environment has documented capacity, database recovery, Storage r
 - [x] Database backup retention satisfies the documented 24-hour recovery point objective (RPO). Seven consecutive daily physical backups were verified on 2026-08-25.
 - [x] Recovery time objective (RTO) is documented.
 - [x] PITR is enabled or explicitly risk-assessed against the required RPO. PITR is disabled; the 24-hour database-RPO risk is accepted for the current stage.
-- [x] Audio and media objects are copied to an independent backup destination and checksum-verified.
+- [x] Historical independent audio/media copies were checksum-verified, most recently on 2026-07-25. Recurring copies are explicitly deferred under the policy above.
 - [x] Bucket-specific MIME-type and file-size restrictions are configured.
 - [x] Storage lifecycle and orphan cleanup rules are documented.
 - [ ] Spend, database size, Storage size, and egress alerts are configured.
-- [x] The restore drill in [`OPS.md`](./OPS.md) is completed and recorded.
+- [x] The 2026-07-15 local logical-backup restore drill in [OPS.md](./OPS.md#2026-07-15-restore-drill-record) is completed and recorded.
+- [ ] A retained Pro daily backup is restored and the four-hour service RTO is demonstrated; the historical local drill does not close this proof.
 
 ### DB-004: Prove a staging or disposable-environment release workflow
 
@@ -875,13 +890,13 @@ Status: In progress
 - [ ] Do not introduce `pg_cron` or Supabase Edge Functions solely for monitoring; the live project currently uses neither, so monitoring should follow the actual worker runtime unless the architecture changes.
 - [ ] `pg_stat_statements` or equivalent query diagnostics are reviewed regularly.
 - [ ] Advisor audits run on a schedule and after database changes.
-- [ ] Backup freshness and independent Storage-copy freshness are monitored.
+- [ ] Pro daily database-backup freshness is monitored. Recurring independent Storage-copy freshness remains deferred under [DB-003](#recovery-objectives-and-retention-policy); revisit it when the external-copy policy changes.
 - [ ] Restore drills run on a documented cadence.
 - [ ] Expected launch traffic is tested in staging with documented results.
 
 ## Decision log
 
-Record decisions that materially affect database behavior or the order of work.
+Record decisions that materially affect database behavior or the order of work. Rows preserve their original decision-date rationale. The 2026-08-25 recovery decision supersedes the 2026-07-15 requirement for enabled PITR and the Free-plan assumption; it does not close the Pro restore or alerting gates. The July deployment-gate setup was completed under DB-004; use [OPS.md](./OPS.md#ci-security-gates) for ongoing enforcement. Risk acceptance is cross-referenced in the [security risk log](./SECURITY_REMEDIATION.md#risk-acceptance-log).
 
 | Date       | Decision                                                                                                     | Reason                                                                                                                                            | Owner            | Revisit date                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- | ---------------------------------------------- |
@@ -934,6 +949,8 @@ Record decisions that materially affect database behavior or the order of work.
 | 2026-07-15 | DB-004                                | Completed the first normal two-layer gated release through PR #14. GitHub kept the PR blocked while required checks were pending or failing and allowed the merge only after both passed. Vercel built commit `b6f5f42` but withheld all production aliases through the initial failed `validate` run and its rerun; the aliases appeared only after the rerun succeeded. The live domains and health endpoint then returned HTTP 200 from the expected deployment. DB-004 is Verified.                                                                                                             | PR #14 check and merge timestamps; ruleset `18984223`; Vercel deployment `dpl_FC63uQEfQTb3q2rsVT3CwiSf6EaJ`; pre- and post-check alias observations; live HTTP smoke                                                      |
 
 ## Execution model
+
+This preserves the original dependency order, not a new queue of migrations to apply. Completed phases remain historical; use the master tracker and the dated current-position paragraph below to identify unfinished work.
 
 This work is not a purely sequential backlog. Follow the critical path for schema-changing work while completing operational and security launch gates in parallel.
 

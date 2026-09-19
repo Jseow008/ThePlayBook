@@ -1,29 +1,27 @@
 # Netflux Brand Guidelines
 
-This document serves as the absolute, platform-agnostic source of truth for the **Netflux** brand identity. Whether you are developing the Web App, building Mobile Applications (iOS/Android), designing Social Media posts (Canva/Figma), or creating presentation decks, **these rules must be strictly followed to ensure a consistent, premium user experience.**
+This document owns Netflux's visual identity and provides direction for new native apps, social assets, and presentation decks. It does not override the shipped web app's tokens, themes, component styles, or interaction patterns.
 
-For Web-specific React and Next.js Tailwind implementations, refer to [DESIGN.md](./DESIGN.md).  
+For the shipped web app, follow [DESIGN.md](./DESIGN.md), `app/globals.css`, and the existing components. Preserve the light admin shell, reader theme choices, and surface-specific accents.
 For messaging, audience, and positioning strategy, refer to [POSITIONING.md](./POSITIONING.md).
 
 ---
 
 ## 1. Brand Concept & Voice
 
-- **Identity:** A summary-first knowledge system for people who want to revisit, connect, and use ideas over time.
-- **Consumer line:** Read less. Retain more.
-- **Core promise:** Netflux turns books, podcasts, articles, and videos into summaries, highlights, and saved ideas you can search, revisit, and use later.
+- **Identity, consumer line, and product promises:** Use the wording and claim-status boundaries in [POSITIONING.md](./POSITIONING.md).
 - **Voice:** Authoritative, clear, minimal, and actionable. We don't speak in buzzwords; we provide pure signal.
 - **Aesthetic Vibe:** "Cinematic Dark Mode", Premium, Uncluttered, Focused.
 
 ---
 
-## 2. Core Colors (Cross-Platform)
+## 2. Palette Direction for Native and Brand Assets
 
-Netflux relies on an ultra-minimal, high-contrast dark palette. We do this to reduce eye strain and focus the user's attention purely on the content being consumed.
+Use a restrained dark palette for new brand assets. The values below are art-direction references, not replacement web tokens. Web surfaces use semantic variables and their existing theme overrides; the web primary token is not a universal gold CTA.
 
 | Role | Color Name | Hex Code | HSL Approx | Usage |
 | :--- | :--- | :--- | :--- | :--- |
-| **App Background** | Pure Void | `#09090B` | 240 10% 4% | The universal background for web/mobile shells, and social media canvas backgrounds. |
+| **Brand Background** | Pure Void | `#09090B` | 240 10% 4% | Default dark canvas for native concepts and social assets. |
 | **Primary Text** | Paper White | `#FAFAFA` | 0 0% 98% | High-contrast body text and headings. |
 | **Muted Text / Icons**| Zinc Subtitle | `#A1A1AA` | 240 5% 65% | Auxiliary text, timestamps, subtitles, and secondary icons. |
 | **Surface/Card** | Elevated Dark | `#111113` | 240 10% 6% | Backgrounds for floating cards, modals, or overlapping sheets. |
@@ -31,7 +29,7 @@ Netflux relies on an ultra-minimal, high-contrast dark palette. We do this to re
 
 ### Accent Color Family: "Solar Gold"
 
-While the app remains largely monochrome to let the content shine, **Solar Gold** is our official brand accent used for primary Call-To-Action buttons, critical highlights, and app notification badges. It consists of a scaled family to provide flexibility for hover states and subtle backgrounds:
+**Solar Gold** is a brand accent for selective emphasis. In native concepts and brand assets, the family supports accent buttons, hover states, and subtle backgrounds. For web buttons, highlights, and badges, preserve each existing component's semantic color choices.
 
 | Shade Name | Hex Code | Primary Usage |
 | :--- | :--- | :--- |
@@ -40,7 +38,7 @@ While the app remains largely monochrome to let the content shine, **Solar Gold*
 | **Solar Gold 200** | `#FDE68A` | - |
 | **Solar Gold 300** | `#FCD34D` | - |
 | **Solar Gold 400** | `#FBBF24` | Bright borders or outline emphasis |
-| **Solar Gold 500** | `#F59E0B` | **Primary Brand Pop** (Default buttons & CTAs) |
+| **Solar Gold 500** | `#F59E0B` | Main accent when an accent treatment is appropriate |
 | **Solar Gold 600** | `#D97706` | Hover states for primary buttons |
 | **Solar Gold 700** | `#B45309` | Active (pressed) states |
 | **Solar Gold 800** | `#92400E` | - |
@@ -52,23 +50,23 @@ While the app remains largely monochrome to let the content shine, **Solar Gold*
 
 ## 3. Typography
 
-Netflux utilizes three highly specific typefaces to establish its premium brand identity. 
+These three typefaces guide native concepts and brand assets; web font usage is documented in [DESIGN.md](./DESIGN.md).
 *(All fonts are available freely via Google Fonts).*
 
 The web landing page additionally uses `Instrument Serif` only for its hero headline. This is a scoped marketing exception, not a replacement for the core typography system.
 
 ### A. Brand Logo & Display: `Outfit`
-Used exclusively for the logo, ultra-large hero titles, marketing landing pages, or high-impact brand statements on social media.
+Use for the logo and selected display statements in new brand assets. This does not authorize applying Outfit to existing web headings or the landing hero.
 - **Weight:** Medium (500) to Semi-Bold (600)
 - **Tracking:** Slightly tight (`-0.025em`)
 
 ### B. Core UI & General Headings: `Inter`
-The workhorse font for 90% of the interface (buttons, menus, navigation, metadata, standard paragraphs).
+The primary font for UI text in new native concepts: buttons, menus, navigation, metadata, and standard paragraphs.
 - **Weight:** Regular (400) for standard UI text, Semibold (600) for UI headings
 - **Characteristics:** Unstyled, raw, extremely readable at small sizes.
 
 ### C. Reading & Editorial Content: `Playfair Display`
-The premium serif font used during the true deep reading / content consumption experience.
+Use for editorial display and pull-quotes in brand assets. Preserve the web reader's supported font choices rather than prescribing one reading font.
 - **Weight:** Regular (400) or occasionally Italicized.
 - **Characteristics:** Creates a "book-like" premium reading feel. Use carefully; it should not be used for UI buttons or navigation.
 
@@ -93,7 +91,7 @@ When translating the design to native mobile apps or other platforms:
 
 ## 6. Motion & Animation
 
-- **Philosophy:** Motion should be functional and restrained, never decorative. 
+- **Philosophy:** Motion should be functional and restrained, never decorative.
 - **Pattern:** Use subtle fade-ins (150-300ms) and slight vertical floating translates (`transform: translateY(-2px)`) for hover states or new screen loads. Avoid bouncy or springy animations that break the serious, cinematic vibe.
 
 ---
@@ -101,7 +99,7 @@ When translating the design to native mobile apps or other platforms:
 ## 7. Iconography & Artwork
 
 - **Icon Family:** Consistently use outline-style icons. (e.g., `Lucide Outline`).
-- **Stroke Weight:** Mandate a strict **1.5px stroke width** across the entire digital ecosystem (web apps, mobile apps, marketing). Mixing icon weights destroys the premium execution of minimal design. 
+- **Stroke Weight:** Prefer a consistent **1.5px stroke width** within new native or marketing icon sets. Existing web components retain their current icon family and weight; do not restyle them from this guide.
 - **Imagery Art Direction:** Because Netflux operates on an ultra-dark canvas, raw photography or bright graphics can look harsh. All major images (like book covers or hero banners) should be treated with a subtle dark vignette or a linear gradient fade at the bottom. This ensures images sit smoothly within the void background rather than looking like cut-and-paste stickers.
 
 ---

@@ -1,10 +1,12 @@
 # Phase 1 access path and complete-export design
 
-**Status:** Review handoff — proposed; no production change is authorized by this document
+**Status:** Reviewed design retained from [#136](https://github.com/Jseow008/ThePlayBook/pull/136); access/export slices subsequently merged. This document is a contract, not a blanket implementation-complete claim or production authorization.
 
 **Depends on:** [Phase 1 trustworthy retrieval contract](./PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md), including its lifecycle, stale-mutation, guest-migration, and evidence-identity decisions.
 
 **Implements after approval:** #7 complete access, then #10 complete export. It deliberately does not implement search, AI retrieval, or citations.
+
+See [release status](STATUS.md) and the [finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register) for delivered and remaining work. The original fixture matrix and proposal wording below are retained; distinguish those requirements from measured evidence for a particular release. The export/resume delivery does not sign off the separate live-list path.
 
 ## Decision summary
 
@@ -191,7 +193,9 @@ The runner uses a versioned retrieval budget of **8 evidence items** and **4,000
 
 The required classes are **source segments**, **highlights** (selection text and note-bearing variants), and **reflections**. The minimum corpus is 12 positive cases per class, including four exact-quote cases and four distractor/near-match cases; six mixed-scope cases; eight authorized no-evidence/withdrawn cases; and eight deterministic exclusion cases split across unauthorized, user-deleted, and revoked access. Each case declares its required IDs, eligible IDs, allowed citation states, and whether abstention is required. Cases have equal weight within their class; no hand-tuned per-case weighting is allowed without an approved fixture-version change.
 
-### Proposed numeric release thresholds — approval required
+### Original numeric threshold proposal — approval and evidence are versioned
+
+This heading preserves the design-stage threshold proposal. Subsequent retrieval evaluation freezes its own approved corpus/configuration and review provenance; consult the owning workstream evidence identified in [STATUS.md](STATUS.md). Do not infer either a fresh approval requirement or a passing result solely from this historical proposal.
 
 These are the numbers to approve in this review. Once approved they become fixture assertions before implementation begins:
 

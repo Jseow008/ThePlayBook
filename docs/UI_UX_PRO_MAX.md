@@ -1,60 +1,40 @@
 # UI UX Pro Max Integration
 
-UI UX Pro Max is installed in this project as assistant-local tooling, not as an application dependency.
+UI UX Pro Max is optional assistant-local tooling, not an application dependency. A repository checkout does not guarantee that the skill or generated design artifacts are present.
 
 ## Netflux Rule
 
 For Netflux, UI UX Pro Max is a reference library, not the design authority.
 
-The shipped source of truth is:
-- `docs/DESIGN.md`
-- `app/globals.css`
-- existing component structure in `components/ui/`
+[AGENTS.md](../AGENTS.md) owns the permitted scope and required workflow for UI work. [DESIGN.md](./DESIGN.md) documents the shipped design and its precedence rules: existing CSS and components govern the web product. This guide supplies local-tool examples, not a second design policy.
 
-Do not let UI UX Pro Max:
-- replace the project design system
-- rewrite the landing page layout
-- change font families or typography scale
-- change section order or CTA strategy
-- introduce a new visual identity without explicit approval
-
-Use it only for:
-- UI review
-- UX/accessibility checks
-- hover/focus/motion refinement
-- background and surface polish
-- small component-level improvements
-
-## Installed Locations
+## Possible Local Install Locations
 
 - Codex: `.codex/skills/ui-ux-pro-max/`
 - Antigravity: `.agent/skills/ui-ux-pro-max/`
 
-Each install includes:
+These paths are ignored assistant-local directories, not tracked application assets. Inspect the active environment's skill location before using an example; if it is absent, follow the repository's UI workflow without this optional tool. A typical install includes:
 
 - `SKILL.md` for assistant activation/instructions
 - `scripts/search.py` for design-system and domain searches
 - bundled CSV data files under `data/`
 
-## Current Project Artifacts
+## Optional Generated Artifacts
 
-- Master design system: `design-system/netflux/MASTER.md`
-- Landing page override: `design-system/netflux/pages/landing.md`
+- Possible generated master: `design-system/netflux/MASTER.md`
+- Possible generated landing exploration: `design-system/netflux/pages/landing.md`
 
-These files are intended as assistant reference material during future UI work.
+These paths are not tracked in the current checkout. If a local exploration has created them, treat them as historical reference material only; do not assume they exist or use them as product authority.
 
 ## Recommended Workflow For Netflux
 
-1. Treat `docs/DESIGN.md` and `app/globals.css` as the source of truth for the shipped product.
-2. Use UI UX Pro Max for ideation, design reviews, and narrow page-specific exploration only.
-3. Read the existing page component before running any UI UX Pro Max command.
-4. Prefer domain lookups over design-system generation.
-5. Keep changes localized and polish-only unless the user explicitly asks for a redesign.
-6. Treat `design-system/netflux/MASTER.md` and page overrides as historical reference artifacts, not as source of truth.
+1. Follow the UI workflow in `AGENTS.md`, including reading `docs/DESIGN.md` and the relevant existing components.
+2. If the skill is available, read its local instructions and use a narrow domain lookup for the specific review or polish task.
+3. Validate any resulting changes as required by `AGENTS.md`; a generated recommendation does not authorize a redesign.
 
 ## Safe Command Patterns
 
-Prefer these:
+Use these only if `.codex/skills/ui-ux-pro-max/scripts/search.py` exists. Otherwise substitute the verified local install path; do not assume another checkout has it.
 
 ```bash
 python3 .codex/skills/ui-ux-pro-max/scripts/search.py "landing page hover focus states dark mode" --domain ux
@@ -78,7 +58,7 @@ Use `--design-system` only when the user explicitly wants redesign exploration, 
 
 Avoid this for normal Netflux UI work. Use only for explicit redesign exploration.
 
-From the project root:
+Only after an explicit redesign-exploration request, and with the local script path verified, the following example writes optional reference artifacts from the project root:
 
 ```bash
 python3 .codex/skills/ui-ux-pro-max/scripts/search.py \
