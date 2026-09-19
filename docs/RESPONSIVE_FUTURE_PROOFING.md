@@ -1,9 +1,12 @@
 # Netflux Responsive and Future-Proofing Audit
 
-This document is the source of truth for responsive resilience and medium-term maintainability work. It is intentionally documentation-only: it does not replace the current Netflux design system, page structure, typography, spacing rhythm, or product identity.
+This document preserves the July 2026 responsive audit and its subsequent implementation evidence. It is a historical work record, not the current design authority or a fresh release certification.
 
-Last updated: 2026-07-01
-Last verified by codebase audit: 2026-07-01
+Original audit: 2026-07-01. Documentation housekeeping: 2026-09-19 against main baseline `6bfdb99`. No browser or performance checks were rerun for this housekeeping change.
+
+**How to read this record:** each item separates its recorded implementation update from its original issue, evidence, and acceptance criteria. Old file counts, line references, dependency versions, and measurements describe that audit snapshot. A recorded implemented status does not make the original problem current; a partially implemented status retains its stated follow-up.
+
+Current web design lives in [DESIGN.md](./DESIGN.md) and the implementation. [ADMIN_RESPONSIVE_PATTERNS.md](./ADMIN_RESPONSIVE_PATTERNS.md) owns admin layout rules, [ROUTE_SHELL_POLICY.md](./ROUTE_SHELL_POLICY.md) owns route chrome, and [DEPENDENCY_UPGRADE_POSTURE.md](./DEPENDENCY_UPGRADE_POSTURE.md) owns upgrade policy. Use the verification pointers at the end for current commands.
 
 ## Operating Rules
 
@@ -13,9 +16,9 @@ Last verified by codebase audit: 2026-07-01
 - Every remediation should include verification: component test, Playwright viewport test, visual smoke test, performance budget, or lint/typecheck gate.
 - Any future UI changes should be checked at mobile, tablet, laptop, and wide desktop sizes before shipping.
 
-## Audit Scope
+## Original Audit Scope
 
-Reviewed repository scale (verified counts):
+Repository scale recorded by the original audit (not current counts):
 
 - 293 TypeScript/TSX files across `app`, `components`, `hooks`, and `lib`
 - 102 client-marked files (`"use client"`)
@@ -35,7 +38,7 @@ Primary responsive surfaces reviewed:
 - Admin shell and content workflow: `app/admin/layout.tsx`, `app/admin/page.tsx`, `components/admin/*`
 - Project guardrails: `next.config.ts`, `eslint.config.mjs`, `playwright.config.ts`, `vitest.config.ts`
 
-## Baseline Strengths
+## Original Baseline Strengths
 
 - Netflux has an explicit design source of truth in `docs/DESIGN.md` and semantic tokens in `app/globals.css` (:root L14–56, @theme inline L170–199).
 - The app already uses `next/font`, scoped reader themes (`.reader-light`, `.reader-sepia`, `.reader-dark`), constrained `next/image` remote patterns (10 domains in `next.config.ts`), safe-area padding in key mobile chrome, and `dvh`/`svh` in several immersive surfaces.
@@ -47,19 +50,19 @@ Primary responsive surfaces reviewed:
 - The storyboard lightbox in `LandingPageSections.tsx` (L1007–1069) implements a proper focus trap, Escape handling, arrow key navigation, scroll lock, and focus restoration.
 - Security headers in `next.config.ts` are comprehensive: CSP, HSTS, X-Frame-Options DENY, Permissions-Policy, Referrer-Policy, and CORS on API routes.
 
-## P0: Production Blockers
+## Original P0 Assessment
 
 No P0 responsive or future-proofing blockers were found during this audit.
 
 The current product has enough responsive treatment to continue development. The main risk is regression: as more surfaces are added, the lack of browser-level responsive gates and shared layout primitives will make failures harder to catch.
 
-## P1: High Priority Before Broad Launch
+## Original P1 Findings and Recorded Follow-Up
 
 ### 1. Add a real responsive Playwright gate
 
-Status: Implemented in `400d2c4`.
+Recorded status: Implemented in `400d2c4`.
 
-Implementation notes:
+Recorded implementation update:
 
 - Commit: `400d2c4` (`Add responsive chrome policy and viewport gates`).
 - Playwright config: `playwright.config.ts` now defines responsive projects for `mobile-se` (375 × 667), `mobile-iphone` (390 × 844), `mobile-landscape` (667 × 375), `tablet-portrait` (768 × 1024), `tablet-landscape` (1024 × 768), and `desktop-chromium` (1440 × 900).
@@ -73,9 +76,9 @@ Implementation notes:
 - Verification run before merge: `npm run typecheck`, `npm run lint`, `npm run test`, `npm run build`, focused desktop dynamic-route Playwright check, and `npm run test:e2e:responsive` all passed.
 - Known limitation: WebKit/Safari projects were not added in this PR. That remains optional follow-up scope because the required viewport matrix is now covered in Chromium.
 
-Issue: `playwright.config.ts` currently defines only one project: `chromium` using `devices['Desktop Chrome']` (L16–21). No mobile or tablet viewport projects exist. Component tests cover some mobile intent, but they do not prove rendered layout behavior in real mobile/tablet browser dimensions.
+Original issue: `playwright.config.ts` then defined only one project: `chromium` using `devices['Desktop Chrome']` (L16–21). No mobile or tablet viewport projects existed in that snapshot. The implementation update above records the added coverage.
 
-Required outcome:
+Original required outcome:
 
 - Add Playwright projects for mobile, tablet, desktop, and optionally WebKit.
 - Cover representative routes: `/`, `/browse`, `/search`, `/preview/[id]`, `/read/[id]`, `/notes`, `/focus`, `/library/my-list`, `/requests`, and core admin pages.
@@ -89,7 +92,7 @@ Suggested viewport matrix:
 - 1024 × 768 (iPad landscape / small laptop)
 - 1440 × 900 (desktop)
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - CI fails if `document.documentElement.scrollWidth > window.innerWidth + 1` on guarded routes.
 - Mobile bottom nav and sticky headers do not cover CTAs, composers, or pagination controls.
@@ -97,9 +100,9 @@ Acceptance criteria:
 
 ### 2. Centralize mobile chrome and viewport sizing primitives
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Commit: `400d2c4` (`Add responsive chrome policy and viewport gates`).
 - Shared primitives: `app/globals.css` now declares `--mobile-header-height`, `--mobile-header-compact-height`, `--mobile-bottom-nav-height`, `--mobile-bottom-nav-compact-height`, `--safe-area-bottom`, `--safe-area-top`, and `--focus-mobile-vertical-chrome`.
@@ -121,7 +124,7 @@ Accepted exceptions:
 - The canonical `env(safe-area-inset-bottom)` and `env(safe-area-inset-top)` declarations remain centralized in `app/globals.css`.
 - A small number of local compound offsets intentionally use `var(--safe-area-bottom)` because they encode component-specific clearance rather than reusable shell chrome.
 
-Issue: There are many independent height, fixed-position, safe-area, and overflow patterns across the codebase.
+Original issue: There are many independent height, fixed-position, safe-area, and overflow patterns across the codebase.
 
 Evidence of height/padding fragmentation:
 
@@ -145,13 +148,13 @@ Risk:
 - `min-h-screen` remains common on pages with fixed mobile chrome (7 locations found in components).
 - New immersive routes may forget to opt out of mobile chrome.
 
-Required outcome:
+Original required outcome:
 
 - Define shared shell constants or CSS custom properties for mobile header height, compact header height, bottom nav height, and safe-area offsets.
 - Prefer `dvh`/`svh` utilities for viewport-owned surfaces.
 - Add a small route chrome policy map for read, preview, ask, focus, landing, and standard app pages.
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - App chrome heights are declared once.
 - Pages consume shared padding/height utilities instead of repeating `calc(...env(safe-area-inset-bottom))`.
@@ -159,9 +162,9 @@ Acceptance criteria:
 
 ### 3. Harmonize "isDesktop" breakpoint thresholds
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Shared contract: `lib/breakpoints.ts` defines Tailwind-aligned `BREAKPOINTS`, reusable `MEDIA_QUERIES`, and semantic `VIEWPORT_QUERIES`.
 - Hook hardening: `hooks/useMediaQuery.ts` now avoids render-time `window` access, syncs after mount, uses `[query]` as its effect dependency, supports both modern `addEventListener` and legacy `addListener`, and cleans up subscriptions correctly.
@@ -185,13 +188,13 @@ Previous evidence:
 | 1024px | Notes client page | `notes/client-page.tsx:1052` |
 | 767px (max-width) | Background scroll animation | `background-scroll-animation.tsx:35` |
 
-Required outcome:
+Original required outcome:
 
 - Define a shared set of named breakpoint constants and semantic viewport query aliases.
 - Preserve separate thresholds where they encode different behavior: reader interaction, compact reader controls, content desktop, full-layout app chrome/sidebar, and landing motion tuning.
 - Replace ad hoc runtime viewport width checks and direct viewport `matchMedia` calls with the shared `useMediaQuery` hook where possible.
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - Covered runtime viewport decisions use `VIEWPORT_QUERIES` instead of raw width literals.
 - Components avoid ambiguous local `isDesktop` naming when the behavior is actually reader interaction, Ask full layout, compact controls, or Notes sidebar availability.
@@ -200,9 +203,9 @@ Acceptance criteria:
 
 ### 4. Create shared viewport, media query, and body-scroll-lock hooks
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Shared scroll lock: `hooks/useBodyScrollLock.ts` uses stable per-hook tokens and module-level lock sets so overlapping overlays compose safely.
 - Lock targets are tracked independently. Body-only overlays lock `document.body`; composer/sheet/editor overlays that previously locked both body and html now pass `{ lockDocumentElement: true }`.
@@ -219,7 +222,7 @@ Accepted exceptions:
 - Component-specific `ResizeObserver` and viewport measurement logic remains local where a shared hook would only move code without simplifying behavior.
 - `useMediaQuery` still defaults to `false` for SSR. A `useSyncExternalStore` or server-hint redesign remains optional follow-up scope.
 
-Previous issue: Responsive behavior still had several local body/html overflow locks and a few specialized viewport/motion helper patterns. Runtime width breakpoint checks were centralized in item 3.
+Original issue: Responsive behavior still had several local body/html overflow locks and a few specialized viewport/motion helper patterns. Runtime width breakpoint checks were centralized in item 3.
 
 Evidence for scroll lock fragmentation (9+ independent implementations):
 
@@ -241,22 +244,22 @@ Evidence for `useMediaQuery` SSR hydration concern:
 
 `hooks/useMediaQuery.ts` initializes with `useState(false)`. On SSR, all media queries are `false`, which may cause a layout flash on hydration when the real viewport matches. Components using this hook for layout decisions will render the mobile/default layout on the server and then switch to the matched client layout after mount.
 
-Required outcome:
+Original required outcome:
 
 - Add shared `useBodyScrollLock` with nested lock safety.
 - Add shared reduced-motion helper where it replaces direct React-state media query usage.
 - Keep complex viewport measurement and SSR media-query redesign as separate follow-up scope unless a concrete regression appears.
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - Scroll locks compose correctly when drawers, sheets, and composers overlap.
 - Event listeners do not resubscribe on every state transition.
 
 ### 5. Expand responsive regression tests around high-risk surfaces
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Shared Playwright assertions in `tests/e2e/helpers/responsive.ts` now cover viewport containment with tolerance, intentional horizontal scroller ownership, focused input visibility, and overlay focus/scroll/body-overflow restoration.
 - New suite: `tests/e2e/responsive-surfaces-public.spec.ts`, `tests/e2e/responsive-surfaces-authenticated.spec.ts`, and `tests/e2e/responsive-surfaces-admin.spec.ts`.
@@ -268,7 +271,7 @@ Implementation notes:
 - Related product hardening: `ContentLane` now uses an inner `w-max` flex track inside the scroll container so horizontal lanes accept real user horizontal scroll gestures while preserving existing card sizing, gaps, snap behavior, and layout rhythm.
 - Verification: `npm run typecheck`, `npm run lint`, `npm run test:e2e:responsive:surfaces`, and a warm rerun of `npm run test:e2e:responsive` passed. The first cold run of `npm run test:e2e:responsive` had initial `page.goto(..., load)` timeouts under concurrent dev-server startup, then passed on rerun once the server was warm.
 
-Issue: High-risk surfaces have good unit/component intent tests, but not enough browser-level checks for visual containment.
+Original issue: High-risk surfaces have good unit/component intent tests, but not enough browser-level checks for visual containment.
 
 High-risk surfaces:
 
@@ -279,12 +282,12 @@ High-risk surfaces:
 - Notes page sticky filter bars and sidebar AI panel
 - Admin content workbench filters and tables
 
-Required outcome:
+Original required outcome:
 
 - Add a small suite of browser smoke tests that checks containment and primary interactions for these surfaces.
 - Keep screenshots or DOM measurements focused; do not introduce broad flaky visual diffs.
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - Tests prove scroll containers intentionally own horizontal scrolling while the document itself does not.
 - Sticky/fixed elements remain reachable and do not hide the active input or CTA.
@@ -292,9 +295,9 @@ Acceptance criteria:
 
 ### 6. Formalize a bundle and client-boundary budget
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - `next.config.ts` now composes `@next/bundle-analyzer` outside the Sentry-wrapped config with `enabled: process.env.ANALYZE === "true"` and `openAnalyzer: process.env.CI !== "true"`.
 - NPM scripts now include `analyze`, `analyze:ci`, `check:bundle-budgets`, and `check:client-boundaries`.
@@ -308,7 +311,7 @@ Implementation notes:
 - The first baseline tracks `/`, `/browse`, `/read/[id]`, `/notes`, and `/focus`.
 - No additional lazy-loading split was made from this baseline alone. Further splits should be analyzer-led; the landing page already defers `LandingDeferredSections` through `next/dynamic`.
 
-Issue: The app has 102 client-marked files. Some large surfaces are necessarily interactive, but future growth will make bundle size and hydration cost harder to reason about.
+Original issue: The app has 102 client-marked files. Some large surfaces are necessarily interactive, but future growth will make bundle size and hydration cost harder to reason about.
 
 Evidence:
 
@@ -319,13 +322,13 @@ Evidence:
 - Only 2 files use `next/dynamic` for code splitting: `components/ui/LandingPage.tsx` (L1) and `components/providers/AppToaster.tsx` (L3).
 - Framer Motion (`framer-motion ^12.40.0`) is imported in only 1 file: `components/ui/background-scroll-animation.tsx` (L10). Its actual route impact should be confirmed with bundle analysis before assigning a size.
 
-Required outcome:
+Original required outcome:
 
 - Add a documented client-boundary policy: server by default, client only for interaction islands.
 - Run Next bundle analysis periodically and record route-level budgets. `@next/bundle-analyzer ^16.2.9` is already in devDependencies.
 - Split heavy optional UI where it can load on intent: image modal, notes AI sidebar, admin editors, advanced carousels.
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - A bundle analysis artifact exists before launch.
 - Landing, browse, read, notes, and focus have tracked JS budgets.
@@ -333,9 +336,9 @@ Acceptance criteria:
 
 ### 7. Tighten future type-safety gates
 
-Status: Partially implemented.
+Recorded status: Partially implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Type-safety ratchet policy: `docs/TYPE_SAFETY_RATCHET.md`.
 - `package.json` now runs `scripts/check-type-safety-ratchet.mjs` as part of `npm run lint`.
@@ -344,7 +347,7 @@ Implementation notes:
 - `@next/next/no-img-element` is enabled for production code. Raw `<img>` remains locally documented where required for Satori OG rendering or admin URL-preview `onError` fallbacks.
 - Remaining follow-up: expand `no-explicit-any` coverage into `app/admin/**` and selected `components/**` after existing casts are cleaned or explicitly allowlisted; review/narrow the React hook rule suppressions.
 
-Issue: TypeScript strict mode is enabled (`tsconfig.json` strict: true), but several future-proofing rules are relaxed globally in `eslint.config.mjs`:
+Original issue: TypeScript strict mode is enabled (`tsconfig.json` strict: true), but several future-proofing rules are relaxed globally in `eslint.config.mjs`:
 
 | Rule | Status | File:Line |
 |------|--------|-----------|
@@ -374,13 +377,13 @@ Risk:
 - Future React/Next upgrades will be harder if hook purity and static component checks stay globally disabled.
 - `@next/next/no-img-element` being disabled globally allows unoptimized `<img>` tags without lint warnings.
 
-Required outcome:
+Original required outcome:
 
 - Keep exceptions where they are justified, but move toward file-scoped allowlists.
 - Regenerate and commit database types after schema changes.
 - Expand `no-explicit-any` enforcement from current 6 targeted files to server routes and shared libraries first.
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - New app/API/library files cannot introduce `any` without an explicit local exception.
 - Supabase type lag is tracked as schema maintenance, not normalized as permanent application code.
@@ -388,9 +391,9 @@ Acceptance criteria:
 
 ### 8. Centralize cache and revalidation policy
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Shared policy helper: `lib/server/revalidation.ts` centralizes public content, admin content, featured, narration, and series revalidation paths behind mutation-specific helpers.
 - Content create/update/delete now call intent-specific helpers instead of duplicating public route path lists in `app/api/admin/content/route.ts` and `app/api/admin/content/[id]/route.ts`.
@@ -402,7 +405,7 @@ Implementation notes:
 - Regression coverage: `lib/server/__tests__/revalidation.test.ts` covers create/update/delete/bulk/featured/narration/series path sets and de-duping.
 - Guardrail: `scripts/check-revalidation-boundaries.mjs` is wired into `npm run lint` through `check:revalidation-boundaries`, with an explicit allowlist for legitimate non-content direct `revalidatePath` calls.
 
-Issue: ISR and `revalidatePath` are used, but cache strategy is distributed across pages and admin/API mutation routes with no tag-based invalidation.
+Original issue: ISR and `revalidatePath` are used, but cache strategy is distributed across pages and admin/API mutation routes with no tag-based invalidation.
 
 Evidence of ISR durations:
 
@@ -422,25 +425,25 @@ Evidence of `revalidatePath` fragmentation: **67 `revalidatePath` calls** spread
 
 `revalidateTag` is not used anywhere (0 occurrences). All invalidation is path-based.
 
-Required outcome:
+Original required outcome:
 
 - Create a single route revalidation helper for content mutations (e.g., `revalidateContentPaths(id, title, seriesSlugs)`).
 - Document which pages are ISR, dynamic, request-time personalized, or client-personalized.
 - Consider tag-based invalidation for content collections when the app is ready for that migration.
 
-Acceptance criteria:
+Original acceptance criteria:
 
 - Adding a new public content surface requires adding it to one revalidation helper or tag policy.
 - Admin publish/edit/delete flows invalidate all relevant public pages consistently.
 - Cache durations are documented by content freshness need, not copied per route.
 
-## P2: Medium Priority Hardening
+## Original P2 Findings and Recorded Follow-Up
 
 ### 9. Standardize modal, drawer, and sheet behavior
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Shared overlay layers: `lib/overlay-layers.ts` now names the intended stacking scale for shell chrome, reader floating elements, drawers, composers, panels, sheets, popovers, raised sheets, and top-level dialogs.
 - Shared overlay interactions: `hooks/useOverlayInteractions.ts` centralizes focus trap behavior, Escape handling, initial focus, focus restoration, optional body/html scroll lock via `useBodyScrollLock`, and a small overlay stack so nested overlays only let the top overlay handle keyboard events.
@@ -452,7 +455,7 @@ Implementation notes:
 - Regression coverage: `hooks/__tests__/useOverlayInteractions.test.tsx` covers focus wrapping, nested overlay Escape routing, focus restoration, and scroll lock. `tests/components/NotesDrawer.test.tsx` now asserts dialog semantics, scroll lock, and Escape close behavior on a migrated reader overlay.
 - Verification: `npm run typecheck`, focused Vitest coverage for affected overlays, and `npm run lint` passed.
 
-Previous issue: The project had multiple overlay implementations, and only 1 of 9+ overlays implemented a focus trap.
+Original issue: The project had multiple overlay implementations, and only 1 of 9+ overlays implemented a focus trap.
 
 Previous evidence of overlay focus trap coverage:
 
@@ -482,7 +485,7 @@ Evidence of z-index collision risk — 7 components share z-[100]:
 
 While these are unlikely to all be open simultaneously, several reader-page overlays and popovers share the same layer value. `AuthorChat`, `ReaderSettingsMenu`, `HighlightPopover`, `ContentFeedback`, `TextSelectionToolbar`, and `ReadingHeatmap` tooltip can all exist in the reader feature area, so stacking order should be intentional rather than incidental.
 
-Required outcome:
+Original required outcome:
 
 - Define shared overlay expectations: focus trap, Escape behavior, body scroll lock, safe-area padding, max height, close affordance, restore focus, z-index range.
 - Keep visual styling local to preserve Netflux identity, but centralize interaction guarantees.
@@ -490,9 +493,9 @@ Required outcome:
 
 ### 10. Add a motion-reduction audit
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Shared motion fallbacks: `app/globals.css` now extends the reduced-motion policy beyond landing-only classes to cover `.card-hover`, `.btn-active`, content-card motion hooks, mobile-header transform transitions, reader drawer transitions, and reader settings sheet animations.
 - State changes intentionally still happen under reduced motion. Mobile header hide/show and drawer open/close snap instantly instead of staying visible forever or animating through the viewport.
@@ -506,7 +509,7 @@ Implementation notes:
 - Verification: `npm run test -- tests/components/ContentCard.test.tsx tests/components/NotesDrawer.test.tsx tests/components/ReaderSettingsMenu.test.tsx`, `npm run typecheck`, `npm run lint`, and `npm run test:e2e:reduced-motion` passed.
 - Rendered sanity check: the in-app Browser loaded `/browse` on the existing local dev server, confirmed main content, content-card motion hooks, no document horizontal overflow, and no console warnings/errors.
 
-Issue: Some surfaces respect reduced motion well, while others lack coverage.
+Original issue: Some surfaces respect reduced motion well, while others lack coverage.
 
 Evidence of good coverage:
 
@@ -524,16 +527,16 @@ Evidence of gaps:
 - Transition classes in overlays (`transition-transform duration-300` on MobileHeader, NotesDrawer slide animations, ReaderSettingsMenu sheet) lack `motion-reduce` variants except for `AudioPlayer.tsx:403` and `LandingPageSections.tsx:1135,1224`.
 - Hover-only discoverability: Content card bookmark/remove buttons use `lg:opacity-0 lg:group-hover:opacity-100` (`ContentCard.tsx:203,282`) — not discoverable on touch devices at lg breakpoint, though they are always visible below lg.
 
-Required outcome:
+Original required outcome:
 
 - Ensure custom animations and scroll effects have `motion-reduce` or `prefers-reduced-motion` fallbacks.
 - Avoid hover-only discoverability on touch-first interactions.
 
 ### 11. Create responsive content-card standards
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Shared standards: `components/ui/content-card-standards.ts` defines the reusable card aspect, compact shelf card sizing, loading skeleton sizing, catalog card image `sizes`, and reader cover image `sizes`.
 - Design source of truth: `docs/DESIGN.md` now documents the responsive card families: compact shelf card, catalog grid card, landing featured card, focus card cover, and reader cover.
@@ -543,7 +546,7 @@ Implementation notes:
 - Regression coverage: component tests assert rendered linkage for `ContentCard`, `ContentLane`, `ContentPreview`, `ReaderHeroHeader`, public loading skeletons, browse skeleton source linkage, and focus cover width behavior.
 - Verification: focused component tests, `npm run lint`, `npm run typecheck`, and `npm run test:e2e:responsive:surfaces` passed.
 
-Issue: Content cards are central to browse, search, library, landing featured reads, and focus. They mostly behave well, but card widths, text clamps, overlay gradients, and image sizes are spread across multiple components.
+Original issue: Content cards are central to browse, search, library, landing featured reads, and focus. They mostly behave well, but card widths, text clamps, overlay gradients, and image sizes are spread across multiple components.
 
 Evidence of card sizing fragmentation:
 
@@ -557,16 +560,16 @@ Evidence of card sizing fragmentation:
 | Browse loading skeleton | Previously `w-[140px]` → `md:w-[200px]` → `lg:w-[240px]`; now compact shelf standard | `app/(public)/browse/page.tsx` |
 | Public route loading skeleton | Previously `w-[120px]` → `sm:w-[140px]`; now compact shelf standard | `app/(public)/loading.tsx` |
 
-Required outcome:
+Original required outcome:
 
 - Document card size families: compact shelf card, catalog grid card, landing featured card, focus card, reader cover.
 - Keep existing styling, but define reusable sizing constants or helper classes where repeated.
 
 ### 12. Strengthen admin responsive patterns
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Admin responsive standards are documented in `docs/ADMIN_RESPONSIVE_PATTERNS.md`.
 - The standards preserve the existing admin light theme, navigation structure, workflow order, and `xl` table/card split.
@@ -575,25 +578,25 @@ Implementation notes:
 - Tablet Playwright coverage checks content filters, admin nav wrapping, New Content navigation, editor title/type/action anchors, and document horizontal overflow.
 - Authenticated browser checks reuse the existing responsive credential fallback and skip behavior when `RESPONSIVE_AUTH_EMAIL`/`RESPONSIVE_AUTH_PASSWORD`, `SMOKE_ADMIN_EMAIL`/`SMOKE_ADMIN_PASSWORD`, or `E2E_ADMIN_EMAIL`/`E2E_ADMIN_PASSWORD` are not configured.
 
-Issue: Admin pages are functional and use wrapping filters, but they are more table/form dense than public pages. As admin workflows grow, mobile and tablet usability will regress unless table and editor patterns are standardized.
+Original issue: Admin pages are functional and use wrapping filters, but they are more table/form dense than public pages. As admin workflows grow, mobile and tablet usability will regress unless table and editor patterns are standardized.
 
 Evidence:
 
 - Admin layout stacks nav vertically on mobile, row on lg: `flex flex-col gap-3 py-3 lg:h-16 lg:flex-row` (`app/admin/layout.tsx:34`).
 - Dashboard cards: `grid grid-cols-1 gap-4 md:grid-cols-3` (`app/admin/page.tsx:122`).
 - Admin uses a separate light theme: `min-h-screen bg-background text-foreground light` (`app/admin/layout.tsx:30`).
-- No admin-specific Playwright tests exist for tablet or mobile viewports.
+- At the original audit, no admin-specific Playwright tests existed for tablet or mobile viewports. The recorded update above supersedes this finding; see `tests/e2e/responsive-admin.spec.ts` and `tests/e2e/responsive-surfaces-admin.spec.ts`.
 
-Required outcome:
+Original required outcome:
 
 - Document when admin data should use card layout, horizontal table scroll, or column hiding.
 - Add at least one tablet-width admin Playwright smoke test for content filters and editor navigation.
 
 ### 13. Add route ownership and shell-behavior documentation
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Route shell ownership is documented in `docs/ROUTE_SHELL_POLICY.md`, split between routes governed by `getRouteChromePolicy`, standalone root routes, and admin routes that use the separate admin shell.
 - `lib/route-chrome-policy.ts` now defines the canonical viewport mode semantics inline and exposes the documented special route patterns for tests.
@@ -602,9 +605,9 @@ Implementation notes:
 - `npm run lint` now includes `npm run check:route-shell-policy`, so a new public page route must update the shell policy documentation before passing lint.
 - `/chat-export/*` is documented as a standalone root route at `app/chat-export/[id]` and must not inherit public mobile app chrome.
 
-Previous issue: Shell behavior was encoded in `PublicLayoutShell.tsx` conditionals. This worked, but route growth made it easy to forget whether a page wanted mobile chrome, immersive viewport ownership, bottom padding, or desktop sidebar padding.
+Original issue: Shell behavior was encoded in `PublicLayoutShell.tsx` conditionals. This worked, but route growth made it easy to forget whether a page wanted mobile chrome, immersive viewport ownership, bottom padding, or desktop sidebar padding.
 
-Current public-shell policy summary:
+Historical public-shell summary (use `docs/ROUTE_SHELL_POLICY.md` and `lib/route-chrome-policy.ts` for current values):
 
 | Route | Header | Bottom Nav | Sidebar Padding | Bottom Padding | Viewport Mode |
 |-------|--------|-----------|-----------------|----------------|---------------|
@@ -620,16 +623,16 @@ Canonical route matrix:
 
 - See `docs/ROUTE_SHELL_POLICY.md` for all public-shell routes, standalone routes such as `/chat-export/*`, and the separate admin shell.
 
-Required outcome:
+Original required outcome:
 
 - Add a small route matrix in docs or code (above serves as the initial version).
 - Adding a new immersive route requires changing one policy map, not hand-editing shell conditionals.
 
 ### 14. Track dependency upgrade posture
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Upgrade policy: `docs/DEPENDENCY_UPGRADE_POSTURE.md` defines the cadence, tracked dependency tiers, special watch items, and the ordered verification checklist for framework/runtime upgrades.
 - Structural checker: `scripts/check-dependency-posture.mjs` verifies tracked packages exist in `package.json` and reports configured ranges plus lockfile-resolved versions when available.
@@ -640,9 +643,9 @@ Implementation notes:
 - Scope boundary: `framer-motion`, `ffmpeg-static`, and `@dnd-kit/*` are kept as special watch items here, but active bundle-cost reduction remains item 15 scope.
 - Tracked package tiers include framework/runtime packages plus AI provider SDKs, Google GenAI, React Query, PostHog, Upstash, content rendering packages, UI libraries, `@types/node`, ESLint, `jsdom`, and Testing Library.
 
-Issue: The app is on modern tooling. Future-proofing now depends on an explicit upgrade rhythm.
+Original issue: The app is on modern tooling. Future-proofing now depends on an explicit upgrade rhythm.
 
-Current major versions:
+Dependency versions recorded in the audit (historical; current versions come from `package.json` and `package-lock.json`):
 
 | Dependency | Version | Notes |
 |-----------|---------|-------|
@@ -661,7 +664,7 @@ Current major versions:
 
 Note: `stores/` directory is empty. The only Zustand store lives in `hooks/useReaderSettings.ts` (L4–5) using `create` with `persist` middleware.
 
-Required outcome:
+Original required outcome:
 
 - Maintain a short upgrade checklist for Next, React, Tailwind, Sentry, Supabase, AI SDK, and Playwright.
 - Run `npm run lint`, `npm run typecheck`, `npm run test`, and `npm run build` after framework upgrades.
@@ -670,19 +673,19 @@ Required outcome:
 
 ### 15. Audit low-use and heavy dependencies
 
-Status: Implemented.
+Recorded status: Implemented.
 
-Implementation notes:
+Recorded implementation update:
 
 - Audit artifact: `docs/performance/DEPENDENCY_AUDIT.md` records the 2026-07-02 webpack analyzer findings, route budget snapshot, dependency-specific keep/replace thresholds, and current ffmpeg server trace scope.
 - Enforcement: `scripts/check-dependency-isolation.mjs` is wired into `npm run lint` through `check:dependency-isolation`.
-- `framer-motion` remains isolated to `components/ui/background-scroll-animation.tsx`; measured landing impact is 487.2 KiB stat / 129.7 KiB parsed / 47.3 KiB gzip in the webpack client analyzer, below the 50 KiB gzip replacement threshold but close enough to keep watched.
+- At that measurement, `framer-motion` was isolated to `components/ui/background-scroll-animation.tsx`; measured landing impact is 487.2 KiB stat / 129.7 KiB parsed / 47.3 KiB gzip in the webpack client analyzer, below the 50 KiB gzip replacement threshold but close enough to keep watched.
 - `@dnd-kit/*` remains isolated to admin content editing surfaces; measured impact is 130.4 KiB stat / 44.7 KiB parsed / 15.6 KiB gzip on admin new/edit entrypoints only.
 - `ffmpeg-static` remains absent from client bundles. The native binary is traced only by admin API server traces in the current build; the audit records the current route list and notes `/api/admin/content/[id]/featured` as an admin-only transitive trace cleanup candidate.
 
-Issue: Some production dependencies are heavy, native, or low-use. They are not necessarily unused, but they should be reviewed periodically so bundle/runtime cost remains intentional.
+Original issue: Some production dependencies are heavy, native, or low-use. They are not necessarily unused, but they should be reviewed periodically so bundle/runtime cost remains intentional.
 
-Known low-use or high-impact dependencies:
+Dependencies and bundle measurements recorded in the audit (historical):
 
 | Package | Bundle Impact | Used In | Consideration |
 |---------|--------------|---------|---------------|
@@ -690,25 +693,30 @@ Known low-use or high-impact dependencies:
 | `ffmpeg-static ^5.3.0` | Measured: 0 B client; ~43 MiB native binary traced by admin API routes | Narration audio processing (`next.config.ts`, `lib/server/ai-narration.ts`) | Required for server-side audio; keep out of client bundles and verify tracing stays admin-only |
 | `@dnd-kit/* (3 packages)` | Measured: 130.4 KiB stat / 44.7 KiB parsed / 15.6 KiB gzip on admin new/edit entrypoints | Admin content form and sortable segment components | Required for admin drag-and-drop; keep isolated to admin/editor routes |
 
-## Recommended Verification Commands
+As of the housekeeping baseline `6bfdb99`, `framer-motion` is no longer a dependency in `package.json`. Its measurements above are retained as historical evidence, not a current dependency recommendation.
 
-Run after implementation work that touches responsive layout, app shell, or core UI:
+## Current Verification Pointers
+
+Use `package.json` scripts and `playwright.config.ts` as the executable source of truth. At baseline `6bfdb99`, responsive layout work uses the following commands; these are instructions, not results from this documentation-only change:
 
 ```bash
 npm run lint
 npm run typecheck
 npm run test
 npm run build
-npx playwright test
+npm run test:e2e:responsive
+npm run test:e2e:responsive:surfaces
+npm run test:e2e:reduced-motion
 ```
 
-Add these before launch:
+For bundle work, follow `docs/performance/DEPENDENCY_AUDIT.md` and use the existing analyzer and budget scripts:
 
 ```bash
-npx next experimental-analyze
-npx playwright test --project="Mobile Chrome"
-npx playwright test --project="Mobile Safari"
+npm run analyze
+npm run check:bundle-budgets
 ```
+
+The configured browser projects are `desktop-chromium`, `mobile-se`, `mobile-iphone`, `mobile-landscape`, `tablet-portrait`, and `tablet-landscape`; all use Chromium. There is no project named `Mobile Chrome` or `Mobile Safari`. Authenticated/admin checks need the credentials documented by their existing helpers and may otherwise skip; a skipped check is not a verified surface.
 
 For the responsive Playwright gate, configure stable dynamic content paths in CI whenever possible:
 
@@ -717,7 +725,9 @@ For the responsive Playwright gate, configure stable dynamic content paths in CI
 
 Both paths should point to a public `verified` content item. The preview path can be copied from `/browse`; the read path can be copied from that preview page's `Read Summary` CTA. `RESPONSIVE_READ_PATH` falls back to `SMOKE_READ_PATH`, but setting the canonical read path directly avoids an extra redirect and keeps `/preview/*` and `/read/*` browser-level chrome checks from depending on route discovery.
 
-## Suggested Implementation Order
+## Original Suggested Implementation Order
+
+This sequence records the original plan; consult the item updates above before treating any step as outstanding.
 
 1. Add Playwright mobile/tablet projects and document horizontal-overflow assertions.
 2. Harmonize "isDesktop" breakpoint thresholds across all surfaces.
@@ -729,11 +739,11 @@ Both paths should point to a public `verified` content item. The preview path ca
 8. Centralize route revalidation for content mutations.
 9. Standardize overlay focus trap, escape, and z-index behavior.
 
-## Risk Acceptance
+## Historical Risk Acceptance Record
 
-No responsive or future-proofing risk has been formally accepted yet.
+The original audit recorded no formally accepted responsive or future-proofing risk. This housekeeping edit does not accept a risk or certify that every follow-up has been completed.
 
-If a P1 item is deferred, record:
+For any newly deferred P1 item, record:
 
 - owner
 - date

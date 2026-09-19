@@ -31,7 +31,7 @@ For local Supabase development:
 npm run supabase:types:local
 ```
 
-After regenerating [types/database.ts](/Users/j/Desktop/Lifebook/types/database.ts), remove any casts or `@ts-expect-error` directives that are no longer needed, then shrink the allowlists in `eslint.config.mjs` and `scripts/check-type-safety-ratchet.mjs`.
+After regenerating [types/database.ts](../types/database.ts), remove any casts or `@ts-expect-error` directives that are no longer needed, then shrink the allowlists in `eslint.config.mjs` and `scripts/check-type-safety-ratchet.mjs`.
 
 ## Image Rule
 

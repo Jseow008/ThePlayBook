@@ -3,6 +3,17 @@
 > **Status:** Active  
 > **Purpose:** Development, deployment, admin operations, and troubleshooting for the current Netflux implementation.
 
+## Navigation and evidence dates
+
+This is the operating procedure reference. The [database readiness tracker](./DATABASE_PRODUCTION_READINESS.md) owns workstream status and recovery-policy decisions; the [security tracker](./SECURITY_REMEDIATION.md) owns remediation evidence. See [INDEX.md](./INDEX.md) for the documentation map.
+
+- [Database release gate](#22-disposable-hosted-database-verification): disposable proof, production dry-run, and explicit authorization.
+- [CI security gates](#ci-security-gates) and [production verification](#production-verification-checklist): required release checks.
+- [Backup and restore](#56-backup-and-restore-drill): current procedure, open proof, and dated records.
+- [Elevated-key rotation and recovery](#45-supabase-elevated-key-rotation-and-emergency-recovery): routine and emergency procedures.
+
+Dated enforcement, deployment, and recovery records are evidence from those dates, not fresh verification. Historical commands and completed migration records do not authorize repeating production operations. This documentation reconciliation runs no release checks and changes no release gates.
+
 ## 1. Local Development
 
 ### 1.1 Install and Run
@@ -79,12 +90,7 @@ npx supabase start
 npx supabase db reset
 ```
 
-If you are using a hosted project:
-
-```bash
-npx supabase link --project-ref <your-project-ref>
-npx supabase db push
-```
+For a disposable hosted development project, use the isolated workdir and project-reference guards in [§2.2](#22-disposable-hosted-database-verification). Production migrations require that section's full release gate, reviewed production dry-run, and explicit authorization before `db push`; a hosted-project link alone is not authorization.
 
 Rule: keep schema changes in `supabase/migrations/`. Do not rely on dashboard-only edits.
 
@@ -823,6 +829,8 @@ If those are missing, production behavior is expected to be stricter than local 
 
 ### 5.6 Backup and Restore Drill
 
+Use the approved [DB-003 recovery policy](./DATABASE_PRODUCTION_READINESS.md#recovery-objectives-and-retention-policy). The latest recorded policy decision is 2026-08-25: Pro daily backups support the accepted 24-hour database RPO; PITR and recurring off-platform copies are deferred. A retained Pro-backup restore proving the four-hour service RTO and proportionate alert delivery remain open. The July local restore below does not close that Pro-backup proof.
+
 Run one backup and one restore drill before launch:
 
 - confirm the database backup/export path you will actually use in production
@@ -836,6 +844,10 @@ Record:
 - where it was restored
 - who ran the drill
 - what failed, if anything
+
+#### Historical backup and restore evidence
+
+The following records retain the procedure and outcome as executed on each date. They do not establish present-day backup freshness or instruct an operator to replay a completed migration. July launch requirements were superseded by the [2026-08-25 recovery decision](./DATABASE_PRODUCTION_READINESS.md#decision-log); only the current policy and unresolved proof above govern the next recovery work.
 
 #### 2026-07-15 restore drill record
 
@@ -855,14 +867,14 @@ Record:
 - **Database:** `~/.codex/backups/Lifebook/db003-production-20260717T085243Z` contains role, schema, and data dumps created read-only from production. The data dump contains 49 `COPY` sections. All SQL files and the manifest are mode `0600`, and `shasum -a 256 -c SHA256SUMS` passed.
 - **Storage:** `~/Backups/Netflux/2026-07-17-db003-recovery/storage` contains 246 `audio` objects and 735 `media` objects. The 981-object, 1,146,837,837-byte inventory matches production exactly, and all entries in `storage.sha256` passed.
 - **Scope:** this refresh did not run a second restore drill because the 2026-07-15 drill already proved the current restore procedure. It did not mutate production data, schema, migration history, bucket configuration, or Storage objects.
-- **Remaining launch gate:** manual recovery points are safeguards, not the required operating posture. Upgrade to an approved paid plan, enable the approved backup/PITR retention, automate database and Storage recovery points, and configure cost and capacity monitoring before marking DB-003 Verified.
+- **Launch gate recorded on 2026-07-17 (superseded by the 2026-08-25 policy):** manual recovery points are safeguards, not the required operating posture. Upgrade to an approved paid plan, enable the approved backup/PITR retention, automate database and Storage recovery points, and configure cost and capacity monitoring before marking DB-003 Verified.
 
 #### 2026-07-25 recovery-point refresh
 
 - **Database:** `~/.codex/backups/Lifebook/db003-production-20260725T042740Z` contains owner-only role, schema, and data dumps created read-only from production. The data dump contains 49 `COPY` sections. All three SQL files are mode `0600`, and `shasum -a 256 -c SHA256SUMS` passed.
 - **Storage:** `~/Backups/Netflux/2026-07-25-db003-recovery/storage` contains 261 `audio` objects and 752 `media` objects. Production inventories captured before and after the copy matched the local 1,013-object, 1,222,139,218-byte inventory exactly, and all 1,013 entries in `storage.sha256` passed.
 - **Scope:** this refresh did not run another restore drill because the 2026-07-15 drill already proved the current logical restore procedure. It did not mutate production data, schema, migration history, bucket configuration, Auth configuration, or Storage objects.
-- **Remaining launch gate:** this verified manual recovery point is current but does not establish the required recurring cadence. Automated database and Storage recovery points, freshness/failure alerts, approved retention, and a launch-stage plan decision remain required before marking DB-003 Verified.
+- **Launch gate recorded on 2026-07-25 (superseded by the 2026-08-25 policy):** this verified manual recovery point is current but does not establish the required recurring cadence. Automated database and Storage recovery points, freshness/failure alerts, approved retention, and a launch-stage plan decision remain required before marking DB-003 Verified.
 
 #### 2026-08-25 Pro backup verification
 
@@ -873,8 +885,10 @@ Record:
 
 #### 2026-08-25 Pro capacity and cost baseline
 
+This is the operating cadence adopted on that date, not evidence that every dashboard setting or alert has been verified. [DB-203](./DATABASE_PRODUCTION_READINESS.md#db-203-add-capacity-query-and-recovery-monitoring) owns the remaining acceptance items and threshold policy.
+
 - **Cadence:** review the Supabase Usage and Upcoming Invoice pages monthly and after every database-facing production release. Review the daily backup inventory and database advisors after those releases. The organization billing-notification recipient must be monitored.
-- **Thresholds:** database disk 6.4 GB review / 7.2 GB action; Storage 80 GB review / 90 GB action; monthly egress 200 GB review / 225 GB action. Any missing expected daily backup is a review; two consecutive missing backups or no restorable backup is an action condition.
+- **Thresholds:** use the [DB-203 signal/threshold/response table](./DATABASE_PRODUCTION_READINESS.md#pro-plan-baseline-2026-08-25), including disk, Storage, egress, backup freshness, and cost anomalies. Keep policy changes in that table rather than maintaining a second set of thresholds here.
 - **Response:** investigate the largest tables, indexes, or files for capacity; pause unexpected uploads; investigate media delivery or abusive traffic for egress; and postpone destructive database work while backup availability is unresolved. Review Usage and the invoice before approving any paid add-on or Spend Cap change.
 - **Limits of this baseline:** it uses Supabase quota notifications and human review. It does not claim custom threshold alerts, continuous external monitoring, or automated metric collection. Those require a later least-privilege credential decision. PITR remains deliberately disabled.
 - **Pending dashboard verification:** confirm the Spend Cap state, billing-recipient monitoring, and billing-cycle end date in the authenticated Supabase dashboard before closing this part of DB-203.

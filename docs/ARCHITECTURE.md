@@ -1,8 +1,10 @@
 # ARCHITECTURE.md: Netflux
 
-> **Status:** Active  
-> **Last Updated:** March 2026  
+> **Status:** Active
+> **Reference:** Repository snapshot `6bfdb99`; September 2026 access/search additions reconciled on 19 September. This is not a new production verification.
 > **Goal:** Keep the docs aligned with the implementation that currently ships.
+
+See [release status](STATUS.md) for held work and [the documentation map](INDEX.md) for policy ownership.
 
 ## 1. Product Shape
 
@@ -131,6 +133,10 @@ Any future newsletter/email template must include an unsubscribe link using:
   - bookmarks and reading progress snapshot
 - `user_highlights`
   - highlights, note bodies, colors, optional anchors
+- `user_reflections`
+  - prompt and written reflection associated with a content item
+- private account-data snapshot/operation tables and `account_library_state`
+  - immutable export/hydration payloads, recovery state, and revision/reset tracking; not browser-readable tables
 - `reading_activity`
   - reading history used for heatmaps and recent activity
 - `content_feedback`
@@ -147,6 +153,16 @@ Any future newsletter/email template must include an unsubscribe link using:
   - Gemini segment coverage
   - reading activity logging
   - homepage section item assembly
+
+### 4.5 Complete account access and export
+
+The account-data routes use restricted worker/maintenance database connections, rather than exposing private snapshot tables to clients. Creation uses idempotency operations; a complete export traverses all 11 collections from one snapshot and verifies its manifest. Resume looks up an existing manifest under the authenticated session, then reads pages through server authorization. Normal token refresh is distinct from logout or session replacement.
+
+[API reference](API_SPECS.md#35-account-data-access-export-and-resume) owns the route inventory. [Access design](PHASE_1_ACCESS_PATH_DESIGN.md) owns the reviewed contract; its broader live-list and lifecycle obligations are not automatically proved by export delivery.
+
+### 4.6 Catalog and Notes search
+
+Catalog search uses a private lexical projection, transactional freshness updates, ranking, safe match snippets, and signed keyset cursors through `/api/catalog/search`. It has no generative-AI dependency. Notes highlight/note search applies the query and filters in the database before pagination. Reflection CRUD is separate; typed reflection retrieval into chat remains held.
 
 ## 5. Reader Architecture
 
@@ -169,6 +185,8 @@ Reader themes are scoped separately from the browse UI:
 
 ## 6. AI Architecture
 
+The descriptions below cover main. The shared typed personal-evidence candidate is [held](STATUS.md#held-work--not-on-main); it must not be described as deployed.
+
 ### 6.1 Generation
 
 - Default chat provider is Anthropic via `AI_PROVIDER=anthropic`
@@ -184,7 +202,7 @@ Reader themes are scoped separately from the browse UI:
   - combines library metadata with Gemini segment retrieval
 - `/api/chat/notes`
   - authenticated “Ask These Notes”
-  - grounded only in highlights currently in scope
+  - currently accepts scoped highlight IDs from the client; complete server-side Notes search does not itself replace this chat boundary
 - `/api/chat/author`
   - author-style chat over the segments of a single content item
 
