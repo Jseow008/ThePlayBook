@@ -1,3 +1,16 @@
+## Execution Efficiency and Continuity
+
+The user prioritizes effective progress and wall-clock efficiency, not merely low token usage. Preserve correctness without allowing repeated experiments or verification to become an open-ended loop.
+
+- **Time-box investigation:** after 20–30 minutes without resolving a blocker, summarize what is known, identify the blocker, and choose a concrete next step. This is a decision checkpoint, not permission to skip required work or stop useful progress.
+- **Limit experiments:** use a small, separate development check first. Run the full benchmark only for a credible candidate; do not tune against held-out results or rerun until a favorable result appears.
+- **Reassess after two unsuccessful attempts:** stop repeating the same prompt-tuning or implementation approach. Investigate the underlying design and choose a materially different approach before another experiment.
+- **Reuse valid evidence:** retain completed tests, provider outputs, and release evidence when their relevant inputs and implementation are unchanged. Rerun checks affected by a change or unresolved failure; do not restart unrelated verification. Never reuse old model responses as evidence for changed prompts or models.
+- **Report decision points early:** distinguish a bug fix from a product tradeoff or scope expansion. Surface the options, recommendation, and user-visible consequences before a long new workstream begins. Continue independent authorized work while a necessary decision is pending.
+- **Checkpoint for continuity:** before a handoff, pause, or context limit, record the branch/worktree, commit, completed evidence, failed attempts, remaining blocker, pending decisions, and exact next action in the task's existing tracked status document. Never record secrets. After compaction or a new session, read that checkpoint and verify current state before resuming; do not redo completed work solely because conversation context was lost.
+
+These rules do not waive required security, authorization, migration, or production release gates. Efficiency comes from better sequencing, bounded experiments, and evidence reuse, not weakening acceptance criteria.
+
 ## UI Guardrails
 
 When working on UI or UX in this repository, preserve the existing Netflux design system and treat the current product as the source of truth.
