@@ -16,6 +16,8 @@ Use this map to find the document that owns a decision. Current code and checked
 
 ## Focused implementation policies
 
+- Agent execution: [run efficiency and lessons](RUN_EFFICIENCY.md), subordinate to [AGENTS.md](../AGENTS.md).
+
 - UI: [admin responsive patterns](ADMIN_RESPONSIVE_PATTERNS.md), [route shells](ROUTE_SHELL_POLICY.md), and [optional design-tool usage](UI_UX_PRO_MAX.md).
 - Application boundaries: [client components](CLIENT_BOUNDARY_POLICY.md), [cache/revalidation](CACHE_REVALIDATION_POLICY.md), and [type safety](TYPE_SAFETY_RATCHET.md).
 - Data and operations: [category taxonomy](CATEGORY_TAXONOMY.md), [request-board hardening](REQUEST_BOARD_HARDENING.md), and [dependency upgrades](DEPENDENCY_UPGRADE_POSTURE.md).

@@ -2,7 +2,7 @@
 
 ## Execution Efficiency and Continuity
 
-Prioritize effective progress and wall-clock efficiency while preserving required security, authorization, testing, and release gates.
+Prioritize effective progress and wall-clock efficiency while preserving required security, authorization, testing, and release gates. Read [run efficiency](docs/RUN_EFFICIENCY.md) before substantial implementation, delegation, or evaluation work; apply its delegation and evidence rules. Broad authorization permits action but does not require more agents or repeated verification.
 
 - After 20–30 minutes without resolving a blocker, report what is known and choose a concrete next step. This is a decision checkpoint, not a reason to abandon useful work.
 - Test a small, separate development sample before a full benchmark. Never tune against held-out results or rerun until a favorable result appears.
