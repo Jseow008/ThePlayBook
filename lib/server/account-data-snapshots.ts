@@ -90,7 +90,6 @@ export class AccountDataSnapshotError extends Error {
 }
 
 let pool: Pool | null = null;
-let maintenancePool: Pool | null = null;
 
 function getPool() {
     if (pool) return pool;
@@ -107,14 +106,6 @@ function getPool() {
     // leave spare connections for lease renewal and recovery.
     pool = new Pool({ connectionString, max: 6, idleTimeoutMillis: 10_000 });
     return pool;
-}
-
-function getMaintenancePool() {
-    if (maintenancePool) return maintenancePool;
-    const connectionString = process.env.SNAPSHOT_MAINTENANCE_DATABASE_URL;
-    if (!connectionString) throw new AccountDataSnapshotError("CONFIGURATION", "Snapshot maintenance requires SNAPSHOT_MAINTENANCE_DATABASE_URL on the server.");
-    maintenancePool = new Pool({ connectionString, max: 1, idleTimeoutMillis: 10_000 });
-    return maintenancePool;
 }
 
 async function releaseRestrictedWorker(client: PoolClient) {
@@ -153,19 +144,6 @@ async function withRestrictedWorkerSnapshotTransaction<T>(
         await client.query("SET LOCAL lock_timeout = '2s'");
         await client.query("SET LOCAL ROLE netflux_snapshot_worker");
         await client.query("SELECT set_config('app.snapshot_account_id', $1, true)", [accountId]);
-        const result = await work();
-        await client.query("COMMIT");
-        return result;
-    } catch (error) {
-        await client.query("ROLLBACK").catch(() => undefined);
-        throw error;
-    }
-}
-
-async function withSnapshotMaintenanceTransaction<T>(client: PoolClient, work: () => Promise<T>): Promise<T> {
-    await client.query("BEGIN");
-    try {
-        await client.query("SET LOCAL ROLE netflux_snapshot_maintenance");
         const result = await work();
         await client.query("COMMIT");
         return result;
@@ -502,55 +480,6 @@ function startOperationLeaseRenewal(accountId: string, operationId: string) {
         clearInterval(timer);
         await inFlight;
     };
-}
-
-export async function reconcileExpiredAccountDataSnapshots() {
-    const client = await getMaintenancePool().connect();
-    try {
-        return await withSnapshotMaintenanceTransaction(client, async () => {
-            const expiredOperations = await client.query<{ id: string; account_id: string }>(
-                `SELECT id, account_id
-                 FROM snapshot_private.account_data_snapshot_operations
-                 WHERE status = 'building' AND lease_expires_at <= now()`,
-            );
-            let abortedCount = 0;
-            for (const operation of expiredOperations.rows) {
-                if (!await tryAcquireAccountLock(client, operation.account_id)) continue;
-                try {
-                    const aborted = await client.query(
-                        `UPDATE snapshot_private.account_data_snapshot_operations operation
-                         SET status = 'aborted', failure_code = 'SNAPSHOT_WORKER_INTERRUPTED', lease_expires_at = NULL, updated_at = now()
-                         WHERE operation.id = $1
-                           AND operation.status = 'building'
-                           AND operation.lease_expires_at <= now()
-                           AND NOT EXISTS (
-                               SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
-                               WHERE snapshot.operation_id = operation.id AND snapshot.status = 'ready'
-                           )`,
-                        [operation.id],
-                    );
-                    abortedCount += aborted.rowCount ?? 0;
-                } finally {
-                    await releaseAccountLock(client, operation.account_id);
-                }
-            }
-            const expired = await client.query(
-                `DELETE FROM snapshot_private.account_data_snapshots WHERE expires_at <= now()`,
-            );
-            const pruned = await client.query(
-                `DELETE FROM snapshot_private.account_data_snapshot_operations operation
-                 WHERE operation.status <> 'building'
-                   AND operation.updated_at < now() - interval '25 hours'
-                   AND NOT EXISTS (
-                       SELECT 1 FROM snapshot_private.account_data_snapshots snapshot
-                       WHERE snapshot.operation_id = operation.id
-                   )`,
-            );
-            return { aborted: abortedCount, expired: expired.rowCount ?? 0, pruned: pruned.rowCount ?? 0 };
-        });
-    } finally {
-        client.release();
-    }
 }
 
 export async function resetLibraryForAccount(accountId: string) {
@@ -1044,8 +973,6 @@ export async function getLiveLibraryPage(
 
 export function resetAccountDataSnapshotPoolForTests() {
     const activePool = pool;
-    const activeMaintenancePool = maintenancePool;
     pool = null;
-    maintenancePool = null;
-    return Promise.all([activePool?.end(), activeMaintenancePool?.end()]);
+    return activePool?.end();
 }
