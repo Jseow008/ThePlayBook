@@ -465,6 +465,9 @@ scoped work.
 
 Owner: Codex implementing for the repository owner. Target: this bounded release;
 production remains gated by hosted verification and required CI.
+PR [#162](https://github.com/Jseow008/ThePlayBook/pull/162), implementation
+`08307d9a`, is open and held with auto-merge off. Rebased onto merged #161
+(`eca07ef4`); only the shared checkpoint needed conflict reconciliation.
 Branch `codex/library-stale-write-guard`, worktree
 `/Users/j/Desktop/Lifebook-library-durability`.
 
@@ -492,8 +495,8 @@ responses; a newer reset snapshot never overlays old pending saves.
 Evidence: baseline original SQL reproduced the defect (not a complete historical
 application build). Five new focused database fixtures and all 26 snapshot runtime
 tests passed on the existing loopback disposable stack. Full local unit suite:
-1,439 passed, 227 configuration-dependent skips. Typecheck and targeted lint passed
-before the last focused reset/feedback tests. One reused bounded reviewer found a
+1,439 passed, 227 configuration-dependent skips. Final reset/feedback checks:
+27 passed; final typecheck and targeted lint pass. CI is running. One reused bounded reviewer found a
 hanging pre-reset request could block post-reset actions; fixed by detaching the
 old queue, with regression coverage. No model benchmark or tuning run was needed.
 
