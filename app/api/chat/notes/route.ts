@@ -1,8 +1,8 @@
-import { getNotesOutputTokenCap, getNotesAnthropicModelName, NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
+import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
+import { NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
-import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
@@ -10,7 +10,7 @@ import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/r
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
 import { PersonalEvidenceScopeSchema } from "@/lib/personal-evidence";
-import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady, buildPersonalEvidencePrompt } from "@/lib/server/personal-retrieval";
+import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady } from "@/lib/server/personal-retrieval";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
 import { contextualizeUserQuestion, FOLLOW_UP_CLARIFICATION } from "@/lib/server/retrieval-user-context";
 import { assertActiveChatSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
@@ -111,7 +111,6 @@ export async function POST(req: NextRequest) {
             return apiError("RETRIEVAL_UNAVAILABLE", "Your chat session could not be verified. Please retry.", 503, requestId);
         }
 
-        const provider = process.env.AI_PROVIDER || "anthropic";
         const hasAnthropic = Boolean(process.env.ANTHROPIC_API_KEY);
         const hasOpenAI = Boolean(process.env.OPENAI_API_KEY);
         const hasGemini = Boolean(process.env.GEMINI_API_KEY);
@@ -240,47 +239,17 @@ export async function POST(req: NextRequest) {
             return retrievalTextResponse(quoted.exactQuote, "text");
         }
 
-        const systemPrompt = buildPersonalEvidencePrompt(evidence);
-
-        let aiModel;
-
-        if (provider === "anthropic" && hasAnthropic) {
-            const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(getNotesAnthropicModelName(questionContext.semanticQuestion));
-        } else if (hasOpenAI) {
-            const { openai } = await import("@ai-sdk/openai");
-            aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
-        } else {
-            const { anthropic } = await import("@ai-sdk/anthropic");
-            aiModel = anthropic(getNotesAnthropicModelName(questionContext.semanticQuestion));
+        req.signal.throwIfAborted();
+        const text = renderEvidenceExtracts({ personal: evidence.items });
+        if (messages.filter((message) => message.role === "user").length === 1) {
+            afterResponse(() => captureServerAnalyticsEvent({
+                event: "ai_chat_started", distinctId: user.id,
+                insertId: `ai_chat_started:notes:${user.id}:${requestId}`,
+                properties: { source: "ask_notes", route: "/api/chat/notes", chat_scope: "notes",
+                    note_count: evidence.candidateCount, user_state: "authenticated" },
+            }));
         }
-
-        const result = streamText({
-            model: aiModel,
-            system: systemPrompt,
-            messages: [{ role: "user", content: questionContext.semanticQuestion }],
-            abortSignal: req.signal,
-            maxOutputTokens: getNotesOutputTokenCap(lastMessage.content),
-            experimental_transform: smoothStream({ delayInMs: 6 }),
-            onFinish: async () => {
-                if (messages.filter((message) => message.role === "user").length === 1) {
-                    afterResponse(() => captureServerAnalyticsEvent({
-                        event: "ai_chat_started",
-                        distinctId: user.id,
-                        insertId: `ai_chat_started:notes:${user.id}:${requestId}`,
-                        properties: {
-                            source: "ask_notes",
-                            route: "/api/chat/notes",
-                            chat_scope: "notes",
-                            note_count: evidence.candidateCount,
-                            user_state: "authenticated",
-                        },
-                    }));
-                }
-            },
-        });
-
-        return result.toTextStreamResponse();
+        return retrievalTextResponse(text, "text");
     } catch (error: unknown) {
         logApiError({
             requestId,

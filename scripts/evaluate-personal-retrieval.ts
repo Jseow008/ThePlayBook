@@ -234,7 +234,7 @@ function bankEmbedder(bank: VectorBank): PersonalEvidenceEmbedBatch {
 }
 export type RetrievedCase = {
     selectedIds: string[]; contextText: string; contextBytes: number;
-    branch: "model" | "exact_quote" | "no_evidence" | "quote_too_large";
+    branch: "model" | "extracts" | "exact_quote" | "no_evidence" | "quote_too_large";
     deterministicText: string | null; system: string; model: string; maxOutputTokens: number;
     selected: Array<{ id: string; score: number; spans: Array<{ field: string; start: number; end: number; text: string }> }>;
     personalCandidateCount: number; sourceCandidateCount: number;
@@ -437,14 +437,14 @@ export function scoreQuality(corpus: Corpus, records: QualityRecord[], reviews: 
         && results.every((run) => run.recallMacro >= limits.recallPerRunMacro
             && CLASSES.every((type) => run.perClass[type].rate! >= limits.recallPerRunClass)
             && run.irrelevantRejection.rate! >= limits.rejectionAndAbstentionPerRun && run.abstention.rate! >= limits.rejectionAndAbstentionPerRun);
-    const generated = valid.filter((record) => record.modelCalled);
+    const generated = valid.filter((record) => record.modelCalled || record.branch === "extracts");
     const reviewed = generated.filter((record) => reviewFor(record));
     const conflictCases = corpus.cases.filter((item) => item.exactQuote === null && item.requiredIds.some((id) => corpus.evidence.find((row) => row.id === id)?.note));
     const conflictContext = conflictCases.flatMap((item) => Array.from({ length: QUALITY_CONFIG.runs }, (_, index) => {
         const record = valid.find((row) => row.caseId === item.id && row.run === index + 1);
         const notes = item.requiredIds.map((id) => corpus.evidence.find((row) => row.id === id)?.note).filter((note): note is string => Boolean(note));
         return { caseId: item.id, run: index + 1, fullStoredNotePresent: Boolean(record && notes.every((note) => record.contextText.includes(note))),
-            attributionReview: record?.modelCalled ? reviewFor(record)?.noteAttributionCorrect ?? null : "not-model-dependent" };
+            attributionReview: record && (record.modelCalled || record.branch === "extracts") ? reviewFor(record)?.noteAttributionCorrect ?? null : "not-model-dependent" };
     }));
     const tokenProofComplete = complete && valid.every((record) => record.evidenceTokenCount !== null && record.evidenceTokenCount <= QUALITY_CONFIG.evidenceTokens);
     const answerReviewComplete = reviewed.length === generated.length;
@@ -452,7 +452,7 @@ export function scoreQuality(corpus: Corpus, records: QualityRecord[], reviews: 
     const answersComplete = answerReviewComplete && reviewed.every((record) => !requireIndependentReview || reviewFor(record)?.answerComplete === true);
     const conflictPass = conflictContext.every((record) => record.fullStoredNotePresent
         && (record.attributionReview === "not-model-dependent" || record.attributionReview === true));
-    const actualGenerationUsageComplete = generated.every((record) => record.modelResult?.inputTokens != null && record.modelResult.outputTokens != null);
+    const actualGenerationUsageComplete = generated.filter((record) => record.modelCalled).every((record) => record.modelResult?.inputTokens != null && record.modelResult.outputTokens != null);
     return { complete, expectedRecords: expected, actualRecords: records.length, runs: results, aggregate,
         numericalThresholdsPass: thresholdPass, tokenProofComplete,
         providerDiagnosticVerdict: !complete || !tokenProofComplete || !actualGenerationUsageComplete || !answerReviewComplete
@@ -904,6 +904,7 @@ async function executeCapturedSelectors(corpus: Corpus, inputPath: string, vecto
 export function productionRetrievalHashes() {
     const files = ["app/api/chat/route.ts", "app/api/chat/notes/route.ts", "lib/server/personal-retrieval.ts",
         "lib/server/library-evidence.ts", "lib/server/retrieval-generation.ts", "lib/server/retrieval-user-context.ts",
+        "lib/server/evidence-extract-response.ts",
         "lib/server/personal-evidence-selector.ts", "lib/server/personal-evidence-ranking.ts",
         "lib/server/personal-retrieval-session.ts", "tests/database/personal-retrieval-quality-runtime.test.ts"];
     return Object.fromEntries(files.map((file) => [file, sha(readFileSync(resolve(ROOT, file), "utf8"))]));
@@ -952,11 +953,29 @@ export function readDatabaseGenerationInputs(corpus: Corpus, path: string) {
         const expectedCap = library ? getOutputTokenCap(detectAskIntent(testCase.query)) : getNotesOutputTokenCap(testCase.query);
         if (record.deniedRevokedSession || !input || input.query !== testCase.query || input.model !== expectedModel || input.maxOutputTokens !== expectedCap
             || typeof input.system !== "string" || input.system.length > 100_000 || !input.system.includes(record.contextText)
-            || !["model", "exact_quote", "no_evidence", "quote_too_large"].includes(input.branch)
+            || !["model", "extracts", "exact_quote", "no_evidence", "quote_too_large"].includes(input.branch)
             || (input.branch === "model" ? input.deterministicText !== null : typeof input.deterministicText !== "string")) throw new ProbeFailure("DATABASE_GENERATION_PROMPT_INVALID");
     }
     return { artifact, sha256: sha(raw) };
 }
+/** Evaluate the captured production renderer without calling a writing model or relaxing review gates. */
+export function extractCaptureReport(corpus: Corpus, capture: ReturnType<typeof readDatabaseGenerationInputs>) {
+    const records: QualityRecord[] = capture.artifact.records.map((source) => {
+        const input = source.generationInput;
+        if (!source.deniedRevokedSession && (!input || input.branch === "model" || input.deterministicText === null)) {
+            throw new ProbeFailure("EXTRACT_CAPTURE_HAS_GENERATION");
+        }
+        return { caseId: source.caseId, run: source.run, outcome: "complete", selectedIds: source.selectedIds,
+            contextText: source.contextText, responseText: source.deniedRevokedSession ? "Request rejected: revoked session." : input!.deterministicText,
+            branch: input?.branch ?? "no_evidence", modelCalled: false, evidenceTokenCount: 0 };
+    });
+    return { mode: "production-extracts-from-database-capture", corpusSha256: corpusHash(corpus),
+        inputSha256: capture.sha256, productionHashes: capture.artifact.productionHashes, records,
+        tokenMeasurement: "Zero final-writing-model input/output tokens: no writing request exists. Retrieval selector and embedding costs are separate and unchanged; zero does not describe their usage or the display size.",
+        score: scoreQuality(corpus, records, [], true),
+        reviewInstructions: "Independently review every extracts response against the frozen question and stored fields for grounding, requested-facet completeness, attribution, irrelevant selections and misleading truncation. Bind reviews to responseSha256 and rubricSha256. Exact quotes and no-evidence outcomes retain their existing deterministic checks. No generation is not a quality pass." };
+}
+
 export function databaseGenerationPlan(corpus: Corpus, capture: ReturnType<typeof readDatabaseGenerationInputs>) {
     return { mode: "offline-database-generation-plan", corpusSha256: corpusHash(corpus), inputSha256: capture.sha256,
         records: capture.artifact.records.length, generationCallsUpperBound: capture.artifact.records.filter((item) => item.generationInput?.branch === "model").length,
@@ -1117,13 +1136,22 @@ async function main() {
         await executeCapturedSelectors(corpus, resolve(selectorInputs), resolve(vectorsPath), resolve(output), resolve(envFile));
         return;
     }
+    const extractCapture = args.find((arg) => arg.startsWith("--extract-capture="))?.slice("--extract-capture=".length);
+    if (extractCapture) {
+        const output = args.find((arg) => arg.startsWith("--output="))?.slice("--output=".length);
+        if (!output || existsSync(resolve(output))) throw new ProbeFailure("EXPLICIT_NEW_OUTPUT_PATH_REQUIRED");
+        const report = extractCaptureReport(corpus, readDatabaseGenerationInputs(corpus, resolve(extractCapture)));
+        writeFileSync(resolve(output), JSON.stringify(report, null, 2) + "\n");
+        console.log(JSON.stringify({ output, records: report.records.length, reviewRequired: report.score.answerReview.required }));
+        return;
+    }
     const scorePath = args.find((arg) => arg.startsWith("--score="))?.slice("--score=".length);
     if (scorePath) {
         const artifact = JSON.parse(readFileSync(resolve(scorePath), "utf8")) as { corpusSha256: string; mode?: string; records: QualityRecord[] };
         if (artifact.corpusSha256 !== corpusHash(corpus)) throw new ProbeFailure("SCORE_CORPUS_HASH_MISMATCH");
         const reviewsPath = args.find((arg) => arg.startsWith("--reviews="))?.slice("--reviews=".length);
         const reviews = reviewsPath ? JSON.parse(readFileSync(resolve(reviewsPath), "utf8")) as Adjudication[] : [];
-        const score = scoreQuality(corpus, artifact.records, reviews, artifact.mode === "actual-generation-from-production-database-capture");
+        const score = scoreQuality(corpus, artifact.records, reviews, artifact.mode === "actual-generation-from-production-database-capture" || artifact.mode === "production-extracts-from-database-capture");
         console.log(JSON.stringify(score, null, 2));
         process.exitCode = qualityScoreExitCode(score);
         return;

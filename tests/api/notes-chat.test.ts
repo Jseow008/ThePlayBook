@@ -1,3 +1,4 @@
+import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { retrievePersonalEvidence } from '@/lib/server/personal-retrieval';
 import { POST } from "@/app/api/chat/notes/route";
 import { NextRequest } from "next/server";
@@ -84,7 +85,7 @@ describe("Notes chat API", () => {
         vi.mocked(retrievePersonalEvidence).mockReset();
         sessionStatusQuery.abortSignal.mockReset().mockResolvedValue({ data: readySessionStatus, error: null });
         vi.mocked(retrievePersonalEvidence).mockResolvedValue({
-            items: [{ exactQuote: null }], contextText: 'Verified written note: discipline and focus.', candidateCount: 1201,
+            items: [selectedPersonalEvidence()], contextText: 'Verified written note: discipline and focus.', candidateCount: 1201,
         } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
         process.env.ANTHROPIC_API_KEY = "test-key";
         process.env.GEMINI_API_KEY = "test-gemini-key";
@@ -237,11 +238,8 @@ describe("Notes chat API", () => {
         }));
         expect(mockSupabaseClient.from).not.toHaveBeenCalled();
         expect(res.status).toBe(200);
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            maxOutputTokens: 450,
-            system: expect.stringContaining("Verified written note: discipline and focus."),
-            abortSignal: req.signal,
-        }));
+        expect(await res.text()).toContain("**Your note**");
+        expect(streamText).not.toHaveBeenCalled();
         expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
         await finishLatestStream();
         expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
@@ -364,7 +362,7 @@ describe("Notes chat API", () => {
         expect(res.status).toBe(200);
     });
 
-    it("uses the synthesis model and higher output cap for synthesis-style note questions", async () => {
+    it("returns extracts without a writing model for synthesis-style note questions", async () => {
         vi.stubEnv("AI_COMPLEX_MODEL", "claude-sonnet-4-6");
         const req = new NextRequest(new URL("http://localhost/api/chat/notes"), {
             method: "POST",
@@ -376,10 +374,8 @@ describe("Notes chat API", () => {
 
         const res = await POST(req);
         expect(res.status).toBe(200);
-        expect(anthropic).toHaveBeenCalledWith("claude-sonnet-4-6");
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            maxOutputTokens: 450,
-        }));
+        expect(anthropic).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it("does not carry older unrelated instructions into a fresh question", async () => {
@@ -398,11 +394,9 @@ describe("Notes chat API", () => {
 
         const res = await POST(req);
         expect(res.status).toBe(200);
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            messages: [messages.at(-1)],
-        }));
+        expect(streamText).not.toHaveBeenCalled();
     });
-    it("uses the same named user context for retrieval and generation without prior assistant text", async () => {
+    it("uses named user context for retrieval without prior assistant text", async () => {
         const question = "Which specific notes best support your last answer? Cite them clearly.";
         const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({
             messages: [{ role: "user", content: "Explain my notes about sleep deprivation." },
@@ -414,7 +408,7 @@ describe("Notes chat API", () => {
         expect(retrieval.question).toBe(question);
         expect(retrieval.semanticQuestion).toContain("sleep deprivation");
         expect(retrieval.semanticQuestion).not.toContain("SECRET_DELETED_PASSAGE");
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ messages: [{ role: "user", content: retrieval.semanticQuestion }] }));
+        expect(streamText).not.toHaveBeenCalled();
     });
     it("asks for an assistant-only theme before quota debit or provider work", async () => {
         const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({

@@ -1,3 +1,4 @@
+import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { afterResponse } from "@/lib/server/after-response";
@@ -294,8 +295,8 @@ export async function POST(req: NextRequest) {
         const libraryItems = (libraryRows ?? []) as LibraryItemRow[];
         const metadataContext = buildLibraryMetadataContext(libraryItems, MAX_LIBRARY_CONTEXT_CHARS);
 
-        let retrievalContext = "";
-        let retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
+        const retrievalContext = "";
+        const retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
         if (intent !== "library_metadata" && hasGemini) {
             if (embeddingResult.error) {
                 logApiError({ requestId, route: "/api/chat", message: "Gemini embedding API error", error: embeddingResult.error });
@@ -335,12 +336,10 @@ export async function POST(req: NextRequest) {
                 if (authError || currentUser?.id !== user.id) throw new Error("RETRIEVAL_AUTH_CHANGED");
                 if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui");
                 if (selected.quoteTooLarge) return retrievalTextResponse("The matching stored passage is too long to quote completely here. Open the source to read its full text.", "ui");
-                const context = selected;
-                retrievalContext = context.contextText;
-                retrievalStatus = context.evidenceIds.length ? "matched" : "no_match";
-                if (retrievalStatus === "no_match" && intent !== "reading_advisor") {
-                    return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui");
-                }
+                if (selected.evidenceIds.length === 0) return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui");
+                return retrievalTextResponse(renderEvidenceExtracts({
+                    personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds,
+                }), "ui");
             } catch (error) {
                 if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
                 logApiError({ requestId, route: "/api/chat", message: "Complete library evidence retrieval failed", error });

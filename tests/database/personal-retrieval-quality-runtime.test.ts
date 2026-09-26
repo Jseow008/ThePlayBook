@@ -1,3 +1,4 @@
+import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
 import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -52,7 +53,7 @@ type Result = {
     contextBytes: number; exactQuote: string | null; deniedRevokedSession: boolean;
     personalCandidateCount: number; sourceCandidateCount: number; error?: string;
     generationInput?: { system: string; model: string; maxOutputTokens: number; query: string;
-        branch: "model" | "exact_quote" | "no_evidence" | "quote_too_large"; deterministicText: string | null };
+        branch: "model" | "extracts" | "exact_quote" | "no_evidence" | "quote_too_large"; deterministicText: string | null };
 
 };
 type CapturedSelection = {
@@ -348,12 +349,14 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
         }
         const exact = combined.exactQuote;
         const tooLarge = "quoteTooLarge" in combined && combined.quoteTooLarge;
-        const empty = combined.evidenceIds.length === 0 && (!isLibrary || intent !== "reading_advisor");
+        const empty = combined.evidenceIds.length === 0;
         const generationInput: NonNullable<Result["generationInput"]> = {
             query: testCase.query,
-            branch: tooLarge ? "quote_too_large" : exact !== null ? "exact_quote" : empty ? "no_evidence" : "model",
+            branch: tooLarge ? "quote_too_large" : exact !== null ? "exact_quote" : empty ? "no_evidence" : "extracts",
             deterministicText: tooLarge ? "The matching stored passage is too long to quote completely here. Open the source to read its full text."
-                : exact !== null ? exact : empty ? isLibrary ? LIBRARY_NO_EVIDENCE : NOTES_NO_EVIDENCE : null,
+                : exact !== null ? exact : empty ? isLibrary ? LIBRARY_NO_EVIDENCE : NOTES_NO_EVIDENCE
+                    : renderEvidenceExtracts({ personal: "personal" in combined ? combined.personal.items : personal.items,
+                        sources: "sources" in combined ? combined.sources : [], evidenceIds: combined.evidenceIds }),
             system: isLibrary ? buildLibraryEvidencePrompt(metadata, combined.contextText || buildRetrievalFallbackText("no_match", intent), intent)
                 : buildPersonalEvidencePrompt(personal),
             model: isLibrary ? getAnthropicModelName(intent) : getNotesAnthropicModelName(testCase.query),

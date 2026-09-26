@@ -1,3 +1,4 @@
+import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { recheckPersonalEvidenceCandidates } from '@/lib/server/personal-evidence-candidates';
 import { loadLibrarySourceEvidence, selectLibraryEvidence, rankLibrarySourceSpans } from '@/lib/server/library-evidence';
@@ -133,7 +134,7 @@ describe('Chat API', () => {
         vi.mocked(assertActivePersonalRetrievalSession).mockResolvedValue(undefined);
         vi.mocked(retrievePersonalEvidence).mockReset();
         vi.mocked(retrievePersonalEvidence).mockResolvedValue({
-            items: [{ exactQuote: null }], contextText: 'Verified written note: discipline and focus.', candidateCount: 1201,
+            items: [selectedPersonalEvidence()], contextText: 'Verified written note: discipline and focus.', candidateCount: 1201,
         } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
         vi.mocked(rankLibrarySourceSpans).mockReset();
         vi.mocked(rankLibrarySourceSpans).mockResolvedValue([]);
@@ -303,9 +304,8 @@ describe('Chat API', () => {
 
         // Stream text mock returned a 200 response
         expect(res.status).toBe(200);
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            maxOutputTokens: 500,
-        }));
+        expect(streamText).not.toHaveBeenCalled();
+        expect(await res.text()).toContain('Your note');
         expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
         await finishLatestStream();
         expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
@@ -424,19 +424,13 @@ describe('Chat API', () => {
         expect(res.status).toBe(200);
         expect(embedContentMock).toHaveBeenCalled();
         expect(loadLibrarySourceEvidence).toHaveBeenCalled();
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Library metadata:'),
-        }));
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Retrieved passages:'),
-        }));
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            maxOutputTokens: 450,
-        }));
-        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
+        expect(streamText).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+        expect(anthropicMock).not.toHaveBeenCalled();
     });
 
-    it('replaces the retired Sonnet 4 override with the supported synthesis model', async () => {
+    it('does not invoke synthesis even with a configured model override', async () => {
         process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-20250514';
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
@@ -449,7 +443,7 @@ describe('Chat API', () => {
         const res = await POST(req);
 
         expect(res.status).toBe(200);
-        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
+        expect(anthropicMock).not.toHaveBeenCalled();
     });
 
     it('uses the UI message stream protocol and returns a safe provider error', async () => {
@@ -485,17 +479,10 @@ describe('Chat API', () => {
         expect(res.status).toBe(200);
         expect(embedContentMock).toHaveBeenCalled();
         expect(loadLibrarySourceEvidence).toHaveBeenCalledWith(expect.objectContaining({ boostCompleted: true, userId: 'user-123' }));
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Intent: reading_advisor'),
-            maxOutputTokens: 550,
-        }));
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Eligible next-read candidates:'),
-        }));
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('UNDER NO CIRCUMSTANCES recommend a book, article, author, or source that is not explicitly listed'),
-        }));
-        expect(anthropicMock).toHaveBeenCalledWith('claude-sonnet-4-6');
+        expect(streamText).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+        expect(anthropicMock).not.toHaveBeenCalled();
     });
 
     it('can answer reading advisor questions from metadata when Gemini retrieval is unavailable', async () => {
@@ -563,9 +550,8 @@ describe('Chat API', () => {
         const res = await POST(req);
 
         expect(res.status).toBe(200);
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            messages: [messages.at(-1)],
-        }));
+        expect(streamText).not.toHaveBeenCalled();
+        expect(vi.mocked(retrievePersonalEvidence).mock.calls[0][0].semanticQuestion).toBe(messages.at(-1)!.content);
     });
     it('retrieves passages for the source-support follow-up using only the named user topic', async () => {
         const question = 'Which saved source most strongly supports your last answer? Cite the specific source from my library.';
@@ -580,7 +566,7 @@ describe('Chat API', () => {
         expect(retrieval.semanticQuestion).not.toContain('SECRET_DELETED_PASSAGE');
         expect(embedContentMock).toHaveBeenCalledWith(expect.objectContaining({ contents: retrieval.semanticQuestion }));
         expect(selectLibraryEvidence).toHaveBeenCalledWith(expect.objectContaining({ question, semanticQuestion: retrieval.semanticQuestion }));
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ messages: [{ role: 'user', content: retrieval.semanticQuestion }] }));
+        expect(streamText).not.toHaveBeenCalled();
     });
     it('asks for a missing follow-up topic without calling a provider or debiting usage', async () => {
         const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({
@@ -683,7 +669,7 @@ describe('Chat API', () => {
         expect(signal.aborted).toBe(false);
         controller.abort();
         expect(signal.aborted).toBe(true);
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ abortSignal: request.signal }));
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it('rejects a session revoked during selection even when getUser still reports the account', async () => {

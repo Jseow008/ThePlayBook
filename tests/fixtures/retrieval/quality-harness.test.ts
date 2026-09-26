@@ -509,3 +509,16 @@ it("uses an explicit structural zero only when no evidence or model request exis
     expect(emptyEvidenceMeasurement("no_evidence", "stored evidence", [])).toBeNull();
     expect(emptyEvidenceMeasurement("no_evidence", "", ["capture-id"])).toBeNull();
 });
+
+
+describe("extract response review gates", () => {
+    it("does not bypass independent answer review when the final model is removed", () => {
+        const records = perfectStructuralRecords().map((record) => record.modelCalled
+            ? { ...record, branch: "extracts" as const, modelCalled: false, modelResult: undefined } : record);
+        const score = scoreQuality(corpus, records, [], true);
+        expect(score.answerReview.required).toBeGreaterThan(0);
+        expect(score.answerReview.reviewed).toBe(0);
+        expect(score.answerReview.allGrounded).toBe(false);
+        expect(qualityScoreExitCode(score)).not.toBe(0);
+    });
+});

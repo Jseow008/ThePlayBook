@@ -2,6 +2,19 @@
 
 Status: implementation checkpoint; **held, not ready to merge or deploy**.
 
+## Evidence-first continuation — 26 September 2026
+
+The user approved replacing final prose generation for matched retrieval responses with structured, attributed extracts. The original answer-v2 failure below remains preserved; it is not a pass for the new renderer.
+
+- Branch: `codex/evidence-first-retrieval`; worktree: `/Users/j/Desktop/Lifebook-evidence-first`.
+- Recovered committed checkpoint `cd2c7fd` onto current main `8ac20e8`; temporary worktree loss did not require reimplementation.
+- Shared server rendering labels source/highlight/note/reflection text, verifies stored spans, marks excerpts, and escapes Markdown data. No generated facet headings or new citation-navigation claims.
+- Matched Notes and Library responses skip final prose generation. Existing deterministic exact quotes/empty responses stay. Library metadata and the existing no-Gemini metadata-advisor fallback are outside this change; Sonnet is not removed globally.
+- Embedding/index/selector behavior is unchanged. Database capture now records the served extract text; evaluator review remains required for extracts despite zero final-generation calls. Historical failed outputs and frozen thresholds are retained.
+- Verification in progress: focused routes/renderer/harness checks and typecheck passed; broader local checks, exact-commit disposable database capture, independent display review, and final journey/release proof remain required. Docker is unavailable locally; CI must provide the database proof.
+- One primary implementer and one fresh-context bounded reviewer. Provider calls for this correction so far: zero. Agent usage is unavailable; no savings claim is made. Record final elapsed time, repeated checks, and reviewer findings here at handoff.
+- No production migration or deployment has occurred. The reviewed response change is approved; separate hosted rehearsal/cost and production release evidence remain unresolved.
+
 ## Current verification decision
 
 **The complete answer-v2 execution fails grounding and is not approved for release.**
@@ -112,7 +125,7 @@ No production migration, deployment, or release approval is recorded here.
 The scheduled snapshot-maintenance failure remains explicitly deferred.
 
 
-## Proposed answer boundary — product decision pending
+## Accepted answer boundary — implementation and verification in progress
 
 The recommended first-release alternative is concise, attributed evidence extracts.
 Keep the verified retrieval, selection, eight-record/4,000-byte composition bound,
@@ -130,12 +143,11 @@ need independent evaluation. The benchmark adapter must assess the actual served
 extracts across all three recorded selector runs and require independent review;
 zero final-generation calls must not silently remove the answer-quality gate.
 The current corpus, thresholds, failed outputs, and attribution requirements stay
-unchanged. This alternative has been proposed to the user but is not implemented.
+unchanged. The user accepted this alternative on 26 September 2026. The continuation above records implementation and verification; approval of the product direction is not release approval.
 
 A paid hosted rehearsal has not run. Its unused private preparation directory was
 removed; no hosted project was created. The recorded read-only preflight is not a
-hosted release pass. Production remains unchanged, and both the product decision
-and the hosted-project price acknowledgment remain pending.
+hosted release pass. Production remains unchanged. The response-design decision is now approved; the hosted-project price acknowledgment remains pending.
 
 ## User-visible behavior
 
