@@ -31,6 +31,7 @@
     "database:content-invariants": "node scripts/check-database-content-invariants.mjs",
     "database:legacy-embedding-retirement": "node scripts/check-database-legacy-embedding-retirement.mjs",
     "database:published-at": "node scripts/check-database-published-at.mjs",
+    "database:book-identity": "node scripts/check-database-book-identity.mjs",
     "database:account-data-snapshots": "node scripts/check-database-account-data-snapshots.mjs",
     "database:account-data-snapshot-runtime": "vitest run tests/database/account-data-snapshot-runtime.test.ts",
     "database:catalog-search-runtime": "vitest run tests/database/catalog-search-runtime.test.ts",
