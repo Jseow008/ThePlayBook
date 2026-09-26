@@ -13,7 +13,9 @@ describe("snapshot-maintenance cron migration", () => {
         expect(migration).toContain("CREATE OR REPLACE FUNCTION snapshot_private.reconcile_expired_account_data_snapshots()");
         expect(migration).toContain("SECURITY DEFINER");
         expect(migration).toContain("OWNER TO netflux_snapshot_maintenance;");
-        expect(migration).toContain("GRANT netflux_snapshot_maintenance TO postgres;");
+        expect(migration).toContain("GRANT netflux_snapshot_maintenance TO postgres\n    WITH INHERIT FALSE;");
+        expect(migration).toContain("GRANT netflux_snapshot_maintenance TO postgres\n    WITH SET TRUE;");
+        expect(migration).toContain("GRANT netflux_snapshot_maintenance TO postgres\n    WITH ADMIN TRUE;");
         expect(migration).toContain("GRANT CREATE ON SCHEMA snapshot_private TO netflux_snapshot_maintenance;");
         expect(migration).toContain("FROM PUBLIC, anon, authenticated;");
         expect(migration).toContain("TO postgres;");
@@ -30,7 +32,7 @@ describe("snapshot-maintenance cron migration", () => {
         expect(expireSnapshots).toBeGreaterThan(settleExpiredOperation);
         expect(pruneOperations).toBeGreaterThan(expireSnapshots);
 
-        const grantRole = migration.indexOf("GRANT netflux_snapshot_maintenance TO postgres;");
+        const grantRole = migration.indexOf("GRANT netflux_snapshot_maintenance TO postgres\n    WITH INHERIT FALSE;");
         const transferOwnership = migration.indexOf("OWNER TO netflux_snapshot_maintenance;");
         const revokeRole = migration.indexOf("REVOKE netflux_snapshot_maintenance FROM postgres;");
         expect(grantRole).toBeLessThan(transferOwnership);

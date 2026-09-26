@@ -84,8 +84,15 @@ $$;
 -- specifically allow this role, instead of executing as the migration owner.
 -- PostgreSQL requires the migration role to be able to SET ROLE to the new
 -- owner and requires that owner to have CREATE on the containing schema during
--- the handoff. Both permissions are revoked immediately after the transfer.
-GRANT netflux_snapshot_maintenance TO postgres;
+-- the handoff. The temporary ADMIN option is necessary so the migration role
+-- can revoke its own temporary membership afterwards. Neither permission is
+-- inherited, and both are revoked immediately after the transfer.
+GRANT netflux_snapshot_maintenance TO postgres
+    WITH INHERIT FALSE;
+GRANT netflux_snapshot_maintenance TO postgres
+    WITH SET TRUE;
+GRANT netflux_snapshot_maintenance TO postgres
+    WITH ADMIN TRUE;
 GRANT CREATE ON SCHEMA snapshot_private TO netflux_snapshot_maintenance;
 ALTER FUNCTION snapshot_private.reconcile_expired_account_data_snapshots()
     OWNER TO netflux_snapshot_maintenance;
