@@ -82,12 +82,19 @@ $$;
 -- The owner is the existing least-privilege cross-account maintenance role.
 -- SECURITY DEFINER therefore remains subject to the FORCE RLS policies that
 -- specifically allow this role, instead of executing as the migration owner.
+-- PostgreSQL requires the migration role to be able to SET ROLE to the new
+-- owner and requires that owner to have CREATE on the containing schema during
+-- the handoff. Both permissions are revoked immediately after the transfer.
+GRANT netflux_snapshot_maintenance TO postgres;
+GRANT CREATE ON SCHEMA snapshot_private TO netflux_snapshot_maintenance;
 ALTER FUNCTION snapshot_private.reconcile_expired_account_data_snapshots()
     OWNER TO netflux_snapshot_maintenance;
 REVOKE ALL ON FUNCTION snapshot_private.reconcile_expired_account_data_snapshots()
     FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION snapshot_private.reconcile_expired_account_data_snapshots()
     TO postgres;
+REVOKE netflux_snapshot_maintenance FROM postgres;
+REVOKE CREATE ON SCHEMA snapshot_private FROM netflux_snapshot_maintenance;
 
 SELECT cron.schedule(
     'reconcile-account-data-snapshots',

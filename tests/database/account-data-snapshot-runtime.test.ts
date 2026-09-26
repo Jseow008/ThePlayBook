@@ -307,12 +307,24 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             },
         ]);
 
-        const access = await db.query<{ anon_can_execute: boolean; authenticated_can_execute: boolean }>(
+        const access = await db.query<{
+            anon_can_execute: boolean;
+            authenticated_can_execute: boolean;
+            postgres_is_maintenance_member: boolean;
+            maintenance_can_create_private_objects: boolean;
+        }>(
             `SELECT
                 has_function_privilege('anon', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS anon_can_execute,
-                has_function_privilege('authenticated', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS authenticated_can_execute`,
+                has_function_privilege('authenticated', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS authenticated_can_execute,
+                pg_has_role('postgres', 'netflux_snapshot_maintenance', 'member') AS postgres_is_maintenance_member,
+                has_schema_privilege('netflux_snapshot_maintenance', 'snapshot_private', 'CREATE') AS maintenance_can_create_private_objects`,
         );
-        expect(access.rows).toEqual([{ anon_can_execute: false, authenticated_can_execute: false }]);
+        expect(access.rows).toEqual([{
+            anon_can_execute: false,
+            authenticated_can_execute: false,
+            postgres_is_maintenance_member: false,
+            maintenance_can_create_private_objects: false,
+        }]);
     });
 
     it("returns an explicit terminal outcome for an expired successful operation", async () => {
