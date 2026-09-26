@@ -1,6 +1,6 @@
 # Netflux release and workstream status
 
-**Repository snapshot reviewed:** `6bfdb99` on 19 September 2026. This page distinguishes merged implementation from unfinished work. It does not perform or claim a new production smoke test.
+**Latest production verification:** `d159c6f8` on 26 September 2026. Earlier delivery entries retain their own scope and evidence; the current retrieval release has the dated production proof below.
 
 ## Implemented on main
 
@@ -14,21 +14,25 @@ The [README](../README.md#what-ships-today) lists the product surfaces; [archite
 | Catalog and Notes search | [#145](https://github.com/Jseow008/ThePlayBook/pull/145), `7f479ce` | Findings #2/#12/#13: server search before pagination, lexical ranking/snippets, and distinct errors. This is separate from generative personal retrieval. |
 | Account-state/function ACL repairs | [#143](https://github.com/Jseow008/ThePlayBook/pull/143), [#146](https://github.com/Jseow008/ThePlayBook/pull/146) | Repairs are recorded deliveries, not proof against future ACL drift. |
 | CI efficiency | [#148](https://github.com/Jseow008/ThePlayBook/pull/148), `6bfdb99` | Scope-aware verification and cancellation of superseded PR checks; required release gates remain. |
+| Typed personal retrieval and evidence extracts | [#153](https://github.com/Jseow008/ThePlayBook/pull/153), `d159c6f8` | Findings #3/#4/#6 delivery; matched responses use attributed extracts. Broader synthesis and precise citation navigation remain separate. |
+| Database-native snapshot maintenance | Reviewed [#154](https://github.com/Jseow008/ThePlayBook/pull/154), shipped in #153 | Private hourly Supabase Cron replaces the failing HTTP worker; #154 is closed as superseded. |
+| Replayable deployed book identity schema | [#155](https://github.com/Jseow008/ThePlayBook/pull/155), `7ff1dd98` | Records existing production ISBN/identity definitions and grants; preserves publishing compatibility. |
 
-The release handoffs in the working conversation reported production export/resume smoke success. This housekeeping pass verifies the merge history and relevant source only; confirm the deployed commit and current environment when making a new operational decision.
+Earlier export/resume handoffs reported production smoke success. The current release verification below does not rerun every earlier workstream; confirm the deployed commit and environment when making a new operational decision.
 
-## Held work — not on main
+## Current retrieval release
 
-Typed retrieval for highlights, attached notes, and reflections (#3/#4/#6) continues on `codex/evidence-first-retrieval` in PR #153, recovered from the held `codex/typed-personal-retrieval` checkpoint `cd2c7fd`. Its branch-local `docs/PHASE_1_PERSONAL_RETRIEVAL.md` records the implementation and raw evidence; that file accompanies the held delivery and is not proof of release.
+PR #153 shipped typed highlights, notes and reflections with attributed evidence extracts. The historical generated-answer candidate failed grounding (86/90); it remains evidence against releasing broader synthesis. All 90 replacement extract responses were independently reviewed. Frozen diagnostic thresholds pass, with the three known irrelevant selections still counted as failures.
 
-The completed candidate benchmark has passing retrieval/access/quotation results, but independent AI review found only 86 of 90 generated answers grounded. Four unsupported claims keep the candidate held. All 90 answers were reviewed; there was no selective rerun. The user approved concise attributed evidence extracts on 26 September 2026. PR #153 implements that response change. At `ff00cff`, database-backed checks and independent review of all 90 extracts pass the frozen diagnostic thresholds; the three known irrelevant selections remain recorded. The authenticated browser journey now passes, including desktop/mobile extract wrapping and logout clearing. Hosted database release proof and final follow-up CI remain pending. The earlier generated-answer failure is preserved and does not certify the new response path. No personal-index production migration or deployment is recorded for this candidate.
+The combined release passed a data-less hosted 105-migration replay, matching production schema/type contracts, six security checks, targeted database behavior tests, and all seven application smoke checks. All three reviewed migrations are applied; the follow-up production dry-run is clean and 46 existing captures are indexed and ready. The candidate's hourly Cron tick and a manual production maintenance run succeeded. The first production scheduled tick was not separately awaited.
+
+Vercel deployed `d159c6f8`. Live authenticated empty-scope retrieval returned 200 and the same session returned 401 after actual revocation; the temporary account was removed. The index worker's production-credential GitHub dispatch passed. Health and Browse returned 200. Details and retained evidence: [personal retrieval checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#production-release-continuation--26-september-2026). The hosted branch, credentials and isolated services were removed.
 
 ## Deferred and separately open
 
 - Validated citations and exact-passage navigation (#5) follow the typed retrieval contract; existing reader links are not proof of that workstream.
-- Snapshot-maintenance migration candidate: `codex/supabase-snapshot-maintenance` in `/Users/j/Desktop/Lifebook-supabase-snapshot-maintenance` replaces the failing GitHub HTTP worker with a private Supabase Cron job. The ownership handoff enables `SET ROLE` only temporarily and the database assertion aggregates all role-catalog grantors. GitHub Security Gates run `36220664503` passed the migration replay. A disposable hosted branch also applied the migration, cleaned expired/stale fixtures while preserving active work, and completed a scheduled cron invocation; its fixtures and branch were deleted. A fresh read-only check on 26 September corrected the earlier production-drift diagnosis: production project `xmuqsgfxuaaophxnwure` has all 102 migration versions from current main, through `20260918151058`, with no missing or extra versions. A combined #153/#154 production dry-run proposes only `20260918164448_add_personal_evidence_index.sql` and `20260926043844_add_snapshot_maintenance_cron.sql`, in that order. Do not repair production migration history based on the earlier March-cutoff observation; its source remains unexplained. Full schema comparison and the remaining combined release gate still apply. The latest observed completed production backup is `2026-09-25T23:45:02.269Z`. Neither migration has been applied to production.
 - Broader durability (#8/#9), AI safeguards (#20–#24), remaining operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
-- The held branch recorded an account-deletion/revision-trigger defect during disposable cleanup. Removing fixture library rows before deleting its account was a cleanup workaround, not a production fix; track it with the durability workstream.
+- The retrieval work recorded an account-deletion/revision-trigger defect during disposable cleanup. Removing fixture library rows before deleting its account was a cleanup workaround, not a production fix; track it with the durability workstream.
 
 ## Updating this page
 
