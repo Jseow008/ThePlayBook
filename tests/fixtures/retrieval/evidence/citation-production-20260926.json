@@ -1,0 +1,77 @@
+{
+  "checkedAt": "2026-09-26T15:04:20.745Z",
+  "origin": "https://www.netflux.blog",
+  "checks": [
+    {
+      "name": "Temporary confirmed account created",
+      "passed": true
+    },
+    {
+      "name": "Ordinary authenticated login",
+      "passed": true
+    },
+    {
+      "name": "Existing public source available",
+      "passed": true
+    },
+    {
+      "name": "Owned synthetic note saved",
+      "passed": true
+    },
+    {
+      "name": "Production index worker accepted",
+      "passed": true
+    },
+    {
+      "name": "Synthetic note indexed",
+      "passed": true
+    },
+    {
+      "name": "Deployed Notes retrieval returned 200",
+      "passed": true
+    },
+    {
+      "name": "Exact answer text preserved",
+      "passed": true
+    },
+    {
+      "name": "Server-issued citation present",
+      "passed": true
+    },
+    {
+      "name": "Citation resolved exact authorized passage",
+      "passed": true
+    },
+    {
+      "name": "Deployed passage page reachable",
+      "passed": true
+    },
+    {
+      "name": "Synthetic note deleted",
+      "passed": true
+    },
+    {
+      "name": "Deleted capture no longer serves excerpt",
+      "passed": true
+    },
+    {
+      "name": "Temporary session revoked",
+      "passed": true
+    },
+    {
+      "name": "Revoked session cannot resolve citation",
+      "passed": true
+    },
+    {
+      "name": "Synthetic account and captures cleaned up",
+      "passed": true
+    }
+  ],
+  "scope": "Synthetic ordinary account; no existing personal data changed; one Notes exact-quote request, no benchmark",
+  "deployedCommit": "820fe7b7b151d5fe2e303dd46befeb2c63aee3de",
+  "citationMergeCommit": "610724e22ede0f2eeda63a64c677739e47ec9d6e",
+  "limitations": [
+    "Authenticated production HTTP journey, not a fresh browser screen-reader audit or complete later-session export journey.",
+    "Unchanged model benchmark was not rerun."
+  ]
+}

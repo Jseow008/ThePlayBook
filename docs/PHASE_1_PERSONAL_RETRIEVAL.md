@@ -49,7 +49,7 @@ The user approved replacing final prose generation for matched retrieval respons
 - Release work is complete. Next product workstream: validated citations and exact-passage navigation (#5). Existing synthesis failures, the three irrelevant selections, and the separately recorded account-deletion defect remain visible; this release does not close those broader concerns.
 - One primary implementer and one reused bounded reviewer. The reviewer caught migration delimiters and ambient database-URL precedence in the disposable test runner. These were fixed before release. No additional quality benchmark or prompt-tuning pass ran. Token usage is unavailable. Approximately 54 minutes elapsed between hosted-branch creation (06:46 UTC) and the combined app merge (07:40 UTC), including reconciliation, verification, and CI wait; this is not total historical task time.
 
-## Current verification decision
+## Historical generated-answer verification (superseded by evidence extracts)
 
 **The complete answer-v2 execution fails grounding and is not approved for release.**
 All 174 case-runs completed, including 90 actual model answers across three runs,
@@ -348,7 +348,7 @@ added to this retrieval migration.
 
 ## Citation implementation checkpoint — 26 September 2026
 
-Workstream #5 is in progress on `codex/validated-evidence-citations`, isolated at
+Workstream #5 was implemented on `codex/validated-evidence-citations`, isolated at
 `/Users/j/Desktop/Lifebook-citations`, based on deployed `ff475093` (#156).
 No database migration is planned. References are account-bound, encrypted,
 24-hour tokens issued only for the final selected response set, using a
@@ -362,7 +362,7 @@ no old excerpts. Still-owned personal context can remain visible with an explici
 changed/withdrawn label. A secondary reader link opens the source, not an
 unverified historical reader offset. Full editorial revision history is deferred.
 
-Implementation and local verification complete; PR/CI publication is next.
+Implementation and local verification completed; #158 subsequently merged and deployed. See the production closeout below.
 The opaque reference survives reloads in history state; personal data is never
 stored there. Visibility changes invalidate pending reads synchronously. Exact quotations also carry a literal-rendering marker so Markdown syntax cannot
 turn stored punctuation into formatting or links. Response
@@ -383,8 +383,7 @@ One bounded reviewer caught exact-quote identity loss at the composition limit,
 Strict Mode reference loss, and a hidden-page late-response race; each was fixed
 with regression coverage. Browser evidence also drove opaque-reference retention
 across remounts. Full lint and the affected regression tests passed after corrections. The
-production build is repeated on the final rebased candidate before publication. CI remains the release
-gate. No migration, production configuration or production action in this change.
+final rebased production build and required CI checks passed before #158 merged. No migration, production configuration or production action in this change.
 
 
 To reproduce citation browser proof, start the app against a migrated loopback
@@ -394,3 +393,70 @@ run `NODE_OPTIONS=--conditions=react-server npx tsx scripts/citation-browser-fix
 then `PLAYWRIGHT_BASE_URL=http://localhost:<port> npx playwright test tests/e2e/evidence-citations.spec.ts --project=desktop-chromium --workers=1`.
 This runs Chromium and WebKit explicitly. Finish with the same fixture script's
 `cleanup` command. Never commit the fixture: it contains disposable login cookies.
+
+
+## Citation closeout and deletion-fix checkpoint — 26 September 2026
+
+#158 merged as `610724e2` and successfully deployed. The current production build
+`820fe7b7` passed the authenticated HTTP citation journey described in
+[STATUS.md](STATUS.md#citation-production-closeout--26-september-2026). The synthetic
+capture and temporary account were cleaned up. This establishes deployed quote,
+reference, deletion and revocation behavior; it does not claim a new full browser
+or later-session/export acceptance pass.
+
+Next bounded correction: the documented account-deletion/revision-trigger defect.
+Branch `codex/account-deletion-closeout`, isolated worktree
+`/Users/j/Desktop/Lifebook-account-deletion`, base `820fe7b7`. One agent owns the
+migration and real database/Auth regressions; the coordinator owns release proof
+and register reconciliation. Docker was stopped at entry; starting it restored the existing disposable stack
+without a reset. The original defect reproduced as Auth delete HTTP 500 with the
+account-state FK failure. Candidate migration
+`20260926150259_account_deletion_library_revision.sql` first advances existing state,
+then repairs missing state only for a still-live, key-share-locked account.
+
+The focused regression and all 20 affected database runtime tests pass. Coverage
+includes real Auth deletion, capture/state/index cleanup, account isolation,
+concurrent ordinary deletions, missing-state recovery, and source-deletion revision
+updates. Typecheck, focused lint, diff and direct function-ACL checks pass. The
+local advisor CLI connection failed despite successful direct database checks;
+hosted advisor proof is still required. No production schema change has occurred.
+
+Production read-only dry-run proposes exactly the migration above. The latest
+completed production backup is `2026-09-25T23:45:02.269Z`. The user approved the
+$10/month temporary-project cost; isolated candidate `disbfndyhfrwsdggxnsy` is
+being verified in `/private/tmp/netflux-deletion-hosted/candidate`, distinct from
+production `xmuqsgfxuaaophxnwure`. No production migration has been applied.
+The PR remains held until hosted replay, security/advisor/type/schema checks and
+application smoke pass. Next: finish that gate, apply the reviewed one-migration
+production release, then delete the candidate and private credentials. Do not
+rerun unchanged model benchmarks.
+
+
+### Deletion repair release result
+
+PR [#161](https://github.com/Jseow008/ThePlayBook/pull/161), implementation
+`71493b37`, completes the bounded fix. The user approved the temporary project's
+quoted cost. Full hosted replay/reset, 106 immutable migrations, six security
+checks, DB-002 behavior, type comparison, build and all seven browser smoke
+checks pass. Hosted real Auth deletion removes all five tested capture/state/index
+collections. Before production, the only schema difference was the intended
+trigger body.
+
+The single reviewed migration is applied to production under the user's existing
+production authorization. Post-apply parity/recorded SQL, clean dry-run, all 14
+schema categories and all six security checks pass. A real temporary ordinary
+account saved a library item, note and reflection, then Auth deletion succeeded
+and removed its public capture/state rows. Health is `ok`. Advisors show no new
+findings; existing public-search and leaked-password warnings retain their owners.
+
+The temporary hosted project was deleted and its absence confirmed. The isolated
+application was stopped; synthetic accounts were removed. Private credentials and
+workdir are removed after the sanitized evidence is retained. No production
+content or existing personal data was changed. Setup retries were one dependency
+symlink correction and one local HTTP proxy-header correction, not product fixes
+or weakened assertions. No model benchmark or prompt tuning was repeated.
+
+[Release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
+Next: finish required PR checks and merge #161; the migration is already applied
+and must not be reapplied. Broader durability and AI safeguards remain separately
+scoped work.

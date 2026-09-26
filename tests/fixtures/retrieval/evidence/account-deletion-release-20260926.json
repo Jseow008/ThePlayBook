@@ -1,0 +1,77 @@
+{
+  "date": "2026-09-26",
+  "pr": 161,
+  "implementationCommit": "71493b37",
+  "migration": "20260926150259_account_deletion_library_revision.sql",
+  "migrationSha256": "cc16108456d8554879b97dec4efb70f587c5406770a968d9ebda068393b9a994",
+  "candidateRef": "disbfndyhfrwsdggxnsy",
+  "productionRef": "xmuqsgfxuaaophxnwure",
+  "candidate": {
+    "fullReplay": "passed",
+    "guardedReset": "passed",
+    "migrationSqlMatches": 106,
+    "securityChecksPassed": 6,
+    "highlightPreservation": "passed",
+    "generatedTypes": "equal after PostgREST metadata normalization",
+    "preApplySchemaDifference": "only private.advance_user_library_revision_on_delete() as intended",
+    "productionBuild": "passed",
+    "smoke": {
+      "passed": 7,
+      "skipped": 0,
+      "retries": 0
+    },
+    "realAuthDeletion": {
+      "status": "passed",
+      "method": "real hosted Supabase Auth admin deletion",
+      "collections": [
+        "public.user_library",
+        "public.account_library_state",
+        "public.user_highlights",
+        "public.user_reflections",
+        "private.personal_evidence_index"
+      ],
+      "fixtureCleaned": true
+    }
+  },
+  "production": {
+    "backupCompletedAt": "2026-09-25T23:45:02.269Z",
+    "dryRunProposed": [
+      "20260926150259_account_deletion_library_revision.sql"
+    ],
+    "applied": true,
+    "postApplyDryRun": "up-to-date",
+    "migrationSqlMatches": 106,
+    "schemaCategoriesMatched": 14,
+    "securityChecksPassed": 6,
+    "realAuthDeletion": {
+      "status": "passed",
+      "method": "ordinary authenticated synthetic library/note/reflection writes then real admin Auth deletion",
+      "publicCollectionsCleaned": [
+        "user_library",
+        "user_highlights",
+        "user_reflections",
+        "account_library_state"
+      ],
+      "existingContentUnchanged": true
+    },
+    "health": "ok"
+  },
+  "advisors": {
+    "security": "no new findings; existing intentional public search_catalog definer warnings and production leaked-password protection warning remain separately tracked",
+    "performance": "only unused-index and Auth connection-strategy informational notices; fresh candidate has more unused indexes"
+  },
+  "setupFailures": [
+    "Turbopack rejected shared node_modules symlink; replaced with local dependency copy, no code change.",
+    "Initial local HTTP callback used a matching forwarded host and intentionally redirected to HTTPS; used a nonmatching localhost proxy host so configured loopback origin is selected. All seven checks then passed."
+  ],
+  "cleanup": {
+    "temporaryProjectDeleted": true,
+    "absenceConfirmed": true,
+    "isolatedAppStopped": true,
+    "syntheticAccountsRemoved": true
+  },
+  "limits": [
+    "Browser smoke verifies application/database compatibility, not AI-provider availability. Existing third-party rate-limit configuration used; no production database credentials copied to candidate.",
+    "Production account proof uses only a temporary synthetic ordinary account and existing public source; no existing personal records or public content altered."
+  ]
+}

@@ -24,9 +24,10 @@ const databaseUrl = process.env.DB107_ADMIN_DATABASE_URL;
 const workerDatabaseUrl = process.env.SNAPSHOT_WORKER_DATABASE_URL;
 const apiUrl = process.env.DB107_SUPABASE_URL;
 const anonKey = process.env.DB107_SUPABASE_ANON_KEY;
-const configured = Boolean(databaseUrl && workerDatabaseUrl && apiUrl && anonKey);
+const serviceRoleKey = process.env.DB107_SUPABASE_SERVICE_ROLE_KEY;
+const configured = Boolean(databaseUrl && workerDatabaseUrl && apiUrl && anonKey && serviceRoleKey);
 if (process.env.PERSONAL_EVIDENCE_RUNTIME_REQUIRED === "1" && !configured) {
-    throw new Error("Personal evidence runtime checks require the existing disposable DB107 database, worker, URL and anon key.");
+    throw new Error("Personal evidence runtime checks require the existing disposable DB107 database, worker, URL, anon key and service-role key.");
 }
 // Fixtures must never run against a linked/hosted project, even when an operator
 // accidentally provides a production connection string to this test command.
@@ -587,5 +588,98 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
         vi.mocked(createServerSupabaseClient).mockResolvedValue({ auth: stale.auth } as unknown as Awaited<ReturnType<typeof createServerSupabaseClient>>);
         await expect(getVerifiedAccountDataSession()).resolves.toBeNull();
 
+    });
+});
+
+
+describeDatabase("account deletion library revision regression", () => {
+    const db = new Pool({ connectionString: databaseUrl, max: 3 });
+    const accounts: string[] = [];
+    const contents = [randomUUID(), randomUUID(), randomUUID()];
+    const admin = configured ? createSupabaseClient(apiUrl!, serviceRoleKey!, {
+        auth: { persistSession: false, autoRefreshToken: false },
+    }) : undefined;
+
+    beforeAll(async () => {
+        for (let index = 0; index < 2; index++) {
+            const result = await admin!.auth.admin.createUser({
+                email: `account-delete-${randomUUID()}@example.invalid`,
+                password: `fixture-${randomUUID()}-Aa1!`, email_confirm: true,
+            });
+            expect(result.error).toBeNull();
+            accounts.push(result.data.user!.id);
+        }
+        await db.query(`INSERT INTO public.content_item(id,type,title,author,status)
+            SELECT id, 'article', 'Account deletion fixture', 'Fixture author', 'verified'
+            FROM unnest($1::uuid[]) AS id`, [contents]);
+        await db.query(`INSERT INTO public.user_library(user_id,content_id,is_bookmarked)
+            SELECT account, content, true FROM unnest($1::uuid[]) AS account
+            CROSS JOIN unnest($2::uuid[]) AS content`, [accounts, contents]);
+        await db.query(`INSERT INTO public.user_highlights(user_id,content_item_id,highlighted_text,note_body)
+            SELECT id,$2,'Delete fixture quotation','Delete fixture note' FROM unnest($1::uuid[]) AS id`, [accounts, contents[0]]);
+        await db.query(`INSERT INTO public.user_reflections(user_id,content_item_id,prompt,reflection_text)
+            SELECT id,$2,'Fixture prompt','Fixture reflection' FROM unnest($1::uuid[]) AS id`, [accounts, contents[0]]);
+    }, 30_000);
+
+    afterAll(async () => {
+        // Remove library rows before Auth cleanup so a regression cannot leak
+        // synthetic users merely because the assertion failed before the fix.
+        await db.query("DELETE FROM public.content_item WHERE id = ANY($1::uuid[])", [contents]);
+        await db.query("DELETE FROM auth.users WHERE id = ANY($1::uuid[])", [accounts]);
+        await db.end();
+    }, 30_000);
+
+    async function revision(account: string) {
+        return Number((await db.query("SELECT current_revision FROM public.account_library_state WHERE user_id=$1", [account])).rows[0].current_revision);
+    }
+
+    it("keeps ordinary and concurrent delete revisions, including missing-state recovery", async () => {
+        const before = await revision(accounts[0]);
+        const otherBefore = await revision(accounts[1]);
+        const first = await db.connect();
+        const second = await db.connect();
+        try {
+            await first.query("BEGIN");
+            await second.query("BEGIN");
+            await second.query("SET LOCAL statement_timeout='5s'");
+            await first.query("DELETE FROM public.user_library WHERE user_id=$1 AND content_id=$2", [accounts[0], contents[1]]);
+            const waiting = second.query("DELETE FROM public.user_library WHERE user_id=$1 AND content_id=$2", [accounts[0], contents[2]]);
+            await first.query("COMMIT");
+            await waiting;
+            await second.query("COMMIT");
+            expect(await revision(accounts[0])).toBe(before + 2);
+            expect(await revision(accounts[1])).toBe(otherBefore);
+        } finally {
+            await first.query("ROLLBACK");
+            await second.query("ROLLBACK");
+            first.release(); second.release();
+        }
+        await db.query("DELETE FROM public.account_library_state WHERE user_id=$1", [accounts[0]]);
+        await db.query("DELETE FROM public.user_library WHERE user_id=$1 AND content_id=$2", [accounts[0], contents[0]]);
+        expect(await revision(accounts[0])).toBe(1);
+        // Refill the library so the Auth deletion below exercises the cascade.
+        await db.query("INSERT INTO public.user_library(user_id,content_id,is_bookmarked) VALUES($1,$2,true)", [accounts[0], contents[0]]);
+        const stateBeforeContentDelete = await revision(accounts[1]);
+        await db.query("DELETE FROM public.content_item WHERE id=$1", [contents[2]]);
+        expect(await revision(accounts[1])).toBe(stateBeforeContentDelete + 1);
+    });
+
+    it("deletes an Auth account with library, captures and state while preserving the other account", async () => {
+        const otherBefore = await revision(accounts[1]);
+        for (const table of ['public.user_library', 'public.user_highlights', 'public.user_reflections', 'public.account_library_state', 'private.personal_evidence_index']) {
+            expect(Number((await db.query(`SELECT count(*) FROM ${table} WHERE user_id=$1`, [accounts[0]])).rows[0].count)).toBeGreaterThan(0);
+        }
+        const deleted = await admin!.auth.admin.deleteUser(accounts[0]);
+        expect(deleted.error).toBeNull();
+        for (const table of ['public.user_library', 'public.user_highlights', 'public.user_reflections', 'public.account_library_state', 'private.personal_evidence_index']) {
+            expect(Number((await db.query(`SELECT count(*) FROM ${table} WHERE user_id=$1`, [accounts[0]])).rows[0].count)).toBe(0);
+            expect(Number((await db.query(`SELECT count(*) FROM ${table} WHERE user_id=$1`, [accounts[1]])).rows[0].count)).toBeGreaterThan(0);
+        }
+        expect((await db.query("SELECT id FROM auth.users WHERE id=$1", [accounts[0]])).rows).toHaveLength(0);
+        expect((await db.query("SELECT id FROM public.profiles WHERE id=$1", [accounts[0]])).rows).toHaveLength(0);
+        expect(await revision(accounts[1])).toBe(otherBefore);
+        const acl = await db.query(`SELECT has_function_privilege('anon', 'private.advance_user_library_revision_on_delete()', 'EXECUTE') AS anon,
+            has_function_privilege('authenticated', 'private.advance_user_library_revision_on_delete()', 'EXECUTE') AS authenticated`);
+        expect(acl.rows[0]).toEqual({ anon: false, authenticated: false });
     });
 });
