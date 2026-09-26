@@ -1,3 +1,4 @@
+import { captureServerAnalyticsEvent } from '@/lib/server/analytics';
 import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
 import { recheckPersonalEvidenceCandidates } from '@/lib/server/personal-evidence-candidates';
@@ -19,6 +20,9 @@ const { anthropicMock, toUIMessageStreamResponseMock } = vi.hoisted(() => ({
         return new Response('mocked-stream');
     }),
 }));
+
+vi.mock('@/lib/server/after-response', () => ({ afterResponse: (callback: () => unknown) => callback() }));
+vi.mock('@/lib/server/analytics', () => ({ captureServerAnalyticsEvent: vi.fn().mockResolvedValue(undefined) }));
 
 vi.mock('@/lib/server/personal-retrieval-session', async (importOriginal) => ({
     ...await importOriginal<typeof import('@/lib/server/personal-retrieval-session')>(),
@@ -306,6 +310,7 @@ describe('Chat API', () => {
         expect(res.status).toBe(200);
         expect(streamText).not.toHaveBeenCalled();
         expect(await res.text()).toContain('Your note');
+        expect(captureServerAnalyticsEvent).toHaveBeenCalledWith(expect.objectContaining({ event: 'ai_chat_started', properties: expect.objectContaining({ chat_scope: 'library' }) }));
         expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
         await finishLatestStream();
         expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
@@ -483,6 +488,16 @@ describe('Chat API', () => {
         expect(streamText).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
         expect(anthropicMock).not.toHaveBeenCalled();
+    });
+
+    it('preserves metadata advice when Gemini succeeds but no evidence is selected', async () => {
+        vi.mocked(selectLibraryEvidence).mockResolvedValueOnce({ personal: { items: [] }, sources: [],
+            exactQuote: null, quoteTooLarge: false, contextText: '', evidenceIds: [] } as unknown as Awaited<ReturnType<typeof selectLibraryEvidence>>);
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({
+            messages: [{ role: 'user', content: 'What should I read next from my library?' }],
+        }) }));
+        expect(response.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ system: expect.stringContaining('Eligible next-read candidates:') }));
     });
 
     it('can answer reading advisor questions from metadata when Gemini retrieval is unavailable', async () => {

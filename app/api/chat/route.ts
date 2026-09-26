@@ -296,7 +296,7 @@ export async function POST(req: NextRequest) {
         const metadataContext = buildLibraryMetadataContext(libraryItems, MAX_LIBRARY_CONTEXT_CHARS);
 
         const retrievalContext = "";
-        const retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
+        let retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
         if (intent !== "library_metadata" && hasGemini) {
             if (embeddingResult.error) {
                 logApiError({ requestId, route: "/api/chat", message: "Gemini embedding API error", error: embeddingResult.error });
@@ -336,10 +336,21 @@ export async function POST(req: NextRequest) {
                 if (authError || currentUser?.id !== user.id) throw new Error("RETRIEVAL_AUTH_CHANGED");
                 if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui");
                 if (selected.quoteTooLarge) return retrievalTextResponse("The matching stored passage is too long to quote completely here. Open the source to read its full text.", "ui");
-                if (selected.evidenceIds.length === 0) return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui");
-                return retrievalTextResponse(renderEvidenceExtracts({
-                    personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds,
-                }), "ui");
+                if (selected.evidenceIds.length === 0) {
+                    if (intent !== "reading_advisor") return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui");
+                    retrievalStatus = "no_match";
+                } else {
+                    const text = renderEvidenceExtracts({
+                        personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds,
+                    });
+                    if (messages.filter((message) => message.role === "user").length === 1) {
+                        afterResponse(() => captureServerAnalyticsEvent({ event: "ai_chat_started", distinctId: user.id,
+                            insertId: `ai_chat_started:library:${user.id}:${requestId}`,
+                            properties: { source: "ask_library", route: "/api/chat", chat_scope: "library", user_state: "authenticated" },
+                        }));
+                    }
+                    return retrievalTextResponse(text, "ui");
+                }
             } catch (error) {
                 if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
                 logApiError({ requestId, route: "/api/chat", message: "Complete library evidence retrieval failed", error });

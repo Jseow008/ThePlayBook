@@ -37,6 +37,18 @@ describe('evidence extracts in the actual Markdown renderer', () => {
         expect(output).toContain('Your note (excerpt)'); expect(html(output)).toContain('🚀 Later.');
         expect(output).not.toContain('Before.');
     });
+    it('preserves indentation and embedded fences as literal stored text', () => {
+        const item = selectedPersonalEvidence();
+        if (item.evidence.type !== 'highlight') throw new Error('fixture');
+        const text = '    Stop <here>.\n\n    **this**\n```\n[not a link](https://evil.test)';
+        item.evidence.noteBody = text;
+        item.spans = [{ field: 'noteBody', start: 0, end: text.length, text, score: .9 }];
+        const root = document.createElement('div');
+        root.innerHTML = html(renderEvidenceExtracts({ personal: [item] }));
+        expect(root.querySelectorAll('pre')).toHaveLength(1);
+        expect(root.querySelector('code')!.textContent).toBe(text + '\n');
+        expect(root.querySelector('a')).toBeNull();
+    });
     it('refuses stale or fabricated span text', () => {
         const item = selectedPersonalEvidence(); item.spans[0].text = 'A made-up claim';
         expect(() => renderEvidenceExtracts({ personal: [item] })).toThrow('Invalid extract span');

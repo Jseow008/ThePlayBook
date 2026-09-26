@@ -4,11 +4,15 @@ import type { LibrarySourceEvidence } from "@/lib/server/library-evidence";
 
 /** Escape stored data for the existing Markdown renderer: never create links, HTML or headings from captures. */
 function literal(text: string): string {
-    return text.replace(/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g, "\\$&");
+    return text.replace(/[\r\n\t]+/g, " ").replace(/[!"#$%&'()*+,\-./:;<=>?@[\\\]^_`{|}~]/g, "\\$&");
 }
 
 function quote(text: string): string {
-    return text.split(/\r\n|\n|\r/).map((line) => `> ${literal(line)}  `).join("\n");
+    // A longer fence than any stored run cannot be closed by untrusted text.
+    // Literal blocks also preserve indentation and punctuation without Markdown escapes.
+    const longest = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
+    const fence = "`".repeat(Math.max(3, longest + 1));
+    return `${fence}\n${text}\n${fence}`;
 }
 
 /** Input is the final authorized, freshness-checked selection, after existing composition limits. */
