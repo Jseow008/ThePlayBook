@@ -3,11 +3,14 @@ import { spawn } from "node:child_process";
 import {
     OPENAI_TTS_MODEL,
     OPENAI_TTS_VOICE,
+    FISH_AUDIO_VOICE_ID,
     NarrationError,
     buildNarrationSegmentScript,
     isNarrationError,
     normalizeWhitespace,
     splitNarrationIntoChunks,
+    getFishAudioModel,
+    getNarrationProvider,
     type NarrationContentSource,
     type GeneratedNarrationSegmentTiming,
 } from "@/lib/server/narration-script";
@@ -29,9 +32,11 @@ const FINAL_AUDIO_FORMAT = "mp3";
 const FINAL_AUDIO_CONTENT_TYPE = "audio/mpeg";
 const TTS_CONCURRENCY = 3;
 const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
-const OPENAI_MAX_ATTEMPTS = 3;
+const FISH_REQUEST_TIMEOUT_MS = 120_000;
+const TTS_MAX_ATTEMPTS = 3;
 const FFMPEG_TRANSCODE_TIMEOUT_MS = 60_000;
 const RETRYABLE_OPENAI_STATUSES = new Set([408, 409, 429, 500, 502, 503, 504]);
+const RETRYABLE_FISH_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
 
 function shouldPreferWavOutput() {
     const requestedFormat = process.env.NARRATION_OUTPUT_FORMAT?.trim().toLowerCase();
@@ -380,16 +385,16 @@ function buildOpenAiHttpError(status: number, providerMessage: string) {
     });
 }
 
-function getCombinedAbortSignal(signal?: AbortSignal) {
+function getCombinedAbortSignal(signal?: AbortSignal, timeoutMs = OPENAI_REQUEST_TIMEOUT_MS) {
     if (!signal) {
-        return AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS);
+        return AbortSignal.timeout(timeoutMs);
     }
 
     if (typeof AbortSignal.any === "function") {
-        return AbortSignal.any([signal, AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS)]);
+        return AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)]);
     }
 
-    return AbortSignal.timeout(OPENAI_REQUEST_TIMEOUT_MS);
+    return AbortSignal.timeout(timeoutMs);
 }
 
 export async function mapWithConcurrency<T, R>(
@@ -429,7 +434,94 @@ export async function mapWithConcurrency<T, R>(
     return results;
 }
 
+async function synthesizeFishNarrationChunkWav(chunk: string, signal?: AbortSignal) {
+    const apiKey = process.env.FISH_AUDIO_API_KEY;
+    if (!apiKey) {
+        throw new NarrationError({
+            code: "FISH_NOT_CONFIGURED",
+            status: 500,
+            userMessage: "AI narration is not configured right now.",
+        });
+    }
+
+    const model = getFishAudioModel();
+    for (let attempt = 1; attempt <= TTS_MAX_ATTEMPTS; attempt += 1) {
+        try {
+            const response = await fetch("https://api.fish.audio/v1/tts", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                    model,
+                },
+                body: JSON.stringify({
+                    text: chunk,
+                    reference_id: FISH_AUDIO_VOICE_ID,
+                    prosody: { speed: 1, volume: 0 },
+                    normalize: true,
+                    format: "wav",
+                    sample_rate: 24_000,
+                    latency: "normal",
+                }),
+                signal: getCombinedAbortSignal(signal, FISH_REQUEST_TIMEOUT_MS),
+            });
+
+            if (!response.ok) {
+                const detail = (await response.text()).slice(0, 500);
+                if (RETRYABLE_FISH_STATUSES.has(response.status) && attempt < TTS_MAX_ATTEMPTS) {
+                    await delay(getRetryDelayMs(attempt), signal);
+                    continue;
+                }
+                throw new NarrationError({
+                    code: response.status === 401 || response.status === 403 ? "FISH_AUTH" : "FISH_REQUEST_FAILED",
+                    status: response.status === 401 || response.status === 403 ? 500 : 502,
+                    userMessage: response.status === 401 || response.status === 403
+                        ? "AI narration is not configured correctly right now."
+                        : "The AI voice provider could not generate narration for this summary.",
+                    message: `Fish Audio request failed (${response.status}): ${detail}`,
+                });
+            }
+
+            const wavBuffer = Buffer.from(await response.arrayBuffer());
+            parseWavChunk(wavBuffer);
+            return wavBuffer;
+        } catch (error) {
+            if (error instanceof NarrationError) throw error;
+            const retryable = isAbortError(error) || isRetryableFetchFailure(error);
+            if (retryable && attempt < TTS_MAX_ATTEMPTS) {
+                await delay(getRetryDelayMs(attempt), signal);
+                continue;
+            }
+            if (signal?.aborted) {
+                throw new NarrationError({
+                    code: "NARRATION_ABORTED",
+                    status: 499,
+                    userMessage: "AI narration generation was cancelled.",
+                    cause: error,
+                });
+            }
+            throw new NarrationError({
+                code: isAbortError(error) ? "FISH_TIMEOUT" : "FISH_NETWORK",
+                status: isAbortError(error) ? 504 : 503,
+                userMessage: isAbortError(error)
+                    ? "AI narration timed out while generating audio. Please try again."
+                    : "The AI voice provider could not be reached right now. Please try again.",
+                cause: error,
+            });
+        }
+    }
+
+    throw new NarrationError({
+        code: "FISH_UNKNOWN",
+        status: 503,
+        userMessage: "AI narration could not be completed right now. Please try again.",
+    });
+}
+
 export async function synthesizeNarrationChunkWav(chunk: string, signal?: AbortSignal) {
+    if (getNarrationProvider() === "fish") {
+        return synthesizeFishNarrationChunkWav(chunk, signal);
+    }
     if (!process.env.OPENAI_API_KEY) {
         throw new NarrationError({
             code: "OPENAI_NOT_CONFIGURED",
@@ -438,7 +530,7 @@ export async function synthesizeNarrationChunkWav(chunk: string, signal?: AbortS
         });
     }
 
-    for (let attempt = 1; attempt <= OPENAI_MAX_ATTEMPTS; attempt += 1) {
+    for (let attempt = 1; attempt <= TTS_MAX_ATTEMPTS; attempt += 1) {
         try {
             const response = await fetch("https://api.openai.com/v1/audio/speech", {
                 method: "POST",
@@ -459,7 +551,7 @@ export async function synthesizeNarrationChunkWav(chunk: string, signal?: AbortS
                 const providerMessage = await extractOpenAiError(response);
                 const error = buildOpenAiHttpError(response.status, providerMessage);
 
-                if (RETRYABLE_OPENAI_STATUSES.has(response.status) && attempt < OPENAI_MAX_ATTEMPTS) {
+                if (RETRYABLE_OPENAI_STATUSES.has(response.status) && attempt < TTS_MAX_ATTEMPTS) {
                     await delay(getRetryDelayMs(attempt), signal);
                     continue;
                 }
@@ -476,7 +568,7 @@ export async function synthesizeNarrationChunkWav(chunk: string, signal?: AbortS
 
             const isRetryable = isAbortError(error) || isRetryableFetchFailure(error);
 
-            if (isRetryable && attempt < OPENAI_MAX_ATTEMPTS) {
+            if (isRetryable && attempt < TTS_MAX_ATTEMPTS) {
                 await delay(getRetryDelayMs(attempt), signal);
                 continue;
             }
