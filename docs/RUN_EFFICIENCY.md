@@ -21,10 +21,16 @@ Purpose: complete authorized work with less repeated context, coordination, and 
 
 After a materially expensive or unexpectedly slow run, update this file only if it teaches a reusable lesson. Use: **observed problem → evidence → changed practice → how to check improvement**. Merge duplicates into existing guidance; remove superseded advice. Keep detailed run history in the task's existing status document, not here. Routine successful edits need no retrospective.
 
-Report elapsed time, agent count, repeated experiments, and observed usage when available. Distinguish Codex usage from application-provider benchmark tokens. Do not sum overlapping session counters, count cached tokens as unique work, or infer billed allowance from raw counters. Mark unavailable measurements as unknown. Check whether later comparable runs improve before claiming savings.
+Report elapsed time, agent count, repeated experiments, and observed usage when available. Distinguish Codex usage from application-provider benchmark tokens. Do not sum overlapping session counters, count cached tokens as unique work, or infer billed allowance from raw counters. Mark unavailable measurements as unknown. Record what a reviewer actually caught and whether parallel work reduced elapsed time or prevented rework. A large subagent token share is a signal to investigate, not proof of waste or value. Do not call delegation efficient without supporting evidence; narrow or omit future discretionary reviews when their observed benefit does not justify their cost. Check whether later comparable runs improve before claiming savings.
 
 ## Lessons recorded 26 September 2026
 
 - **Coordination overhead:** extended retrieval-session records contain hundreds of execution and agent-coordination calls, with large cumulative cached-input usage. These are not isolated per-task billing measurements. Use smaller teams and fresh-context briefs; assess subsequent runs by wall time, coordination calls, and rework.
 - **Repeated model experiments:** the held retrieval checkpoint records multiple selector/answer trials; one selector execution used 168 provider calls. Apply the existing two-attempt reassessment rule and resolve response-design tradeoffs before another full benchmark. Compare experiment counts without changing acceptance standards.
 - **Misleading cost attribution:** database waiting, Codex context processing, and external model evaluation are different costs. Report them separately; do not blame backups without evidence or reduce required recovery checks to save model tokens.
+
+## Next retrieval implementation: bounded trial
+
+For the structured-evidence response change, the primary agent implements directly with no parallel implementation agents. Use one bounded independent reviewer after the candidate is ready, supplying the diff, acceptance requirements, and relevant evidence rather than the full conversation. Use focused development checks, then the affected release evaluation; repeat only when a change, failure, or unresolved concern requires it.
+
+At handoff, record elapsed time, available agent usage, repeated checks, and actionable reviewer findings in the existing retrieval checkpoint. Unavailable usage remains unknown. The user reports that earlier subagents consumed more than half of the tokens; no measured net efficiency benefit has been established. This trial tests an improvement rather than claiming one. After the trial, replace this section with its evidence-backed lesson; it is not a permanent mandate to spawn a reviewer for every task.
