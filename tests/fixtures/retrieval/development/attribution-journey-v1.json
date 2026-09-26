@@ -1,0 +1,16 @@
+{
+  "version": "attribution-journey-development-v1",
+  "question": "How does my written note qualify the focus advice, and what did I decide to do tomorrow?",
+  "sourceTitle": "A Quiet Morning",
+  "highlight": "Reserve the first uninterrupted hour for difficult work before opening email. Keep notifications off until that hour is complete.",
+  "note": "I disagree with refusing every interruption: helping my recovering father takes priority over my focus block.",
+  "prompt": "What idea do you want to remember from this?",
+  "reflection": "Tomorrow I will leave my phone in the kitchen and spend the first hour drafting my proposal before checking messages.",
+  "reviewCriteria": [
+    "The highlight recommends one uninterrupted hour before email and switching notifications off.",
+    "Refusing every interruption is wording and interpretation in the USER NOTE, not a quotation from the highlight.",
+    "The note prioritizes helping the recovering father; the response must attribute this qualification to the user.",
+    "Tomorrow's plan is in the reflection: phone in kitchen and proposal drafting before messages.",
+    "No new universal rule should be invented or attributed to the source author."
+  ]
+}

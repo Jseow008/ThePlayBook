@@ -1,0 +1,148 @@
+{
+  "version": "extract-authenticated-browser-journey-v1",
+  "observedAt": "2026-09-26T06:42:45Z",
+  "applicationBaseCommit": "6e2e29c8750e184cab6d24ba26c86a07ee537145",
+  "applicationChanges": "Three wrapping class additions across Notes and Ask; hashes bind the tested production build source.",
+  "sourceSha256": {
+    "app/(public)/ask/client-page.tsx": "abf5333058d1ff047f0165057e27badba534c080c20f1bca7e4f226d21ceb26c",
+    "components/notes/NotesAskPanel.tsx": "74da210d3ed00ffe449e163fa4f5fefb27a1ff1e3846a99f1d0852899c4050b0",
+    "lib/server/evidence-extract-response.ts": "0a667459c3ff2633aa1912cc7dee9b61635aaef9cd84fcbedc1f7b7d68561641"
+  },
+  "database": "Existing disposable loopback Supabase at port56322, with both PR153 and PR154 migrations applied; no production database writes.",
+  "rateLimiter": "Real local Redis7 via serverless-redis-http image sha256:5b0bb9239fce53abf87b2018a7a0deb9ec7bd900c5360738fe5fbeeb426f9150; not a hosted Upstash availability proof.",
+  "providerUse": "Real Gemini indexing/embeddings and Anthropic selection. One indexing batch completed2 records. Three successful UI retrieval questions; no final answer-writing calls. Full provider token/call counters unavailable.",
+  "journey": [
+    "Signed in as the prepared ordinary synthetic user",
+    "Saved a highlighted passage with attached note using reader UI",
+    "Saved a reflection using reader UI",
+    "Index worker returned claimed2/completed2/failed0",
+    "Notes query displayed exact highlight, note and reflection with distinct attribution",
+    "Ask My Library query displayed attributed extracts",
+    "Desktop and mobile width checks show no extract horizontal overflow",
+    "Sign-out removed private response and navigated to login"
+  ],
+  "layout": {
+    "notes-wrap-desktop.json": {
+      "hasExtract": true,
+      "blocks": [
+        {
+          "whiteSpace": "pre-wrap",
+          "overflowWrap": "anywhere",
+          "width": 280,
+          "scrollWidth": 280
+        },
+        {
+          "whiteSpace": "pre-wrap",
+          "overflowWrap": "anywhere",
+          "width": 280,
+          "scrollWidth": 280
+        },
+        {
+          "whiteSpace": "pre-wrap",
+          "overflowWrap": "anywhere",
+          "width": 280,
+          "scrollWidth": 280
+        }
+      ]
+    },
+    "notes-wrap-mobile.json": {
+      "hasExtract": true,
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "blocks": [
+        {
+          "width": 234,
+          "scrollWidth": 234,
+          "whiteSpace": "pre-wrap"
+        },
+        {
+          "width": 234,
+          "scrollWidth": 234,
+          "whiteSpace": "pre-wrap"
+        },
+        {
+          "width": 234,
+          "scrollWidth": 234,
+          "whiteSpace": "pre-wrap"
+        }
+      ]
+    },
+    "library-wrap-desktop.json": [
+      {
+        "text": "I tried the morning focus idea. Turning notifications off helped me finish one difficult task before opening email.\n",
+        "whiteSpace": "pre-wrap",
+        "overflowWrap": "anywhere",
+        "width": 616,
+        "scrollWidth": 616
+      },
+      {
+        "text": "Reserve the first uninterrupted hour for difficult work before opening email. Keep notifications off until that hour is complete. A brief planning note can make the next action clear.\n",
+        "whiteSpace": "pre-wrap",
+        "overflowWrap": "anywhere",
+        "width": 616,
+        "scrollWidth": 616
+      },
+      {
+        "text": "My morning focus experiment: I will silence notifications and protect the first hour before email.\n",
+        "whiteSpace": "pre-wrap",
+        "overflowWrap": "anywhere",
+        "width": 616,
+        "scrollWidth": 616
+      }
+    ],
+    "library-wrap-mobile.json": {
+      "pageWidth": 390,
+      "pageScrollWidth": 390,
+      "blocks": [
+        {
+          "whiteSpace": "pre-wrap",
+          "overflowWrap": "anywhere",
+          "width": 234,
+          "scrollWidth": 234
+        },
+        {
+          "whiteSpace": "pre-wrap",
+          "overflowWrap": "anywhere",
+          "width": 234,
+          "scrollWidth": 234
+        },
+        {
+          "whiteSpace": "pre-wrap",
+          "overflowWrap": "anywhere",
+          "width": 234,
+          "scrollWidth": 234
+        }
+      ]
+    },
+    "logout-proof.json": {
+      "privateResponseVisible": false,
+      "extractVisible": false,
+      "url": "/login",
+      "errorOverlay": false
+    }
+  },
+  "earlierSetupFailures": [
+    "Prepared rate-limiter URL pointed to a stopped local service; started real Redis and HTTP adapter rather than bypassing protection.",
+    "Prepared environment lacked ACCOUNT_DATA_CURSOR_SECRET; supplied a random local secret.",
+    "Combined DB test harness initially used postgres instead of direct worker login;38/39 passed, then the specific direct-worker test passed with corrected local credentials. No production privilege change."
+  ],
+  "databaseProof": {
+    "combinedRuntimeAndSecurityChecks": 39,
+    "initialPassed": 38,
+    "correctedCredentialCheckPassed": 1,
+    "personalEvidenceRuntimePassed": 16,
+    "codeChangesForDbFailures": false
+  },
+  "review": "Bounded independent review found no cron code blockers and no issue with the three wrapping additions.",
+  "checks": [
+    "Production build passed",
+    "Targeted ESLint passed",
+    "No browser errors reported in final session",
+    "No framework error overlay after logout"
+  ],
+  "limitations": [
+    "Hosted combined rehearsal/schema comparison still pending quoted branch-cost acknowledgment.",
+    "No production migration, merge, or deployment performed.",
+    "Earlier benchmark evidence is reused because retrieval/selector/renderer text are unchanged; wrapping affects display only."
+  ]
+}

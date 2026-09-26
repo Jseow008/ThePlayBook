@@ -1,0 +1,21 @@
+{
+  "reviewedGroups": 31,
+  "reviewedExtractRuns": 90,
+  "grounded": 90,
+  "answerComplete": 90,
+  "misleadingTruncation": 0,
+  "findings": [
+    {
+      "caseId": "library-willow",
+      "runs": [
+        1,
+        2,
+        3
+      ],
+      "kind": "irrelevant-selection",
+      "evidenceId": "54194630-6ecd-5725-bc99-551ed8cfe056",
+      "explanation": "The frozen question requests only current editorial guidance. The answer additionally includes a personal highlight and number-card adaptation, which is outside its eligible evidence. Stored text is faithful and correctly labeled; requested editorial facts are complete. This remains an irrelevant-rejection failure, not a grounding or attribution failure."
+    }
+  ],
+  "method": "Manually reviewed every grouped question, frozen support facets/rationale, stored fields, selected identities and exact response. Identical case/evidence/response groups share judgment across listed runs. Hashes and report equality verified before writing adjudications. Completeness judges availability of requested factual facets in explicitly labeled extracts; it does not claim generated comparative synthesis."
+}

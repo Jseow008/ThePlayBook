@@ -56,13 +56,13 @@ Use [.env.example](.env.example) as the maintained configuration template and [O
 | --- | --- |
 | Supabase/auth and site metadata | Public Supabase URL/anon key, elevated server key where required, site URL |
 | Library hydration and export | `SNAPSHOT_WORKER_DATABASE_URL`, `ACCOUNT_DATA_CURSOR_SECRET` |
-| Snapshot maintenance | `SNAPSHOT_MAINTENANCE_DATABASE_URL`, `CRON_SECRET` |
+| Snapshot maintenance | Supabase Cron job managed by the snapshot-maintenance migration |
 | Catalog search cursors | `CATALOG_SEARCH_CURSOR_SECRET` |
 | Notes search cursors | `ACCOUNT_DATA_CURSOR_SECRET` |
 | AI generation/retrieval | Configured generation provider key and `GEMINI_API_KEY`; model settings are in the template |
 | Production rate limiting and operations | Upstash credentials and applicable health/admin/notification settings listed in OPS |
 
-Snapshot connections use the provisioned restricted worker/maintenance roles. These URLs and cursor secrets are server-only; never add a `NEXT_PUBLIC_` prefix or commit real values. Optional providers and telemetry settings are documented in the template.
+Snapshot worker connections use the provisioned restricted role. These URLs and cursor secrets are server-only; never add a `NEXT_PUBLIC_` prefix or commit real values. Optional providers and telemetry settings are documented in the template.
 
 Start the app:
 

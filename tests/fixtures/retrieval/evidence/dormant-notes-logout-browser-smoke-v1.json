@@ -1,0 +1,142 @@
+{
+  "version": "dormant-notes-logout-browser-smoke-v1",
+  "checkedAt": "2026-09-18T19:37:42.934Z",
+  "result": "PASS",
+  "build": {
+    "commit": "1e36335142a4d5c15807897e76f63336740572f2",
+    "logoutFixCommit": "4a137d8e319ab5e80142d920cf6c710592956423",
+    "files": [
+      {
+        "path": "app/api/chat/route.ts",
+        "sha256": "5b178a4b6b21ec699b2da8cc720413b202dc1eb5d4a58509acd3a4234c1680a2"
+      },
+      {
+        "path": "app/api/chat/notes/route.ts",
+        "sha256": "a2c236de882d1e6d94e597a5e2016201e0a1d43bb91e7e3b95597672e212eaa3"
+      },
+      {
+        "path": "lib/server/personal-evidence-selector.ts",
+        "sha256": "013254f6546c0eeffbdcce9d7453d9ad728302ead165b62131f6c8cc331b45f3"
+      },
+      {
+        "path": "lib/server/personal-retrieval.ts",
+        "sha256": "034166595633a176c2bfb7dd3a3882b3e5097d7135041559ddfd53a3f05c995b"
+      },
+      {
+        "path": "lib/server/library-evidence.ts",
+        "sha256": "a7d14adf62318e349210ed4179bebd95a1a30b7949c60749bd4a927adda21bfc"
+      },
+      {
+        "path": "lib/server/personal-evidence-indexer.ts",
+        "sha256": "60cee5327756051d4784408a5ffe0ee1f5b51f30684e72ce8b8dbd893f990cf9"
+      },
+      {
+        "path": "lib/server/personal-retrieval-session.ts",
+        "sha256": "f749a1c5e0ca09e2d4cf826a27caf431ca8f5518a0310d67253df9c6336da8d9"
+      },
+      {
+        "path": "lib/server/retrieval-generation.ts",
+        "sha256": "a9e4f6af42c980a16b3c4895ba817e0d44518592ee904a8ca2e2c45b31c56dfa"
+      },
+      {
+        "path": "components/notes/NotesAskPanel.tsx",
+        "sha256": "be159697f88cda0722802ca6921d8eb7f7e17b924b16e83d4b9bfbc04eff3e85"
+      },
+      {
+        "path": "hooks/useAuthUser.ts",
+        "sha256": "01e729aff1ab15360e1e99948d90623d4de49c243eceb2d8834910e5cf55b382"
+      },
+      {
+        "path": "lib/notes-chat-session.ts",
+        "sha256": "a078b3ab473dc37e78458590b7d15ae98b8ffc39bf649c0728191bb8eb5f3f96"
+      }
+    ],
+    "priorJourneyCommit": "87599d166ad7f2aa5dbdc45f45f179b3719f472d",
+    "priorRetrievalSourceHashesUnchanged": true,
+    "changedFilesSincePriorJourney": [
+      "docs/PHASE_1_PERSONAL_RETRIEVAL.md",
+      "hooks/useAuthUser.ts",
+      "lib/notes-chat-session.ts",
+      "package.json",
+      "tests/fixtures/retrieval/evidence/database-quality-v2-selector-v4.json",
+      "tests/fixtures/retrieval/evidence/final-build-auth-retrieval-journey-v2.json",
+      "tests/fixtures/retrieval/provider-selections-v2-selector-v4.json",
+      "tests/hooks/useAuthUser.test.tsx"
+    ],
+    "buildId": "kYbL3b48S-c7WgfG2m4qy",
+    "builtAt": "2026-09-18T19:34:59.568Z",
+    "buildPassed": true,
+    "sharpTraceCheckPassed": true,
+    "filesUnchangedAfterBuild": true
+  },
+  "priorJourney": {
+    "path": "tests/fixtures/retrieval/evidence/final-build-auth-retrieval-journey-v2.json",
+    "sha256": "f1c77a16a209747bbc7e0875a89d10b5eb66f3e65ccf1c12dee0e70e6f735eb5",
+    "commit": "87599d166ad7f2aa5dbdc45f45f179b3719f472d",
+    "relationship": "Closes its recorded dormant Notes cache retention on Settings sign-out. Other prior journey observations remain unchanged."
+  },
+  "productionSourceChanges": [
+    {
+      "path": "hooks/useAuthUser.ts",
+      "beforeSha256": "00ce2267de52cacabcac3ec8658b9c9734149b971258212280cf020b828a9b30",
+      "afterSha256": "01e729aff1ab15360e1e99948d90623d4de49c243eceb2d8834910e5cf55b382"
+    },
+    {
+      "path": "lib/notes-chat-session.ts",
+      "beforeSha256": "c3a16cb6efb269ca9c8fff6eccec7b0ae4e160b7d11dbc3b0f57e5023e1e0755",
+      "afterSha256": "a078b3ab473dc37e78458590b7d15ae98b8ffc39bf649c0728191bb8eb5f3f96"
+    }
+  ],
+  "environment": {
+    "app": "Local production build localhost3305",
+    "database": "Disposable Supabase API55321 DB55322",
+    "account": "Temporary ordinary user",
+    "configuration": "Existing shared Upstash credentials available to local process; production configuration and database unchanged"
+  },
+  "setup": "Seeded synthetic v2 and legacy Notes sessionStorage fixtures plus an unrelated preservation sentinel directly while on Settings. Notes panel was not mounted.",
+  "before": {
+    "errorOverlay": false,
+    "hasContent": true,
+    "notesKeysBefore": [
+      "netflux_notes_chat_session:v1:synthetic-legacy-scope",
+      "netflux_notes_chat_session:v2:synthetic-dormant-owner:all"
+    ],
+    "notesPanelMounted": false,
+    "seededKeys": {
+      "legacy": "netflux_notes_chat_session:v1:synthetic-legacy-scope",
+      "unrelated": "netflux_logout_smoke_unrelated",
+      "v2": "netflux_notes_chat_session:v2:synthetic-dormant-owner:all"
+    },
+    "unrelatedBefore": "preserve-me",
+    "url": "http://localhost:3305/settings"
+  },
+  "after": {
+    "chatCallsObserved": 0,
+    "errorOverlay": false,
+    "notesKeysAfter": [],
+    "notesPanelMounted": false,
+    "unrelatedAfter": "preserve-me",
+    "url": "http://localhost:3305/login"
+  },
+  "databaseProof": {
+    "role": "user",
+    "sessions": 0,
+    "usage": 0,
+    "highlights": 0,
+    "reflections": 0
+  },
+  "paidProviderCalls": 0,
+  "contentRecordsCreated": 0,
+  "workerInvocations": 0,
+  "cleanup": {
+    "ordinaryAccountDeleted": true,
+    "remainingAccounts": 0,
+    "temporarySecretFilesRemoved": true,
+    "browserClosed": true,
+    "productionServerStopped": true
+  },
+  "limitations": [
+    "Focused auth/storage correction check only; no repeat of paid retrieval quality or grounded-answer generation.",
+    "Storage entries were synthetic test setup fixtures using the real v2/legacy prefixes, not transcripts generated in this smoke."
+  ]
+}

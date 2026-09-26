@@ -22,6 +22,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     const accountB = randomUUID();
     const accountC = randomUUID();
     const accountD = randomUUID();
+    const accountMaintenance = randomUUID();
     const accountExport = randomUUID();
     const accountCrossCollectionExport = randomUUID();
     const contentA = randomUUID();
@@ -55,8 +56,9 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                 ('00000000-0000-0000-0000-000000000000', $3, 'authenticated', 'authenticated', $4, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
                 ('00000000-0000-0000-0000-000000000000', $5, 'authenticated', 'authenticated', $6, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
                 ('00000000-0000-0000-0000-000000000000', $7, 'authenticated', 'authenticated', $8, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
-                ('00000000-0000-0000-0000-000000000000', $9, 'authenticated', 'authenticated', $10, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
-            [accountA, `db107-a-${accountA}@example.invalid`, accountB, `db107-b-${accountB}@example.invalid`, accountC, `db107-c-${accountC}@example.invalid`, accountD, `db107-d-${accountD}@example.invalid`, accountExport, `db107-export-${accountExport}@example.invalid`],
+                ('00000000-0000-0000-0000-000000000000', $9, 'authenticated', 'authenticated', $10, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
+                ('00000000-0000-0000-0000-000000000000', $11, 'authenticated', 'authenticated', $12, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
+            [accountA, `db107-a-${accountA}@example.invalid`, accountB, `db107-b-${accountB}@example.invalid`, accountC, `db107-c-${accountC}@example.invalid`, accountD, `db107-d-${accountD}@example.invalid`, accountExport, `db107-export-${accountExport}@example.invalid`, accountMaintenance, `db107-maintenance-${accountMaintenance}@example.invalid`],
         );
         await db.query(
             `INSERT INTO public.content_item (id, type, title, status)
@@ -167,7 +169,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         ).catch(() => undefined);
         await db.query(
             "DELETE FROM auth.users WHERE id = ANY($1::uuid[])",
-            [[accountA, accountB, accountC, accountD, accountExport, accountCrossCollectionExport]],
+            [[accountA, accountB, accountC, accountD, accountMaintenance, accountExport, accountCrossCollectionExport]],
         ).catch(() => undefined);
         await workerDb.end();
         await db.end();
@@ -181,6 +183,155 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         // Simulates a network response lost after the copy transaction commits.
         const retry = await createLibrarySnapshot(accountA, snapshotKey);
         expect(retry).toEqual(first);
+    });
+
+    it("reconciles expired snapshot state in the TypeScript worker's order", async () => {
+        const expiredBuildingOperation = randomUUID();
+        const expiredBuildingSnapshot = randomUUID();
+        const expiredReadyOperation = randomUUID();
+        const expiredReadySnapshot = randomUUID();
+        const staleTerminalOperation = randomUUID();
+        const activeOperation = randomUUID();
+
+        await db.query(
+            `INSERT INTO snapshot_private.account_data_snapshot_operations
+                (id, account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status, lease_expires_at, updated_at)
+             VALUES
+                ($1, $7, $2, 'fixture', ARRAY['user_library'], 2, $3, 'building', now() - interval '1 second', now() - interval '1 hour'),
+                ($4, $7, $5, 'fixture', ARRAY['user_library'], 2, $6, 'ready', NULL, now() - interval '26 hours'),
+                ($8, $7, $9, 'fixture', ARRAY['user_library'], 2, $10, 'failed', NULL, now() - interval '26 hours'),
+                ($11, $7, $12, 'fixture', ARRAY['user_library'], 2, $13, 'building', now() + interval '1 hour', now())`,
+            [
+                expiredBuildingOperation,
+                randomUUID(),
+                expiredBuildingSnapshot,
+                expiredReadyOperation,
+                randomUUID(),
+                expiredReadySnapshot,
+                accountMaintenance,
+                staleTerminalOperation,
+                randomUUID(),
+                randomUUID(),
+                activeOperation,
+                randomUUID(),
+                randomUUID(),
+            ],
+        );
+        await db.query(
+            `INSERT INTO snapshot_private.account_data_snapshots
+                (id, operation_id, account_id, collection_names, schema_version, reset_epoch, boundary_library_revision, status, expires_at)
+             VALUES ($1, $2, $3, ARRAY['user_library'], 2, 0, 0, 'ready', now() - interval '1 second')`,
+            [expiredReadySnapshot, expiredReadyOperation, accountMaintenance],
+        );
+
+        const result = await db.query<{ aborted: string; expired: string; pruned: string; skipped: boolean }>(
+            "SELECT * FROM snapshot_private.reconcile_expired_account_data_snapshots()",
+        );
+
+        expect(result.rows[0]).toEqual({ aborted: "1", expired: "1", pruned: "2", skipped: false });
+        const operations = await db.query<{ id: string; status: string; failure_code: string | null }>(
+            "SELECT id, status, failure_code FROM snapshot_private.account_data_snapshot_operations WHERE id = ANY($1::uuid[]) ORDER BY id",
+            [[expiredBuildingOperation, activeOperation]],
+        );
+        expect(operations.rows).toEqual(expect.arrayContaining([
+            { id: expiredBuildingOperation, status: "aborted", failure_code: "SNAPSHOT_WORKER_INTERRUPTED" },
+            { id: activeOperation, status: "building", failure_code: null },
+        ]));
+        const removed = await db.query<{ count: string }>(
+            "SELECT count(*) FROM snapshot_private.account_data_snapshot_operations WHERE id = ANY($1::uuid[])",
+            [[expiredReadyOperation, staleTerminalOperation]],
+        );
+        expect(removed.rows[0]?.count).toBe("0");
+    });
+
+    it("preserves an expired operation while its account lock is held, then settles it after release", async () => {
+        const operationId = randomUUID();
+        const snapshotId = randomUUID();
+        await db.query(
+            `INSERT INTO snapshot_private.account_data_snapshot_operations
+                (id, account_id, idempotency_key, request_fingerprint, collection_names, schema_version, snapshot_id, status, lease_expires_at)
+             VALUES ($1, $2, $3, 'fixture', ARRAY['user_library'], 2, $4, 'building', now() - interval '1 second')`,
+            [operationId, accountMaintenance, randomUUID(), snapshotId],
+        );
+
+        const lockHolder = await db.connect();
+        try {
+            await lockHolder.query("SELECT pg_advisory_lock(hashtext($1))", [`account-data:${accountMaintenance}`]);
+            const whileLocked = await db.query<{ aborted: string; skipped: boolean }>(
+                "SELECT aborted, skipped FROM snapshot_private.reconcile_expired_account_data_snapshots()",
+            );
+            expect(whileLocked.rows[0]).toEqual({ aborted: "0", skipped: false });
+            const held = await db.query<{ status: string }>(
+                "SELECT status FROM snapshot_private.account_data_snapshot_operations WHERE id = $1",
+                [operationId],
+            );
+            expect(held.rows[0]?.status).toBe("building");
+        } finally {
+            await lockHolder.query("SELECT pg_advisory_unlock(hashtext($1))", [`account-data:${accountMaintenance}`]);
+            lockHolder.release();
+        }
+
+        const afterRelease = await db.query<{ aborted: string; skipped: boolean }>(
+            "SELECT aborted, skipped FROM snapshot_private.reconcile_expired_account_data_snapshots()",
+        );
+        expect(afterRelease.rows[0]).toEqual({ aborted: "1", skipped: false });
+    });
+
+    it("skips a concurrent database-native maintenance run", async () => {
+        const lockHolder = await db.connect();
+        try {
+            await lockHolder.query("BEGIN");
+            await lockHolder.query("SELECT pg_advisory_xact_lock($1, $2)", [91_007, 91_009]);
+            const result = await db.query<{ aborted: string; expired: string; pruned: string; skipped: boolean }>(
+                "SELECT * FROM snapshot_private.reconcile_expired_account_data_snapshots()",
+            );
+            expect(result.rows[0]).toEqual({ aborted: "0", expired: "0", pruned: "0", skipped: true });
+        } finally {
+            await lockHolder.query("ROLLBACK").catch(() => undefined);
+            lockHolder.release();
+        }
+    });
+
+    it("installs the active private cron job without browser access", async () => {
+        const job = await db.query<{ jobname: string; schedule: string; command: string; active: boolean }>(
+            `SELECT jobname, schedule, command, active
+             FROM cron.job
+             WHERE jobname = 'reconcile-account-data-snapshots'`,
+        );
+        expect(job.rows).toEqual([
+            {
+                jobname: "reconcile-account-data-snapshots",
+                schedule: "17 * * * *",
+                command: "SELECT snapshot_private.reconcile_expired_account_data_snapshots();",
+                active: true,
+            },
+        ]);
+
+        const access = await db.query<{
+            anon_can_execute: boolean;
+            authenticated_can_execute: boolean;
+            postgres_can_set_maintenance_role: boolean;
+            maintenance_can_create_private_objects: boolean;
+        }>(
+            `SELECT
+                has_function_privilege('anon', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS anon_can_execute,
+                has_function_privilege('authenticated', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS authenticated_can_execute,
+                COALESCE((
+                    SELECT bool_or(membership.set_option)
+                    FROM pg_auth_members membership
+                    JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
+                    JOIN pg_roles member_role ON member_role.oid = membership.member
+                    WHERE granted_role.rolname = 'netflux_snapshot_maintenance'
+                      AND member_role.rolname = 'postgres'
+                ), false) AS postgres_can_set_maintenance_role,
+                has_schema_privilege('netflux_snapshot_maintenance', 'snapshot_private', 'CREATE') AS maintenance_can_create_private_objects`,
+        );
+        expect(access.rows).toEqual([{
+            anon_can_execute: false,
+            authenticated_can_execute: false,
+            postgres_can_set_maintenance_role: false,
+            maintenance_can_create_private_objects: false,
+        }]);
     });
 
     it("returns an explicit terminal outcome for an expired successful operation", async () => {

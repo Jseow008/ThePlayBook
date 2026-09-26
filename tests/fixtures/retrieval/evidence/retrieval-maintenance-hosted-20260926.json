@@ -1,0 +1,528 @@
+{
+  "date": "2026-09-26",
+  "candidateRef": "wadjiymmnupaonongzxu",
+  "productionRef": "xmuqsgfxuaaophxnwure",
+  "sourceHeads": {
+    "retrieval": "97cf17172012718e1e2ead186db247d88eb7a16a",
+    "maintenance": "ce2ec691fddb33d0a643301bf0be676834d013e8",
+    "reconciliation": "fe8750bd75dcdec2621c38b3e0a4223687ba7bd9"
+  },
+  "migrations": [
+    "20260918164448_add_personal_evidence_index.sql",
+    "20260926043844_add_snapshot_maintenance_cron.sql",
+    "20260926065035_reconcile_existing_production_book_schema.sql"
+  ],
+  "baseline": {
+    "versions": 102,
+    "reconciliation": "Before applying feature migrations, clean replay plus reconciliation matched production across all14 fingerprint categories and raw generated types.",
+    "typesOverrides": "Existing convenience aliases and nullable subscribe_email_subscription fields retained."
+  },
+  "candidate": {
+    "migrationCount": 105,
+    "fullReset": "passed",
+    "dryRun": "up-to-date",
+    "securityChecks": 6,
+    "highlightPreservation": "passed",
+    "bookIdentity": "passed",
+    "maintenanceRuntime": {
+      "passed": 5,
+      "unselected": 16
+    },
+    "productionBuild": "passed",
+    "smoke": {
+      "passed": 7,
+      "skipped": 0,
+      "baseURL": "http://127.0.0.1:3219",
+      "forwardedClientIp": "127.0.0.1",
+      "explanation": "Emulates platform client-IP header for the configured local admin allowlist. Initial localhost run hit expected production HTTPS redirect; bare 127.0.0.1 omitted the forwarded IP."
+    },
+    "schemaChanges": [
+      {
+        "key": "column_definition|private.personal_evidence_chunk.chunk_index",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_chunk.embedding",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_chunk.end_offset",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_chunk.evidence_id",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_chunk.evidence_type",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_chunk.field",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_chunk.revision",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_chunk.start_offset",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.attempts",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.evidence_id",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.evidence_type",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.highlight_id",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.index_version",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.lease_expires_at",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.lease_token",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.next_attempt_at",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.reflection_id",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.revision",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.state",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.updated_at",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_index.user_id",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_provider_state.next_allowed_at",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_provider_state.singleton",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_provider_state.worker_expires_at",
+        "kind": "add"
+      },
+      {
+        "key": "column_definition|private.personal_evidence_provider_state.worker_token",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_chunk.personal_evidence_chunk_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_chunk.personal_evidence_chunk_check1",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_chunk.personal_evidence_chunk_chunk_index_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_chunk.personal_evidence_chunk_evidence_type_evidence_id_fkey",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_chunk.personal_evidence_chunk_pkey",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_chunk.personal_evidence_chunk_start_offset_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_attempts_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_check1",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_evidence_type_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_highlight_id_fkey",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_highlight_id_key",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_index_version_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_pkey",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_reflection_id_fkey",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_reflection_id_key",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_state_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_index.personal_evidence_index_user_id_fkey",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_provider_state.personal_evidence_provider_state_pkey",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_provider_state.personal_evidence_provider_state_singleton_check",
+        "kind": "add"
+      },
+      {
+        "key": "constraint_definition|private.personal_evidence_provider_state.personal_evidence_provider_worker_lease",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.acquire_personal_evidence_worker(p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.claim_personal_evidence_index(p_worker_token uuid, p_limit integer, p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.complete_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_chunks jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.fail_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_retry_after_seconds integer, p_terminal boolean, p_rate_limited boolean)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.match_personal_evidence(p_scope jsonb, p_query_embedding vector, p_match_count integer, p_min_similarity double precision, p_field text)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.personal_evidence_index_status(p_scope jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.release_personal_evidence_worker(p_worker_token uuid)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|private.seed_personal_evidence_index(p_limit integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.acquire_personal_evidence_worker(p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.claim_personal_evidence_index(p_worker_token uuid, p_limit integer, p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.complete_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_chunks jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.fail_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_retry_after_seconds integer, p_terminal boolean, p_rate_limited boolean)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.match_personal_evidence(p_scope jsonb, p_query_embedding vector, p_match_count integer, p_min_similarity double precision, p_field text)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.personal_evidence_index_status(p_scope jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.release_personal_evidence_worker(p_worker_token uuid)",
+        "kind": "add"
+      },
+      {
+        "key": "function_acl|public.seed_personal_evidence_index(p_limit integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.acquire_personal_evidence_worker(p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.claim_personal_evidence_index(p_worker_token uuid, p_limit integer, p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.complete_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_chunks jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.fail_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_retry_after_seconds integer, p_terminal boolean, p_rate_limited boolean)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.invalidate_personal_evidence_index()",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.match_personal_evidence(p_scope jsonb, p_query_embedding vector, p_match_count integer, p_min_similarity double precision, p_field text)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.personal_evidence_index_status(p_scope jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.personal_evidence_scope(p_scope jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.personal_evidence_utf16_length(p_text text)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.release_personal_evidence_worker(p_worker_token uuid)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.require_personal_index_service()",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|private.seed_personal_evidence_index(p_limit integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.acquire_personal_evidence_worker(p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.claim_personal_evidence_index(p_worker_token uuid, p_limit integer, p_lease_seconds integer)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.complete_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_chunks jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.fail_personal_evidence_index(p_evidence_type text, p_evidence_id uuid, p_revision uuid, p_lease_token uuid, p_retry_after_seconds integer, p_terminal boolean, p_rate_limited boolean)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.match_personal_evidence(p_scope jsonb, p_query_embedding vector, p_match_count integer, p_min_similarity double precision, p_field text)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.personal_evidence_index_status(p_scope jsonb)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.release_personal_evidence_worker(p_worker_token uuid)",
+        "kind": "add"
+      },
+      {
+        "key": "function_definition|public.seed_personal_evidence_index(p_limit integer)",
+        "kind": "add"
+      },
+      {
+        "key": "index_definition|private.personal_evidence_chunk_pkey",
+        "kind": "add"
+      },
+      {
+        "key": "index_definition|private.personal_evidence_index_highlight_id_key",
+        "kind": "add"
+      },
+      {
+        "key": "index_definition|private.personal_evidence_index_owner_idx",
+        "kind": "add"
+      },
+      {
+        "key": "index_definition|private.personal_evidence_index_pending_idx",
+        "kind": "add"
+      },
+      {
+        "key": "index_definition|private.personal_evidence_index_pkey",
+        "kind": "add"
+      },
+      {
+        "key": "index_definition|private.personal_evidence_index_reflection_id_key",
+        "kind": "add"
+      },
+      {
+        "key": "index_definition|private.personal_evidence_provider_state_pkey",
+        "kind": "add"
+      },
+      {
+        "key": "relation_comment|private.personal_evidence_chunk",
+        "kind": "add"
+      },
+      {
+        "key": "relation_comment|private.personal_evidence_index",
+        "kind": "add"
+      },
+      {
+        "key": "relation_comment|private.personal_evidence_provider_state",
+        "kind": "add"
+      },
+      {
+        "key": "relation_definition|private.personal_evidence_chunk",
+        "kind": "add"
+      },
+      {
+        "key": "relation_definition|private.personal_evidence_index",
+        "kind": "add"
+      },
+      {
+        "key": "relation_definition|private.personal_evidence_provider_state",
+        "kind": "add"
+      },
+      {
+        "key": "trigger_definition|public.user_highlights.personal_highlight_index_invalidation",
+        "kind": "add"
+      },
+      {
+        "key": "trigger_definition|public.user_reflections.personal_reflection_index_invalidation",
+        "kind": "add"
+      }
+    ],
+    "fingerprints": [
+      {
+        "category": "column_definition",
+        "object_count": 260,
+        "fingerprint": "74165790f4fd510ebcf28b2a22c237dd"
+      },
+      {
+        "category": "constraint_definition",
+        "object_count": 133,
+        "fingerprint": "6d866aefa7a4379a78836e63f23511a9"
+      },
+      {
+        "category": "enum_definition",
+        "object_count": 8,
+        "fingerprint": "ecad8d1cb9108011203756428dee2151"
+      },
+      {
+        "category": "extension_definition",
+        "object_count": 2,
+        "fingerprint": "d9e15e4100dcfa41f08a6079ced14ce8"
+      },
+      {
+        "category": "function_acl",
+        "object_count": 76,
+        "fingerprint": "f46af1d400bf51ca12f7633299c57778"
+      },
+      {
+        "category": "function_definition",
+        "object_count": 63,
+        "fingerprint": "8289ed1e88b7df23de3276ad01e1f146"
+      },
+      {
+        "category": "index_definition",
+        "object_count": 100,
+        "fingerprint": "74b8c818d9ca360cee5adee1217211ab"
+      },
+      {
+        "category": "policy_definition",
+        "object_count": 70,
+        "fingerprint": "6e4e13f82009ab06a3a630b8cd7c3b16"
+      },
+      {
+        "category": "relation_acl",
+        "object_count": 447,
+        "fingerprint": "3b64a4042562a728dc125afcebf79856"
+      },
+      {
+        "category": "relation_comment",
+        "object_count": 8,
+        "fingerprint": "de3dde2e0c7ec6673305ec87d1c37f6a"
+      },
+      {
+        "category": "relation_definition",
+        "object_count": 28,
+        "fingerprint": "4a707abf41697c569153d7b46d0a1865"
+      },
+      {
+        "category": "storage_bucket_definition",
+        "object_count": 2,
+        "fingerprint": "a4891b7cf84ee01cd9d9e8340e5faf7d"
+      },
+      {
+        "category": "trigger_definition",
+        "object_count": 21,
+        "fingerprint": "bcb6dc4ea9d661edd9f0488ab064afe8"
+      },
+      {
+        "category": "view_definition",
+        "object_count": 1,
+        "fingerprint": "b5d6f2084dc0e5068d5a02c3f4176500"
+      }
+    ],
+    "scheduledCronRun": {
+      "status": "succeeded",
+      "start": "2026-09-26T07:17:00.02467Z"
+    }
+  },
+  "production": {
+    "backupCompletedAt": "2026-09-25T23:45:02.269Z",
+    "dryRun": "exact three migrations",
+    "applied": true,
+    "migrationCount": 105,
+    "postApplyDryRun": "up-to-date",
+    "schemaCategoriesMatch": 14,
+    "generatedTypesMatch": true,
+    "securityChecksPassed": 6,
+    "index": {
+      "ready": 46,
+      "failed": 0,
+      "deferred": 0
+    },
+    "maintenanceRun": {
+      "aborted": 0,
+      "expired": 4,
+      "pruned": 4,
+      "skipped": false
+    }
+  },
+  "cleanup": "Temporary hosted branch deleted and absence verified; isolated app and Redis stopped; candidate credentials removed."
+}

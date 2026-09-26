@@ -1,0 +1,351 @@
+{
+  "version": "authenticated-personal-retrieval-journey-v2",
+  "environment": {
+    "app": "Local production build at localhost3305",
+    "database": "Disposable Supabase API55321 DB55322",
+    "providers": "Real Google embeddings and Anthropic selector/generation",
+    "rateLimiter": "Existing shared production Upstash configuration used for synthetic requests; no production database access or mutation",
+    "account": "Temporary ordinary user"
+  },
+  "build": {
+    "commit": "87599d166ad7f2aa5dbdc45f45f179b3719f472d",
+    "files": [
+      {
+        "path": "app/api/chat/route.ts",
+        "sha256": "5b178a4b6b21ec699b2da8cc720413b202dc1eb5d4a58509acd3a4234c1680a2"
+      },
+      {
+        "path": "app/api/chat/notes/route.ts",
+        "sha256": "a2c236de882d1e6d94e597a5e2016201e0a1d43bb91e7e3b95597672e212eaa3"
+      },
+      {
+        "path": "lib/server/personal-evidence-selector.ts",
+        "sha256": "013254f6546c0eeffbdcce9d7453d9ad728302ead165b62131f6c8cc331b45f3"
+      },
+      {
+        "path": "lib/server/personal-retrieval.ts",
+        "sha256": "034166595633a176c2bfb7dd3a3882b3e5097d7135041559ddfd53a3f05c995b"
+      },
+      {
+        "path": "lib/server/library-evidence.ts",
+        "sha256": "a7d14adf62318e349210ed4179bebd95a1a30b7949c60749bd4a927adda21bfc"
+      },
+      {
+        "path": "lib/server/personal-evidence-indexer.ts",
+        "sha256": "60cee5327756051d4784408a5ffe0ee1f5b51f30684e72ce8b8dbd893f990cf9"
+      },
+      {
+        "path": "lib/server/personal-retrieval-session.ts",
+        "sha256": "f749a1c5e0ca09e2d4cf826a27caf431ca8f5518a0310d67253df9c6336da8d9"
+      },
+      {
+        "path": "lib/server/retrieval-generation.ts",
+        "sha256": "a9e4f6af42c980a16b3c4895ba817e0d44518592ee904a8ca2e2c45b31c56dfa"
+      },
+      {
+        "path": "components/notes/NotesAskPanel.tsx",
+        "sha256": "be159697f88cda0722802ca6921d8eb7f7e17b924b16e83d4b9bfbc04eff3e85"
+      }
+    ],
+    "startedAt": "2026-09-18T19:23:39.994Z",
+    "buildId": "16l8b8rR0DKql_nNtka4E",
+    "builtAt": "2026-09-18T19:23:51.414Z",
+    "buildPassed": true,
+    "sharpTraceCheckPassed": true,
+    "filesUnchangedAfterBuild": true
+  },
+  "steps": [
+    "Reader saved highlight and attached note through UI",
+    "Reader saved reflection and displayed acknowledgement",
+    "Notes reopened and displayed both saved records",
+    "Single bounded real index-worker invocation completed both own captures",
+    "Reflection-only Notes scope returned exact full stored reflection",
+    "Ask My Library generated comparison using actual v4 selector path",
+    "Existing note link reopened reader with saved highlight mark",
+    "Settings Download My Data produced complete verified export",
+    "Settings UI sign-out revoked actual session; old cookie requests rejected before admission",
+    "Own library rows removed before temporary account/source cleanup"
+  ],
+  "proofs": {
+    "build-inputs": {
+      "commit": "87599d166ad7f2aa5dbdc45f45f179b3719f472d",
+      "files": [
+        {
+          "path": "app/api/chat/route.ts",
+          "sha256": "5b178a4b6b21ec699b2da8cc720413b202dc1eb5d4a58509acd3a4234c1680a2"
+        },
+        {
+          "path": "app/api/chat/notes/route.ts",
+          "sha256": "a2c236de882d1e6d94e597a5e2016201e0a1d43bb91e7e3b95597672e212eaa3"
+        },
+        {
+          "path": "lib/server/personal-evidence-selector.ts",
+          "sha256": "013254f6546c0eeffbdcce9d7453d9ad728302ead165b62131f6c8cc331b45f3"
+        },
+        {
+          "path": "lib/server/personal-retrieval.ts",
+          "sha256": "034166595633a176c2bfb7dd3a3882b3e5097d7135041559ddfd53a3f05c995b"
+        },
+        {
+          "path": "lib/server/library-evidence.ts",
+          "sha256": "a7d14adf62318e349210ed4179bebd95a1a30b7949c60749bd4a927adda21bfc"
+        },
+        {
+          "path": "lib/server/personal-evidence-indexer.ts",
+          "sha256": "60cee5327756051d4784408a5ffe0ee1f5b51f30684e72ce8b8dbd893f990cf9"
+        },
+        {
+          "path": "lib/server/personal-retrieval-session.ts",
+          "sha256": "f749a1c5e0ca09e2d4cf826a27caf431ca8f5518a0310d67253df9c6336da8d9"
+        },
+        {
+          "path": "lib/server/retrieval-generation.ts",
+          "sha256": "a9e4f6af42c980a16b3c4895ba817e0d44518592ee904a8ca2e2c45b31c56dfa"
+        },
+        {
+          "path": "components/notes/NotesAskPanel.tsx",
+          "sha256": "be159697f88cda0722802ca6921d8eb7f7e17b924b16e83d4b9bfbc04eff3e85"
+        }
+      ],
+      "startedAt": "2026-09-18T19:23:39.994Z",
+      "buildId": "16l8b8rR0DKql_nNtka4E",
+      "builtAt": "2026-09-18T19:23:51.414Z",
+      "buildPassed": true,
+      "sharpTraceCheckPassed": true,
+      "filesUnchangedAfterBuild": true
+    },
+    "capture-proof": {
+      "index": [
+        {
+          "state": "pending",
+          "count": 2,
+          "all_journey": true
+        }
+      ],
+      "ownHighlights": [
+        {
+          "id": "0c17edc1-42c3-4e53-aadc-b39743286128",
+          "highlighted_text": "Reserve the first uninterrupted hour for difficult work before opening email. Keep notifications off until that hour is complete.",
+          "note_body": "I disagree with refusing every interruption: helping my recovering father takes priority over my focus block."
+        }
+      ],
+      "ownReflections": [
+        {
+          "id": "2cea3868-f902-4f37-9792-6dba1cc4a158",
+          "prompt": "What idea do you want to remember from this?",
+          "reflection_text": "Tomorrow I will leave my phone in the kitchen and spend the first hour drafting my proposal before checking messages."
+        }
+      ]
+    },
+    "worker-proof": {
+      "status": 200,
+      "elapsedMs": 1012,
+      "body": {
+        "success": true,
+        "data": {
+          "claimed": 2,
+          "completed": 2,
+          "stale": 0,
+          "deferred": 0,
+          "failed": 0,
+          "retryAfterSeconds": 0,
+          "stopReason": "no_claim_available"
+        }
+      },
+      "queueBefore": {
+        "records": 2,
+        "allOwned": true,
+        "unrelatedCaptures": 0
+      },
+      "indexStates": [
+        {
+          "evidence_type": "highlight",
+          "state": "ready",
+          "count": 1
+        },
+        {
+          "evidence_type": "reflection",
+          "state": "ready",
+          "count": 1
+        }
+      ]
+    },
+    "source-vector-proof": {
+      "method": "Copied actual worker-generated vector for byte-for-byte identical full synthetic source text",
+      "model": "gemini-embedding-001",
+      "dimensions": 768,
+      "taskType": "provider default",
+      "textSha256": "d817db673e021d17b54c5910a8813f92c78f7545b17ce27ef73e6a55b1ceddf0",
+      "storedVectorSha256": "152448a210068e4a0b035579d6ed2d3e67cb29b8a32822efd96dd369b631c7ae",
+      "wholeText": true,
+      "additionalProviderRequests": 0
+    },
+    "notes-proof": {
+      "responses": [
+        {
+          "url": "/api/chat/notes",
+          "status": 200,
+          "request": {
+            "scope": {
+              "version": 1,
+              "itemType": "reflection"
+            },
+            "scopeLabel": "reflections only",
+            "id": "_r_0_:0",
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "type": "text",
+                    "text": "Quote my reflection exactly about where I will leave my phone and what I will work on tomorrow."
+                  }
+                ],
+                "id": "tfwqXd7txUWbD1wH",
+                "role": "user"
+              }
+            ],
+            "trigger": "submit-message"
+          },
+          "body": "Tomorrow I will leave my phone in the kitchen and spend the first hour drafting my proposal before checking messages."
+        }
+      ],
+      "text": "Search\nBrowse\nFocus\n2\nNotes\nJ\nJ\nNotes\n\nReview highlights across your library, filter what matters, and jump back to the exact saved passage.\n\nClose notes AI\nAll\nNotes\nHighlights\nReflections\nAll content\nA Quiet Morning\nNewest first\nOldest first\n1 result\nfrom 1 loaded entries\nClear filters\nReflections only\nA Quiet Morning\nREFLECTION\n•\nSep 19, 3:13 AM\n\nYOUR REFLECTION\n\nTomorrow I will leave my phone in the kitchen and spend the first hour drafting my proposal before checking messages.\n\nEdit\nAsk These Notes\n\nQuote my reflection exactly about where I will leave my phone and what I will work on tomorrow.\n\nTomorrow I will leave my phone in the kitchen and spend the first hour drafting my proposal before checking messages.\n\nPull the strongest theme\nShow supporting notes\nFind what's missing\nMatching saved captures\nreflections only\nStart new chat\n\nGrounded only in the notes currently in scope.",
+      "scope": "?type=reflection&ask=1"
+    },
+    "library-proof": {
+      "responses": [
+        {
+          "url": "/api/chat",
+          "status": 200,
+          "request": {
+            "id": "3DjINCfQJzeJ7R0b",
+            "messages": [
+              {
+                "parts": [
+                  {
+                    "type": "text",
+                    "text": "How does my written note qualify the current focus advice in A Quiet Morning, and what did I decide to do tomorrow?"
+                  }
+                ],
+                "id": "V1fNUtsRgU5ricWn",
+                "role": "user"
+              }
+            ],
+            "trigger": "submit-message"
+          },
+          "body": "data: {\"type\":\"start\"}\n\ndata: {\"type\":\"start-step\"}\n\ndata: {\"type\":\"text-start\",\"id\":\"0\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Here \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"is \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"what \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"saved \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"captures \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"show, \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"keeping \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"each \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"voice \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"distinct:\\n\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"**The \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"source's \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"advice \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"(your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"highlight \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"from \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"*A \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Quiet \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Morning*):**\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"- \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Reserve \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"the \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"first \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"uninterrupted \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"hour \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"for \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"difficult \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"work \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"before \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"opening \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"email.\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"- \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Keep \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"notifications \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"off \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"until \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"that \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"hour \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"is \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"complete.\\n\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"**Your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"qualification \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"(your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"note, \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"not \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"the \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"author's \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"words):**\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"- \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"You \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"disagreed \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"with \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"applying \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"that \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"advice \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"absolutely. \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Specifically, \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"you \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"wrote \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"that \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"helping \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"recovering \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"father \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"takes \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"priority \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"over \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"a \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"focus \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"block \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"— \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"meaning \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"you \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"would \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"not \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"refuse \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"every \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"interruption \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"in \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"that \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"circumstance.\\n\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"**Your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"decision \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"for \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"tomorrow \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"(your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"personal \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"reflection):**\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"- \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Leave \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"phone \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"in \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"the \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"kitchen \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"and \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"spend \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"the \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"first \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"hour \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"drafting \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"proposal \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"before \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"checking \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"messages.\\n\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"---\\n\\n\"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"In \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"short: \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"you \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"broadly \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"accepted \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"the \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"source's \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"focus-hour \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"idea \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"but \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"carved \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"out \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"a \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"personal \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"exception \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"— \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"caregiving \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"for \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"father \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"overrides \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"the \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"rule. \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"Your \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"reflection \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"then \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"translated \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"the \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"general \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"advice \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"into \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"a \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"concrete \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"next-day \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"plan \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"(phone \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"in \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"kitchen, \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"proposal \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"first, \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"messages \"}\n\ndata: {\"type\":\"text-delta\",\"id\":\"0\",\"delta\":\"after).\"}\n\ndata: {\"type\":\"text-end\",\"id\":\"0\"}\n\ndata: {\"type\":\"finish-step\"}\n\ndata: {\"type\":\"finish\",\"finishReason\":\"stop\"}\n\ndata: [DONE]\n\n"
+        }
+      ],
+      "text": "Search\nBrowse\nFocus\n2\nNotes\nJ\nJ\nAsk My Library\n\nAnswers grounded in your library, reading history, and saved content\n\nExport\n\nLIBRARY SCOPE\n\n1 in library\n1 completed\n0 in progress\n0 saved but not started\n\nHow does my written note qualify the current focus advice in A Quiet Morning, and what did I decide to do tomorrow?\n\nHere is what your saved captures show, keeping each voice distinct:\n\nThe source's advice (your highlight from A Quiet Morning):\n\nReserve the first uninterrupted hour for difficult work before opening email.\nKeep notifications off until that hour is complete.\n\nYour qualification (your note, not the author's words):\n\nYou disagreed with applying that advice absolutely. Specifically, you wrote that helping your recovering father takes priority over a focus block — meaning you would not refuse every interruption in that circumstance.\n\nYour decision for tomorrow (your personal reflection):\n\nLeave your phone in the kitchen and spend the first hour drafting your proposal before checking messages.\n\nIn short: you broadly accepted the source's focus-hour idea but carved out a personal exception — caregiving for your father overrides the rule. Your reflection then translated the general advice into a concrete next-day plan (phone in kitchen, proposal first, messages after).\n\nWhich source says this?\nSummarize the overlap\nShow me another perspective\n1 in library\nEnter to send · Shift+Enter for newline\n\nLibrary-scoped assistant · Grounded in your library metadata, reading history, and saved passages when relevant.",
+      "url": "http://localhost:3305/ask",
+      "assistantAnswer": "Here is what your saved captures show, keeping each voice distinct:\n\n**The source's advice (your highlight from *A Quiet Morning*):**\n- Reserve the first uninterrupted hour for difficult work before opening email.\n- Keep notifications off until that hour is complete.\n\n**Your qualification (your note, not the author's words):**\n- You disagreed with applying that advice absolutely. Specifically, you wrote that helping your recovering father takes priority over a focus block — meaning you would not refuse every interruption in that circumstance.\n\n**Your decision for tomorrow (your personal reflection):**\n- Leave your phone in the kitchen and spend the first hour drafting your proposal before checking messages.\n\n---\n\nIn short: you broadly accepted the source's focus-hour idea but carved out a personal exception — caregiving for your father overrides the rule. Your reflection then translated the general advice into a concrete next-day plan (phone in kitchen, proposal first, messages after).",
+      "assistantAnswerSha256": "1bd6e91417a566465e94daabdb19258be9bcdd7acbd3d0053c2c345fa1c21702"
+    },
+    "reader-proof": {
+      "url": "http://localhost:3305/read/5a2c40d1-761d-4e81-b137-09be0192ce5f/a-quiet-morning",
+      "highlightText": "Reserve the first uninterrupted hour for difficult work before opening email. Keep notifications off until that hour is complete.",
+      "errorOverlay": false
+    },
+    "export-proof": {
+      "sha256": "7b8f8cb9b2d84c8aaf1003bea9d8a9931f2ccd1426d5f4ae561493262de3119c",
+      "bytes": 5106,
+      "collections": [
+        "preferences",
+        "user_library",
+        "highlights",
+        "reflections",
+        "reading_activity",
+        "feedback",
+        "submitted_requests",
+        "request_votes",
+        "notification_preferences",
+        "request_notifications",
+        "ai_usage"
+      ],
+      "highlights": 1,
+      "attachedNotes": 1,
+      "reflections": 1,
+      "aiUsageEvents": 2,
+      "captureTextExact": true,
+      "topLevelKeys": [
+        "export_date",
+        "schema_version",
+        "snapshot",
+        "data",
+        "timings"
+      ]
+    },
+    "refresh-proof": {
+      "refreshSucceeded": true,
+      "sessionIdUnchanged": true,
+      "tokenChanged": true,
+      "draftPreserved": true,
+      "errorOverlay": false,
+      "hasContent": true
+    },
+    "revocation-proof": {
+      "signedOutThroughUi": true,
+      "authSessionsRemaining": 0,
+      "oldJwtUnexpired": true,
+      "oldJwtStillAcceptedByAuthGetUser": false,
+      "results": [
+        {
+          "path": "/api/chat/notes",
+          "status": 401,
+          "body": "{\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Please log in to use Ask These Notes\",\"request_id\":\"c0a668a0-53ef-489d-a4af-eaee938effae\"}}"
+        },
+        {
+          "path": "/api/chat",
+          "status": 401,
+          "body": "{\"error\":{\"code\":\"UNAUTHORIZED\",\"message\":\"Please log in to use Ask My Library\",\"request_id\":\"610dec13-9d03-45bb-971e-d3c9e6cb5225\"}}"
+        }
+      ],
+      "aiUsageBefore": 2,
+      "aiUsageAfter": 2,
+      "aiUsageUnchanged": true,
+      "ui": {
+        "chatCacheKeys": [
+          "netflux_notes_chat_session:v2:%5B%22b0ea69bb-7777-497b-88fd-bbd5e825f53e%22%2C%22e460bf6a-34e3-464f-b5c5-7a5a73e42412%22%5D:%7B%22version%22%3A1%2C%22itemType%22%3A%22reflection%22%7D"
+        ],
+        "url": "http://localhost:3305/login"
+      },
+      "credentialsRetainedInArtifact": false
+    }
+  },
+  "independentAnswerReview": {
+    "reviewer": "/root/backend_audit",
+    "reviewType": "independent_ai",
+    "grounding": "PASS",
+    "attribution": "PASS",
+    "requestedFacets": "PASS",
+    "responseSha256": "1bd6e91417a566465e94daabdb19258be9bcdd7acbd3d0053c2c345fa1c21702",
+    "note": "Visible answer identifies copied highlight; current editorial segment inclusion cannot be proven from UI output alone."
+  },
+  "providerBudget": {
+    "plannedRequests": 8,
+    "maximumAuthorized": 10,
+    "noManualRetries": true,
+    "successfulChatRouteRequests": 2,
+    "actualProviderRequestCount": null,
+    "actualProviderTokens": null,
+    "measurementLimitation": "Production routes do not expose or persist selector/answer provider usage or assessment output. No transport tracing was added. Successful path includes two worker embedding batches, two query embeddings, two selections, one answer, and at most one editorial span embedding."
+  },
+  "cleanup": {
+    "verified": true,
+    "remaining": {
+      "account": 0,
+      "source": 0,
+      "index_records": 0,
+      "sessions": 0
+    },
+    "browserClosed": true,
+    "productionServerStopped": true
+  },
+  "limitations": [
+    "Same-session refresh proof ran on a168ee0; subsequent87599d1 changed only quote-field routing, and final browser journey ran final87599d1 build.",
+    "Existing Notes chat cache remained in sessionStorage after Settings sign-out while Notes was unmounted. It is owner/session/scope keyed; signed-out UI did not expose it. This is recorded separately from the successful route authorization denial.",
+    "Local Auth getUser already rejected the old revoked cookie; these401 route checks do not independently prove execution of the added live-session RPC guard. Focused route and database tests cover that guard.",
+    "Current editorial passage fixture vector reused the real worker vector only after full text, model, default task and dimension equivalence checks; publishing/backfill workflow was not exercised.",
+    "This small synthetic-account journey does not replace held-out multi-run database and provider quality evaluation."
+  ]
+}

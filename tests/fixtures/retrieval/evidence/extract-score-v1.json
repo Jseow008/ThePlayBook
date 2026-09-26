@@ -1,0 +1,3386 @@
+{
+  "complete": true,
+  "expectedRecords": 174,
+  "actualRecords": 174,
+  "runs": [
+    {
+      "run": 1,
+      "perClass": {
+        "source_segment": {
+          "passed": 18,
+          "total": 18,
+          "rate": 1
+        },
+        "highlight": {
+          "passed": 16,
+          "total": 16,
+          "rate": 1
+        },
+        "reflection": {
+          "passed": 16,
+          "total": 16,
+          "rate": 1
+        }
+      },
+      "recallMacro": 1,
+      "irrelevantRejection": {
+        "passed": 57,
+        "total": 58,
+        "rate": 0.9827586206896551
+      },
+      "abstention": {
+        "passed": 16,
+        "total": 16,
+        "rate": 1
+      },
+      "exactQuoteFidelity": {
+        "passed": 12,
+        "total": 12,
+        "rate": 1
+      },
+      "forbiddenEvidenceExclusion": {
+        "passed": 58,
+        "total": 58,
+        "rate": 1
+      }
+    },
+    {
+      "run": 2,
+      "perClass": {
+        "source_segment": {
+          "passed": 18,
+          "total": 18,
+          "rate": 1
+        },
+        "highlight": {
+          "passed": 16,
+          "total": 16,
+          "rate": 1
+        },
+        "reflection": {
+          "passed": 16,
+          "total": 16,
+          "rate": 1
+        }
+      },
+      "recallMacro": 1,
+      "irrelevantRejection": {
+        "passed": 57,
+        "total": 58,
+        "rate": 0.9827586206896551
+      },
+      "abstention": {
+        "passed": 16,
+        "total": 16,
+        "rate": 1
+      },
+      "exactQuoteFidelity": {
+        "passed": 12,
+        "total": 12,
+        "rate": 1
+      },
+      "forbiddenEvidenceExclusion": {
+        "passed": 58,
+        "total": 58,
+        "rate": 1
+      }
+    },
+    {
+      "run": 3,
+      "perClass": {
+        "source_segment": {
+          "passed": 18,
+          "total": 18,
+          "rate": 1
+        },
+        "highlight": {
+          "passed": 16,
+          "total": 16,
+          "rate": 1
+        },
+        "reflection": {
+          "passed": 16,
+          "total": 16,
+          "rate": 1
+        }
+      },
+      "recallMacro": 1,
+      "irrelevantRejection": {
+        "passed": 57,
+        "total": 58,
+        "rate": 0.9827586206896551
+      },
+      "abstention": {
+        "passed": 16,
+        "total": 16,
+        "rate": 1
+      },
+      "exactQuoteFidelity": {
+        "passed": 12,
+        "total": 12,
+        "rate": 1
+      },
+      "forbiddenEvidenceExclusion": {
+        "passed": 58,
+        "total": 58,
+        "rate": 1
+      }
+    }
+  ],
+  "aggregate": {
+    "recallPerClass": {
+      "source_segment": 1,
+      "highlight": 1,
+      "reflection": 1
+    },
+    "recallMacro": 1,
+    "irrelevantRejection": 0.9827586206896551,
+    "abstention": 1,
+    "exactQuoteFidelity": 1,
+    "forbiddenEvidenceExclusion": 1
+  },
+  "numericalThresholdsPass": true,
+  "tokenProofComplete": true,
+  "providerDiagnosticVerdict": "THRESHOLDS_MET_IN_DIAGNOSTIC_ONLY",
+  "actualGenerationUsageComplete": true,
+  "answerReview": {
+    "required": 90,
+    "reviewed": 90,
+    "allGrounded": true,
+    "allAnswerComplete": true,
+    "independentReviewRequired": true,
+    "humanReviewed": 0,
+    "aiReviewed": 90,
+    "pending": []
+  },
+  "conflictContext": [
+    {
+      "caseId": "notes-highlight-willow",
+      "run": 1,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-willow",
+      "run": 2,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-willow",
+      "run": 3,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-aspen",
+      "run": 1,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-aspen",
+      "run": 2,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-aspen",
+      "run": 3,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-beech",
+      "run": 1,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-beech",
+      "run": 2,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-beech",
+      "run": 3,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-sycamore",
+      "run": 1,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-sycamore",
+      "run": 2,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "notes-highlight-sycamore",
+      "run": 3,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-cedar",
+      "run": 1,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-cedar",
+      "run": 2,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-cedar",
+      "run": 3,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-willow",
+      "run": 1,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-willow",
+      "run": 2,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-willow",
+      "run": 3,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-aspen",
+      "run": 1,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-aspen",
+      "run": 2,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    },
+    {
+      "caseId": "comparison-aspen",
+      "run": 3,
+      "fullStoredNotePresent": true,
+      "attributionReview": true
+    }
+  ],
+  "supportOutcomes": [
+    {
+      "run": 1,
+      "caseId": "library-cedar",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9b81b05f-4011-5f5b-85ce-c08416a4be7f"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-cedar",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "f00e68c3-0262-5510-b133-e1f6e297c674"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-cedar",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "e1a8e64e-1bd1-5a4a-9bc0-b1f50e381713"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-birch",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9cfa6f3d-f3f1-53af-9114-a6bb921169dd"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-birch",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "c400b56b-ce68-5b8d-b0b1-e1b42cd291c3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-birch",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "7ce05fe6-7fa5-5a9d-9723-7989c011c9de"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-larch",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "0de6abf3-5c68-5781-9dc3-968784af49d5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-larch",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "108dc5a0-091c-570d-8942-f2a44618588e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-larch",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "d77925f0-d7a3-552b-91c8-e93d774a2bc6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-elm",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "bf0ac535-728d-554a-aff4-326bc6c5db92"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-elm",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "82beba5d-0e28-5f89-8753-2994017658b8"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-elm",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "36b877d8-7f29-564c-8cd7-1dbceaa90c98"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-willow",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "6b38a2d2-754c-5098-945d-89527d19b4d3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": false,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-willow",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "54194630-6ecd-5725-bc99-551ed8cfe056"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-willow",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "73187074-0916-5045-8145-52da9eb2d20e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-aspen",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "4176c23e-b621-52e0-819e-3634af4845c0"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-aspen",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "b5d0d3d6-72b9-5dd0-a810-09ee43a38250"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-aspen",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "c93ddea5-e8d6-5cde-a655-cf160785f2b6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-hazel",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "fa1cb017-c4fc-5eca-93ab-8e5aaa53ef0b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-hazel",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "09518408-3339-563f-b2b1-6608c2367aad"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-hazel",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "95338f87-800d-537c-878a-41e20ca07f2e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-alder",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9d69db77-8267-503c-8e2a-d5927effb390"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-alder",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "00ced45d-892a-5fab-a444-e3bd7477dcea"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-alder",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "76c210d7-55a3-5198-8789-edfd9074dec5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-beech",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "dff77b9c-df13-5fae-b13d-18e694d5e71c"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-beech",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "2a41dc46-360a-5e5a-a0e3-87fc8edefb51"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-beech",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "07885fe5-9c94-5124-b1b5-342efdac1099"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-juniper",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "24b9e12c-bd4c-5af0-9f91-f0bc3955d2e2"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-juniper",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "eff7b601-5475-5eaa-93cc-fe26487759d7"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-juniper",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "1cba8c5a-4058-5abd-aa24-71cc038929e2"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-sycamore",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "00e89110-9cc3-566f-be00-ffecea79e36b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-sycamore",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "ad4be725-053f-5875-a76a-5033de1b6b79"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-sycamore",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "6632d991-69ca-5d78-92ab-3bc43810119b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "library-rowan",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "4cce4710-8e43-5058-b84c-46fa5cc20281"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-highlight-rowan",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "a8d436ed-8a0d-5c71-abfa-339ccccc6fbb"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "notes-reflection-rowan",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "2c20d925-5835-5336-b22c-f668c4651b90"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "comparison-cedar",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "9b81b05f-4011-5f5b-85ce-c08416a4be7f"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "f00e68c3-0262-5510-b133-e1f6e297c674"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "comparison-birch",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "9cfa6f3d-f3f1-53af-9114-a6bb921169dd"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "7ce05fe6-7fa5-5a9d-9723-7989c011c9de"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "comparison-larch",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "0de6abf3-5c68-5781-9dc3-968784af49d5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "108dc5a0-091c-570d-8942-f2a44618588e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "d77925f0-d7a3-552b-91c8-e93d774a2bc6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "comparison-elm",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "bf0ac535-728d-554a-aff4-326bc6c5db92"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "personal-adjustment",
+          "selectedEvidenceIds": [
+            "82beba5d-0e28-5f89-8753-2994017658b8",
+            "36b877d8-7f29-564c-8cd7-1dbceaa90c98"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "comparison-willow",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "6b38a2d2-754c-5098-945d-89527d19b4d3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "54194630-6ecd-5725-bc99-551ed8cfe056"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "73187074-0916-5045-8145-52da9eb2d20e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "comparison-aspen",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "4176c23e-b621-52e0-819e-3634af4845c0"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "b5d0d3d6-72b9-5dd0-a810-09ee43a38250"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "c93ddea5-e8d6-5cde-a655-cf160785f2b6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-absent-measurement",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-linden-identity",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-withdrawn-editorial",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-prompt-only",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-notes-type-scope",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-glossary-no-value",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-embedded-instruction",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "abstain-room-identity",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-other-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-other-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-other-library",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-deleted-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-deleted-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-deleted-note",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-revoked-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 1,
+      "caseId": "exclude-revoked-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-cedar",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9b81b05f-4011-5f5b-85ce-c08416a4be7f"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-cedar",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "f00e68c3-0262-5510-b133-e1f6e297c674"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-cedar",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "e1a8e64e-1bd1-5a4a-9bc0-b1f50e381713"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-birch",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9cfa6f3d-f3f1-53af-9114-a6bb921169dd"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-birch",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "c400b56b-ce68-5b8d-b0b1-e1b42cd291c3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-birch",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "7ce05fe6-7fa5-5a9d-9723-7989c011c9de"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-larch",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "0de6abf3-5c68-5781-9dc3-968784af49d5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-larch",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "108dc5a0-091c-570d-8942-f2a44618588e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-larch",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "d77925f0-d7a3-552b-91c8-e93d774a2bc6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-elm",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "bf0ac535-728d-554a-aff4-326bc6c5db92"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-elm",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "82beba5d-0e28-5f89-8753-2994017658b8"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-elm",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "36b877d8-7f29-564c-8cd7-1dbceaa90c98"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-willow",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "6b38a2d2-754c-5098-945d-89527d19b4d3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": false,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-willow",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "54194630-6ecd-5725-bc99-551ed8cfe056"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-willow",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "73187074-0916-5045-8145-52da9eb2d20e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-aspen",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "4176c23e-b621-52e0-819e-3634af4845c0"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-aspen",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "b5d0d3d6-72b9-5dd0-a810-09ee43a38250"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-aspen",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "c93ddea5-e8d6-5cde-a655-cf160785f2b6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-hazel",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "fa1cb017-c4fc-5eca-93ab-8e5aaa53ef0b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-hazel",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "09518408-3339-563f-b2b1-6608c2367aad"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-hazel",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "95338f87-800d-537c-878a-41e20ca07f2e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-alder",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9d69db77-8267-503c-8e2a-d5927effb390"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-alder",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "00ced45d-892a-5fab-a444-e3bd7477dcea"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-alder",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "76c210d7-55a3-5198-8789-edfd9074dec5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-beech",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "dff77b9c-df13-5fae-b13d-18e694d5e71c"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-beech",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "2a41dc46-360a-5e5a-a0e3-87fc8edefb51"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-beech",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "07885fe5-9c94-5124-b1b5-342efdac1099"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-juniper",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "24b9e12c-bd4c-5af0-9f91-f0bc3955d2e2"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-juniper",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "eff7b601-5475-5eaa-93cc-fe26487759d7"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-juniper",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "1cba8c5a-4058-5abd-aa24-71cc038929e2"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-sycamore",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "00e89110-9cc3-566f-be00-ffecea79e36b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-sycamore",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "ad4be725-053f-5875-a76a-5033de1b6b79"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-sycamore",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "6632d991-69ca-5d78-92ab-3bc43810119b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "library-rowan",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "4cce4710-8e43-5058-b84c-46fa5cc20281"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-highlight-rowan",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "a8d436ed-8a0d-5c71-abfa-339ccccc6fbb"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "notes-reflection-rowan",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "2c20d925-5835-5336-b22c-f668c4651b90"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "comparison-cedar",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "9b81b05f-4011-5f5b-85ce-c08416a4be7f"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "f00e68c3-0262-5510-b133-e1f6e297c674"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "comparison-birch",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "9cfa6f3d-f3f1-53af-9114-a6bb921169dd"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "7ce05fe6-7fa5-5a9d-9723-7989c011c9de"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "comparison-larch",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "0de6abf3-5c68-5781-9dc3-968784af49d5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "108dc5a0-091c-570d-8942-f2a44618588e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "d77925f0-d7a3-552b-91c8-e93d774a2bc6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "comparison-elm",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "bf0ac535-728d-554a-aff4-326bc6c5db92"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "personal-adjustment",
+          "selectedEvidenceIds": [
+            "82beba5d-0e28-5f89-8753-2994017658b8",
+            "36b877d8-7f29-564c-8cd7-1dbceaa90c98"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "comparison-willow",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "6b38a2d2-754c-5098-945d-89527d19b4d3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "54194630-6ecd-5725-bc99-551ed8cfe056"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "73187074-0916-5045-8145-52da9eb2d20e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "comparison-aspen",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "4176c23e-b621-52e0-819e-3634af4845c0"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "b5d0d3d6-72b9-5dd0-a810-09ee43a38250"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "c93ddea5-e8d6-5cde-a655-cf160785f2b6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-absent-measurement",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-linden-identity",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-withdrawn-editorial",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-prompt-only",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-notes-type-scope",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-glossary-no-value",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-embedded-instruction",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "abstain-room-identity",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-other-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-other-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-other-library",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-deleted-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-deleted-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-deleted-note",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-revoked-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 2,
+      "caseId": "exclude-revoked-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-cedar",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9b81b05f-4011-5f5b-85ce-c08416a4be7f"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-cedar",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "f00e68c3-0262-5510-b133-e1f6e297c674"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-cedar",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "e1a8e64e-1bd1-5a4a-9bc0-b1f50e381713"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-birch",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9cfa6f3d-f3f1-53af-9114-a6bb921169dd"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-birch",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "c400b56b-ce68-5b8d-b0b1-e1b42cd291c3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-birch",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "7ce05fe6-7fa5-5a9d-9723-7989c011c9de"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-larch",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "0de6abf3-5c68-5781-9dc3-968784af49d5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-larch",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "108dc5a0-091c-570d-8942-f2a44618588e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-larch",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "d77925f0-d7a3-552b-91c8-e93d774a2bc6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-elm",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "bf0ac535-728d-554a-aff4-326bc6c5db92"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-elm",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "82beba5d-0e28-5f89-8753-2994017658b8"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-elm",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "36b877d8-7f29-564c-8cd7-1dbceaa90c98"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-willow",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "6b38a2d2-754c-5098-945d-89527d19b4d3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": false,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-willow",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "54194630-6ecd-5725-bc99-551ed8cfe056"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-willow",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "73187074-0916-5045-8145-52da9eb2d20e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-aspen",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "4176c23e-b621-52e0-819e-3634af4845c0"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-aspen",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "b5d0d3d6-72b9-5dd0-a810-09ee43a38250"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-aspen",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "c93ddea5-e8d6-5cde-a655-cf160785f2b6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-hazel",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "fa1cb017-c4fc-5eca-93ab-8e5aaa53ef0b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-hazel",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "09518408-3339-563f-b2b1-6608c2367aad"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-hazel",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "95338f87-800d-537c-878a-41e20ca07f2e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-alder",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "9d69db77-8267-503c-8e2a-d5927effb390"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-alder",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "00ced45d-892a-5fab-a444-e3bd7477dcea"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-alder",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "76c210d7-55a3-5198-8789-edfd9074dec5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-beech",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "dff77b9c-df13-5fae-b13d-18e694d5e71c"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-beech",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "2a41dc46-360a-5e5a-a0e3-87fc8edefb51"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-beech",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "07885fe5-9c94-5124-b1b5-342efdac1099"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-juniper",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "24b9e12c-bd4c-5af0-9f91-f0bc3955d2e2"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-juniper",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "eff7b601-5475-5eaa-93cc-fe26487759d7"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-juniper",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "1cba8c5a-4058-5abd-aa24-71cc038929e2"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-sycamore",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "00e89110-9cc3-566f-be00-ffecea79e36b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-sycamore",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "ad4be725-053f-5875-a76a-5033de1b6b79"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-sycamore",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "6632d991-69ca-5d78-92ab-3bc43810119b"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "library-rowan",
+      "facets": [
+        {
+          "id": "editorial",
+          "selectedEvidenceIds": [
+            "4cce4710-8e43-5058-b84c-46fa5cc20281"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-highlight-rowan",
+      "facets": [
+        {
+          "id": "saved-field",
+          "selectedEvidenceIds": [
+            "a8d436ed-8a0d-5c71-abfa-339ccccc6fbb"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "notes-reflection-rowan",
+      "facets": [
+        {
+          "id": "personal-answer",
+          "selectedEvidenceIds": [
+            "2c20d925-5835-5336-b22c-f668c4651b90"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "comparison-cedar",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "9b81b05f-4011-5f5b-85ce-c08416a4be7f"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "f00e68c3-0262-5510-b133-e1f6e297c674"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "comparison-birch",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "9cfa6f3d-f3f1-53af-9114-a6bb921169dd"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "7ce05fe6-7fa5-5a9d-9723-7989c011c9de"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "comparison-larch",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "0de6abf3-5c68-5781-9dc3-968784af49d5"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "108dc5a0-091c-570d-8942-f2a44618588e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "d77925f0-d7a3-552b-91c8-e93d774a2bc6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "comparison-elm",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "bf0ac535-728d-554a-aff4-326bc6c5db92"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "personal-adjustment",
+          "selectedEvidenceIds": [
+            "82beba5d-0e28-5f89-8753-2994017658b8",
+            "36b877d8-7f29-564c-8cd7-1dbceaa90c98"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "comparison-willow",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "6b38a2d2-754c-5098-945d-89527d19b4d3"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "54194630-6ecd-5725-bc99-551ed8cfe056"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "73187074-0916-5045-8145-52da9eb2d20e"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "comparison-aspen",
+      "facets": [
+        {
+          "id": "current-source",
+          "selectedEvidenceIds": [
+            "4176c23e-b621-52e0-819e-3634af4845c0"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "saved-capture",
+          "selectedEvidenceIds": [
+            "b5d0d3d6-72b9-5dd0-a810-09ee43a38250"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        },
+        {
+          "id": "reflection",
+          "selectedEvidenceIds": [
+            "c93ddea5-e8d6-5cde-a655-cf160785f2b6"
+          ],
+          "covered": true,
+          "fieldsPresent": true
+        }
+      ],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-absent-measurement",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-linden-identity",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-withdrawn-editorial",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-prompt-only",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-notes-type-scope",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-glossary-no-value",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-embedded-instruction",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "abstain-room-identity",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-other-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-other-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-other-library",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-deleted-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-deleted-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-deleted-note",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-revoked-highlight",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    },
+    {
+      "run": 3,
+      "caseId": "exclude-revoked-reflection",
+      "facets": [],
+      "allFacetsCovered": true,
+      "selectedFacetFieldsPresent": true,
+      "acceptableSetPresent": true,
+      "forbiddenIdsExcluded": true,
+      "interpretation": "Supplementary rubric outcomes; required-ID recall is unchanged. Field-presence is not answer-attribution proof."
+    }
+  ],
+  "releaseGate": "NOT_ESTABLISHED: synthetic provider diagnostic; actual database source RPC, live authorization/freshness, response-scoped citations and journey are outside this harness",
+  "limitations": [
+    "Missing runs/errors count as failures, never disappear from denominators.",
+    "Irrelevant rejection is case-weighted over all 58 cases: every selected ID must be in the frozen eligibleIds; empty eligibility therefore requires zero selected IDs. Named distractors are not the only rejected evidence.",
+    "Unknown abstentions count as failures until independently reviewed; no text heuristic or automatic generator self-grade grants a pass.",
+    "Exact quote and empty-evidence branches are repeated deterministic outcomes, not claimed as independent Anthropic generations."
+  ]
+}

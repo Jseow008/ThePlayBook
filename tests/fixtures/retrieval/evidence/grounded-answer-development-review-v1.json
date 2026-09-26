@@ -1,0 +1,1254 @@
+{
+  "version": "grounded-answer-development-review-v1",
+  "reviewer": "/root/backend_audit",
+  "reviewerKind": "ai",
+  "independent": true,
+  "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+  "sourceArtifact": "tests/fixtures/retrieval/evidence/grounded-answer-development-v1.json",
+  "sourceArtifactSha256": "a577eba818f66a0bdd0e596d4b3afd863896d31cff1b94582c3c723f52e05e50",
+  "scope": "Independent manual review of all24 actual completed generation responses against exact prepared contexts and the frozen four-criterion development rubric. No provider calls, prompt edits, or held-out rerun.",
+  "summary": {
+    "baseline": {
+      "passed": 6,
+      "total": 6
+    },
+    "candidate": {
+      "passed": 18,
+      "total": 18
+    },
+    "allFourCriteriaPass": 24,
+    "supportedUnrequestedExtras": 0,
+    "conclusion": "Both conditions pass every case. The candidate preserves facts and authorship and is shorter in some comparisons; this is a small development non-regression result, not demonstrated grounding improvement over the baseline or a release-gate pass.",
+    "limitations": [
+      "Six synthetic cases with one baseline and three candidate samples do not estimate broad factual error rates.",
+      "Previously failed held-out answers remain failed and unchanged.",
+      "The assessment permits faithful synthesis and the rubric’s direct arithmetic; no exact-string answer key or prose-length gate was used."
+    ]
+  },
+  "records": [
+    {
+      "caseId": "grounded-dev-01",
+      "condition": "baseline",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "e3aa08a6f50483f2b9c67490f583a2617c5c09af049452133117bb365497b24e",
+      "actualContextSha256": "1bd7f2713f1fb675068eec6c46932cff33da43163cb562451648dff0fc509f0a",
+      "systemSha256": "c6e5d61da65ce60e9b3dd74c0443287cfabcf649f9a27c6dc9854bf74307c00b",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection, you set the foam wedge between the back of the picture frame and the wall. You noted that you did not put it under the frame."
+        ],
+        "rationale": "Identifies the statement as the user’s reflection, rather than current editorial guidance."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-01",
+      "condition": "candidate",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "e3aa08a6f50483f2b9c67490f583a2617c5c09af049452133117bb365497b24e",
+      "actualContextSha256": "1bd7f2713f1fb675068eec6c46932cff33da43163cb562451648dff0fc509f0a",
+      "systemSha256": "d51e77e88b4611e4b1b18ef0d4bbf9f6c1377069e05faac85060e201f5381719",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection, you set the foam wedge between the back of the picture frame and the wall. You noted that you did not put it under the frame."
+        ],
+        "rationale": "Identifies the statement as the user’s reflection, rather than current editorial guidance."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-01",
+      "condition": "candidate",
+      "run": 2,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "5d11ea36cffe192f77ed7a50fc9669cbedb3b568dbc52dd95ac5869dbf41b5ec",
+      "actualContextSha256": "1bd7f2713f1fb675068eec6c46932cff33da43163cb562451648dff0fc509f0a",
+      "systemSha256": "d51e77e88b4611e4b1b18ef0d4bbf9f6c1377069e05faac85060e201f5381719",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection, you set the foam wedge between the back of the picture frame and the wall. You also noted that you did not put it under the frame."
+        ],
+        "rationale": "Identifies the statement as the user’s reflection, rather than current editorial guidance."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-01",
+      "condition": "candidate",
+      "run": 3,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "e3aa08a6f50483f2b9c67490f583a2617c5c09af049452133117bb365497b24e",
+      "actualContextSha256": "1bd7f2713f1fb675068eec6c46932cff33da43163cb562451648dff0fc509f0a",
+      "systemSha256": "d51e77e88b4611e4b1b18ef0d4bbf9f6c1377069e05faac85060e201f5381719",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "Preserves the wedge between the frame back and wall, including the explicitly allowed not-under clarification. No cleaning detail or placement motive is introduced."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection, you set the foam wedge between the back of the picture frame and the wall. You noted that you did not put it under the frame."
+        ],
+        "rationale": "Identifies the statement as the user’s reflection, rather than current editorial guidance."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "between the back of the picture frame and the wall",
+          "did not put it under the frame"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-02",
+      "condition": "baseline",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "ef86026f682b3fbb16c0957cab1d322897f1b6bec00c872901569b8246ad8ddc",
+      "actualContextSha256": "d35f3f4be7fbc3b691ce82003b34e78148c87cd8432037f5dfc699ee4075cbc3",
+      "systemSha256": "4d82075b6115b4d498c0ca6f2708bcb6e827f668d02d5c786e0bf8632d2188fd",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection on Friday's lino print, you rolled ink onto the printing plate immediately before laying the paper on it."
+        ],
+        "rationale": "Attributes the sequence to the user’s reflection."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-02",
+      "condition": "candidate",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "ef86026f682b3fbb16c0957cab1d322897f1b6bec00c872901569b8246ad8ddc",
+      "actualContextSha256": "d35f3f4be7fbc3b691ce82003b34e78148c87cd8432037f5dfc699ee4075cbc3",
+      "systemSha256": "bdbe11906756d95422bbf71fa5046291a7e611de96cedaf0c9fdd012e4735e62",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection on Friday's lino print, you rolled ink onto the printing plate immediately before laying the paper on it."
+        ],
+        "rationale": "Attributes the sequence to the user’s reflection."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-02",
+      "condition": "candidate",
+      "run": 2,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "ef86026f682b3fbb16c0957cab1d322897f1b6bec00c872901569b8246ad8ddc",
+      "actualContextSha256": "d35f3f4be7fbc3b691ce82003b34e78148c87cd8432037f5dfc699ee4075cbc3",
+      "systemSha256": "bdbe11906756d95422bbf71fa5046291a7e611de96cedaf0c9fdd012e4735e62",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection on Friday's lino print, you rolled ink onto the printing plate immediately before laying the paper on it."
+        ],
+        "rationale": "Attributes the sequence to the user’s reflection."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-02",
+      "condition": "candidate",
+      "run": 3,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "ef86026f682b3fbb16c0957cab1d322897f1b6bec00c872901569b8246ad8ddc",
+      "actualContextSha256": "d35f3f4be7fbc3b691ce82003b34e78148c87cd8432037f5dfc699ee4075cbc3",
+      "systemSha256": "bdbe11906756d95422bbf71fa5046291a7e611de96cedaf0c9fdd012e4735e62",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "Correctly identifies rolling ink onto the plate as the immediate predecessor to paper placement; the registration check and later edition numbering do not replace that relation."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to your reflection on Friday's lino print, you rolled ink onto the printing plate immediately before laying the paper on it."
+        ],
+        "rationale": "Attributes the sequence to the user’s reflection."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "rolled ink onto the printing plate immediately before laying the paper on it"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-03",
+      "condition": "baseline",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "c5b67769a68deb4f5446ca226f01247adabec37232845f68c727093f2f5dacdf",
+      "actualContextSha256": "4cc7a86f3e2bd69f027497429426d807d6047bd60c8e9e94d4d3e48b349dee2e",
+      "systemSha256": "8bbb811cbb44b25af7b29fb5e7e6f67c4d2ac8929e9143c0d440b171d09addb9",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to the stored highlight, Mira the courier collected six small frames."
+        ],
+        "rationale": "Identifies the record as the stored highlight."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-03",
+      "condition": "candidate",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "c5b67769a68deb4f5446ca226f01247adabec37232845f68c727093f2f5dacdf",
+      "actualContextSha256": "4cc7a86f3e2bd69f027497429426d807d6047bd60c8e9e94d4d3e48b349dee2e",
+      "systemSha256": "0c9108e9d0270849ec5df60c5ea863282dfebc0f317ea08b9f56cf892dbdee77",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to the stored highlight, Mira the courier collected six small frames."
+        ],
+        "rationale": "Identifies the record as the stored highlight."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-03",
+      "condition": "candidate",
+      "run": 2,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "c5b67769a68deb4f5446ca226f01247adabec37232845f68c727093f2f5dacdf",
+      "actualContextSha256": "4cc7a86f3e2bd69f027497429426d807d6047bd60c8e9e94d4d3e48b349dee2e",
+      "systemSha256": "0c9108e9d0270849ec5df60c5ea863282dfebc0f317ea08b9f56cf892dbdee77",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to the stored highlight, Mira the courier collected six small frames."
+        ],
+        "rationale": "Identifies the record as the stored highlight."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-03",
+      "condition": "candidate",
+      "run": 3,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "c5b67769a68deb4f5446ca226f01247adabec37232845f68c727093f2f5dacdf",
+      "actualContextSha256": "4cc7a86f3e2bd69f027497429426d807d6047bd60c8e9e94d4d3e48b349dee2e",
+      "systemSha256": "0c9108e9d0270849ec5df60c5ea863282dfebc0f317ea08b9f56cf892dbdee77",
+      "modelId": "claude-haiku-4-5-20251001",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "Retains Mira’s courier role, collection action, quantity six and small-frame description. It does not merge the installer’s different action or count."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "According to the stored highlight, Mira the courier collected six small frames."
+        ],
+        "rationale": "Identifies the record as the stored highlight."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Mira the courier collected six small frames"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-04",
+      "condition": "baseline",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "99abf613164aa3617c2e3492fd0095c7a6fcff2229b3d11d5e9befb032b727e5",
+      "actualContextSha256": "d76008b3ad460452ace560c484c86ab83cac610af32281bb3ef8b0ce3949729a",
+      "systemSha256": "063a82c7c12fb6d39ba6c23b47582b2d3de25b327b9738aedc311d564ef23d07",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "Here's what each source says:"
+        ],
+        "rationale": "Explicitly labels current editorial guidance and the user’s note separately."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": "The closing opposite-placement shorthand is less precise than the explicit spatial clauses, but those clauses accurately state below versus level and do not claim an above placement. It is a direct contrast, not a substituted requested fact."
+    },
+    {
+      "caseId": "grounded-dev-04",
+      "condition": "candidate",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "346bae3d0033da57ce6eb81a29f518f3c5dbc84452e35254a5432fd75c91edc3",
+      "actualContextSha256": "d76008b3ad460452ace560c484c86ab83cac610af32281bb3ef8b0ce3949729a",
+      "systemSha256": "6fdd485f72ead2fe25a746e5a1812771eb37944bd10c564576a9d0159628f847",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Current guide (editorial source):**"
+        ],
+        "rationale": "Explicitly labels current editorial guidance and the user’s note separately."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-04",
+      "condition": "candidate",
+      "run": 2,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "346bae3d0033da57ce6eb81a29f518f3c5dbc84452e35254a5432fd75c91edc3",
+      "actualContextSha256": "d76008b3ad460452ace560c484c86ab83cac610af32281bb3ef8b0ce3949729a",
+      "systemSha256": "6fdd485f72ead2fe25a746e5a1812771eb37944bd10c564576a9d0159628f847",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Current guide (editorial source):**"
+        ],
+        "rationale": "Explicitly labels current editorial guidance and the user’s note separately."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-04",
+      "condition": "candidate",
+      "run": 3,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "a06db7c7a6b015c972359e17c806c957a6910b1cf8bc6f74cf066315ba1c7ee4",
+      "actualContextSha256": "d76008b3ad460452ace560c484c86ab83cac610af32281bb3ef8b0ce3949729a",
+      "systemSha256": "6fdd485f72ead2fe25a746e5a1812771eb37944bd10c564576a9d0159628f847",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "Preserves all spatial constraints: editorial inside/left/below versus personal outside/right/level. No motive, endorsement, paint color or future plan is invented."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Current guide (editorial source):**"
+        ],
+        "rationale": "Explicitly labels current editorial guidance and the user’s note separately."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "inside of the tray's left edge",
+          "below the divider's top edge",
+          "outside of the tray's right edge",
+          "level with the divider's top edge"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-05",
+      "condition": "baseline",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "c4ef14bfd2f0a42bd34232e71b2d1d29ac91cfcc8158cd292e0417b443af162b",
+      "actualContextSha256": "0d125ef02dc13f79b92eebc4f8d29eb258cc411a7029d3d78f37329ffeeec1af",
+      "systemSha256": "783431a224447831b68557ef4eca33d1b5e58c17e199b75ce5b82b29064d7c3f",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "I wrote down the tare after I had already added the dry pigment."
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "I wrote down the tare after I had already added the dry pigment."
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "Here is the distinction, keeping your note and the source instructions separate:"
+        ],
+        "rationale": "Separates source instructions from the user’s recorded departure, without recommending the departure."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "I wrote down the tare after I had already added the dry pigment."
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-05",
+      "condition": "candidate",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "824fafaf5f78191bb74b253fdad2384d27d1d12256e3739570305fbc57be69be",
+      "actualContextSha256": "0d125ef02dc13f79b92eebc4f8d29eb258cc411a7029d3d78f37329ffeeec1af",
+      "systemSha256": "c82b7c34d2f39cca69fcbf1f2a6cf541774dcd4a7fda14b55b0fac1b6c7da2c6",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "you wrote down the tare *after* you had already added the dry pigment."
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "you wrote down the tare *after* you had already added the dry pigment."
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**The source instructions** say to record the tare *before* adding the dry pigment — specifically: \"After weighing the empty jar, record its tare. Only then add the dry pigment.\""
+        ],
+        "rationale": "Separates source instructions from the user’s recorded departure, without recommending the departure."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "you wrote down the tare *after* you had already added the dry pigment."
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-05",
+      "condition": "candidate",
+      "run": 2,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "64ce8d0a44ef6579b0f749ddf5de5a62eebf946c75dab487d08e60a79343adfa",
+      "actualContextSha256": "0d125ef02dc13f79b92eebc4f8d29eb258cc411a7029d3d78f37329ffeeec1af",
+      "systemSha256": "c82b7c34d2f39cca69fcbf1f2a6cf541774dcd4a7fda14b55b0fac1b6c7da2c6",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Weigh the empty jar, record its tare, and only *then* add the dry pigment.",
+          "You recorded the tare *after* you had already added the dry pigment"
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Weigh the empty jar, record its tare, and only *then* add the dry pigment.",
+          "You recorded the tare *after* you had already added the dry pigment"
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Source instruction** (*The pigment log*): Weigh the empty jar, record its tare, and only *then* add the dry pigment."
+        ],
+        "rationale": "Separates source instructions from the user’s recorded departure, without recommending the departure."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Weigh the empty jar, record its tare, and only *then* add the dry pigment.",
+          "You recorded the tare *after* you had already added the dry pigment"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-05",
+      "condition": "candidate",
+      "run": 3,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "bc439854bb89cf014ce40009211e7dae881b7f0696476b81c319ae9e30a6523e",
+      "actualContextSha256": "0d125ef02dc13f79b92eebc4f8d29eb258cc411a7029d3d78f37329ffeeec1af",
+      "systemSha256": "c82b7c34d2f39cca69fcbf1f2a6cf541774dcd4a7fda14b55b0fac1b6c7da2c6",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "you wrote down the tare after you had already added the dry pigment."
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "you wrote down the tare after you had already added the dry pigment."
+        ],
+        "rationale": "Preserves the empty-jar weighing prerequisite and source recording-before-pigment order, contrasted with the user’s recording-after-pigment action. No measurement consequence or corrective plan is added."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "The source instructs recording the tare **before** adding the dry pigment (\"After weighing the empty jar, record its tare. Only then add the dry pigment\")."
+        ],
+        "rationale": "Separates source instructions from the user’s recorded departure, without recommending the departure."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "After weighing the empty jar, record its tare. Only then add the dry pigment",
+          "you wrote down the tare after you had already added the dry pigment."
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-06",
+      "condition": "baseline",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "e379257f1f221d2cdfbddcc0b0c12a77bc729d2b739d7f18d0daec5c20ea79ca",
+      "actualContextSha256": "58fe99f6c6bbf4592f0b956baa589ebe1e19b15b6afd052c9557fd3309a3be96",
+      "systemSha256": "e2e6fdeff28df31932cde34b7471235f6eff821674fd0ab80518c608e2f6d168",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has **two solo bars**",
+          "you gave Niko the bassist **four solo bars**"
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has **two solo bars**",
+          "you gave Niko the bassist **four solo bars**"
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Highlight:** The stored highlight from \"The rehearsal roster\" states that Niko the bassist has **two solo bars**."
+        ],
+        "rationale": "Keeps the copied highlight and user-authored reflection distinct; no source approval or changed pianist allocation is claimed."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has **two solo bars**",
+          "you gave Niko the bassist **four solo bars**"
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-06",
+      "condition": "candidate",
+      "run": 1,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "bf8ed38fa74ba474e9b9e1b548e633738172f17616cf44920defc8752b704feb",
+      "actualContextSha256": "58fe99f6c6bbf4592f0b956baa589ebe1e19b15b6afd052c9557fd3309a3be96",
+      "systemSha256": "d9b9a7369ad7841c1df5ab449a13e46908a3161740824b7d898c75df8c90cd58",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You gave Niko the bassist four solo bars."
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You gave Niko the bassist four solo bars."
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Highlight:** Niko the bassist has two solo bars."
+        ],
+        "rationale": "Keeps the copied highlight and user-authored reflection distinct; no source approval or changed pianist allocation is claimed."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You gave Niko the bassist four solo bars."
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": null
+    },
+    {
+      "caseId": "grounded-dev-06",
+      "condition": "candidate",
+      "run": 2,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "c58a86975eee0a0896ace1c362efb9b0be6f73f85447422ec7914aee55585806",
+      "actualContextSha256": "58fe99f6c6bbf4592f0b956baa589ebe1e19b15b6afd052c9557fd3309a3be96",
+      "systemSha256": "d9b9a7369ad7841c1df5ab449a13e46908a3161740824b7d898c75df8c90cd58",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You changed this to four solo bars during rehearsal."
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You changed this to four solo bars during rehearsal."
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Highlight:** Niko the bassist has two solo bars."
+        ],
+        "rationale": "Keeps the copied highlight and user-authored reflection distinct; no source approval or changed pianist allocation is claimed."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You changed this to four solo bars during rehearsal."
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": "During rehearsal is supplied by the reflection prompt asking what changed during rehearsal and the directly responsive first-person answer; it is not an invented later performance event."
+    },
+    {
+      "caseId": "grounded-dev-06",
+      "condition": "candidate",
+      "run": 3,
+      "reviewer": "/root/backend_audit",
+      "reviewerKind": "ai",
+      "independent": true,
+      "rubricSha256": "75c06170d8679eb0da951a9cafc5ec62f974dcc60702e41db957a6d7f60db55c",
+      "responseSha256": "c58a86975eee0a0896ace1c362efb9b0be6f73f85447422ec7914aee55585806",
+      "actualContextSha256": "58fe99f6c6bbf4592f0b956baa589ebe1e19b15b6afd052c9557fd3309a3be96",
+      "systemSha256": "d9b9a7369ad7841c1df5ab449a13e46908a3161740824b7d898c75df8c90cd58",
+      "modelId": "claude-sonnet-4-6",
+      "pass": true,
+      "requestedFactCoverage": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You changed this to four solo bars during rehearsal."
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "grounding": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You changed this to four solo bars during rehearsal."
+        ],
+        "rationale": "Preserves bassist identity, solo-bar units, highlighted allocation of two and personally reported allocation of four. Any doubling comparison is expressly allowed direct arithmetic."
+      },
+      "attribution": {
+        "pass": true,
+        "answerSpans": [
+          "**Highlight:** Niko the bassist has two solo bars."
+        ],
+        "rationale": "Keeps the copied highlight and user-authored reflection distinct; no source approval or changed pianist allocation is claimed."
+      },
+      "unsupportedAbstention": {
+        "pass": true,
+        "answerSpans": [
+          "Niko the bassist has two solo bars.",
+          "You changed this to four solo bars during rehearsal."
+        ],
+        "rationale": "The answer directly supplies every requested facet; it does not refuse or claim the provided evidence is insufficient."
+      },
+      "focusDiagnostic": {
+        "supportedUnrequestedExtras": false,
+        "unsupportedAdditions": false,
+        "rationale": "Contains the requested facts, direct comparison where requested, and brief attribution/clarification. It does not add the fixture’s unrelated facts, plans or advice."
+      },
+      "reviewNote": "During rehearsal is supplied by the reflection prompt asking what changed during rehearsal and the directly responsive first-person answer; it is not an invented later performance event."
+    }
+  ]
+}

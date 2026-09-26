@@ -1,0 +1,1510 @@
+{
+  "fixtureVersion": "personal-retrieval-v1",
+  "applicationCommit": "6bfdb99c10af0cd78e507ef001ca0ffbdd0e735e",
+  "generatedAt": "2026-09-18T16:20:06.265Z",
+  "runner": "scripts/run-personal-retrieval-baseline.mjs",
+  "measurementKind": "executed-route-structural-baseline",
+  "provider": {
+    "mode": "deterministic provider and database doubles",
+    "generation": "stubbed; no real model called",
+    "embedding": "fixed vectors; no semantic-ranking measurement",
+    "tokenizer": null
+  },
+  "limitations": [
+    "Not database authorization proof: doubles filter ownership/deletion.",
+    "Source RPC matches are supplied by fixture, not measured semantic search.",
+    "No model quality, abstention, token-budget, or release-threshold pass is claimed.",
+    "First-page exclusion is simulated via the actual legacy request contract; database over-cap proof remains a separate runner."
+  ],
+  "corpusSha256": "b177ec05c47fa623269b3d089656c0e86c57b71c2d4764b0333e0da2805bfcef",
+  "releaseQualityGate": "not-evaluated",
+  "aggregation": "case-level structural observations only; no semantic aggregate",
+  "results": [
+    {
+      "caseId": "source_segment-attention",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e"
+      ],
+      "fullStoredTextPresentIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": true,
+      "contextSha256": "7990ad81f8ec0d7274039300cd4a5f46ba3bb8b7770eb59b2ce75a3ed5249600",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-habits",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45"
+      ],
+      "fullStoredTextPresentIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": true,
+      "contextSha256": "57b9c204718893ea1988f02c13d971babb6d1109c253c00755ad97c5da234124",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-sleep",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f"
+      ],
+      "fullStoredTextPresentIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": true,
+      "contextSha256": "9de4b928b4975a6250018ed6982466053b2ec9a167c2a94f7ffe562e6f6005bd",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-risk",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556"
+      ],
+      "fullStoredTextPresentIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": true,
+      "contextSha256": "f2431e8706c600f693683b242cfae0ace248104e9e34cb555e44e0ebbff9d0bf",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-learning",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d"
+      ],
+      "fullStoredTextPresentIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "dd4c66388943cc465a2817d708204435deab5cbc8a59607938607981f22181c2",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-feedback",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830"
+      ],
+      "fullStoredTextPresentIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "0f1a9b6ec03d2deda7f2b35d71ec7f0c5d3ee2e4c94f515e5aee2a418ce5f025",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-rest",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "b96cf7af-a5fd-54d6-a463-ce892cf561fa"
+      ],
+      "fullStoredTextPresentIds": [
+        "b96cf7af-a5fd-54d6-a463-ce892cf561fa"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "789e84bf72ca39c0849d00b61a9c613dd2c5ee29fa20ae31b900769b64be699f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-planning",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "052ca886-401d-585c-a79c-88895d9e6aca"
+      ],
+      "fullStoredTextPresentIds": [
+        "052ca886-401d-585c-a79c-88895d9e6aca"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "fc2d1131d907c0dd6825cb290b48da13ba6516a35e24d1a5bfff211ae777ce67",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-uncertainty",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "1923c424-d676-53fa-a23b-0dd18a3eb7d9"
+      ],
+      "fullStoredTextPresentIds": [
+        "1923c424-d676-53fa-a23b-0dd18a3eb7d9"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "202cca0c5071f5392996e1cb4479abe4ea92d9b76f3ca00fac23819b89ca91da",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-relationships",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "aecd1b79-c146-517f-a34b-9b512002405c"
+      ],
+      "fullStoredTextPresentIds": [
+        "aecd1b79-c146-517f-a34b-9b512002405c"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "559d0141af1762345e141307d384dfced4aef11d7468fdf0b1a70e030312904b",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-boundaries",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "fc109188-2cfb-54a2-83dd-c14f16b6d985"
+      ],
+      "fullStoredTextPresentIds": [
+        "fc109188-2cfb-54a2-83dd-c14f16b6d985"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "1396d3eda62dfa9e8e0a12ebc25979ba090f6a1b81673085c8fe7c980650c650",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "source_segment-experiments",
+      "route": "/api/chat",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "77d34a5d-eff7-5265-b79d-e50a7cab9bef"
+      ],
+      "fullStoredTextPresentIds": [
+        "77d34a5d-eff7-5265-b79d-e50a7cab9bef"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_library",
+        "segment"
+      ],
+      "queriedRpcs": [
+        "match_library_segments_gemini"
+      ],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "32aacbca2120b160e35ec65f05ca0da67d30d0500810895e2afb34eab1868070",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-attention",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+        "94737ac6-7280-50c1-8b0c-b3d91d6a82f6"
+      ],
+      "requiredIds": [
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175"
+      ],
+      "fullStoredTextPresentIds": [
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+        "94737ac6-7280-50c1-8b0c-b3d91d6a82f6"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": true,
+      "contextSha256": "448daa7cb7a192cbf1be7c7b15077cf5249d7d8d61971e9ce76f2a13e0d90484",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-habits",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+        "962d8d63-a289-58e6-b789-de7490a098e6"
+      ],
+      "requiredIds": [
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329"
+      ],
+      "fullStoredTextPresentIds": [
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+        "962d8d63-a289-58e6-b789-de7490a098e6"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": true,
+      "contextSha256": "51a55ee67daab6291423a9c512a6f5807740896f43004e968cc949beaa4b79dc",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-sleep",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "297a92c0-7017-5929-b731-31797f7ac0e9",
+        "4cc5ed5a-5483-5726-9417-1cdaa0cf0cf6"
+      ],
+      "requiredIds": [
+        "297a92c0-7017-5929-b731-31797f7ac0e9"
+      ],
+      "fullStoredTextPresentIds": [
+        "297a92c0-7017-5929-b731-31797f7ac0e9",
+        "4cc5ed5a-5483-5726-9417-1cdaa0cf0cf6"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": true,
+      "contextSha256": "dd3ba9978d9b40373a7ac63e664d3fe9bb719f9058fbb862dce5a0f5e78f2f58",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-risk",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b",
+        "7e5d53c9-c642-5674-8e6f-53d3b72a8a45"
+      ],
+      "requiredIds": [
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b"
+      ],
+      "fullStoredTextPresentIds": [
+        "7e5d53c9-c642-5674-8e6f-53d3b72a8a45"
+      ],
+      "missingRequiredTextIds": [
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": false,
+      "contextSha256": "b5796edf743c30856eeebea9583ab498082bc770d4d707c492c571a1eba13f87",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-learning",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "edb765f8-220b-5357-9556-a4e47fb48664",
+        "3a8b562f-e7b7-5eac-9d89-d8d2a0668de8"
+      ],
+      "requiredIds": [
+        "edb765f8-220b-5357-9556-a4e47fb48664"
+      ],
+      "fullStoredTextPresentIds": [
+        "edb765f8-220b-5357-9556-a4e47fb48664",
+        "3a8b562f-e7b7-5eac-9d89-d8d2a0668de8"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "a0e61d627ecc3a4d072f349e95f5ea6bc3eafee331bd5477c6a06e24dea2b9f1",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-feedback",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+        "96c2338b-c440-54a9-8f1b-75f05fe8d1b5"
+      ],
+      "requiredIds": [
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9"
+      ],
+      "fullStoredTextPresentIds": [
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+        "96c2338b-c440-54a9-8f1b-75f05fe8d1b5"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "19329bbdabd228565a49bd5b3b188d79ba76ced2cffe09e90c02bdbcd2a9f773",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-rest",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "127ce549-e4bc-5f49-987a-69112a267b1e",
+        "1d0c17bb-fd48-55ee-806d-756040dbad93"
+      ],
+      "requiredIds": [
+        "127ce549-e4bc-5f49-987a-69112a267b1e"
+      ],
+      "fullStoredTextPresentIds": [
+        "127ce549-e4bc-5f49-987a-69112a267b1e",
+        "1d0c17bb-fd48-55ee-806d-756040dbad93"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "917d0ec4eec324a0d6ec605d8e00d5090877d25453222ae0f3f7f2bae18bc3a6",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-planning",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "02551587-d1c2-567f-a2f0-2c59151b3629",
+        "c0e5e7c3-1d3f-55e4-a6af-369f3723b104"
+      ],
+      "requiredIds": [
+        "02551587-d1c2-567f-a2f0-2c59151b3629"
+      ],
+      "fullStoredTextPresentIds": [
+        "02551587-d1c2-567f-a2f0-2c59151b3629",
+        "c0e5e7c3-1d3f-55e4-a6af-369f3723b104"
+      ],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "0032749c9cb5050d126e6e24d4de21eaa15cbf29435f1920ad3ca1d9e67db248",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-uncertainty",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "fa5b6ba3-73c0-5cee-a956-6e14a6bb3500"
+      ],
+      "requiredIds": [
+        "3fcf061d-e855-51d9-a4ff-a8775f990293"
+      ],
+      "fullStoredTextPresentIds": [
+        "fa5b6ba3-73c0-5cee-a956-6e14a6bb3500"
+      ],
+      "missingRequiredTextIds": [
+        "3fcf061d-e855-51d9-a4ff-a8775f990293"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "1d38e55f851868cad3ffb79f746dcb3fef23ce0bdb442de6ae4fcfdd10823e51",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-relationships",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "df9f5dc1-9760-5767-9a5a-75784c55c79c"
+      ],
+      "requiredIds": [
+        "a8bb16a3-f244-5207-be87-dce9ef8d1dc7"
+      ],
+      "fullStoredTextPresentIds": [
+        "df9f5dc1-9760-5767-9a5a-75784c55c79c"
+      ],
+      "missingRequiredTextIds": [
+        "a8bb16a3-f244-5207-be87-dce9ef8d1dc7"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "bf9a5985c67cf8a50f196625e33666698789e0dc299508dda22a974b7981fe2e",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-boundaries",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "106db632-1041-5aea-8317-1b8b64f530fd"
+      ],
+      "requiredIds": [
+        "a9047b0a-d672-5b90-afaf-6904702229ea"
+      ],
+      "fullStoredTextPresentIds": [
+        "106db632-1041-5aea-8317-1b8b64f530fd"
+      ],
+      "missingRequiredTextIds": [
+        "a9047b0a-d672-5b90-afaf-6904702229ea"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "2c21fb5c00c9cb2fd2241c8cd489e2343c5cdb5fb0e8f4c1fb6117e340ebd052",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "highlight-experiments",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "3829c5cf-3396-5f45-9ea7-b2d1c0e8d134"
+      ],
+      "requiredIds": [
+        "7c9b4ab7-58d7-5286-b657-aa58e1655521"
+      ],
+      "fullStoredTextPresentIds": [
+        "3829c5cf-3396-5f45-9ea7-b2d1c0e8d134"
+      ],
+      "missingRequiredTextIds": [
+        "7c9b4ab7-58d7-5286-b657-aa58e1655521"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "d1a00001626200158d22d93b1f2e91fa93d1e1773c3eb126fb53a4ed09f94e4c",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-attention",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": false,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-habits",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": false,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-sleep",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": false,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-risk",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": false,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-learning",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-feedback",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-rest",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "ae2d30bd-c3d2-51c9-8f62-7ec6171812f7"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "ae2d30bd-c3d2-51c9-8f62-7ec6171812f7"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-planning",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "95f3194d-6ecb-5dae-b08c-0a17853a4a41"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "95f3194d-6ecb-5dae-b08c-0a17853a4a41"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-uncertainty",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "3b84785f-a44a-567c-94b1-d4b55b9b3c26"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "3b84785f-a44a-567c-94b1-d4b55b9b3c26"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-relationships",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "83cda3a1-c35b-5df9-9850-6a9b057dfd6e"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "83cda3a1-c35b-5df9-9850-6a9b057dfd6e"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-boundaries",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "2ed15df3-2f6f-5547-9867-6f6c2cd79504"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "2ed15df3-2f6f-5547-9867-6f6c2cd79504"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "reflection-experiments",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [],
+      "requiredIds": [
+        "288d9f2b-ce24-512a-8798-6c90c73a6cd6"
+      ],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [
+        "288d9f2b-ce24-512a-8798-6c90c73a6cd6"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "mixed-attention",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+        "94737ac6-7280-50c1-8b0c-b3d91d6a82f6"
+      ],
+      "requiredIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e",
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "fullStoredTextPresentIds": [
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+        "94737ac6-7280-50c1-8b0c-b3d91d6a82f6"
+      ],
+      "missingRequiredTextIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e",
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "448daa7cb7a192cbf1be7c7b15077cf5249d7d8d61971e9ce76f2a13e0d90484",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "mixed-habits",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+        "962d8d63-a289-58e6-b789-de7490a098e6"
+      ],
+      "requiredIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45",
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "fullStoredTextPresentIds": [
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+        "962d8d63-a289-58e6-b789-de7490a098e6"
+      ],
+      "missingRequiredTextIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45",
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "51a55ee67daab6291423a9c512a6f5807740896f43004e968cc949beaa4b79dc",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "mixed-sleep",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [
+        "297a92c0-7017-5929-b731-31797f7ac0e9",
+        "4cc5ed5a-5483-5726-9417-1cdaa0cf0cf6"
+      ],
+      "requiredIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f",
+        "297a92c0-7017-5929-b731-31797f7ac0e9",
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "fullStoredTextPresentIds": [
+        "297a92c0-7017-5929-b731-31797f7ac0e9",
+        "4cc5ed5a-5483-5726-9417-1cdaa0cf0cf6"
+      ],
+      "missingRequiredTextIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f",
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "dd3ba9978d9b40373a7ac63e664d3fe9bb719f9058fbb862dce5a0f5e78f2f58",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "mixed-risk",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b",
+        "7e5d53c9-c642-5674-8e6f-53d3b72a8a45"
+      ],
+      "requiredIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556",
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b",
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "fullStoredTextPresentIds": [
+        "7e5d53c9-c642-5674-8e6f-53d3b72a8a45"
+      ],
+      "missingRequiredTextIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556",
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b",
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "b5796edf743c30856eeebea9583ab498082bc770d4d707c492c571a1eba13f87",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "mixed-learning",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [
+        "edb765f8-220b-5357-9556-a4e47fb48664",
+        "3a8b562f-e7b7-5eac-9d89-d8d2a0668de8"
+      ],
+      "requiredIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d",
+        "edb765f8-220b-5357-9556-a4e47fb48664",
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "fullStoredTextPresentIds": [
+        "edb765f8-220b-5357-9556-a4e47fb48664",
+        "3a8b562f-e7b7-5eac-9d89-d8d2a0668de8"
+      ],
+      "missingRequiredTextIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d",
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "a0e61d627ecc3a4d072f349e95f5ea6bc3eafee331bd5477c6a06e24dea2b9f1",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "mixed-feedback",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "not-supported",
+      "suppliedHighlightIds": [
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+        "96c2338b-c440-54a9-8f1b-75f05fe8d1b5"
+      ],
+      "requiredIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830",
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "fullStoredTextPresentIds": [
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+        "96c2338b-c440-54a9-8f1b-75f05fe8d1b5"
+      ],
+      "missingRequiredTextIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830",
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "19329bbdabd228565a49bd5b3b188d79ba76ced2cffe09e90c02bdbcd2a9f773",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-0",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-1",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-2",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-3",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-4",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-5",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-6",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "abstain-7",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-0",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "5cf9ae53-c696-5ab9-9f25-95168b8da41b"
+      ],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-1",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-2",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "69633225-261c-579d-989a-324416efe252"
+      ],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-3",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-4",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "0d68892b-1d84-52b6-804c-a6ec5b06e743"
+      ],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-5",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-6",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [
+        "fb0b81f7-57c8-5ba4-8f01-1150c6cbc0ad"
+      ],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    },
+    {
+      "caseId": "exclude-7",
+      "route": "/api/chat/notes",
+      "status": 200,
+      "outcome": "executed-structural-only",
+      "suppliedHighlightIds": [],
+      "requiredIds": [],
+      "fullStoredTextPresentIds": [],
+      "missingRequiredTextIds": [],
+      "queriedTables": [
+        "user_highlights"
+      ],
+      "queriedRpcs": [],
+      "generationCalled": true,
+      "exactStoredQuotePresent": null,
+      "contextSha256": "06fcede7750b9080d050c6c01710318ef5e2c359e4b6da079b3bc85a6cb41d2f",
+      "semanticRecall": null,
+      "modelAbstention": null,
+      "evidenceTokens": null
+    }
+  ],
+  "libraryPersonalProbe": {
+    "status": 200,
+    "outcome": "not-supported",
+    "queriedTables": [
+      "user_library"
+    ],
+    "queriedRpcs": [
+      "match_library_segments_gemini",
+      "match_library_segments_gemini"
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "format": "gzip preserves original recorded JSON bytes exactly",
+  "reason": "Keep raw provider provenance without hundreds of thousands of generated numeric lines in the code review.",
+  "records": [
+    {
+      "file": "v2-vector-acquisition-20260918.json.gz",
+      "originalFile": "v2-vector-acquisition-20260918.json",
+      "sha256": "33d3c5304d6d030d1afffe07fdd293330f6ee443c381d10f3bd39c5aa1bdd11e",
+      "uncompressedSha256": "1ec87d78d475f521b0c53c5e28c091f7175e4dea5651586ef31c5b4f9996372c",
+      "originalBytes": 1848530,
+      "compressedBytes": 411872
+    },
+    {
+      "file": "v2-vector-acquisition-20260918-continuation.json.gz",
+      "originalFile": "v2-vector-acquisition-20260918-continuation.json",
+      "sha256": "2950b1bbfd7f9a1fb84f9364f58ad0e6dffcc073804ef9b2714e2798d03c49c6",
+      "uncompressedSha256": "ff4523263109bb94d41a4fdd41c2ea3e5db4f1b01dba35dbd6ceb4d3bb49ebaa",
+      "originalBytes": 2672918,
+      "compressedBytes": 593726
+    }
+  ]
+}

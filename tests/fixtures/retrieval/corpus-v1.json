@@ -1,0 +1,2577 @@
+{
+  "version": "personal-retrieval-v1",
+  "baselineCommit": "6bfdb99",
+  "approvalBasis": "Previously user-approved PR #136 design; execution under current delegated implementation authority. No new user approval is claimed.",
+  "budget": {
+    "evidenceItems": 8,
+    "evidenceTokens": 4000,
+    "tokenizer": "must record actual provider tokenizer in candidate quality record; baseline structural run does not measure tokens"
+  },
+  "thresholds": {
+    "recallMacro": 0.95,
+    "recallPerClass": 0.9,
+    "recallPerRunMacro": 0.9,
+    "recallPerRunClass": 0.85,
+    "irrelevantRejection": 0.95,
+    "abstention": 0.95,
+    "rejectionAndAbstentionPerRun": 0.9,
+    "exactQuoteFidelity": 1,
+    "forbiddenEvidenceExclusion": 1,
+    "independentModelRuns": 3
+  },
+  "aggregation": "equal weight within class, macro-average source_segment/highlight/reflection; no quality pass from structural mocks",
+  "corpusExpansion": {
+    "noisePerPersonalClass": 1001,
+    "noiseText": "Unrelated shipping inventory and warehouse labels.",
+    "createdAt": "2026-07-01T00:00:00.123456Z",
+    "purpose": "future database runner must materialize these before older required records; structural baseline only models first-page selection and does not claim database cap proof"
+  },
+  "evidence": [
+    {
+      "id": "88c23d2f-9044-50ba-8cb5-dff1b996851e",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "1523e1ea-f20d-5c6e-b221-25367608c63d",
+      "segmentId": "f1c10939-2b43-5ac7-b5ed-15a559305ab8",
+      "title": "Attention field guide",
+      "text": "Source observation: Protect one uninterrupted hour before opening messages.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "084cf88a-e392-5983-a68a-6d20e4db7d45",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "b78d2402-37fd-51bc-b938-47632c53c959",
+      "segmentId": "54a42e4b-5231-5b04-a380-87663f2550ec",
+      "title": "Habits field guide",
+      "text": "Source observation: Attach a tiny repeatable action to an existing daily cue.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "7bec5795-c936-56e2-b510-5c2930c1bf1f",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "8d2c4773-cdb2-53b0-85dc-0a7da02aa3d1",
+      "segmentId": "df7147a4-6e31-5ddc-904a-24821c26df7a",
+      "title": "Sleep field guide",
+      "text": "Source observation: Keep a consistent waking time even after a late night.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "0c01e7de-30c7-584c-a110-360d22bbf556",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "928fe552-fd4b-5891-b88c-2f88dbee58e7",
+      "segmentId": "cd0ea00c-c6aa-5fca-96bb-f118bbf9f2d6",
+      "title": "Risk field guide",
+      "text": "Source observation: Keep a cash reserve so an unexpected bill does not force a sale.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "2b3ddf77-f8e4-57f4-a88d-fa445590165d",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "a08a7e0e-1142-5d0c-98ec-f0d4081b739d",
+      "segmentId": "9c6cd7b0-8922-549a-be0e-c296c858a2a8",
+      "title": "Learning field guide",
+      "text": "Source observation: Recall an explanation without looking before rereading it.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "c6f1c648-8993-561e-a0c1-e5030a387830",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "2172741a-83cd-55c6-b44e-ea27b79b5bde",
+      "segmentId": "748708ad-8a86-50a3-91d1-eaf888ba100b",
+      "title": "Feedback field guide",
+      "text": "Source observation: Ask for one observable example before changing your approach.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "b96cf7af-a5fd-54d6-a463-ce892cf561fa",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "f323b121-9667-5493-9357-b01c06c406ad",
+      "segmentId": "d8a47702-65dc-580c-9d80-be7b79a02945",
+      "title": "Rest field guide",
+      "text": "Source observation: Leave deliberate gaps between demanding blocks of work.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "052ca886-401d-585c-a79c-88895d9e6aca",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "47848cbe-5774-5c92-9402-b57a70f904da",
+      "segmentId": "6207d52e-e3eb-5e83-ae60-ba5d7520da49",
+      "title": "Planning field guide",
+      "text": "Source observation: Choose the next physical action instead of a vague project label.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "1923c424-d676-53fa-a23b-0dd18a3eb7d9",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "e33f2ed4-f26b-5318-86ed-d5f2b3c2f5eb",
+      "segmentId": "4a2f77b8-c904-5545-83ca-180d69c17dea",
+      "title": "Uncertainty field guide",
+      "text": "Source observation: State what evidence would change your current belief.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "aecd1b79-c146-517f-a34b-9b512002405c",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "db6fceff-076c-506f-a9b1-2628e56a8c74",
+      "segmentId": "35799423-ad9d-53cd-8c99-e8fcda7ed964",
+      "title": "Relationships field guide",
+      "text": "Source observation: Repeat the other person\u2019s concern before offering advice.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "fc109188-2cfb-54a2-83dd-c14f16b6d985",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "5eb68e41-f535-57b9-9401-b57cfb5f58cb",
+      "segmentId": "216ff29c-97ad-5828-9f53-dabfae176a65",
+      "title": "Boundaries field guide",
+      "text": "Source observation: Decline commitments that displace your already chosen priorities.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "77d34a5d-eff7-5265-b79d-e50a7cab9bef",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "1b18ca72-6fc7-5c5d-bcb8-9af74244d539",
+      "segmentId": "48b4b98e-8140-580d-8132-81ef43bbddc8",
+      "title": "Experiments field guide",
+      "text": "Source observation: Try a reversible small version before making a lasting commitment.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "1523e1ea-f20d-5c6e-b221-25367608c63d",
+      "segmentId": "f1c10939-2b43-5ac7-b5ed-15a559305ab8",
+      "title": "Attention field guide",
+      "text": "Captured passage: Protect one uninterrupted hour before opening messages.",
+      "note": "I disagree with treating every interruption as waste; caring for someone sometimes comes first.",
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "b78d2402-37fd-51bc-b938-47632c53c959",
+      "segmentId": "54a42e4b-5231-5b04-a380-87663f2550ec",
+      "title": "Habits field guide",
+      "text": "Captured passage: Attach a tiny repeatable action to an existing daily cue.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "297a92c0-7017-5929-b731-31797f7ac0e9",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "8d2c4773-cdb2-53b0-85dc-0a7da02aa3d1",
+      "segmentId": "df7147a4-6e31-5ddc-904a-24821c26df7a",
+      "title": "Sleep field guide",
+      "text": "Captured passage: Keep a consistent waking time even after a late night.",
+      "note": "My application: Keep a consistent waking time even after a late night.",
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "5d8f8569-30e8-5f8a-b82b-1e0deff6924b",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "928fe552-fd4b-5891-b88c-2f88dbee58e7",
+      "segmentId": "cd0ea00c-c6aa-5fca-96bb-f118bbf9f2d6",
+      "title": "Risk field guide",
+      "text": "Captured passage: Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Keep a cash reserve so an unexpected bill does not force a sale.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "edb765f8-220b-5357-9556-a4e47fb48664",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "a08a7e0e-1142-5d0c-98ec-f0d4081b739d",
+      "segmentId": "9c6cd7b0-8922-549a-be0e-c296c858a2a8",
+      "title": "Learning field guide",
+      "text": "Captured passage: Recall an explanation without looking before rereading it.",
+      "note": "My application: Recall an explanation without looking before rereading it.",
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "2172741a-83cd-55c6-b44e-ea27b79b5bde",
+      "segmentId": "748708ad-8a86-50a3-91d1-eaf888ba100b",
+      "title": "Feedback field guide",
+      "text": "Captured passage: Ask for one observable example before changing your approach.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "127ce549-e4bc-5f49-987a-69112a267b1e",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "f323b121-9667-5493-9357-b01c06c406ad",
+      "segmentId": "d8a47702-65dc-580c-9d80-be7b79a02945",
+      "title": "Rest field guide",
+      "text": "Captured passage: Leave deliberate gaps between demanding blocks of work.",
+      "note": "My application: Leave deliberate gaps between demanding blocks of work.",
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "02551587-d1c2-567f-a2f0-2c59151b3629",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "47848cbe-5774-5c92-9402-b57a70f904da",
+      "segmentId": "6207d52e-e3eb-5e83-ae60-ba5d7520da49",
+      "title": "Planning field guide",
+      "text": "Captured passage: Choose the next physical action instead of a vague project label.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "3fcf061d-e855-51d9-a4ff-a8775f990293",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "e33f2ed4-f26b-5318-86ed-d5f2b3c2f5eb",
+      "segmentId": "4a2f77b8-c904-5545-83ca-180d69c17dea",
+      "title": "Uncertainty field guide",
+      "text": "Captured passage: State what evidence would change your current belief.",
+      "note": "My application: State what evidence would change your current belief.",
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "a8bb16a3-f244-5207-be87-dce9ef8d1dc7",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "db6fceff-076c-506f-a9b1-2628e56a8c74",
+      "segmentId": "35799423-ad9d-53cd-8c99-e8fcda7ed964",
+      "title": "Relationships field guide",
+      "text": "Captured passage: Repeat the other person\u2019s concern before offering advice.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "a9047b0a-d672-5b90-afaf-6904702229ea",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "5eb68e41-f535-57b9-9401-b57cfb5f58cb",
+      "segmentId": "216ff29c-97ad-5828-9f53-dabfae176a65",
+      "title": "Boundaries field guide",
+      "text": "Captured passage: Decline commitments that displace your already chosen priorities.",
+      "note": "My application: Decline commitments that displace your already chosen priorities.",
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "7c9b4ab7-58d7-5286-b657-aa58e1655521",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "1b18ca72-6fc7-5c5d-bcb8-9af74244d539",
+      "segmentId": "48b4b98e-8140-580d-8132-81ef43bbddc8",
+      "title": "Experiments field guide",
+      "text": "Captured passage: Try a reversible small version before making a lasting commitment.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "92616bd3-e062-57a0-ae4a-9e99a21a3368",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "1523e1ea-f20d-5c6e-b221-25367608c63d",
+      "segmentId": "f1c10939-2b43-5ac7-b5ed-15a559305ab8",
+      "title": "Attention field guide",
+      "text": "My reflection: Protect one uninterrupted hour before opening messages.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "3aa84b12-08bd-5a8c-85a5-d63c8ba09825",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "b78d2402-37fd-51bc-b938-47632c53c959",
+      "segmentId": "54a42e4b-5231-5b04-a380-87663f2550ec",
+      "title": "Habits field guide",
+      "text": "My reflection: Attach a tiny repeatable action to an existing daily cue.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "03c26898-ce3c-5eae-bfc2-744716c45173",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "8d2c4773-cdb2-53b0-85dc-0a7da02aa3d1",
+      "segmentId": "df7147a4-6e31-5ddc-904a-24821c26df7a",
+      "title": "Sleep field guide",
+      "text": "My reflection: Keep a consistent waking time even after a late night.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "d6e5e092-c51b-5c9a-8321-0733be4cb5e7",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "928fe552-fd4b-5891-b88c-2f88dbee58e7",
+      "segmentId": "cd0ea00c-c6aa-5fca-96bb-f118bbf9f2d6",
+      "title": "Risk field guide",
+      "text": "My reflection: Keep a cash reserve so an unexpected bill does not force a sale.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "05ea7863-a09f-5e26-840d-b62f514aab75",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "a08a7e0e-1142-5d0c-98ec-f0d4081b739d",
+      "segmentId": "9c6cd7b0-8922-549a-be0e-c296c858a2a8",
+      "title": "Learning field guide",
+      "text": "My reflection: Recall an explanation without looking before rereading it.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "1fd8ca33-a6aa-54cd-9f41-56c0e776859b",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "2172741a-83cd-55c6-b44e-ea27b79b5bde",
+      "segmentId": "748708ad-8a86-50a3-91d1-eaf888ba100b",
+      "title": "Feedback field guide",
+      "text": "My reflection: Ask for one observable example before changing your approach.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "ae2d30bd-c3d2-51c9-8f62-7ec6171812f7",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "f323b121-9667-5493-9357-b01c06c406ad",
+      "segmentId": "d8a47702-65dc-580c-9d80-be7b79a02945",
+      "title": "Rest field guide",
+      "text": "My reflection: Leave deliberate gaps between demanding blocks of work.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "95f3194d-6ecb-5dae-b08c-0a17853a4a41",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "47848cbe-5774-5c92-9402-b57a70f904da",
+      "segmentId": "6207d52e-e3eb-5e83-ae60-ba5d7520da49",
+      "title": "Planning field guide",
+      "text": "My reflection: Choose the next physical action instead of a vague project label.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "3b84785f-a44a-567c-94b1-d4b55b9b3c26",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "e33f2ed4-f26b-5318-86ed-d5f2b3c2f5eb",
+      "segmentId": "4a2f77b8-c904-5545-83ca-180d69c17dea",
+      "title": "Uncertainty field guide",
+      "text": "My reflection: State what evidence would change your current belief.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "83cda3a1-c35b-5df9-9850-6a9b057dfd6e",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "db6fceff-076c-506f-a9b1-2628e56a8c74",
+      "segmentId": "35799423-ad9d-53cd-8c99-e8fcda7ed964",
+      "title": "Relationships field guide",
+      "text": "My reflection: Repeat the other person\u2019s concern before offering advice.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "2ed15df3-2f6f-5547-9867-6f6c2cd79504",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "5eb68e41-f535-57b9-9401-b57cfb5f58cb",
+      "segmentId": "216ff29c-97ad-5828-9f53-dabfae176a65",
+      "title": "Boundaries field guide",
+      "text": "My reflection: Decline commitments that displace your already chosen priorities.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "288d9f2b-ce24-512a-8798-6c90c73a6cd6",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "1b18ca72-6fc7-5c5d-bcb8-9af74244d539",
+      "segmentId": "48b4b98e-8140-580d-8132-81ef43bbddc8",
+      "title": "Experiments field guide",
+      "text": "My reflection: Try a reversible small version before making a lasting commitment.",
+      "note": null,
+      "prompt": "What will I apply?",
+      "state": "available",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "33d7f0ea-695c-5e33-b9be-c26ab94d5096",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "66f06a7d-462e-521b-877f-0079af2b7fb3",
+      "segmentId": "549a713b-a523-5389-b89c-1a0c820adee5",
+      "title": "Attention distractor",
+      "text": "Source observation: An unrelated glossary mentions attention but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "6bceee70-ce0d-59e2-b40a-367352adcad7",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "a701e57a-a05c-5c8c-8240-c96f97d967bb",
+      "segmentId": "391f974f-9651-567f-a924-67a278e1c4ed",
+      "title": "Habits distractor",
+      "text": "Source observation: An unrelated glossary mentions habits but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "6375c50d-c557-5b1d-8498-7e4b7254e84a",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "0c46fbf9-def4-5f2a-bc30-5dc7c50d0b0c",
+      "segmentId": "0f1808d6-e002-503a-9478-0b2a34ae6652",
+      "title": "Sleep distractor",
+      "text": "Source observation: An unrelated glossary mentions sleep but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "fc98dcf8-e32f-5c05-ace3-a37a1a325f08",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "1dbcf108-fb52-5b5d-a310-879d83ed0a62",
+      "segmentId": "84213f88-8f60-5cd8-8dfc-a38cb20958af",
+      "title": "Risk distractor",
+      "text": "Source observation: An unrelated glossary mentions risk but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "ebb76152-6843-5fbe-a743-b8b0b0b76608",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "8d3dd6ee-16ba-531d-b4c1-ba30eaeac9f1",
+      "segmentId": "249fbec6-b2db-5d15-a642-7566d002004a",
+      "title": "Learning distractor",
+      "text": "Source observation: An unrelated glossary mentions learning but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "ba00ffae-aad5-5350-8340-5591531341d4",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "bfa695df-816d-5bb3-9d1c-a624ebae95ee",
+      "segmentId": "5f56898c-8ce1-57fd-a9ea-adf3069a2b83",
+      "title": "Feedback distractor",
+      "text": "Source observation: An unrelated glossary mentions feedback but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "295b87f3-e893-545e-b624-1e74537afcd1",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "db3c541a-2575-51e5-aaf4-a635efd0d682",
+      "segmentId": "61fe3dbe-c874-5bba-bae6-0c249030611d",
+      "title": "Rest distractor",
+      "text": "Source observation: An unrelated glossary mentions rest but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "d76f7bf6-b11e-5b6b-a436-b2d299029bd7",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "7969a109-9fbb-5e47-b035-98f48aca9606",
+      "segmentId": "1a883883-bcc7-50da-a8c6-221ffbabc4ee",
+      "title": "Planning distractor",
+      "text": "Source observation: An unrelated glossary mentions planning but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "74377ffd-f8cf-535b-a246-5b7f1fb67407",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "5b1e3548-bef2-5cbe-9e39-86a8e3775b15",
+      "segmentId": "1a1b10ab-9a13-5267-85db-34ba655ca5a7",
+      "title": "Uncertainty distractor",
+      "text": "Source observation: An unrelated glossary mentions uncertainty but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "f68dd11c-ba79-5a41-a478-4ca6a16f8332",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "5aff6ceb-4a0f-5a9c-9e78-51c45f7f9287",
+      "segmentId": "2d460d06-332a-5fea-93e7-8aae3cbd47a6",
+      "title": "Relationships distractor",
+      "text": "Source observation: An unrelated glossary mentions relationships but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "d3d875eb-99f2-503d-bfdc-eb8152136632",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "c7813663-a18c-587d-85d3-898af9939208",
+      "segmentId": "40a9f778-84c4-5e3c-99b8-29205daec933",
+      "title": "Boundaries distractor",
+      "text": "Source observation: An unrelated glossary mentions boundaries but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "b3bb8319-0782-59c2-b6e6-be3a4ad0ae83",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "37d8bc8e-798c-538b-8c1e-ec4b3978ccc0",
+      "segmentId": "482962e2-28e7-5358-9b83-c0c70c92817f",
+      "title": "Experiments distractor",
+      "text": "Source observation: An unrelated glossary mentions experiments but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "94737ac6-7280-50c1-8b0c-b3d91d6a82f6",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "b17950ae-ff64-5646-b05e-86ed01e95a93",
+      "segmentId": "d51fc635-ee7f-56b4-98cb-4a1a6d18ced8",
+      "title": "Attention distractor",
+      "text": "Captured passage: An unrelated glossary mentions attention but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "962d8d63-a289-58e6-b789-de7490a098e6",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "1cd546ae-4d84-5291-96a5-0af7992033af",
+      "segmentId": "62dd020d-1f9c-560b-8247-f09cf9351a4b",
+      "title": "Habits distractor",
+      "text": "Captured passage: An unrelated glossary mentions habits but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "4cc5ed5a-5483-5726-9417-1cdaa0cf0cf6",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "17ed75da-cc36-507f-a123-25f0ff951ce6",
+      "segmentId": "510dc29c-cc38-50bc-9531-a628dac1c9e3",
+      "title": "Sleep distractor",
+      "text": "Captured passage: An unrelated glossary mentions sleep but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "7e5d53c9-c642-5674-8e6f-53d3b72a8a45",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "a44a0ecf-ecb1-515c-9b9e-0c41c6b4ced9",
+      "segmentId": "912bb678-2f05-5ba3-ba50-a2ed55e90347",
+      "title": "Risk distractor",
+      "text": "Captured passage: An unrelated glossary mentions risk but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "3a8b562f-e7b7-5eac-9d89-d8d2a0668de8",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "dddf5c3e-bf8b-53e8-bb35-8919eb1cc59f",
+      "segmentId": "eccba5b2-9223-5b65-8de7-6bc8c3b48fd7",
+      "title": "Learning distractor",
+      "text": "Captured passage: An unrelated glossary mentions learning but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "96c2338b-c440-54a9-8f1b-75f05fe8d1b5",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "7f51e2a4-7e64-5fe9-94f1-2a4c2caabd5b",
+      "segmentId": "f605bf33-2af9-53bc-83a8-b702cb0d1b9c",
+      "title": "Feedback distractor",
+      "text": "Captured passage: An unrelated glossary mentions feedback but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "1d0c17bb-fd48-55ee-806d-756040dbad93",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "875e0e5c-b1a5-5fee-ba04-83436b325cea",
+      "segmentId": "b86ecf4e-89f7-531b-9171-738cf58ac425",
+      "title": "Rest distractor",
+      "text": "Captured passage: An unrelated glossary mentions rest but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "c0e5e7c3-1d3f-55e4-a6af-369f3723b104",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "3dd5945c-1fa1-5735-a50f-bd181d9fa7ba",
+      "segmentId": "ebc21191-1165-5968-adf8-d3cea02d1cfb",
+      "title": "Planning distractor",
+      "text": "Captured passage: An unrelated glossary mentions planning but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "fa5b6ba3-73c0-5cee-a956-6e14a6bb3500",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "626ab4e8-6a8f-5171-a445-52d5d3ebaca8",
+      "segmentId": "5d1a6c6c-9e36-5be3-b5df-4dacef07155c",
+      "title": "Uncertainty distractor",
+      "text": "Captured passage: An unrelated glossary mentions uncertainty but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "df9f5dc1-9760-5767-9a5a-75784c55c79c",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "d27c8b98-50f2-549e-9c31-c35a5dbaf01c",
+      "segmentId": "bfe1b3e2-20fa-5baa-a4a3-07798ae44fcc",
+      "title": "Relationships distractor",
+      "text": "Captured passage: An unrelated glossary mentions relationships but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "106db632-1041-5aea-8317-1b8b64f530fd",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "dfee1012-78c0-5a5d-8dd0-44da83522048",
+      "segmentId": "0c8dd7a0-0e20-5528-84b4-dc3ea006f608",
+      "title": "Boundaries distractor",
+      "text": "Captured passage: An unrelated glossary mentions boundaries but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "3829c5cf-3396-5f45-9ea7-b2d1c0e8d134",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "2582ce58-5fc3-5421-a280-df0a82937a1b",
+      "segmentId": "86129f2c-2713-53ae-93e9-396b3281a787",
+      "title": "Experiments distractor",
+      "text": "Captured passage: An unrelated glossary mentions experiments but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "599e78a7-8cf5-5513-b480-e6731f0ff0f8",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "ed9234e8-3b16-5ea8-a92d-b345425b27c7",
+      "segmentId": "8380725b-adfc-5495-98d7-fdb49043383d",
+      "title": "Attention distractor",
+      "text": "My reflection: An unrelated glossary mentions attention but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "50d46a79-b5e8-52cb-a8a1-82818b8aebe9",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "445e6198-1577-5a69-9b10-c57188f2a5bc",
+      "segmentId": "8824f510-c0db-596f-bfa7-d514173c00fb",
+      "title": "Habits distractor",
+      "text": "My reflection: An unrelated glossary mentions habits but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "bdd72e57-4d70-51b2-b888-77f550287e2f",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "0ea05961-e664-52b8-bad5-6edd8abb1b75",
+      "segmentId": "f5497776-2641-5780-ac11-0dc72e880eb7",
+      "title": "Sleep distractor",
+      "text": "My reflection: An unrelated glossary mentions sleep but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "9c8dfa4f-0d8b-542a-8083-b83f25a6a33a",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "c1c24f63-8f8d-5a27-a093-e480906df9bd",
+      "segmentId": "743b3e19-ff23-5002-9582-5261ccf79a64",
+      "title": "Risk distractor",
+      "text": "My reflection: An unrelated glossary mentions risk but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "29948af1-3436-5eed-b32a-68cdf050d5fd",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "46f098a5-5b40-5871-be89-5fe2fefa3a52",
+      "segmentId": "283904c2-4553-56a7-848a-bf6d408df20b",
+      "title": "Learning distractor",
+      "text": "My reflection: An unrelated glossary mentions learning but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "192d70da-b898-5497-b00c-fadd59b62c36",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "be6a9790-7435-5539-9e26-298119328dcd",
+      "segmentId": "2905e9f2-90fb-50ce-a9b9-66dca3b9c4a1",
+      "title": "Feedback distractor",
+      "text": "My reflection: An unrelated glossary mentions feedback but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "f1770e5c-e3ec-51a9-8ead-0ad608a883be",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "f213f4fa-b04b-590d-8a3b-378dba99c5fd",
+      "segmentId": "964bfcc8-c6d7-50b0-b7af-a972f957494f",
+      "title": "Rest distractor",
+      "text": "My reflection: An unrelated glossary mentions rest but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "4b1c8d52-50a9-542f-b17a-edf48b999511",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "d2103222-7c93-5064-bd33-c30837da8844",
+      "segmentId": "f9a82dc9-40aa-5199-a1b9-245fcf0be028",
+      "title": "Planning distractor",
+      "text": "My reflection: An unrelated glossary mentions planning but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "b7d483b3-43d1-5c90-b936-8d7248d96fb9",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "3c0a5ac4-d6a1-55fe-b5fe-34599d709b5c",
+      "segmentId": "8a431e81-0cce-5296-aaf3-2bd3272f5431",
+      "title": "Uncertainty distractor",
+      "text": "My reflection: An unrelated glossary mentions uncertainty but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "47bb6e2d-d2b0-5d44-bc60-e6e50e61aa0c",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "07c310ec-cd9f-5dd3-beae-c61f178a1120",
+      "segmentId": "89ac192e-c6f1-5a66-8154-0b69f7785360",
+      "title": "Relationships distractor",
+      "text": "My reflection: An unrelated glossary mentions relationships but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "c1a5ff56-2798-504f-8a73-fe8351e69b34",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "f3760050-5b3a-53fd-adc1-8a19bc0a7695",
+      "segmentId": "a3eb0e70-07c9-5708-8401-243cf78c3681",
+      "title": "Boundaries distractor",
+      "text": "My reflection: An unrelated glossary mentions boundaries but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "f85cb61f-2948-50af-bc66-bd518a39ae9c",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "4d84b608-f5e6-5150-bc3a-783d54806179",
+      "segmentId": "d57e157b-bc86-5361-86bb-0c44dcc33eb5",
+      "title": "Experiments distractor",
+      "text": "My reflection: An unrelated glossary mentions experiments but gives no advice or personal decision.",
+      "note": null,
+      "prompt": null,
+      "state": "available",
+      "createdAt": "2026-06-01T00:00:00.123456Z"
+    },
+    {
+      "id": "9c774a44-ccc7-5d09-9d5f-7a720b58f7f9",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "20285e07-0f35-5e02-b6d0-a17597e0ec90",
+      "segmentId": "9c774a44-ccc7-5d09-9d5f-7a720b58f7f9",
+      "title": "Withdrawn 0",
+      "text": "Source observation: Withdrawn witness phrase 0",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "f6d182c4-278a-5c2d-b573-371793859f91",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "389e536f-b5d9-5d26-b542-acdff0223cea",
+      "segmentId": "f6d182c4-278a-5c2d-b573-371793859f91",
+      "title": "Withdrawn 1",
+      "text": "Source observation: Withdrawn witness phrase 1",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "5bb85119-63af-5560-a398-d33291920e14",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "cca7f784-35c2-571c-b933-e0bd68812be3",
+      "segmentId": "5bb85119-63af-5560-a398-d33291920e14",
+      "title": "Withdrawn 2",
+      "text": "Source observation: Withdrawn witness phrase 2",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "48e2545a-eda6-5c30-a0b4-a39692c5cf73",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "1d27a705-d992-5bbd-a236-5a7d4c7354fa",
+      "segmentId": "48e2545a-eda6-5c30-a0b4-a39692c5cf73",
+      "title": "Withdrawn 3",
+      "text": "Source observation: Withdrawn witness phrase 3",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "e15e06c2-00ea-5867-b72a-5425f4cb4bac",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "861e9629-ced1-540b-8dd9-c968851cf61a",
+      "segmentId": "e15e06c2-00ea-5867-b72a-5425f4cb4bac",
+      "title": "Withdrawn 4",
+      "text": "Source observation: Withdrawn witness phrase 4",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "9383e4b5-c193-530c-95bc-bb985df7de22",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "c5e123c5-5b2a-5638-b6bb-4c7f938fa4f6",
+      "segmentId": "9383e4b5-c193-530c-95bc-bb985df7de22",
+      "title": "Withdrawn 5",
+      "text": "Source observation: Withdrawn witness phrase 5",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "483dfabe-6696-5716-b39b-2f3b24c970ee",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "0edc613c-1f66-5bd1-82d7-9daffb264f3f",
+      "segmentId": "483dfabe-6696-5716-b39b-2f3b24c970ee",
+      "title": "Withdrawn 6",
+      "text": "Source observation: Withdrawn witness phrase 6",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "b988be39-e48d-5b72-a053-fafab8807968",
+      "type": "source_segment",
+      "accountId": "account-a",
+      "contentId": "a24555e9-f67c-5b2f-92f6-6f8c9c9ca632",
+      "segmentId": "b988be39-e48d-5b72-a053-fafab8807968",
+      "title": "Withdrawn 7",
+      "text": "Source observation: Withdrawn witness phrase 7",
+      "note": null,
+      "prompt": null,
+      "state": "withdrawn",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "5cf9ae53-c696-5ab9-9f25-95168b8da41b",
+      "type": "highlight",
+      "accountId": "account-b",
+      "contentId": "1fc18195-63e5-5f0c-93c8-04796db4915f",
+      "segmentId": null,
+      "title": "Forbidden witness 0",
+      "text": "Captured passage: Forbidden evidence marker 0",
+      "note": null,
+      "prompt": null,
+      "state": "unauthorized",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "48cfb27e-ee3a-587d-883d-9a30bf4d39e2",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "018cf6ed-c111-5ae9-b16c-fddb6fcbae35",
+      "segmentId": null,
+      "title": "Forbidden witness 1",
+      "text": "My reflection: Forbidden evidence marker 1",
+      "note": null,
+      "prompt": null,
+      "state": "user_deleted",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "69633225-261c-579d-989a-324416efe252",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "16f9dd88-f9b2-5145-81a8-ec3bf95c193c",
+      "segmentId": null,
+      "title": "Forbidden witness 2",
+      "text": "Captured passage: Forbidden evidence marker 2",
+      "note": null,
+      "prompt": null,
+      "state": "revoked",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "d14843ca-6164-5e8c-9386-9730dd2a57e6",
+      "type": "reflection",
+      "accountId": "account-b",
+      "contentId": "9f815c35-3be8-5a05-8af8-f93a32425b9a",
+      "segmentId": null,
+      "title": "Forbidden witness 3",
+      "text": "My reflection: Forbidden evidence marker 3",
+      "note": null,
+      "prompt": null,
+      "state": "unauthorized",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "0d68892b-1d84-52b6-804c-a6ec5b06e743",
+      "type": "highlight",
+      "accountId": "account-a",
+      "contentId": "c2c480ea-c71a-505c-b90e-c7b0bcc44891",
+      "segmentId": null,
+      "title": "Forbidden witness 4",
+      "text": "Captured passage: Forbidden evidence marker 4",
+      "note": null,
+      "prompt": null,
+      "state": "user_deleted",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "7ead9684-611d-5df8-a640-5e668a87dfc3",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "c471a3db-eabd-5e0c-92bd-fc153674c5b8",
+      "segmentId": null,
+      "title": "Forbidden witness 5",
+      "text": "My reflection: Forbidden evidence marker 5",
+      "note": null,
+      "prompt": null,
+      "state": "revoked",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "fb0b81f7-57c8-5ba4-8f01-1150c6cbc0ad",
+      "type": "highlight",
+      "accountId": "account-b",
+      "contentId": "405cd84b-6cbd-56da-823f-6d2b35942ba4",
+      "segmentId": null,
+      "title": "Forbidden witness 6",
+      "text": "Captured passage: Forbidden evidence marker 6",
+      "note": null,
+      "prompt": null,
+      "state": "unauthorized",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    },
+    {
+      "id": "def28d42-b69a-5fe4-9215-d201aeb7233c",
+      "type": "reflection",
+      "accountId": "account-a",
+      "contentId": "eeb5325a-d781-51fa-b6fd-7342307625e1",
+      "segmentId": null,
+      "title": "Forbidden witness 7",
+      "text": "My reflection: Forbidden evidence marker 7",
+      "note": null,
+      "prompt": null,
+      "state": "user_deleted",
+      "createdAt": "2026-01-01T00:00:00.123456Z"
+    }
+  ],
+  "cases": [
+    {
+      "id": "source_segment-attention",
+      "class": "source_segment",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about attention.",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e"
+      ],
+      "eligibleIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e"
+      ],
+      "distractorIds": [
+        "33d7f0ea-695c-5e33-b9be-c26ab94d5096"
+      ],
+      "exactQuote": "Source observation: Protect one uninterrupted hour before opening messages.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-habits",
+      "class": "source_segment",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about habits.",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45"
+      ],
+      "eligibleIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45"
+      ],
+      "distractorIds": [
+        "6bceee70-ce0d-59e2-b40a-367352adcad7"
+      ],
+      "exactQuote": "Source observation: Attach a tiny repeatable action to an existing daily cue.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-sleep",
+      "class": "source_segment",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about sleep.",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f"
+      ],
+      "eligibleIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f"
+      ],
+      "distractorIds": [
+        "6375c50d-c557-5b1d-8498-7e4b7254e84a"
+      ],
+      "exactQuote": "Source observation: Keep a consistent waking time even after a late night.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-risk",
+      "class": "source_segment",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about risk.",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556"
+      ],
+      "eligibleIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556"
+      ],
+      "distractorIds": [
+        "fc98dcf8-e32f-5c05-ace3-a37a1a325f08"
+      ],
+      "exactQuote": "Source observation: Keep a cash reserve so an unexpected bill does not force a sale.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-learning",
+      "class": "source_segment",
+      "kind": "distractor",
+      "query": "How do I test whether I actually remember something?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d"
+      ],
+      "eligibleIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d"
+      ],
+      "distractorIds": [
+        "ebb76152-6843-5fbe-a743-b8b0b0b76608"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-feedback",
+      "class": "source_segment",
+      "kind": "distractor",
+      "query": "How should I turn vague criticism into useful guidance?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830"
+      ],
+      "eligibleIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830"
+      ],
+      "distractorIds": [
+        "ba00ffae-aad5-5350-8340-5591531341d4"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-rest",
+      "class": "source_segment",
+      "kind": "distractor",
+      "query": "How can I stop exhausting myself between hard tasks?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "b96cf7af-a5fd-54d6-a463-ce892cf561fa"
+      ],
+      "eligibleIds": [
+        "b96cf7af-a5fd-54d6-a463-ce892cf561fa"
+      ],
+      "distractorIds": [
+        "295b87f3-e893-545e-b624-1e74537afcd1"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-planning",
+      "class": "source_segment",
+      "kind": "distractor",
+      "query": "What makes an intimidating project easier to begin?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "052ca886-401d-585c-a79c-88895d9e6aca"
+      ],
+      "eligibleIds": [
+        "052ca886-401d-585c-a79c-88895d9e6aca"
+      ],
+      "distractorIds": [
+        "d76f7bf6-b11e-5b6b-a436-b2d299029bd7"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-uncertainty",
+      "class": "source_segment",
+      "kind": "semantic_paraphrase",
+      "query": "How can I become less attached to my first opinion?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "1923c424-d676-53fa-a23b-0dd18a3eb7d9"
+      ],
+      "eligibleIds": [
+        "1923c424-d676-53fa-a23b-0dd18a3eb7d9"
+      ],
+      "distractorIds": [
+        "74377ffd-f8cf-535b-a246-5b7f1fb67407"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-relationships",
+      "class": "source_segment",
+      "kind": "semantic_paraphrase",
+      "query": "How do I help someone feel understood?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "aecd1b79-c146-517f-a34b-9b512002405c"
+      ],
+      "eligibleIds": [
+        "aecd1b79-c146-517f-a34b-9b512002405c"
+      ],
+      "distractorIds": [
+        "f68dd11c-ba79-5a41-a478-4ca6a16f8332"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-boundaries",
+      "class": "source_segment",
+      "kind": "semantic_paraphrase",
+      "query": "How can I protect time without saying yes to everything?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "fc109188-2cfb-54a2-83dd-c14f16b6d985"
+      ],
+      "eligibleIds": [
+        "fc109188-2cfb-54a2-83dd-c14f16b6d985"
+      ],
+      "distractorIds": [
+        "d3d875eb-99f2-503d-bfdc-eb8152136632"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "source_segment-experiments",
+      "class": "source_segment",
+      "kind": "semantic_paraphrase",
+      "query": "How do I explore a risky idea cheaply?",
+      "scope": [
+        "source_segment"
+      ],
+      "requiredIds": [
+        "77d34a5d-eff7-5265-b79d-e50a7cab9bef"
+      ],
+      "eligibleIds": [
+        "77d34a5d-eff7-5265-b79d-e50a7cab9bef"
+      ],
+      "distractorIds": [
+        "b3bb8319-0782-59c2-b6e6-be3a4ad0ae83"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-attention",
+      "class": "highlight",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about attention.",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175"
+      ],
+      "eligibleIds": [
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175"
+      ],
+      "distractorIds": [
+        "94737ac6-7280-50c1-8b0c-b3d91d6a82f6"
+      ],
+      "exactQuote": "Captured passage: Protect one uninterrupted hour before opening messages.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-habits",
+      "class": "highlight",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about habits.",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329"
+      ],
+      "eligibleIds": [
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329"
+      ],
+      "distractorIds": [
+        "962d8d63-a289-58e6-b789-de7490a098e6"
+      ],
+      "exactQuote": "Captured passage: Attach a tiny repeatable action to an existing daily cue.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-sleep",
+      "class": "highlight",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about sleep.",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "297a92c0-7017-5929-b731-31797f7ac0e9"
+      ],
+      "eligibleIds": [
+        "297a92c0-7017-5929-b731-31797f7ac0e9"
+      ],
+      "distractorIds": [
+        "4cc5ed5a-5483-5726-9417-1cdaa0cf0cf6"
+      ],
+      "exactQuote": "Captured passage: Keep a consistent waking time even after a late night.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-risk",
+      "class": "highlight",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about risk.",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b"
+      ],
+      "eligibleIds": [
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b"
+      ],
+      "distractorIds": [
+        "7e5d53c9-c642-5674-8e6f-53d3b72a8a45"
+      ],
+      "exactQuote": "Captured passage: Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Context before the decisive passage. Keep a cash reserve so an unexpected bill does not force a sale.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-learning",
+      "class": "highlight",
+      "kind": "distractor",
+      "query": "How do I test whether I actually remember something?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "edb765f8-220b-5357-9556-a4e47fb48664"
+      ],
+      "eligibleIds": [
+        "edb765f8-220b-5357-9556-a4e47fb48664"
+      ],
+      "distractorIds": [
+        "3a8b562f-e7b7-5eac-9d89-d8d2a0668de8"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-feedback",
+      "class": "highlight",
+      "kind": "distractor",
+      "query": "How should I turn vague criticism into useful guidance?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9"
+      ],
+      "eligibleIds": [
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9"
+      ],
+      "distractorIds": [
+        "96c2338b-c440-54a9-8f1b-75f05fe8d1b5"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-rest",
+      "class": "highlight",
+      "kind": "distractor",
+      "query": "How can I stop exhausting myself between hard tasks?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "127ce549-e4bc-5f49-987a-69112a267b1e"
+      ],
+      "eligibleIds": [
+        "127ce549-e4bc-5f49-987a-69112a267b1e"
+      ],
+      "distractorIds": [
+        "1d0c17bb-fd48-55ee-806d-756040dbad93"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-planning",
+      "class": "highlight",
+      "kind": "distractor",
+      "query": "What makes an intimidating project easier to begin?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "02551587-d1c2-567f-a2f0-2c59151b3629"
+      ],
+      "eligibleIds": [
+        "02551587-d1c2-567f-a2f0-2c59151b3629"
+      ],
+      "distractorIds": [
+        "c0e5e7c3-1d3f-55e4-a6af-369f3723b104"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "highlight-uncertainty",
+      "class": "highlight",
+      "kind": "semantic_paraphrase",
+      "query": "How can I become less attached to my first opinion?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "3fcf061d-e855-51d9-a4ff-a8775f990293"
+      ],
+      "eligibleIds": [
+        "3fcf061d-e855-51d9-a4ff-a8775f990293"
+      ],
+      "distractorIds": [
+        "fa5b6ba3-73c0-5cee-a956-6e14a6bb3500"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "beyond_first_page"
+    },
+    {
+      "id": "highlight-relationships",
+      "class": "highlight",
+      "kind": "semantic_paraphrase",
+      "query": "How do I help someone feel understood?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "a8bb16a3-f244-5207-be87-dce9ef8d1dc7"
+      ],
+      "eligibleIds": [
+        "a8bb16a3-f244-5207-be87-dce9ef8d1dc7"
+      ],
+      "distractorIds": [
+        "df9f5dc1-9760-5767-9a5a-75784c55c79c"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "beyond_first_page"
+    },
+    {
+      "id": "highlight-boundaries",
+      "class": "highlight",
+      "kind": "semantic_paraphrase",
+      "query": "How can I protect time without saying yes to everything?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "a9047b0a-d672-5b90-afaf-6904702229ea"
+      ],
+      "eligibleIds": [
+        "a9047b0a-d672-5b90-afaf-6904702229ea"
+      ],
+      "distractorIds": [
+        "106db632-1041-5aea-8317-1b8b64f530fd"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "beyond_first_page"
+    },
+    {
+      "id": "highlight-experiments",
+      "class": "highlight",
+      "kind": "semantic_paraphrase",
+      "query": "How do I explore a risky idea cheaply?",
+      "scope": [
+        "highlight"
+      ],
+      "requiredIds": [
+        "7c9b4ab7-58d7-5286-b657-aa58e1655521"
+      ],
+      "eligibleIds": [
+        "7c9b4ab7-58d7-5286-b657-aa58e1655521"
+      ],
+      "distractorIds": [
+        "3829c5cf-3396-5f45-9ea7-b2d1c0e8d134"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "beyond_first_page"
+    },
+    {
+      "id": "reflection-attention",
+      "class": "reflection",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about attention.",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "eligibleIds": [
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "distractorIds": [
+        "599e78a7-8cf5-5513-b480-e6731f0ff0f8"
+      ],
+      "exactQuote": "My reflection: Protect one uninterrupted hour before opening messages.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-habits",
+      "class": "reflection",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about habits.",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "eligibleIds": [
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "distractorIds": [
+        "50d46a79-b5e8-52cb-a8a1-82818b8aebe9"
+      ],
+      "exactQuote": "My reflection: Attach a tiny repeatable action to an existing daily cue.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-sleep",
+      "class": "reflection",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about sleep.",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "eligibleIds": [
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "distractorIds": [
+        "bdd72e57-4d70-51b2-b888-77f550287e2f"
+      ],
+      "exactQuote": "My reflection: Keep a consistent waking time even after a late night.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-risk",
+      "class": "reflection",
+      "kind": "exact_quote",
+      "query": "Quote exactly the stored passage about risk.",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "eligibleIds": [
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "distractorIds": [
+        "9c8dfa4f-0d8b-542a-8083-b83f25a6a33a"
+      ],
+      "exactQuote": "My reflection: Keep a cash reserve so an unexpected bill does not force a sale.",
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-learning",
+      "class": "reflection",
+      "kind": "distractor",
+      "query": "How do I test whether I actually remember something?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "eligibleIds": [
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "distractorIds": [
+        "29948af1-3436-5eed-b32a-68cdf050d5fd"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-feedback",
+      "class": "reflection",
+      "kind": "distractor",
+      "query": "How should I turn vague criticism into useful guidance?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "eligibleIds": [
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "distractorIds": [
+        "192d70da-b898-5497-b00c-fadd59b62c36"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-rest",
+      "class": "reflection",
+      "kind": "distractor",
+      "query": "How can I stop exhausting myself between hard tasks?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "ae2d30bd-c3d2-51c9-8f62-7ec6171812f7"
+      ],
+      "eligibleIds": [
+        "ae2d30bd-c3d2-51c9-8f62-7ec6171812f7"
+      ],
+      "distractorIds": [
+        "f1770e5c-e3ec-51a9-8ead-0ad608a883be"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-planning",
+      "class": "reflection",
+      "kind": "distractor",
+      "query": "What makes an intimidating project easier to begin?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "95f3194d-6ecb-5dae-b08c-0a17853a4a41"
+      ],
+      "eligibleIds": [
+        "95f3194d-6ecb-5dae-b08c-0a17853a4a41"
+      ],
+      "distractorIds": [
+        "4b1c8d52-50a9-542f-b17a-edf48b999511"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-uncertainty",
+      "class": "reflection",
+      "kind": "semantic_paraphrase",
+      "query": "How can I become less attached to my first opinion?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "3b84785f-a44a-567c-94b1-d4b55b9b3c26"
+      ],
+      "eligibleIds": [
+        "3b84785f-a44a-567c-94b1-d4b55b9b3c26"
+      ],
+      "distractorIds": [
+        "b7d483b3-43d1-5c90-b936-8d7248d96fb9"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-relationships",
+      "class": "reflection",
+      "kind": "semantic_paraphrase",
+      "query": "How do I help someone feel understood?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "83cda3a1-c35b-5df9-9850-6a9b057dfd6e"
+      ],
+      "eligibleIds": [
+        "83cda3a1-c35b-5df9-9850-6a9b057dfd6e"
+      ],
+      "distractorIds": [
+        "47bb6e2d-d2b0-5d44-bc60-e6e50e61aa0c"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-boundaries",
+      "class": "reflection",
+      "kind": "semantic_paraphrase",
+      "query": "How can I protect time without saying yes to everything?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "2ed15df3-2f6f-5547-9867-6f6c2cd79504"
+      ],
+      "eligibleIds": [
+        "2ed15df3-2f6f-5547-9867-6f6c2cd79504"
+      ],
+      "distractorIds": [
+        "c1a5ff56-2798-504f-8a73-fe8351e69b34"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "reflection-experiments",
+      "class": "reflection",
+      "kind": "semantic_paraphrase",
+      "query": "How do I explore a risky idea cheaply?",
+      "scope": [
+        "reflection"
+      ],
+      "requiredIds": [
+        "288d9f2b-ce24-512a-8798-6c90c73a6cd6"
+      ],
+      "eligibleIds": [
+        "288d9f2b-ce24-512a-8798-6c90c73a6cd6"
+      ],
+      "distractorIds": [
+        "f85cb61f-2948-50af-bc66-bd518a39ae9c"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "mixed-attention",
+      "class": "mixed",
+      "kind": "mixed_scope",
+      "query": "Compare my own interpretation with the source advice about attention.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e",
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "eligibleIds": [
+        "88c23d2f-9044-50ba-8cb5-dff1b996851e",
+        "6eeb7a2c-5c79-5601-a637-55ef0ed4f175",
+        "92616bd3-e062-57a0-ae4a-9e99a21a3368"
+      ],
+      "distractorIds": [
+        "33d7f0ea-695c-5e33-b9be-c26ab94d5096",
+        "94737ac6-7280-50c1-8b0c-b3d91d6a82f6",
+        "599e78a7-8cf5-5513-b480-e6731f0ff0f8"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "mixed-habits",
+      "class": "mixed",
+      "kind": "mixed_scope",
+      "query": "Compare my own interpretation with the source advice about habits.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45",
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "eligibleIds": [
+        "084cf88a-e392-5983-a68a-6d20e4db7d45",
+        "916e5efe-18e6-5b63-a7f6-f64dc0b80329",
+        "3aa84b12-08bd-5a8c-85a5-d63c8ba09825"
+      ],
+      "distractorIds": [
+        "6bceee70-ce0d-59e2-b40a-367352adcad7",
+        "962d8d63-a289-58e6-b789-de7490a098e6",
+        "50d46a79-b5e8-52cb-a8a1-82818b8aebe9"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "mixed-sleep",
+      "class": "mixed",
+      "kind": "mixed_scope",
+      "query": "Compare my own interpretation with the source advice about sleep.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f",
+        "297a92c0-7017-5929-b731-31797f7ac0e9",
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "eligibleIds": [
+        "7bec5795-c936-56e2-b510-5c2930c1bf1f",
+        "297a92c0-7017-5929-b731-31797f7ac0e9",
+        "03c26898-ce3c-5eae-bfc2-744716c45173"
+      ],
+      "distractorIds": [
+        "6375c50d-c557-5b1d-8498-7e4b7254e84a",
+        "4cc5ed5a-5483-5726-9417-1cdaa0cf0cf6",
+        "bdd72e57-4d70-51b2-b888-77f550287e2f"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "mixed-risk",
+      "class": "mixed",
+      "kind": "mixed_scope",
+      "query": "Compare my own interpretation with the source advice about risk.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556",
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b",
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "eligibleIds": [
+        "0c01e7de-30c7-584c-a110-360d22bbf556",
+        "5d8f8569-30e8-5f8a-b82b-1e0deff6924b",
+        "d6e5e092-c51b-5c9a-8321-0733be4cb5e7"
+      ],
+      "distractorIds": [
+        "fc98dcf8-e32f-5c05-ace3-a37a1a325f08",
+        "7e5d53c9-c642-5674-8e6f-53d3b72a8a45",
+        "9c8dfa4f-0d8b-542a-8083-b83f25a6a33a"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "mixed-learning",
+      "class": "mixed",
+      "kind": "mixed_scope",
+      "query": "Compare my own interpretation with the source advice about learning.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d",
+        "edb765f8-220b-5357-9556-a4e47fb48664",
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "eligibleIds": [
+        "2b3ddf77-f8e4-57f4-a88d-fa445590165d",
+        "edb765f8-220b-5357-9556-a4e47fb48664",
+        "05ea7863-a09f-5e26-840d-b62f514aab75"
+      ],
+      "distractorIds": [
+        "ebb76152-6843-5fbe-a743-b8b0b0b76608",
+        "3a8b562f-e7b7-5eac-9d89-d8d2a0668de8",
+        "29948af1-3436-5eed-b32a-68cdf050d5fd"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "mixed-feedback",
+      "class": "mixed",
+      "kind": "mixed_scope",
+      "query": "Compare my own interpretation with the source advice about feedback.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830",
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "eligibleIds": [
+        "c6f1c648-8993-561e-a0c1-e5030a387830",
+        "59bf5ee9-ffae-57c9-9d75-e44f8c8771a9",
+        "1fd8ca33-a6aa-54cd-9f41-56c0e776859b"
+      ],
+      "distractorIds": [
+        "ba00ffae-aad5-5350-8340-5591531341d4",
+        "96c2338b-c440-54a9-8f1b-75f05fe8d1b5",
+        "192d70da-b898-5497-b00c-fadd59b62c36"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "available"
+      ],
+      "abstentionRequired": false,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-0",
+      "class": "abstention",
+      "kind": "withdrawn",
+      "query": "What did the withdrawn witness 0 say?",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "9c774a44-ccc7-5d09-9d5f-7a720b58f7f9"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-1",
+      "class": "abstention",
+      "kind": "withdrawn",
+      "query": "What did the withdrawn witness 1 say?",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "f6d182c4-278a-5c2d-b573-371793859f91"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-2",
+      "class": "abstention",
+      "kind": "withdrawn",
+      "query": "What did the withdrawn witness 2 say?",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "5bb85119-63af-5560-a398-d33291920e14"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-3",
+      "class": "abstention",
+      "kind": "withdrawn",
+      "query": "What did the withdrawn witness 3 say?",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "48e2545a-eda6-5c30-a0b4-a39692c5cf73"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-4",
+      "class": "abstention",
+      "kind": "no_evidence",
+      "query": "Find my missing account 4 astronomy opinion.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-5",
+      "class": "abstention",
+      "kind": "no_evidence",
+      "query": "Find my missing account 5 astronomy opinion.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-6",
+      "class": "abstention",
+      "kind": "no_evidence",
+      "query": "Find my missing account 6 astronomy opinion.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "abstain-7",
+      "class": "abstention",
+      "kind": "no_evidence",
+      "query": "Find my missing account 7 astronomy opinion.",
+      "scope": [
+        "source_segment",
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "withdrawn",
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-0",
+      "class": "exclusion",
+      "kind": "unauthorized",
+      "query": "Quote the forbidden witness 0.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "5cf9ae53-c696-5ab9-9f25-95168b8da41b"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-1",
+      "class": "exclusion",
+      "kind": "user_deleted",
+      "query": "Quote the forbidden witness 1.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "48cfb27e-ee3a-587d-883d-9a30bf4d39e2"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-2",
+      "class": "exclusion",
+      "kind": "revoked",
+      "query": "Quote the forbidden witness 2.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "69633225-261c-579d-989a-324416efe252"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-3",
+      "class": "exclusion",
+      "kind": "unauthorized",
+      "query": "Quote the forbidden witness 3.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "d14843ca-6164-5e8c-9386-9730dd2a57e6"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-4",
+      "class": "exclusion",
+      "kind": "user_deleted",
+      "query": "Quote the forbidden witness 4.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "0d68892b-1d84-52b6-804c-a6ec5b06e743"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-5",
+      "class": "exclusion",
+      "kind": "revoked",
+      "query": "Quote the forbidden witness 5.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "7ead9684-611d-5df8-a640-5e668a87dfc3"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-6",
+      "class": "exclusion",
+      "kind": "unauthorized",
+      "query": "Quote the forbidden witness 6.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "fb0b81f7-57c8-5ba4-8f01-1150c6cbc0ad"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    },
+    {
+      "id": "exclude-7",
+      "class": "exclusion",
+      "kind": "user_deleted",
+      "query": "Quote the forbidden witness 7.",
+      "scope": [
+        "highlight",
+        "reflection"
+      ],
+      "requiredIds": [],
+      "eligibleIds": [],
+      "distractorIds": [
+        "def28d42-b69a-5fe4-9215-d201aeb7233c"
+      ],
+      "exactQuote": null,
+      "allowedCitationStates": [
+        "unavailable"
+      ],
+      "abstentionRequired": true,
+      "baselineClientSelection": "explicit_selection"
+    }
+  ]
+}

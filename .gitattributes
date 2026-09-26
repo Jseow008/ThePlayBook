@@ -1,0 +1,4 @@
+# Recorded synthetic provider output is review evidence, not handwritten source.
+tests/fixtures/retrieval/provider-vectors-*.json linguist-generated=true
+tests/fixtures/retrieval/provider-selections-*.json linguist-generated=true
+tests/fixtures/retrieval/evidence/*.json linguist-generated=true

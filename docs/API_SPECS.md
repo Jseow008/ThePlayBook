@@ -363,9 +363,7 @@ Required email-template rule: every future weekly email must embed the `GET` uns
 
 ## 6. Admin APIs
 
-`GET /api/admin/account-data-snapshots/process` is a `cron` maintenance route protected by the server credential. It reconciles expired operations/snapshots and prunes eligible records; route presence does not prove scheduled production execution. The reported maintenance failure remains deferred in [STATUS.md](STATUS.md#deferred-and-separately-open).
-
-The admin routes in the table below are protected by session + role checks; the maintenance route above uses its separate cron credential.
+The admin routes in the table below are protected by session + role checks.
 
 | Route | Method | Purpose |
 | --- | --- | --- |

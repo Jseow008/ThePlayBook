@@ -234,11 +234,11 @@ describe("proxy auth routing", () => {
         expect(updateSession).not.toHaveBeenCalled();
     });
 
-    it("lets the authorized story image processor bypass the admin IP gate", async () => {
+    it.each(["story-images", "personal-evidence"])("lets the authorized %s processor bypass the admin IP gate", async (processor) => {
         vi.stubEnv("NODE_ENV", "production");
         process.env.CRON_SECRET = "cron-secret";
 
-        const response = await proxy(new NextRequest("http://localhost/api/admin/story-images/process", {
+        const response = await proxy(new NextRequest(`http://localhost/api/admin/${processor}/process`, {
             headers: { authorization: "Bearer cron-secret" },
         }));
 

@@ -1,0 +1,55 @@
+{
+  "version": "personal-retrieval-hosted-release-preparation-v1",
+  "status": "NOT_EXECUTED",
+  "reason": "Hosted creation remained pending explicit acknowledgment of the quoted USD 10/month resource cost. Subsequent independent final-answer grounding failures kept the release blocked, so no hosted candidate was created.",
+  "sourceCommit": "8a3efe11d52add31a3daeb6905cf52060c154fef",
+  "productionCodeCommit": "a5341e6e05b0a4fb0157d369d733bd998eef3acd",
+  "productionProjectRef": "xmuqsgfxuaaophxnwure",
+  "organizationId": "gpzuqaperuoiqvtgugzb",
+  "region": "ap-south-1",
+  "readOnlyPreparation": {
+    "isolatedTrackedSourceArchive": true,
+    "productionSecretsCopied": false,
+    "migration": "20260918164448_add_personal_evidence_index.sql",
+    "migrationSha256": "8349c18d1bbf766e5424e9765f48b28e3453111ca375e84e9f83107b7fc20144",
+    "productionFingerprint": {
+      "categories": 14,
+      "sha256": "b15469bcf2d4ce2726f936f4c46983c39ed9a256d244f94f4b8465f23646584f"
+    },
+    "productionTypes": {
+      "bytes": 50788,
+      "sha256": "9e16eb30b3f4cbd86ade8668fc0cc9503d7ba2dd3c97234922f1c55ee116a9e4"
+    },
+    "productionBackupInventory": {
+      "observedAt": "2026-09-18T20:02:13.474Z",
+      "completedDailyPhysicalBackups": 7,
+      "latestCompletedBackup": "2026-09-17T23:44:38.004Z",
+      "pitrEnabled": false,
+      "freshnessMustBeRecheckedBeforeProductionMutation": true
+    }
+  },
+  "notExecuted": [
+    "Hosted project creation",
+    "Hosted baseline migration replay and schema/type parity comparison",
+    "Hosted candidate guarded reset and final dry-run",
+    "Pending migration application to hosted candidate and intended delta review",
+    "Hosted security/advisor checks",
+    "Hosted production-build seven-test application smoke",
+    "Any production migration, settings change, deployment or provider call"
+  ],
+  "cleanup": {
+    "hostedProjectCreated": false,
+    "chargedCreationPerformed": false,
+    "privateBuildAndCandidateWorkdirsRemoved": true,
+    "generatedUnusedCandidatePasswordRemoved": true,
+    "privateBaselineTypesAndFingerprintFilesRemoved": true,
+    "privatePathPointerRemoved": true,
+    "sharedLocalDatabaseAndQualityArtifactsUntouched": true,
+    "productionPreflightDirectoryUntouched": true
+  },
+  "limitations": [
+    "Preparation is not hosted rehearsal evidence and does not satisfy the database-facing release gate.",
+    "No new hosted candidate existed to delete or compare against production.",
+    "Backup observation is historical and is not authorization to mutate production."
+  ]
+}

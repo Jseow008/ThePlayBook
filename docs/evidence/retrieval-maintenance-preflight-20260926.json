@@ -1,0 +1,101 @@
+{
+  "observedAt": "2026-09-26T06:17:00Z",
+  "productionProject": "xmuqsgfxuaaophxnwure",
+  "mainCommit": "8ac20e87e8e4d9e65284d0f7cea9f2a005e3c5c3",
+  "migrationHistory": {
+    "localCount": 102,
+    "productionCount": 102,
+    "missingVersions": [],
+    "extraVersions": [],
+    "latest": "20260918151058",
+    "repairRequiredByThisCheck": false
+  },
+  "productionDryRun": {
+    "applied": false,
+    "pending": [
+      "20260918164448_add_personal_evidence_index.sql",
+      "20260926043844_add_snapshot_maintenance_cron.sql"
+    ]
+  },
+  "latestObservedBackup": {
+    "status": "COMPLETED",
+    "timestamp": "2026-09-25T23:45:02.269Z"
+  },
+  "productionSchemaFingerprint": [
+    {
+      "category": "column_definition",
+      "object_count": 235,
+      "fingerprint": "18d3c554de58d14e3bd22d09b9eaa2d5"
+    },
+    {
+      "category": "constraint_definition",
+      "object_count": 112,
+      "fingerprint": "de8260944c90f6d5a8c19b366abdb7a3"
+    },
+    {
+      "category": "enum_definition",
+      "object_count": 8,
+      "fingerprint": "ecad8d1cb9108011203756428dee2151"
+    },
+    {
+      "category": "extension_definition",
+      "object_count": 2,
+      "fingerprint": "d9e15e4100dcfa41f08a6079ced14ce8"
+    },
+    {
+      "category": "function_acl",
+      "object_count": 60,
+      "fingerprint": "4d5a1864cd249216d1befb524f007353"
+    },
+    {
+      "category": "function_definition",
+      "object_count": 43,
+      "fingerprint": "a6527cbafe4a96ede1fff19be4ca97f6"
+    },
+    {
+      "category": "index_definition",
+      "object_count": 93,
+      "fingerprint": "f2fa9395080e79d6a51bb64170304a2e"
+    },
+    {
+      "category": "policy_definition",
+      "object_count": 70,
+      "fingerprint": "6e4e13f82009ab06a3a630b8cd7c3b16"
+    },
+    {
+      "category": "relation_acl",
+      "object_count": 447,
+      "fingerprint": "3b64a4042562a728dc125afcebf79856"
+    },
+    {
+      "category": "relation_comment",
+      "object_count": 5,
+      "fingerprint": "3c2ce8aebd647de0cdc1e645c8c7f793"
+    },
+    {
+      "category": "relation_definition",
+      "object_count": 25,
+      "fingerprint": "93af22ec29cb9ceb1fba71161d05262d"
+    },
+    {
+      "category": "storage_bucket_definition",
+      "object_count": 2,
+      "fingerprint": "a4891b7cf84ee01cd9d9e8340e5faf7d"
+    },
+    {
+      "category": "trigger_definition",
+      "object_count": 19,
+      "fingerprint": "909a3172131547e95ede0e9d8e1ba23e"
+    },
+    {
+      "category": "view_definition",
+      "object_count": 1,
+      "fingerprint": "b5d6f2084dc0e5068d5a02c3f4176500"
+    }
+  ],
+  "limitations": [
+    "History-version parity does not establish schema parity; combined hosted rehearsal and schema comparison remain pending.",
+    "The earlier March-cutoff claim is contradicted by direct production observation; its original source has not been established.",
+    "No production migration, application merge, or deployment performed."
+  ]
+}

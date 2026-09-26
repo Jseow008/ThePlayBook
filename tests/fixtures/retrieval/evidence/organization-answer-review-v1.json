@@ -1,0 +1,88 @@
+{
+  "scope": "Independent AI review of bounded development responses, not frozen V2 or release approval.",
+  "remainingLimitations": [
+    "Selector still selects a wrong-entity candidate in this development case.",
+    "One of three corrected responses makes an unsupported organization-relationship claim.",
+    "These results cannot substitute for the frozen retrieval and answer-quality gates."
+  ],
+  "reviews": [
+    {
+      "artifact": "organization-answer-development-v1.json",
+      "artifactSha256": "5407abe1e789204ceaa3bb5a274d57c4ae0e037b55c78e2d586ba71bd41d35f7",
+      "run": 1,
+      "responseSha256": "0218a3b159a75d35f9b464fad32eca17cd9e3d1816b53b37a0bd8f27339386d4",
+      "reviewer": "/root",
+      "reviewerKind": "ai",
+      "independent": true,
+      "grounded": true,
+      "answerComplete": false,
+      "abstained": false,
+      "notes": "Identifies that the passage names Museum and reports its stored deadline, but corrects the requested Guild to that entity instead of explicitly establishing that Guild data is unavailable. Not accepted as a complete abstention."
+    },
+    {
+      "artifact": "organization-answer-development-v1.json",
+      "artifactSha256": "5407abe1e789204ceaa3bb5a274d57c4ae0e037b55c78e2d586ba71bd41d35f7",
+      "run": 2,
+      "responseSha256": "a9a933d7f69c3d8471281a83d8c51a4b7254095e9ccc09cc1ac143ef0f2f9bfb",
+      "reviewer": "/root",
+      "reviewerKind": "ai",
+      "independent": true,
+      "grounded": true,
+      "answerComplete": false,
+      "abstained": false,
+      "notes": "Identifies that the passage names Museum and reports its stored deadline, but corrects the requested Guild to that entity instead of explicitly establishing that Guild data is unavailable. Not accepted as a complete abstention."
+    },
+    {
+      "artifact": "organization-answer-development-v1.json",
+      "artifactSha256": "5407abe1e789204ceaa3bb5a274d57c4ae0e037b55c78e2d586ba71bd41d35f7",
+      "run": 3,
+      "responseSha256": "3eeacd18573dc536318de5fa0397715372f731c55c0fe6ebb2e28cd4f6f1f1d5",
+      "reviewer": "/root",
+      "reviewerKind": "ai",
+      "independent": true,
+      "grounded": true,
+      "answerComplete": false,
+      "abstained": false,
+      "notes": "Identifies that the passage names Museum and reports its stored deadline, but corrects the requested Guild to that entity instead of explicitly establishing that Guild data is unavailable. Not accepted as a complete abstention."
+    },
+    {
+      "artifact": "organization-answer-development-v2.json",
+      "artifactSha256": "1dd6fe95137576684d0e89c0dfeff5be38e2f3f1bf6c4b3b9f881820d41b3b90",
+      "run": 1,
+      "responseSha256": "e2a72f513255cb7bca0abf0c6c04b29e3c6cda9095abf09ebc160db8bd3dcfa9",
+      "reviewer": "/root",
+      "reviewerKind": "ai",
+      "independent": true,
+      "grounded": true,
+      "answerComplete": true,
+      "abstained": true,
+      "notes": "Explicitly says the requested Guild deadline is unestablished. Additional Museum deadline is clearly attributed to Museum; unnecessary additional information is a concision concern, not a substituted Guild fact."
+    },
+    {
+      "artifact": "organization-answer-development-v2.json",
+      "artifactSha256": "1dd6fe95137576684d0e89c0dfeff5be38e2f3f1bf6c4b3b9f881820d41b3b90",
+      "run": 2,
+      "responseSha256": "d0918fccf96c28d96a36c0076c38fb2947a777c9bcd90810be02cea69746929c",
+      "reviewer": "/root",
+      "reviewerKind": "ai",
+      "independent": true,
+      "grounded": true,
+      "answerComplete": true,
+      "abstained": true,
+      "notes": "Explicitly says the requested Guild deadline is unestablished. Additional Museum deadline is clearly attributed to Museum; unnecessary additional information is a concision concern, not a substituted Guild fact."
+    },
+    {
+      "artifact": "organization-answer-development-v2.json",
+      "artifactSha256": "1dd6fe95137576684d0e89c0dfeff5be38e2f3f1bf6c4b3b9f881820d41b3b90",
+      "run": 3,
+      "responseSha256": "eddb00d37555e98248a58c1063427d0d5abf4a9757c4c1af256e48d50a43e06a",
+      "reviewer": "/root",
+      "reviewerKind": "ai",
+      "independent": true,
+      "grounded": false,
+      "answerComplete": true,
+      "abstained": true,
+      "notes": "Explicitly says the requested Guild deadline is unestablished, but asserts the differently named entities are different organizations; the supplied text cannot rule out aliases or establish that relationship."
+    }
+  ]
+}

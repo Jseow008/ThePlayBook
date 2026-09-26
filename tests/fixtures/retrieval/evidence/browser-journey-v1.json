@@ -1,0 +1,62 @@
+{
+  "version": "authenticated-personal-retrieval-journey-v1",
+  "environment": "Local production Next build; disposable Supabase; real Google/Anthropic providers and configured Upstash limiter; ordinary temporary account",
+  "buildId": "GyEbwfseCUOG4KQpafkjA",
+  "builtAt": "2026-09-18T17:29:11.645Z",
+  "steps": [
+    "UI selected passage and saved attached note",
+    "UI saved reflection; waited for acknowledgement",
+    "Two real bounded index-worker invocations each completed one record",
+    "Reopened Notes and asked real synthesis question",
+    "Asked exact reflection and received stored text",
+    "Existing note link reopened reader with saved highlight mark",
+    "Settings Download My Data produced parseable verified export",
+    "Reopened Notes and prior chat restored"
+  ],
+  "captures": {
+    "highlight": "Reserve the first uninterrupted hour for difficult work before opening email. Keep notifications off until that hour is complete.",
+    "note": "I disagree with refusing every interruption: helping my recovering father takes priority over my focus block.",
+    "reflection": "Tomorrow I will leave my phone in the kitchen and spend the first hour drafting my proposal before checking messages."
+  },
+  "transcript": "Ask These Notes\n\nHow does my written note qualify the focus advice, and what did I decide to do tomorrow?\n\nYour written note's qualification:\n\nYou disagreed with the absolute \"refuse every interruption\" approach from the highlight. Your note clarifies that helping your recovering father takes priority over your focus block—establishing a boundary condition where interruptions aren't universally off-limits.\n\nWhat you decided for tomorrow:\n\nYou reflected that you'll leave your phone in the kitchen and spend the first hour drafting your proposal before checking messages. This adapts the focus advice while preserving your flexibility for caregiving needs.\n\nQuote my reflection exactly about where I will leave my phone and what I will work on tomorrow.\n\nTomorrow I will leave my phone in the kitchen and spend the first hour drafting my proposal before checking messages.\n\nPull the strongest theme\nShow supporting notes\nFind what's missing\nMatching saved captures\nAll content\nStart new chat\n\nGrounded only in the notes currently in scope.",
+  "export": {
+    "sha256": "e250ea21182af1c595bef11ac2d297888db55aed28c93d71931b631f90d50d0e",
+    "bytes": 5105,
+    "collections": [
+      "preferences",
+      "user_library",
+      "highlights",
+      "reflections",
+      "reading_activity",
+      "feedback",
+      "submitted_requests",
+      "request_votes",
+      "notification_preferences",
+      "request_notifications",
+      "ai_usage"
+    ],
+    "highlights": 1,
+    "reflections": 1,
+    "aiUsageEvents": 2
+  },
+  "indexStates": [
+    {
+      "evidence_type": "reflection",
+      "state": "ready",
+      "count": "1"
+    },
+    {
+      "evidence_type": "highlight",
+      "state": "ready",
+      "count": "1"
+    }
+  ],
+  "limitations": [
+    "Build preceded subsequent durable-worker lease and client-session-hook fixes; final build recheck remains required.",
+    "First reflection save was followed immediately by navigation before acknowledgement and did not persist; second save acknowledged and persisted.",
+    "Synthesis called the note’s absolute interruption interpretation an approach from the highlight; source wording only says uninterrupted hour and notifications off. Retain for independent attribution review.",
+    "Cleanup discovered existing direct account deletion fails when library rows remain: revision DELETE trigger inserts state after auth user deletion, violating FK. Fixture cleanup explicitly removed its library rows first.",
+    "This small-account journey does not replace over-cap fixtures or three-run quality adjudication."
+  ],
+  "ownedFixtureCleanup": "verified account and content deleted; dependent captures cascade"
+}
