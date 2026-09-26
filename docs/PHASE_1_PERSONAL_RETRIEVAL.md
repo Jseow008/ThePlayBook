@@ -1,6 +1,6 @@
 # Typed personal retrieval (#3, #4, #6)
 
-Status: production migrations and initial indexing complete; **combined application PR #153 awaits final CI and deployment**.
+Status: **released and production-verified on 26 September 2026** at `d159c6f8` (PR #153, including #154).
 
 ## Evidence-first continuation — 26 September 2026
 
@@ -38,6 +38,16 @@ The user approved replacing final prose generation for matched retrieval respons
 - All three production migrations applied under existing authorization. Production has 105 versions, a clean follow-up dry-run, matching schema fingerprints and generated types, and six passing security checks. All 46 captures indexed successfully with no failed/deferred rows. Production maintenance ran successfully (four expired snapshots and four old operations removed).
 - Candidate Cron also succeeded on its actual hourly schedule at 07:17 UTC. Hosted branch deletion and absence were verified; isolated app/Redis and candidate credentials are cleaned up.
 - PR #155 merged as `7ff1dd98`. Strict up-to-date branch protection would serialize repeated full CI for #153/#154, so the remaining reviewed changes are packaged together in #153 on current main. The implementation matches the tested combined candidate. #154 stays open until #153 merges, then closes as superseded. Next: final exact-head CI, squash merge #153, verify deployment and authenticated route behavior. Do not reapply migrations or rerun unchanged model evaluations.
+
+## Production release continuation — 26 September 2026
+
+- PR #155 merged as `7ff1dd98`; combined #153 merged as `d159c6f8` with every required check passing. #154 is closed as superseded; its reviewed implementation is included unchanged in #153. The merged application tree matches the hosted candidate.
+- The three reviewed migrations are applied, all 46 existing captures are ready, and production schema/types/security/dry-run checks pass. Do not reapply migrations or rerun unchanged model-quality evidence.
+- Hosted branch `wadjiymmnupaonongzxu` was deleted and absence verified. Its private credentials, synthetic fixtures, isolated app, and Redis services were removed. The unrelated prepared local Supabase instance was left alone.
+- Production deployment `6676337814` reports success for `d159c6f8`; Vercel commit status and main validation/security checks passed. On `www.netflux.blog`, an authenticated empty-scope Notes request returned 200, then the same cookie returned 401 after real Supabase session revocation. The temporary user was deleted; no personal captures were created. Health and Browse returned 200.
+- GitHub worker dispatch [36228298889](https://github.com/Jseow008/ThePlayBook/actions/runs/36228298889) passed using the configured production cron credential: no queued claims, failures or deferrals. Snapshot maintenance is active hourly; its manual production run and the candidate scheduled run passed. The first production scheduled tick was not separately awaited.
+- Release work is complete. Next product workstream: validated citations and exact-passage navigation (#5). Existing synthesis failures, the three irrelevant selections, and the separately recorded account-deletion defect remain visible; this release does not close those broader concerns.
+- One primary implementer and one reused bounded reviewer. The reviewer caught migration delimiters and ambient database-URL precedence in the disposable test runner. These were fixed before release. No additional quality benchmark or prompt-tuning pass ran. Token usage is unavailable. Approximately 54 minutes elapsed between hosted-branch creation (06:46 UTC) and the combined app merge (07:40 UTC), including reconciliation, verification, and CI wait; this is not total historical task time.
 
 ## Current verification decision
 
