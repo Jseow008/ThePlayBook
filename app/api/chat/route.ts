@@ -1,3 +1,4 @@
+import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
@@ -334,7 +335,8 @@ export async function POST(req: NextRequest) {
                 const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
                 signal.throwIfAborted();
                 if (authError || currentUser?.id !== user.id) throw new Error("RETRIEVAL_AUTH_CHANGED");
-                if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui");
+                if (selected.exactQuote !== null && !selected.quotedEvidenceId) throw new Error("Quoted evidence identity missing");
+                if (selected.exactQuote !== null) return retrievalTextResponse(selected.exactQuote, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.quotedEvidenceId ? [selected.quotedEvidenceId] : [], exactQuote: true }), true);
                 if (selected.quoteTooLarge) return retrievalTextResponse("The matching stored passage is too long to quote completely here. Open the source to read its full text.", "ui");
                 if (selected.evidenceIds.length === 0) {
                     if (intent !== "reading_advisor") return retrievalTextResponse(LIBRARY_NO_EVIDENCE, "ui");
@@ -349,7 +351,7 @@ export async function POST(req: NextRequest) {
                             properties: { source: "ask_library", route: "/api/chat", chat_scope: "library", user_state: "authenticated" },
                         }));
                     }
-                    return retrievalTextResponse(text, "ui");
+                    return retrievalTextResponse(text, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds }));
                 }
             } catch (error) {
                 if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);

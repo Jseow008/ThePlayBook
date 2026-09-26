@@ -114,6 +114,23 @@ describe("Notes chat API", () => {
         );
     });
 
+    it("returns UI citation metadata separately from a literal exact quote", async () => {
+        vi.stubEnv("ACCOUNT_DATA_CURSOR_SECRET", "notes-citation-unit-secret-at-least-32");
+        const userId = "11111111-1111-4111-8111-111111111111";
+        mockAuthUser.mockResolvedValue({ data: { user: { id: userId } } });
+        const item = selectedPersonalEvidence();
+        Object.assign(item.evidence, { userId, id: "22222222-2222-4222-8222-222222222222", contentItemId: "33333333-3333-4333-8333-333333333333" });
+        item.exactQuote = item.spans[0].text;
+        vi.mocked(retrievePersonalEvidence).mockResolvedValueOnce({ items: [item] } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
+        const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", headers: { "x-evidence-protocol": "ui" },
+            body: JSON.stringify({ messages: [{ role: "user", content: "Quote my note" }], scope: { version: 1, itemType: "all" } }) }));
+        expect(response.status).toBe(200);
+        const events = (await response.text()).split("\n").filter((line) => line.startsWith("data: {")).map((line) => JSON.parse(line.slice(6)));
+        expect(events.find((event) => event.type === "text-delta").delta).toBe(item.exactQuote);
+        expect(events.find((event) => event.type === "data-exact-quotation").data).toBe(true);
+        expect(events.find((event) => event.type === "data-citations").data).toEqual([{ label: expect.any(String), href: expect.stringMatching(/^\/evidence#/) }]);
+    });
+
     it("requires authentication", async () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("unauth") });
 

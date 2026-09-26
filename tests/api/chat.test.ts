@@ -1,3 +1,4 @@
+vi.mock("@/lib/server/evidence-citation", () => ({ issueEvidenceCitations: vi.fn(() => [{ label: "Test passage", href: "/evidence#fixture" }]) }));
 import { captureServerAnalyticsEvent } from '@/lib/server/analytics';
 import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
@@ -147,7 +148,7 @@ describe('Chat API', () => {
         vi.mocked(loadLibrarySourceEvidence).mockReset();
         vi.mocked(loadLibrarySourceEvidence).mockResolvedValue([]);
         vi.mocked(selectLibraryEvidence).mockReset();
-        vi.mocked(selectLibraryEvidence).mockImplementation(async ({personal,sources}) => ({ personal, sources, exactQuote: personal.items.find(item => item.exactQuote !== null)?.exactQuote ?? null, quoteTooLarge: false, contextText: 'Verified source and personal context.', evidenceIds: ['highlight:owned'] }) as unknown as Awaited<ReturnType<typeof selectLibraryEvidence>>);
+        vi.mocked(selectLibraryEvidence).mockImplementation(async ({personal,sources}) => ({ personal, sources, quotedEvidenceId: 'highlight:owned', exactQuote: personal.items.find(item => item.exactQuote !== null)?.exactQuote ?? null, quoteTooLarge: false, contextText: 'Verified source and personal context.', evidenceIds: ['highlight:owned'] }) as unknown as Awaited<ReturnType<typeof selectLibraryEvidence>>);
         process.env.GEMINI_API_KEY = 'gemini-test-key';
         process.env.ANTHROPIC_API_KEY = 'anthropic-test-key';
         delete process.env.AI_PROVIDER;

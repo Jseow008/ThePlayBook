@@ -1,3 +1,4 @@
+import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
 import { NOTES_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
 import { afterResponse } from "@/lib/server/after-response";
@@ -73,6 +74,7 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 
 export async function POST(req: NextRequest) {
     const requestId = getRequestId();
+    const protocol = req.headers.get("x-evidence-protocol") === "ui" ? "ui" : "text";
 
     try {
         const supabase = await createClient();
@@ -189,7 +191,7 @@ export async function POST(req: NextRequest) {
         }
         if (lastMessage.content.length > 2_000) return apiError("VALIDATION_ERROR", "Query must be between 1 and 2000 characters", 400, requestId);
         const questionContext = contextualizeUserQuestion(messages);
-        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, "text");
+        if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, protocol);
 
         const quota = await checkAiUsageQuota(supabase, user.id);
         if (!quota.allowed) {
@@ -232,11 +234,11 @@ export async function POST(req: NextRequest) {
             return apiError("RETRIEVAL_UNAVAILABLE", "Your notes could not be searched completely. Please retry or narrow your filters.", 503, requestId);
         }
         if (evidence.items.length === 0) {
-            return retrievalTextResponse(NOTES_NO_EVIDENCE, "text");
+            return retrievalTextResponse(NOTES_NO_EVIDENCE, protocol);
         }
         const quoted = evidence.items.find((item) => item.exactQuote !== null);
         if (quoted?.exactQuote !== null && quoted?.exactQuote !== undefined) {
-            return retrievalTextResponse(quoted.exactQuote, "text");
+            return retrievalTextResponse(quoted.exactQuote, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: [quoted] }) : [], true);
         }
 
         req.signal.throwIfAborted();
@@ -249,7 +251,7 @@ export async function POST(req: NextRequest) {
                     note_count: evidence.candidateCount, user_state: "authenticated" },
             }));
         }
-        return retrievalTextResponse(text, "text");
+        return retrievalTextResponse(text, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: evidence.items }) : []);
     } catch (error: unknown) {
         logApiError({
             requestId,

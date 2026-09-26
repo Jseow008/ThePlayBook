@@ -143,7 +143,8 @@ export async function selectLibraryEvidence(options: {
     const sources = selection.ids.flatMap((id) => options.sources.filter((source) => source.evidenceId === id));
     const exactQuote = sourceQuote ? sources[0]?.text ?? null : personal.items.find((item) => item.exactQuote !== null)?.exactQuote ?? null;
     const quoteTooLarge = exactQuote !== null && Buffer.byteLength(exactQuote, "utf8") > 4_000;
-    return { personal, sources, selection, exactQuote: quoteTooLarge ? null : exactQuote, quoteTooLarge,
+    const quotedEvidenceId = sourceQuote ? sources[0]?.evidenceId : personal.items.find((item) => item.exactQuote !== null)?.evidence.evidenceId;
+    return { personal, sources, selection, quotedEvidenceId, exactQuote: quoteTooLarge ? null : exactQuote, quoteTooLarge,
         ...composeLibraryEvidence(personal, sources, selection.ids) };
 }
 

@@ -344,3 +344,53 @@ The fixture was cleaned by removing its own library rows before deleting its Aut
 account. This workaround is not a production fix or account-deletion acceptance
 pass. Track the defect in the parallel durability workstream; it was not silently
 added to this retrieval migration.
+
+
+## Citation implementation checkpoint — 26 September 2026
+
+Workstream #5 is in progress on `codex/validated-evidence-citations`, isolated at
+`/Users/j/Desktop/Lifebook-citations`, based on deployed `ff475093` (#156).
+No database migration is planned. References are account-bound, encrypted,
+24-hour tokens issued only for the final selected response set, using a
+purpose-derived key from the existing server-only cursor secret. No model creates
+citation targets. UI message metadata carries links separately from exact text.
+
+The dedicated `/evidence` view rechecks live authentication and ordinary RLS
+ownership, and marks the exact stored field slice with surrounding context.
+Changed editorial text is not reconstructed; deleted captures/cleared fields serve
+no old excerpts. Still-owned personal context can remain visible with an explicit
+changed/withdrawn label. A secondary reader link opens the source, not an
+unverified historical reader offset. Full editorial revision history is deferred.
+
+Implementation and local verification complete; PR/CI publication is next.
+The opaque reference survives reloads in history state; personal data is never
+stored there. Visibility changes invalidate pending reads synchronously. Exact quotations also carry a literal-rendering marker so Markdown syntax cannot
+turn stored punctuation into formatting or links. Response
+text, selector prompts, embedding/ranking inputs and model choices are unchanged;
+no model-quality rerun was required.
+
+Evidence: full unit run 1,416 passed (221 configuration-dependent
+skips at that checkpoint); subsequent affected tests cover Notes UI-stream
+metadata and hidden-page cancellation. The two new disposable Supabase cases
+exercise actual RLS/lifecycle changes and an actually revoked Auth session.
+Chromium desktop and WebKit mobile pass exact-text rendering, keyboard focus,
+200% text sizing without horizontal overflow, and no content after cookie removal.
+The browser fixture is synthetic; the browser suite requires
+`CITATION_BROWSER_FIXTURE` and a loopback `PLAYWRIGHT_BASE_URL`, and is not
+silently counted as default CI browser coverage. No production data was used.
+
+One bounded reviewer caught exact-quote identity loss at the composition limit,
+Strict Mode reference loss, and a hidden-page late-response race; each was fixed
+with regression coverage. Browser evidence also drove opaque-reference retention
+across remounts. Full lint and the affected regression tests passed after corrections. The
+production build is repeated on the final rebased candidate before publication. CI remains the release
+gate. No migration, production configuration or production action in this change.
+
+
+To reproduce citation browser proof, start the app against a migrated loopback
+Supabase with the existing DB107 variables and a local cursor secret of at least
+32 characters. Set `CITATION_BROWSER_FIXTURE` to a private temporary JSON path;
+run `NODE_OPTIONS=--conditions=react-server npx tsx scripts/citation-browser-fixture.ts create`,
+then `PLAYWRIGHT_BASE_URL=http://localhost:<port> npx playwright test tests/e2e/evidence-citations.spec.ts --project=desktop-chromium --workers=1`.
+This runs Chromium and WebKit explicitly. Finish with the same fixture script's
+`cleanup` command. Never commit the fixture: it contains disposable login cookies.

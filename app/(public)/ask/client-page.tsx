@@ -1,5 +1,7 @@
 "use client";
 
+import { EvidenceCitations } from "@/components/evidence/EvidenceCitations";
+import { getMessageCitations, isExactQuotation, type CitationLink } from "@/lib/evidence-citation";
 import { useMemo, useRef, useEffect, useState, type FormEvent } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
@@ -180,10 +182,12 @@ function VerifiedAskClientPage({
         await sendPrompt(input);
     };
 
-    const displayMessages: Array<{ id: string; role: string; content: string }> = messages
+    const displayMessages: Array<{ id: string; role: string; content: string; citations: CitationLink[]; exactQuotation: boolean }> = messages
         .map((message) => ({
             id: message.id,
             role: message.role,
+            citations: getMessageCitations(message),
+            exactQuotation: isExactQuotation(message),
             content: getMessageText(message as { parts?: Array<{ type: string; text?: string }>; content?: unknown }),
         }))
         .filter((message) => message.role === "user" || message.content.trim().length > 0);
@@ -391,7 +395,7 @@ function VerifiedAskClientPage({
                                                                     {message.role === "user" ? (
                                                                         <p className="m-0 leading-[1.55] text-[0.9rem] sm:text-[0.95rem]">{message.content}</p>
                                                                     ) : (
-                                                                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                                                                        <>{message.exactQuotation ? <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{message.content}</p> : <ReactMarkdown>{message.content}</ReactMarkdown>}<EvidenceCitations citations={message.citations} /></>
                                                                     )}
                                                                 </div>
                                                             </div>

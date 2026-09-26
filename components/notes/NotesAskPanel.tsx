@@ -1,11 +1,13 @@
 "use client";
 
+import { EvidenceCitations } from "@/components/evidence/EvidenceCitations";
+import { getMessageCitations, isExactQuotation, type CitationLink } from "@/lib/evidence-citation";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport, type UIMessage } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import {
     ArrowRight,
     BookOpen,
@@ -30,7 +32,7 @@ import {
 import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 
-const chatTransport = new TextStreamChatTransport({ api: "/api/chat/notes" });
+const chatTransport = new DefaultChatTransport({ api: "/api/chat/notes", headers: { "x-evidence-protocol": "ui" } });
 
 const FALLBACK_CHAT_ERROR = "Something went wrong. Please try asking again.";
 
@@ -382,9 +384,11 @@ function VerifiedNotesAskPanel({
         return typeof maybeContent === "string" ? maybeContent : "";
     };
 
-    const displayMessages: Array<{ id: string; role: string; content: string }> = messages.map((message) => ({
+    const displayMessages: Array<{ id: string; role: string; content: string; citations: CitationLink[]; exactQuotation: boolean }> = messages.map((message) => ({
         id: message.id,
         role: message.role,
+            citations: getMessageCitations(message),
+            exactQuotation: isExactQuotation(message),
         content: getMessageText(message),
     }));
     const lastDisplayMessage = displayMessages[displayMessages.length - 1];
@@ -500,7 +504,7 @@ function VerifiedNotesAskPanel({
                                                         {message.role === "user" ? (
                                                             <p className="m-0 leading-[1.55] text-[0.9rem] sm:text-[0.95rem]">{message.content}</p>
                                                         ) : (
-                                                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                                                            <>{message.exactQuotation ? <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{message.content}</p> : <ReactMarkdown>{message.content}</ReactMarkdown>}<EvidenceCitations citations={message.citations} /></>
                                                         )}
                                                     </div>
                                                 </div>
@@ -832,7 +836,7 @@ function VerifiedNotesAskPanel({
                                             {message.role === "user" ? (
                                                 <p className="m-0 leading-relaxed text-[0.92rem]">{message.content}</p>
                                             ) : (
-                                                <ReactMarkdown>{message.content}</ReactMarkdown>
+                                                <>{message.exactQuotation ? <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{message.content}</p> : <ReactMarkdown>{message.content}</ReactMarkdown>}<EvidenceCitations citations={message.citations} /></>
                                             )}
                                         </div>
                                     </div>
