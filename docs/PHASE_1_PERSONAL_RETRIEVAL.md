@@ -26,6 +26,17 @@ The user approved replacing final prose generation for matched retrieval respons
 - Remaining blocker: hosted branch price acknowledgment (quoted US$0.01344/hour) is pending. After acknowledgment, create a data-less candidate, complete hosted replay/schema/security/application verification, review the exact production dry-run, then proceed through the production gate. No production mutation, merge or deployment has occurred.
 - Approximately 30 minutes for this continuation, including setup downloads. One primary implementer and one bounded reviewer. Reused the frozen quality benchmark; three live synthetic retrieval queries exercised the browser boundary. Agent token usage is unknown. Preflight all runtime dependencies before reusing a prepared build: Redis and the cursor secret were missing here.
 
+## Hosted release gate — 26 September 2026
+
+- The user approved the temporary hosted branch price. Data-less candidate `wadjiymmnupaonongzxu` was created in the approved organization; production was never reset or relinked.
+- Main's 102 migration versions match production, but a clean replay lacked already-deployed book ISBN/identity definitions and explicit service-role grants. PR #155 records those existing definitions. Clean baseline plus reconciliation matches all 14 production schema fingerprint categories and fresh raw generated types. No production history repair is needed.
+- Combined 105-migration replay and follow-up dry-run pass. Six security checks, DB-002 highlight preservation, publishing behavior, and five targeted hosted maintenance/worker tests pass. Fresh generated types preserve existing application aliases and nullable email-RPC arguments; typecheck and 86 affected tests pass.
+- Hosted production build and all seven smoke checks pass with synthetic admin/content only. Local smoke uses loopback plus the platform-style forwarded client-IP header; initial attempts exposed local HTTPS/header setup differences, not application failures. No gate was disabled.
+- Advisors show the intentional private personal-index tables with RLS/no browser policies and the already-approved public catalog RPC warnings. Candidate-only unused-index and Auth pool-sizing info are expected; no unexpected security warning was added.
+- Exact production dry-run: `20260918164448_add_personal_evidence_index.sql`, `20260926043844_add_snapshot_maintenance_cron.sql`, `20260926065035_reconcile_existing_production_book_schema.sql`. Latest completed backup: `2026-09-25T23:45:02.269Z`.
+- Evidence: `tests/fixtures/retrieval/evidence/retrieval-maintenance-hosted-20260926.json`. PR #153 temporarily incorporates parent #155 to resolve the generated-type contract before release; after #155 merges its changes leave #153's diff.
+- Production apply/merge and hosted branch cleanup are still pending. Next: finish exact-head CI, apply the reviewed migration list under existing production authorization, verify parity/security/Cron, merge scoped PRs, verify deployment, delete the temporary hosted branch and credentials.
+
 ## Current verification decision
 
 **The complete answer-v2 execution fails grounding and is not approved for release.**
