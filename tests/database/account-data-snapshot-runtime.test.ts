@@ -310,19 +310,26 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         const access = await db.query<{
             anon_can_execute: boolean;
             authenticated_can_execute: boolean;
-            postgres_is_maintenance_member: boolean;
+            postgres_has_direct_maintenance_membership: boolean;
             maintenance_can_create_private_objects: boolean;
         }>(
             `SELECT
                 has_function_privilege('anon', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS anon_can_execute,
                 has_function_privilege('authenticated', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS authenticated_can_execute,
-                pg_has_role('postgres', 'netflux_snapshot_maintenance', 'member') AS postgres_is_maintenance_member,
+                EXISTS (
+                    SELECT 1
+                    FROM pg_auth_members membership
+                    JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
+                    JOIN pg_roles member_role ON member_role.oid = membership.member
+                    WHERE granted_role.rolname = 'netflux_snapshot_maintenance'
+                      AND member_role.rolname = 'postgres'
+                ) AS postgres_has_direct_maintenance_membership,
                 has_schema_privilege('netflux_snapshot_maintenance', 'snapshot_private', 'CREATE') AS maintenance_can_create_private_objects`,
         );
         expect(access.rows).toEqual([{
             anon_can_execute: false,
             authenticated_can_execute: false,
-            postgres_is_maintenance_member: false,
+            postgres_has_direct_maintenance_membership: false,
             maintenance_can_create_private_objects: false,
         }]);
     });
