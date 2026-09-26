@@ -582,11 +582,17 @@ function useReadingProgressController(initialUser?: User | null) {
 
     useEffect(() => {
         void hydrateForUser(initialUser ?? null);
-
-        return () => {
-            hydrateRunRef.current += 1;
-        };
     }, [hydrateForUser, initialUser]);
+
+    useEffect(() => {
+        return () => {
+            // A same-account auth refresh must not invalidate in-flight hydration.
+            // Account changes are invalidated by hydrateForUser; only unmount
+            // cancels here. Clear readiness so Strict Mode can restart setup.
+            hydrateRunRef.current += 1;
+            isLoadedRef.current = false;
+        };
+    }, []);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -900,7 +906,7 @@ function useReadingProgressController(initialUser?: User | null) {
         completedIds,
         inProgressCount: inProgressIds.length,
         completedCount: completedIds.length,
-        isLoaded,
+        isLoaded: isLoaded && (!user || hydrationStatus !== "hydrating"),
         hydrationStatus,
         syncNeedsAttention,
         refresh,

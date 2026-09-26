@@ -501,12 +501,11 @@ hanging pre-reset request could block post-reset actions; fixed by detaching the
 old queue, with regression coverage. No model benchmark or tuning run was needed.
 
 Candidate migration: `20260926153219_guard_library_mutation_boundary.sql`.
-Only the disposable local database has this migration. Supabase quoted a new
-short-lived hosted project at $10/month; the user approved it and candidate
-`genspcayrpwbgekyzyph` is undergoing isolated verification. Next:
-finish focused checks, open the focused PR, perform the hosted release gate if
-approved, apply exactly the reviewed ACL migration, then deploy and prove the
-new application route. ACL revocation alone does not fix the old server route;
+The user approved the short-lived hosted project at $10/month. Candidate
+`genspcayrpwbgekyzyph` passed full replay/reset, six security checks, type/schema
+comparison, seven standard smoke checks, and the real browser conflict/refresh/reset
+journey. Production has not received this migration. Next: final required CI,
+apply exactly the reviewed ACL migration, then deploy and prove the new route. ACL revocation alone does not fix the old server route;
 do not claim #8 live before the new app is deployed. Existing open browser tabs
 must refresh to send the new contract. Preserve required CI and production gates.
 
@@ -514,3 +513,14 @@ CI correction: the full RLS SQL fixture still expected owner browser writes. It 
 requires permission denial for own/other-row DML and TRUNCATE while retaining
 SELECT isolation. The complete RLS, snapshot-worker, new-object and vector SQL
 fixtures pass locally, as do five RLS unit tests. No grants were restored.
+
+Hosted browser follow-up, 27 September: kept Save loading until the server boundary
+is available. A same-account auth update was also cancelling pending hydration
+without starting a replacement; the new deterministic test reproduced it before
+fixing cancellation to occur on unmount/account changes. The real hosted browser
+journey now passes with no retry. Candidate worker TLS uses the official Supabase
+CA with verification enabled. No production environment setting was changed.
+[Sanitized release evidence](../tests/fixtures/retrieval/evidence/library-stale-write-release-20260927.json).
+Final local verification: 1,442 tests passed, 229 configuration-dependent skips;
+typecheck and targeted lint passed. The database/runtime code is unchanged from
+the passing 26-fixture run. Final CI remains required before production.

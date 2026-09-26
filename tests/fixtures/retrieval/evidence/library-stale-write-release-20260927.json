@@ -1,0 +1,75 @@
+{
+  "date": "2026-09-27",
+  "pr": 162,
+  "baseCommit": "eca07ef48929fbf554f84c4ab83caebbf60438a1",
+  "migration": "20260926153219_guard_library_mutation_boundary.sql",
+  "migrationSha256": "5d40d2cef94632de0f022fad38cbef15fb5e6c1610601d2dea6ca88b8ef57f98",
+  "candidateRef": "genspcayrpwbgekyzyph",
+  "productionRef": "xmuqsgfxuaaophxnwure",
+  "candidate": {
+    "fullReplay": "passed",
+    "guardedReset": "passed",
+    "migrations": 107,
+    "cleanDryRun": true,
+    "securityChecksPassed": 6,
+    "highlightPreservation": "passed",
+    "generatedTypes": "equal after PostgREST metadata normalization",
+    "preApplySchemaDifference": "only eight browser DML grants removed from public.user_library",
+    "productionBuild": "passed",
+    "standardSmoke": {
+      "passed": 7,
+      "skipped": 0,
+      "retries": 0,
+      "scope": "before final hydration-only correction; unaffected standard routes"
+    },
+    "staleWriteBrowserJourney": {
+      "passed": 1,
+      "skipped": 0,
+      "retries": 0,
+      "checks": [
+        "absent removal advances boundary",
+        "initial authenticated hydration completes",
+        "second-device change makes browser save return 409",
+        "conflict feedback without success toast",
+        "explicit refresh then fresh save returns 200",
+        "reset rejects old epoch",
+        "legacy bookmark route returns 428"
+      ]
+    },
+    "applicationFilesSha256": {
+      "hooks/useReadingProgress.ts": "641886dd914fbdc01d63dfaf806ad28d216940cb4da10c3b398a173c70f052dc",
+      "lib/server/account-data-snapshots.ts": "947c4aad4f727d20f8e36a9aa2e8172e0bb6668919c4c4bfef2caa29f0409f0f",
+      "app/api/account-data/user_library/mutation/route.ts": "ec17f4fdc4508ae4004efdd91ff93198c0e40c97aee06aef10a258228f1a63a1"
+    }
+  },
+  "production": {
+    "status": "not applied or deployed",
+    "backupCompletedAt": "2026-09-25T23:45:02.269Z",
+    "dryRunProposed": [
+      "20260926153219_guard_library_mutation_boundary.sql"
+    ]
+  },
+  "advisors": "No new security findings; intentional search_catalog, existing leaked-password-protection and informational notices remain separately tracked.",
+  "failuresResolved": [
+    "RLS test expected superseded browser write grants; updated to prove denial and retained SELECT isolation.",
+    "Candidate worker required official Supabase CA for verify-full TLS. No production setting changed.",
+    "Browser permitted Save before boundary hydration; now retains loading state.",
+    "Same-account auth event invalidated hydration without replacement; reproduced by regression test, fixed unmount cancellation lifecycle."
+  ],
+  "cleanup": {
+    "temporaryProjectDeleted": false,
+    "isolatedAppStopped": true
+  },
+  "limits": [
+    "Failed intents remain memory-only; finding #9 is separate.",
+    "Account-wide revisions can require refresh after an unrelated second-device change.",
+    "Old browser tabs must refresh for the new mutation contract."
+  ],
+  "local": {
+    "unitPassed": 1442,
+    "configurationDependentSkipped": 229,
+    "snapshotRuntimePassed": 26,
+    "typecheck": "passed",
+    "targetedLint": "passed"
+  }
+}

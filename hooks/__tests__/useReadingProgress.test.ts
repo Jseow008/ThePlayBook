@@ -555,12 +555,29 @@ describe("useReadingProgress", () => {
         currentAuthUser = { id: "user-a" };
         const { result } = renderHook(() => useReadingProgress(), { wrapper });
         await waitFor(() => expect(result.current.hydrationStatus).toBe("hydrating"));
+        expect(result.current.isLoaded).toBe(false);
         await act(async () => { expect(await result.current.addToMyList("new-local-item")).toBe(false); });
         expect(commitMutationMock).not.toHaveBeenCalled();
         expect(result.current.syncNeedsAttention).toBe(true);
         await act(async () => resolveSnapshot(snapshotAt(2) as never));
         await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
         expect(result.current.myListIds).toEqual([]);
+    });
+
+    it("finishes pending hydration when auth emits a new object for the same user", async () => {
+        let resolveSnapshot!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        vi.mocked(fetchCompleteLibrarySnapshot).mockImplementationOnce(() => new Promise(resolve => { resolveSnapshot = resolve; }));
+        currentAuthUser = { id: "user-a" };
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("hydrating"));
+        act(() => authStateChangeHandler?.("INITIAL_SESSION", { user: { id: "user-a" } }));
+        act(() => authStateChangeHandler?.("TOKEN_REFRESHED", { user: { id: "user-a" } }));
+        await act(async () => resolveSnapshot(snapshotAt(2) as never));
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        expect(result.current.isLoaded).toBe(true);
+        expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1);
+        await act(async () => { await result.current.addToMyList("new-local-item"); });
+        expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({ baseRevision: 2 }));
     });
 
     it("marks conflicts as needing attention and refreshes without replaying rejected saves", async () => {
