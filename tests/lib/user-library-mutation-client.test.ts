@@ -12,6 +12,7 @@ describe("commitUserLibraryMutation", () => {
         vi.stubGlobal("fetch", fetchMock);
 
         await expect(commitUserLibraryMutation({
+            expectedAccountId: "account-a", baseRevision: 16, resetEpoch: 2,
             contentId: "00000000-0000-4000-8000-000000000001",
             isBookmarked: true,
             progress: null,

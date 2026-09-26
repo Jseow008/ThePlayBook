@@ -460,3 +460,67 @@ or weakened assertions. No model benchmark or prompt tuning was repeated.
 Next: finish required PR checks and merge #161; the migration is already applied
 and must not be reapplied. Broader durability and AI safeguards remain separately
 scoped work.
+
+## Finding #8 — stale library writes, 26 September 2026
+
+Owner: Codex implementing for the repository owner. Target: this bounded release;
+production remains gated by hosted verification and required CI.
+PR [#162](https://github.com/Jseow008/ThePlayBook/pull/162), implementation
+`08307d9a`, is open and held with auto-merge off. Rebased onto merged #161
+(`eca07ef4`); only the shared checkpoint needed conflict reconciliation.
+Branch `codex/library-stale-write-guard`, worktree
+`/Users/j/Desktop/Lifebook-library-durability`.
+
+Confirmed gap: the old mutation route accepted unconditional upserts without a
+base revision or reset epoch. Its original SQL reproduced resurrection after an
+absent-row removal in a rolled-back disposable transaction. Legacy bookmark
+routes and browser table write grants bypassed the authoritative path too.
+
+The candidate requires the expected account, exact account-wide base revision,
+and reset epoch. A shared account lock serializes writes and resets. Even an
+absent-row removal advances the durable account boundary. Browser DML is revoked;
+the unused legacy bookmark routes reject with authenticated 428. The current
+client serializes its own writes and chains only its own successful acknowledgements.
+Conflicts and unconfirmed writes stop the chain and show a refresh action; they
+are never automatically rebased or replayed. Saves before initial hydration are
+not submitted. Save-success feedback waits for acknowledgement.
+
+The account-wide boundary is deliberately conservative: a different device's
+change to another item can also require refresh. No new tombstone table is needed
+because the account revision survives removal. Client failure records are still
+memory-only; durable retry IDs, offline persistence and guest migration are #9,
+not claimed here. Reset/account changes invalidate older queued actions and late
+responses; a newer reset snapshot never overlays old pending saves.
+
+Evidence: baseline original SQL reproduced the defect (not a complete historical
+application build). Five new focused database fixtures and all 26 snapshot runtime
+tests passed on the existing loopback disposable stack. Full local unit suite:
+1,439 passed, 227 configuration-dependent skips. Final reset/feedback checks:
+27 passed; final typecheck and targeted lint pass. CI is running. One reused bounded reviewer found a
+hanging pre-reset request could block post-reset actions; fixed by detaching the
+old queue, with regression coverage. No model benchmark or tuning run was needed.
+
+Candidate migration: `20260926153219_guard_library_mutation_boundary.sql`.
+The user approved the short-lived hosted project at $10/month. Candidate
+`genspcayrpwbgekyzyph` passed full replay/reset, six security checks, type/schema
+comparison, seven standard smoke checks, and the real browser conflict/refresh/reset
+journey. Production has not received this migration. Next: final required CI,
+apply exactly the reviewed ACL migration, then deploy and prove the new route. ACL revocation alone does not fix the old server route;
+do not claim #8 live before the new app is deployed. Existing open browser tabs
+must refresh to send the new contract. Preserve required CI and production gates.
+
+CI correction: the full RLS SQL fixture still expected owner browser writes. It now
+requires permission denial for own/other-row DML and TRUNCATE while retaining
+SELECT isolation. The complete RLS, snapshot-worker, new-object and vector SQL
+fixtures pass locally, as do five RLS unit tests. No grants were restored.
+
+Hosted browser follow-up, 27 September: kept Save loading until the server boundary
+is available. A same-account auth update was also cancelling pending hydration
+without starting a replacement; the new deterministic test reproduced it before
+fixing cancellation to occur on unmount/account changes. The real hosted browser
+journey now passes with no retry. Candidate worker TLS uses the official Supabase
+CA with verification enabled. No production environment setting was changed.
+[Sanitized release evidence](../tests/fixtures/retrieval/evidence/library-stale-write-release-20260927.json).
+Final local verification: 1,442 tests passed, 229 configuration-dependent skips;
+typecheck and targeted lint passed. The database/runtime code is unchanged from
+the passing 26-fixture run. Final CI remains required before production.

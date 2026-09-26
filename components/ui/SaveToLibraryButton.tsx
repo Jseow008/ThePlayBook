@@ -21,9 +21,9 @@ export function SaveToLibraryButton({
             {...buttonProps}
             isSaved={isSaved}
             isLoading={!isReadingProgressLoaded}
-            onToggle={() => {
+            onToggle={async () => {
                 const wasSaved = isInMyList(contentId);
-                toggleMyList(contentId);
+                if (!await toggleMyList(contentId)) return;
                 toast.success(wasSaved ? "Removed from Library" : "Saved to Library");
             }}
         />

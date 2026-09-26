@@ -34,72 +34,28 @@ describe('Bookmarks API', () => {
         mockAuthUser.mockResolvedValue({ data: { user: mockUser } });
     });
 
-    describe('POST /', () => {
-        it('requires authentication', async () => {
-            mockAuthUser.mockResolvedValueOnce({ data: { user: null } });
-            const req = new NextRequest(new URL('http://localhost/api/library/bookmarks'), {
-                method: 'POST',
-                body: JSON.stringify({ content_item_id: '123e4567-e89b-12d3-a456-426614174000' })
+    for (const [method, handler] of [["POST", POST], ["DELETE", DELETE]] as const) {
+        describe(method, () => {
+            const request = () => new NextRequest("http://localhost/api/library/bookmarks", {
+                method, body: JSON.stringify({ content_item_id: "123e4567-e89b-12d3-a456-426614174000" }),
             });
-            const res = await POST(req);
-            expect(res.status).toBe(401);
-        });
-
-        it('validates payload schema', async () => {
-            const req = new NextRequest(new URL('http://localhost/api/library/bookmarks'), {
-                method: 'POST',
-                body: JSON.stringify({ invalid_id: 123 })
+            it("requires authentication", async () => {
+                mockAuthUser.mockResolvedValueOnce({ data: { user: null } });
+                expect((await handler(request())).status).toBe(401);
             });
-            const res = await POST(req);
-            expect(res.status).toBe(400);
-        });
-
-        it('saves a bookmark', async () => {
-            (repo.upsertUserLibrary as any).mockResolvedValue({ error: null });
-
-            const req = new NextRequest(new URL('http://localhost/api/library/bookmarks'), {
-                method: 'POST',
-                body: JSON.stringify({ content_item_id: '123e4567-e89b-12d3-a456-426614174000' })
+            it("retains the rate limit", async () => {
+                vi.mocked(rateLimit).mockResolvedValueOnce({ success: false, retryAfterMs: 20_000 });
+                const response = await handler(request());
+                expect(response.status).toBe(429);
+                expect(response.headers.get("Retry-After")).toBe("20");
+                expect(mockAuthUser).not.toHaveBeenCalled();
             });
-            const res = await POST(req);
-            expect(res.status).toBe(200);
-
-            expect(repo.upsertUserLibrary).toHaveBeenCalledWith(mockSupabaseClient, expect.objectContaining({
-                user_id: 'user-123',
-                content_id: '123e4567-e89b-12d3-a456-426614174000',
-                is_bookmarked: true,
-            }));
-        });
-    });
-
-    describe('DELETE /', () => {
-        it('deletes a bookmark completely if no reading progress', async () => {
-            (repo.getUserLibraryRow as any).mockResolvedValue({ data: { progress: null }, error: null });
-            (repo.deleteUserLibrary as any).mockResolvedValue({ error: null });
-
-            const req = new NextRequest(new URL('http://localhost/api/library/bookmarks'), {
-                method: 'DELETE',
-                body: JSON.stringify({ content_item_id: '123e4567-e89b-12d3-a456-426614174000' })
+            it("requires refresh and never reads or writes a library row", async () => {
+                const response = await handler(request());
+                expect(response.status).toBe(428);
+                expect(await response.json()).toMatchObject({ error: { code: "LIBRARY_REFRESH_REQUIRED" } });
+                for (const operation of Object.values(repo)) expect(operation).not.toHaveBeenCalled();
             });
-            const res = await DELETE(req);
-            expect(res.status).toBe(200);
-            expect(repo.deleteUserLibrary).toHaveBeenCalledWith(mockSupabaseClient, 'user-123', '123e4567-e89b-12d3-a456-426614174000');
         });
-
-        it('updates bookmark status to false if there is reading progress', async () => {
-            (repo.getUserLibraryRow as any).mockResolvedValue({ data: { progress: 50 }, error: null });
-            (repo.updateUserLibrary as any).mockResolvedValue({ error: null });
-
-            const req = new NextRequest(new URL('http://localhost/api/library/bookmarks'), {
-                method: 'DELETE',
-                body: JSON.stringify({ content_item_id: '123e4567-e89b-12d3-a456-426614174000' })
-            });
-            const res = await DELETE(req);
-            expect(res.status).toBe(200);
-            expect(repo.updateUserLibrary).toHaveBeenCalledWith(mockSupabaseClient, 'user-123', '123e4567-e89b-12d3-a456-426614174000', expect.objectContaining({
-                is_bookmarked: false
-            }));
-            expect(repo.deleteUserLibrary).not.toHaveBeenCalled();
-        });
-    });
+    }
 });

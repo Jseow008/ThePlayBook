@@ -1,22 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
-import { afterResponse } from "@/lib/server/after-response";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { rateLimit } from "@/lib/server/rate-limit";
-import {
-    upsertUserLibrary,
-    getUserLibraryRow,
-    updateUserLibrary,
-    deleteUserLibrary,
-} from "@/lib/server/user-library-repository";
 
-const BookmarkPayloadSchema = z.object({
-    content_item_id: z.string().uuid(),
-});
-
-export async function POST(request: NextRequest) {
+// Legacy clients cannot supply the account/revision/reset preconditions.
+// Fail closed and require a refresh onto the guarded mutation endpoint.
+async function requireLibraryRefresh(request: NextRequest) {
     const requestId = getRequestId();
 
     const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
@@ -37,129 +26,16 @@ export async function POST(request: NextRequest) {
             return apiError("UNAUTHORIZED", "Must be logged in to bookmark content.", 401, requestId);
         }
 
-        let body: unknown;
-        try {
-            body = await request.json();
-        } catch {
-            return apiError("INVALID_JSON", "Invalid JSON payload.", 400, requestId);
-        }
-
-        const parsed = BookmarkPayloadSchema.safeParse(body);
-        if (!parsed.success) {
-            return apiError("VALIDATION_ERROR", "Invalid bookmark payload.", 400, requestId);
-        }
-
-        const { content_item_id } = parsed.data;
-
-        const { error } = await upsertUserLibrary(supabase, {
-            user_id: user.id,
-            content_id: content_item_id,
-            is_bookmarked: true,
-            last_interacted_at: new Date().toISOString(),
-        });
-
-        if (error) {
-            logApiError({ requestId, route: "POST /api/library/bookmarks", message: "Error creating bookmark", error, userId: user.id });
-            return apiError("INTERNAL_ERROR", "Failed to save bookmark.", 500, requestId);
-        }
-
-        afterResponse(async () => {
-            await captureServerAnalyticsEvent({
-                event: "library_saved",
-                distinctId: user.id,
-                insertId: `library_saved:${user.id}:${content_item_id}:${requestId}`,
-                properties: {
-                    content_id: content_item_id,
-                    route: "POST /api/library/bookmarks",
-                    save_state: "saved",
-                    user_state: "authenticated",
-                },
-            });
-        });
-
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ error: {
+            code: "LIBRARY_REFRESH_REQUIRED",
+            message: "Refresh your library before making changes.",
+            request_id: requestId,
+        } }, { status: 428, headers: { "Cache-Control": "no-store" } });
     } catch (error) {
-        logApiError({ requestId, route: "POST /api/library/bookmarks", message: "Unexpected error", error });
-        return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);
+        logApiError({ requestId, route: `${request.method} /api/library/bookmarks`, message: "Could not authenticate legacy library request", error });
+        return apiError("INTERNAL_ERROR", "Could not update your library.", 503, requestId);
     }
 }
 
-export async function DELETE(request: NextRequest) {
-    const requestId = getRequestId();
-
-    const rl = await rateLimit(request, { limit: 30, windowMs: 60_000 });
-    if (!rl.success) {
-        return NextResponse.json(
-            { error: { code: "RATE_LIMITED", message: "Too many requests." } },
-            { status: 429, headers: { "Retry-After": String(Math.ceil((rl.retryAfterMs ?? 60_000) / 1000)) } }
-        );
-    }
-
-    try {
-        const supabase = await createClient();
-        const {
-            data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-            return apiError("UNAUTHORIZED", "Must be logged in to remove bookmark.", 401, requestId);
-        }
-
-        let body: unknown;
-        try {
-            body = await request.json();
-        } catch {
-            return apiError("INVALID_JSON", "Invalid JSON payload.", 400, requestId);
-        }
-
-        const parsed = BookmarkPayloadSchema.safeParse(body);
-        if (!parsed.success) {
-            return apiError("VALIDATION_ERROR", "Invalid bookmark payload.", 400, requestId);
-        }
-
-        const { content_item_id } = parsed.data;
-
-        const { data: existing, error: fetchError } = await getUserLibraryRow(
-            supabase,
-            user.id,
-            content_item_id
-        );
-
-        if (fetchError) {
-            logApiError({ requestId, route: "DELETE /api/library/bookmarks", message: "Error fetching bookmark row", error: fetchError, userId: user.id });
-            return apiError("INTERNAL_ERROR", "Failed to remove bookmark.", 500, requestId);
-        }
-
-        if (!existing) {
-            return NextResponse.json({ success: true });
-        }
-
-        const hasProgress = existing.progress !== null;
-
-        if (!hasProgress) {
-            const { error: deleteError } = await deleteUserLibrary(supabase, user.id, content_item_id);
-
-            if (deleteError) {
-                logApiError({ requestId, route: "DELETE /api/library/bookmarks", message: "Error deleting bookmark row", error: deleteError, userId: user.id });
-                return apiError("INTERNAL_ERROR", "Failed to remove bookmark.", 500, requestId);
-            }
-        } else {
-            const { error: updateError } = await updateUserLibrary(
-                supabase,
-                user.id,
-                content_item_id,
-                { is_bookmarked: false, last_interacted_at: new Date().toISOString() }
-            );
-
-            if (updateError) {
-                logApiError({ requestId, route: "DELETE /api/library/bookmarks", message: "Error updating bookmark row", error: updateError, userId: user.id });
-                return apiError("INTERNAL_ERROR", "Failed to remove bookmark.", 500, requestId);
-            }
-        }
-
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        logApiError({ requestId, route: "DELETE /api/library/bookmarks", message: "Unexpected error", error });
-        return apiError("INTERNAL_ERROR", "An unexpected error occurred", 500, requestId);
-    }
-}
+export const POST = requireLibraryRefresh;
+export const DELETE = requireLibraryRefresh;

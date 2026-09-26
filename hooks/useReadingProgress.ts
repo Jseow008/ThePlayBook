@@ -14,6 +14,8 @@ import {
 import { AuthUser as User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 import { commitUserLibraryMutation } from "@/lib/user-library-mutation-client";
+import { toast } from "sonner";
+import { LibraryMutationConflictError, type LibraryBoundary } from "@/lib/user-library-mutation-contract";
 import type { Json } from "@/types/database";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
@@ -148,7 +150,10 @@ type LocalLibraryMutation = {
     sessionGeneration: number;
     isBookmarked: boolean;
     progress: ReadingProgressData | null;
-    acknowledgement?: { resetEpoch: number; libraryRevision: number };
+    acknowledgement?: LibraryBoundary;
+    base?: LibraryBoundary;
+    predecessor?: LocalLibraryMutation;
+    needsAttention?: boolean;
 };
 
 const terminalSnapshotOutcomeCodes = new Set([
@@ -173,6 +178,7 @@ function useReadingProgressController(initialUser?: User | null) {
     const [completedIds, setCompletedIds] = useState<string[]>([]);
     const [myListIds, setMyListIds] = useState<string[]>([]);
     const [progressMap, setProgressMap] = useState<Record<string, ReadingProgressData>>({});
+    const [syncNeedsAttention, setSyncNeedsAttention] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
     const [hydrationStatus, setHydrationStatus] = useState<"idle" | "hydrating" | "ready" | "error">("idle");
     const [user, setUser] = useState<User | null>(initialUser ?? null);
@@ -187,6 +193,12 @@ function useReadingProgressController(initialUser?: User | null) {
     const isLoadedRef = useRef(false);
     const didRunLegacyMigrationRef = useRef(false);
     const installedSnapshotStateRef = useRef(new Map<StorageScope, { resetEpoch: number; boundaryRevision: number }>());
+
+    const confirmedBoundaryRef = useRef<LibraryBoundary | undefined>(undefined);
+    const latestMutationRef = useRef<LocalLibraryMutation | undefined>(undefined);
+    const mutationTailRef = useRef<Promise<unknown>>(Promise.resolve());
+    const syncBlockedRef = useRef(false);
+    const refreshLibraryRef = useRef<() => void>(() => {});
 
     const recordLocalMutation = useCallback((
         scope: StorageScope,
@@ -206,7 +218,11 @@ function useReadingProgressController(initialUser?: User | null) {
             sessionGeneration: authenticationGenerationRef.current,
             isBookmarked,
             progress,
+            base: confirmedBoundaryRef.current,
+            predecessor: latestMutationRef.current,
+            needsAttention: syncBlockedRef.current,
         };
+        latestMutationRef.current = mutation;
         localMutationsRef.current.set(mutation.id, mutation);
         return mutation.id;
     }, []);
@@ -223,7 +239,14 @@ function useReadingProgressController(initialUser?: User | null) {
     const acknowledgeMutation = useCallback((mutationId: string, acknowledgement: { resetEpoch: number; libraryRevision: number }) => {
         const mutation = localMutationsRef.current.get(mutationId);
         if (!mutation) return;
+        if (mutation.sessionGeneration !== authenticationGenerationRef.current || mutation.accountId !== userRef.current?.id) return;
         mutation.acknowledgement = acknowledgement;
+        mutation.predecessor = undefined;
+        const prior = confirmedBoundaryRef.current;
+        if (!prior || acknowledgement.resetEpoch > prior.resetEpoch
+            || (acknowledgement.resetEpoch === prior.resetEpoch && acknowledgement.libraryRevision > prior.libraryRevision)) {
+            confirmedBoundaryRef.current = acknowledgement;
+        }
     }, []);
 
     const resetState = useCallback(() => {
@@ -307,25 +330,57 @@ function useReadingProgressController(initialUser?: User | null) {
         if (!currentUser) return true;
         if (!mutationId) return true;
 
-        try {
-            const data = await commitUserLibraryMutation({
-                contentId: itemId,
-                isBookmarked,
-                progress: progressData as Json | null,
-                lastInteractedAt: new Date().toISOString(),
-                deleteIfEmpty: !isBookmarked && progressData === null,
-            });
-
-            acknowledgeMutation(mutationId, data);
-            return true;
-        } catch (error) {
-            logRecoverableCloudSync("Unexpected cloud sync failure", error, {
-                itemId,
-                scope,
-                userId: currentUser.id,
-            });
-            return false;
-        }
+        const mutation = localMutationsRef.current.get(mutationId);
+        if (!mutation) return false;
+        const commit = async () => {
+            const isCurrent = () => mutation.sessionGeneration === authenticationGenerationRef.current
+                && currentUser.id === userRef.current?.id && scope === scopeRef.current;
+            if (!isCurrent()) return false;
+            try {
+                // Chain only this device's confirmed writes. Never replace a
+                // stale base with a newly fetched server boundary automatically.
+                const predecessorBoundary = mutation.predecessor?.acknowledgement;
+                const base = predecessorBoundary && mutation.base
+                    && predecessorBoundary.resetEpoch === mutation.base.resetEpoch
+                    && predecessorBoundary.libraryRevision > mutation.base.libraryRevision
+                    ? predecessorBoundary : mutation.base;
+                if (mutation.needsAttention || mutation.predecessor?.needsAttention || !base
+                    || base.resetEpoch !== mutation.base?.resetEpoch
+                    || base.resetEpoch !== confirmedBoundaryRef.current?.resetEpoch) {
+                    throw new LibraryMutationConflictError();
+                }
+                const data = await commitUserLibraryMutation({
+                    expectedAccountId: mutation.accountId,
+                    baseRevision: base.libraryRevision,
+                    resetEpoch: base.resetEpoch,
+                    contentId: itemId,
+                    isBookmarked,
+                    progress: progressData as Json | null,
+                    lastInteractedAt: new Date().toISOString(),
+                    deleteIfEmpty: !isBookmarked && progressData === null,
+                });
+                if (!isCurrent() || mutation.needsAttention) return false;
+                acknowledgeMutation(mutationId, data);
+                return true;
+            } catch (error) {
+                mutation.needsAttention = true;
+                if (!isCurrent() || (mutation.base && confirmedBoundaryRef.current
+                    && mutation.base.resetEpoch < confirmedBoundaryRef.current.resetEpoch)) return false;
+                syncBlockedRef.current = true;
+                setSyncNeedsAttention(true);
+                toast.error(error instanceof LibraryMutationConflictError
+                    ? "Your library changed. Refresh it and review your change before saving again."
+                    : "This library change is not confirmed. Refresh your library before trying again.", {
+                    id: "library-sync-attention", duration: Infinity,
+                    action: { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
+                });
+                logRecoverableCloudSync("Library change needs attention", error, { itemId, scope });
+                return false;
+            }
+        };
+        const result = mutationTailRef.current.then(commit, commit);
+        mutationTailRef.current = result;
+        return result;
     }, [acknowledgeMutation]);
 
     const hydrateCloudSnapshot = useCallback(async (
@@ -353,10 +408,20 @@ function useReadingProgressController(initialUser?: User | null) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
         }
 
+        if (installed && snapshot.manifest.resetEpoch > installed.resetEpoch) {
+            for (const mutation of localMutationsRef.current.values()) {
+                if (mutation.scope === scope && mutation.base && mutation.base.resetEpoch < snapshot.manifest.resetEpoch) {
+                    mutation.needsAttention = true;
+                }
+            }
+            latestMutationRef.current = undefined;
+            mutationTailRef.current = Promise.resolve();
+        }
         const scopedMutations = [...localMutationsRef.current.values()]
             .filter((mutation) => mutation.scope === scope
                 && mutation.accountId === currentUser.id
-                && mutation.sessionGeneration === authenticationGenerationRef.current)
+                && mutation.sessionGeneration === authenticationGenerationRef.current
+                && !mutation.needsAttention)
             .sort((left, right) => left.sequence - right.sequence);
         const isAcknowledgementIncluded = (mutation: LocalLibraryMutation) => {
             const acknowledgement = mutation.acknowledgement;
@@ -412,6 +477,20 @@ function useReadingProgressController(initialUser?: User | null) {
             resetEpoch: snapshot.manifest.resetEpoch,
             boundaryRevision: snapshot.manifest.boundaryLibraryRevision,
         });
+        const boundary = { resetEpoch: snapshot.manifest.resetEpoch, libraryRevision: snapshot.manifest.boundaryLibraryRevision };
+        const confirmed = confirmedBoundaryRef.current;
+        if (!confirmed || boundary.resetEpoch > confirmed.resetEpoch
+            || (boundary.resetEpoch === confirmed.resetEpoch && boundary.libraryRevision >= confirmed.libraryRevision)) {
+            confirmedBoundaryRef.current = boundary;
+        }
+        if (syncBlockedRef.current) {
+            // Refresh shows canonical data; failed intent is retained in memory
+            // for #9's later durable recovery work, never silently resubmitted.
+            syncBlockedRef.current = false;
+            setSyncNeedsAttention(false);
+            latestMutationRef.current = undefined;
+            toast.dismiss("library-sync-attention");
+        }
         clearLibrarySnapshotIdempotencyKey(currentUser.id);
         return true;
     }, []);
@@ -425,6 +504,12 @@ function useReadingProgressController(initialUser?: User | null) {
 
         if (currentUserId !== nextUserId) {
             authenticationGenerationRef.current += 1;
+            confirmedBoundaryRef.current = undefined;
+            latestMutationRef.current = undefined;
+            mutationTailRef.current = Promise.resolve();
+            syncBlockedRef.current = false;
+            setSyncNeedsAttention(false);
+            toast.dismiss("library-sync-attention");
         }
 
         if (!didRunLegacyMigrationRef.current) {
@@ -490,13 +575,24 @@ function useReadingProgressController(initialUser?: User | null) {
             });
     }, [hydrateCloudSnapshot, loadProgress, resetState]);
 
+    refreshLibraryRef.current = () => {
+        if (userRef.current) clearLibrarySnapshotIdempotencyKey(userRef.current.id);
+        void hydrateForUser(userRef.current, true);
+    };
+
     useEffect(() => {
         void hydrateForUser(initialUser ?? null);
-
-        return () => {
-            hydrateRunRef.current += 1;
-        };
     }, [hydrateForUser, initialUser]);
+
+    useEffect(() => {
+        return () => {
+            // A same-account auth refresh must not invalidate in-flight hydration.
+            // Account changes are invalidated by hydrateForUser; only unmount
+            // cancels here. Clear readiness so Strict Mode can restart setup.
+            hydrateRunRef.current += 1;
+            isLoadedRef.current = false;
+        };
+    }, []);
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -539,6 +635,18 @@ function useReadingProgressController(initialUser?: User | null) {
                 resetEpoch: detail.resetEpoch ?? (prior?.resetEpoch ?? 0) + 1,
                 boundaryRevision: detail.boundaryRevision ?? prior?.boundaryRevision ?? 0,
             });
+            confirmedBoundaryRef.current = {
+                resetEpoch: detail.resetEpoch ?? (prior?.resetEpoch ?? 0) + 1,
+                libraryRevision: detail.boundaryRevision ?? prior?.boundaryRevision ?? 0,
+            };
+            for (const mutation of localMutationsRef.current.values()) {
+                if (mutation.scope === detail.scope) mutation.needsAttention = true;
+            }
+            latestMutationRef.current = undefined;
+            mutationTailRef.current = Promise.resolve();
+            syncBlockedRef.current = false;
+            setSyncNeedsAttention(false);
+            toast.dismiss("library-sync-attention");
             setHydrationStatus("ready");
         };
 
@@ -683,12 +791,12 @@ function useReadingProgressController(initialUser?: User | null) {
         window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [insertOrMoveToFront, readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
-    const addToMyList = useCallback((itemId: string) => {
+    const addToMyList = useCallback(async (itemId: string) => {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
         const currentList = readScopedMyList(localStorage, scope);
-        if (currentList.includes(itemId)) return;
+        if (currentList.includes(itemId)) return false;
 
         const newList = [itemId, ...currentList];
         writeScopedMyList(localStorage, scope, newList);
@@ -697,9 +805,9 @@ function useReadingProgressController(initialUser?: User | null) {
         const progress = readProgressFromScope(scope, itemId);
         const mutationId = recordLocalMutation(scope, itemId, true, progress);
 
-        void syncItemToCloud(userRef.current, scope, itemId, true, progress, mutationId)
+        const synced = syncItemToCloud(userRef.current, scope, itemId, true, progress, mutationId)
             .then((didSync) => {
-                if (!didSync) return;
+                if (!didSync) return false;
 
                 captureAnalyticsEvent("library_saved", {
                     content_id: itemId,
@@ -707,11 +815,13 @@ function useReadingProgressController(initialUser?: User | null) {
                     save_state: "saved",
                     user_state: userRef.current ? "authenticated" : "anonymous",
                 });
+                return true;
             });
         window.dispatchEvent(new Event("netflux_progress_updated"));
+        return synced;
     }, [readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
-    const removeFromMyList = useCallback((itemId: string) => {
+    const removeFromMyList = useCallback(async (itemId: string) => {
         if (typeof window === "undefined") return;
 
         const scope = scopeRef.current;
@@ -722,19 +832,19 @@ function useReadingProgressController(initialUser?: User | null) {
         setMyListIds(newList);
 
         const progress = readProgressFromScope(scope, itemId);
-        syncItemToCloud(userRef.current, scope, itemId, false, progress,
+        const synced = syncItemToCloud(userRef.current, scope, itemId, false, progress,
             recordLocalMutation(scope, itemId, false, progress));
         window.dispatchEvent(new Event("netflux_progress_updated"));
+        return synced;
     }, [readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
     const toggleMyList = useCallback((itemId: string) => {
-        if (myListIds.includes(itemId)) {
-            removeFromMyList(itemId);
-            return;
+        if (readScopedMyList(localStorage, scopeRef.current).includes(itemId)) {
+            return removeFromMyList(itemId);
         }
 
-        addToMyList(itemId);
-    }, [addToMyList, myListIds, removeFromMyList]);
+        return addToMyList(itemId);
+    }, [addToMyList, removeFromMyList]);
 
     const saveReadingProgress = useCallback((itemId: string, data: ReadingProgressData) => {
         if (typeof window === "undefined") return;
@@ -796,8 +906,9 @@ function useReadingProgressController(initialUser?: User | null) {
         completedIds,
         inProgressCount: inProgressIds.length,
         completedCount: completedIds.length,
-        isLoaded,
+        isLoaded: isLoaded && (!user || hydrationStatus !== "hydrating"),
         hydrationStatus,
+        syncNeedsAttention,
         refresh,
         retryHydration,
         archiveFromProgressList,
@@ -815,7 +926,7 @@ function useReadingProgressController(initialUser?: User | null) {
         totalLibraryItems,
         storageScope,
         user,
-    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, refresh, retryHydration, archiveFromProgressList,
+    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, syncNeedsAttention, refresh, retryHydration, archiveFromProgressList,
         restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
         getProgress, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
         totalLibraryItems, storageScope, user]);

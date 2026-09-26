@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import { Pool, type PoolClient } from "pg";
+import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
 import type { LibrarySnapshotWireRecord } from "@/lib/account-data-wire";
 import {
     ACCOUNT_DATA_SNAPSHOT_COLLECTIONS,
@@ -482,10 +483,27 @@ function startOperationLeaseRenewal(accountId: string, operationId: string) {
     };
 }
 
+/** All library writes lock the account before touching either state or rows. */
+async function lockLibraryBoundary(client: PoolClient, accountId: string) {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [accountLockName(accountId)]);
+    await client.query(
+        "INSERT INTO public.account_library_state (user_id) VALUES ($1) ON CONFLICT (user_id) DO NOTHING",
+        [accountId],
+    );
+    const state = await client.query<{ reset_epoch: string; current_revision: string }>(
+        "SELECT reset_epoch, current_revision FROM public.account_library_state WHERE user_id = $1 FOR UPDATE",
+        [accountId],
+    );
+    const row = state.rows[0];
+    if (!row) throw new AccountDataSnapshotError("FAILED", "Could not lock the library boundary.");
+    return { resetEpoch: Number(row.reset_epoch), libraryRevision: Number(row.current_revision) };
+}
+
 export async function resetLibraryForAccount(accountId: string) {
     const client = await getPool().connect();
     try {
         return await withRestrictedWorkerTransaction(client, accountId, async () => {
+            await lockLibraryBoundary(client, accountId);
             await client.query("DELETE FROM public.user_library WHERE user_id = $1", [accountId]);
             const state = await client.query<{ reset_epoch: string; current_revision: string }>(
                 `INSERT INTO public.account_library_state (user_id, reset_epoch, current_revision)
@@ -515,6 +533,8 @@ export async function resetLibraryForAccount(accountId: string) {
 export async function commitLibraryMutationForAccount(
     accountId: string,
     input: {
+        baseRevision: number;
+        resetEpoch: number;
         contentId: string;
         isBookmarked: boolean;
         progress: unknown | null;
@@ -525,11 +545,26 @@ export async function commitLibraryMutationForAccount(
     const client = await getPool().connect();
     try {
         return await withRestrictedWorkerTransaction(client, accountId, async () => {
+            const current = await lockLibraryBoundary(client, accountId);
+            if (input.baseRevision !== current.libraryRevision || input.resetEpoch !== current.resetEpoch) {
+                throw new LibraryMutationConflictError(current);
+            }
             if (input.deleteIfEmpty) {
-                await client.query(
+                const deleted = await client.query(
                     "DELETE FROM public.user_library WHERE user_id = $1 AND content_id = $2",
                     [accountId, input.contentId],
                 );
+                // A removal of an absent row still supersedes any earlier save.
+                // Row-delete triggers advance existing rows; no-op deletes need
+                // an explicit account boundary advance to prevent resurrection.
+                if (deleted.rowCount === 0) {
+                    await client.query(
+                        `UPDATE public.account_library_state
+                         SET current_revision = current_revision + 1, updated_at = now()
+                         WHERE user_id = $1`,
+                        [accountId],
+                    );
+                }
             } else {
                 await client.query(
                     `INSERT INTO public.user_library
@@ -556,8 +591,7 @@ export async function commitLibraryMutationForAccount(
                 [accountId],
             );
             const row = state.rows[0];
-            // A delete of a never-written item is a valid idempotent mutation.
-            if (!row) return { resetEpoch: 0, libraryRevision: 0 };
+            if (!row) throw new AccountDataSnapshotError("FAILED", "Could not read the committed library boundary.");
             return {
                 resetEpoch: Number(row.reset_epoch),
                 libraryRevision: Number(row.current_revision),

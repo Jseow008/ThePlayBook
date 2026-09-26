@@ -20,6 +20,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     const workerDb = new Pool({ connectionString: workerDatabaseUrl, max: 2 });
     const accountA = randomUUID();
     const accountB = randomUUID();
+    const accountMutation = randomUUID();
     const accountC = randomUUID();
     const accountD = randomUUID();
     const accountMaintenance = randomUUID();
@@ -59,6 +60,12 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                 ('00000000-0000-0000-0000-000000000000', $9, 'authenticated', 'authenticated', $10, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now()),
                 ('00000000-0000-0000-0000-000000000000', $11, 'authenticated', 'authenticated', $12, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
             [accountA, `db107-a-${accountA}@example.invalid`, accountB, `db107-b-${accountB}@example.invalid`, accountC, `db107-c-${accountC}@example.invalid`, accountD, `db107-d-${accountD}@example.invalid`, accountExport, `db107-export-${accountExport}@example.invalid`, accountMaintenance, `db107-maintenance-${accountMaintenance}@example.invalid`],
+        );
+        await db.query(
+            `INSERT INTO auth.users
+                (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, raw_user_meta_data, created_at, updated_at)
+             VALUES ('00000000-0000-0000-0000-000000000000', $1, 'authenticated', 'authenticated', $2, '', now(), '{}'::jsonb, '{}'::jsonb, now(), now())`,
+            [accountMutation, `db107-mutation-${accountMutation}@example.invalid`],
         );
         await db.query(
             `INSERT INTO public.content_item (id, type, title, status)
@@ -169,7 +176,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         ).catch(() => undefined);
         await db.query(
             "DELETE FROM auth.users WHERE id = ANY($1::uuid[])",
-            [[accountA, accountB, accountC, accountD, accountMaintenance, accountExport, accountCrossCollectionExport]],
+            [[accountA, accountB, accountMutation, accountC, accountD, accountMaintenance, accountExport, accountCrossCollectionExport]],
         ).catch(() => undefined);
         await workerDb.end();
         await db.end();
@@ -791,7 +798,10 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
     });
 
     it("returns the authoritative reset epoch and revision from a restricted server mutation", async () => {
+        const boundary = await readBoundary(accountA);
         const acknowledgement = await commitLibraryMutationForAccount(accountA, {
+            baseRevision: boundary.libraryRevision,
+            resetEpoch: boundary.resetEpoch,
             contentId: contentA,
             isBookmarked: true,
             progress: null,
@@ -806,6 +816,100 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
             resetEpoch: Number(current.rows[0]?.reset_epoch),
             libraryRevision: Number(current.rows[0]?.current_revision),
         });
+    });
+
+    async function readBoundary(accountId: string) {
+        const state = await db.query<{ reset_epoch: string; current_revision: string }>(
+            "SELECT reset_epoch, current_revision FROM public.account_library_state WHERE user_id = $1", [accountId],
+        );
+        return { resetEpoch: Number(state.rows[0]?.reset_epoch ?? 0), libraryRevision: Number(state.rows[0]?.current_revision ?? 0) };
+    }
+
+    function mutationAt(boundary: { resetEpoch: number; libraryRevision: number }, remove = false) {
+        return {
+            baseRevision: boundary.libraryRevision, resetEpoch: boundary.resetEpoch,
+            contentId: contentA, isBookmarked: !remove, progress: null,
+            lastInteractedAt: new Date().toISOString(), deleteIfEmpty: remove,
+        };
+    }
+
+    it("rejects stale saves after removal, including removal of an absent row", async () => {
+        const before = await readBoundary(accountMutation);
+        const removed = await commitLibraryMutationForAccount(accountMutation, mutationAt(before, true));
+        expect(removed.libraryRevision).toBeGreaterThan(before.libraryRevision);
+        await expect(commitLibraryMutationForAccount(accountMutation, mutationAt(before))).rejects.toMatchObject({ current: removed });
+        const saved = await commitLibraryMutationForAccount(accountMutation, mutationAt(removed));
+        const removedAgain = await commitLibraryMutationForAccount(accountMutation, mutationAt(saved, true));
+        await expect(commitLibraryMutationForAccount(accountMutation, mutationAt(saved))).rejects.toMatchObject({ current: removedAgain });
+        expect((await db.query("SELECT 1 FROM public.user_library WHERE user_id = $1", [accountMutation])).rowCount).toBe(0);
+    });
+
+    it("rejects stale saves and deletes after reset and does not alter another account", async () => {
+        const before = await readBoundary(accountMutation);
+        const other = await readBoundary(accountA);
+        await resetLibraryForAccount(accountMutation);
+        const reset = await readBoundary(accountMutation);
+        expect(reset.resetEpoch).toBe(before.resetEpoch + 1);
+        await expect(commitLibraryMutationForAccount(accountMutation, mutationAt(before))).rejects.toMatchObject({ current: reset });
+        const saved = await commitLibraryMutationForAccount(accountMutation, mutationAt(reset));
+        await expect(commitLibraryMutationForAccount(accountMutation, mutationAt(before, true))).rejects.toMatchObject({ current: saved });
+        expect((await db.query("SELECT is_bookmarked FROM public.user_library WHERE user_id = $1", [accountMutation])).rows).toEqual([{ is_bookmarked: true }]);
+        expect(await readBoundary(accountA)).toEqual(other);
+    });
+
+    it("serializes simultaneous same-base writes so exactly one succeeds", async () => {
+        const before = await readBoundary(accountMutation);
+        const outcomes = await Promise.allSettled([
+            commitLibraryMutationForAccount(accountMutation, mutationAt(before)),
+            commitLibraryMutationForAccount(accountMutation, mutationAt(before, true)),
+        ]);
+        expect(outcomes.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+        const rejected = outcomes.find((result) => result.status === "rejected") as PromiseRejectedResult;
+        expect(rejected.reason).toMatchObject({ name: "LibraryMutationConflictError", current: await readBoundary(accountMutation) });
+    });
+
+    it("serializes a reset against an in-flight save without resurrection", async () => {
+        const before = await readBoundary(accountMutation);
+        const outcomes = await Promise.allSettled([
+            commitLibraryMutationForAccount(accountMutation, mutationAt(before)),
+            resetLibraryForAccount(accountMutation),
+        ]);
+        expect(outcomes[1].status).toBe("fulfilled");
+        if (outcomes[0].status === "rejected") {
+            expect(outcomes[0].reason).toMatchObject({ name: "LibraryMutationConflictError" });
+        }
+        expect((await readBoundary(accountMutation)).resetEpoch).toBe(before.resetEpoch + 1);
+        expect((await db.query("SELECT 1 FROM public.user_library WHERE user_id = $1", [accountMutation])).rowCount).toBe(0);
+    });
+
+    it("denies direct browser library DML while retaining SELECT", async () => {
+        for (const role of ["anon", "authenticated"]) {
+            const client = await db.connect();
+            try {
+                for (const statement of [
+                    `INSERT INTO public.user_library (user_id, content_id, is_bookmarked) VALUES ('${accountMutation}', '${contentA}', true)`,
+                    `UPDATE public.user_library SET is_bookmarked = true WHERE user_id = '${accountMutation}'`,
+                    `DELETE FROM public.user_library WHERE user_id = '${accountMutation}'`,
+                    "TRUNCATE public.user_library",
+                ]) {
+                    await client.query("BEGIN");
+                    await client.query(`SET LOCAL ROLE ${role}`);
+                    await client.query("SELECT set_config('request.jwt.claim.sub', $1, true)", [accountMutation]);
+                    await expect(client.query(statement)).rejects.toMatchObject({ code: "42501" });
+                    await client.query("ROLLBACK");
+                }
+                if (role === "authenticated") {
+                    await client.query("BEGIN");
+                    await client.query("SET LOCAL ROLE authenticated");
+                    await client.query("SELECT set_config('request.jwt.claim.sub', $1, true)", [accountMutation]);
+                    await expect(client.query("SELECT * FROM public.user_library WHERE user_id = $1", [accountMutation])).resolves.toBeDefined();
+                    await client.query("ROLLBACK");
+                }
+            } finally {
+                await client.query("ROLLBACK");
+                client.release();
+            }
+        }
     });
 
     it("settles a worker-terminated operation to its stable idempotency outcome", async () => {

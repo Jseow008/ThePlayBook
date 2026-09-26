@@ -126,8 +126,8 @@ function InteractiveContentCard(props: ContentCardProps) {
     const isBookmarked = isInMyList(item.id);
     const progress = getProgress(item.id);
     const href = getContentCardHref(item, navigationMode, hasUsableProgress(progress));
-    const handleToggleBookmark = useCallback(() => {
-        toggleMyList(item.id);
+    const handleToggleBookmark = useCallback(async () => {
+        if (!await toggleMyList(item.id)) return;
         toast.success(isBookmarked ? "Removed from Library" : "Saved to Library");
     }, [isBookmarked, item.id, toggleMyList]);
 

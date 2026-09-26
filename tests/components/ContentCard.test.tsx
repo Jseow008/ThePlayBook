@@ -85,7 +85,7 @@ describe("ContentCard", () => {
     };
 
     beforeEach(() => {
-        mockToggleMyList.mockReset();
+        mockToggleMyList.mockReset().mockResolvedValue(true);
         mockIsInMyList.mockReset();
         mockGetProgress.mockReset();
         mockToastSuccess.mockReset();
