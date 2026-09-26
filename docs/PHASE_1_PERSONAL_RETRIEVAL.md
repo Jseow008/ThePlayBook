@@ -11,9 +11,10 @@ The user approved replacing final prose generation for matched retrieval respons
 - Shared server rendering labels source/highlight/note/reflection text, verifies stored spans, marks excerpts, and escapes Markdown data. No generated facet headings or new citation-navigation claims.
 - Matched Notes and Library responses skip final prose generation. Existing deterministic exact quotes/empty responses stay. Library metadata and the existing no-Gemini metadata-advisor fallback are outside this change; Sonnet is not removed globally.
 - Embedding/index/selector behavior is unchanged. Database capture now records the served extract text; evaluator review remains required for extracts despite zero final-generation calls. Historical failed outputs and frozen thresholds are retained.
-- Verification in progress: 1,392 local tests passed (216 existing conditional skips), lint and production build passed; after reviewer corrections, 110 focused tests and typecheck passed. Exact-commit disposable database capture, independent display review, and final journey/release proof remain required. Docker is unavailable locally; CI must provide the database proof.
+- Verification at `ff00cff`: Security Validation, catalog evidence, scope and Vercel passed. Disposable Supabase ran 16/16 runtime fixtures, 175/175 retrieval checks and 178 security tests. Local evidence: 1,392 tests passed (216 conditional skips), lint and production build passed; after reviewer corrections, 110 focused tests and typecheck passed. Full CI browser validation was still running at handoff. The new authenticated browser journey and database release gate remain outstanding.
 - Reviewer caught and rechecked three corrected regressions: empty advisor fallback, indented-text Markdown fidelity, and Library start analytics. CI then passed 13/16 existing database fixtures but hit the default five-second whole-test timeout in three multi-operation scenarios. Those fixtures now have explicit 30-second bounds; production deadlines and frozen thresholds are unchanged.
-- One primary implementer and one fresh-context bounded reviewer. Provider calls for this correction so far: zero. Agent usage is unavailable; no savings claim is made. Record final elapsed time, repeated checks, and reviewer findings here at handoff.
+- Extract evidence: all 174 case-runs captured; all 90 extract responses independently AI-reviewed with response/corpus hashes. Grounding, requested-facet completeness and attribution passed. The same three Willow irrelevant selections remain failures in the rejection metric (171/174); no threshold or fixture label changed. `tests/fixtures/retrieval/evidence/extract-provenance-v1.json` binds the lossless capture, responses, reviews and score. The diagnostic thresholds pass; this is not a production release pass.
+- One primary implementer and one fresh-context reviewer, reused for correction verification and semantic review. Approximately 30 minutes elapsed from checkpoint recovery (`12:25:58 +0800`) to evidence packaging; this is a bounded interval, not total historical task time. New provider calls: zero. One CI retry followed the three explicit fixture-timeout corrections; no model-tuning loop. Agent token usage is unavailable, so no measured token-saving claim. The reviewer prevented three concrete regressions.
 - No production migration or deployment has occurred. The reviewed response change is approved; separate hosted rehearsal/cost and production release evidence remain unresolved.
 
 ## Current verification decision
@@ -31,8 +32,8 @@ The answer-v2 raw JSON is preserved losslessly in
 `evidence/final-generation-v2-selector-v4-answer-v2.json.gz`; its provenance file
 binds the frozen corpus, updated database capture, provider counters, independent
 reviews, and failed score. The scoring command exits 1. All 90 responses were
-reviewed, with no selective rerun or automatic self-grade. The current decision
-is to stop prompt-only iterations and settle the response contract below.
+reviewed, with no selective rerun or automatic self-grade. That historical failure led to the approved extract response contract above;
+no further prompt-only generation iteration was performed.
 
 The v4 selector passes the frozen v2 database retrieval gates. All 174 case-runs
 completed with exact provider-request hashes verified: required-evidence recall

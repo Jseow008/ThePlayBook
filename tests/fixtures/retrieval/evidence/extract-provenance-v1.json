@@ -1,0 +1,43 @@
+{
+  "version": "personal-retrieval-extract-evidence-v1",
+  "implementationCommit": "ff00cff",
+  "ciRun": "https://github.com/Jseow008/ThePlayBook/actions/runs/36218621371",
+  "corpusSha256": "dd866de9d24c712e929085f240ca5a47760cab74ef15f4a60d829bc937d58608",
+  "records": 174,
+  "independentlyAiReviewedExtracts": 90,
+  "newProviderCalls": 0,
+  "selectorAndEmbeddingEvidence": "Reused frozen provider captures; no claim of new provider execution or measured latency saving.",
+  "legacyModelValidation": "Capture conversion used AI_MODEL=gemini-pro to match CI legacy generation metadata. No final model call occurs for extracts.",
+  "result": "Frozen diagnostic thresholds met; three irrelevant selections retained. Not a production release pass.",
+  "releaseGatesOutstanding": [
+    "Authenticated production-build journey for the extract response change",
+    "Hosted rehearsal and production database release gate"
+  ],
+  "files": {
+    "extract-responses-v1.json.gz": {
+      "sha256": "6fe91fe88c9496347cbfc3a9b33cce319a4cb8e831f16f2f4f2eac13c007c97b",
+      "bytes": 29966,
+      "uncompressedSha256": "ae54be2fdbc5af17ad8882e09183fcfcc7bbdcd1be0c2075be989c4b17ef51a7"
+    },
+    "database-extract-capture-v1.json.gz": {
+      "sha256": "1f6c20753a7270c57285d8608b04d70f3faffd6056e27650c47a2933e1a6318e",
+      "bytes": 61391,
+      "uncompressedSha256": "e8e70a14f6770377f2bfbe9ca759f7c3f3a524ed45966f0be5eb06869265ae1c"
+    },
+    "extract-review-v1.json": {
+      "sha256": "862ed2dfc96e294a8aacbabef683b45b6bc2c203ab07315174e56c3b8d398641",
+      "bytes": 42546,
+      "uncompressedSha256": "862ed2dfc96e294a8aacbabef683b45b6bc2c203ab07315174e56c3b8d398641"
+    },
+    "extract-review-findings-v1.json": {
+      "sha256": "bb76b4f10774da543f593539c16eac8ae45e2e8e313edd1a53af7f79cc6765c9",
+      "bytes": 1159,
+      "uncompressedSha256": "bb76b4f10774da543f593539c16eac8ae45e2e8e313edd1a53af7f79cc6765c9"
+    },
+    "extract-score-v1.json": {
+      "sha256": "9c70192f75ecf57ffd1ae289e5ef5d91234f2247eef8decac170d3e0ff1e9592",
+      "bytes": 105041,
+      "uncompressedSha256": "9c70192f75ecf57ffd1ae289e5ef5d91234f2247eef8decac170d3e0ff1e9592"
+    }
+  }
+}
