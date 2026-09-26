@@ -1,6 +1,6 @@
 # Netflux release and workstream status
 
-**Latest production verification:** authenticated citation HTTP journey on `820fe7b7` on 26 September 2026; citation code shipped as `610724e2` (#158). Earlier deliveries retain their own scope and evidence. This is not blanket closure of the 32-finding register.
+**Latest production verification:** stale-library-write protection on `e3182888` (#162), 27 September 2026. Authenticated save/remove/reset, stale-write rejection, browser write denial, and account isolation passed; temporary accounts were removed. Earlier deliveries retain their own scope and evidence. This is not blanket closure of the 32-finding register.
 
 ## Implemented on main
 
@@ -9,6 +9,7 @@ The [README](../README.md#what-ships-today) lists the product surfaces; [archite
 | Delivery | Merge evidence | Boundary |
 | --- | --- | --- |
 | Account library access and verified hydration | [#137](https://github.com/Jseow008/ThePlayBook/pull/137), `faa7353` | Foundation for finding #7; export verification does not independently close every live-list or synchronization requirement. |
+| Stale library write protection | [#162](https://github.com/Jseow008/ThePlayBook/pull/162), `e3182888` | Finding #8: exact account revision/reset checks prevent stale bookmark resurrection; explicit refresh after conflict. Durable offline recovery remains #9. |
 | Complete account export | [#138](https://github.com/Jseow008/ThePlayBook/pull/138), `c6847bb` | Finding #10 delivery; one verified cross-collection snapshot. |
 | Separate export allowance, progress, refresh-safe delivery, and resume | [#139](https://github.com/Jseow008/ThePlayBook/pull/139), [#140](https://github.com/Jseow008/ThePlayBook/pull/140), [#141](https://github.com/Jseow008/ThePlayBook/pull/141), [#142](https://github.com/Jseow008/ThePlayBook/pull/142) | Resume reuses a valid server snapshot; the browser retains an opaque reference, not exported account data. |
 | Catalog and Notes search | [#145](https://github.com/Jseow008/ThePlayBook/pull/145), `7f479ce` | Findings #2/#12/#13: server search before pagination, lexical ranking/snippets, and distinct errors. This is separate from generative personal retrieval. |
@@ -48,7 +49,7 @@ journey. Search/model evaluation was unchanged and not rerun.
 ## Deferred and separately open
 
 - Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7, #26 and #27 stay explicit in the register; broader synthesis and full editorial revision history remain deferred.
-- Broader durability (#8/#9), AI safeguards (#20–#24), remaining operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
+- Durable offline recovery and guest migration (#9), AI safeguards (#20–#24), remaining operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
 - The account-deletion/revision-trigger defect is repaired in production by `20260926150259_account_deletion_library_revision.sql` ([#161](https://github.com/Jseow008/ThePlayBook/pull/161)). Real hosted and production Auth deletion proofs pass; full durability acceptance remains separate. See [release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
 
 ## Updating this page
