@@ -10,10 +10,31 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
+      account_library_state: {
+        Row: {
+          current_revision: number
+          reset_epoch: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          current_revision?: number
+          reset_epoch?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          current_revision?: number
+          reset_epoch?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_message_usage: {
         Row: {
           created_at: string
@@ -80,6 +101,64 @@ export type Database = {
           },
         ]
       }
+      catalog_search_document: {
+        Row: {
+          content_id: string
+          search_vector: unknown
+          segment_id: string | null
+          snippet_label: string
+          snippet_text: string
+          source_id: string
+          source_kind: string
+          source_order: number
+          updated_at: string
+        }
+        Insert: {
+          content_id: string
+          search_vector: unknown
+          segment_id?: string | null
+          snippet_label: string
+          snippet_text: string
+          source_id: string
+          source_kind: string
+          source_order: number
+          updated_at?: string
+        }
+        Update: {
+          content_id?: string
+          search_vector?: unknown
+          segment_id?: string | null
+          snippet_label?: string
+          snippet_text?: string
+          source_id?: string
+          source_kind?: string
+          source_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "catalog_search_document_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_search_document_content_id_fkey"
+            columns: ["content_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_search_document_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       content_feedback: {
         Row: {
           content_id: string
@@ -138,6 +217,7 @@ export type Database = {
           hero_image_url: string | null
           id: string
           is_featured: boolean
+          isbn: string | null
           narration_completed_at: string | null
           narration_error: string | null
           narration_requested_at: string | null
@@ -165,6 +245,7 @@ export type Database = {
           hero_image_url?: string | null
           id?: string
           is_featured?: boolean
+          isbn?: string | null
           narration_completed_at?: string | null
           narration_error?: string | null
           narration_requested_at?: string | null
@@ -192,6 +273,7 @@ export type Database = {
           hero_image_url?: string | null
           id?: string
           is_featured?: boolean
+          isbn?: string | null
           narration_completed_at?: string | null
           narration_error?: string | null
           narration_requested_at?: string | null
@@ -920,56 +1002,13 @@ export type Database = {
           },
         ]
       }
-      user_reflections: {
-        Row: {
-          content_item_id: string
-          created_at: string
-          id: string
-          prompt: string
-          reflection_text: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content_item_id: string
-          created_at?: string
-          id?: string
-          prompt: string
-          reflection_text: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content_item_id?: string
-          created_at?: string
-          id?: string
-          prompt?: string
-          reflection_text?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_reflections_content_item_id_fkey"
-            columns: ["content_item_id"]
-            isOneToOne: false
-            referencedRelation: "admin_content_workbench_readiness"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_reflections_content_item_id_fkey"
-            columns: ["content_item_id"]
-            isOneToOne: false
-            referencedRelation: "content_item"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_library: {
         Row: {
           content_id: string
           is_bookmarked: boolean | null
           last_interacted_at: string | null
+          library_revision: number
+          library_updated_at: string
           progress: Json | null
           user_id: string
         }
@@ -977,6 +1016,8 @@ export type Database = {
           content_id: string
           is_bookmarked?: boolean | null
           last_interacted_at?: string | null
+          library_revision?: number
+          library_updated_at?: string
           progress?: Json | null
           user_id: string
         }
@@ -984,6 +1025,8 @@ export type Database = {
           content_id?: string
           is_bookmarked?: boolean | null
           last_interacted_at?: string | null
+          library_revision?: number
+          library_updated_at?: string
           progress?: Json | null
           user_id?: string
         }
@@ -1032,6 +1075,51 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_reflections: {
+        Row: {
+          content_item_id: string
+          created_at: string
+          id: string
+          prompt: string
+          reflection_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content_item_id: string
+          created_at?: string
+          id?: string
+          prompt: string
+          reflection_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content_item_id?: string
+          created_at?: string
+          id?: string
+          prompt?: string
+          reflection_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_reflections_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "admin_content_workbench_readiness"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_reflections_content_item_id_fkey"
+            columns: ["content_item_id"]
+            isOneToOne: false
+            referencedRelation: "content_item"
             referencedColumns: ["id"]
           },
         ]
@@ -1090,6 +1178,8 @@ export type Database = {
         }
         Returns: undefined
       }
+      canonical_book_base_title: { Args: { p_title: string }; Returns: string }
+      catalog_search_plain_text: { Args: { p_value: string }; Returns: string }
       claim_content_request_notifications: {
         Args: { p_limit?: number }
         Returns: {
@@ -1242,6 +1332,7 @@ export type Database = {
         Args: {
           p_author?: string
           p_category?: string
+          p_isbn?: string
           p_quick_mode_json?: Json
           p_segments?: Json
           p_status?: Database["public"]["Enums"]["content_status"]
@@ -1328,14 +1419,81 @@ export type Database = {
           updated_at: string
         }[]
       }
+      normalize_book_identity_text: {
+        Args: { p_value: string }
+        Returns: string
+      }
       personal_evidence_index_status: { Args: { p_scope: Json }; Returns: Json }
       queue_content_request_published_notifications: {
         Args: { p_request_id: string }
         Returns: number
       }
+      refresh_catalog_search_documents: {
+        Args: { p_content_id: string }
+        Returns: undefined
+      }
       release_personal_evidence_worker: {
         Args: { p_worker_token: string }
         Returns: boolean
+      }
+      search_catalog: {
+        Args: {
+          p_after_content_id: string
+          p_after_rank: number
+          p_before_content_id: string
+          p_before_rank: number
+          p_categories: string[]
+          p_limit: number
+          p_query: string
+          p_type: Database["public"]["Enums"]["content_type"]
+        }
+        Returns: {
+          audio_url: string
+          author: string
+          category: string
+          content_id: string
+          content_type: Database["public"]["Enums"]["content_type"]
+          cover_image_url: string
+          created_at: string
+          cursor_rank: string
+          duration_seconds: number
+          query_state: string
+          quick_mode_json: Json
+          result_rank: number
+          snippet_headline: string
+          snippet_source: string
+          title: string
+        }[]
+      }
+      search_user_highlights: {
+        Args: {
+          p_after_created_at: string
+          p_after_id: string
+          p_color: string
+          p_content_item_id: string
+          p_item_type: string
+          p_limit: number
+          p_query: string
+          p_sort: string
+        }
+        Returns: {
+          anchor_end: number
+          anchor_start: number
+          color: string
+          content_author: string
+          content_cover_image_url: string
+          content_item_id: string
+          content_title: string
+          created_at: string
+          cursor_created_at: string
+          highlighted_text: string
+          id: string
+          note_body: string
+          segment_id: string
+          segment_title: string
+          updated_at: string
+          user_id: string
+        }[]
       }
       seed_personal_evidence_index: {
         Args: { p_limit?: number }
@@ -1418,12 +1576,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1447,11 +1605,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1472,11 +1630,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1497,11 +1655,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1514,11 +1672,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1553,7 +1711,6 @@ export const Constants = {
     },
   },
 } as const
-
 export type ContentType = Database["public"]["Enums"]["content_type"];
 export type ArtifactType = Database["public"]["Enums"]["artifact_type"];
 export type ContentStatus = Database["public"]["Enums"]["content_status"];

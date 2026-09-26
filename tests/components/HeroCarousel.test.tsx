@@ -62,6 +62,7 @@ describe("HeroCarousel", () => {
             published_at: "2026-03-01T00:00:00Z",
             updated_at: "2026-03-01T00:00:00Z",
             deleted_at: null,
+        isbn: null,
         },
         {
             id: "22222222-2222-2222-2222-222222222222",
@@ -89,6 +90,7 @@ describe("HeroCarousel", () => {
             published_at: "2026-03-02T00:00:00Z",
             updated_at: "2026-03-02T00:00:00Z",
             deleted_at: null,
+        isbn: null,
         },
         {
             id: "33333333-3333-3333-3333-333333333333",
@@ -116,6 +118,7 @@ describe("HeroCarousel", () => {
             published_at: "2026-03-03T00:00:00Z",
             updated_at: "2026-03-03T00:00:00Z",
             deleted_at: null,
+        isbn: null,
         },
     ];
 

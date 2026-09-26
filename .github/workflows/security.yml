@@ -140,6 +140,7 @@ jobs:
           npm run database:legacy-embedding-retirement
           npm run database:highlight-preservation
           npm run database:published-at
+          npm run database:book-identity
           npm run database:account-data-snapshots
           npm run database:account-data-snapshot-runtime
           npm run database:catalog-search-runtime

@@ -242,6 +242,7 @@ export async function searchCatalog(input: {
         status: "verified" as const,
         updated_at: row.created_at,
         deleted_at: null,
+        isbn: null,
         rank: row.result_rank,
         snippet: { source: row.snippet_source ?? "Summary", ...parseCatalogSearchHeadline(row.snippet_headline ?? row.title) },
     }));
