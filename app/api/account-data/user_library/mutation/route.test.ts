@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/account-data/user_library/mutation/route";
 import { createClient } from "@/lib/supabase/server";
+import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
 import { commitLibraryMutationForAccount } from "@/lib/server/account-data-snapshots";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -10,6 +11,9 @@ vi.mock("@/lib/server/account-data-snapshots", () => ({ commitLibraryMutationFor
 describe("POST /api/account-data/user_library/mutation", () => {
     const getUser = vi.fn();
     const mutation = {
+        expectedAccountId: "account-a",
+        baseRevision: 20,
+        resetEpoch: 3,
         contentId: "00000000-0000-4000-8000-000000000001",
         isBookmarked: true,
         progress: null,
@@ -35,7 +39,8 @@ describe("POST /api/account-data/user_library/mutation", () => {
         }));
 
         expect(response.status).toBe(200);
-        expect(commitLibraryMutationForAccount).toHaveBeenCalledWith("account-a", mutation);
+        const { expectedAccountId, ...input } = mutation;
+        expect(commitLibraryMutationForAccount).toHaveBeenCalledWith(expectedAccountId, input);
         await expect(response.json()).resolves.toEqual({ data: { resetEpoch: 3, libraryRevision: 21 } });
     });
 
@@ -53,5 +58,36 @@ describe("POST /api/account-data/user_library/mutation", () => {
         }));
         expect(malformed.status).toBe(400);
         expect(commitLibraryMutationForAccount).not.toHaveBeenCalled();
+    });
+    it("rejects a queued action for another authenticated account before calling the worker", async () => {
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", {
+            method: "POST", body: JSON.stringify({ ...mutation, expectedAccountId: "account-b" }),
+        }));
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({ error: { code: "LIBRARY_CONFLICT" } });
+        expect(commitLibraryMutationForAccount).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { expectedAccountId: undefined }, { baseRevision: undefined }, { resetEpoch: undefined },
+        { baseRevision: -1 }, { resetEpoch: -1 }, { baseRevision: 0.5 }, { resetEpoch: 0.5 },
+        { baseRevision: Number.MAX_SAFE_INTEGER + 1 }, { resetEpoch: Number.MAX_SAFE_INTEGER + 1 },
+    ])("requires valid account and safe integer boundaries: %j", async (invalid) => {
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", {
+            method: "POST", body: JSON.stringify({ ...mutation, ...invalid }),
+        }));
+        expect(response.status).toBe(400);
+        expect(commitLibraryMutationForAccount).not.toHaveBeenCalled();
+    });
+
+    it("returns a stale boundary conflict without retrying or rebasing", async () => {
+        const current = { resetEpoch: 4, libraryRevision: 24 };
+        vi.mocked(commitLibraryMutationForAccount).mockRejectedValueOnce(new LibraryMutationConflictError(current));
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", {
+            method: "POST", body: JSON.stringify(mutation),
+        }));
+        expect(response.status).toBe(409);
+        expect(await response.json()).toMatchObject({ error: { code: "LIBRARY_CONFLICT", current } });
+        expect(commitLibraryMutationForAccount).toHaveBeenCalledTimes(1);
     });
 });

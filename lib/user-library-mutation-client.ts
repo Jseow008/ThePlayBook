@@ -1,5 +1,6 @@
 "use client";
 
+import { LibraryMutationConflictError, type LibraryBoundary } from "@/lib/user-library-mutation-contract";
 import type { Json } from "@/types/database";
 
 export type UserLibraryMutationAcknowledgement = {
@@ -8,6 +9,9 @@ export type UserLibraryMutationAcknowledgement = {
 };
 
 export async function commitUserLibraryMutation(input: {
+    expectedAccountId: string;
+    baseRevision: number;
+    resetEpoch: number;
     contentId: string;
     isBookmarked: boolean;
     progress: Json | null;
@@ -20,7 +24,10 @@ export async function commitUserLibraryMutation(input: {
         credentials: "same-origin",
         body: JSON.stringify(input),
     });
-    const payload = await response.json().catch(() => null) as { data?: UserLibraryMutationAcknowledgement; error?: { message?: string } } | null;
+    const payload = await response.json().catch(() => null) as { data?: UserLibraryMutationAcknowledgement; error?: { message?: string; code?: string; current?: LibraryBoundary } } | null;
+    if (response.status === 409 && payload?.error?.code === "LIBRARY_CONFLICT") {
+        throw new LibraryMutationConflictError(payload.error.current);
+    }
     if (!response.ok || !payload?.data) {
         throw new Error(payload?.error?.message ?? "Could not commit your library change.");
     }

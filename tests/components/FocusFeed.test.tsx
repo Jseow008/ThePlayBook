@@ -238,7 +238,7 @@ describe("FocusFeed", () => {
             isDesktop: false,
             prefersReducedMotion: false,
         };
-        toggleMyListMock.mockReset();
+        toggleMyListMock.mockReset().mockResolvedValue(true);
         toastSuccessMock.mockReset();
         window.sessionStorage.clear();
         fetchMock.mockResolvedValue({
@@ -863,7 +863,7 @@ describe("FocusFeed", () => {
 
         expect(toggleMyListMock).toHaveBeenNthCalledWith(1, focusItems[0]!.id);
         expect(toggleMyListMock).toHaveBeenNthCalledWith(2, focusItems[0]!.id);
-        expect(toastSuccessMock).toHaveBeenNthCalledWith(1, "Saved to Library");
+        await waitFor(() => expect(toastSuccessMock).toHaveBeenNthCalledWith(1, "Saved to Library"));
         expect(toastSuccessMock).toHaveBeenNthCalledWith(2, "Removed from Library");
     });
 
@@ -1529,7 +1529,7 @@ describe("FocusFeed", () => {
         );
 
         expect(toggleMyListMock).toHaveBeenCalledWith(focusItems[0]!.id);
-        expect(toastSuccessMock).toHaveBeenCalledWith("Saved to Library");
+        await waitFor(() => expect(toastSuccessMock).toHaveBeenCalledWith("Saved to Library"));
     });
 
     it("keeps the full takeaway list available in the mobile bottom sheet regardless of the card limit", async () => {

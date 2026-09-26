@@ -562,15 +562,15 @@ export function FocusFeed() {
         setTakeawaysSheetPhase(prefersReducedMotion ? "entered" : "entering");
     }, [clearSheetAnimationTimeouts, prefersReducedMotion]);
 
-    const handleToggleSave = useCallback((card: FocusCard) => {
+    const handleToggleSave = useCallback(async (card: FocusCard) => {
         const wasSaved = myListIdSetRef.current.has(card.id);
-        toggleMyList(card.id);
+        const acknowledgement = toggleMyList(card.id);
         if (wasSaved) {
             myListIdSetRef.current.delete(card.id);
         } else {
             myListIdSetRef.current.add(card.id);
         }
-        toast.success(wasSaved ? "Removed from Library" : "Saved to Library");
+        if (await acknowledgement) toast.success(wasSaved ? "Removed from Library" : "Saved to Library");
     }, [toggleMyList]);
 
     const fetchBatch = useCallback(async (options?: {

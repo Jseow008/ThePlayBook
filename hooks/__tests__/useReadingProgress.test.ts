@@ -17,6 +17,7 @@ import {
     myListKey,
     progressKey,
 } from "@/lib/local-user-storage";
+import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
 import { clearLibrarySnapshotIdempotencyKey, fetchCompleteLibrarySnapshot, LibrarySnapshotClientError } from "@/lib/account-data-client";
 
 let authStateChangeHandler: ((event: string, session: { user: { id: string } | null } | null) => void) | null = null;
@@ -517,62 +518,67 @@ describe("useReadingProgress", () => {
         expect(localStorage.getItem(myListKey(getStorageScope("user-b")))).toBe(JSON.stringify(["item-b"]));
     });
 
-    it("preserves a save through pending, acknowledged, stale, and current snapshot transitions", async () => {
-        let resolveFirstSnapshot!: (value: unknown) => void;
+    const snapshotAt = (revision: number, saved = false, epoch = 0) => ({
+        manifest: { snapshotId: `snapshot-${epoch}-${revision}`, recordCount: saved ? 1 : 0,
+            manifestHash: "hash", resetEpoch: epoch, boundaryLibraryRevision: revision, expiresAt: "2030-01-01T00:00:00.000Z" },
+        records: saved ? [{ ordinal: 1, payloadHash: "hash", content_id: "new-local-item", is_bookmarked: true,
+            progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: revision }] : [],
+    });
+
+    it("preserves a based pending save through stale snapshots until its exact acknowledgement is included", async () => {
         let resolveSave!: (value: unknown) => void;
-        let resolveOlderSnapshot!: (value: unknown) => void;
-        let resolveCurrentSnapshot!: (value: unknown) => void;
-        const firstSnapshot = new Promise((resolve) => { resolveFirstSnapshot = resolve; });
-        const save = new Promise((resolve) => { resolveSave = resolve; });
-        const olderSnapshot = new Promise((resolve) => { resolveOlderSnapshot = resolve; });
-        const currentSnapshot = new Promise((resolve) => { resolveCurrentSnapshot = resolve; });
-        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
-            .mockImplementationOnce(() => firstSnapshot)
-            .mockImplementationOnce(() => olderSnapshot)
-            .mockImplementationOnce(() => currentSnapshot);
-        commitMutationMock.mockImplementationOnce(() => save);
-
-        const { result } = renderHook(() => useReadingProgress(), { wrapper });
-        await waitFor(() => expect(result.current.isLoaded).toBe(true));
-
+        commitMutationMock.mockImplementationOnce(() => new Promise(resolve => { resolveSave = resolve; }));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
         currentAuthUser = { id: "user-a" };
-        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
-        await waitFor(() => expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1));
-        act(() => {
-            result.current.toggleMyList("new-local-item");
-        });
-        await waitFor(() => expect(result.current.myListIds).toEqual(["new-local-item"]));
-        await act(async () => {
-            resolveFirstSnapshot({
-                manifest: { snapshotId: "snapshot-old", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 10, expiresAt: "2030-01-01T00:00:00.000Z" },
-                records: [],
-            });
-        });
-        await waitFor(() => expect(result.current.myListIds).toEqual(["new-local-item"]));
-        // The invalidated first traversal schedules a deterministic retry.
-        // Do not start a competing traversal until that retry has begun.
-        await waitFor(() => expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(2));
-        // A different device advances the library from revision 10 through
-        // 20 before this save commits at 21. The acknowledgement must carry
-        // 21—not a client-side guess of 11—so the stale snapshot retains it.
-        await act(async () => { resolveSave({ resetEpoch: 0, libraryRevision: 21 }); });
-        await act(async () => {
-            resolveOlderSnapshot({ manifest: { snapshotId: "snapshot-stale", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 20, expiresAt: "2030-01-01T00:00:00.000Z" }, records: [] });
-        });
-        await waitFor(() => {
-            expect(result.current.hydrationStatus).toBe("ready");
-            expect(result.current.myListIds).toEqual(["new-local-item"]);
-        });
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        act(() => { void result.current.addToMyList("new-local-item"); });
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({
+            expectedAccountId: "user-a", baseRevision: 10, resetEpoch: 0,
+        })));
+        act(() => result.current.retryHydration());
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(result.current.myListIds).toEqual(["new-local-item"]);
+        await act(async () => resolveSave({ resetEpoch: 0, libraryRevision: 11 }));
+        act(() => result.current.retryHydration());
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(result.current.myListIds).toEqual(["new-local-item"]);
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(11, true) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(result.current.myListIds).toEqual(["new-local-item"]);
+    });
 
-        act(() => { result.current.retryHydration(); });
-        await waitFor(() => expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(3));
-        await act(async () => {
-            resolveCurrentSnapshot({ manifest: { snapshotId: "snapshot-current", recordCount: 1, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 21, expiresAt: "2030-01-01T00:00:00.000Z" }, records: [{ ordinal: 1, payloadHash: "hash", content_id: "new-local-item", is_bookmarked: true, progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: 21 }] });
-        });
-        await waitFor(() => {
-            expect(result.current.hydrationStatus).toBe("ready");
-            expect(result.current.myListIds).toEqual(["new-local-item"]);
-        });
+    it("does not submit a cached action before the initial server boundary is known", async () => {
+        let resolveSnapshot!: (value: Awaited<ReturnType<typeof fetchCompleteLibrarySnapshot>>) => void;
+        vi.mocked(fetchCompleteLibrarySnapshot).mockImplementationOnce(() => new Promise(resolve => { resolveSnapshot = resolve; }));
+        currentAuthUser = { id: "user-a" };
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(result.current.hydrationStatus).toBe("hydrating"));
+        await act(async () => { expect(await result.current.addToMyList("new-local-item")).toBe(false); });
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        expect(result.current.syncNeedsAttention).toBe(true);
+        await act(async () => resolveSnapshot(snapshotAt(2) as never));
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(result.current.myListIds).toEqual([]);
+    });
+
+    it("marks conflicts as needing attention and refreshes without replaying rejected saves", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        commitMutationMock.mockRejectedValueOnce(new LibraryMutationConflictError({ resetEpoch: 0, libraryRevision: 12 }));
+        await act(async () => { expect(await result.current.addToMyList("new-local-item")).toBe(false); });
+        expect(result.current.syncNeedsAttention).toBe(true);
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(12) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(result.current.myListIds).toEqual([]);
+        expect(commitMutationMock).toHaveBeenCalledTimes(1);
+        commitMutationMock.mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 13 });
+        await act(async () => { expect(await result.current.addToMyList("new-local-item")).toBe(true); });
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 12 }));
     });
 
     it("keeps a newer pending removal ahead of an older acknowledged save during hydration", async () => {
@@ -597,59 +603,90 @@ describe("useReadingProgress", () => {
         await waitFor(() => expect(result.current.isLoaded).toBe(true));
         currentAuthUser = { id: "user-a" };
         await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
-        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
 
-        act(() => result.current.addToMyList("item-ordered"));
+        act(() => { void result.current.addToMyList("item-ordered"); });
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
-        act(() => result.current.removeFromMyList("item-ordered"));
+        act(() => { void result.current.removeFromMyList("item-ordered"); });
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
 
         act(() => result.current.retryHydration());
-        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
         expect(result.current.myListIds).toEqual([]);
 
         await act(async () => { resolveRemoval({ resetEpoch: 0, libraryRevision: 2 }); });
     });
 
-    it("keeps a newer confirmed removal ahead of an older save whose acknowledgement arrives late", async () => {
-        let resolveOlderSave!: (value: unknown) => void;
-        const olderSave = new Promise((resolve) => { resolveOlderSave = resolve; });
-        const emptySnapshot = {
-            manifest: { snapshotId: "base", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 0, expiresAt: "2030-01-01T00:00:00.000Z" },
-            records: [],
-        };
-        const removalSnapshot = {
-            manifest: { snapshotId: "removal-confirmed", recordCount: 0, manifestHash: "hash", resetEpoch: 0, boundaryLibraryRevision: 2, expiresAt: "2030-01-01T00:00:00.000Z" },
-            records: [],
-        };
-        (fetchCompleteLibrarySnapshot as unknown as ReturnType<typeof vi.fn>)
-            .mockResolvedValueOnce(emptySnapshot)
-            .mockResolvedValueOnce(removalSnapshot)
-            .mockResolvedValueOnce(removalSnapshot);
-        commitMutationMock
-            .mockImplementationOnce(() => olderSave)
-            .mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 2 });
-
-        const { result } = renderHook(() => useReadingProgress(), { wrapper });
-        await waitFor(() => expect(result.current.isLoaded).toBe(true));
+    it("serializes save then removal even when the first acknowledgement is delayed", async () => {
+        let resolveSave!: (value: unknown) => void;
         currentAuthUser = { id: "user-a" };
-        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
-        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
-
-        act(() => result.current.addToMyList("item-reverse-ack"));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(0) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        commitMutationMock.mockImplementationOnce(() => new Promise(resolve => { resolveSave = resolve; }))
+            .mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 2 });
+        act(() => { void result.current.addToMyList("new-local-item"); });
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
-        act(() => result.current.removeFromMyList("item-reverse-ack"));
+        act(() => { void result.current.removeFromMyList("new-local-item"); });
+        expect(commitMutationMock).toHaveBeenCalledTimes(1);
+        expect(result.current.myListIds).toEqual([]);
+        await act(async () => resolveSave({ resetEpoch: 0, libraryRevision: 1 }));
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 1, isBookmarked: false }));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(2) as never);
+        act(() => result.current.retryHydration());
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(result.current.myListIds).toEqual([]);
+    });
 
-        // The removal is confirmed by the snapshot while the earlier save's
-        // response is delayed. Its overlay must remain to suppress the save.
+    it("does not dispatch queued actions or accept late acknowledgements after account switching", async () => {
+        let resolveSave!: (value: unknown) => void;
+        currentAuthUser = { id: "user-a" };
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        commitMutationMock.mockImplementationOnce(() => new Promise(resolve => { resolveSave = resolve; }));
+        act(() => { void result.current.addToMyList("old-item"); });
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        act(() => { void result.current.addToMyList("queued-item"); });
+        currentAuthUser = { id: "user-b" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        await waitFor(() => expect(result.current.user?.id).toBe("user-b"));
+        await act(async () => resolveSave({ resetEpoch: 0, libraryRevision: 100 }));
+        expect(commitMutationMock).toHaveBeenCalledTimes(1);
+        expect(result.current.myListIds).toEqual([]);
+    });
+
+    it("lets explicit post-reset writes proceed while ignoring an unresolved pre-reset response", async () => {
+        let resolveOld!: (value: unknown) => void;
+        currentAuthUser = { id: "user-a" };
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        commitMutationMock.mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }))
+            .mockResolvedValueOnce({ resetEpoch: 1, libraryRevision: 3 });
+        act(() => { void result.current.addToMyList("old-item"); });
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        act(() => window.dispatchEvent(new CustomEvent("netflux_library_reset", {
+            detail: { scope: getStorageScope("user-a"), resetEpoch: 1, boundaryRevision: 2 },
+        })));
+        await act(async () => { expect(await result.current.addToMyList("post-reset-item")).toBe(true); });
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ resetEpoch: 1, baseRevision: 2 }));
+        await act(async () => resolveOld({ resetEpoch: 0, libraryRevision: 1 }));
+        expect(result.current.syncNeedsAttention).toBe(false);
+    });
+
+    it("does not overlay a pending pre-reset save onto a newer epoch snapshot", async () => {
+        let resolveOld!: (value: unknown) => void;
+        currentAuthUser = { id: "user-a" };
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        commitMutationMock.mockImplementationOnce(() => new Promise(resolve => { resolveOld = resolve; }));
+        act(() => { void result.current.addToMyList("old-item"); });
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(2, false, 1) as never);
         act(() => result.current.retryHydration());
         await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
         expect(result.current.myListIds).toEqual([]);
-
-        await act(async () => { resolveOlderSave({ resetEpoch: 0, libraryRevision: 1 }); });
-        act(() => result.current.retryHydration());
-        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        await act(async () => resolveOld({ resetEpoch: 0, libraryRevision: 1 }));
         expect(result.current.myListIds).toEqual([]);
     });
 

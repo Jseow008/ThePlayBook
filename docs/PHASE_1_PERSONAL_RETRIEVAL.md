@@ -460,3 +460,48 @@ or weakened assertions. No model benchmark or prompt tuning was repeated.
 Next: finish required PR checks and merge #161; the migration is already applied
 and must not be reapplied. Broader durability and AI safeguards remain separately
 scoped work.
+
+## Finding #8 — stale library writes, 26 September 2026
+
+Owner: Codex implementing for the repository owner. Target: this bounded release;
+production remains gated by hosted verification and required CI.
+Branch `codex/library-stale-write-guard`, worktree
+`/Users/j/Desktop/Lifebook-library-durability`.
+
+Confirmed gap: the old mutation route accepted unconditional upserts without a
+base revision or reset epoch. Its original SQL reproduced resurrection after an
+absent-row removal in a rolled-back disposable transaction. Legacy bookmark
+routes and browser table write grants bypassed the authoritative path too.
+
+The candidate requires the expected account, exact account-wide base revision,
+and reset epoch. A shared account lock serializes writes and resets. Even an
+absent-row removal advances the durable account boundary. Browser DML is revoked;
+the unused legacy bookmark routes reject with authenticated 428. The current
+client serializes its own writes and chains only its own successful acknowledgements.
+Conflicts and unconfirmed writes stop the chain and show a refresh action; they
+are never automatically rebased or replayed. Saves before initial hydration are
+not submitted. Save-success feedback waits for acknowledgement.
+
+The account-wide boundary is deliberately conservative: a different device's
+change to another item can also require refresh. No new tombstone table is needed
+because the account revision survives removal. Client failure records are still
+memory-only; durable retry IDs, offline persistence and guest migration are #9,
+not claimed here. Reset/account changes invalidate older queued actions and late
+responses; a newer reset snapshot never overlays old pending saves.
+
+Evidence: baseline original SQL reproduced the defect (not a complete historical
+application build). Five new focused database fixtures and all 26 snapshot runtime
+tests passed on the existing loopback disposable stack. Full local unit suite:
+1,439 passed, 227 configuration-dependent skips. Typecheck and targeted lint passed
+before the last focused reset/feedback tests. One reused bounded reviewer found a
+hanging pre-reset request could block post-reset actions; fixed by detaching the
+old queue, with regression coverage. No model benchmark or tuning run was needed.
+
+Candidate migration: `20260926153219_guard_library_mutation_boundary.sql`.
+Only the disposable local database has this migration. Supabase quoted a new
+short-lived hosted project at $10/month; cost confirmation is pending. Next:
+finish focused checks, open the focused PR, perform the hosted release gate if
+approved, apply exactly the reviewed ACL migration, then deploy and prove the
+new application route. ACL revocation alone does not fix the old server route;
+do not claim #8 live before the new app is deployed. Existing open browser tabs
+must refresh to send the new contract. Preserve required CI and production gates.
