@@ -1,0 +1,309 @@
+{
+  "version": "personal-retrieval-development-probe-v1",
+  "startedAt": "2026-09-18T16:39:14.069Z",
+  "lastUpdatedAt": "2026-09-18T16:39:14.555Z",
+  "applicationCommit": "6bfdb99c10af0cd78e507ef001ca0ffbdd0e735e",
+  "rankingModuleSha256": "6071eb310d2b9d89c558ec980ccf56162f127b2a8d8ae65524a73c6b4a786848",
+  "purpose": "Independent synthetic development calibration and feasibility only; not the frozen 58-case benchmark and not release approval.",
+  "mode": "one-small-batch-after-initial-429",
+  "previousAttempts": [
+    {
+      "startedAt": "2026-09-18T16:37:23.086Z",
+      "results": [
+        {
+          "caseId": "continuity-paraphrase",
+          "run": "cold-1201",
+          "threshold": 0.55,
+          "outcome": "error",
+          "durationMs": 545,
+          "errorCode": "EMBEDDING_UNAVAILABLE",
+          "provider": {
+            "batches": [
+              {
+                "inputCount": 100,
+                "inputBytes": 16160,
+                "maxInputBytes": 162,
+                "durationMs": 0,
+                "outcome": "pending",
+                "tokenCount": null,
+                "billableCharacters": null
+              },
+              {
+                "inputCount": 100,
+                "inputBytes": 16270,
+                "maxInputBytes": 163,
+                "durationMs": 508,
+                "outcome": "provider_error",
+                "tokenCount": null,
+                "billableCharacters": null,
+                "providerStatus": 429
+              },
+              {
+                "inputCount": 100,
+                "inputBytes": 16280,
+                "maxInputBytes": 163,
+                "durationMs": 0,
+                "outcome": "pending",
+                "tokenCount": null,
+                "billableCharacters": null
+              },
+              {
+                "inputCount": 100,
+                "inputBytes": 16270,
+                "maxInputBytes": 163,
+                "durationMs": 0,
+                "outcome": "pending",
+                "tokenCount": null,
+                "billableCharacters": null
+              }
+            ],
+            "requests": 4,
+            "inputCount": 400,
+            "inputBytes": 64980,
+            "maximumConcurrency": 4,
+            "measuredTokenCount": null,
+            "usdCost": null,
+            "costStatus": "Not measured: Developer API embedding responses may omit billable tokens; account billing was not queried. Input bytes are not tokens or a dollar estimate."
+          }
+        }
+      ]
+    }
+  ],
+  "model": "gemini-embedding-001",
+  "dimensions": 768,
+  "taskType": "provider default",
+  "limits": {
+    "candidates": 10000,
+    "candidateBytes": 26214400,
+    "embeddingBytes": 1500,
+    "overlapBytes": 180,
+    "batchSize": 100,
+    "concurrency": 4,
+    "evidenceItems": 8,
+    "contextBytes": 4000,
+    "timeoutMs": 40000,
+    "probeDeadlineMs": 35000
+  },
+  "corpus": {
+    "candidates": 1201,
+    "noiseCandidates": 1195,
+    "relevantCandidates": 6,
+    "utf8Bytes": 950939,
+    "relevant": [
+      {
+        "id": "continuity",
+        "userId": "synthetic-development-owner",
+        "contentItemId": "source-continuity",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "fingerprint": "0adc36057cef79f8a7b8a862bb9fab8cbdc13828498c636c4d92d761fd621a0f",
+        "sourceStatus": "available",
+        "source": {
+          "id": "source-continuity",
+          "title": "Development source continuity",
+          "author": "Synthetic author",
+          "updatedAt": "2026-01-01T00:00:00Z"
+        },
+        "type": "highlight",
+        "evidenceId": "highlight:continuity",
+        "highlightedText": "When a project depends on a single specialist, write down the operating procedure and train a second person before the first person takes leave.",
+        "noteBody": null,
+        "color": "yellow",
+        "segmentId": null,
+        "anchorStart": null,
+        "anchorEnd": null,
+        "segment": null,
+        "readerAnchor": null
+      },
+      {
+        "id": "disagreement",
+        "userId": "synthetic-development-owner",
+        "contentItemId": "source-disagreement",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "fingerprint": "5df57ea85e027cfddec99331b5c30d4564160fde2e3398d35c97ed6629b88550",
+        "sourceStatus": "available",
+        "source": {
+          "id": "source-disagreement",
+          "title": "Development source disagreement",
+          "author": "Synthetic author",
+          "updatedAt": "2026-01-01T00:00:00Z"
+        },
+        "type": "highlight",
+        "evidenceId": "highlight:disagreement",
+        "highlightedText": "Before assigning bad motives during a disagreement, identify the legitimate goals each person is trying to protect. Conflicts often come from competing priorities.",
+        "noteBody": null,
+        "color": "yellow",
+        "segmentId": null,
+        "anchorStart": null,
+        "anchorEnd": null,
+        "segment": null,
+        "readerAnchor": null
+      },
+      {
+        "id": "delayed-reply",
+        "userId": "synthetic-development-owner",
+        "contentItemId": "source-delayed-reply",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "fingerprint": "c8c2882f55e090367b44bf34e736a523787dccd75f28605b3f389a8a8e6c00ec",
+        "sourceStatus": "available",
+        "source": {
+          "id": "source-delayed-reply",
+          "title": "Development source delayed-reply",
+          "author": "Synthetic author",
+          "updatedAt": "2026-01-01T00:00:00Z"
+        },
+        "type": "highlight",
+        "evidenceId": "highlight:delayed-reply",
+        "highlightedText": "An angry rebuttal feels urgent while your pulse is racing. Draft it privately, leave it unsent, and reread it after your body has settled.",
+        "noteBody": null,
+        "color": "yellow",
+        "segmentId": null,
+        "anchorStart": null,
+        "anchorEnd": null,
+        "segment": null,
+        "readerAnchor": null
+      },
+      {
+        "id": "measurement",
+        "userId": "synthetic-development-owner",
+        "contentItemId": "source-measurement",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "fingerprint": "6c5a6990038d66c5ecddf6c983345ed18acc416e188ff1476e3cd7201699aaed",
+        "sourceStatus": "available",
+        "source": {
+          "id": "source-measurement",
+          "title": "Development source measurement",
+          "author": "Synthetic author",
+          "updatedAt": "2026-01-01T00:00:00Z"
+        },
+        "type": "highlight",
+        "evidenceId": "highlight:measurement",
+        "highlightedText": "A thermometer with a constant offset can show a smooth trend while reporting the wrong temperature. Compare the instrument against a known reference before trusting its absolute readings.",
+        "noteBody": null,
+        "color": "yellow",
+        "segmentId": null,
+        "anchorStart": null,
+        "anchorEnd": null,
+        "segment": null,
+        "readerAnchor": null
+      },
+      {
+        "id": "delegation-note",
+        "userId": "synthetic-development-owner",
+        "contentItemId": "source-delegation-note",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "fingerprint": "4ccfa05bf1165bfb6cb8820698f349f5def889901a4e820392fe8e9301a8e648",
+        "sourceStatus": "available",
+        "source": {
+          "id": "source-delegation-note",
+          "title": "Development source delegation-note",
+          "author": "Synthetic author",
+          "updatedAt": "2026-01-01T00:00:00Z"
+        },
+        "type": "highlight",
+        "evidenceId": "highlight:delegation-note",
+        "highlightedText": "A manager can delegate the task but remains responsible for making success criteria explicit.",
+        "noteBody": "I disagree with requiring every decision to return to the manager; the person doing the work needs room to choose their own method.",
+        "color": "yellow",
+        "segmentId": null,
+        "anchorStart": null,
+        "anchorEnd": null,
+        "segment": null,
+        "readerAnchor": null
+      },
+      {
+        "id": "commitment-reflection",
+        "userId": "synthetic-development-owner",
+        "contentItemId": "source-commitment-reflection",
+        "createdAt": "2026-01-01T00:00:00Z",
+        "updatedAt": "2026-01-01T00:00:00Z",
+        "fingerprint": "02c7e2cdd8e14dc42a5dd173c844a579865d2650007b145ebba334cfdbe522b2",
+        "sourceStatus": "available",
+        "source": {
+          "id": "source-commitment-reflection",
+          "title": "Development source commitment-reflection",
+          "author": "Synthetic author",
+          "updatedAt": "2026-01-01T00:00:00Z"
+        },
+        "type": "reflection",
+        "evidenceId": "reflection:commitment-reflection",
+        "prompt": "What did you change in your behavior this week?",
+        "reflectionText": "I used to accept every request immediately. This week I waited until the following morning before answering invitations, which gave me time to notice when I was overcommitting."
+      }
+    ],
+    "noiseRecipe": "Warehouse record N: carton N+8000 contains replacement brackets. Shelf N modulo38 was counted at end of shift; delivery label retained in receiving log."
+  },
+  "methodology": "First question is run with an empty vector cache, then again with the same cache. Subsequent development questions reuse only candidate vectors. Diagnostic runs set an invocation-only threshold of -1 to observe top scores, without changing production threshold 0.55. One run per case; no quality confidence claim. Live database traversal/auth/generation are not included in timing.",
+  "costLimitations": "No billing API queried. No dollar estimate is fabricated when billable token counts are absent. Provider cancellation may still incur charges.",
+  "results": [
+    {
+      "caseId": "continuity-paraphrase",
+      "run": "single-small-quota-diagnostic",
+      "question": "How can a team keep functioning when its sole expert is unavailable?",
+      "threshold": 0.55,
+      "expectedEvidenceId": "highlight:continuity",
+      "outcome": "success",
+      "durationMs": 484,
+      "expectedFound": true,
+      "selected": [
+        {
+          "evidenceId": "highlight:continuity",
+          "score": 0.7852655639792928,
+          "fields": [
+            "highlightedText"
+          ]
+        }
+      ],
+      "stats": {
+        "rankingMode": "semantic",
+        "complete": true,
+        "candidateCount": 1,
+        "chunkCount": 1,
+        "cacheHits": 0,
+        "embeddedInputs": 2,
+        "embeddingBatches": 1,
+        "eligibleCount": 1,
+        "selectedCount": 1,
+        "omittedByLimit": 0,
+        "omittedByContext": 0,
+        "contextBytes": 227,
+        "contextByteLimit": 4000,
+        "similarityThreshold": 0.55
+      },
+      "provider": {
+        "batches": [
+          {
+            "inputCount": 2,
+            "inputBytes": 212,
+            "maxInputBytes": 144,
+            "durationMs": 482,
+            "outcome": "success",
+            "tokenCount": null,
+            "billableCharacters": null
+          }
+        ],
+        "requests": 1,
+        "inputCount": 2,
+        "inputBytes": 212,
+        "maximumConcurrency": 1,
+        "measuredTokenCount": null,
+        "usdCost": null,
+        "costStatus": "Not measured: Developer API embedding responses may omit billable tokens; account billing was not queried. Input bytes are not tokens or a dollar estimate."
+      }
+    }
+  ],
+  "assessment": {
+    "largeScope35SecondFeasibility": "Not established: the initial 1201-candidate attempt returned HTTP 429 before completion.",
+    "warm1201Latency": "Not measured; do not extrapolate from the single-record diagnostic.",
+    "providerAvailability": "The same embedding model/key successfully handled one small batch after the failed large attempt.",
+    "quotaMetricAndTier": "Unknown: the original failed attempt retained HTTP status only; no quota metric, retry delay, or billing tier was observed. The successful diagnostic has no quota-error details.",
+    "originalInFlightCalls": "The first attempt recorded three pending calls before cancellation settled. Their final provider outcomes and charges were not observed.",
+    "thresholdCalibration": "One positive development paraphrase is insufficient to calibrate a semantic threshold. Production threshold was not changed.",
+    "frozenQualityGate": "Not run by this probe.",
+    "causeOf429": "The failure occurred with four concurrent 100-input SDK calls, but this does not establish causality. It is unknown whether the applicable quota counted SDK requests, individual embedded documents, tokens, or another unit; concurrency was not varied in a controlled experiment."
+  }
+}

@@ -1,0 +1,848 @@
+{
+  "version": "selector-assessment-development-review-v1",
+  "sourceArtifact": "selector-assessment-development-v1.json",
+  "sourceSha256": "9a29b6573296be092f137f7ef4d979f765376b6caa30d61b328c021cfe743095",
+  "systemPromptSha256": "54ef00d5a59ff24c88c608bfcdfa822ac019fd77f47e5e5e57c91ad15df2a309",
+  "moduleSha256": "3ce8e0e94466258d4d45b7f7555a99d15078d73079e9a6ffe9d44e029b36c506",
+  "fixtureSha256": "1b647ca4da960d44608767b51e8bc3d4d2d933f1160157288e25b5908dfeb41f",
+  "capacityFixtureSha256": "725a545d950f357bfe5486f409e375c1c1a6f5defb99d223a34498dcd1e92b17",
+  "method": "Production-like selected IDs require schema-valid, allowed, unique assessments with direct verdict. Separately, diagnostic raw IDs are read from all returned JSON, including invalid responses; this never changes validation failures into passes. Expected IDs are assertion labels only. Generated assessments are never answer evidence.",
+  "summary": {
+    "calls": 21,
+    "validResponses": 20,
+    "validatedPassedCases": 20,
+    "diagnosticRawDecisionAgreementCases": 21,
+    "originalDevelopment": {
+      "passedCases": 17,
+      "totalCases": 18,
+      "positiveRecallHits": 21,
+      "positiveRecallTargets": 21,
+      "abstentionCasesPassed": 5,
+      "abstentionCases": 6
+    },
+    "capacity": {
+      "passedCases": 3,
+      "totalCases": 3,
+      "requiredItems": 8,
+      "outputTokens": [
+        702,
+        712,
+        709
+      ],
+      "durationMs": [
+        7201.515583,
+        4551.798458000005,
+        4460.948459000007
+      ]
+    },
+    "usage": {
+      "inputTokens": 48186,
+      "outputTokens": 7890,
+      "totalTokens": 56076
+    },
+    "latencyMs": {
+      "min": 2527.8705829999963,
+      "p50": 4342.884833000004,
+      "p95": 7201.515583,
+      "max": 7219.593832999999,
+      "mean": 4700.717831476191
+    },
+    "maxOutputTokensObserved": 712,
+    "outputTokenCap": 1600
+  },
+  "priorResults": {
+    "idsOnlyHaikuV3": {
+      "passedCases": 5,
+      "totalCases": 6,
+      "organizationAbstention": 0,
+      "positiveRecall": "7/7",
+      "abstentionCases": "1/2"
+    },
+    "strictWitness": {
+      "validatedPassedCases": 12,
+      "totalCases": 18,
+      "diagnosticRawDecisionAgreementCases": 18,
+      "positiveRecall": "8/21",
+      "abstentionCases": "6/6"
+    }
+  },
+  "caseResults": [
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 158
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 466
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 150
+        }
+      ]
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 290
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 279
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 401
+        }
+      ]
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 401
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 349
+        },
+        {
+          "run": 3,
+          "validatedPass": false,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "invalid_structured_output",
+          "boundViolations": [
+            {
+              "path": [
+                "assessments",
+                0,
+                "constraintCheck"
+              ],
+              "characters": 351,
+              "maximum": 300
+            }
+          ],
+          "outputTokens": 411
+        }
+      ]
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 366
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 338
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 380
+        }
+      ]
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 306
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 316
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 332
+        }
+      ]
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 297
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 266
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 261
+        }
+      ]
+    },
+    {
+      "caseId": "eight-greenhouse-procedures",
+      "runs": [
+        {
+          "run": 1,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 702
+        },
+        {
+          "run": 2,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 712
+        },
+        {
+          "run": 3,
+          "validatedPass": true,
+          "diagnosticRawDecisionAgreement": true,
+          "outcome": "complete",
+          "boundViolations": [],
+          "outputTokens": 709
+        }
+      ]
+    }
+  ],
+  "records": [
+    {
+      "run": 1,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p02"
+      ],
+      "expectedIds": [
+        "p02"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p02"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "a44ecff5a80b2af8584d4fc386acff261e0e9341e09a67d412c19a6a739cb054",
+      "rawOutputSha256": "d09088168da76191c8a709fb4f1b052542b7ca3853625b118eff7e38b2584d19",
+      "outputTokens": 158,
+      "durationMs": 5855.199334
+    },
+    {
+      "run": 1,
+      "caseId": "same-name-different-profession",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p06"
+      ],
+      "expectedIds": [
+        "p06"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p06"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "401ec587f128c29244e14e66c29cf8aa93e6bda370b7ba13fa87003915ba0b38",
+      "rawOutputSha256": "de80cda14ee95fbd060d1ff24313979bd68d04e19c080e621704e3dc92bcb1fa",
+      "outputTokens": 290,
+      "durationMs": 6020.211459
+    },
+    {
+      "run": 1,
+      "caseId": "named-organization-not-established",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [],
+      "expectedIds": [],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "f703bbf15eab95f7105021d617ff04619ab1704fe5d0df4cdbfdf043183d01d7",
+      "rawOutputSha256": "67cc93a3dbc0313d7dd1bd82df33a93ad91f7e854eb15c5cfae1357bb05498be",
+      "outputTokens": 401,
+      "durationMs": 6478.631541999999
+    },
+    {
+      "run": 1,
+      "caseId": "unsupported-causal-connection",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [],
+      "expectedIds": [],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "53144d0259b2e1c90e413ced78e97b6fd2bf1587a66a0cd0cf3a41b355c6bfe7",
+      "rawOutputSha256": "b182c795d08dd66264d8e9e04b0629f76872e35599a300e4bacca6c6febda6cc",
+      "outputTokens": 366,
+      "durationMs": 7219.593832999999
+    },
+    {
+      "run": 1,
+      "caseId": "three-requested-comparison-facets",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "a15f00d9f2d8f076efc0c2ec1bdf1b0fca28f49b46015efd772594163a0c96dc",
+      "rawOutputSha256": "00e45f24ea37706111f1021bdcd1da37a083c5f81896da09f532d03ee25c9282",
+      "outputTokens": 306,
+      "durationMs": 6040.734499999999
+    },
+    {
+      "run": 1,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p18",
+        "p19"
+      ],
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "3c669872bc599ebc302f0db068920f3706a6658482bf5990117ae56bee69fc63",
+      "rawOutputSha256": "ba2911e59bc8b35c55bb6f9ab2dcda7d654429f839850b3c00b26b2a4058821b",
+      "outputTokens": 297,
+      "durationMs": 6215.540583000002
+    },
+    {
+      "run": 1,
+      "caseId": "eight-greenhouse-procedures",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "expectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "eb03d28504004eb800aa3d09bde5b44f148e2f5bb0cfc3add5357547a80714a9",
+      "rawOutputSha256": "1f9c4de8b3e2a4e4bf54a8173a24afdef52253a063f1454acae4f622ef3504c8",
+      "outputTokens": 702,
+      "durationMs": 7201.515583
+    },
+    {
+      "run": 2,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p02"
+      ],
+      "expectedIds": [
+        "p02"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p02"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "a44ecff5a80b2af8584d4fc386acff261e0e9341e09a67d412c19a6a739cb054",
+      "rawOutputSha256": "eb0127cf278507387143e02b8a23d307b7be822cbc0c131d1bfe9de5fedd55a1",
+      "outputTokens": 466,
+      "durationMs": 4971.129292000005
+    },
+    {
+      "run": 2,
+      "caseId": "same-name-different-profession",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p06"
+      ],
+      "expectedIds": [
+        "p06"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p06"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "401ec587f128c29244e14e66c29cf8aa93e6bda370b7ba13fa87003915ba0b38",
+      "rawOutputSha256": "fd08ef281d194e65fa0a4744c15e2c6725e98ac5a3d500b13ef15b6c9f10ffd6",
+      "outputTokens": 279,
+      "durationMs": 3518.946541999998
+    },
+    {
+      "run": 2,
+      "caseId": "named-organization-not-established",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [],
+      "expectedIds": [],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "f703bbf15eab95f7105021d617ff04619ab1704fe5d0df4cdbfdf043183d01d7",
+      "rawOutputSha256": "6f1ae06fd67b10f416acbd3f86f6674aba20fca08117455ef08772def72d32cb",
+      "outputTokens": 349,
+      "durationMs": 3537.6795829999974
+    },
+    {
+      "run": 2,
+      "caseId": "unsupported-causal-connection",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [],
+      "expectedIds": [],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "53144d0259b2e1c90e413ced78e97b6fd2bf1587a66a0cd0cf3a41b355c6bfe7",
+      "rawOutputSha256": "29558db34f2d020c878f4e9ea8dba33df4d5e2e1a34acdeba6e8000b8bf5a6e5",
+      "outputTokens": 338,
+      "durationMs": 4342.884833000004
+    },
+    {
+      "run": 2,
+      "caseId": "three-requested-comparison-facets",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "a15f00d9f2d8f076efc0c2ec1bdf1b0fca28f49b46015efd772594163a0c96dc",
+      "rawOutputSha256": "45ab52f48192f3fc59deb363c11c0b8510c864fcadbc2254e09afb00eb165a39",
+      "outputTokens": 316,
+      "durationMs": 3585.6767919999984
+    },
+    {
+      "run": 2,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p18",
+        "p19"
+      ],
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "3c669872bc599ebc302f0db068920f3706a6658482bf5990117ae56bee69fc63",
+      "rawOutputSha256": "e810458c595c9539809aa3fc10226c184b443078eeda12513c60ef853e9b3d51",
+      "outputTokens": 266,
+      "durationMs": 3356.0908750000017
+    },
+    {
+      "run": 2,
+      "caseId": "eight-greenhouse-procedures",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "expectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "eb03d28504004eb800aa3d09bde5b44f148e2f5bb0cfc3add5357547a80714a9",
+      "rawOutputSha256": "a6761e52d7d70a1c42d7bed5f0a1a82172da5b4f9a243b8737371d9a3873f825",
+      "outputTokens": 712,
+      "durationMs": 4551.798458000005
+    },
+    {
+      "run": 3,
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p02"
+      ],
+      "expectedIds": [
+        "p02"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p02"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "a44ecff5a80b2af8584d4fc386acff261e0e9341e09a67d412c19a6a739cb054",
+      "rawOutputSha256": "e2321ba5e25595095d68bcb43ec285ce61db16491662fb5dc2484500d2a2ab1c",
+      "outputTokens": 150,
+      "durationMs": 2527.8705829999963
+    },
+    {
+      "run": 3,
+      "caseId": "same-name-different-profession",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p06"
+      ],
+      "expectedIds": [
+        "p06"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p06"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "401ec587f128c29244e14e66c29cf8aa93e6bda370b7ba13fa87003915ba0b38",
+      "rawOutputSha256": "82500849745f7a49305c35ec6a43ea1743a6ca369ca3a6da95c055c386637fef",
+      "outputTokens": 401,
+      "durationMs": 4290.8764999999985
+    },
+    {
+      "run": 3,
+      "caseId": "named-organization-not-established",
+      "outcome": "invalid_structured_output",
+      "error": null,
+      "selectedIds": null,
+      "expectedIds": [],
+      "validatedPass": false,
+      "diagnosticRawDirectIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "JSON parsed from invalid structured response; NOT accepted by validator",
+      "boundViolations": [
+        {
+          "path": [
+            "assessments",
+            0,
+            "constraintCheck"
+          ],
+          "characters": 351,
+          "maximum": 300
+        }
+      ],
+      "inputSha256": "f703bbf15eab95f7105021d617ff04619ab1704fe5d0df4cdbfdf043183d01d7",
+      "rawOutputSha256": "58335ffcfe99ca9648f21591b758c5ffb933217d24529debbb3142b14a225de7",
+      "outputTokens": 411,
+      "durationMs": 3946.7469169999968
+    },
+    {
+      "run": 3,
+      "caseId": "unsupported-causal-connection",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [],
+      "expectedIds": [],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "53144d0259b2e1c90e413ced78e97b6fd2bf1587a66a0cd0cf3a41b355c6bfe7",
+      "rawOutputSha256": "b5afb360a4c19cf2c47b409822d7d40469cd278ed2eabe4242061629bf6e9e75",
+      "outputTokens": 380,
+      "durationMs": 4038.572417000003
+    },
+    {
+      "run": 3,
+      "caseId": "three-requested-comparison-facets",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "a15f00d9f2d8f076efc0c2ec1bdf1b0fca28f49b46015efd772594163a0c96dc",
+      "rawOutputSha256": "13c523d2c112d20bbd7e0324784a36e49138d47b4a0b3cd874cdd3112338b0a7",
+      "outputTokens": 332,
+      "durationMs": 3204.4010839999974
+    },
+    {
+      "run": 3,
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "p18",
+        "p19"
+      ],
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "p18",
+        "p19"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "3c669872bc599ebc302f0db068920f3706a6658482bf5990117ae56bee69fc63",
+      "rawOutputSha256": "02b8e19eb4f0145d263010150066e25c25a957529c719def96c6f9a7d8786e32",
+      "outputTokens": 261,
+      "durationMs": 3350.0252920000057
+    },
+    {
+      "run": 3,
+      "caseId": "eight-greenhouse-procedures",
+      "outcome": "complete",
+      "error": null,
+      "selectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "expectedIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "validatedPass": true,
+      "diagnosticRawDirectIds": [
+        "q01",
+        "q02",
+        "q03",
+        "q04",
+        "q05",
+        "q06",
+        "q07",
+        "q08"
+      ],
+      "diagnosticRawDecisionAgreement": true,
+      "rawSource": "schema-valid structured output",
+      "boundViolations": [],
+      "inputSha256": "eb03d28504004eb800aa3d09bde5b44f148e2f5bb0cfc3add5357547a80714a9",
+      "rawOutputSha256": "13933c9d69570ced0653589c860399d043e1edad4cf8c36b2d0c147845562e7f",
+      "outputTokens": 709,
+      "durationMs": 4460.948459000007
+    }
+  ],
+  "limitations": [
+    "Same six development cases repeated three times, plus one independent eight-procedure capacity case; no held-out corpus/results were inspected.",
+    "Model judgments can omit constraints or misread claims. Structural validity is not deterministic semantic proof.",
+    "The eight-item capacity case contains eight short relevant records, not a full 96-candidate pool with distractors or long multi-facet material.",
+    "Generated requestedFacets, supportSummary and constraintCheck must remain internal. Final answers use freshly authorized stored fields only.",
+    "The output cap increased from 700 to 1600 tokens. Measured tokens do not establish dollar cost without verified model pricing.",
+    "The failed per-field bound remains a failure. No limits, labels, output or gate were changed after freezing the run.",
+    "Prior failed evaluations remain unchanged and this development result does not satisfy the release gate."
+  ],
+  "integrationSurface": [
+    "Production selector prompt/schema/version, output type, canonical request/hash metadata, 1600 output cap, validator and direct-ID derivation.",
+    "Provider generator and unit tests must retain raw assessment output, while retrieval callers continue consuming only derived IDs.",
+    "Provider evaluator, DB capture/replay generator seam and fresh structured-output sidecars must use the actual schema and exact hash/model binding. Never rewrite outputs to ids-only and claim compatible replay."
+  ],
+  "recommendation": "Do not integrate this frozen contract unchanged: one internal explanation exceeded its per-field length cap. Raw decisions are promising, but the root must decide whether and how to revise this operational bound. No production changes or additional calls were made."
+}

@@ -1,0 +1,248 @@
+{
+  "version": "selector-precision-development-v1",
+  "fixtureSha256": "1b647ca4da960d44608767b51e8bc3d4d2d933f1160157288e25b5908dfeb41f",
+  "modelConfig": {
+    "version": "personal-evidence-selector-model-v1",
+    "promptVersion": "personal-evidence-selector-v3",
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "maxOutputTokens": 700,
+    "maxRetries": 0,
+    "temperature": "provider default"
+  },
+  "evidenceKind": "real-provider development diagnostic",
+  "expectedCases": 6,
+  "completedCases": 6,
+  "passedCases": 5,
+  "actualCalls": 6,
+  "pricing": {
+    "estimatedUsd": null,
+    "reason": "Report measured token usage; no unverified model price or fabricated cost estimate."
+  },
+  "releaseGate": "Not established. Frozen corpus, three-run quality, database authorization and answer attribution gates remain separate.",
+  "records": [
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "badd60172e017267d54c99dc71ea561ca6fec3686b848d547297abb4b05a9317",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p02"
+      ],
+      "selectedIds": [
+        "p02"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p02"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1392,
+        "outputTokens": 11,
+        "totalTokens": 1403,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 4,
+        "candidateBytes": 1117,
+        "promptBytes": 5672,
+        "selectedCount": 1,
+        "durationMs": 1451.881834,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "57b8467bc96814f778d007044795731778ad68328562e35e7ad9431785559644",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p06"
+      ],
+      "selectedIds": [
+        "p06"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p06"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1299,
+        "outputTokens": 11,
+        "totalTokens": 1310,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 799,
+        "promptBytes": 5344,
+        "selectedCount": 1,
+        "durationMs": 949.0079169999999,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "outcome": "complete",
+      "passed": false,
+      "inputSha256": "ee91aef18e4784c6953b48168314ad2743a9492afc1ca8152d643237254d6f35",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [],
+      "selectedIds": [
+        "p08"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p08"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1309,
+        "outputTokens": 11,
+        "totalTokens": 1320,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 745,
+        "promptBytes": 5293,
+        "selectedCount": 1,
+        "durationMs": 972.472667,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "d9d54cf2afce2863a8a6587969ca4a29e544b4edb0af96e98469ddce63eb970c",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [],
+      "selectedIds": [],
+      "rawSyntheticOutput": {
+        "ids": []
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1304,
+        "outputTokens": 8,
+        "totalTokens": 1312,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 821,
+        "promptBytes": 5377,
+        "selectedCount": 0,
+        "durationMs": 1338.592416,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "b502a8374d80586cd58ffb1cf82060596582c6abea49e59dbb204ec83cf9afd7",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "selectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p14",
+          "p15",
+          "p16"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1436,
+        "outputTokens": 17,
+        "totalTokens": 1453,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 4,
+        "candidateBytes": 1254,
+        "promptBytes": 5829,
+        "selectedCount": 3,
+        "durationMs": 983.9059580000003,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "1f39c69120525673536b84c045661f0ede5db72a1c5318940695168445c92c5a",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "selectedIds": [
+        "p18",
+        "p19"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p18",
+          "p19"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1381,
+        "outputTokens": 14,
+        "totalTokens": 1395,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-haiku-4-5-20251001",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 4,
+        "candidateBytes": 1107,
+        "promptBytes": 5665,
+        "selectedCount": 2,
+        "durationMs": 966.4882500000003,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    }
+  ]
+}

@@ -42,7 +42,7 @@ import { captureAnalyticsEvent } from "@/lib/analytics";
 import { buildCanonicalReadPath } from "@/lib/content-paths";
 import { HIGHLIGHT_COLOR_CLASSES, normalizeHighlightColor, type HighlightColor } from "@/lib/highlight-utils";
 import type { NotesChatScope } from "@/components/notes/NotesAskPanel";
-import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
+import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 import { OVERLAY_LAYER_CLASS } from "@/lib/overlay-layers";
 
@@ -1241,38 +1241,14 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     const loadedEntryCount = highlights.length + reflections.length;
     const resultLabel = `${filteredEntryCount} ${filteredEntryCount === 1 ? "result" : "results"}`;
 
-    const notesChatScope = useMemo<NotesChatScope>(() => {
-        const scopedHighlights = filteredHighlights.slice(0, 40);
-
-        return {
-            highlightIds: scopedHighlights.map((item) => item.id),
-            noteCount: scopedHighlights.length,
-            totalMatches: filteredHighlights.length,
-            summary: buildScopeSummary({
-                selectedItemTitle,
-                selectedType,
-                selectedColor,
-                searchQuery,
-            }),
-            signature: JSON.stringify({
-                ids: scopedHighlights.map((item) => item.id),
-                totalMatches: filteredHighlights.length,
-                selectedItem,
-                selectedType,
-                selectedColor,
-                searchQuery: searchQuery.trim(),
-                sortBy,
-            }),
-        };
-    }, [
-        filteredHighlights,
-        searchQuery,
-        selectedColor,
-        selectedItem,
-        selectedItemTitle,
-        selectedType,
-        sortBy,
-    ]);
+    const notesChatScope = useMemo<NotesChatScope>(() => createNotesChatScope({
+        version: 1,
+        itemType: selectedType,
+        ...(selectedItem !== DEFAULT_SELECTED_ITEM ? { contentItemId: selectedItem } : {}),
+        ...(selectedColor !== "all" ? { color: selectedColor } : {}),
+        ...(searchQuery.trim() ? { filterQuery: searchQuery.trim() } : {}),
+    }, buildScopeSummary({ selectedItemTitle, selectedType, selectedColor, searchQuery })),
+    [searchQuery, selectedColor, selectedItem, selectedItemTitle, selectedType]);
 
     const mobileAskHref = useMemo(() => {
         const returnParams = new URLSearchParams(searchParams.toString());
@@ -1469,6 +1445,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
     return (
         <div className="min-h-screen bg-background font-sans text-foreground pb-8 lg:pb-24">
             <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6 sm:py-12">
+                {searchParams.get("restart") === "1" && <p role="status" className="mb-4 text-sm text-muted-foreground">This older chat link used a saved selection. Choose your filters and start a new question.</p>}
                 <div className={cn(!isAskOpen && "mx-auto max-w-4xl")}>
                     <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex flex-col gap-3">
@@ -1512,6 +1489,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                             type="text"
                                             placeholder="Search notes, highlights, sources, sections"
                                             value={searchQuery}
+                                                maxLength={160}
                                             onChange={(event) => setSearchQuery(event.target.value)}
                                             className="h-10 w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-primary"
                                         />
@@ -1678,6 +1656,7 @@ export function BrainClientPage({ initialPage, initialReflections = [], initialA
                                         type="text"
                                         placeholder="Search notes, highlights, sources, sections"
                                         value={searchQuery}
+                                                maxLength={160}
                                         onChange={(event) => setSearchQuery(event.target.value)}
                                         className={cn(
                                             "w-full rounded-xl border border-white/10 bg-card/35 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground/70 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary",

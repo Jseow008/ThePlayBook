@@ -1,0 +1,29 @@
+{
+  "criterion": "Full grounding, separately from correction of the original source-attribution wording.",
+  "reviews": [
+    {
+      "run": 1,
+      "responseSha256": "66e3ef049a9ef391eaa253fc3c4c8326721a75cb4bedeafb27e25b1e9dbfecd3",
+      "reviewer": "independent-pipeline-audit-agent",
+      "originalExplicitSourceMisattributionPresent": false,
+      "grounded": false,
+      "notes": "Separates the note interpretation from advice, but adds unsupported inference that kitchen phone placement keeps the user available for caregiving; stored reflection does not establish that purpose or availability."
+    },
+    {
+      "run": 2,
+      "responseSha256": "5d39b20eff9223ca1987e6e00a0f38b31943339340f2dc34a01fefba77f29e8d",
+      "reviewer": "independent-pipeline-audit-agent",
+      "originalExplicitSourceMisattributionPresent": false,
+      "grounded": true,
+      "notes": "Attributes interruption exception to the written note and reports the stored tomorrow plan without adding a new availability claim."
+    },
+    {
+      "run": 3,
+      "responseSha256": "be0e75c381f4873f6daaf6b43594257c83f556b7414ae63593f9340640ff3ad9",
+      "reviewer": "independent-pipeline-audit-agent",
+      "originalExplicitSourceMisattributionPresent": false,
+      "grounded": false,
+      "notes": "Separates the note interpretation from advice, but adds unsupported inference that kitchen phone placement keeps the user available for caregiving; stored reflection does not establish that purpose or availability."
+    }
+  ]
+}

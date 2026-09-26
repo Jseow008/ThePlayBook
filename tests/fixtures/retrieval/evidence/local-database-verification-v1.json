@@ -1,0 +1,29 @@
+{
+  "version": "personal-retrieval-local-database-verification-v1",
+  "verifiedAt": "2026-09-18T17:56:07.497219+00:00",
+  "environment": "isolated local Supabase, project netflux-personal-retrieval-candidate, loopback DB port 55322",
+  "productionAccess": false,
+  "migration": "supabase/migrations/20260918164448_add_personal_evidence_index.sql",
+  "migrationSha256": "8349c18d1bbf766e5424e9765f48b28e3453111ca375e84e9f83107b7fc20144",
+  "fullMigrationReplay": {
+    "command": "supabase db reset --local --no-seed --workdir <guarded-disposable-workdir> --yes",
+    "exitCode": 0,
+    "guard": "Exact candidate project ID, DB port 55322 and absence of linked project metadata checked before reset."
+  },
+  "personalEvidenceRuntime": {
+    "passed": 16,
+    "failed": 0
+  },
+  "sqlSecurityGatesPassed": [
+    "function ACLs",
+    "new object access",
+    "admin RPC ACLs",
+    "embedding table reads",
+    "storage bucket listing",
+    "analytics RLS"
+  ],
+  "limitations": [
+    "Local replay is not the repository hosted production release gate.",
+    "Frozen v1 relevance gate remains failed; no merge or deployment authorization is implied."
+  ]
+}

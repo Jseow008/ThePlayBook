@@ -1,0 +1,20 @@
+{
+  "version": "selector-capacity-development-v1",
+  "purpose": "Independent synthetic DEVELOPMENT capacity case: eight explicitly requested facets need eight short stored procedures. Not a held-out quality gate.",
+  "case": {
+    "id": "eight-greenhouse-procedures",
+    "question": "Summarize each saved greenhouse procedure: pump priming, door-hinge lubrication, roof-gutter clearing, thermostat calibration, tray cleaning, drain flushing, fan-guard cleaning, and vent-latch inspection.",
+    "exactQuote": false,
+    "expectedIds": ["q01", "q02", "q03", "q04", "q05", "q06", "q07", "q08"],
+    "candidates": [
+      {"id":"q01","type":"highlight","title":"Notebook 28","fields":[{"name":"highlightedText","text":"To prime the greenhouse circulation pump, switch it off, fill its priming chamber with clean water, close the chamber cap, and restart it. Check that water flows before leaving it running."}]},
+      {"id":"q02","type":"highlight","title":"Notebook 61","fields":[{"name":"highlightedText","text":"Lubricate the greenhouse door hinges by wiping grit from each pin, adding one drop of light machine oil, and moving the door through its full travel. Wipe away excess oil."}]},
+      {"id":"q03","type":"highlight","title":"Notebook 14","fields":[{"name":"highlightedText","text":"Clear the greenhouse roof gutter from a stable working platform. Remove leaves with a scoop, collect them in a bucket, and run a small amount of water through the downpipe to check flow."}]},
+      {"id":"q04","type":"highlight","title":"Notebook 72","fields":[{"name":"highlightedText","text":"Check greenhouse thermostat calibration by placing a reference thermometer beside its sensor for thirty minutes. Record the difference and adjust the thermostat offset according to its manual."}]},
+      {"id":"q05","type":"highlight","title":"Notebook 39","fields":[{"name":"highlightedText","text":"Clean empty greenhouse planting trays by brushing out dry soil, washing with warm soapy water, rinsing thoroughly, and leaving them to dry before storage. Inspect for cracks while washing."}]},
+      {"id":"q06","type":"highlight","title":"Notebook 85","fields":[{"name":"highlightedText","text":"Flush the greenhouse floor drain by lifting the grate, removing visible debris, and pouring in a bucket of clean water. Refit the grate and confirm that no water remains pooled on the floor."}]},
+      {"id":"q07","type":"highlight","title":"Notebook 46","fields":[{"name":"highlightedText","text":"Before cleaning a greenhouse fan guard, disconnect power and wait for the blades to stop. Remove dust from the guard with a soft brush and refit it securely before reconnecting power."}]},
+      {"id":"q08","type":"highlight","title":"Notebook 93","fields":[{"name":"highlightedText","text":"Inspect each greenhouse vent latch by opening and closing it by hand. Check that the catch fully engages, tighten loose mounting screws, and mark any bent latch for replacement."}]}
+    ]
+  }
+}

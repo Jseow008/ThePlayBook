@@ -1,0 +1,32 @@
+{
+  "version": "personal-retrieval-generation-attempt-provenance-v1",
+  "artifact": "final-generation-v2-selector-v4-first-attempt.json.gz",
+  "uncompressedSha256": "4864eed507ed749a5617922317252a8376ffb194ff190da188e0d2fd46ab4bf8",
+  "compressedSha256": "62ac46d0a94c593766a887a5a8d65910dc4a99e6ad90fd0a5869a806f64d39c7",
+  "uncompressedBytes": 151762,
+  "corpusSha256": "dd866de9d24c712e929085f240ca5a47760cab74ef15f4a60d829bc937d58608",
+  "captureSha256": "43fd16c314d141e07c7641238d5da297313694645d7476e0f560f4f706c0bdbb",
+  "status": "incomplete-and-known-quality-failure",
+  "completedRecords": 42,
+  "completedModelAnswers": 30,
+  "failure": {
+    "code": "TOKEN_COUNT_FAILED",
+    "status": 400
+  },
+  "counters": {
+    "generationAttempts": 30,
+    "reservedGenerationTokens": 252600
+  },
+  "measurementFailureExplanation": "The deterministic empty/no-evidence branch submitted whitespace to the provider token-count endpoint and received HTTP400. No model request was made for that failed record. The original artifact is preserved unchanged; later harness correction is not a rerun or a quality pass.",
+  "independentReview": {
+    "path": "final-answer-v2-selector-v4-run1-review-first-attempt.json",
+    "sha256": "38106f597398585e81e0eece7b7f1dbcacf69947cf1485edc3f06ef6cef2606c",
+    "reviewerKind": "ai",
+    "grounded": 28,
+    "reviewed": 30,
+    "completeAnswers": 30,
+    "releasePass": false
+  },
+  "remainingModelCallsNotExecuted": 60,
+  "continuation": "Paused after independent review found two factual mutations. No quality retry or changed holdout labels."
+}

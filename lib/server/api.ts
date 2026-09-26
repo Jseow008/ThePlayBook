@@ -8,6 +8,8 @@ export type ApiErrorCode =
     | "INVALID_JSON"
     | "NOT_FOUND"
     | "CONFLICT"
+    | "RETRIEVAL_UNAVAILABLE"
+    | "RETRIEVAL_NOT_READY"
     | "INTERNAL_ERROR";
 
 export function getRequestId(): string {

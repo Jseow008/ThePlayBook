@@ -1,0 +1,445 @@
+{
+  "version": "grounded-answer-development-v1",
+  "status": "frozen-for-development-acquisition",
+  "purpose": "Independent synthetic development examples for answer precision, attribution, and requested-facet discipline. These are not a held-out retrieval benchmark or evidence of a release gate passing.",
+  "author": "/root/retrieval_audit",
+  "providerCallsBeforeCriteria": 0,
+  "evaluationProtocol": {
+    "boundary": "Treat the supplied typed records as authorized, freshly selected evidence. Exercise production evidence formatting and answer-prompt builders only; do not retrieve, embed, rerank, or query a database.",
+    "modelPayload": "Include question, surface-appropriate metadata, and formatted evidence. Never include case IDs, evaluation labels, requestedFacets, decisiveWording, forbiddenClaims, unrequestedDetails, or acceptableVariations in model inputs.",
+    "conditions": [
+      "unchanged production answer prompt",
+      "same prompt plus the proposed appendix"
+    ],
+    "proposedRunsPerCondition": {
+      "baseline": 1,
+      "candidate": 3
+    },
+    "proposedMaximumGenerationRequests": 24,
+    "acquisitionStatus": "Parent authorized the bounded 24-call development plan after this pre-acquisition criteria freeze; no calls have been made by the fixture author.",
+    "decisiveWording": "An evidence substring that establishes a required fact. Its meaning must be preserved, but using the exact substring or quotation marks is not mandatory. Any wording presented as a quotation must actually occur in that evidence field.",
+    "criteria": {
+      "requestedFactCoverage": "Every requestedFacet must be answered accurately, with its specified relation, order, quantity, unit, and identity constraints intact.",
+      "grounding": "Every substantive answer claim must follow from the supplied fields or an explicitly allowed direct arithmetic comparison. A more general statement that loses a requested physical or temporal relation does not satisfy that facet.",
+      "attribution": "Keep current editorial source, copied highlight, attached personal note, and personal reflection distinct. A note or reflection must not become the source author's claim, and a recorded past action must not be presented as an endorsed instruction.",
+      "unsupportedAbstention": "Do not abstain from the requested facts when the supplied evidence directly establishes them. State only what is established; do not fill other gaps."
+    },
+    "scoring": "Record the four pass criteria independently for every raw answer, with supporting answer spans and reviewer identity. A development case passes only when requestedFactCoverage, grounding, attribution, and unsupportedAbstention pass. Record focus separately as a descriptive diagnostic; supported unrequested details alone cannot cause failure. Do not use answer length, a required template, or exact-string matching as a substitute for these criteria. Keep all raw baseline and candidate answers; this development result does not replace or relax release thresholds.",
+    "focusDiagnostic": "Record whether the answer adds supported facts, recaps, advice, or plans beyond the requested facets, using each case's unrequestedDetails as diagnostic examples. Supported extra material alone does not fail an otherwise accurate, complete, properly attributed answer. Unsupported additions still fail grounding. Brief source labels and necessary qualifications are not focus problems."
+  },
+  "proposedPromptAppendix": "Answer only the requested facets. For precise factual details such as physical position, direction, sequence, quantities, or identity, prefer the evidence's short decisive wording; preserve its relationships, units, negation, and qualifiers. Paraphrase surrounding explanation naturally, but omit unrequested recaps, advice, and plans.",
+  "cases": [
+    {
+      "id": "grounded-dev-01",
+      "surface": "notes",
+      "question": "Where did I put the foam wedge relative to the picture frame and the wall?",
+      "scope": {
+        "version": 1,
+        "itemType": "all"
+      },
+      "libraryMetadata": null,
+      "evidence": [
+        {
+          "id": "reflection:581f1d83-8e2b-4a77-9c6b-168fd91d2a31",
+          "type": "reflection",
+          "title": "Hanging the small print",
+          "fields": [
+            {
+              "name": "prompt",
+              "text": "What did you change while setting up the display?"
+            },
+            {
+              "name": "reflectionText",
+              "text": "I set the foam wedge between the back of the picture frame and the wall. I did not put it under the frame. I wiped the glass with a blue cloth afterward."
+            }
+          ]
+        }
+      ],
+      "expectedGeneration": {
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5-20251001",
+        "maxOutputTokens": 350
+      },
+      "evaluation": {
+        "requestedFacets": [
+          {
+            "id": "position",
+            "evidenceId": "reflection:581f1d83-8e2b-4a77-9c6b-168fd91d2a31",
+            "field": "reflectionText",
+            "proposition": "The user placed the wedge between the back of the picture frame and the wall.",
+            "decisiveWording": "between the back of the picture frame and the wall"
+          }
+        ],
+        "forbiddenClaims": [
+          "The wedge was under or beneath the frame.",
+          "The wedge was between the glass and frame.",
+          "A placement rationale such as leveling or ventilation, which the reflection does not state."
+        ],
+        "unrequestedDetails": [
+          "Wiping the glass.",
+          "The cloth's color."
+        ],
+        "acceptableVariations": [
+          "A short standalone placement answer is sufficient.",
+          "Mentioning that the wedge was not under the frame is allowed because it directly clarifies the requested spatial relation.",
+          "A brief label identifying this as the user's reflection is allowed.",
+          "Behind the frame alone is insufficient: the question asks for its relation to both the frame and the wall."
+        ]
+      }
+    },
+    {
+      "id": "grounded-dev-02",
+      "surface": "notes",
+      "question": "What did I do immediately before laying the paper on the printing plate?",
+      "scope": {
+        "version": 1,
+        "itemType": "all"
+      },
+      "libraryMetadata": null,
+      "evidence": [
+        {
+          "id": "reflection:27f9ebd7-4c0e-4d66-93b2-f7d7c5e43d26",
+          "type": "reflection",
+          "title": "Friday's lino print",
+          "fields": [
+            {
+              "name": "prompt",
+              "text": "What order did you follow at the printing bench?"
+            },
+            {
+              "name": "reflectionText",
+              "text": "I checked the registration marks, rolled ink onto the printing plate, then laid the paper on it. I wrote the edition number only after lifting the print."
+            }
+          ]
+        }
+      ],
+      "expectedGeneration": {
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5-20251001",
+        "maxOutputTokens": 350
+      },
+      "evaluation": {
+        "requestedFacets": [
+          {
+            "id": "immediate-predecessor",
+            "evidenceId": "reflection:27f9ebd7-4c0e-4d66-93b2-f7d7c5e43d26",
+            "field": "reflectionText",
+            "proposition": "Rolling ink onto the printing plate was the action immediately before laying the paper on it.",
+            "decisiveWording": "rolled ink onto the printing plate, then laid the paper on it"
+          }
+        ],
+        "forbiddenClaims": [
+          "Checking registration marks was the immediate predecessor to laying the paper.",
+          "The user wrote the edition number before laying the paper.",
+          "The user rolled ink onto the paper rather than the plate."
+        ],
+        "unrequestedDetails": [
+          "Reciting the complete printing sequence.",
+          "The later edition-number entry."
+        ],
+        "acceptableVariations": [
+          "You rolled ink onto the plate is a sufficient answer.",
+          "The answer may use immediately before or equivalent temporal wording.",
+          "A brief reflection/source label is allowed; no new printing advice is requested."
+        ]
+      }
+    },
+    {
+      "id": "grounded-dev-03",
+      "surface": "notes",
+      "question": "How many frames did Mira the courier collect?",
+      "scope": {
+        "version": 1,
+        "itemType": "all"
+      },
+      "libraryMetadata": null,
+      "evidence": [
+        {
+          "id": "highlight:e2ccf3ad-dc6b-452a-b293-435b953c5944",
+          "type": "highlight",
+          "title": "Packing the gallery display",
+          "fields": [
+            {
+              "name": "highlightedText",
+              "text": "At the gallery packing table, Mira the courier collected six small frames. Mira the installer mounted four large frames. The courier did not mount any frames. The delivery note was green."
+            }
+          ]
+        }
+      ],
+      "expectedGeneration": {
+        "provider": "anthropic",
+        "model": "claude-haiku-4-5-20251001",
+        "maxOutputTokens": 350
+      },
+      "evaluation": {
+        "requestedFacets": [
+          {
+            "id": "courier-quantity",
+            "evidenceId": "highlight:e2ccf3ad-dc6b-452a-b293-435b953c5944",
+            "field": "highlightedText",
+            "proposition": "Mira the courier collected six frames, described as small.",
+            "decisiveWording": "Mira the courier collected six small frames"
+          }
+        ],
+        "forbiddenClaims": [
+          "The courier collected four or ten frames.",
+          "Mira the courier mounted the frames.",
+          "The courier and installer are assumed to be the same person.",
+          "The six collected frames were large."
+        ],
+        "unrequestedDetails": [
+          "The installer's four mounted frames.",
+          "The delivery note's color.",
+          "A separate recap of what the courier did not do."
+        ],
+        "acceptableVariations": [
+          "Six frames and six small frames are both sufficient.",
+          "The role may be implicit in a direct answer to the question, but must not be contradicted.",
+          "A short highlight/source label is allowed."
+        ]
+      }
+    },
+    {
+      "id": "grounded-dev-04",
+      "surface": "library",
+      "question": "Where does the current guide put the felt strip, and where did I put it in my note?",
+      "scope": {
+        "version": 1,
+        "itemType": "all"
+      },
+      "libraryMetadata": "One saved article: Tray dividers, by Evin Sol. The supplied editorial passage is current and available.",
+      "evidence": [
+        {
+          "id": "source_segment:043cf789-b0e9-426e-aa61-1ed37130a6cf",
+          "type": "source_segment",
+          "title": "Tray dividers",
+          "fields": [
+            {
+              "name": "sourceText",
+              "text": "Run the felt strip along the inside of the tray's left edge. Keep its top below the divider's top edge. The example tray is painted yellow."
+            }
+          ]
+        },
+        {
+          "id": "highlight:868756f1-b743-41bc-818b-c9ac07f4369f",
+          "type": "highlight",
+          "title": "Tray dividers",
+          "fields": [
+            {
+              "name": "highlightedText",
+              "text": "Run the felt strip along the inside of the tray's left edge. Keep its top below the divider's top edge."
+            },
+            {
+              "name": "noteBody",
+              "text": "I placed my felt strip along the outside of the tray's right edge, with its top level with the divider's top edge. Next weekend I plan to replace the paper label."
+            }
+          ]
+        }
+      ],
+      "expectedGeneration": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "maxOutputTokens": 500
+      },
+      "evaluation": {
+        "requestedFacets": [
+          {
+            "id": "current-source-placement",
+            "evidenceId": "source_segment:043cf789-b0e9-426e-aa61-1ed37130a6cf",
+            "field": "sourceText",
+            "proposition": "The current guide places the strip along the inside of the tray's left edge, with the strip's top below the divider's top edge.",
+            "decisiveWording": "Run the felt strip along the inside of the tray's left edge. Keep its top below the divider's top edge."
+          },
+          {
+            "id": "personal-placement",
+            "evidenceId": "highlight:868756f1-b743-41bc-818b-c9ac07f4369f",
+            "field": "noteBody",
+            "proposition": "The user placed their strip along the outside of the tray's right edge, with its top level with the divider's top edge.",
+            "decisiveWording": "along the outside of the tray's right edge, with its top level with the divider's top edge"
+          }
+        ],
+        "forbiddenClaims": [
+          "Swapping the source's left/inside/below placement with the user's right/outside/level placement.",
+          "Saying the guide puts the strip under the tray or divider.",
+          "Presenting the user's location as a source-endorsed alternative.",
+          "Inventing why the user chose the different placement."
+        ],
+        "unrequestedDetails": [
+          "The example tray's paint color.",
+          "The future label replacement.",
+          "A closing recommendation about which placement is better."
+        ],
+        "acceptableVariations": [
+          "Two short attributed sentences or bullets are sufficient.",
+          "Level with and at the same height as are equivalent here.",
+          "A brief direct contrast of the stated placements is allowed; it must not replace any of the requested spatial constraints."
+        ]
+      }
+    },
+    {
+      "id": "grounded-dev-05",
+      "surface": "library",
+      "question": "How did the timing in my note differ from the current instructions for recording the jar's tare?",
+      "scope": {
+        "version": 1,
+        "itemType": "all"
+      },
+      "libraryMetadata": "One saved article: The pigment log, by Yara Fen. The supplied editorial passage is current and available.",
+      "evidence": [
+        {
+          "id": "source_segment:e80e10c5-dc39-4d7a-952b-e1d7f14f367d",
+          "type": "source_segment",
+          "title": "The pigment log",
+          "fields": [
+            {
+              "name": "sourceText",
+              "text": "After weighing the empty jar, record its tare. Only then add the dry pigment. Store the batch card in the lower drawer."
+            }
+          ]
+        },
+        {
+          "id": "highlight:b8a25ae3-a4da-4129-8618-d6a52d6b013f",
+          "type": "highlight",
+          "title": "The pigment log",
+          "fields": [
+            {
+              "name": "highlightedText",
+              "text": "After weighing the empty jar, record its tare. Only then add the dry pigment."
+            },
+            {
+              "name": "noteBody",
+              "text": "I wrote down the tare after I had already added the dry pigment. I plan to switch to white labels next week."
+            }
+          ]
+        }
+      ],
+      "expectedGeneration": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "maxOutputTokens": 500
+      },
+      "evaluation": {
+        "requestedFacets": [
+          {
+            "id": "instruction-sequence",
+            "evidenceId": "source_segment:e80e10c5-dc39-4d7a-952b-e1d7f14f367d",
+            "field": "sourceText",
+            "proposition": "The instructions require recording the tare after weighing the empty jar and before adding dry pigment.",
+            "decisiveWording": "After weighing the empty jar, record its tare. Only then add the dry pigment."
+          },
+          {
+            "id": "actual-sequence",
+            "evidenceId": "highlight:b8a25ae3-a4da-4129-8618-d6a52d6b013f",
+            "field": "noteBody",
+            "proposition": "The user's note says they recorded the tare after adding the dry pigment, reversing the record-versus-add order.",
+            "decisiveWording": "I wrote down the tare after I had already added the dry pigment"
+          }
+        ],
+        "forbiddenClaims": [
+          "The user recorded the tare before adding pigment.",
+          "The source instructs recording the tare before weighing the empty jar.",
+          "The user's later recording is described as a preferred or recommended method.",
+          "An invented weight, measurement error, motive, or consequence."
+        ],
+        "unrequestedDetails": [
+          "The batch-card drawer.",
+          "Next week's white labels.",
+          "A corrective procedure or reminder plan the user did not request."
+        ],
+        "acceptableVariations": [
+          "The answer may state source order and personal order in two short attributed parts.",
+          "A direct sentence saying the user recorded it later than instructed is allowed, provided the answer preserves the before/after pigment distinction and the empty-jar weighing prerequisite.",
+          "No technical explanation of tare is required."
+        ]
+      }
+    },
+    {
+      "id": "grounded-dev-06",
+      "surface": "notes",
+      "question": "Compare the bassist's solo allocation in my highlight with what I did in my reflection.",
+      "scope": {
+        "version": 1,
+        "itemType": "all"
+      },
+      "libraryMetadata": null,
+      "evidence": [
+        {
+          "id": "highlight:e43415f8-f181-487c-812a-e28a3d118485",
+          "type": "highlight",
+          "title": "The rehearsal roster",
+          "fields": [
+            {
+              "name": "highlightedText",
+              "text": "Niko the bassist has two solo bars; Niko the pianist has five. The bassist enters after the drummer."
+            }
+          ]
+        },
+        {
+          "id": "reflection:ed12e32b-c44d-45df-ac8b-e5d657bc7388",
+          "type": "reflection",
+          "title": "The rehearsal roster",
+          "fields": [
+            {
+              "name": "prompt",
+              "text": "What did you change during rehearsal?"
+            },
+            {
+              "name": "reflectionText",
+              "text": "I gave Niko the bassist four solo bars. I kept Niko the pianist at five. Next rehearsal I will move the chairs into a semicircle."
+            }
+          ]
+        }
+      ],
+      "expectedGeneration": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-4-6",
+        "maxOutputTokens": 450
+      },
+      "evaluation": {
+        "requestedFacets": [
+          {
+            "id": "highlight-bassist-allocation",
+            "evidenceId": "highlight:e43415f8-f181-487c-812a-e28a3d118485",
+            "field": "highlightedText",
+            "proposition": "The saved highlight allocates two solo bars to Niko the bassist.",
+            "decisiveWording": "Niko the bassist has two solo bars"
+          },
+          {
+            "id": "reflection-bassist-allocation",
+            "evidenceId": "reflection:ed12e32b-c44d-45df-ac8b-e5d657bc7388",
+            "field": "reflectionText",
+            "proposition": "The user's reflection says they gave Niko the bassist four solo bars.",
+            "decisiveWording": "I gave Niko the bassist four solo bars"
+          }
+        ],
+        "forbiddenClaims": [
+          "The bassist had five solo bars in either record.",
+          "The user changed the pianist's allocation.",
+          "The source author approved the change or the change improved the performance.",
+          "Replacing bars with songs, verses, or another unit."
+        ],
+        "unrequestedDetails": [
+          "The pianist's allocation.",
+          "The bassist's entry after the drummer.",
+          "The future chair arrangement."
+        ],
+        "acceptableVariations": [
+          "Highlight: two solo bars; your reflection: four solo bars is sufficient.",
+          "Two more solo bars or twice the highlighted allocation is an allowed direct arithmetic comparison because the user explicitly asks to compare allocations.",
+          "The personal reflection must remain the user's reported action, not a current editorial revision."
+        ]
+      }
+    }
+  ],
+  "freeze": {
+    "reviewer": "/root",
+    "reviewType": "independent_ai_pre_acquisition",
+    "reviewedAt": "2026-09-18T19:54:17.336Z",
+    "approvedDraftSha256": "e59e41f47c1a43e600fb2c83a15be4406c7c772e806947f60e454d7d0cabbb84",
+    "reviewDecision": "All six cases and the appendix approved; focus-only excess detail remains descriptive rather than a failure criterion. Unsupported additions remain grounding failures.",
+    "casesSha256": "e595d4747385ec034e3f91b0e208eb143b6be57f43d7f6f5413aa840bd873515",
+    "promptAppendixSha256": "c3b0de5709426079d8b922b7c209f56f91cb8a37ce3dd3bf4ae74ff5fe74bb90",
+    "casesAndAppendixUnchanged": true,
+    "providerOutputsAvailableAtFreeze": false
+  }
+}

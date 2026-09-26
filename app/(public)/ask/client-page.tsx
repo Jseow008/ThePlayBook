@@ -11,10 +11,11 @@ import Link from "next/link";
 import { useChatAutoScroll } from "@/hooks/useChatAutoScroll";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { ChatExportButton } from "@/components/chat/ChatExportButton";
-import { useInfiniteHighlights, type HighlightsPage } from "@/hooks/useHighlights";
+import type { HighlightsPage } from "@/hooks/useHighlights";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
 import type { LibrarySnapshot } from "@/lib/server/library-snapshot";
-import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
+import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-scope";
+import { useVerifiedChatSession } from "@/hooks/useVerifiedChatSession";
 import { VIEWPORT_QUERIES } from "@/lib/breakpoints";
 
 const chatTransport = new DefaultChatTransport({ api: "/api/chat" });
@@ -118,20 +119,30 @@ interface AskClientPageProps {
     initialNotesPage?: HighlightsPage;
     initialNotesScope?: NotesChatScope;
     initialLibrarySnapshot?: LibrarySnapshot;
+    initialAccountId?: string;
 }
 
-export function AskClientPage({
+export function AskClientPage(props: AskClientPageProps) {
+    const { ownerKey, isCurrent, resolved } = useVerifiedChatSession();
+    if (!ownerKey) return <p role="status" className="p-4 text-sm text-muted-foreground">{resolved ? <Link href="/login">Sign in to start a private chat.</Link> : "Verifying your chat session…"}</p>;
+    const accountMatches = !props.initialAccountId || JSON.parse(ownerKey)[0] === props.initialAccountId;
+    return <VerifiedAskClientPage key={ownerKey} {...props} initialLibrarySnapshot={accountMatches ? props.initialLibrarySnapshot : undefined} ownerKey={ownerKey} isCurrent={isCurrent} />;
+}
+
+function VerifiedAskClientPage({
     returnTo,
     scope = "library",
-    initialNotesPage,
     initialNotesScope,
     initialLibrarySnapshot,
-}: AskClientPageProps) {
+    ownerKey,
+    isCurrent,
+}: AskClientPageProps & { ownerKey: string; isCurrent: (key: string) => boolean }) {
     const {
         messages,
         sendMessage,
         status,
         error,
+        stop,
     } = useChat({
         transport: chatTransport,
     });
@@ -142,14 +153,7 @@ export function AskClientPage({
     const isAskFullLayout = useMediaQuery(VIEWPORT_QUERIES.askFullLayout);
     const resolvedScope = scope;
 
-    const {
-        data: notesData,
-        isLoading: isNotesLoading,
-        isError: isNotesError,
-    } = useInfiniteHighlights(undefined, {
-        initialPage: initialNotesPage,
-        enabled: resolvedScope === "notes" && !initialNotesScope,
-    });
+    useEffect(() => () => { void stop?.(); }, [stop]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -164,7 +168,7 @@ export function AskClientPage({
 
     const sendPrompt = async (text: string) => {
         const trimmed = text.trim();
-        if (!trimmed || isStreaming) return;
+        if (!trimmed || isStreaming || !isCurrent(ownerKey)) return;
         setInput("");
         if (textareaRef.current) textareaRef.current.style.height = "auto";
         scrollToBottom();
@@ -203,39 +207,8 @@ export function AskClientPage({
     const backHref = returnTo || "/";
     const backLabel = returnTo ? "Back to notes" : "Back to home";
 
-    const noteHighlights = useMemo(
-        () => notesData?.pages.flatMap((page) => page.data) ?? initialNotesPage?.data ?? [],
-        [initialNotesPage?.data, notesData]
-    );
-    const hasMoreDefaultNotes = useMemo(
-        () => Boolean(notesData?.pages.some((page) => page.nextCursor) ?? initialNotesPage?.nextCursor),
-        [initialNotesPage?.nextCursor, notesData]
-    );
-
-    const notesChatScope = useMemo<NotesChatScope>(() => {
-        if (initialNotesScope) {
-            return initialNotesScope;
-        }
-
-        const scopedHighlights = noteHighlights.slice(0, 40);
-        const scopeSummary = hasMoreDefaultNotes ? "Most recent notes" : "All content";
-        const totalMatches = hasMoreDefaultNotes
-            ? Math.max(noteHighlights.length + 1, scopedHighlights.length + 1)
-            : noteHighlights.length;
-
-        return {
-            highlightIds: scopedHighlights.map((item) => item.id),
-            noteCount: scopedHighlights.length,
-            totalMatches,
-            summary: scopeSummary,
-            signature: JSON.stringify({
-                ids: scopedHighlights.map((item) => item.id),
-                hasMore: hasMoreDefaultNotes,
-                totalMatches,
-                scope: hasMoreDefaultNotes ? "notes:recent" : "notes",
-            }),
-        };
-    }, [hasMoreDefaultNotes, initialNotesScope, noteHighlights]);
+    const notesChatScope = useMemo<NotesChatScope>(() => initialNotesScope
+        ?? createNotesChatScope({ version: 1, itemType: "all" }), [initialNotesScope]);
 
     const shouldPreserveNotesScope = Boolean(initialNotesScope) || resolvedScope === "notes";
     const serializedNotesScope = useMemo(
@@ -543,26 +516,12 @@ export function AskClientPage({
             ) : (
                 <main className="min-h-0 flex-1 overflow-hidden">
                     <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-4 pt-4 safe-area-pb-md sm:px-6 sm:pt-6">
-                        {isNotesLoading && noteHighlights.length === 0 ? (
-                            <div className="flex flex-1 items-center justify-center px-4 py-12">
-                                <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                    <Loader2 className="size-4 animate-spin" />
-                                    <span>Loading your notes...</span>
-                                </div>
-                            </div>
-                        ) : isNotesError ? (
-                            <div className="flex flex-1 items-center justify-center px-4 py-12">
-                                <div className="rounded-2xl border border-destructive/20 bg-destructive/10 px-5 py-4 text-sm text-destructive">
-                                    Failed to load notes for Ask These Notes.
-                                </div>
-                            </div>
-                        ) : (
                             <NotesAskPanel
                                 currentScope={notesChatScope}
                                 onClose={() => {}}
                                 variant="page"
                             />
-                        )}
+
                     </div>
                 </main>
             )}

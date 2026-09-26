@@ -1,0 +1,57 @@
+{
+  "gitHead": "6bfdb99c10af0cd78e507ef001ca0ffbdd0e735e",
+  "workingTreeIsUncommittedCandidate": true,
+  "capturedAt": "2026-09-18T17:57:11.217Z",
+  "files": {
+    "app/api/chat/route.ts": "7edde85bc26aab433b32453150a7c9501c77506fffc8ef74a7dd62267b44074f",
+    "app/api/chat/notes/route.ts": "9504b714f6f54f72bc99e6a986f8c07cac5ff3418836928f3c83e40cb1d70e93",
+    "hooks/useVerifiedChatSession.ts": "229ba9c583e3f34ea3f7b81cae505109ebebd5c19020fabd38d60b09c28bb2e0",
+    "lib/server/personal-evidence-indexer.ts": "60cee5327756051d4784408a5ffe0ee1f5b51f30684e72ce8b8dbd893f990cf9",
+    "lib/server/personal-retrieval.ts": "796984a09254e1f3a9974eb13296112a242b9ce9d5a06647ad550cd02b674ddd",
+    "lib/server/library-evidence.ts": "a7d14adf62318e349210ed4179bebd95a1a30b7949c60749bd4a927adda21bfc",
+    "lib/server/retrieval-user-context.ts": "1896dfe72658a863b75fcfa1eb3a99f410a87d739221ec39fcb902373c88a501"
+  },
+  "buildId": "n22hTU1fY1IpOQbI0ZbT3",
+  "environment": "isolated disposable Supabase + local production build port3305",
+  "refresh": {
+    "composerEnabled": true,
+    "composerValue": "Unsent session-refresh smoke draft",
+    "refresh": {
+      "sameSession": true,
+      "tokenChanged": true
+    }
+  },
+  "signout": {
+    "chatCacheKeys": [],
+    "composerAbsent": true,
+    "draftAbsent": true,
+    "signedOutMessage": true
+  },
+  "remainingAuthSessionsAfterSignout": 0,
+  "worker": {
+    "status": 200,
+    "result": {
+      "success": true,
+      "data": {
+        "claimed": 0,
+        "completed": 0,
+        "stale": 0,
+        "deferred": 0,
+        "failed": 0,
+        "retryAfterSeconds": 0,
+        "stopReason": "no_claim_available"
+      }
+    },
+    "leaseReleased": true,
+    "providerInputs": 0
+  },
+  "paidProviderCalls": 0,
+  "cleanup": {
+    "ordinaryAccountDeleted": true,
+    "browserClosed": true
+  },
+  "limitations": [
+    "No retrieval quality claim; empty-account authentication and empty-worker lifecycle smoke only.",
+    "Candidate was uncommitted; input hashes identify tested build."
+  ]
+}

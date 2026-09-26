@@ -1,3 +1,7 @@
+import { assertActiveChatSession, assertActivePersonalRetrievalSession, ChatSessionValidationError } from "@/lib/server/personal-retrieval-session";
+import { recheckPersonalEvidenceCandidates } from '@/lib/server/personal-evidence-candidates';
+import { loadLibrarySourceEvidence, selectLibraryEvidence, rankLibrarySourceSpans } from '@/lib/server/library-evidence';
+import { retrievePersonalEvidence } from '@/lib/server/personal-retrieval';
 import { POST } from '@/app/api/chat/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
@@ -13,6 +17,18 @@ const { anthropicMock, toUIMessageStreamResponseMock } = vi.hoisted(() => ({
         void options;
         return new Response('mocked-stream');
     }),
+}));
+
+vi.mock('@/lib/server/personal-retrieval-session', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@/lib/server/personal-retrieval-session')>(),
+    assertActiveChatSession: vi.fn(), assertActivePersonalRetrievalSession: vi.fn(),
+}));
+vi.mock('@/lib/server/library-evidence', async (importOriginal) => ({ ...await importOriginal<typeof import('@/lib/server/library-evidence')>(), loadLibrarySourceEvidence: vi.fn(), selectLibraryEvidence: vi.fn(), rankLibrarySourceSpans: vi.fn() }));
+vi.mock('@/lib/server/personal-evidence-candidates', () => ({ recheckPersonalEvidenceCandidates: vi.fn() }));
+
+vi.mock('@/lib/server/personal-retrieval', async (importOriginal) => ({
+    ...await importOriginal<typeof import('@/lib/server/personal-retrieval')>(),
+    retrievePersonalEvidence: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -43,7 +59,8 @@ vi.mock('@/lib/server/ai-usage-quota', () => ({
 }));
 
 // Mock streamText to avoid actual AI call
-vi.mock('ai', () => ({
+vi.mock('ai', async (importOriginal) => ({
+    ...await importOriginal<typeof import("ai")>(),
     smoothStream: vi.fn().mockReturnValue('mock-smooth-transform'),
     streamText: vi.fn().mockImplementation(() => ({
         toUIMessageStreamResponse: toUIMessageStreamResponseMock,
@@ -110,6 +127,22 @@ describe('Chat API', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(assertActiveChatSession).mockReset();
+        vi.mocked(assertActiveChatSession).mockResolvedValue(undefined);
+        vi.mocked(assertActivePersonalRetrievalSession).mockReset();
+        vi.mocked(assertActivePersonalRetrievalSession).mockResolvedValue(undefined);
+        vi.mocked(retrievePersonalEvidence).mockReset();
+        vi.mocked(retrievePersonalEvidence).mockResolvedValue({
+            items: [{ exactQuote: null }], contextText: 'Verified written note: discipline and focus.', candidateCount: 1201,
+        } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
+        vi.mocked(rankLibrarySourceSpans).mockReset();
+        vi.mocked(rankLibrarySourceSpans).mockResolvedValue([]);
+        vi.mocked(recheckPersonalEvidenceCandidates).mockReset();
+        vi.mocked(recheckPersonalEvidenceCandidates).mockResolvedValue([]);
+        vi.mocked(loadLibrarySourceEvidence).mockReset();
+        vi.mocked(loadLibrarySourceEvidence).mockResolvedValue([]);
+        vi.mocked(selectLibraryEvidence).mockReset();
+        vi.mocked(selectLibraryEvidence).mockImplementation(async ({personal,sources}) => ({ personal, sources, exactQuote: personal.items.find(item => item.exactQuote !== null)?.exactQuote ?? null, quoteTooLarge: false, contextText: 'Verified source and personal context.', evidenceIds: ['highlight:owned'] }) as unknown as Awaited<ReturnType<typeof selectLibraryEvidence>>);
         process.env.GEMINI_API_KEY = 'gemini-test-key';
         process.env.ANTHROPIC_API_KEY = 'anthropic-test-key';
         delete process.env.AI_PROVIDER;
@@ -244,20 +277,6 @@ describe('Chat API', () => {
     });
 
     it('processes a valid request successfully via Gemini embeddings and RAG', async () => {
-        mockRpc.mockResolvedValueOnce({
-            data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.82 }],
-            error: null,
-        });
-        segmentFetchIn.mockResolvedValueOnce({
-            data: [
-                {
-                    id: 'segment-1',
-                    markdown_body: 'Discipline is choosing what matters most.',
-                    content_item: { title: "Can't Hurt Me" },
-                },
-            ],
-            error: null,
-        });
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
@@ -276,17 +295,20 @@ describe('Chat API', () => {
         expect(embedContentMock).toHaveBeenCalled();
 
         // Ensure vector search RPC was called
-        expect(mockRpc).toHaveBeenCalledWith('match_library_segments_gemini', expect.objectContaining({
-            match_count: 3,
+        expect(retrievePersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({
+            userId: 'user-123', scope: { version: 1, itemType: 'all' },
+            question: 'What themes show up across my saved items?', signal: expect.any(AbortSignal),
         }));
+        expect(loadLibrarySourceEvidence).toHaveBeenCalledWith(expect.objectContaining({ userId: 'user-123' }));
 
         // Stream text mock returned a 200 response
         expect(res.status).toBe(200);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             maxOutputTokens: 500,
         }));
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
         await finishLatestStream();
+        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
         expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
             userId: 'user-123',
             feature: 'ask-library',
@@ -334,6 +356,7 @@ describe('Chat API', () => {
         expect(res.status).toBe(200);
         expect(embedContentMock).not.toHaveBeenCalled();
         expect(mockRpc).not.toHaveBeenCalled();
+        expect(assertActiveChatSession).toHaveBeenCalledTimes(2);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('Completed items: 1'),
         }));
@@ -346,22 +369,48 @@ describe('Chat API', () => {
         expect(anthropicMock).toHaveBeenCalledWith('claude-haiku-4-5-20251001');
     });
 
+    it.each([
+        ['inventory', 'What have I completed in my library?'],
+        ['metadata-only recommendation', 'What should I read next?'],
+    ])('denies a revoked session before private %s reads or usage admission', async (_label, question) => {
+        delete process.env.GEMINI_API_KEY;
+        vi.mocked(assertActiveChatSession).mockRejectedValueOnce(new ChatSessionValidationError('UNAUTHORIZED'));
+        const response = await POST(new NextRequest('http://localhost/api/chat', {
+            method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: question }] }),
+        }));
+        expect(response.status).toBe(401);
+        expect((await response.json()).error.code).toBe('UNAUTHORIZED');
+        expect(mockAuthUser).toHaveBeenCalled();
+        expect(mockFrom).not.toHaveBeenCalled();
+        expect(checkAiUsageQuota).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('denies revocation during metadata loading before generation', async () => {
+        vi.mocked(assertActiveChatSession).mockResolvedValueOnce(undefined)
+            .mockRejectedValueOnce(new ChatSessionValidationError('UNAUTHORIZED'));
+        const response = await POST(new NextRequest('http://localhost/api/chat', {
+            method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'What have I completed in my library?' }] }),
+        }));
+        expect(response.status).toBe(401);
+        expect(libraryOrder).toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('reports unavailable session verification as retryable rather than a completed metadata answer', async () => {
+        vi.mocked(assertActiveChatSession).mockRejectedValueOnce(new ChatSessionValidationError('UNAVAILABLE'));
+        const response = await POST(new NextRequest('http://localhost/api/chat', {
+            method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'Which authors are in my library?' }] }),
+        }));
+        expect(response.status).toBe(503);
+        expect((await response.json()).error.code).toBe('RETRIEVAL_UNAVAILABLE');
+        expect(mockFrom).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
     it('uses hybrid context for source ranking questions', async () => {
         process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-6';
-        mockRpc.mockResolvedValueOnce({
-            data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.82 }],
-            error: null,
-        });
-        segmentFetchIn.mockResolvedValueOnce({
-            data: [
-                {
-                    id: 'segment-1',
-                    markdown_body: 'Discipline is choosing what matters most.',
-                    content_item: { title: "Can't Hurt Me" },
-                },
-            ],
-            error: null,
-        });
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
@@ -374,7 +423,7 @@ describe('Chat API', () => {
 
         expect(res.status).toBe(200);
         expect(embedContentMock).toHaveBeenCalled();
-        expect(mockRpc).toHaveBeenCalled();
+        expect(loadLibrarySourceEvidence).toHaveBeenCalled();
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('Library metadata:'),
         }));
@@ -423,20 +472,6 @@ describe('Chat API', () => {
 
     it('uses reading advisor mode for next-read recommendations from completed items', async () => {
         process.env.AI_COMPLEX_MODEL = 'claude-sonnet-4-6';
-        mockRpc.mockResolvedValueOnce({
-            data: [{ segment_id: 'segment-1', content_item_id: 'content-1', similarity: 0.9 }],
-            error: null,
-        });
-        segmentFetchIn.mockResolvedValueOnce({
-            data: [
-                {
-                    id: 'segment-1',
-                    markdown_body: 'Completed readers often respond to discipline and compounding effort.',
-                    content_item: { title: "Can't Hurt Me" },
-                },
-            ],
-            error: null,
-        });
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
@@ -449,10 +484,7 @@ describe('Chat API', () => {
 
         expect(res.status).toBe(200);
         expect(embedContentMock).toHaveBeenCalled();
-        expect(mockRpc).toHaveBeenCalledWith('match_library_segments_gemini', expect.objectContaining({
-            match_count: 12,
-            p_boost_completed: true,
-        }));
+        expect(loadLibrarySourceEvidence).toHaveBeenCalledWith(expect.objectContaining({ boostCompleted: true, userId: 'user-123' }));
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
             system: expect.stringContaining('Intent: reading_advisor'),
             maxOutputTokens: 550,
@@ -487,8 +519,9 @@ describe('Chat API', () => {
         }));
     });
 
-    it('degrades to metadata-only context when retrieval has no matches and the library is empty', async () => {
+    it('returns deterministic abstention when retrieval has no matches and the library is empty', async () => {
         libraryOrder.mockResolvedValueOnce({ data: [], error: null });
+        vi.mocked(selectLibraryEvidence).mockImplementationOnce(async ({personal,sources}) => ({ personal, sources, exactQuote: null, quoteTooLarge: false, contextText: '', evidenceIds: [] }) as unknown as Awaited<ReturnType<typeof selectLibraryEvidence>>);
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
@@ -501,9 +534,9 @@ describe('Chat API', () => {
 
         expect(res.status).toBe(200);
         expect(mockFrom).not.toHaveBeenCalledWith('segment_embedding_gemini');
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Matching saved passages were limited for this topic.'),
-        }));
+        expect(streamText).not.toHaveBeenCalled();
+        expect(await res.text()).toContain('find enough relevant evidence');
+        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
     });
 
     it('accepts legacy content-only messages', async () => {
@@ -516,7 +549,7 @@ describe('Chat API', () => {
         expect(res.status).toBe(200);
     });
 
-    it('keeps only the last 4 normalized messages', async () => {
+    it('does not carry older unrelated instructions into a fresh question', async () => {
         const messages = Array.from({ length: 7 }, (_, index) => ({
             role: index % 2 === 0 ? 'user' : 'assistant',
             content: `message-${index + 1}`,
@@ -531,8 +564,35 @@ describe('Chat API', () => {
 
         expect(res.status).toBe(200);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            messages: messages.slice(-4),
+            messages: [messages.at(-1)],
         }));
+    });
+    it('retrieves passages for the source-support follow-up using only the named user topic', async () => {
+        const question = 'Which saved source most strongly supports your last answer? Cite the specific source from my library.';
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({
+            messages: [{ role: 'user', content: 'Explain my saved ideas about sleep deprivation.' },
+                { role: 'assistant', content: 'SECRET_DELETED_PASSAGE' }, { role: 'user', content: question }],
+        }) }));
+        expect(response.status).toBe(200);
+        const retrieval = vi.mocked(retrievePersonalEvidence).mock.calls[0][0];
+        expect(retrieval.question).toBe(question);
+        expect(retrieval.semanticQuestion).toContain('sleep deprivation');
+        expect(retrieval.semanticQuestion).not.toContain('SECRET_DELETED_PASSAGE');
+        expect(embedContentMock).toHaveBeenCalledWith(expect.objectContaining({ contents: retrieval.semanticQuestion }));
+        expect(selectLibraryEvidence).toHaveBeenCalledWith(expect.objectContaining({ question, semanticQuestion: retrieval.semanticQuestion }));
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ messages: [{ role: 'user', content: retrieval.semanticQuestion }] }));
+    });
+    it('asks for a missing follow-up topic without calling a provider or debiting usage', async () => {
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({
+            messages: [{ role: 'user', content: 'Summarize the shared idea across the sources behind your last answer.' }],
+        }) }));
+        expect(response.status).toBe(200);
+        expect(await response.text()).toContain('Which topic, theme, or point');
+        expect(checkAiUsageQuota).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(embedContentMock).not.toHaveBeenCalled();
+        expect(retrievePersonalEvidence).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it('rejects requests when normalization produces no usable text', async () => {
@@ -573,8 +633,9 @@ describe('Chat API', () => {
         expect(json.error.message).toContain('Last message must be a user message');
     });
 
-    it('degrades gracefully when retrieval has no matches and no library metadata exists', async () => {
+    it('does not generate unsupported content when both evidence and library metadata are empty', async () => {
         libraryOrder.mockResolvedValueOnce({ data: [], error: null });
+        vi.mocked(selectLibraryEvidence).mockImplementationOnce(async ({personal,sources}) => ({ personal, sources, exactQuote: null, quoteTooLarge: false, contextText: '', evidenceIds: [] }) as unknown as Awaited<ReturnType<typeof selectLibraryEvidence>>);
 
         const req = new NextRequest(new URL('http://localhost/api/chat'), {
             method: 'POST',
@@ -584,8 +645,62 @@ describe('Chat API', () => {
         const res = await POST(req);
         expect(res.status).toBe(200);
         expect(mockFrom).not.toHaveBeenCalledWith('segment_embedding_gemini');
-        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({
-            system: expect.stringContaining('Matching saved passages were limited for this topic.'),
-        }));
+        expect(streamText).not.toHaveBeenCalled();
+        expect(await res.text()).toContain('find enough relevant evidence');
+        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
     });
+    it.each(['personal', 'source', 'final-recheck', 'final-auth'])('fails closed when %s retrieval or authorization fails', async (failure) => {
+        if (failure === 'personal') vi.mocked(retrievePersonalEvidence).mockRejectedValueOnce(new Error('partial retrieval'));
+        if (failure === 'source') vi.mocked(loadLibrarySourceEvidence).mockRejectedValueOnce(new Error('source unavailable'));
+        if (failure === 'final-recheck') vi.mocked(recheckPersonalEvidenceCandidates).mockRejectedValueOnce(new Error('deleted evidence'));
+        if (failure === 'final-auth') mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } }).mockResolvedValueOnce({ data: { user: null }, error: null });
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'Explain my saved ideas about focus' }] }) }));
+        expect(response.status).toBe(503);
+        expect((await response.json()).error.code).toBe('RETRIEVAL_UNAVAILABLE');
+        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('streams exact personal quotations using the real UI stream protocol without a model call', async () => {
+        const quote = 'My exact reflection.\nDo not paraphrase.';
+        vi.mocked(retrievePersonalEvidence).mockResolvedValueOnce({ items: [{ exactQuote: quote, evidence: { id: 'owned' } }] } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'Quote my reflection exactly' }] }) }));
+        expect(response.status).toBe(200);
+        expect(response.headers.get('cache-control')).toBe('no-store');
+        const events = (await response.text()).split('\n').filter((line) => line.startsWith('data: {')).map((line) => JSON.parse(line.slice(6)) as { type: string; delta?: string });
+        expect(events.filter((event) => event.type === 'text-delta').map((event) => event.delta).join('')).toBe(quote);
+        expect(streamText).not.toHaveBeenCalled();
+        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(recheckPersonalEvidenceCandidates).toHaveBeenCalled();
+        expect(mockAuthUser).toHaveBeenCalledTimes(2);
+    });
+
+    it('propagates request cancellation through retrieval and generation', async () => {
+        const controller = new AbortController();
+        const request = new NextRequest('http://localhost/api/chat', { method: 'POST', signal: controller.signal, body: JSON.stringify({ messages: [{ role: 'user', content: 'Explain my saved ideas about focus' }] }) });
+        expect((await POST(request)).status).toBe(200);
+        const signal = vi.mocked(retrievePersonalEvidence).mock.calls[0][0].signal;
+        expect(signal.aborted).toBe(false);
+        controller.abort();
+        expect(signal.aborted).toBe(true);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ abortSignal: request.signal }));
+    });
+
+    it('rejects a session revoked during selection even when getUser still reports the account', async () => {
+        vi.mocked(assertActivePersonalRetrievalSession).mockRejectedValueOnce(new Error('RETRIEVAL_SESSION_OR_INDEX_CHANGED'));
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'What themes recur in my notes?' }] }) }));
+        expect(selectLibraryEvidence).toHaveBeenCalled();
+        expect(assertActivePersonalRetrievalSession).toHaveBeenCalled();
+        expect(response.status).toBe(503);
+        expect(streamText).not.toHaveBeenCalled();
+    });
+    it('fails closed before embeddings or selectors if retrieval-attempt accounting fails', async () => {
+        vi.mocked(recordGeneratedAiMessage).mockRejectedValueOnce(new Error('usage unavailable'));
+        const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'What themes recur in my notes?' }] }) }));
+        expect(response.status).toBeGreaterThanOrEqual(500);
+        expect(embedContentMock).not.toHaveBeenCalled();
+        expect(retrievePersonalEvidence).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
 });

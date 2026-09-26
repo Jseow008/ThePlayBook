@@ -1,0 +1,249 @@
+{
+  "version": "selector-precision-development-v1",
+  "fixtureSha256": "1b647ca4da960d44608767b51e8bc3d4d2d933f1160157288e25b5908dfeb41f",
+  "modelConfig": {
+    "version": "personal-evidence-selector-model-v1",
+    "promptVersion": "personal-evidence-selector-v3",
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "maxOutputTokens": 700,
+    "maxRetries": 0,
+    "temperature": "provider default"
+  },
+  "modelOverride": true,
+  "evidenceKind": "real-provider development diagnostic",
+  "expectedCases": 6,
+  "completedCases": 6,
+  "passedCases": 5,
+  "actualCalls": 6,
+  "pricing": {
+    "estimatedUsd": null,
+    "reason": "Report measured token usage; no unverified model price or fabricated cost estimate."
+  },
+  "releaseGate": "Not established. Frozen corpus, three-run quality, database authorization and answer attribution gates remain separate.",
+  "records": [
+    {
+      "caseId": "specific-procedure-with-adjacent-advice",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "3802402241424268b920ff31cc5eac24abd4e3a24f1d093676f5c51b536e6d2e",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p02"
+      ],
+      "selectedIds": [
+        "p02"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p02"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1393,
+        "outputTokens": 11,
+        "totalTokens": 1404,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 4,
+        "candidateBytes": 1117,
+        "promptBytes": 5672,
+        "selectedCount": 1,
+        "durationMs": 2827.242833,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "same-name-different-profession",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "e2b1431dd8aef2267207d74ce626681a1359c72040048b6e01a885227c0290c0",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p06"
+      ],
+      "selectedIds": [
+        "p06"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p06"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1300,
+        "outputTokens": 11,
+        "totalTokens": 1311,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 799,
+        "promptBytes": 5344,
+        "selectedCount": 1,
+        "durationMs": 2685.3433339999997,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "named-organization-not-established",
+      "outcome": "complete",
+      "passed": false,
+      "inputSha256": "5834c09ecddb07171be326538866f4f7cfed6c1e1dbe22d51a07f4f086628d03",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [],
+      "selectedIds": [
+        "p08"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p08"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1310,
+        "outputTokens": 11,
+        "totalTokens": 1321,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 745,
+        "promptBytes": 5293,
+        "selectedCount": 1,
+        "durationMs": 2683.333207999999,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "unsupported-causal-connection",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "9d4b0b0390eda1ffd7ef31a1267b4134b1e6b93c7e3888194e67ae6798ef99e5",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [],
+      "selectedIds": [],
+      "rawSyntheticOutput": {
+        "ids": []
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1305,
+        "outputTokens": 8,
+        "totalTokens": 1313,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 3,
+        "candidateBytes": 821,
+        "promptBytes": 5377,
+        "selectedCount": 0,
+        "durationMs": 1691.8886669999993,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "three-requested-comparison-facets",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "d70f671f4a2d20a0980f6a3326ce477e78d7d268a61397b8bc66349190b418fe",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "selectedIds": [
+        "p14",
+        "p15",
+        "p16"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p14",
+          "p15",
+          "p16"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1437,
+        "outputTokens": 17,
+        "totalTokens": 1454,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 4,
+        "candidateBytes": 1254,
+        "promptBytes": 5829,
+        "selectedCount": 3,
+        "durationMs": 2972.7382500000003,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    },
+    {
+      "caseId": "note-exception-with-irrelevant-similar-reflection",
+      "outcome": "complete",
+      "passed": true,
+      "inputSha256": "f823cea60d322d5e1da4b137a02c06773d8a29ea3eec0dac06c548da51c0a861",
+      "systemPromptSha256": "a7419dd9bf1316040300e716331b5952ae28b5153afa5491c762c106e0d93d7e",
+      "expectedIds": [
+        "p18",
+        "p19"
+      ],
+      "selectedIds": [
+        "p18",
+        "p19"
+      ],
+      "rawSyntheticOutput": {
+        "ids": [
+          "p18",
+          "p19"
+        ]
+      },
+      "actualCalls": 1,
+      "usage": {
+        "inputTokens": 1382,
+        "outputTokens": 14,
+        "totalTokens": 1396,
+        "cachedInputTokens": 0
+      },
+      "model": "claude-sonnet-4-6",
+      "provider": "anthropic",
+      "promptVersion": "personal-evidence-selector-v3",
+      "stats": {
+        "candidateCount": 4,
+        "candidateBytes": 1107,
+        "promptBytes": 5665,
+        "selectedCount": 2,
+        "durationMs": 4532.809334,
+        "modelCalled": true,
+        "exactQuote": false
+      }
+    }
+  ]
+}

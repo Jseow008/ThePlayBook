@@ -1,0 +1,17 @@
+{
+  "version": "selector-precision-baseline-attempt-v1",
+  "evidenceKind": "incomplete diagnostic; not scored",
+  "promptVersionAtAttempt": "personal-evidence-selector-v2",
+  "fixtureSha256": "1b647ca4da960d44608767b51e8bc3d4d2d933f1160157288e25b5908dfeb41f",
+  "outcome": "unrecoverable-artifact",
+  "failure": "Command exited with a sanitized generic error. The requested nested artifact parent directory did not exist; no response or usage record was saved.",
+  "providerCalls": {
+    "measured": null,
+    "maximumPossible": 6,
+    "assumedForBudget": 6
+  },
+  "measuredUsage": null,
+  "caseResults": null,
+  "repeated": false,
+  "releaseGate": "No quality conclusion can be drawn from this attempt. Existing failed frozen evaluation is unchanged."
+}

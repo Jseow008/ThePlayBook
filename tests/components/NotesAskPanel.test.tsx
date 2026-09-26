@@ -1,8 +1,13 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { NotesAskPanel, type NotesChatScope } from "@/components/notes/NotesAskPanel";
-import { serializeNotesChatScope } from "@/lib/notes-chat-scope";
+import { createNotesChatScope, serializeNotesChatScope } from "@/lib/notes-chat-scope";
 import { useChat } from "@ai-sdk/react";
 import { vi } from "vitest";
+
+const identity = vi.hoisted(() => ({ ownerKey: "account-a:session-a", valid: true }));
+vi.mock("@/hooks/useVerifiedChatSession", () => ({
+    useVerifiedChatSession: () => ({ ownerKey: identity.ownerKey, isCurrent: () => identity.valid }),
+}));
 
 vi.mock("@ai-sdk/react", () => ({
     useChat: vi.fn(),
@@ -32,13 +37,7 @@ describe("NotesAskPanel", () => {
     const sendMessageMock = vi.fn();
     const scrollToMock = vi.fn();
 
-    const currentScope: NotesChatScope = {
-        highlightIds: ["highlight-1", "highlight-2"],
-        noteCount: 2,
-        totalMatches: 2,
-        summary: 'search: "goggins"',
-        signature: "scope-a",
-    };
+    const currentScope = createNotesChatScope({ version: 1, itemType: "all", filterQuery: "goggins" }, 'search: "goggins"');
     const expectedFullScreenHref = `/ask?${new URLSearchParams({
         scope: "notes",
         returnTo: "/notes?ask=1",
@@ -54,6 +53,8 @@ describe("NotesAskPanel", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        window.sessionStorage.clear();
+        identity.ownerKey = "account-a:session-a"; identity.valid = true;
         (useChat as any).mockReturnValue({
             messages: [],
             sendMessage: sendMessageMock,
@@ -63,11 +64,11 @@ describe("NotesAskPanel", () => {
         });
     });
 
-    it("renders starter prompts and sends them with the scoped note ids", async () => {
+    it("renders starter prompts and sends them with the declarative server scope", async () => {
         render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
 
         expect(screen.getByText("Ask These Notes")).toBeInTheDocument();
-        expect(screen.getAllByText("2 notes in scope").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("Matching saved captures").length).toBeGreaterThan(0);
 
         fireEvent.click(screen.getByRole("button", { name: "What patterns show up across these notes?" }));
 
@@ -76,7 +77,7 @@ describe("NotesAskPanel", () => {
                 { text: "What patterns show up across these notes?" },
                 {
                     body: {
-                        highlightIds: ["highlight-1", "highlight-2"],
+                        scope: currentScope.scope,
                         scopeLabel: 'search: "goggins"',
                     },
                 }
@@ -87,7 +88,7 @@ describe("NotesAskPanel", () => {
     it("uses the author-chat shell pattern for the page variant while keeping scope context", () => {
         const pageScope: NotesChatScope = {
             ...currentScope,
-            totalMatches: 6,
+
         };
 
         render(
@@ -104,10 +105,10 @@ describe("NotesAskPanel", () => {
             screen.getByText("Use the notes currently in scope to surface patterns, compare themes, retrieve supporting evidence, and spot tensions or contradictions.")
         ).toBeInTheDocument();
         expect(screen.getByText("Good places to start")).toBeInTheDocument();
-        expect(screen.getAllByText("2 notes in scope").length).toBeGreaterThan(0);
-        expect(screen.getAllByText("Using 2 most recent").length).toBeGreaterThan(0);
+        expect(screen.getAllByText("Matching saved captures").length).toBeGreaterThan(0);
+        expect(screen.queryByText(/Using .* most recent/)).not.toBeInTheDocument();
         expect(screen.getByText('search: "goggins"')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText("Ask about the notes in this scope...")).toBeInTheDocument();
+        expect(screen.getByPlaceholderText("Ask about saved captures matching this scope…")).toBeInTheDocument();
         expect(
             screen.getByText("Notes-scoped assistant · Grounded only in the notes currently in scope.")
         ).toBeInTheDocument();
@@ -134,9 +135,7 @@ describe("NotesAskPanel", () => {
             <NotesAskPanel
                 currentScope={{
                     ...currentScope,
-                    highlightIds: ["highlight-3"],
-                    noteCount: 1,
-                    totalMatches: 1,
+                    scope: { version: 1, itemType: "highlight" },
                     summary: "highlights only",
                     signature: "scope-b",
                 }}
@@ -165,8 +164,36 @@ describe("NotesAskPanel", () => {
             expectedFullScreenHref
         );
         expect(screen.queryByLabelText(/close notes ai panel/i)).not.toBeInTheDocument();
-        expect(screen.getAllByText("2 notes in scope")).toHaveLength(1);
+        expect(screen.getAllByText("Matching saved captures")).toHaveLength(1);
         expect(screen.getByText("Grounded only in the notes currently in scope.")).toBeInTheDocument();
         expect(screen.queryByText(/matching notes/i)).not.toBeInTheDocument();
     });
+});
+
+it("allows a reflection-only question without relying on loaded highlight IDs", async () => {
+    const send = vi.fn();
+    vi.mocked(useChat).mockReturnValue({ messages: [], sendMessage: send, setMessages: vi.fn(), status: "ready", error: undefined } as unknown as ReturnType<typeof useChat>);
+    const scope = createNotesChatScope({ version: 1, itemType: "reflection", filterQuery: "focus" });
+    render(<NotesAskPanel currentScope={scope} onClose={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "What patterns show up across these notes?" }));
+    await waitFor(() => expect(send).toHaveBeenCalledWith(expect.anything(), { body: { scope: scope.scope, scopeLabel: scope.summary } }));
+});
+it("stops an active transport when its verified account/session is replaced", () => {
+    const stop = vi.fn();
+    vi.mocked(useChat).mockReturnValue({ messages: [], sendMessage: vi.fn(), setMessages: vi.fn(), stop, status: "streaming", error: undefined } as unknown as ReturnType<typeof useChat>);
+    const scope = createNotesChatScope({ version: 1, itemType: "all" });
+    const { rerender } = render(<NotesAskPanel currentScope={scope} onClose={vi.fn()} />);
+    identity.ownerKey = "account-b:session-b";
+    rerender(<NotesAskPanel currentScope={scope} onClose={vi.fn()} />);
+    expect(stop).toHaveBeenCalledOnce();
+});
+it('renders invalid URL filters safely and cannot submit a broadened question', () => {
+    const send = vi.fn();
+    vi.mocked(useChat).mockReturnValue({ messages: [], sendMessage: send, setMessages: vi.fn(), status: 'ready', error: undefined } as unknown as ReturnType<typeof useChat>);
+    const scope = createNotesChatScope({ version: 1, itemType: 'all', contentItemId: 'invalid-url-source' });
+    render(<NotesAskPanel currentScope={scope} onClose={vi.fn()} />);
+    expect(screen.getByRole('textbox', { name: 'Ask a question about the notes in view' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'What patterns show up across these notes?' }));
+    expect(send).not.toHaveBeenCalled();
+    expect(screen.getAllByText('Adjust Notes filters').length).toBeGreaterThan(0);
 });
