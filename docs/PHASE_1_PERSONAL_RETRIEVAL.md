@@ -17,6 +17,15 @@ The user approved replacing final prose generation for matched retrieval respons
 - One primary implementer and one fresh-context reviewer, reused for correction verification and semantic review. Approximately 30 minutes elapsed from checkpoint recovery (`12:25:58 +0800`) to evidence packaging; this is a bounded interval, not total historical task time. New provider calls: zero. One CI retry followed the three explicit fixture-timeout corrections; no model-tuning loop. Agent token usage is unavailable, so no measured token-saving claim. The reviewer prevented three concrete regressions.
 - No production migration or deployment has occurred. The reviewed response change is approved; separate hosted rehearsal/cost and production release evidence remain unresolved.
 
+## Release continuation — 26 September 2026, 14:43 Singapore
+
+- Both required CI checks passed on `6e2e29c`. A real local production-build journey now covers reader capture, actual indexing, Notes and Library extracts, and sign-out clearing. Desktop/mobile inspection found unwrapped literal blocks; three scoped wrapping classes fix this without changing text, selection or auth. Production build, targeted lint and independent review pass. Evidence: `tests/fixtures/retrieval/evidence/extract-authenticated-browser-journey-v1.json` and its screenshots. Final follow-up CI must finish before release.
+- Combined disposable database checks for #153/#154: 38/39 initially passed; the remaining direct-worker identity check passed after correcting the test connection from administrator to restricted worker. Production permissions were not changed. Both migrations are applied only to the disposable database.
+- Production project `xmuqsgfxuaaophxnwure` has exactly the 102 migration versions on main through `20260918151058`. The earlier March-cutoff diagnosis is contradicted; do not repair history. Production dry-run lists only the personal-evidence index and snapshot-cron migrations, in chronological order. #154 contains the corrected diagnosis and read-only preflight artifact.
+- Combined rehearsal worktree: `/Users/j/Desktop/Lifebook-retrieval-release`, branch `codex/retrieval-maintenance-release`. Parent PRs stay separate. Apply/verify cron before deploying removal of its old HTTP worker.
+- Remaining blocker: hosted branch price acknowledgment (quoted US$0.01344/hour) is pending. After acknowledgment, create a data-less candidate, complete hosted replay/schema/security/application verification, review the exact production dry-run, then proceed through the production gate. No production mutation, merge or deployment has occurred.
+- Approximately 30 minutes for this continuation, including setup downloads. One primary implementer and one bounded reviewer. Reused the frozen quality benchmark; three live synthetic retrieval queries exercised the browser boundary. Agent token usage is unknown. Preflight all runtime dependencies before reusing a prepared build: Redis and the cursor secret were missing here.
+
 ## Current verification decision
 
 **The complete answer-v2 execution fails grounding and is not approved for release.**

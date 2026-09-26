@@ -491,7 +491,7 @@ function VerifiedNotesAskPanel({
                                                 >
                                                     <div
                                                         className={cn(
-                                                            "prose prose-sm max-w-none",
+                                                            "prose prose-sm max-w-none [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]",
                                                             message.role === "user"
                                                                 ? "text-primary-foreground [&_*]:text-primary-foreground"
                                                                 : "leading-[1.6] text-[0.92rem] text-foreground/95 [&_p]:my-0 [&_p+p]:mt-4 sm:max-w-[70ch] sm:text-[0.98rem] sm:leading-7"
@@ -823,7 +823,7 @@ function VerifiedNotesAskPanel({
                                     >
                                         <div
                                             className={cn(
-                                                "prose prose-sm max-w-none",
+                                                "prose prose-sm max-w-none [&_pre]:whitespace-pre-wrap [&_pre]:[overflow-wrap:anywhere]",
                                                 message.role === "user"
                                                     ? "text-primary-foreground [&_*]:text-primary-foreground"
                                                     : "leading-7 text-[0.94rem] text-foreground/95 [&_p]:my-0 [&_p+p]:mt-4"
