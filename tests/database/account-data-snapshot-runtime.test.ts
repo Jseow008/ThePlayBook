@@ -317,7 +317,7 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
                 has_function_privilege('anon', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS anon_can_execute,
                 has_function_privilege('authenticated', 'snapshot_private.reconcile_expired_account_data_snapshots()', 'EXECUTE') AS authenticated_can_execute,
                 COALESCE((
-                    SELECT membership.set_option
+                    SELECT bool_or(membership.set_option)
                     FROM pg_auth_members membership
                     JOIN pg_roles granted_role ON granted_role.oid = membership.roleid
                     JOIN pg_roles member_role ON member_role.oid = membership.member
