@@ -73,6 +73,7 @@ describe("HomeFeed", () => {
         published_at: "2026-03-01T00:00:00Z",
         updated_at: "2026-03-01T00:00:00Z",
         deleted_at: null,
+        isbn: null,
     };
 
     const section: HomepageSection = {
