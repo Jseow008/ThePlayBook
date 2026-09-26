@@ -76,6 +76,17 @@ describe('joint semantic evidence selection', () => {
         expect(result.sources.map(item => item.id)).toEqual(['correct']);
         expect(generate).toHaveBeenCalledTimes(1);
     });
+    it('retains exact-quote identity even when extract composition drops its oversized metadata', async () => {
+        const record = source('near-budget', 'a'.repeat(3950));
+        record.title = 'Long title '.repeat(30);
+        record.span = { text: record.text, start: 0, end: record.text.length };
+        const result = await selectLibraryEvidence({ personal: emptyPersonal(), sources: [record],
+            question: 'Quote the source exactly.', signal: new AbortController().signal,
+            selectionGenerator: async () => ({ output: structuralSelectionOutput([record.evidenceId]) }) });
+        expect(result.exactQuote).toBe(record.text);
+        expect(result.evidenceIds).toEqual([]);
+        expect(result.quotedEvidenceId).toBe(record.evidenceId);
+    });
     it('keeps provider selection order instead of resorting by vector similarity', async () => {
         const result = await selectLibraryEvidence({ personal: emptyPersonal(), sources: [source('high', 'Related detail.', .99), source('low', 'Core answer.', .6)],
             question: 'Explain the answer.', signal: new AbortController().signal,

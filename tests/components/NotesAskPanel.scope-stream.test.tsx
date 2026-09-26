@@ -20,8 +20,8 @@ vi.mock('ai', async (importOriginal) => {
     const actual = await importOriginal<typeof import('ai')>();
     return {
         ...actual,
-        TextStreamChatTransport: class extends actual.TextStreamChatTransport<UIMessage> {
-            constructor(options: ConstructorParameters<typeof actual.TextStreamChatTransport<UIMessage>>[0]) {
+        DefaultChatTransport: class extends actual.DefaultChatTransport<UIMessage> {
+            constructor(options: ConstructorParameters<typeof actual.DefaultChatTransport<UIMessage>>[0]) {
                 super({ ...options, fetch: streamFetch });
             }
         },
@@ -50,7 +50,7 @@ beforeEach(() => {
                 responses.push({ controller, signal: options?.signal, body: JSON.parse(String(options?.body)) });
             },
         });
-        return new Response(stream, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+        return new Response(stream, { headers: { 'Content-Type': 'text/event-stream', 'x-vercel-ai-ui-message-stream': 'v1' } });
     });
 });
 
@@ -64,7 +64,7 @@ it.each([
     fireEvent.click(screen.getByRole('button', { name: 'What patterns show up across these notes?' }));
     await waitFor(() => expect(responses).toHaveLength(1));
     expect(responses[0].body.scope).toEqual(firstScope.scope);
-    await act(async () => { responses[0].controller.enqueue(encoder.encode('Earlier scope content')); });
+    await act(async () => { responses[0].controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'text-start',id:'answer'})+'\n\ndata: '+JSON.stringify({type:'text-delta',id:'answer',delta:'Earlier scope content'})+'\n\n')); });
     await screen.findByText('Earlier scope content');
 
     rerender(<NotesAskPanel {...props} currentScope={secondScope} onClose={vi.fn()} />);
@@ -75,12 +75,12 @@ it.each([
     await waitFor(() => expect(responses).toHaveLength(2));
     expect(responses[1].body.scope).toEqual(secondScope.scope);
     await act(async () => {
-        responses[1].controller.enqueue(encoder.encode('Only the current reflection scope.'));
+        responses[1].controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'text-start',id:'answer'})+'\n\ndata: '+JSON.stringify({type:'text-delta',id:'answer',delta:'Only the current reflection scope.'})+'\n\n'));
         responses[1].controller.close();
     });
     await screen.findByText('Only the current reflection scope.');
     await act(async () => {
-        responses[0].controller.enqueue(encoder.encode(' Late response from the old scope.'));
+        responses[0].controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'text-delta',id:'answer',delta:' Late response from the old scope.'})+'\n\n'));
         responses[0].controller.close();
     });
 

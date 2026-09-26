@@ -64,6 +64,18 @@ describe("NotesAskPanel", () => {
         });
     });
 
+    it("renders exact quotations literally and keeps validated citation links separate", () => {
+        const text = "**literal** [not a link](https://example.invalid) <script>stored</script>";
+        vi.mocked(useChat).mockReturnValue({ messages: [{ id: "quoted", role: "assistant", parts: [
+            { type: "text", text }, { type: "data-exact-quotation", data: true },
+            { type: "data-citations", data: [{ label: "Your note", href: "/evidence#opaque" }] },
+        ] }], sendMessage: sendMessageMock, setMessages: setMessagesMock, status: "ready", error: null } as unknown as ReturnType<typeof useChat>);
+        render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
+        expect(screen.getByText(text)).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "not a link" })).not.toBeInTheDocument();
+        expect(screen.getByRole("link", { name: /Your note.*opens in a new tab/ })).toHaveAttribute("href", "/evidence#opaque");
+    });
+
     it("renders starter prompts and sends them with the declarative server scope", async () => {
         render(<NotesAskPanel currentScope={currentScope} onClose={vi.fn()} />);
 

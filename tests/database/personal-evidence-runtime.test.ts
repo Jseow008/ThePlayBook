@@ -1,3 +1,7 @@
+import { NextRequest } from "next/server";
+import { POST as resolveCitationRequest } from "@/app/api/evidence/resolve/route";
+import { createHash } from "node:crypto";
+import { issueEvidenceCitations, resolveEvidenceCitation } from "@/lib/server/evidence-citation";
 import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
@@ -226,6 +230,72 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
         await db.query("INSERT INTO public.user_highlights(id,user_id,content_item_id,highlighted_text) VALUES ($1,$2,$3,$4)", [id, accountA, contentId, text]);
         return id;
     }
+
+    it("resolves issued citations through real RLS and lifecycle changes without serving deleted excerpts", async () => {
+        const priorSecret = process.env.ACCOUNT_DATA_CURSOR_SECRET;
+        process.env.ACCOUNT_DATA_CURSOR_SECRET = 'disposable-citation-runtime-key-at-least-32';
+        const captureId = randomUUID();
+        const capturedText = 'Before 🌱 literal **quotation** after.';
+        try {
+            await db.query("INSERT INTO public.user_highlights(id,user_id,content_item_id,highlighted_text,note_body) VALUES($1,$2,$3,'highlight',$4)", [captureId, accountA, contentId, capturedText]);
+            const captured = (await loadA()).find((item) => item.id === captureId)!;
+            const links = issueEvidenceCitations({ userId: accountA, personal: [{ evidence: captured, score: 1, exactQuote: null,
+                spans: [{ field: 'noteBody', start: 7, end: 31, text: capturedText.slice(7, 31), score: 1 }] }] });
+            const token = links[0].href.split('#')[1];
+            const resolveReference = (reference = token, client = clientA, owner = accountA) => resolveEvidenceCitation({ token: reference, userId: owner, supabase: client, signal: AbortSignal.timeout(10_000) });
+            expect(await resolveReference()).toMatchObject({ state: 'available', passages: [{ text: capturedText.slice(7, 31) }] });
+            expect(await resolveReference(token, clientB, accountB)).toEqual({ state: 'unavailable' });
+            // Even a caller falsely supplying the token's owner cannot override ordinary-client RLS.
+            expect(await resolveReference(token, clientB, accountA)).toEqual({ state: 'unavailable' });
+            await db.query("UPDATE public.user_highlights SET note_body='edited' WHERE id=$1", [captureId]);
+            expect(await resolveReference()).toMatchObject({ state: 'changed', passages: [{ text: capturedText.slice(7, 31) }] });
+            await db.query("UPDATE public.content_item SET deleted_at=now() WHERE id=$1", [contentId]);
+            expect(await resolveReference()).toMatchObject({ state: 'withdrawn', title: 'Saved personal evidence' });
+            expect((await resolveReference()).sourceHref).toBeUndefined();
+            await db.query("UPDATE public.content_item SET deleted_at=NULL WHERE id=$1", [contentId]);
+            await db.query("UPDATE public.user_highlights SET note_body=NULL WHERE id=$1", [captureId]);
+            expect(await resolveReference()).toEqual({ state: 'unavailable' });
+            await db.query("DELETE FROM public.user_highlights WHERE id=$1", [captureId]);
+            expect(await resolveReference()).toEqual({ state: 'unavailable' });
+
+            const { rows: [source] } = await db.query<{ title: string; markdown_body: string }>('SELECT c.title,s.markdown_body FROM public.segment s JOIN public.content_item c ON c.id=s.item_id WHERE s.id=$1', [segmentId]);
+            const sourceToken = issueEvidenceCitations({ userId: accountA, personal: [], evidenceIds: [`source_segment:${segmentId}`], sources: [{
+                type: 'source_segment', id: segmentId, evidenceId: `source_segment:${segmentId}`, contentItemId: contentId, title: source.title, text: source.markdown_body, score: 1,
+                fingerprint: createHash('sha256').update(JSON.stringify([segmentId, contentId, source.title, source.markdown_body])).digest('hex'),
+                span: { start: 0, end: 20, text: source.markdown_body.slice(0, 20) },
+            }] })[0].href.split('#')[1];
+            expect(await resolveReference(sourceToken)).toMatchObject({ state: 'available' });
+            await db.query("UPDATE public.segment SET markdown_body=markdown_body || ' edit' WHERE id=$1", [segmentId]);
+            expect(await resolveReference(sourceToken)).toEqual({ state: 'changed', kind: 'source_segment', title: source.title });
+            await db.query("UPDATE public.segment SET markdown_body=$2 WHERE id=$1", [segmentId, source.markdown_body]);
+            await db.query("DELETE FROM public.user_library WHERE user_id=$1 AND content_id=$2", [accountA, contentId]);
+            expect(await resolveReference(sourceToken)).toEqual({ state: 'unavailable' });
+            await db.query("INSERT INTO public.user_library(user_id,content_id) VALUES($1,$2)", [accountA, contentId]);
+        } finally {
+            await db.query("UPDATE public.content_item SET deleted_at=NULL WHERE id=$1", [contentId]);
+            await db.query("DELETE FROM public.user_highlights WHERE id=$1", [captureId]);
+            if (priorSecret === undefined) delete process.env.ACCOUNT_DATA_CURSOR_SECRET;
+            else process.env.ACCOUNT_DATA_CURSOR_SECRET = priorSecret;
+        }
+    }, 30_000);
+
+    it("rejects a real revoked session at the citation route", async () => {
+        const owner = authClient();
+        const signup = await owner.auth.signUp({ email: `citation-revoke-${randomUUID()}@example.invalid`, password: `fixture-${randomUUID()}-Aa1!` });
+        expect(signup.error).toBeNull();
+        const session = signup.data.session!;
+        const stale = authClient();
+        expect((await stale.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token })).error).toBeNull();
+        try {
+            expect((await owner.auth.signOut({ scope: 'global' })).error).toBeNull();
+            vi.mocked(createServerSupabaseClient).mockResolvedValue(stale as unknown as Awaited<ReturnType<typeof createServerSupabaseClient>>);
+            const response = await resolveCitationRequest(new NextRequest('http://localhost/api/evidence/resolve', {
+                method: 'POST', body: JSON.stringify({ token: 'revoked-session-cannot-resolve-any-reference' }),
+            }));
+            expect(response.status).toBe(401);
+            expect(await response.json()).toEqual({ error: 'UNAUTHORIZED' });
+        } finally { await db.query('DELETE FROM auth.users WHERE id=$1', [signup.data.user!.id]); }
+    });
 
     it("traverses beyond the real API cap with timestamp ties/nulls, then ranks and rechecks late evidence", async () => {
         const firstApiPage = await clientA.from("user_highlights").select("id").eq("user_id", accountA);
@@ -516,5 +586,6 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
         // signatures; this boundary injects only their identical Auth API.
         vi.mocked(createServerSupabaseClient).mockResolvedValue({ auth: stale.auth } as unknown as Awaited<ReturnType<typeof createServerSupabaseClient>>);
         await expect(getVerifiedAccountDataSession()).resolves.toBeNull();
+
     });
 });
