@@ -1,6 +1,6 @@
 # Typed personal retrieval (#3, #4, #6)
 
-Status: implementation checkpoint; **held, not ready to merge or deploy**.
+Status: production migrations and initial indexing complete; **combined application PR #153 awaits final CI and deployment**.
 
 ## Evidence-first continuation — 26 September 2026
 
@@ -35,7 +35,9 @@ The user approved replacing final prose generation for matched retrieval respons
 - Advisors show the intentional private personal-index tables with RLS/no browser policies and the already-approved public catalog RPC warnings. Candidate-only unused-index and Auth pool-sizing info are expected; no unexpected security warning was added.
 - Exact production dry-run: `20260918164448_add_personal_evidence_index.sql`, `20260926043844_add_snapshot_maintenance_cron.sql`, `20260926065035_reconcile_existing_production_book_schema.sql`. Latest completed backup: `2026-09-25T23:45:02.269Z`.
 - Evidence: `tests/fixtures/retrieval/evidence/retrieval-maintenance-hosted-20260926.json`. PR #153 temporarily incorporates parent #155 to resolve the generated-type contract before release; after #155 merges its changes leave #153's diff.
-- Production apply/merge and hosted branch cleanup are still pending. Next: finish exact-head CI, apply the reviewed migration list under existing production authorization, verify parity/security/Cron, merge scoped PRs, verify deployment, delete the temporary hosted branch and credentials.
+- All three production migrations applied under existing authorization. Production has 105 versions, a clean follow-up dry-run, matching schema fingerprints and generated types, and six passing security checks. All 46 captures indexed successfully with no failed/deferred rows. Production maintenance ran successfully (four expired snapshots and four old operations removed).
+- Candidate Cron also succeeded on its actual hourly schedule at 07:17 UTC. Hosted branch deletion and absence were verified; isolated app/Redis and candidate credentials are cleaned up.
+- PR #155 merged as `7ff1dd98`. Strict up-to-date branch protection would serialize repeated full CI for #153/#154, so the remaining reviewed changes are packaged together in #153 on current main. The implementation matches the tested combined candidate. #154 stays open until #153 merges, then closes as superseded. Next: final exact-head CI, squash merge #153, verify deployment and authenticated route behavior. Do not reapply migrations or rerun unchanged model evaluations.
 
 ## Current verification decision
 

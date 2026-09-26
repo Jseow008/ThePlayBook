@@ -497,12 +497,32 @@
         "object_count": 1,
         "fingerprint": "b5d6f2084dc0e5068d5a02c3f4176500"
       }
-    ]
+    ],
+    "scheduledCronRun": {
+      "status": "succeeded",
+      "start": "2026-09-26T07:17:00.02467Z"
+    }
   },
   "production": {
     "backupCompletedAt": "2026-09-25T23:45:02.269Z",
     "dryRun": "exact three migrations",
-    "applied": false
+    "applied": true,
+    "migrationCount": 105,
+    "postApplyDryRun": "up-to-date",
+    "schemaCategoriesMatch": 14,
+    "generatedTypesMatch": true,
+    "securityChecksPassed": 6,
+    "index": {
+      "ready": 46,
+      "failed": 0,
+      "deferred": 0
+    },
+    "maintenanceRun": {
+      "aborted": 0,
+      "expired": 4,
+      "pruned": 4,
+      "skipped": false
+    }
   },
-  "cleanup": "pending"
+  "cleanup": "Temporary hosted branch deleted and absence verified; isolated app and Redis stopped; candidate credentials removed."
 }
