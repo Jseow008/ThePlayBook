@@ -1,7 +1,33 @@
 import type { NarrationCostEstimate } from "@/lib/narration-cost";
+import { Buffer } from "node:buffer";
 
 export const OPENAI_TTS_MODEL = process.env.OPENAI_TTS_MODEL || "gpt-4o-mini-tts";
 export const OPENAI_TTS_VOICE = process.env.OPENAI_TTS_VOICE || "alloy";
+export const FISH_AUDIO_VOICE_ID = process.env.FISH_AUDIO_VOICE_ID || "3df6f0a0b0f349dbb0f9425e50c36a5b";
+
+export function getNarrationProvider() {
+    const provider = process.env.NARRATION_PROVIDER?.trim().toLowerCase() || "openai";
+    if (provider !== "openai" && provider !== "fish") {
+        throw new NarrationError({
+            code: "NARRATION_PROVIDER_INVALID",
+            userMessage: "AI narration is not configured correctly right now.",
+            message: `Unsupported narration provider: ${provider}`,
+        });
+    }
+    return provider;
+}
+
+export function getFishAudioModel() {
+    const model = process.env.FISH_AUDIO_MODEL?.trim() || "s2.1-pro-free";
+    if (model !== "s2.1-pro-free" && model !== "s2.1-pro") {
+        throw new NarrationError({
+            code: "FISH_MODEL_INVALID",
+            userMessage: "AI narration is not configured correctly right now.",
+            message: `Unsupported Fish Audio model: ${model}`,
+        });
+    }
+    return model;
+}
 
 const MAX_CHARS_PER_CHUNK = 3_500;
 const DEFAULT_NARRATION_SPEED = 1;
@@ -217,14 +243,20 @@ export function estimateNarrationCost(
     const estimatedCostUsd = Number(
         ((estimatedDurationSeconds / 60) * ESTIMATED_GPT_4O_MINI_TTS_COST_PER_MINUTE_USD).toFixed(4)
     );
+    const provider = getNarrationProvider();
+    const fishModel = provider === "fish" ? getFishAudioModel() : null;
 
     return {
-        model: OPENAI_TTS_MODEL,
+        model: fishModel ?? OPENAI_TTS_MODEL,
         speed,
         scriptCharacters,
         scriptWords,
         chunkCount,
         estimatedDurationSeconds,
-        estimatedCostUsd,
+        estimatedCostUsd: fishModel === "s2.1-pro-free"
+            ? 0
+            : fishModel === "s2.1-pro"
+                ? Number(((Buffer.byteLength(script, "utf8") / 1_000_000) * 15).toFixed(4))
+                : estimatedCostUsd,
     };
 }

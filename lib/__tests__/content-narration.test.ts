@@ -147,6 +147,52 @@ describe("AI narration helpers", () => {
         expect(estimate.estimatedCostUsd).toBeGreaterThan(0);
     });
 
+    it("reports zero estimated API cost for Fish's free model", () => {
+        vi.stubEnv("NARRATION_PROVIDER", "fish");
+        vi.stubEnv("FISH_AUDIO_MODEL", "s2.1-pro-free");
+        const estimate = estimateNarrationCost({
+            title: "The Singapore Story",
+            author: "Lee Kuan Yew",
+            segments: [{ title: "A city", markdown_body: "Singapore grew through careful choices." }],
+        });
+
+        expect(estimate.model).toBe("s2.1-pro-free");
+        expect(estimate.estimatedCostUsd).toBe(0);
+    });
+
+    it("sends Fish narration to the selected model and Documentary Narrator voice", async () => {
+        vi.stubEnv("NARRATION_PROVIDER", "fish");
+        vi.stubEnv("FISH_AUDIO_MODEL", "s2.1-pro-free");
+        vi.stubEnv("FISH_AUDIO_API_KEY", "test-fish-key");
+        const wavBuffer = makeWav(7, 9);
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            arrayBuffer: async () => wavBuffer.buffer.slice(
+                wavBuffer.byteOffset,
+                wavBuffer.byteOffset + wavBuffer.byteLength
+            ),
+        }) as any;
+
+        const result = await synthesizeNarrationChunkWav("A brief test passage.");
+        const [url, options] = (global.fetch as any).mock.calls[0];
+        expect(result.toString("ascii", 0, 4)).toBe("RIFF");
+        expect(url).toBe("https://api.fish.audio/v1/tts");
+        expect(options.headers.model).toBe("s2.1-pro-free");
+        expect(JSON.parse(options.body).reference_id).toBe("3df6f0a0b0f349dbb0f9425e50c36a5b");
+        expect(JSON.parse(options.body).format).toBe("wav");
+    });
+
+    it("rejects an unknown Fish model before making a chargeable request", async () => {
+        vi.stubEnv("NARRATION_PROVIDER", "fish");
+        vi.stubEnv("FISH_AUDIO_MODEL", "unknown-model");
+        vi.stubEnv("FISH_AUDIO_API_KEY", "test-fish-key");
+        global.fetch = vi.fn() as any;
+
+        await expect(synthesizeNarrationChunkWav("A brief test passage."))
+            .rejects.toMatchObject({ code: "FISH_MODEL_INVALID" });
+        expect(global.fetch).not.toHaveBeenCalled();
+    });
+
     it("concatenates WAV chunks into a single valid WAV file", () => {
         const wav = concatenateWavBuffers([
             makeWav(1, 2),
