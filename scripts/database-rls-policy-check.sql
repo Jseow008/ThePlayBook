@@ -313,6 +313,18 @@ SELECT pg_temp.expect_insufficient_privilege(
     $$INSERT INTO public.user_library (user_id, content_id) VALUES ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000212')$$,
     'anon cannot insert library rows'
 );
+SELECT pg_temp.expect_insufficient_privilege(
+    $$UPDATE public.user_library SET is_bookmarked = false WHERE user_id = '00000000-0000-4000-8000-000000000101'$$,
+    'anon cannot update library rows'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$DELETE FROM public.user_library WHERE user_id = '00000000-0000-4000-8000-000000000101'$$,
+    'anon cannot delete library rows'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$TRUNCATE public.user_library$$,
+    'anon cannot truncate library rows'
+);
 
 RESET ROLE;
 
@@ -366,15 +378,35 @@ SELECT pg_temp.assert_count(
     1,
     'owner sees own AI usage'
 );
-SELECT pg_temp.assert_affected(
+-- Even an owner must use the server mutation route, which checks the account
+-- revision and reset epoch. SELECT remains owner-scoped above.
+SELECT pg_temp.expect_insufficient_privilege(
     $$UPDATE public.user_library SET is_bookmarked = false WHERE user_id = '00000000-0000-4000-8000-000000000101' AND content_id = '00000000-0000-4000-8000-000000000211'$$,
-    1,
-    'owner updates own library row'
+    'owner cannot bypass the guarded route to update own library row'
 );
-SELECT pg_temp.assert_affected(
+SELECT pg_temp.expect_insufficient_privilege(
     $$UPDATE public.user_library SET is_bookmarked = true WHERE user_id = '00000000-0000-4000-8000-000000000102' AND content_id = '00000000-0000-4000-8000-000000000211'$$,
-    0,
     'owner cannot update another library row'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$INSERT INTO public.user_library (user_id, content_id) VALUES ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000212')$$,
+    'owner cannot bypass the guarded route to insert own library row'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$INSERT INTO public.user_library (user_id, content_id) VALUES ('00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-000000000212')$$,
+    'owner cannot insert another library row'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$DELETE FROM public.user_library WHERE user_id = '00000000-0000-4000-8000-000000000101'$$,
+    'owner cannot bypass the guarded route to delete own library row'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$DELETE FROM public.user_library WHERE user_id = '00000000-0000-4000-8000-000000000102'$$,
+    'owner cannot delete another library row'
+);
+SELECT pg_temp.expect_insufficient_privilege(
+    $$TRUNCATE public.user_library$$,
+    'owner cannot truncate library rows'
 );
 SELECT pg_temp.expect_insufficient_privilege(
     $$UPDATE public.user_highlights SET user_id = '00000000-0000-4000-8000-000000000102' WHERE id = '00000000-0000-4000-8000-000000000261'$$,

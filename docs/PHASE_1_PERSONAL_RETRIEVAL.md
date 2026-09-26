@@ -502,9 +502,15 @@ old queue, with regression coverage. No model benchmark or tuning run was needed
 
 Candidate migration: `20260926153219_guard_library_mutation_boundary.sql`.
 Only the disposable local database has this migration. Supabase quoted a new
-short-lived hosted project at $10/month; cost confirmation is pending. Next:
+short-lived hosted project at $10/month; the user approved it and candidate
+`genspcayrpwbgekyzyph` is undergoing isolated verification. Next:
 finish focused checks, open the focused PR, perform the hosted release gate if
 approved, apply exactly the reviewed ACL migration, then deploy and prove the
 new application route. ACL revocation alone does not fix the old server route;
 do not claim #8 live before the new app is deployed. Existing open browser tabs
 must refresh to send the new contract. Preserve required CI and production gates.
+
+CI correction: the full RLS SQL fixture still expected owner browser writes. It now
+requires permission denial for own/other-row DML and TRUNCATE while retaining
+SELECT isolation. The complete RLS, snapshot-worker, new-object and vector SQL
+fixtures pass locally, as do five RLS unit tests. No grants were restored.
