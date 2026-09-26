@@ -49,7 +49,7 @@ journey. Search/model evaluation was unchanged and not rerun.
 
 - Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7, #26 and #27 stay explicit in the register; broader synthesis and full editorial revision history remain deferred.
 - Broader durability (#8/#9), AI safeguards (#20–#24), remaining operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
-- The retrieval work recorded an account-deletion/revision-trigger defect during disposable cleanup. Removing fixture library rows before deleting its account was a cleanup workaround, not a production fix; track it with the durability workstream.
+- The account-deletion/revision-trigger defect is repaired in production by `20260926150259_account_deletion_library_revision.sql` ([#161](https://github.com/Jseow008/ThePlayBook/pull/161)). Real hosted and production Auth deletion proofs pass; full durability acceptance remains separate. See [release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
 
 ## Updating this page
 

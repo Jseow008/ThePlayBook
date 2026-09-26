@@ -430,3 +430,33 @@ The PR remains held until hosted replay, security/advisor/type/schema checks and
 application smoke pass. Next: finish that gate, apply the reviewed one-migration
 production release, then delete the candidate and private credentials. Do not
 rerun unchanged model benchmarks.
+
+
+### Deletion repair release result
+
+PR [#161](https://github.com/Jseow008/ThePlayBook/pull/161), implementation
+`71493b37`, completes the bounded fix. The user approved the temporary project's
+quoted cost. Full hosted replay/reset, 106 immutable migrations, six security
+checks, DB-002 behavior, type comparison, build and all seven browser smoke
+checks pass. Hosted real Auth deletion removes all five tested capture/state/index
+collections. Before production, the only schema difference was the intended
+trigger body.
+
+The single reviewed migration is applied to production under the user's existing
+production authorization. Post-apply parity/recorded SQL, clean dry-run, all 14
+schema categories and all six security checks pass. A real temporary ordinary
+account saved a library item, note and reflection, then Auth deletion succeeded
+and removed its public capture/state rows. Health is `ok`. Advisors show no new
+findings; existing public-search and leaked-password warnings retain their owners.
+
+The temporary hosted project was deleted and its absence confirmed. The isolated
+application was stopped; synthetic accounts were removed. Private credentials and
+workdir are removed after the sanitized evidence is retained. No production
+content or existing personal data was changed. Setup retries were one dependency
+symlink correction and one local HTTP proxy-header correction, not product fixes
+or weakened assertions. No model benchmark or prompt tuning was repeated.
+
+[Release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
+Next: finish required PR checks and merge #161; the migration is already applied
+and must not be reapplied. Broader durability and AI safeguards remain separately
+scoped work.
