@@ -524,3 +524,55 @@ CA with verification enabled. No production environment setting was changed.
 Final local verification: 1,442 tests passed, 229 configuration-dependent skips;
 typecheck and targeted lint passed. The database/runtime code is unchanged from
 the passing 26-fixture run. Final CI remains required before production.
+
+### Production rollout checkpoint — 27 September 2026
+
+#162 merged as `e3182888a370da1a0a927f222f034f7e5a5dff25`; all required
+checks passed on `2d44e90e` (1,442 unit, 26 snapshot runtime, 174 browser tests;
+229 unit and 114 browser configuration/scope skips). Production received only
+`20260926153219_guard_library_mutation_boundary.sql`. All 107 recorded migration
+SQLs and 14 schema fingerprint categories match; the post-apply dry-run is clean
+and all six security checks pass. Advisors show no new findings.
+
+The pre-release JSON above is frozen rehearsal evidence; this closeout supersedes
+its pending production/cleanup fields. Hosted candidate `genspcayrpwbgekyzyph`
+was deleted and its absence confirmed. Candidate credentials/workdir, generated types and remaining private fixtures were removed;
+the isolated application is stopped. No error-level runtime logs were returned for
+the new deployment during closeout.
+Vercel production deployment `dpl_GQ7nSntJhxezJMHyPmsSezJLVE3j` is READY and
+`www.netflux.blog` resolves to `e3182888`. The first guarded smoke attempt ran before
+the custom-domain switch, received legacy HTTP 400 instead of 428, and stopped
+before library writes; its temporary Auth account was removed. After post-merge CI
+passed and the domain switched, the complete synthetic ordinary-account proof passed:
+
+| Production check | Result |
+| --- | --- |
+| Legacy bookmark path requires refresh | 428 |
+| Fresh save and removal | 200 / 200 |
+| Old save after removal | 409; no row resurrected |
+| Reset and old-epoch replay | 200 / 409 |
+| Fresh save after reset | 200 |
+| Direct authenticated browser UPDATE | Permission denied, 42501 |
+| Wrong expected account | 409 |
+| Synthetic Auth account deletion | Passed |
+| Public health | `ok` |
+
+No existing personal records or public content were changed. The hosted real-browser
+journey separately proved initial loading, conflict feedback, explicit refresh, and
+successful fresh Save. Production proof is authenticated HTTP, not a claim that every
+browser viewport was retested live. Local main was fast-forwarded to the merged code.
+Finding #8's stale-bookmark non-resurrection acceptance is delivered. Account-wide
+conflicts remain conservative; users with old open tabs must refresh. Durable offline
+queue, idempotent retry and guest migration remain #9.
+
+Run accounting: approximately one hour including release waiting, one bounded reused
+subagent for the RLS fixture correction, no model benchmark/prompt tuning. The final
+PR validation took 15m58s, including 9.3m of serial browser tests, and production aliases
+waited for a second main-branch validation. Hosted browser retries exposed a verified-TLS
+setup issue and two related hydration problems; the latter have regression coverage.
+Token usage and a comparable prior-run duration are unavailable; no measured token-saving
+claim is made. Future CI-policy changes must be separately scoped, not bypassed here.
+
+Closeout branch `codex/library-stale-write-closeout` in
+`/Users/j/Desktop/Lifebook-library-durability` records this receipt only. Next workstream:
+#9 durability; do not reapply this migration or repeat the completed hosted rehearsal.
