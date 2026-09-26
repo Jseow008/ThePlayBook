@@ -30,6 +30,9 @@ export {
 const OPENAI_WAV_FORMAT = "wav";
 const FINAL_AUDIO_FORMAT = "mp3";
 const FINAL_AUDIO_CONTENT_TYPE = "audio/mpeg";
+const FISH_NARRATION_DIRECTION = "[deliver a sober factual briefing: serious, steady, restrained, with clear articulation and understated emphasis]";
+const FISH_NARRATION_TEMPERATURE = 0.5;
+const FISH_NARRATION_TOP_P = 0.7;
 const TTS_CONCURRENCY = 3;
 const OPENAI_REQUEST_TIMEOUT_MS = 45_000;
 const FISH_REQUEST_TIMEOUT_MS = 120_000;
@@ -455,8 +458,10 @@ async function synthesizeFishNarrationChunkWav(chunk: string, signal?: AbortSign
                     model,
                 },
                 body: JSON.stringify({
-                    text: chunk,
+                    text: `${FISH_NARRATION_DIRECTION} ${chunk}`,
                     reference_id: FISH_AUDIO_VOICE_ID,
+                    temperature: FISH_NARRATION_TEMPERATURE,
+                    top_p: FISH_NARRATION_TOP_P,
                     prosody: { speed: 1, volume: 0 },
                     normalize: true,
                     format: "wav",

@@ -178,8 +178,12 @@ describe("AI narration helpers", () => {
         expect(result.toString("ascii", 0, 4)).toBe("RIFF");
         expect(url).toBe("https://api.fish.audio/v1/tts");
         expect(options.headers.model).toBe("s2.1-pro-free");
-        expect(JSON.parse(options.body).reference_id).toBe("3df6f0a0b0f349dbb0f9425e50c36a5b");
-        expect(JSON.parse(options.body).format).toBe("wav");
+        const body = JSON.parse(options.body);
+        expect(body.reference_id).toBe("3df6f0a0b0f349dbb0f9425e50c36a5b");
+        expect(body.text).toBe("[deliver a sober factual briefing: serious, steady, restrained, with clear articulation and understated emphasis] A brief test passage.");
+        expect(body.temperature).toBe(0.5);
+        expect(body.top_p).toBe(0.7);
+        expect(body.format).toBe("wav");
     });
 
     it("rejects an unknown Fish model before making a chargeable request", async () => {
