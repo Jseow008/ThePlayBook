@@ -19,9 +19,9 @@ The release handoffs in the working conversation reported production export/resu
 
 ## Held work — not on main
 
-Typed retrieval for highlights, attached notes, and reflections (#3/#4/#6) is on `codex/typed-personal-retrieval`, checkpoint `cd2c7fd`. Its branch-local `docs/PHASE_1_PERSONAL_RETRIEVAL.md` records the implementation and raw evidence; that file is not part of main at this snapshot.
+Typed retrieval for highlights, attached notes, and reflections (#3/#4/#6) continues on `codex/evidence-first-retrieval` in PR #153, recovered from the held `codex/typed-personal-retrieval` checkpoint `cd2c7fd`. Its branch-local `docs/PHASE_1_PERSONAL_RETRIEVAL.md` records the implementation and raw evidence; that file accompanies the held delivery and is not proof of release.
 
-The completed candidate benchmark has passing retrieval/access/quotation results, but independent AI review found only 86 of 90 generated answers grounded. Four unsupported claims keep the candidate held. All 90 answers were reviewed; there was no selective rerun. The proposed alternative—concise attributed evidence extracts instead of freeform synthesis—awaits a product decision and is not implemented. No personal-index production migration or deployment is recorded for this candidate.
+The completed candidate benchmark has passing retrieval/access/quotation results, but independent AI review found only 86 of 90 generated answers grounded. Four unsupported claims keep the candidate held. All 90 answers were reviewed; there was no selective rerun. The user approved concise attributed evidence extracts on 26 September 2026. PR #153 implements that response change; database-backed display evaluation, independent quality review and release proof are still pending. The earlier generated-answer failure is preserved and does not certify the new response path. No personal-index production migration or deployment is recorded for this candidate.
 
 ## Deferred and separately open
 

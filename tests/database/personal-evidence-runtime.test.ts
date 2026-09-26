@@ -254,12 +254,14 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
         await expect(recheckPersonalEvidenceCandidates({ supabase: clientA, userId: accountA, scope: allScope, candidates: other })).rejects.toMatchObject({ code: "STALE_EVIDENCE" });
     });
 
+    // These scenarios perform multiple sequential database traversals/mutations.
+    // Bound the whole fixture separately from the unchanged per-operation deadlines.
     it("applies reflection, note, source, color and literal filters across the complete owned collection", async () => {
         expect((await loadA({ version: 1, itemType: "reflection" })).map((candidate) => candidate.id).sort()).toEqual([reflectionId, withdrawnReflectionId].sort());
         expect((await loadA({ version: 1, itemType: "note", contentItemId: contentId, color: "yellow" })).map((candidate) => candidate.id)).toEqual([lateNoteId]);
         expect((await loadA({ version: 1, itemType: "all", filterQuery: "100%_kept" })).map((candidate) => candidate.id)).toEqual([lateHighlightId]);
         expect((await loadA({ version: 1, itemType: "all", filterQuery: "late personal needle" })).map((candidate) => candidate.id).sort()).toEqual([lateHighlightId, lateNoteId, reflectionId].sort());
-    });
+    }, 30_000);
 
     it("preserves the exact stored quote beyond the previous clipping threshold", async () => {
         const candidates = await loadA({ version: 1, itemType: "highlight", filterQuery: "100%_kept" });
@@ -284,7 +286,7 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
         } finally {
             await db.query("INSERT INTO public.user_reflections (id, user_id, content_item_id, prompt, reflection_text) VALUES ($1, $2, $3, 'What will remain?', 'My retained withdrawn-source reflection')", [withdrawnReflectionId, accountA, withdrawnContentId]);
         }
-    });
+    }, 30_000);
 
     it("retains personal captures across the real library reset operation", async () => {
         const before = await loadA();
@@ -294,7 +296,7 @@ describeDatabase("typed personal retrieval through real ordinary-account Supabas
         expect(library.error).toBeNull();
         expect(library.data).toEqual([]);
         expect((await loadA()).map((candidate) => candidate.evidenceId)).toEqual(before.map((candidate) => candidate.evidenceId));
-    });
+    }, 30_000);
 
     it("never attaches a mismatched source segment or anchor", async () => {
         const rows = await loadA({ version: 1, itemType: "highlight", filterQuery: "Retained mismatched capture" });
