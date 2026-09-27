@@ -820,3 +820,73 @@ documentation. Finding #21 is delivered for the three interactive AI routes; #22
 (global/guest budgets, provider-spend controls and kill switch) is the next bounded
 workstream. Do not reapply #20's migration, recreate its deleted database candidate,
 or rerun unchanged retrieval/model evidence.
+
+## Finding #22 implementation checkpoint — 27 September 2026
+
+Worktree `/Users/j/.codex/worktrees/ai-spending-controls/Lifebook`, branch
+`codex/ai-spending-controls`, based on freshly fetched `99c32ac4`. SQL commits
+`9e0c5bd7` and `94be1a6b` integrate the bounded ledger subagent's work. Application
+integration is in progress; no PR, production migration, activation, or deployment yet.
+
+Scope: the three interactive AI routes only. Every query/batch embedding, evidence
+selector call and answer stream reserves global budget before provider dispatch.
+Guests additionally share a monetary sub-cap and a per-network daily attempt quota.
+Existing account quotas/rate controls, models, prompts and retrieval quality remain.
+Provider retries are explicitly disabled on streams, matching the existing selector
+and embedding behavior. Offline evaluations, indexing and admin generation remain
+outside this interactive budget; this is not a cap on the entire provider invoice.
+
+Policy starts disabled with zero monetary limits. User decision pending: daily USD
+ceiling (offered $5/$10/$20). Proposed guest share: 20% of that ceiling, five attempts
+per trusted network per UTC day. Do not activate by treating the preselected answer
+or silence as approval. Configuration/kill-switch procedure is in OPS §5.4.1.
+
+Reservations cover the model's full supported context plus configured output limit;
+this is deliberately conservative, including when the remaining daily budget cannot
+fit that reservation. Successful generation releases unused reserve only for valid
+reported usage at reviewed list prices (including reported cache reads). Missing
+usage, provider failure, disconnect and embedding calls retain their reserve. Gemini
+Developer API embeddings do not reliably report billed usage. Unknown model pricing
+fails closed. No account IDs, prompts, answers or source IDs enter the ledger; guest
+network hashes and operation details have bounded 35-day retention. Daily aggregate
+costs contain no user identity. Costs are USD list-price estimates, not invoices.
+
+Evidence so far: 15 real database tests (concurrency, shared guest cap, quota, UTC-day
+settlement, duplicate/replay rejection, emergency disable and ACL denial); 108 focused
+route/adapter tests; four nested-provider boundary tests. Full local suite: 1,527 passed, 261 declared database/configuration skips.
+Typecheck and lint pass; after the cache-read correction, all 113 focused
+route/adapter/provider tests pass. Production build passes with placeholder public
+configuration. No new paid provider/model evaluation is needed: prompts, models and
+selection rules are unchanged. Existing frozen retrieval evidence is reused.
+
+Corrections during development: local DB harness initially conflicted with shared
+browser setup; nullable guest validation was corrected; review caught overspend
+missing from aggregate counters (now charged exactly once before disabling, with
+exact numeric counters to avoid overflow). Application review found cached-input
+pricing was too conservative; reported cache reads now receive their reviewed tariff.
+One test schema type mismatch was fixed using the production selector request builder.
+
+Next: complete application checks, inspect scope and open held PR; obtain daily-cap
+answer, perform OPS §2.2 hosted release rehearsal with fresh provider cost approval,
+review production dry-run, then apply only this migration/configuration and release.
+Do not repeat completed #20/#21 rollouts or unchanged model benchmarks.
+
+Handoff: PR #170 is open at application commit
+`375ae93b8d6b69dd03936b192f90d0b812ed994d`; GitHub file-list inspection and PR scope
+passed, auto-merge is off. Required validation/security and Vercel checks were still
+running at handoff. Fresh Supabase cost quote is $10/month in the existing Netflux
+organization; explicit new-project approval has been requested, not yet received.
+The daily-ceiling question also remains pending. No hosted project created and no
+production changes. This checkpoint-only working-tree update will be included with
+the next release-evidence commit; application evidence remains bound to `375ae93b`.
+
+27 September follow-up: user approved the quoted $10/month temporary project in
+Netflux's existing organization. The production daily ceiling is still unanswered.
+At `375ae93b`, validate, PR scope, Catalog Search Evidence and Vercel passed. Security
+Validation failed before runtime tests because the ACL checker had two top-level DO
+statements and the CLI uses prepared queries. Consolidated the checks into one DO;
+added prepared-query execution to the existing real-DB positive/negative ACL proof.
+The actual CLI checker and all 15 runtime tests now pass locally (local CLI requires
+`sslmode=disable`). No migration SQL or application behavior changed in this fix.
+Next: push correction, finish approved hosted rehearsal, delete candidate, then wait
+for daily-cap selection before any production activation.

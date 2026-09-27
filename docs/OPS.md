@@ -857,6 +857,68 @@ Check:
 - `GEMINI_API_KEY` for library retrieval embeddings and sync
 - `OPENAI_API_KEY` only if you expect fallback generation
 
+### 5.4.1 Interactive AI spending controls (#22)
+
+The migration creates a disabled policy. Before the application release, explicitly
+set approved ceilings in `private.ai_spend_policy` using the production database
+operator connection (not a browser client). Amounts are integer micro-USD:
+1 USD = 1,000,000 micro-USD. `guest_daily_limit_microusd` is shared by **all** guests
+within the global ceiling; `guest_daily_requests` applies per trusted network/day.
+Only enable after reviewing the effective values. The current rollout decision and
+release evidence are in [the retrieval checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md).
+
+Immediate kill switch, effective for the next provider admission without redeploying:
+
+```sql
+UPDATE private.ai_spend_policy SET enabled = false WHERE singleton;
+```
+
+Already admitted calls can finish and settle. The switch does not cancel provider
+requests already sent. The same policy-row lock serializes admissions and switch
+updates; allow for the short in-flight transaction. Missing policy, database errors,
+unreviewed model pricing and ambiguous admission fail closed before provider work.
+
+Read-only operational inspection:
+
+```sql
+SELECT * FROM private.ai_spend_policy;
+SELECT * FROM private.ai_spend_daily_totals ORDER BY day DESC LIMIT 7;
+SELECT day, provider, model, count(*) AS calls,
+       count(*) FILTER (WHERE cost_microusd IS NULL) AS retained_reservations
+FROM private.ai_spend_operations
+GROUP BY day, provider, model ORDER BY day DESC LIMIT 30;
+SELECT jobname, active FROM cron.job WHERE jobname = 'prune-ai-spend';
+```
+
+`charged_microusd` includes settled estimates **and outstanding reservations**.
+A UTC date rollover opens the next daily allowance; settlement refunds the original
+admission date. The policy does not reset account quotas or network rate limits.
+An account dispatch attempt may remain counted if later budget admission fails.
+The server returns 429 with a retry interval for exhausted allowances, or 503 for
+disabled/unavailable controls; neither means there are no matching notes.
+
+Reservations use full model input limits plus the configured output cap. They can
+refuse work while another request holds budget, or when the remaining budget cannot
+fit the conservative reservation. Missing/invalid usage, interrupted streams and
+provider failures retain the reserve; do not manually refund uncertain operations.
+Gemini embedding reservations stay charged because reliable billed usage is absent.
+An actual reported overrun increases recorded cost and disables the policy. Investigate
+pricing, model configuration and request options before re-enabling; do not simply
+zero counters. Unknown model IDs require reviewed pricing before admission.
+
+These estimates cover interactive `/api/chat`, `/api/chat/notes`, and
+`/api/chat/author` calls only, excluding taxes, currency conversion, other API-key
+consumers, indexing, offline evaluations and admin generation. No automatic SDK retry
+is allowed under a single reservation. No content or account IDs are stored. Guest
+hashes are pseudonymous, not anonymous; hourly bounded cleanup removes operational
+records older than 35 UTC days while retaining non-identifying daily aggregates.
+
+Pricing reviewed 27 September 2026: [Haiku/Sonnet](https://platform.claude.com/docs/en/about-claude/pricing),
+[GPT-4o mini](https://developers.openai.com/api/docs/models/gpt-4o-mini),
+[Gemini embedding](https://developers.googleblog.com/en/gemini-embedding-available-gemini-api/).
+The allowlist in `lib/server/ai-spending.ts` must be reviewed when changing model,
+pricing tier, caching writes, tools, output limits or provider retry behavior.
+
 ### 5.5 Rate-limited routes fail only in production
 
 Check:
