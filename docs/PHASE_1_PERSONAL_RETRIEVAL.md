@@ -1289,3 +1289,46 @@ This does not substitute for #26's combined later-session journey or the remaini
 Closeout branch: `codex/graceful-chat-release-record`, based on `ca30f92f`.
 Next workstream: #26 capture → later session → retrieval → evidence → export/reconcile,
 reusing existing feature evidence and adding the missing combined ordinary-user proof.
+
+### #26 combined journey — verified 27 September 2026
+
+Owner: Codex (Engineering/QA), target/completed proof 27 September. Branch
+`codex/complete-retrieval-journey`, application base `da8d62c2472ae8c3164498ccf56a22f76747db24`,
+managed worktree `/Users/j/.codex/worktrees/retrieval-journey/Lifebook`.
+The unchanged application passes the required ordinary-user production-build journey:
+UI bookmark/reflection → sign out → fresh OTP login/session → real personal indexing
+and Notes retrieval → validated exact-passage view → Settings export/reconcile.
+The displayed quotation equals the original reflection. Both saved records occur
+exactly once in the 11-collection export. Two distinct authenticated sessions are
+proved, including removal of the first session before login. No skipped stages or
+mocked retrieval; no new production account, migration, deployment or hosted project.
+
+[Sanitized evidence](../tests/fixtures/retrieval/evidence/personal-journey-20260927.json)
+records the build ID, durations and successful fixture/server cleanup. The final
+journey took about 14 seconds after the production build. Dedicated local Supabase
+`NetfluxJourney26` replayed all migrations. The launcher builds/owns the server,
+validates local configuration/restricted connections, refuses dotenv leakage and
+stale success, and binds only to loopback. Real provider calls use synthetic text;
+ordinary quota/spending admission remains enabled with the approved $5/$1 local
+policy, restored after the run. Unique synthetic limiter buckets expire normally.
+Real OTP verification is exercised; external email delivery is outside this proof.
+See the [repeatable runbook](evidence/personal-journey-runbook.md).
+
+Five development stops exposed harness assumptions: initial welcome activation
+(two stops, the second with diagnostic capture), canonical reader URLs, mismatched
+forwarded origin during logout, and the migration's intentionally disabled initial
+spending policy. Those were corrected in the harness; no product fix, prompt tuning,
+threshold relaxation or provider-response selection occurred. A development journey
+and two packaged verification runs subsequently passed. Final safety-only preflight
+ordering was checked separately; application/provider inputs were unchanged.
+Typecheck, focused lint and whitespace validation pass. One bounded agent mapped
+controls and reviewed the harness; it caught missing displayed-text, server provenance,
+cleanup and environment-isolation assertions. Codex token/billing attribution is
+unavailable. No claim of general retrieval accuracy follows from this single query.
+
+#26 acceptance is complete for the recorded fixture. Repository closeout/PR checks
+are the remaining action; update this paragraph with the PR once opened. The dedicated local
+Supabase stack was stopped without retaining a backup; private credentials and raw
+logs were deleted after evidence retention. Other local stacks were untouched. Broader #27–#32
+obligations remain separate; no extra benchmark or production replay is required
+for these test/documentation changes.
