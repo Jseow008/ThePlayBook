@@ -1089,6 +1089,8 @@ Authenticated activity logging admits 30/account/minute; history removal admits
 
 ### 5.4.4 Interactive chat failure handling (#24)
 
+Released through #178/#179 (`ca30f92f`) and verified live on 27 September 2026.
+
 The library, Notes and Author Chat routes have a 50-second application deadline,
 leaving response time inside the platform's 60-second limit. Cancellation reaches
 retrieval/database/provider work. A preparation timeout returns `CHAT_TIMEOUT`/504;

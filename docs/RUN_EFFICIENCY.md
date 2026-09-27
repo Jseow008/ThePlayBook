@@ -43,3 +43,7 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
 ## Release comparison lesson — 27 September 2026
 
 - **Verification-harness false alarms:** the #20 rehearsal compared raw serialized records from two database clients. JSON property order, historical CLI statement packaging, and generator formatting produced mismatches despite matching live schema definitions. Prefer the repository's field-based schema comparison. Inspect a focused diff before rerunning remote reads; reuse captured artifacts while inputs are unchanged. Preserve quoted SQL values and procedural statement delimiters when reviewing formatting differences, and keep application type overrides explicit. Measure improvement by fewer comparison retries, without accepting unexplained schema or permission changes.
+
+## Runtime adapter lesson — 27 September 2026
+
+- **Framework request mismatch:** #178 passed ordinary-request unit tests but failed in production when a deadline wrapper reconstructed Next.js's proxied request. Preserve the original framework request and pass cancellation separately. For changes at request/stream adapters, probe the built preview over actual HTTP before merge; a cheap unauthenticated or invalid-payload probe catches this class of failure without provider calls or a database rehearsal. #179 adds that regression coverage. Measure improvement by production-only adapter failures and repair CI runs, not by adding another blanket gate to unrelated changes.
