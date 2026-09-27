@@ -759,3 +759,31 @@ or rerun unchanged model benchmarks. Private release artifacts and credentials a
 removed after closeout preparation. Next bounded workstream is #21's consistent
 trusted identity and burst-rate enforcement; #22 global/guest budgets remains
 separately open.
+
+## Finding #21 implementation checkpoint — 27 September 2026
+
+Worktree: `/Users/j/.codex/worktrees/ai-trusted-rate-limits/Lifebook`; branch:
+`codex/ai-trusted-rate-limits`, from freshly fetched `a7421d29`.
+
+Implemented one AI identity/burst policy: account-only 10/minute per route,
+canonical trusted Vercel network identity, existing guest 3/10-minute protection,
+and a separate shared network 60/minute abuse bucket. Missing trusted identity and
+Redis errors/timeouts fail closed. Author authentication failures are not silently
+converted into guest requests. No migration, provider/model, retrieval, or UI change.
+The generic limiter adds explicit shared scope and rejects timeout-success; existing
+non-AI identity selection is outside this focused change.
+
+Development evidence: 118 focused tests passed before the three added Author Auth
+cases; the updated 21-test Author suite passes. Full local suite at that earlier
+point: 1,498 passed, 246 declared skips. Final typecheck and changed-file lint pass. The three added Author Auth cases
+also pass; hosted evidence and exact-head CI remain pending.
+
+Harness corrections: removed a Node-only test annotation because the repository
+setup needs `window`; replaced an invalid-header fixture whose leading whitespace
+was normalized by the standard Headers constructor. Neither required relaxing the
+production behavior. No agents, database rehearsal, or provider evaluation calls.
+
+Next action: finish final checks, open a focused PR, prove spoofed headers cannot
+reset hosted buckets on its preview, then pass required CI and release. Do not claim
+#21 closed until hosted ingress and production behavior are verified. No production
+change has occurred in this workstream.

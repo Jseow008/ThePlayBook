@@ -1,10 +1,11 @@
+vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn() }));
 import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { retrievePersonalEvidence } from '@/lib/server/personal-retrieval';
 import { POST } from "@/app/api/chat/notes/route";
 import { NextRequest } from "next/server";
 import { vi } from "vitest";
 import { createClient } from "@/lib/supabase/server";
-import { rateLimit } from "@/lib/server/rate-limit";
+import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { admitAiUsage } from "@/lib/server/ai-usage-quota";
 import { streamText } from "ai";
@@ -21,21 +22,10 @@ vi.mock("@/lib/supabase/server", () => ({
     createClient: vi.fn(),
 }));
 
-vi.mock("@/lib/server/rate-limit", () => ({
-    rateLimit: vi.fn(),
-    rateLimitFailureResponseWithTelemetry: vi.fn(({ result, message }) =>
-        Response.json(
-            { error: { code: "RATE_LIMITED", message } },
-            {
-                status: 429,
-                headers: { "Retry-After": String(Math.ceil((result.retryAfterMs ?? 60_000) / 1000)) },
-            },
-        )
-    ),
-}));
 
 vi.mock("@/lib/server/security-telemetry", () => ({
     recordAiRouteAbuse: vi.fn(),
+    recordSecuritySignal: vi.fn(),
 }));
 
 vi.mock("@/lib/server/ai-usage-quota", () => ({
@@ -92,7 +82,7 @@ describe("Notes chat API", () => {
         delete process.env.AI_PROVIDER;
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
-        (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        (aiRateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
         (admitAiUsage as any).mockResolvedValue({ allowed: true, windows: [] });
         mockAuthUser.mockResolvedValue({ data: { user: mockUser } });
         highlightQuery.then.mockImplementation((resolve: any) =>
@@ -110,6 +100,22 @@ describe("Notes chat API", () => {
                 error: null,
             })
         );
+    });
+
+    it.each([
+        { result: { success: false, retryAfterMs: 15_000 }, status: 429, code: "RATE_LIMITED" },
+        { result: { success: false, retryAfterMs: 60_000, unavailable: true }, status: 503, code: "RATE_LIMIT_UNAVAILABLE" },
+    ])("stops before quota/provider work on burst rejection ($status)", async ({ result, status, code }) => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        vi.mocked(aiRateLimit).mockResolvedValueOnce(result);
+        const req = new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: "{}" });
+        const response = await POST(req);
+        expect(aiRateLimit).toHaveBeenCalledWith(req, mockUser.id);
+        expect(response.status).toBe(status);
+        expect((await response.json()).error.code).toBe(code);
+        expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+        expect(admitAiUsage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it("returns UI citation metadata separately from a literal exact quote", async () => {
@@ -442,7 +448,7 @@ describe('Notes retrieval delivery boundary', () => {
             auth: { getUser: async () => ({ data: { user: { id: 'ordinary-a' } }, error: null }) },
             rpc: vi.fn(() => ({ abortSignal: vi.fn().mockResolvedValue({ data: readySessionStatus, error: null }) })),
         } as unknown as Awaited<ReturnType<typeof createClient>>);
-        vi.mocked(rateLimit).mockResolvedValue({ success: true });
+        vi.mocked(aiRateLimit).mockResolvedValue({ success: true });
         vi.mocked(admitAiUsage).mockResolvedValue({ allowed: true, windows: [] } as unknown as Awaited<ReturnType<typeof admitAiUsage>>);
         vi.mocked(retrievePersonalEvidence).mockReset();
     });

@@ -1,8 +1,10 @@
+import { AuthApiError, AuthSessionMissingError } from "@supabase/supabase-js";
+vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn() }));
 import { POST } from '@/app/api/chat/author/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
 import { createClient } from '@/lib/supabase/server';
-import { rateLimit } from '@/lib/server/rate-limit';
+import { aiRateLimit } from '@/lib/server/ai-rate-limit';
 import { recordAiRouteAbuse } from '@/lib/server/security-telemetry';
 import { admitAiUsage } from '@/lib/server/ai-usage-quota';
 import { smoothStream, streamText } from 'ai';
@@ -11,21 +13,10 @@ vi.mock('@/lib/supabase/server', () => ({
     createClient: vi.fn(),
 }));
 
-vi.mock('@/lib/server/rate-limit', () => ({
-    rateLimit: vi.fn(),
-    rateLimitFailureResponseWithTelemetry: vi.fn(({ result, message }) =>
-        Response.json(
-            { error: { code: 'RATE_LIMITED', message } },
-            {
-                status: 429,
-                headers: { 'Retry-After': String(Math.ceil((result.retryAfterMs ?? 60_000) / 1000)) },
-            },
-        )
-    ),
-}));
 
 vi.mock('@/lib/server/security-telemetry', () => ({
     recordAiRouteAbuse: vi.fn(),
+    recordSecuritySignal: vi.fn(),
 }));
 
 vi.mock('@/lib/server/ai-usage-quota', () => ({
@@ -85,7 +76,7 @@ describe('Author Chat API', () => {
         delete process.env.AI_PROVIDER;
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
-        (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
+        (aiRateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
         (admitAiUsage as any).mockResolvedValue({ allowed: true, windows: [] });
         mockAuthUser.mockResolvedValue({ data: { user: null } });
 
@@ -97,6 +88,38 @@ describe('Author Chat API', () => {
         });
     });
 
+    it.each([
+        { result: { success: false, retryAfterMs: 15_000 }, status: 429, code: "RATE_LIMITED" },
+        { result: { success: false, retryAfterMs: 60_000, unavailable: true }, status: 503, code: "RATE_LIMIT_UNAVAILABLE" },
+    ])("stops before quota/provider work on burst rejection ($status)", async ({ result, status, code }) => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        vi.mocked(aiRateLimit).mockResolvedValueOnce(result);
+        const req = new NextRequest("http://localhost/api/chat/author", { method: "POST", body: "{}" });
+        const response = await POST(req);
+        expect(aiRateLimit).toHaveBeenCalledWith(req, mockUser.id);
+        expect(response.status).toBe(status);
+        expect((await response.json()).error.code).toBe(code);
+        expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
+        expect(admitAiUsage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it.each([401, 503])("does not downgrade an authentication failure (%s) to guest admission", async (status) => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: null }, error: new AuthApiError("auth failed", status, undefined) });
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(status);
+        expect(aiRateLimit).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it("recognizes Supabase's missing-session response as a genuine guest", async () => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: null }, error: new AuthSessionMissingError() });
+        const req = new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) });
+        expect((await POST(req)).status).toBe(200);
+        expect(aiRateLimit).toHaveBeenCalledWith(req, undefined);
+    });
+
     it('allows valid guest requests', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
             method: 'POST',
@@ -105,11 +128,7 @@ describe('Author Chat API', () => {
 
         const res = await POST(req);
         expect(res.status).toBe(200);
-        expect(rateLimit).toHaveBeenCalledWith(req, {
-            limit: 3,
-            windowMs: 10 * 60_000,
-            key: 'author-chat:guest',
-        });
+        expect(aiRateLimit).toHaveBeenCalledWith(req, undefined);
         expect(admitAiUsage).not.toHaveBeenCalled();
     });
 
@@ -137,12 +156,7 @@ describe('Author Chat API', () => {
 
         const res = await POST(req);
         expect(res.status).toBe(200);
-        expect(rateLimit).toHaveBeenCalledWith(req, {
-            limit: 10,
-            windowMs: 60_000,
-            key: 'author-chat:user',
-            identifier: 'user-123',
-        });
+        expect(aiRateLimit).toHaveBeenCalledWith(req, 'user-123');
         expect(admitAiUsage).toHaveBeenCalledWith('user-123', 'author-chat', req.signal);
         expect(vi.mocked(admitAiUsage).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(streamText).mock.invocationCallOrder[0]);
         await finishLatestStream();
@@ -210,7 +224,7 @@ describe('Author Chat API', () => {
     });
 
     it('rate limits guests at the guest quota', async () => {
-        (rateLimit as any).mockResolvedValueOnce({ success: false, retryAfterMs: 20_000 });
+        (aiRateLimit as any).mockResolvedValueOnce({ success: false, retryAfterMs: 20_000 });
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
             method: 'POST',
@@ -229,7 +243,7 @@ describe('Author Chat API', () => {
 
     it('rate limits signed-in users at the authenticated quota', async () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
-        (rateLimit as any).mockResolvedValueOnce({ success: false, retryAfterMs: 61_000 });
+        (aiRateLimit as any).mockResolvedValueOnce({ success: false, retryAfterMs: 61_000 });
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
             method: 'POST',
@@ -238,12 +252,7 @@ describe('Author Chat API', () => {
 
         const res = await POST(req);
         expect(res.status).toBe(429);
-        expect(rateLimit).toHaveBeenCalledWith(req, {
-            limit: 10,
-            windowMs: 60_000,
-            key: 'author-chat:user',
-            identifier: 'user-123',
-        });
+        expect(aiRateLimit).toHaveBeenCalledWith(req, 'user-123');
         expect(await res.json()).toEqual({
             error: {
                 code: 'RATE_LIMITED',
