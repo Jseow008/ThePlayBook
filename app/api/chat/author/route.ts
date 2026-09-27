@@ -184,10 +184,10 @@ function buildSourceContext(segments: SourceSegment[], latestUserMessage: string
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
-    return withChatDeadline(req, (boundedRequest) => withAiSpendingScope(boundedRequest, "author-chat", () => handlePost(boundedRequest)));
+    return withChatDeadline(req, (originalRequest, signal) => withAiSpendingScope(originalRequest, "author-chat", () => handlePost(originalRequest, signal)));
 }
 
-async function handlePost(req: NextRequest) {
+async function handlePost(req: NextRequest, signal: AbortSignal) {
     const requestId = getRequestId();
     if (req.headers.get("x-evidence-protocol") !== "ui") {
         return apiError("CONFLICT", "Please refresh the page to continue this chat.", 409, requestId);
@@ -200,7 +200,7 @@ async function handlePost(req: NextRequest) {
             data: { user },
             error: authError,
         } = await supabase.auth.getUser();
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         if (authError && !isAuthSessionMissingError(authError)) {
             const unavailable = !authError.status || authError.status === 429 || authError.status >= 500;
             return apiError(unavailable ? "INTERNAL_ERROR" : "UNAUTHORIZED",
@@ -320,7 +320,7 @@ async function handlePost(req: NextRequest) {
             .select("title, markdown_body, order_index")
             .eq("item_id", contentId)
             .order("order_index", { ascending: true })
-            .abortSignal(req.signal);
+            .abortSignal(signal);
 
         if (segError) {
             logApiError({ requestId, route: "/api/chat/author", message: "Failed to fetch segments", error: segError });
@@ -369,7 +369,7 @@ Rules:
         }
 
         if (user) {
-            const quota = await admitAiUsage(user.id, "author-chat", req.signal);
+            const quota = await admitAiUsage(user.id, "author-chat", signal);
             if (!quota.allowed) {
                 recordAiRouteAbuse({
                     signal: "ai_quota_exhausted",
@@ -396,20 +396,20 @@ Rules:
             }
         }
 
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         // --- Stream ---
         const reservation = await reserveAiProviderCall({
             provider: selectedProvider, model: selectedModel,
-            maxOutputTokens: MAX_OUTPUT_TOKENS, signal: req.signal,
+            maxOutputTokens: MAX_OUTPUT_TOKENS, signal,
         });
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         const result = streamText({
             maxRetries: 0,
             model: aiModel,
             system: systemPrompt,
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
-            abortSignal: req.signal,
+            abortSignal: signal,
             experimental_transform: smoothStream({ delayInMs: 20, chunking: "word" }),
             onFinish: async ({ usage }) => {
                 await reservation.record(usage);
@@ -438,7 +438,7 @@ Rules:
             },
         });
     } catch (error: unknown) {
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         const spendingFailure = aiSpendingFailureResponse(error);
         if (spendingFailure) return spendingFailure;
         logApiError({

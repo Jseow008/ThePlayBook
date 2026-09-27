@@ -76,10 +76,10 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 }
 
 export async function POST(req: NextRequest) {
-    return withChatDeadline(req, (boundedRequest) => withAiSpendingScope(boundedRequest, "ask-notes", () => handlePost(boundedRequest)));
+    return withChatDeadline(req, (originalRequest, signal) => withAiSpendingScope(originalRequest, "ask-notes", () => handlePost(originalRequest, signal)));
 }
 
-async function handlePost(req: NextRequest) {
+async function handlePost(req: NextRequest, signal: AbortSignal) {
     const requestId = getRequestId();
     const protocol = req.headers.get("x-evidence-protocol") === "ui" ? "ui" : "text";
 
@@ -89,7 +89,7 @@ async function handlePost(req: NextRequest) {
             data: { user },
             error: authError,
         } = await supabase.auth.getUser();
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
 
         if (authError || !user) {
             return apiError("UNAUTHORIZED", "Please log in to use Ask These Notes", 401, requestId);
@@ -114,7 +114,7 @@ async function handlePost(req: NextRequest) {
         // getUser can accept a revoked but unexpired JWT. Verify the live
         // session before quota admission, usage charging, or provider work.
         try {
-            await assertActiveChatSession({ supabase, signal: req.signal });
+            await assertActiveChatSession({ supabase, signal });
         } catch (error) {
             if (error instanceof ChatSessionValidationError && error.code === "UNAUTHORIZED") {
                 return apiError("UNAUTHORIZED", "Your chat session has ended. Please sign in again.", 401, requestId);
@@ -203,7 +203,7 @@ async function handlePost(req: NextRequest) {
         const questionContext = contextualizeUserQuestion(messages);
         if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, protocol);
 
-        const quota = await admitAiUsage(user.id, "ask-notes", req.signal);
+        const quota = await admitAiUsage(user.id, "ask-notes", signal);
         if (!quota.allowed) {
             recordAiRouteAbuse({
                 signal: "ai_quota_exhausted",
@@ -229,12 +229,12 @@ async function handlePost(req: NextRequest) {
             );
         }
 
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         let evidence;
         try {
             evidence = await retrievePersonalEvidence({
                 supabase, userId: user.id, scope, question: lastMessage.content,
-                semanticQuestion: questionContext.semanticQuestion, signal: req.signal,
+                semanticQuestion: questionContext.semanticQuestion, signal,
             });
         } catch (error) {
             const spendingFailure = aiSpendingFailureResponse(error);
@@ -251,7 +251,7 @@ async function handlePost(req: NextRequest) {
             return retrievalTextResponse(quoted.exactQuote, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: [quoted] }) : [], true);
         }
 
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         const text = renderEvidenceExtracts({ personal: evidence.items });
         if (messages.filter((message) => message.role === "user").length === 1) {
             afterResponse(() => captureServerAnalyticsEvent({
@@ -263,7 +263,7 @@ async function handlePost(req: NextRequest) {
         }
         return retrievalTextResponse(text, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: evidence.items }) : []);
     } catch (error: unknown) {
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         const spendingFailure = aiSpendingFailureResponse(error);
         if (spendingFailure) return spendingFailure;
         logApiError({
