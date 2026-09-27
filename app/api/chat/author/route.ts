@@ -1,3 +1,4 @@
+import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { afterResponse } from "@/lib/server/after-response";
@@ -182,6 +183,10 @@ function buildSourceContext(segments: SourceSegment[], latestUserMessage: string
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
+    return withAiSpendingScope(req, "author-chat", () => handlePost(req));
+}
+
+async function handlePost(req: NextRequest) {
     const requestId = getRequestId();
 
     try {
@@ -197,6 +202,8 @@ export async function POST(req: NextRequest) {
                 unavailable ? "Authentication could not be verified. Please retry." : "Please sign in again.",
                 unavailable ? 503 : 401, requestId);
         }
+
+        if (user) markAiSpendingAuthenticated();
 
         // --- Rate Limiting ---
         const rl = await aiRateLimit(req, user?.id);
@@ -340,13 +347,17 @@ Rules:
 
         // --- Select Model Dynamically based on ENV vars ---
         let aiModel;
+        let selectedProvider = "anthropic";
+        let selectedModel = process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL;
         const provider = process.env.AI_PROVIDER || "anthropic";
 
         if (provider === "anthropic" && process.env.ANTHROPIC_API_KEY) {
             aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
         } else if (process.env.OPENAI_API_KEY) {
             const { openai } = await import("@ai-sdk/openai");
-            aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
+            selectedProvider = "openai";
+            selectedModel = process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
+            aiModel = openai(selectedModel);
         } else {
             aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
         }
@@ -381,14 +392,21 @@ Rules:
 
         req.signal.throwIfAborted();
         // --- Stream ---
+        const reservation = await reserveAiProviderCall({
+            provider: selectedProvider, model: selectedModel,
+            maxOutputTokens: MAX_OUTPUT_TOKENS, signal: req.signal,
+        });
+        req.signal.throwIfAborted();
         const result = streamText({
+            maxRetries: 0,
             model: aiModel,
             system: systemPrompt,
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
             abortSignal: req.signal,
             experimental_transform: smoothStream({ delayInMs: 20, chunking: "word" }),
-            onFinish: async () => {
+            onFinish: async ({ usage }) => {
+                await reservation.record(usage);
                 if (allMessages.filter((message) => message.role === "user").length === 1) {
                     const distinctId = user?.id ?? `anonymous:${requestId}`;
                     afterResponse(() => captureServerAnalyticsEvent({
@@ -409,6 +427,8 @@ Rules:
 
         return result.toTextStreamResponse();
     } catch (error: unknown) {
+        const spendingFailure = aiSpendingFailureResponse(error);
+        if (spendingFailure) return spendingFailure;
         logApiError({
             requestId,
             route: "/api/chat/author",

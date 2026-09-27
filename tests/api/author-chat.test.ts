@@ -1,5 +1,7 @@
+const { spendingRpc } = vi.hoisted(() => ({ spendingRpc: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: spendingRpc }) }));
 import { AuthApiError, AuthSessionMissingError } from "@supabase/supabase-js";
-vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn() }));
+vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn(), aiNetworkIdentifier: vi.fn(() => 'a'.repeat(64)) }));
 import { POST } from '@/app/api/chat/author/route';
 import { NextRequest } from 'next/server';
 import { vi } from 'vitest';
@@ -41,7 +43,7 @@ vi.mock('@ai-sdk/openai', () => ({
 
 async function finishLatestStream() {
     const options = (streamText as any).mock.calls.at(-1)?.[0];
-    await options?.onFinish?.({});
+    await options?.onFinish?.({ usage: { inputTokens: 100, outputTokens: 50 } });
 }
 
 describe('Author Chat API', () => {
@@ -71,6 +73,9 @@ describe('Author Chat API', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        spendingRpc.mockImplementation((name, args) => ({ abortSignal: async () => ({ data: name === "reserve_ai_spend"
+            ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd }
+            : { recorded: true }, error: null }) }));
         process.env.ANTHROPIC_API_KEY = 'test-key';
         delete process.env.OPENAI_API_KEY;
         delete process.env.AI_PROVIDER;
@@ -111,6 +116,22 @@ describe('Author Chat API', () => {
         expect(aiRateLimit).not.toHaveBeenCalled();
         expect(admitAiUsage).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it.each(["disabled", "global_budget", "guest_budget", "guest_quota"])("does not start a provider stream after spending rejection: %s", async reason => {
+        spendingRpc.mockReturnValue({ abortSignal: async () => ({ data: { allowed: false, reason, retryAfterMs: 1000 }, error: null }) });
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(reason === "disabled" ? 503 : 429);
+        expect(streamText).not.toHaveBeenCalled();
+        expect(spendingRpc).toHaveBeenCalledTimes(1);
+    });
+    it("accounts for streamed usage and disables automatic provider retries", async () => {
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(200);
+        expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0 }));
+        expect(spendingRpc).toHaveBeenCalledWith("reserve_ai_spend", expect.objectContaining({ p_guest_key: "a".repeat(64), p_feature: "author-chat" }));
+        await finishLatestStream();
+        expect(spendingRpc).toHaveBeenCalledWith("record_ai_spend", expect.objectContaining({ p_input_tokens: 100, p_output_tokens: 50 }));
     });
 
     it("recognizes Supabase's missing-session response as a genuine guest", async () => {

@@ -1178,6 +1178,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      reserve_ai_spend: {
+        Args: { p_operation_id: string; p_feature: string; p_provider: string; p_model: string; p_reserved_microusd: number; p_guest_key?: string }
+        Returns: Json
+      }
+      record_ai_spend: {
+        Args: { p_operation_id: string; p_input_tokens: number; p_output_tokens: number; p_cost_microusd: number }
+        Returns: Json
+      }
       admit_ai_usage: {
         Args: {
           p_day_limit: number

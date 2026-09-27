@@ -1,4 +1,5 @@
 import "server-only";
+import { AiSpendingError, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { createHash } from "node:crypto";
 import { GoogleGenAI } from "@google/genai";
 import type { PersonalEvidenceCandidate } from "@/lib/personal-evidence";
@@ -136,6 +137,10 @@ function cacheKey(ownerId: string, fingerprint: string, text: string): string {
 export function createGooglePersonalEvidenceEmbedder(apiKey: string): PersonalEvidenceEmbedBatch {
     const ai = new GoogleGenAI({ apiKey, httpOptions: { retryOptions: { attempts: 1 } } });
     return async (texts, { signal }) => {
+        // The Gemini Developer API does not return reliable billed token usage.
+        // Keep this full reservation even when embeddings succeed.
+        await reserveAiProviderCall({ provider: "google", model: PERSONAL_EMBEDDING_MODEL, maxOutputTokens: 0, inputs: texts.length, signal });
+        signal?.throwIfAborted();
         const response = await ai.models.embedContent({
             model: PERSONAL_EMBEDDING_MODEL,
             contents: texts,
@@ -208,7 +213,7 @@ async function populateEmbeddingVectors(inputs: EmbeddingInput[], options: {
         await Promise.all(Array.from({ length: Math.min(PERSONAL_RETRIEVAL_LIMITS.concurrency, batches.length) }, worker));
     } catch (error) {
         options.controller.abort(error);
-        if (error instanceof PersonalEvidenceRankingError) throw error;
+        if (error instanceof AiSpendingError || error instanceof PersonalEvidenceRankingError) throw error;
         throw new PersonalEvidenceRankingError("EMBEDDING_UNAVAILABLE", "Personal semantic retrieval is temporarily unavailable. Please try again.");
     }
     return { cacheHits, embeddingBatches, embeddedInputs };

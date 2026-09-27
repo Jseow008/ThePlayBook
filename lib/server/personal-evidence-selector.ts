@@ -1,4 +1,5 @@
 import "server-only";
+import { AiSpendingError, reserveAiProviderCall } from "@/lib/server/ai-spending";
 
 import { createHash } from "node:crypto";
 import { generateText, Output, type LanguageModelUsage } from "ai";
@@ -127,6 +128,8 @@ export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerat
         : process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
     const model = useAnthropic ? createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(modelId)
         : createOpenAI({ apiKey: process.env.OPENAI_API_KEY })(modelId);
+    const reservation = await reserveAiProviderCall({ provider, model: modelId, maxOutputTokens: request.maxOutputTokens, signal: request.signal });
+    request.signal?.throwIfAborted();
     const result = await generateText({
         model,
         system: request.system,
@@ -136,6 +139,7 @@ export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerat
         maxRetries: 0,
         abortSignal: request.signal,
     });
+    await reservation.record(result.usage);
     return { output: result.output, usage: result.usage, model: result.response.modelId, provider };
 };
 
@@ -298,7 +302,7 @@ export async function selectPersonalEvidence(options: {
             stats: { candidateCount: candidates.length, candidateBytes, promptBytes: Buffer.byteLength(SYSTEM + prompt, "utf8"), selectedCount: ids.length,
                 durationMs: performance.now() - startedAt, modelCalled: true, exactQuote: options.exactQuote ?? false } };
     } catch (error) {
-        if (error instanceof PersonalEvidenceSelectionError) throw error;
+        if (error instanceof AiSpendingError || error instanceof PersonalEvidenceSelectionError) throw error;
         if (controller.signal.aborted) throw abortFailure(controller.signal);
         throw new PersonalEvidenceSelectionError("UNAVAILABLE");
     } finally {

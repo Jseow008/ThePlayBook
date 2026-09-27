@@ -1,3 +1,4 @@
+import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
@@ -74,6 +75,10 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 }
 
 export async function POST(req: NextRequest) {
+    return withAiSpendingScope(req, "ask-notes", () => handlePost(req));
+}
+
+async function handlePost(req: NextRequest) {
     const requestId = getRequestId();
     const protocol = req.headers.get("x-evidence-protocol") === "ui" ? "ui" : "text";
 
@@ -87,6 +92,8 @@ export async function POST(req: NextRequest) {
         if (authError || !user) {
             return apiError("UNAUTHORIZED", "Please log in to use Ask These Notes", 401, requestId);
         }
+
+        markAiSpendingAuthenticated();
 
         const rl = await aiRateLimit(req, user.id);
         if (!rl.success) {
@@ -228,6 +235,8 @@ export async function POST(req: NextRequest) {
                 semanticQuestion: questionContext.semanticQuestion, signal: req.signal,
             });
         } catch (error) {
+            const spendingFailure = aiSpendingFailureResponse(error);
+            if (spendingFailure) return spendingFailure;
             if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
             logApiError({ requestId, route: "/api/chat/notes", message: "Personal retrieval did not complete", error });
             return apiError("RETRIEVAL_UNAVAILABLE", "Your notes could not be searched completely. Please retry or narrow your filters.", 503, requestId);
@@ -252,6 +261,8 @@ export async function POST(req: NextRequest) {
         }
         return retrievalTextResponse(text, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: evidence.items }) : []);
     } catch (error: unknown) {
+        const spendingFailure = aiSpendingFailureResponse(error);
+        if (spendingFailure) return spendingFailure;
         logApiError({
             requestId,
             route: "/api/chat/notes",

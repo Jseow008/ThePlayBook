@@ -1,4 +1,6 @@
-vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn() }));
+const { spendingRpc } = vi.hoisted(() => ({ spendingRpc: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: spendingRpc }) }));
+vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn(), aiNetworkIdentifier: vi.fn(() => 'a'.repeat(64)) }));
 vi.mock("@/lib/server/evidence-citation", () => ({ issueEvidenceCitations: vi.fn(() => [{ label: "Test passage", href: "/evidence#fixture" }]) }));
 import { captureServerAnalyticsEvent } from '@/lib/server/analytics';
 import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
@@ -78,7 +80,7 @@ vi.mock('@google/genai', () => ({
 
 async function finishLatestStream() {
     const options = (streamText as any).mock.calls.at(-1)?.[0];
-    await options?.onFinish?.({});
+    await options?.onFinish?.({ usage: { inputTokens: 100, outputTokens: 50 } });
 }
 
 describe('Chat API', () => {
@@ -122,6 +124,9 @@ describe('Chat API', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        spendingRpc.mockImplementation((name, args) => ({ abortSignal: async () => ({ data: name === "reserve_ai_spend"
+            ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd }
+            : { recorded: true }, error: null }) }));
         vi.mocked(assertActiveChatSession).mockReset();
         vi.mocked(assertActiveChatSession).mockResolvedValue(undefined);
         vi.mocked(assertActivePersonalRetrievalSession).mockReset();
@@ -189,6 +194,14 @@ describe('Chat API', () => {
         expect((await response.json()).error.code).toBe(code);
         expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
         expect(admitAiUsage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it("blocks query embedding before provider work when the shared budget is exhausted", async () => {
+        spendingRpc.mockReturnValue({ abortSignal: async () => ({ data: { allowed: false, reason: "global_budget", retryAfterMs: 1000 }, error: null }) });
+        const response = await POST(new NextRequest("http://localhost/api/chat", { method: "POST", body: JSON.stringify({ messages: [{ role: "user", content: "What do my notes say about discipline?" }] }) }));
+        expect(response.status).toBe(429);
+        expect(embedContentMock).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
     });
 

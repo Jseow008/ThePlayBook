@@ -1,3 +1,4 @@
+import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
@@ -79,6 +80,10 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 }
 
 export async function POST(req: NextRequest) {
+    return withAiSpendingScope(req, "ask-library", () => handlePost(req));
+}
+
+async function handlePost(req: NextRequest) {
     const requestId = getRequestId();
 
     try {
@@ -92,6 +97,8 @@ export async function POST(req: NextRequest) {
         if (authError || !user) {
             return apiError("UNAUTHORIZED", "Please log in to use Ask My Library", 401, requestId);
         }
+
+        markAiSpendingAuthenticated();
 
         // --- Rate Limiting ---
         const rl = await aiRateLimit(req, user.id);
@@ -277,11 +284,15 @@ export async function POST(req: NextRequest) {
             .eq("user_id", user.id)
             .order("last_interacted_at", { ascending: false });
         const embeddingPromise = intent !== "library_metadata" && hasGemini
-            ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { retryOptions: { attempts: 1 } } }).models.embedContent({
-                model: EMBEDDING_MODEL,
-                contents: questionContext.semanticQuestion,
-                config: { outputDimensionality: EMBEDDING_DIMENSIONS, abortSignal: retrievalSignal },
-            }).then(
+            ? (async () => {
+                await reserveAiProviderCall({ provider: "google", model: EMBEDDING_MODEL, maxOutputTokens: 0, signal: retrievalSignal });
+                retrievalSignal.throwIfAborted();
+                return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY!, httpOptions: { retryOptions: { attempts: 1 } } }).models.embedContent({
+                    model: EMBEDDING_MODEL,
+                    contents: questionContext.semanticQuestion,
+                    config: { outputDimensionality: EMBEDDING_DIMENSIONS, abortSignal: retrievalSignal },
+                });
+            })().then(
                 (response) => ({ response, error: null as unknown }),
                 (error: unknown) => ({ response: null, error }),
             )
@@ -303,6 +314,8 @@ export async function POST(req: NextRequest) {
         let retrievalStatus: "skipped" | "matched" | "no_match" | "not_initialized" = "skipped";
         if (intent !== "library_metadata" && hasGemini) {
             if (embeddingResult.error) {
+                const spendingFailure = aiSpendingFailureResponse(embeddingResult.error);
+                if (spendingFailure) return spendingFailure;
                 logApiError({ requestId, route: "/api/chat", message: "Gemini embedding API error", error: embeddingResult.error });
                 return apiError("RETRIEVAL_UNAVAILABLE", "Ask My Library retrieval is temporarily unavailable. Please retry.", 503, requestId);
             }
@@ -357,6 +370,8 @@ export async function POST(req: NextRequest) {
                     return retrievalTextResponse(text, "ui", issueEvidenceCitations({ userId: user.id, personal: selected.personal.items, sources: selected.sources, evidenceIds: selected.evidenceIds }));
                 }
             } catch (error) {
+                const spendingFailure = aiSpendingFailureResponse(error);
+                if (spendingFailure) return spendingFailure;
                 if (error instanceof PersonalEvidenceIndexNotReady) return apiError("RETRIEVAL_NOT_READY", error.message, 503, requestId);
                 logApiError({ requestId, route: "/api/chat", message: "Complete library evidence retrieval failed", error });
                 return apiError("RETRIEVAL_UNAVAILABLE", "Your library evidence could not be searched completely. Please retry or ask a more specific question.", 503, requestId);
@@ -374,13 +389,17 @@ export async function POST(req: NextRequest) {
         const systemPrompt = buildLibraryEvidencePrompt(metadataContext, retrievalContextForPrompt, intent);
 
         let aiModel;
+        let selectedProvider = "anthropic";
+        let selectedModel = getAnthropicModelName(intent);
 
         if (provider === "anthropic" && hasAnthropic) {
             const { anthropic } = await import("@ai-sdk/anthropic");
             aiModel = anthropic(getAnthropicModelName(intent));
         } else if (hasOpenAI) {
             const { openai } = await import("@ai-sdk/openai");
-            aiModel = openai(process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini");
+            selectedProvider = "openai";
+            selectedModel = process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
+            aiModel = openai(selectedModel);
         } else {
             const { anthropic } = await import("@ai-sdk/anthropic");
             aiModel = anthropic(getAnthropicModelName(intent));
@@ -391,14 +410,21 @@ export async function POST(req: NextRequest) {
             if (failure) return failure;
         }
         req.signal.throwIfAborted();
+        const reservation = await reserveAiProviderCall({
+            provider: selectedProvider, model: selectedModel,
+            maxOutputTokens: getOutputTokenCap(intent), signal: req.signal,
+        });
+        req.signal.throwIfAborted();
         const result = streamText({
+            maxRetries: 0,
             model: aiModel,
             system: systemPrompt,
             messages: [{ role: "user", content: questionContext.semanticQuestion }],
             abortSignal: req.signal,
             maxOutputTokens: getOutputTokenCap(intent),
             experimental_transform: smoothStream({ delayInMs: 6 }),
-            onFinish: async () => {
+            onFinish: async ({ usage }) => {
+                await reservation.record(usage);
                 if (messages.filter((message) => message.role === "user").length === 1) {
                     afterResponse(() => captureServerAnalyticsEvent({
                         event: "ai_chat_started",
@@ -422,6 +448,8 @@ export async function POST(req: NextRequest) {
             },
         });
     } catch (error: unknown) {
+        const spendingFailure = aiSpendingFailureResponse(error);
+        if (spendingFailure) return spendingFailure;
         logApiError({
             requestId,
             route: "/api/chat",

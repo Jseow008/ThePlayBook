@@ -1,4 +1,7 @@
-vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn() }));
+import { AiSpendingError } from "@/lib/server/ai-spending";
+const { spendingRpc } = vi.hoisted(() => ({ spendingRpc: vi.fn() }));
+vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: () => ({ rpc: spendingRpc }) }));
+vi.mock('@/lib/server/ai-rate-limit', () => ({ aiRateLimit: vi.fn(), aiNetworkIdentifier: vi.fn(() => 'a'.repeat(64)) }));
 import { selectedPersonalEvidence } from '../helpers/selected-personal-evidence';
 import { retrievePersonalEvidence } from '@/lib/server/personal-retrieval';
 import { POST } from "@/app/api/chat/notes/route";
@@ -47,7 +50,7 @@ vi.mock("@ai-sdk/anthropic", () => ({
 
 async function finishLatestStream() {
     const options = (streamText as any).mock.calls.at(-1)?.[0];
-    await options?.onFinish?.({});
+    await options?.onFinish?.({ usage: { inputTokens: 100, outputTokens: 50 } });
 }
 
 describe("Notes chat API", () => {
@@ -71,6 +74,9 @@ describe("Notes chat API", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        spendingRpc.mockImplementation((name, args) => ({ abortSignal: async () => ({ data: name === "reserve_ai_spend"
+            ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd }
+            : { recorded: true }, error: null }) }));
         vi.mocked(retrievePersonalEvidence).mockReset();
         sessionStatusQuery.abortSignal.mockReset().mockResolvedValue({ data: readySessionStatus, error: null });
         vi.mocked(retrievePersonalEvidence).mockResolvedValue({
@@ -115,6 +121,14 @@ describe("Notes chat API", () => {
         expect((await response.json()).error.code).toBe(code);
         expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
         expect(admitAiUsage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it("preserves a budget failure from nested retrieval rather than reporting no matches", async () => {
+        vi.mocked(retrievePersonalEvidence).mockRejectedValueOnce(new AiSpendingError("global_budget", 1000));
+        const response = await POST(new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: JSON.stringify({ messages: [{ role: "user", content: "What do my notes say?" }], scope: { version: 1, itemType: "all" } }) }));
+        expect(response.status).toBe(429);
+        expect((await response.json()).error.code).toBe("AI_BUDGET_EXCEEDED");
         expect(streamText).not.toHaveBeenCalled();
     });
 
@@ -443,6 +457,9 @@ describe('Notes retrieval delivery boundary', () => {
     const request = () => new NextRequest('http://localhost/api/chat/notes', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'An earlier question' }, { role: 'assistant', content: 'Obsolete private answer' }, { role: 'user', content: 'Quote my reflection verbatim' }], scope }) });
     beforeEach(() => {
         vi.clearAllMocks();
+        spendingRpc.mockImplementation((name, args) => ({ abortSignal: async () => ({ data: name === "reserve_ai_spend"
+            ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd }
+            : { recorded: true }, error: null }) }));
         process.env.ANTHROPIC_API_KEY = 'test-key'; process.env.GEMINI_API_KEY = 'test-key';
         vi.mocked(createClient).mockResolvedValue({
             auth: { getUser: async () => ({ data: { user: { id: 'ordinary-a' } }, error: null }) },
