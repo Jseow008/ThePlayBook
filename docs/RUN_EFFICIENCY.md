@@ -39,3 +39,7 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
 
 - **Serial CI from strict branch freshness:** separately merging related release PRs made the next branch out of date. Choose the release packaging before starting final CI; combine already-reviewed changes when they share one verified candidate, compare the final application tree, and retain every required gate. Check improvement by counting full CI runs per release.
 - **Hosted smoke setup:** local HTTP redirects and missing platform IP headers caused setup failures despite a successful hosted build. Preflight the fixture schema, rate limiter, auth origin, and forwarded-client headers before the smoke suite; use established fixtures. Count setup retries separately from product failures.
+
+## Release comparison lesson — 27 September 2026
+
+- **Verification-harness false alarms:** the #20 rehearsal compared raw serialized records from two database clients. JSON property order, historical CLI statement packaging, and generator formatting produced mismatches despite matching live schema definitions. Prefer the repository's field-based schema comparison. Inspect a focused diff before rerunning remote reads; reuse captured artifacts while inputs are unchanged. Preserve quoted SQL values and procedural statement delimiters when reviewing formatting differences, and keep application type overrides explicit. Measure improvement by fewer comparison retries, without accepting unexplained schema or permission changes.

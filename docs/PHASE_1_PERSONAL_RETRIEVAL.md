@@ -686,50 +686,76 @@ retains its individual gates in the 32-finding register.
 
 ### Finding #20 implementation checkpoint — 27 September 2026
 
-Scope: authenticated quota admission only, across Ask My Library, Ask These Notes,
-and signed-in Author Chat. #21 identity/burst consistency and #22 global/guest
-budgets remain separate. No retrieval prompts, models, ranking, citations, or UI
-changed. One implementing agent; no new provider evaluation calls.
+PR [#166](https://github.com/Jseow008/ThePlayBook/pull/166) merged as
+`00c0471ed24837322291d7b7cfb20c57ae94e851`, from reviewed head
+`91392cb5435a3e7a21f83833fd8e231de098c85b`, at 06:03:30 UTC.
+Worktree: `/Users/j/.codex/worktrees/ai-quota-admission/Lifebook`; implementation
+branch: `codex/ai-quota-admission`, based on freshly fetched `24d735e0`.
 
-Worktree: `/Users/j/.codex/worktrees/ai-quota-admission/Lifebook`.
-Branch: `codex/ai-quota-admission`, based on freshly fetched `24d735e0`.
-Candidate migration: `20260927053554_atomic_ai_quota_admission.sql`.
-The commit containing this checkpoint identifies the implementation candidate.
+Scope: authenticated quota admission across Ask My Library, Ask These Notes, and
+Author Chat. A service-role-only, security-invoker RPC serializes each account's
+UTC day/week/month count and usage insertion. Existing inserts take the same lock
+for rollout compatibility. Requests admit once before their first provider phase;
+stream completion no longer controls accounting. Defaults remain 20/day, 100/week,
+and 300/month, with validated server-side overrides and the existing 429 response.
 
-Implementation replaces check-then-record with a service-role-only, security-invoker
-RPC. A transaction-scoped account lock protects the shared UTC day/week/month count
-and insertion. Existing usage inserts acquire the same lock for additive rollout.
-Each request admits once before its first provider phase; completion callbacks no
-longer control accounting. Exhaustion preserves 429/Retry-After. Database failures,
-malformed acknowledgements, and cancellation prevent provider dispatch. Limits
-remain 20/day, 100/week, 300/month with validated server-side overrides.
+The quota counts dispatch attempts. Admitted failures/cancellations retain their
+unit; a lost acknowledgement or crash between commit and dispatch can conservatively
+consume a unit without a provider call. An ambiguous admission fails closed without
+automatic retry. This is not provider billing. Fixed clarifications/stored answers
+that bypass providers also bypass admission. See OPS 3.6 for accounting and rollback.
+#21 identity/burst consistency and #22 global/guest budgets remain separate.
+Retrieval prompts, models, ranking, citations, and UI are unchanged.
 
-Accounting assumption presented to the user: count dispatch attempts, including
-subsequent failures/cancellation. No pre-dispatch reservation/lease system was added.
-The commit-to-dispatch gap is conservatively charged even if the database response
-is lost or the process stops; this is an admission budget, not provider billing.
-Explicit feedback choosing successful-response-only accounting would require a
-new lifecycle design before release. See OPS 3.6 for precise semantics and rollback.
+Evidence:
+- Local: 87 focused tests, 1,469 full-suite tests (246 declared skips), 12 separate
+  database tests, all six SQL security gates, lint, typecheck, and production build.
+- Exact-head CI: 1,469 unit tests; 12 quota DB tests; 31 snapshot DB tests; 173 browser
+  tests (113 declared skips). Security, catalog evidence, PR scope, and Vercel passed.
+- Hosted candidate: full 109-migration replay, guarded reset, clean dry-run, six SQL
+  security gates, DB-002 preservation proof, 12 quota runtime tests, and seven app
+  smoke checks. Production-adapter/Data API concurrency admits exactly one final
+  unit. All three authenticated app routes return 429/Retry-After when exhausted,
+  without additional usage or provider dispatch.
+- Reviewed schema delta: two functions, one service-only function ACL, and one
+  insert trigger; no removals. Generated API types add only the matching RPC,
+  preserving existing app aliases and nullable email-RPC overrides.
 
-Completed local evidence:
-- 87 focused route/adapter tests; 1,469 full-suite tests passed (246 declared skips,
-  including database fixtures that are run separately).
-- All 12 new database tests passed on the existing disposable local stack, including
-  real Data API → production adapter, 12-way mixed-feature last-unit contention,
-  weekly/monthly contention, account isolation, legacy insert visibility, UTC windows,
-  role denial, invalid inputs, stale isolation rejection, and rollback recovery.
-- All six SQL security gates passed on that stack. Typecheck, lint, production build
-  with placeholder public configuration, and diff validation passed.
-- The generated new RPC signature matches the checked-in type. This reused local
-  stack has unrelated older catalog schema, so its whole-schema/type output is not
-  claimed as clean full-replay evidence. Fresh CI and hosted replay remain required.
+Production received only `20260927053554_atomic_ai_quota_admission.sql`. All 109
+migration versions are verified; old recorded SQL is unchanged and the new recorded
+SQL matches the candidate. Post-apply parsed schema fingerprints match in every
+category; six SQL security gates and the final dry-run pass. Backup completed at
+`2026-09-26T23:45:27.973Z`. Existing advisors remain: intentional catalog-search
+warnings, private RLS informational findings, disabled leaked-password protection,
+unused-index information, and Auth connection-allocation information.
 
-Release pending: open the scoped PR, inspect its GitHub file list, and require its
-exact-commit checks. Do not enable auto-merge before the database release gate.
-Supabase quoted $10/month for a new disposable project in the existing Netflux
-organization; a fresh cost confirmation was requested and is still pending.
-No hosted project was created and no production migration/deployment occurred.
-After approval, rehearse the complete candidate using OPS 2.2, review the exact
-production dry-run, deploy, let old 60-second requests drain, and verify admission.
-Delete the temporary project and private artifacts afterward. Do not rerun model
-benchmarks or reset the unrelated existing local stack.
+The user approved the temporary project's quoted $10/month rate. Candidate
+`fcstnortxhgddgadaqat` was deleted and its absence confirmed. Its isolated app server
+was stopped and candidate credentials removed. One implementing agent; no new model
+or provider evaluation calls. Verification-harness corrections concerned historical
+SQL comment/statement packaging, old procedural formatting, generated type formatting,
+and JSON property order. No production implementation rewrite was needed; quoted SQL
+values and procedural delimiters were preserved during review.
+
+Production is verified live at `00c0471ed24837322291d7b7cfb20c57ae94e851`, Vercel
+deployment `dpl_6aNq77oXdCJr6u2VtiLx6tgh1cjG`, on `www.netflux.blog`. After a
+60-second drain window, a temporary ordinary account received the expected
+429/Retry-After from all three chat routes. Denied requests did not add usage;
+anonymous admission-RPC access was rejected; public health returned `ok`. The
+synthetic session was revoked, the account deleted, and its usage cleanup verified.
+No existing user data was modified.
+
+Merged-main CI attempt 1 failed five mobile `/browse` navigations. All five traces
+showed the same unfinished optimized-logo request while page/JS responses completed.
+The image/configuration was unchanged by #166 and production served both PNG and
+browser-negotiated WebP successfully. One fresh-runner retry passed: 175 browser
+tests, 113 declared skips, no reported flaky tests. No tests, deadlines, or application
+code were changed to obtain that result. The failed evidence was retained in the
+GitHub run, rather than treating the failure as a quota regression.
+
+Finding #20 is delivered for authenticated account quotas. This closeout is
+documentation only: do not reapply the migration, recreate the deleted candidate,
+or rerun unchanged model benchmarks. Private release artifacts and credentials are
+removed after closeout preparation. Next bounded workstream is #21's consistent
+trusted identity and burst-rate enforcement; #22 global/guest budgets remains
+separately open.
