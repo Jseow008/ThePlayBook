@@ -82,6 +82,8 @@ BEGIN
  RETURN NEW;
 END; $$;
 REVOKE ALL ON FUNCTION private.charge_account_write() FROM PUBLIC,anon,authenticated,service_role;
+-- AFTER STATEMENT keeps row-lock -> budget-lock order for mixed CRUD and
+-- still rolls back the entire deletion if admission is refused.
 CREATE FUNCTION private.guard_account_delete()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $$
 BEGIN
@@ -92,9 +94,9 @@ REVOKE ALL ON FUNCTION private.guard_account_delete() FROM PUBLIC,anon,authentic
 
 CREATE TRIGGER guard_feedback_write BEFORE INSERT OR UPDATE ON public.content_feedback FOR EACH ROW EXECUTE FUNCTION private.guard_account_write();
 CREATE TRIGGER charge_feedback_write AFTER INSERT OR UPDATE ON public.content_feedback FOR EACH ROW EXECUTE FUNCTION private.charge_account_write();
-CREATE TRIGGER guard_feedback_delete BEFORE DELETE ON public.content_feedback FOR EACH STATEMENT EXECUTE FUNCTION private.guard_account_delete();
+CREATE TRIGGER guard_feedback_delete AFTER DELETE ON public.content_feedback FOR EACH STATEMENT EXECUTE FUNCTION private.guard_account_delete();
 CREATE TRIGGER guard_preferences_write BEFORE INSERT OR UPDATE ON public.user_notification_preferences FOR EACH ROW EXECUTE FUNCTION private.guard_account_write();
 CREATE TRIGGER charge_preferences_write AFTER INSERT OR UPDATE ON public.user_notification_preferences FOR EACH ROW EXECUTE FUNCTION private.charge_account_write();
-CREATE TRIGGER guard_preferences_delete BEFORE DELETE ON public.user_notification_preferences FOR EACH STATEMENT EXECUTE FUNCTION private.guard_account_delete();
+CREATE TRIGGER guard_preferences_delete AFTER DELETE ON public.user_notification_preferences FOR EACH STATEMENT EXECUTE FUNCTION private.guard_account_delete();
 CREATE TRIGGER guard_onboarding_write BEFORE UPDATE OF onboarding_state ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.guard_account_write();
 CREATE TRIGGER charge_onboarding_write AFTER UPDATE OF onboarding_state ON public.profiles FOR EACH ROW EXECUTE FUNCTION private.charge_account_write();

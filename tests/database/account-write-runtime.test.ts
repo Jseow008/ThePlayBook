@@ -21,11 +21,15 @@ if(process.env.ACCOUNT_WRITE_RUNTIME_REQUIRED==='1' && !url) throw new Error('Di
  it('serializes the final feedback unit, counts upserts once and isolates accounts',async()=>{
   await feedback();await feedback();expect((await db.query("SELECT writes FROM private.account_write_budget WHERE user_id=$1 AND collection='content_feedback'",[a])).rows[0].writes).toBe(2);
   await db.query('UPDATE private.account_write_budget SET writes=19 WHERE user_id=$1',[a]);
-  const results=await Promise.allSettled(Array.from({length:6},()=>feedback()));expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(results.filter(r=>r.status==='rejected').every(r=>r.status==='rejected'&&r.reason.code==='PT429')).toBe(true);await feedback(b);
+  const results=await Promise.allSettled(Array.from({length:6},()=>feedback()));expect(results.filter(r=>r.status==='fulfilled')).toHaveLength(1);expect(results.filter(r=>r.status==='rejected').map(r=>r.status==='rejected'?r.reason.code:null)).toEqual(Array(5).fill('PT429'));await feedback(b);
  });
  it('allows mixed update/upsert writers without inverse-lock deadlocks',async()=>{
   await feedback();const results=await Promise.allSettled(Array.from({length:12},(_,i)=>i%2?feedback():asUser('UPDATE public.content_feedback SET is_positive=NOT is_positive WHERE user_id=$1',[a])));
-  expect(results.every(r=>r.status==='fulfilled')).toBe(true);expect((await db.query("SELECT writes FROM private.account_write_budget WHERE user_id=$1 AND collection='content_feedback'",[a])).rows[0].writes).toBe(13);
+  expect(results.map(r=>r.status==='fulfilled'?'ok':{code:r.reason.code,message:r.reason.message,where:r.reason.where})).toEqual(Array(12).fill('ok'));expect((await db.query("SELECT writes FROM private.account_write_budget WHERE user_id=$1 AND collection='content_feedback'",[a])).rows[0].writes).toBe(13);
+ });
+ it('serializes mixed delete/upsert and rolls back a refused deletion',async()=>{
+  await feedback();const results=await Promise.allSettled(Array.from({length:12},(_,i)=>i%2?feedback():asUser('DELETE FROM public.content_feedback WHERE user_id=$1',[a])));expect(results.map(r=>r.status==='fulfilled'?'ok':r.reason.code)).toEqual(Array(12).fill('ok'));
+  await feedback();await db.query("UPDATE private.account_write_budget SET writes=20 WHERE user_id=$1 AND collection='content_feedback'",[a]);await expect(asUser('DELETE FROM public.content_feedback WHERE user_id=$1',[a])).rejects.toMatchObject({code:'PT429'});expect((await db.query('SELECT count(*) FROM public.content_feedback WHERE user_id=$1',[a])).rows[0].count).toBe('1');
  });
  it('bounds raw feedback fields, preserves ownership and rolls back rejected budget charges',async()=>{
   await feedback(a,'x'.repeat(4000));await expect(feedback(a,'x'.repeat(4001))).rejects.toMatchObject({code:'22001'});
