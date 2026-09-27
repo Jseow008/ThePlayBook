@@ -1,3 +1,4 @@
+import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -10,8 +11,8 @@ type ContentFeedbackInsert = Database["public"]["Tables"]["content_feedback"]["I
 const PosFeedbackSchema = z.object({
     content_id: z.string().uuid("Invalid content ID"),
     is_positive: z.boolean(),
-    reason: z.string().optional().nullable(),
-    details: z.string().optional().nullable(),
+    reason: z.string().max(256).optional().nullable(),
+    details: z.string().max(4000).optional().nullable(),
 });
 
 const DelSchema = z.object({
@@ -53,6 +54,8 @@ export async function GET(request: NextRequest) {
             .maybeSingle();
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             throw error;
         }
 
@@ -121,6 +124,8 @@ export async function POST(request: NextRequest) {
         });
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             throw error;
         }
 
@@ -184,6 +189,8 @@ export async function DELETE(request: NextRequest) {
             });
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             throw error;
         }
 

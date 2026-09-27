@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
         return apiError("INTERNAL_ERROR", "Failed to verify session", 500, requestId);
     }
 
-    const routeRateLimitResponse = await enforceRateLimit(req, { limit: 30, windowMs: 60_000 });
+    const routeRateLimitResponse = await enforceRateLimit(req, { limit: 30, windowMs: 60_000, ...(user ? { identifier: user.id, key: "account-activity" } : {}) });
     if (routeRateLimitResponse) {
         return routeRateLimitResponse;
     }

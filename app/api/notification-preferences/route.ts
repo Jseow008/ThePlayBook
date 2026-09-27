@@ -1,3 +1,4 @@
+import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
@@ -38,6 +39,8 @@ export async function GET() {
             .maybeSingle();
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             throw error;
         }
 
@@ -96,6 +99,8 @@ export async function PUT(request: NextRequest) {
             .single();
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             throw error;
         }
 

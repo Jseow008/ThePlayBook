@@ -1,3 +1,4 @@
+import { DELETE as deleteHistory } from "@/app/api/activity/history/content/[id]/route";
 import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/activity/log/route";
@@ -63,6 +64,17 @@ describe("Activity Log API", () => {
     afterEach(() => {
         vi.useRealTimers();
         vi.unstubAllEnvs();
+    });
+
+    it("uses verified account admission despite supplied IP headers for logging and removal", async () => {
+        vi.mocked(rateLimit).mockResolvedValue({ success: false, retryAfterMs: 60_000 });
+        const req = new NextRequest("https://example.test/api/activity/log", { method: "POST", headers: { "x-forwarded-for": "1.2.3.4" }, body: JSON.stringify({ duration_seconds: 60 }) });
+        expect((await POST(req)).status).toBe(429);
+        expect(rateLimit).toHaveBeenLastCalledWith(req, expect.objectContaining({ identifier: "user-123", key: "account-activity" }));
+        expect(mockAdminRpc).not.toHaveBeenCalled();
+        const removal = new NextRequest("https://example.test/api/activity/history/content/00000000-0000-4000-8000-000000000001", { method: "DELETE", headers: { "x-forwarded-for": "4.3.2.1" } });
+        expect((await deleteHistory(removal, { params: Promise.resolve({ id: "00000000-0000-4000-8000-000000000001" }) })).status).toBe(429);
+        expect(rateLimit).toHaveBeenLastCalledWith(removal, expect.objectContaining({ identifier: "user-123", scope: "/api/activity/history/content" }));
     });
 
     it("requires authentication when anonymous content identifiers are absent", async () => {

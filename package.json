@@ -33,6 +33,7 @@
     "database:published-at": "node scripts/check-database-published-at.mjs",
     "database:book-identity": "node scripts/check-database-book-identity.mjs",
     "database:account-data-snapshots": "node scripts/check-database-account-data-snapshots.mjs",
+    "database:account-write-runtime": "ACCOUNT_WRITE_RUNTIME_REQUIRED=1 vitest run tests/database/account-write-runtime.test.ts",
     "database:capture-write-runtime": "CAPTURE_WRITE_RUNTIME_REQUIRED=1 vitest run tests/database/capture-write-runtime.test.ts",
     "database:ai-spend-runtime": "AI_SPEND_RUNTIME_REQUIRED=1 vitest run tests/database/ai-spend-runtime.test.ts",
     "database:ai-quota-runtime": "AI_QUOTA_RUNTIME_REQUIRED=1 vitest run tests/database/ai-quota-runtime.test.ts",

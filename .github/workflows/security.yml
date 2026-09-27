@@ -144,6 +144,7 @@ jobs:
           npm run database:book-identity
           npm run database:account-data-snapshots
           npm run database:capture-write-runtime
+          npm run database:account-write-runtime
           npm run database:ai-spend-runtime
           npm run database:ai-quota-runtime
           npm run database:account-data-snapshot-runtime

@@ -1134,3 +1134,47 @@ Closeout branch: `codex/library-write-release-record`, based on merged `e8e93d70
 The first two #23 corrections are released. The next bounded scope is the remaining
 feedback/votes/preferences/profile/activity/legacy-usage inventory; #23 as a whole
 remains open. Do not recreate the candidate or repeat unchanged database/model evidence.
+
+## Finding #23 remaining write boundaries — 27 September 2026
+
+Branch `codex/remaining-write-boundaries`, baseline `81d5cdba`. This delivery closes
+unused browser mutation grants on votes, reading activity and AI usage, retaining their
+existing bounded server writers and browser reads. Authenticated activity logs and
+history removal now key their 30/20-per-minute limits by verified account, with a
+shared removal route scope. Header changes cannot create another account allowance. Feedback and notification writes
+retain ownership RLS and gain 20 committed writes/account/60 seconds in private DB
+budgets. Upserts count once; deletes count per statement. Feedback reason/details are
+bounded to 256/4,000 characters; notification tokens to 256 characters. Onboarding
+updates share a 30/minute budget and validate at most 32 structured entries/32 KiB.
+The RPC's existing tour/version bounds are retained; the historical replay's missing
+single-column onboarding grant is explicitly restored without profile privilege expansion.
+
+Reader settings use a new authenticated server route: 30/account/minute, a streamed
+2 KiB body ceiling, strict enum/time validation and expected-account match before a
+single-column server update. Browser reader/role/internal-flag grants stay denied.
+Local settings and guest imports survive failures; per-account writes serialize and
+queued writes/stale reads are rejected after account changes. No layout changes.
+
+Evidence so far: 1,562 unit tests passed with 275 declared skips; lint/typecheck pass.
+The new eight-case disposable runtime suite and existing 12 AI-quota cases pass,
+including actual Auth/Data API refusal, concurrent admission, mixed update/upsert,
+window renewal, field bounds, owner isolation, private helper denial, trusted vote
+counts/activity/AI admission, and account deletion cleanup. Six local security gates
+and the adapted RLS matrix pass. The legacy quota fixture now uses a trusted insertion;
+a separate test proves browser insert/update/delete privileges remain denied.
+
+One bounded agent implemented/tested reader persistence, then reviewed only the migration
+and runtime fixture. Its two findings (token size and unnecessary BEFORE advisory lock)
+were fixed and covered. Setup failures were harness-only: explicit local container/port
+and disabled TLS for the local-only connection. No hosted/production TLS weakening.
+
+User authorized a temporary project in the existing organization at the quoted $10/month.
+Candidate `rwsppmfneczfprmhbtxh`; production `xmuqsgfxuaaophxnwure`. Candidate-only workdir
+`/private/tmp/netflux-remaining23-hosted`; local disposable `NetfluxRemaining23` at
+`/private/tmp/netflux-remaining23-db`. Safe evidence is in
+`/private/tmp/netflux-remaining23-evidence`. Migration candidate:
+`20260927114833_bound_remaining_account_writes.sql`. No production action yet.
+Next: hosted replay/reset/schema/types/security/runtime/application proof and exact-head
+CI; review the one-migration production dry-run, release under existing authorization,
+then production smoke, delete candidate and reconcile status. #23 remains open until
+this release evidence is complete. Reuse unchanged retrieval/model evidence.
