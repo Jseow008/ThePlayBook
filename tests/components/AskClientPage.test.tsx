@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { AskClientPage } from "@/app/(public)/ask/client-page";
 import { useChat } from "@ai-sdk/react";
 import { vi } from "vitest";
@@ -107,6 +107,26 @@ describe("AskClientPage", () => {
             status: "ready",
             error: null,
         });
+    });
+
+    it("keeps the failed question retryable without presenting its partial answer as complete", async () => {
+        const regenerate = vi.fn();
+        const setMessages = vi.fn();
+        vi.mocked(useChat).mockReturnValue({
+            messages: [
+                { id: "question", role: "user", parts: [{ type: "text", text: "Keep my question" }] },
+                { id: "partial", role: "assistant", parts: [{ type: "text", text: "Unfinished claim" }] },
+            ],
+            sendMessage: vi.fn(), setMessages, regenerate, status: "error", error: new Error("Disconnected"),
+        } as unknown as ReturnType<typeof useChat>);
+        render(<AskClientPage />);
+        expect(screen.getByText("Keep my question")).toBeInTheDocument();
+        expect(screen.queryByText("Unfinished claim")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Which source says this?" })).not.toBeInTheDocument();
+        for (const button of screen.getAllByRole("button", { name: "Export chat with QR code" })) expect(button).toBeDisabled();
+        fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+        await waitFor(() => { expect(regenerate).toHaveBeenCalledWith(); });
+        expect(setMessages).toHaveBeenCalledWith([expect.objectContaining({ id: "question" })]);
     });
 
     it("renders the empty state and starter prompts", () => {

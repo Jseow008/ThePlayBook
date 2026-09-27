@@ -1086,3 +1086,22 @@ route/AI admission and privileged maintenance controls remain their authoritativ
 
 Authenticated activity logging admits 30/account/minute; history removal admits
 20/account/minute shared across content IDs. Anonymous signed-visitor controls remain.
+
+### 5.4.4 Interactive chat failure handling (#24)
+
+The library, Notes and Author Chat routes have a 50-second application deadline,
+leaving response time inside the platform's 60-second limit. Cancellation reaches
+retrieval/database/provider work. A preparation timeout returns `CHAT_TIMEOUT`/504;
+client cancellation returns 499 when a response is still possible. Stream failures
+use a safe UI error rather than a successful partial answer. Author Chat now uses
+UI message streaming, matching the other clients. Already-open legacy Author clients
+receive a refresh-required 409 before provider work, avoiding protocol misinterpretation.
+
+Only a nonempty answer with an explicit successful finish is eligible for transcript
+persistence, export and follow-up context. Interrupted responses keep the question
+available for explicit retry. A retry is a new admitted attempt under existing rate,
+quota and monetary controls; there is no automatic retry or assumed refund. Pending,
+failed or changed evidence remains a retryable failure, distinct from a successful
+search that finds no relevant evidence. Models and relevance thresholds are unchanged.
+See [release evidence](PHASE_1_PERSONAL_RETRIEVAL.md#finding-24-graceful-chat-failures--27-september-2026)
+for current verification/deployment status.

@@ -66,6 +66,7 @@ it.each([
     expect(responses[0].body.scope).toEqual(firstScope.scope);
     await act(async () => { responses[0].controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'text-start',id:'answer'})+'\n\ndata: '+JSON.stringify({type:'text-delta',id:'answer',delta:'Earlier scope content'})+'\n\n')); });
     await screen.findByText('Earlier scope content');
+    expect(JSON.stringify(readNotesChatSession(ownerKey, firstScope.signature)?.messages)).not.toContain('Earlier scope content');
 
     rerender(<NotesAskPanel {...props} currentScope={secondScope} onClose={vi.fn()} />);
     fireEvent.click(screen.getAllByRole('button', { name: /use current filters/i })[0]);
@@ -76,6 +77,7 @@ it.each([
     expect(responses[1].body.scope).toEqual(secondScope.scope);
     await act(async () => {
         responses[1].controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'text-start',id:'answer'})+'\n\ndata: '+JSON.stringify({type:'text-delta',id:'answer',delta:'Only the current reflection scope.'})+'\n\n'));
+        responses[1].controller.enqueue(encoder.encode('data: '+JSON.stringify({type:'text-end',id:'answer'})+'\n\ndata: '+JSON.stringify({type:'finish',finishReason:'stop'})+'\n\n'));
         responses[1].controller.close();
     });
     await screen.findByText('Only the current reflection scope.');

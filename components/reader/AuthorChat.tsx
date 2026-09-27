@@ -2,8 +2,8 @@
 
 import { useRef, useEffect, useState, useMemo, type FormEvent } from "react";
 import { createPortal } from "react-dom";
-import { useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport } from "ai";
+import { useReliableChat as useChat } from "@/hooks/useReliableChat";
+import { DefaultChatTransport } from "ai";
 import { Bot, User, Send, Loader2, X, BotMessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
@@ -86,8 +86,9 @@ export function AuthorChat({
 }: AuthorChatProps) {
     const transport = useMemo(
         () =>
-            new TextStreamChatTransport({
+            new DefaultChatTransport({
                 api: "/api/chat/author",
+                headers: { "x-evidence-protocol": "ui" },
                 body: { contentId, authorName, contentTitle },
             }),
         [contentId, authorName, contentTitle]
@@ -116,6 +117,7 @@ export function AuthorChat({
         sendMessage,
         status,
         error,
+        regenerate,
     } = useChat({ transport });
     const displayErrorMessage = useMemo(() => getDisplayErrorMessage(error), [error]);
 
@@ -139,6 +141,11 @@ export function AuthorChat({
         if (textareaRef.current) textareaRef.current.style.height = "auto";
         scrollToBottom();
         await sendMessage({ text: trimmed });
+    };
+
+    const retry = async () => {
+        if (isStreaming) return;
+        await regenerate();
     };
 
     const onSubmit = async (e?: FormEvent) => {
@@ -224,7 +231,7 @@ export function AuthorChat({
                                 assistantLabel={authorName}
                                 scopeSummary={contentTitle}
                                 messages={displayMessages}
-                                disabled={isStreaming}
+                                disabled={isStreaming || Boolean(error)}
                                 variant="icon"
                             />
                         )}
@@ -283,7 +290,7 @@ export function AuthorChat({
                                 )}
 
                                 {displayMessages.map((m) => {
-                                    const showFollowUpActions = !isStreaming && m.role === "assistant" && m.id === latestAssistantMessageId;
+                                    const showFollowUpActions = !isStreaming && !error && m.role === "assistant" && m.id === latestAssistantMessageId;
 
                                     return (
                                         <div key={m.id} className="space-y-3">
@@ -368,6 +375,7 @@ export function AuthorChat({
                                             <p className="text-sm font-medium text-destructive">
                                                 {displayErrorMessage}
                                             </p>
+                                            <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={isStreaming}>Try again</button>
                                         </div>
                                     </div>
                                 )}
