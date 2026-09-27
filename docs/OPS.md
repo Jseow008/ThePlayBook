@@ -1067,3 +1067,18 @@ Released on 27 September 2026 in [PR #174](https://github.com/Jseow008/ThePlayBo
 Do not reset usage to bypass a refusal. Adjusting capture limits requires a reviewed
 migration and updated concurrency fixtures. These controls do not close #23's remaining
 feedback, votes, profile/preference, activity and legacy AI-usage write inventory.
+
+### 5.4.3 Remaining account-write controls (#23)
+
+Candidate implementation; deployment evidence is in the [checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-remaining-write-boundaries--27-september-2026).
+Feedback and notification preferences admit 20 committed writes/account/60 seconds;
+onboarding admits 30. Windows start with the first committed write, upserts count once,
+deletes consume one unit per statement, and transaction rollback rolls back admission.
+Private counters have at most three rows/account and cascade on Auth deletion.
+Feedback reason/details: 256/4,000 characters. Notification token: 256 characters.
+Onboarding: at most 32 entries and 32 KiB serialized JSON, with constrained keys,
+versions, statuses and timestamp strings. Existing limits in the onboarding RPC remain.
+Reader settings use authenticated server admission (30 attempts/account/minute), strict
+four-setting/ISO-time validation and a 2 KiB body bound; failures retain local settings.
+Votes, activity and AI usage no longer accept browser table mutations. Existing server
+route/AI admission and privileged maintenance controls remain their authoritative paths.

@@ -71,14 +71,14 @@ database("atomic AI admission on disposable PostgreSQL", () => {
         expect(results.filter((r) => !r.allowed).every((r) => r.blockedWindow === window)).toBe(true);
         expect(await used()).toBe(5);
     });
-    it("keeps accounts independent and counts a legacy insertion committed while admission waits", async () => {
+    it("keeps accounts independent and counts a trusted insertion committed while admission waits", async () => {
         await seed(19);
         const legacy = await db.connect();
         let waiting: ReturnType<typeof admit> | undefined;
         try {
             await legacy.query("BEGIN");
-            await legacy.query("SET LOCAL ROLE authenticated");
-            await legacy.query("SELECT set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: account, role: "authenticated" })]);
+            await legacy.query("SET LOCAL ROLE service_role");
+            await legacy.query("SELECT set_config('request.jwt.claims', $1, true)", [JSON.stringify({ sub: account, role: "service_role" })]);
             await legacy.query("INSERT INTO public.ai_message_usage(user_id,feature) VALUES ($1,'author-chat')", [account]);
             waiting = admit();
             expect((await admit(other)).allowed).toBe(true);

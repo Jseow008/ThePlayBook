@@ -416,10 +416,9 @@ SELECT pg_temp.expect_insufficient_privilege(
     $$INSERT INTO public.content_request_votes (user_id, request_id) VALUES ('00000000-0000-4000-8000-000000000102', '00000000-0000-4000-8000-000000000252')$$,
     'owner cannot vote as another user or on a hidden request'
 );
-SELECT pg_temp.assert_affected(
+SELECT pg_temp.expect_insufficient_privilege(
     $$INSERT INTO public.content_request_votes (user_id, request_id) VALUES ('00000000-0000-4000-8000-000000000101', '00000000-0000-4000-8000-000000000251')$$,
-    1,
-    'owner can vote on a visible request'
+    'owner must use the bounded server vote route'
 );
 SELECT pg_temp.expect_insufficient_privilege(
     $$INSERT INTO public.homepage_section (title, filter_type, filter_value, order_index) VALUES ('DB-103 Non-admin Insert', 'featured', 'true', 1000)$$,

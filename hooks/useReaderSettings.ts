@@ -65,6 +65,9 @@ let readerSettingsAuthSubscription: AuthSubscription | null = null;
 let readerSettingsConsumerCount = 0;
 let suppressStorageWrites = false;
 let currentReaderSettingsUserId: string | null | undefined = undefined;
+let scopeRevision = 0;
+let localEditRevision = 0;
+const pendingCloudWrites = new Map<string, Promise<boolean>>();
 
 function isReaderSettingsPayload(value: unknown): value is Partial<ReaderSettingsPayload> {
     if (!value || typeof value !== "object") return false;
@@ -257,19 +260,28 @@ function writePersistedReaderSettings(scope: StorageScope, payload: ReaderSettin
     );
 }
 
-async function pushToCloud(userId: string, settings: ReaderSettingsPayload) {
-    try {
-        const supabase = createClient();
-        const { error } = await supabase
-            .from("profiles")
-            // @ts-expect-error - generated profile types lag the schema additions
-            .update({ reader_settings: settings })
-            .eq("id", userId);
+function pushToCloud(userId: string, settings: ReaderSettingsPayload): Promise<boolean> {
+    const revision = scopeRevision;
+    const previous = pendingCloudWrites.get(userId) ?? Promise.resolve(true);
+    const pending = previous.then(() => {
+        if (revision !== scopeRevision || currentReaderSettingsUserId !== userId) return false;
+        return sendReaderSettings(userId, settings);
+    });
+    pendingCloudWrites.set(userId, pending);
+    void pending.then(() => {
+        if (pendingCloudWrites.get(userId) === pending) pendingCloudWrites.delete(userId);
+    });
+    return pending;
+}
 
-        if (error) {
-            console.error("Failed to push reader settings to cloud:", error);
-            return false;
-        }
+async function sendReaderSettings(userId: string, settings: ReaderSettingsPayload) {
+    try {
+        const response = await fetch("/api/reader-settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ expectedAccountId: userId, settings }),
+        });
+        if (!response.ok) return false;
 
         return true;
     } catch (error) {
@@ -283,32 +295,39 @@ const useReaderSettingsStore = create<ReaderSettingsState>()(
         (set, get) => ({
             ...DEFAULT_READER_SETTINGS,
             setFontSize: (size) => {
-                const nextState = normalizeReaderSettingsPayload({ ...get(), fontSize: size });
+                localEditRevision += 1;
+                const nextState = normalizeReaderSettingsPayload({ ...get(), fontSize: size, updatedAt: new Date().toISOString() });
                 set(nextState);
                 void pushToCloudForCurrentUser(nextState);
             },
             setFontFamily: (family) => {
-                const nextState = normalizeReaderSettingsPayload({ ...get(), fontFamily: family });
+                localEditRevision += 1;
+                const nextState = normalizeReaderSettingsPayload({ ...get(), fontFamily: family, updatedAt: new Date().toISOString() });
                 set(nextState);
                 void pushToCloudForCurrentUser(nextState);
             },
             setReaderTheme: (theme) => {
-                const nextState = normalizeReaderSettingsPayload({ ...get(), readerTheme: theme });
+                localEditRevision += 1;
+                const nextState = normalizeReaderSettingsPayload({ ...get(), readerTheme: theme, updatedAt: new Date().toISOString() });
                 set(nextState);
                 void pushToCloudForCurrentUser(nextState);
             },
             setLineHeight: (height) => {
-                const nextState = normalizeReaderSettingsPayload({ ...get(), lineHeight: height });
+                localEditRevision += 1;
+                const nextState = normalizeReaderSettingsPayload({ ...get(), lineHeight: height, updatedAt: new Date().toISOString() });
                 set(nextState);
                 void pushToCloudForCurrentUser(nextState);
             },
             syncFromCloud: async () => {
+                const revision = scopeRevision;
+                const editRevision = localEditRevision;
                 const supabase = createClient();
                 const { user, error } = resolveAuthUserResult(await supabase.auth.getUser());
+                if (revision !== scopeRevision) return;
                 if (error) {
                     console.error("Failed to resolve auth state for reader settings:", error);
                 }
-                await applyReaderSettingsScope(user);
+                await applyReaderSettingsScope(user, editRevision);
             },
         }),
         {
@@ -331,15 +350,9 @@ async function pushToCloudForCurrentUser(settings: ReaderSettingsPayload) {
         return pushToCloud(currentReaderSettingsUserId, settings);
     }
 
-    const supabase = createClient();
-    const { user, error } = resolveAuthUserResult(await supabase.auth.getUser());
-    if (error) {
-        console.error("Failed to resolve auth state for reader settings:", error);
-        return false;
-    }
-    currentReaderSettingsUserId = user?.id ?? null;
-    if (!user) return true;
-    return pushToCloud(user.id, settings);
+    // Bootstrap imports guest settings after resolving the account. Never attach
+    // settings captured in an unknown scope to a later auth response.
+    return false;
 }
 
 async function rehydrateReaderSettings(scope: StorageScope) {
@@ -366,7 +379,7 @@ function importGuestReaderSettings(scope: StorageScope) {
     return true;
 }
 
-async function syncReaderSettingsWithCloud(user: User, scope: StorageScope) {
+async function syncReaderSettingsWithCloud(user: User, scope: StorageScope, revision: number, editRevision: number) {
     try {
         const localSettings = readPersistedReaderSettings(scope);
         const supabase = createClient();
@@ -380,6 +393,8 @@ async function syncReaderSettingsWithCloud(user: User, scope: StorageScope) {
             console.error("Failed to sync reader settings from cloud:", error);
             return false;
         }
+
+        if (revision !== scopeRevision || editRevision !== localEditRevision) return false;
 
         const profile = (data ?? null) as Pick<ProfileRow, "reader_settings"> | null;
         const cloudSettings = isReaderSettingsPayload(profile?.reader_settings)
@@ -410,22 +425,25 @@ async function syncReaderSettingsWithCloud(user: User, scope: StorageScope) {
     }
 }
 
-async function applyReaderSettingsScope(user: User | null) {
+async function applyReaderSettingsScope(user: User | null, editRevision = localEditRevision) {
     if (typeof window === "undefined") return;
 
+    const revision = ++scopeRevision;
     currentReaderSettingsUserId = user?.id ?? null;
     migrateLegacyStorageToGuest(localStorage);
 
     const nextScope = getStorageScope(user?.id);
+    const guestSnapshot = localStorage.getItem(readerSettingsKey(GUEST_STORAGE_SCOPE));
     const importedGuestSettings = user ? importGuestReaderSettings(nextScope) : false;
 
     await rehydrateReaderSettings(nextScope);
 
-    if (!user) return;
+    if (!user || revision !== scopeRevision || editRevision !== localEditRevision) return;
 
-    const syncSucceeded = await syncReaderSettingsWithCloud(user, nextScope);
+    const syncSucceeded = await syncReaderSettingsWithCloud(user, nextScope, revision, editRevision);
 
-    if (importedGuestSettings && syncSucceeded) {
+    if (importedGuestSettings && syncSucceeded && revision === scopeRevision
+        && localStorage.getItem(readerSettingsKey(GUEST_STORAGE_SCOPE)) === guestSnapshot) {
         localStorage.removeItem(readerSettingsKey(GUEST_STORAGE_SCOPE));
     }
 }
@@ -439,6 +457,7 @@ function releaseReaderSettingsAuthSync() {
     readerSettingsAuthSubscription?.unsubscribe();
     readerSettingsAuthSubscription = null;
     authSyncInitialized = false;
+    scopeRevision += 1;
 }
 
 function ensureReaderSettingsAuthSync() {
@@ -451,13 +470,16 @@ function ensureReaderSettingsAuthSync() {
 
     const supabase = createClient();
 
+    const revision = scopeRevision;
+    const editRevision = localEditRevision;
     supabase.auth.getUser().then((result) => {
+        if (revision !== scopeRevision) return;
         const { user, error } = resolveAuthUserResult(result);
         if (error) {
             console.error("Failed to resolve auth state for reader settings:", error);
         }
         currentReaderSettingsUserId = user?.id ?? null;
-        void applyReaderSettingsScope(user);
+        void applyReaderSettingsScope(user, editRevision);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

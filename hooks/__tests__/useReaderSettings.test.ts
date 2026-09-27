@@ -21,6 +21,9 @@ let currentAuthError: { code?: string; message?: string; name?: string } | null 
 let currentCloudReaderSettings: Partial<ReaderSettingsPayload> | null = null;
 const profileUpdateMock = vi.fn();
 const unsubscribeMock = vi.fn();
+const getUserMock = vi.fn();
+const readSettingsMock = vi.fn();
+const fetchMock = vi.fn();
 
 vi.mock("@/lib/supabase/client", () => ({
     createClient: () => ({
@@ -35,25 +38,15 @@ vi.mock("@/lib/supabase/client", () => ({
                     },
                 };
             }),
-            getUser: vi.fn(() => Promise.resolve({ data: { user: currentAuthUser }, error: currentAuthError })),
+            getUser: getUserMock,
         },
         from: vi.fn(() => ({
             select: vi.fn(() => ({
                 eq: vi.fn(() => ({
-                    single: vi.fn(() => Promise.resolve({
-                        data: { reader_settings: currentCloudReaderSettings },
-                        error: null,
-                    })),
+                    single: readSettingsMock,
                 })),
             })),
-            update: vi.fn((payload: { reader_settings: Partial<ReaderSettingsPayload> }) => {
-                profileUpdateMock(payload.reader_settings);
-                currentCloudReaderSettings = payload.reader_settings;
 
-                return {
-                    eq: vi.fn(() => Promise.resolve({ error: null })),
-                };
-            }),
         })),
     }),
 }));
@@ -102,6 +95,15 @@ describe("useReaderSettings", () => {
         window.localStorage.clear();
         vi.clearAllMocks();
         vi.resetModules();
+        getUserMock.mockReset().mockImplementation(() => Promise.resolve({ data: { user: currentAuthUser }, error: currentAuthError }));
+        readSettingsMock.mockReset().mockImplementation(() => Promise.resolve({ data: { reader_settings: currentCloudReaderSettings }, error: null }));
+        fetchMock.mockReset().mockImplementation((_url: string, options: RequestInit) => {
+            const payload = JSON.parse(options.body as string);
+            profileUpdateMock(payload.settings);
+            currentCloudReaderSettings = payload.settings;
+            return Promise.resolve({ ok: true });
+        });
+        vi.stubGlobal("fetch", fetchMock);
     });
 
     it("preserves guest reader settings across bootstrap and remount", async () => {
@@ -399,4 +401,110 @@ describe("useReaderSettings", () => {
         });
         expect(typeof persisted.state?.updatedAt).toBe("string");
     });
+    it("keeps guest imports and account-local edits when the save fails", async () => {
+        const settings: ReaderSettingsPayload = { fontSize: "large", fontFamily: "sans", readerTheme: "sepia", lineHeight: "relaxed", updatedAt: "2026-03-13T12:00:00.000Z" };
+        localStorage.setItem(readerSettingsKey(GUEST_STORAGE_SCOPE), createPersistedSettings(settings));
+        currentAuthUser = { id: "user-a" };
+        fetchMock.mockResolvedValue({ ok: false });
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+        await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+        expect(localStorage.getItem(readerSettingsKey(GUEST_STORAGE_SCOPE))).toBe(createPersistedSettings(settings));
+        await act(async () => result.current.setReaderTheme("light"));
+        expect(JSON.parse(localStorage.getItem(readerSettingsKey(getStorageScope("user-a")))!).state.readerTheme).toBe("light");
+        expect(fetchMock).toHaveBeenLastCalledWith("/api/reader-settings", expect.objectContaining({
+            body: expect.stringContaining('"expectedAccountId":"user-a"'),
+        }));
+        expect(result.current.updatedAt).not.toBe(settings.updatedAt);
+    });
+
+    it("ignores a delayed account A read after switching to account B", async () => {
+        let finishRead!: (value: unknown) => void;
+        currentAuthUser = { id: "user-a" };
+        readSettingsMock.mockImplementationOnce(() => new Promise(resolve => { finishRead = resolve; }));
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+        await waitFor(() => expect(readSettingsMock).toHaveBeenCalledTimes(1));
+        currentAuthUser = { id: "user-b" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        await act(async () => { finishRead({ data: { reader_settings: { readerTheme: "sepia" } }, error: null }); });
+        expect(result.current.readerTheme).toBe("dark");
+        expect(localStorage.getItem(readerSettingsKey(getStorageScope("user-b")))).toBeNull();
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("ignores delayed cloud settings after a local edit", async () => {
+        let finishRead!: (value: unknown) => void;
+        currentAuthUser = { id: "user-a" };
+        readSettingsMock.mockImplementationOnce(() => new Promise(resolve => { finishRead = resolve; }));
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+        await waitFor(() => expect(readSettingsMock).toHaveBeenCalled());
+        act(() => result.current.setReaderTheme("light"));
+        await act(async () => { finishRead({ data: { reader_settings: { readerTheme: "sepia", updatedAt: "2099-01-01T00:00:00.000Z" } }, error: null }); });
+        expect(result.current.readerTheme).toBe("light");
+        expect(JSON.parse(localStorage.getItem(readerSettingsKey(getStorageScope("user-a")))!).state.readerTheme).toBe("light");
+    });
+
+    it("ignores stale bootstrap auth after an account-change event", async () => {
+        let finishAuth!: (value: unknown) => void;
+        getUserMock.mockImplementationOnce(() => new Promise(resolve => { finishAuth = resolve; }));
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+        currentAuthUser = { id: "user-b" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        act(() => result.current.setReaderTheme("light"));
+        await act(async () => { finishAuth({ data: { user: { id: "user-a" } }, error: null }); });
+        expect(result.current.readerTheme).toBe("light");
+        expect(localStorage.getItem(readerSettingsKey(getStorageScope("user-a")))).toBeNull();
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves a guest edit made while bootstrap auth is pending", async () => {
+        let finishAuth!: (value: unknown) => void;
+        getUserMock.mockImplementationOnce(() => new Promise(resolve => { finishAuth = resolve; }));
+        currentCloudReaderSettings = { readerTheme: "sepia", updatedAt: "2099-01-01T00:00:00.000Z" };
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+        act(() => result.current.setReaderTheme("light"));
+        await act(async () => { finishAuth({ data: { user: { id: "user-a" } }, error: null }); });
+        expect(result.current.readerTheme).toBe("light");
+        expect(JSON.parse(localStorage.getItem(readerSettingsKey(getStorageScope("user-a")))!).state.readerTheme).toBe("light");
+        expect(localStorage.getItem(readerSettingsKey(GUEST_STORAGE_SCOPE))).not.toBeNull();
+        expect(readSettingsMock).not.toHaveBeenCalled();
+    });
+
+    it("serializes same-account writes so an earlier request cannot finish after a newer save", async () => {
+        currentAuthUser = { id: "user-a" };
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+        await waitFor(() => expect(readSettingsMock).toHaveBeenCalled());
+        let finishFirst!: (value: unknown) => void;
+        fetchMock.mockImplementationOnce(() => new Promise(resolve => { finishFirst = resolve; }));
+        await act(async () => result.current.setReaderTheme("light"));
+        await act(async () => result.current.setReaderTheme("sepia"));
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        await act(async () => { finishFirst({ ok: true }); });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        expect(JSON.parse(fetchMock.mock.calls[1][1].body).settings.readerTheme).toBe("sepia");
+    });
+
+    it("discards queued account A writes after switching to B", async () => {
+        currentAuthUser = { id: "user-a" };
+        const useReaderSettings = await loadUseReaderSettings();
+        const { result } = renderHook(() => useReaderSettings());
+        await waitFor(() => expect(readSettingsMock).toHaveBeenCalled());
+        let finishFirst!: (value: unknown) => void;
+        fetchMock.mockImplementationOnce(() => new Promise(resolve => { finishFirst = resolve; }));
+        await act(async () => result.current.setReaderTheme("light"));
+        await act(async () => result.current.setReaderTheme("sepia"));
+        currentAuthUser = { id: "user-b" };
+        await act(async () => { authStateChangeHandler?.("SIGNED_IN", { user: currentAuthUser }); });
+        await act(async () => { finishFirst({ ok: true }); });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(fetchMock.mock.calls[0][1].body).expectedAccountId).toBe("user-a");
+        expect(result.current.readerTheme).toBe("dark");
+        expect(JSON.parse(localStorage.getItem(readerSettingsKey(getStorageScope("user-a")))!).state.readerTheme).toBe("sepia");
+    });
+
 });
