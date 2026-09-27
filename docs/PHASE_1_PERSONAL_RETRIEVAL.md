@@ -1326,8 +1326,9 @@ controls and reviewed the harness; it caught missing displayed-text, server prov
 cleanup and environment-isolation assertions. Codex token/billing attribution is
 unavailable. No claim of general retrieval accuracy follows from this single query.
 
-#26 acceptance is complete for the recorded fixture. Repository closeout/PR checks
-are the remaining action; update this paragraph with the PR once opened. The dedicated local
+#26 acceptance is complete for the recorded fixture. [PR #181](https://github.com/Jseow008/ThePlayBook/pull/181) records the proof;
+required GitHub checks and merge are the remaining repository closeout. Implementation
+commit: `04aa547a` (subsequent edits only update this checkpoint). The dedicated local
 Supabase stack was stopped without retaining a backup; private credentials and raw
 logs were deleted after evidence retention. Other local stacks were untouched. Broader #27–#32
 obligations remain separate; no extra benchmark or production replay is required
