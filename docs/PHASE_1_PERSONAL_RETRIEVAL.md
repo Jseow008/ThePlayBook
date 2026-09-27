@@ -1280,7 +1280,7 @@ stop` in the UI protocol. It used ordinary spending admission; no quota was rese
 No account, personal record or database schema was created/changed for this smoke.
 The deployment log scan showed the expected deliberately invalid 400 probe, with no
 repeat of the request private-field runtime failure. Sanitized results are retained in
-[the release artifact](evidence/graceful-chat-release-20260927.json); generated answer text is not retained.
+[the release artifact](evidence/graceful-chat-release-20260927.md); generated answer text is not retained.
 
 #24 is complete within the recorded interactive chat failure scope: deterministic
 fault/SDK tests establish timeout, cancellation, incomplete-answer exclusion and retry;

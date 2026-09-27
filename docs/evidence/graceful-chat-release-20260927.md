@@ -1,3 +1,8 @@
+# Graceful chat release evidence — 27 September 2026
+
+Sanitized HTTP checks for the corrected production release. No response text, credentials, or personal data are retained.
+
+```json
 {
   "checkedAt": "2026-09-27T14:52:13.841Z",
   "results": [
@@ -42,3 +47,4 @@
   "migrationApplied": false,
   "previousDeploymentRestoredDuringIncident": "9661e5fd477a8feeda08494a506857b82de7f18e"
 }
+```
