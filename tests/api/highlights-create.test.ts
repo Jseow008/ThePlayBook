@@ -166,4 +166,14 @@ describe('Create highlight API', () => {
         const res = await POST(req);
         expect(res.status).toBe(200);
     });
+    it('preserves database admission failures as retryable 429 responses', async () => {
+        insertBuilder.then.mockImplementation((resolve: any) => resolve({ data: null, error: { code: 'PT429' } }));
+        const response = await POST(new NextRequest('http://localhost/api/library/highlights', {
+            method: 'POST', body: JSON.stringify({ content_item_id: mockUser.id, highlighted_text: 'capture' }),
+        }));
+        expect(response.status).toBe(429);
+        expect(response.headers.get('Retry-After')).toBe('60');
+        expect(await response.json()).toMatchObject({ error: { code: 'RATE_LIMITED' } });
+    });
+
 });

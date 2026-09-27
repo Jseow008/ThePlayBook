@@ -1,3 +1,4 @@
+import { strictPublicRateLimit } from "@/lib/server/rate-limit";
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/account-data/user_library/mutation/route";
@@ -7,6 +8,11 @@ import { commitLibraryMutationForAccount } from "@/lib/server/account-data-snaps
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/server/account-data-snapshots", () => ({ commitLibraryMutationForAccount: vi.fn() }));
+
+vi.mock("@/lib/server/rate-limit", async (importOriginal) => ({
+    ...await importOriginal<typeof import("@/lib/server/rate-limit")>(),
+    strictPublicRateLimit: vi.fn(),
+}));
 
 describe("POST /api/account-data/user_library/mutation", () => {
     const getUser = vi.fn();
@@ -23,6 +29,7 @@ describe("POST /api/account-data/user_library/mutation", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.mocked(strictPublicRateLimit).mockResolvedValue({ success: true });
         getUser.mockResolvedValue({ data: { user: { id: "account-a" } } });
         (createClient as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({ auth: { getUser } });
         (commitLibraryMutationForAccount as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -116,6 +123,20 @@ describe("POST /api/account-data/user_library/mutation", () => {
         const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", { method: "POST", body: JSON.stringify(mutation) }));
         expect(response.status).toBe(status);
         expect(await response.json()).toMatchObject({ error: { code } });
+    });
+
+    it.each([
+        [{ success: false, retryAfterMs: 5000 }, 429],
+        [{ success: false, unavailable: true, retryAfterMs: 60000 }, 503],
+    ] as const)("blocks worker dispatch when admission fails", async (admission, status) => {
+        vi.mocked(strictPublicRateLimit).mockResolvedValueOnce(admission);
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", {
+            method: "POST", headers: { "x-forwarded-for": "forged" }, body: JSON.stringify(mutation),
+        }));
+        expect(response.status).toBe(status);
+        expect(response.headers.get("Retry-After")).toBe(String(admission.retryAfterMs / 1000));
+        expect(commitLibraryMutationForAccount).not.toHaveBeenCalled();
+        expect(strictPublicRateLimit).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ identifier: "account-a", limit: 120 }));
     });
 
 });

@@ -1036,3 +1036,34 @@ This is the operating cadence adopted on that date, not evidence that every dash
 - **Response:** investigate the largest tables, indexes, or files for capacity; pause unexpected uploads; investigate media delivery or abusive traffic for egress; and postpone destructive database work while backup availability is unresolved. Review Usage and the invoice before approving any paid add-on or Spend Cap change.
 - **Limits of this baseline:** it uses Supabase quota notifications and human review. It does not claim custom threshold alerts, continuous external monitoring, or automated metric collection. Those require a later least-privilege credential decision. PITR remains deliberately disabled.
 - **Pending dashboard verification:** confirm the Spend Cap state, billing-recipient monitoring, and billing-cycle end date in the authenticated Supabase dashboard before closing this part of DB-203.
+
+### 5.4.2 Personal-library write admission (#23)
+
+Implementation pending release; use the [checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-library-and-capture-admission--27-september-2026) for deployment status.
+
+- Library saves/progress: 120 attempts per account per minute, shared across devices;
+  verified account identity selects the existing Redis limiter. Limiter failure returns
+  503 without worker dispatch. Rate exhaustion returns 429 and Retry-After.
+- The serialized durable client waits for Retry-After and sends the identical frozen
+  mutation. At most three automatic retries; a sustained outage leaves the journal
+  pending for existing Settings recovery. Logout, reset and unmount cancel waiting.
+  Guest import retains all source records until their acknowledgement succeeds.
+- Captures: the database admits 30 highlight/note row inserts/updates and 12 reflection
+  row inserts/updates per account per 60-second window. Delete statements share the
+  corresponding budget and consume one unit, allowing bulk deletion. Upserts count
+  once. Windows begin with the first committed change; this is not a sliding-window
+  or failed-attempt quota. Rolled-back transactions roll back their budget changes.
+- Direct authenticated Data API calls receive the same DB admission as server routes.
+  Existing ownership RLS and API burst checks remain. DB PT429 maps to HTTP 429;
+  application routes add a conservative 60-second Retry-After.
+- New/changed highlight text is bounded at 2,000 database characters and notes at 4,000;
+  whitespace cannot evade the limit. Existing oversized legacy text can still be
+  deleted or have unrelated fields changed. New highlights are capped at 50 per item,
+  serialized with account admission; existing rows are not deleted to enforce a cap.
+- `private.capture_write_budget` holds at most two rows per account, denies browser and
+  service-role direct access, and cascades on Auth deletion. Trigger helpers are not
+  browser-callable. Privileged service/maintenance writes retain their own controls.
+
+Do not reset usage to bypass a refusal. Adjusting capture limits requires a reviewed
+migration and updated concurrency fixtures. These controls do not close #23's remaining
+feedback, votes, profile/preference, activity and legacy AI-usage write inventory.

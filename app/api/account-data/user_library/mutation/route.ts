@@ -4,6 +4,8 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { commitLibraryMutationForAccount } from "@/lib/server/account-data-snapshots";
 import { LibraryMutationConflictError, LibraryMutationReceiptError, LIBRARY_MUTATION_MAX_BYTES, type LibraryGuestImport } from "@/lib/user-library-mutation-contract";
 
+import { strictPublicRateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
+
 export const runtime = "nodejs";
 
 type MutationRequest = {
@@ -30,6 +32,16 @@ export async function POST(request: NextRequest) {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return apiError("UNAUTHORIZED", "Sign in to update your library.", 401, requestId);
+
+        const admission = await strictPublicRateLimit(request, {
+            limit: 120, windowMs: 60_000, identifier: user.id,
+            key: "library-write", routeLabel: "library-write",
+        });
+        if (!admission.success) return rateLimitFailureResponseWithTelemetry({
+            request, requestId, result: admission, route: "POST /api/account-data/user_library/mutation",
+            category: "public", userId: user.id, authState: "authenticated",
+            message: "Too many library changes. Please retry shortly.",
+        });
 
         let body: MutationRequest;
         try {

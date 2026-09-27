@@ -1,3 +1,4 @@
+import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
@@ -219,6 +220,8 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             if (
                 isHighlightOverlapConstraintError(error)
                 && segment_id
@@ -364,6 +367,8 @@ export async function GET(request: NextRequest) {
         });
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             logApiError({ requestId, route: "GET /api/library/highlights", message: "Error fetching highlights", error });
             return apiError("INTERNAL_ERROR", "Failed to fetch highlights.", 500, requestId);
         }
@@ -447,6 +452,8 @@ export async function DELETE(request: NextRequest) {
             .eq("user_id", user.id);
 
         if (deleteError) {
+            const admissionFailure = captureWriteFailure(deleteError);
+            if (admissionFailure) return admissionFailure;
             logApiError({ requestId, route: "DELETE /api/library/highlights", message: "Error deleting notes and highlights", error: deleteError, userId: user.id });
             return apiError("INTERNAL_ERROR", "Failed to delete notes and highlights.", 500, requestId);
         }

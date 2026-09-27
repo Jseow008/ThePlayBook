@@ -436,7 +436,9 @@ function useReadingProgressController(initialUser?: User | null) {
                 // Persist the final wire request before sending it. Lost responses
                 // must never cause a retry with a new base, timestamp or ID.
                 persistMutation(mutation);
-                const data = await commitUserLibraryMutation({ ...mutation.request, expectedAccountId: mutation.accountId }, controller.signal);
+                const data = await commitUserLibraryMutation({ ...mutation.request, expectedAccountId: mutation.accountId }, controller.signal, () => {
+                    if (isCurrent()) toast.info("Your changes are saved on this device. Sync will retry shortly.", { id: "library-sync-wait" });
+                });
                 if (!isCurrent() || mutation.needsAttention || localMutationsRef.current.get(mutation.id) !== mutation) return false;
                 acknowledgeMutation(mutationId, data);
                 return data.outcome !== "skipped";
