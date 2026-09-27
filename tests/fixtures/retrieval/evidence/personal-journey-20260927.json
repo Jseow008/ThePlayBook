@@ -1,0 +1,60 @@
+{
+  "outcome": "passed",
+  "failedStage": null,
+  "buildId": "Bw4Az3ikApOWmcDGmHp0k",
+  "recordedAt": "2026-09-27T15:33:09.481Z",
+  "stages": [
+    {
+      "name": "setup",
+      "elapsedMs": 152
+    },
+    {
+      "name": "first-session capture through browser",
+      "elapsedMs": 2381
+    },
+    {
+      "name": "real personal-evidence indexing",
+      "elapsedMs": 995
+    },
+    {
+      "name": "logout and later fresh session",
+      "elapsedMs": 1005
+    },
+    {
+      "name": "real retrieval and attributed extract",
+      "elapsedMs": 6605
+    },
+    {
+      "name": "validated citation opens exact passage",
+      "elapsedMs": 1012
+    },
+    {
+      "name": "settings export reconciles original capture",
+      "elapsedMs": 1637
+    }
+  ],
+  "authenticatedSessions": 2,
+  "mockedRetrieval": false,
+  "exportCollections": 11,
+  "fixtureCleanupVerified": true,
+  "serverCleanupVerified": true,
+  "applicationCommit": "da8d62c2472ae8c3164498ccf56a22f76747db24",
+  "environment": {
+    "application": "owned local production build (Webpack)",
+    "database": "dedicated disposable Supabase, full migration replay",
+    "browser": "Chromium desktop",
+    "providers": "real Gemini embeddings and Anthropic relevance selector",
+    "emailDelivery": "Supabase-generated real OTP substituted for mailbox delivery",
+    "spendingPolicy": "temporary local $5/day global, included $1/day guest; restored afterward",
+    "productionDataChanged": false
+  },
+  "verificationScripts": {
+    "scripts/verification/personal-journey.ts": "08e4a8b93877d15cc1c7ce34dee6d7adb41a4b13163f7c228591a223eb714bef",
+    "scripts/verification/run-personal-journey.mjs": "15870c658eaa64db0d741369717b45fff0832a1212b79c9d9a0166a2e5856f9d"
+  },
+  "supplementalChecks": [
+    "TypeScript passed",
+    "Focused ESLint passed",
+    "Dotenv refusal and stale-success invalidation preflight passed"
+  ]
+}

@@ -52,7 +52,7 @@ journey. Search/model evaluation was unchanged and not rerun.
 
 ## Deferred and separately open
 
-- Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7, #26 and #27 stay explicit in the register; broader synthesis and full editorial revision history remain deferred.
+- Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7 and #27 stay explicit in the register; broader synthesis and full editorial revision history remain deferred.
 - AI safeguards #20–#24 are shipped within their recorded scope. Remaining operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
 - The account-deletion/revision-trigger defect is repaired in production by `20260926150259_account_deletion_library_revision.sql` ([#161](https://github.com/Jseow008/ThePlayBook/pull/161)). Real hosted and production Auth deletion proofs pass; full durability acceptance remains separate. See [release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
 
@@ -62,7 +62,20 @@ The [inventory and correction plan](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-mut
 
 ## Latest verified release: graceful chat failures (#24)
 
-[#178](https://github.com/Jseow008/ThePlayBook/pull/178) added bounded deadlines and explicit incomplete-answer recovery. Its production request-adapter failure was rolled back; [#179](https://github.com/Jseow008/ThePlayBook/pull/179), `ca30f92f`, corrects the runtime request handling and passes required CI plus real preview HTTP probes. Corrected production deployment and live HTTP smoke passed on 27 September, including a real completed public-source chat response. #24 is complete within its recorded interactive failure scope. See the [release checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-24-graceful-chat-failures--27-september-2026). Next: #26's combined capture → later session → retrieve → evidence → export journey, reusing existing component-level proofs.
+[#178](https://github.com/Jseow008/ThePlayBook/pull/178) added bounded deadlines and explicit incomplete-answer recovery. Its production request-adapter failure was rolled back; [#179](https://github.com/Jseow008/ThePlayBook/pull/179), `ca30f92f`, corrects the runtime request handling and passes required CI plus real preview HTTP probes. Corrected production deployment and live HTTP smoke passed on 27 September, including a real completed public-source chat response. #24 is complete within its recorded interactive failure scope. See the [release checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-24-graceful-chat-failures--27-september-2026). The combined #26 proof is recorded below.
+
+## Combined journey proof (#26) — 27 September 2026
+
+The unchanged application at `da8d62c2` passed the complete ordinary-user journey
+in a local production build: bookmark/reflection capture, sign out and fresh OTP
+login, real indexing/retrieval, opening the exact cited passage, and Settings export
+reconciliation. Both captures appear exactly once; all 11 export collections were
+verified. The reusable runner fails on missing prerequisites or stages and verifies
+fixture/server cleanup. This closes the recorded #26 fixture; it is not a new
+production deployment, email-delivery test or broad retrieval-quality benchmark.
+[Evidence and run history](PHASE_1_PERSONAL_RETRIEVAL.md#26-combined-journey--verified-27-september-2026).
+Next acceptance gap: #27's remaining screen-reader coverage; capacity, analytics
+and operational readiness retain separate open entries in the register.
 
 ## Updating this page
 
