@@ -1082,3 +1082,6 @@ Reader settings use authenticated server admission (30 attempts/account/minute),
 four-setting/ISO-time validation and a 2 KiB body bound; failures retain local settings.
 Votes, activity and AI usage no longer accept browser table mutations. Existing server
 route/AI admission and privileged maintenance controls remain their authoritative paths.
+
+Authenticated activity logging admits 30/account/minute; history removal admits
+20/account/minute shared across content IDs. Anonymous signed-visitor controls remain.

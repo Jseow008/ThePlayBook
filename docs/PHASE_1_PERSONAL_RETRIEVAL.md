@@ -1139,7 +1139,9 @@ remains open. Do not recreate the candidate or repeat unchanged database/model e
 
 Branch `codex/remaining-write-boundaries`, baseline `81d5cdba`. This delivery closes
 unused browser mutation grants on votes, reading activity and AI usage, retaining their
-existing bounded server writers and browser reads. Feedback and notification writes
+existing bounded server writers and browser reads. Authenticated activity logs and
+history removal now key their 30/20-per-minute limits by verified account, with a
+shared removal route scope. Header changes cannot create another account allowance. Feedback and notification writes
 retain ownership RLS and gain 20 committed writes/account/60 seconds in private DB
 budgets. Upserts count once; deletes count per statement. Feedback reason/details are
 bounded to 256/4,000 characters; notification tokens to 256 characters. Onboarding
@@ -1154,7 +1156,7 @@ Local settings and guest imports survive failures; per-account writes serialize 
 queued writes/stale reads are rejected after account changes. No layout changes.
 
 Evidence so far: 1,562 unit tests passed with 275 declared skips; lint/typecheck pass.
-The new seven-case disposable runtime suite and existing 12 AI-quota cases pass,
+The new eight-case disposable runtime suite and existing 12 AI-quota cases pass,
 including actual Auth/Data API refusal, concurrent admission, mixed update/upsert,
 window renewal, field bounds, owner isolation, private helper denial, trusted vote
 counts/activity/AI admission, and account deletion cleanup. Six local security gates

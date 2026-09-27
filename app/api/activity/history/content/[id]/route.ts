@@ -76,7 +76,7 @@ export async function DELETE(
         return apiError("UNAUTHORIZED", "Unauthorized", 401, requestId);
     }
 
-    const rl = await rateLimit(req, { limit: 20, windowMs: 60_000 });
+    const rl = await rateLimit(req, { limit: 20, windowMs: 60_000, identifier: user.id, key: "account-history-removal", scope: "/api/activity/history/content" });
     if (!rl.success) {
         return NextResponse.json(
             { error: { code: "RATE_LIMITED", message: "Too many requests." } },
