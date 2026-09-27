@@ -762,8 +762,9 @@ separately open.
 
 ## Finding #21 implementation checkpoint — 27 September 2026
 
-Worktree: `/Users/j/.codex/worktrees/ai-trusted-rate-limits/Lifebook`; branch:
-`codex/ai-trusted-rate-limits`, from freshly fetched `a7421d29`.
+PR [#168](https://github.com/Jseow008/ThePlayBook/pull/168), reviewed head
+`d6752da6ccf43a874039246ee240b84970521986`, merged as
+`450fb8793cf341d953d2a9616bc97ac0d302d0af`.
 
 Implemented one AI identity/burst policy: account-only 10/minute per route,
 canonical trusted Vercel network identity, existing guest 3/10-minute protection,
@@ -771,19 +772,51 @@ and a separate shared network 60/minute abuse bucket. Missing trusted identity a
 Redis errors/timeouts fail closed. Author authentication failures are not silently
 converted into guest requests. No migration, provider/model, retrieval, or UI change.
 The generic limiter adds explicit shared scope and rejects timeout-success; existing
-non-AI identity selection is outside this focused change.
+non-AI identity selection is outside this focused change. OPS 3.7 records the policy,
+shared-network tradeoff, hosting assumption, and rollback.
 
-Development evidence: 118 focused tests passed before the three added Author Auth
-cases; the updated 21-test Author suite passes. Full local suite at that earlier
-point: 1,498 passed, 246 declared skips. Final typecheck and changed-file lint pass. The three added Author Auth cases
-also pass; hosted evidence and exact-head CI remain pending.
+Evidence:
+- PR CI: 1,501 unit tests passed (246 declared skips), 175 browser tests passed
+  (113 declared skips), lint/typecheck/build, Security Validation, catalog checks,
+  PR scope, and Vercel all passed. No failed CI attempt or rerun.
+- Hosted preview `dpl_DLSB2NLTuzYgV41maCFz2ybLAL1F` at the reviewed head:
+  63 requests in 40,737 ms; 36 expected `400 INVALID_JSON` and 27 expected
+  `429 RATE_LIMITED` outcomes. Forged forwarding headers did not reset guest or
+  account limits. A second account retained its separate allowance until the
+  shared network bucket blocked it on all three routes. Every denial had a
+  positive Retry-After. The committed verification script defines the assertions.
+- No provider calls or quota usage. Two disposable ordinary accounts were globally
+  revoked/deleted and usage cleanup verified. No existing account data changed.
+- DNS points `www.netflux.blog` directly to Vercel; the project exposes system envs.
+  Vercel's injected-header contract is linked in OPS and behavior is verified on
+  the hosted preview, rather than inferred from local header mocks.
 
-Harness corrections: removed a Node-only test annotation because the repository
-setup needs `window`; replaced an invalid-header fixture whose leading whitespace
-was normalized by the standard Headers constructor. Neither required relaxing the
-production behavior. No agents, database rehearsal, or provider evaluation calls.
+One implementing agent; no database project/replay or model evaluation. Two initial
+unit-fixture corrections concerned the repository's browser-based setup and standard
+Headers whitespace normalization. The CLI credential refreshed normally for preview
+access; no deployment protection was disabled. Implementation did not change after
+its first hosted proof. Release waiting is CI/platform time, not repeated experiments.
 
-Next action: finish final checks, open a focused PR, prove spoofed headers cannot
-reset hosted buckets on its preview, then pass required CI and release. Do not claim
-#21 closed until hosted ingress and production behavior are verified. No production
-change has occurred in this workstream.
+Production is verified at `450fb8793cf341d953d2a9616bc97ac0d302d0af`, deployment
+`dpl_DQVN8CuhVpen8pi239E1Nppr3WYZ`, on `www.netflux.blog`. The same 63-request
+proof passed in 40,378 ms: 36 expected malformed-body rejections and 27 rate-limit
+rejections. An additional public request without deployment-bypass credentials,
+with forged forwarding headers, also returned 429 and a positive Retry-After.
+Two new disposable accounts had zero AI usage, were globally revoked/deleted, and
+passed cleanup verification. Public health returned `ok`. No existing user data,
+production environment settings, database schema, or provider settings changed.
+
+Merged-main [validation](https://github.com/Jseow008/ThePlayBook/actions/runs/36304479507)
+and [security](https://github.com/Jseow008/ThePlayBook/actions/runs/36304479532)
+passed on the first attempt. Main browser evidence: 175 passed, 113 declared skips.
+PR creation to production readiness was about 35 minutes, dominated by the existing
+PR and merged-main CI gates; no code changes or reruns occurred during that interval.
+One implementing agent; Codex token usage is not available as a reliable isolated
+measurement. Private credential copies and release helpers were removed at closeout.
+
+Closeout worktree: `/Users/j/.codex/worktrees/ai-trusted-rate-limits/Lifebook`, branch
+`codex/ai-rate-release-closeout`, from merged `450fb879`. This closeout changes only
+documentation. Finding #21 is delivered for the three interactive AI routes; #22
+(global/guest budgets, provider-spend controls and kill switch) is the next bounded
+workstream. Do not reapply #20's migration, recreate its deleted database candidate,
+or rerun unchanged retrieval/model evidence.
