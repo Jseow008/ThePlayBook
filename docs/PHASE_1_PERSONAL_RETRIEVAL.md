@@ -579,11 +579,11 @@ Closeout branch `codex/library-stale-write-closeout` in
 
 ## Finding #9 — library recovery implementation, 27 September 2026
 
-Active worktree `/Users/j/.codex/worktrees/library-recovery/Lifebook`, branch
-`codex/library-recovery`, from freshly fetched `9dae0eae`. Changes are uncommitted;
-no PR, hosted candidate, production migration, or deployment yet. One bounded
-server implementer also provided a read-only client review; the coordinator owns
-client recovery, UI, integration, and release.
+Implemented in [#164](https://github.com/Jseow008/ThePlayBook/pull/164), merged as
+`d17d8c4d` from `codex/library-recovery` at `ec7e1006`, based on freshly fetched
+`9dae0eae`. One bounded server implementer also provided a read-only client review;
+the coordinator owned client recovery, UI, integration, and release. Current release
+state is recorded in the checkpoint below.
 
 Scope: the existing guest/offline library surfaces (bookmarks and reading progress).
 Guest highlights/reflections do not exist today; this does not claim a new offline
@@ -600,10 +600,10 @@ receipts; unchanged old requests still reject by epoch before receipt lookup.
 Each account/epoch admits at most 100,000 receipts, with existing retries allowed
 at the cap. Requests are bounded to 64 KiB. Private worker RLS and browser denial
 apply; account deletion cascades. Migration:
-`20260927035548_library_mutation_receipts.sql` (draft installed through direct SQL
-only on existing disposable `supabase_db_netflux-pr153-browser-cbrcdq`, never reset
-or stopped). Server/API/security focused tests passed 27; database runtime 30 passed,
-1 real-Auth-only configuration skip. The skipped case still needs CI/hosted proof.
+`20260927035548_library_mutation_receipts.sql`. Early development used the existing
+disposable `supabase_db_netflux-pr153-browser-cbrcdq` without resetting or stopping
+that stack. Final local and CI runtime proof executed all 31 tests, including real
+Auth revocation; hosted proof exercised all 30 applicable database cases.
 
 Guest import is explicit in Settings, at most 200 captures per batch. The whole
 batch is queued before delivery, with one migration ID and stable source identities.
@@ -642,13 +642,44 @@ RLS informational findings, plus unused indexes on synthetic data; no new receip
 ACL warning. Seven production-build smoke checks passed after supplying the isolated
 harness's admin IP and forwarded-host configuration.
 
-Production read-only gate: completed backup at `2026-09-26T23:45:27.973Z`; exact dry-run
-proposes only `20260927035548_library_mutation_receipts.sql`. No production mutation,
-merge or deployment yet. Real hosted browser proof passed: explicit guest import,
+Production pre-apply gate: completed backup at `2026-09-26T23:45:27.973Z`; exact dry-run
+proposed only `20260927035548_library_mutation_receipts.sql`. Real hosted browser proof passed: explicit guest import,
 server commit with deliberately lost response, identical replay after reload without
 duplicate receipt/write, remaining-batch completion, offline save/reconnect, and
 375px/1440px Settings rendering with no uncaught browser errors or horizontal overflow.
-Next: publish the focused PR, require exact-commit CI, then perform the
-authorized reviewed migration/release and synthetic production verification. Delete
-the temporary hosted project and private fixtures after verification, including on a
-failed release. No model evaluation or additional subagent is needed.
+The reviewed migration and PR have subsequently shipped; deployment verification is
+tracked below. No model evaluation or additional subagent was needed.
+
+### Finding #9 release checkpoint — 27 September 2026
+
+PR [#164](https://github.com/Jseow008/ThePlayBook/pull/164) merged as
+`d17d8c4d81282f0a9db371a8ba91b655cac23cb4` from reviewed head `ec7e1006`.
+Required exact-head CI passed: 1,464 unit tests, 31 recovery database tests, and
+174 browser tests (114 declared browser skips; zero reported flaky retries).
+Production received only `20260927035548_library_mutation_receipts.sql`; all 108
+migration versions and recorded SQL match. Expanded schema parity, all six security
+gates, and clean post-apply dry-run passed. Existing advisors are unchanged: intentional
+search-function warnings, private RLS informational findings, disabled leaked-password
+protection, unused indexes and Auth connection-allocation information.
+
+Temporary candidate `bzhvoizhcjtqlkjfmqls` was deleted immediately after rehearsal;
+absence was confirmed and candidate credentials/sessions were removed. Synthetic
+hosted records were deleted with the project. The isolated app process was stopped.
+
+Production is verified live at `d17d8c4d`, Vercel deployment
+`dpl_ADp2Mbp3jVAxJBwD6esuHqh7vTec`, on `www.netflux.blog` (27 September 2026).
+Merged-main CI and security checks passed. The merged application tree is identical
+to the verified PR head; unchanged tests were not rerun locally.
+
+The live browser smoke used one temporary ordinary account and an existing public
+source. Settings offered explicit guest import, the item saved successfully, two
+identical mutation retries returned the same acknowledgement, a changed payload
+using the same ID returned 409, and the account had exactly one saved row. The
+session was revoked and the account and owned data deleted afterward. Health returned
+`ok`. No existing personal data or public content was modified.
+
+Finding #9 is delivered for the existing bookmark/progress surfaces. Guest/offline
+note or reflection authoring remains outside this scope. Local `main` was pulled to
+the merged release. This closeout is documentation only: do not reapply the migration,
+recreate the deleted candidate, or rerun unchanged model benchmarks. Remaining work
+retains its individual gates in the 32-finding register.
