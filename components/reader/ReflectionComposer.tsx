@@ -247,9 +247,11 @@ export function ReflectionComposer({
                     </div>
 
                     <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">
-                        <p className="text-base font-medium leading-7 text-foreground">{REFLECTION_PROMPT}</p>
+                        <p id="reflection-composer-prompt" className="text-base font-medium leading-7 text-foreground">{REFLECTION_PROMPT}</p>
                         <textarea
                             ref={textareaRef}
+                            aria-labelledby="reflection-composer-prompt"
+                            aria-describedby="reflection-composer-help"
                             value={draft}
                             onChange={(event) => {
                                 setDraft(event.target.value);
@@ -261,8 +263,9 @@ export function ReflectionComposer({
                         />
                         <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
                             <span>Private to you</span>
-                            <span aria-live="polite">{draft.length} / {REFLECTION_MAX_LENGTH}</span>
+                            <span>{draft.length} / {REFLECTION_MAX_LENGTH}</span>
                         </div>
+                        <p id="reflection-composer-help" className="sr-only">Private to you. Maximum {REFLECTION_MAX_LENGTH} characters.</p>
                         <div className="mt-2 min-h-5">
                             {draft && isDraftStored && (
                                 <p role="status" className="text-xs text-muted-foreground">

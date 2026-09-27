@@ -295,6 +295,11 @@ describe("settings data export delivery", () => {
 
         act(() => options.onProgress?.({ phase: "downloading", completedCollections: 3, totalCollections: 11, completedRecords: 0, totalRecords: 242 }));
         expect(screen.getByText("Downloading 3 of 11 data categories…")).toBeInTheDocument();
+        const announcement = screen.getByRole("status", { name: "Export progress" });
+        expect(announcement.closest("button")).toBeNull();
+        expect(announcement).toHaveTextContent("Downloading 3 of 11 data categories…");
+        expect(downloadButton).toBeDisabled();
+        expect(downloadButton).toHaveAccessibleName("Download My Data");
 
         act(() => options.onProgress?.({ phase: "verifying", completedCollections: 0, totalCollections: 11, completedRecords: 115, totalRecords: 242 }));
         expect(screen.getByText("Verifying 115 of 242 records…")).toBeInTheDocument();

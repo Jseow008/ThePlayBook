@@ -662,10 +662,15 @@ export default function SettingsPage() {
                     <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider px-2">
                         Data Management
                     </h2>
+                    <p role="status" aria-label="Export progress" aria-live="polite" aria-atomic="true" className="sr-only">
+                        {exportProgress ? `Export status: ${exportProgressMessage(exportProgress)}` : ""}
+                    </p>
                     <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
                         <LibraryRecovery />
                         <button
                             onClick={() => handleExportData(resumableExportSnapshotId ?? undefined)}
+                            aria-labelledby="account-export-label"
+                            aria-describedby="account-export-description"
                             disabled={isExporting || isLoadingAuth || !user}
                             className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors text-left"
                         >
@@ -674,10 +679,10 @@ export default function SettingsPage() {
                                     {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
                                 </div>
                                 <div>
-                                    <p className="font-medium text-foreground">
+                                    <p id="account-export-label" className="font-medium text-foreground">
                                         {resumableExportSnapshotId ? "Resume data export" : resumeUnavailable ? "Start a new export" : "Download My Data"}
                                     </p>
-                                    <p className="text-sm text-muted-foreground" aria-live="polite">
+                                    <p id="account-export-description" className="text-sm text-muted-foreground">
                                         {exportProgress
                                             ? exportProgressMessage(exportProgress)
                                             : resumableExportSnapshotId

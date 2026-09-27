@@ -1333,3 +1333,22 @@ Supabase stack was stopped without retaining a backup; private credentials and r
 logs were deleted after evidence retention. Other local stacks were untouched. Broader #27–#32
 obligations remain separate; no extra benchmark or production replay is required
 for these test/documentation changes.
+
+### #27 screen-reader verification — 28 September 2026
+
+#181 merged as `55bbcdb8` with required checks passing; root main was pulled.
+Current work: `codex/screen-reader-verification` in managed worktree
+`/Users/j/.codex/worktrees/screen-reader-verification/Lifebook`, based on that merge.
+One implementing agent; no delegation, provider calls, production data or database
+changes. Three localized corrections add reflection labeling, Notes request-state
+announcements and export progress outside its disabled control. Layout/copy hierarchy
+is preserved. Focused tests: 35 pass; typecheck, focused lint and production Webpack build pass.
+
+The actual VoiceOver attempt is unresolved: settings showed On, but no running
+screen-reader process, speech caption or navigation result was observable through
+the desktop tool. Direct launch timed out; one settings restart did not resolve it.
+VoiceOver is verified Off again, and the temporary Safari tab is closed. No success
+is claimed for spoken output. The [evidence and executable human checklist](evidence/screen-reader-verification-20260928.md)
+keep #27 open. Next: finish build/PR checks, publish the focused fixes, then obtain
+a real spoken-output sign-off on the corrected build. Do not repeat the unchanged
+retrieval benchmark or database rehearsal for these semantic UI changes.
