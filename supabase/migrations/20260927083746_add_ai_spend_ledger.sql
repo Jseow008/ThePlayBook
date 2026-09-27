@@ -8,15 +8,18 @@ CREATE TABLE private.ai_spend_policy (
     guest_daily_requests integer NOT NULL DEFAULT 5 CHECK (guest_daily_requests BETWEEN 0 AND 10000)
 );
 INSERT INTO private.ai_spend_policy DEFAULT VALUES;
+-- Exact counters exceed bigint capacity so emergency actual-cost charges cannot
+-- overflow and roll back the kill switch. Thirty digits also exceed the maximum
+-- outstanding exposure: 10^12 one-microUSD reservations at 10^12 measured each.
 CREATE TABLE private.ai_spend_daily_totals (
     day date PRIMARY KEY,
-    charged_microusd bigint NOT NULL CHECK (charged_microusd BETWEEN 0 AND 1000000000000),
-    guest_charged_microusd bigint NOT NULL CHECK (guest_charged_microusd BETWEEN 0 AND charged_microusd)
+    charged_microusd numeric(30,0) NOT NULL CHECK (charged_microusd >= 0),
+    guest_charged_microusd numeric(30,0) NOT NULL CHECK (guest_charged_microusd BETWEEN 0 AND charged_microusd)
 );
 CREATE TABLE private.ai_spend_guest_daily_totals (
     day date NOT NULL,
     guest_key text NOT NULL CHECK (guest_key ~ '^[0-9a-f]{64}$'),
-    charged_microusd bigint NOT NULL CHECK (charged_microusd BETWEEN 0 AND 1000000000000),
+    charged_microusd numeric(30,0) NOT NULL CHECK (charged_microusd >= 0),
     requests integer NOT NULL CHECK (requests BETWEEN 1 AND 10000),
     PRIMARY KEY (day, guest_key)
 );
@@ -35,6 +38,7 @@ CREATE TABLE private.ai_spend_operations (
         OR (input_tokens IS NOT NULL AND output_tokens IS NOT NULL AND cost_microusd IS NOT NULL))
 );
 CREATE INDEX ai_spend_operations_retention ON private.ai_spend_operations(day, operation_id);
+CREATE INDEX ai_spend_operations_guest_retention ON private.ai_spend_operations(day, guest_key) WHERE guest_key IS NOT NULL;
 ALTER TABLE private.ai_spend_policy ENABLE ROW LEVEL SECURITY;
 ALTER TABLE private.ai_spend_daily_totals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE private.ai_spend_guest_daily_totals ENABLE ROW LEVEL SECURITY;
@@ -53,8 +57,8 @@ DECLARE
     admitted_at timestamptz;
     admission_day date;
     retry_ms bigint;
-    total bigint;
-    guest_total bigint;
+    total numeric;
+    guest_total numeric;
     guest_requests integer;
     operation_ms bigint;
 BEGIN
@@ -144,17 +148,17 @@ BEGIN
     ELSE
         UPDATE private.ai_spend_operations SET input_tokens = p_input_tokens,output_tokens = p_output_tokens,cost_microusd = p_cost_microusd
         WHERE operation_id = p_operation_id;
-        IF p_cost_microusd <= operation.reserved_microusd THEN
-            refund := operation.reserved_microusd - p_cost_microusd;
-            UPDATE private.ai_spend_daily_totals SET charged_microusd = charged_microusd - refund,
-                guest_charged_microusd = guest_charged_microusd - CASE WHEN operation.guest_key IS NULL THEN 0 ELSE refund END
-            WHERE day = operation.day;
-            IF NOT FOUND THEN RAISE EXCEPTION 'Missing AI daily accounting'; END IF;
-            IF operation.guest_key IS NOT NULL THEN
-                UPDATE private.ai_spend_guest_daily_totals SET charged_microusd = charged_microusd - refund
-                WHERE day = operation.day AND guest_key = operation.guest_key;
-                IF NOT FOUND THEN RAISE EXCEPTION 'Missing AI guest accounting'; END IF;
-            END IF;
+        -- A negative refund charges overspend exactly once, including guest
+        -- totals, before disabling. Re-enabling cannot forget measured costs.
+        refund := operation.reserved_microusd - p_cost_microusd;
+        UPDATE private.ai_spend_daily_totals SET charged_microusd = charged_microusd - refund,
+            guest_charged_microusd = guest_charged_microusd - CASE WHEN operation.guest_key IS NULL THEN 0 ELSE refund END
+        WHERE day = operation.day;
+        IF NOT FOUND THEN RAISE EXCEPTION 'Missing AI daily accounting'; END IF;
+        IF operation.guest_key IS NOT NULL THEN
+            UPDATE private.ai_spend_guest_daily_totals SET charged_microusd = charged_microusd - refund
+            WHERE day = operation.day AND guest_key = operation.guest_key;
+            IF NOT FOUND THEN RAISE EXCEPTION 'Missing AI guest accounting'; END IF;
         END IF;
     END IF;
     IF p_cost_microusd > operation.reserved_microusd THEN

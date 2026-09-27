@@ -103,14 +103,28 @@ database("atomic AI spending on disposable PostgreSQL", () => {
         await record(id); await expect(reserve(id)).rejects.toMatchObject({code:"22023"});
         expect(await total()).toBe(60);
     });
-    it("retains full charge and commits emergency disable when reservation is exceeded", async () => {
+    it("charges measured overspend once and commits emergency disable", async () => {
         const id = uuid7(); await reserve(id,100,guest);
         expect(await record(id,101)).toEqual({recorded:false,reason:"reservation_exceeded"});
         expect(await record(id,101)).toEqual({recorded:false,reason:"reservation_exceeded"});
         expect((await reserve()).reason).toBe("disabled");
-        expect(await total()).toBe(100);
+        expect(await total()).toBe(101);
+        expect((await db.query("SELECT charged_microusd,guest_charged_microusd FROM private.ai_spend_daily_totals")).rows[0]).toEqual({charged_microusd:"101",guest_charged_microusd:"101"});
+        expect((await db.query("SELECT charged_microusd FROM private.ai_spend_guest_daily_totals")).rows[0].charged_microusd).toBe("101");
+        await db.query("UPDATE private.ai_spend_policy SET enabled=true,daily_limit_microusd=101");
+        expect((await reserve(uuid7(),1)).reason).toBe("global_budget");
         expect((await db.query("SELECT cost_microusd FROM private.ai_spend_operations WHERE operation_id=$1",[id])).rows[0].cost_microusd).toBe("101");
         await expect(record(id,60)).rejects.toMatchObject({code:"22023"});
+    });
+    it("commits overspend beyond bigint capacity without losing the kill switch", async () => {
+        const id = uuid7(); await reserve(id,100,guest);
+        await db.query("UPDATE private.ai_spend_daily_totals SET charged_microusd=9223372036854775800,guest_charged_microusd=9223372036854775800; UPDATE private.ai_spend_guest_daily_totals SET charged_microusd=9223372036854775800");
+        const expected = {recorded:false,reason:"reservation_exceeded"};
+        expect(await record(id,1000)).toEqual(expected);
+        expect(await record(id,1000)).toEqual(expected);
+        expect((await db.query("SELECT charged_microusd,guest_charged_microusd FROM private.ai_spend_daily_totals")).rows[0]).toEqual({charged_microusd:"9223372036854776700",guest_charged_microusd:"9223372036854776700"});
+        expect((await db.query("SELECT charged_microusd FROM private.ai_spend_guest_daily_totals")).rows[0].charged_microusd).toBe("9223372036854776700");
+        expect((await reserve()).reason).toBe("disabled");
     });
     it.each(["anon","authenticated","netflux_snapshot_worker"])("denies %s RPC and private table access", async role => {
         await expect(reserve(uuid7(),100,null,role)).rejects.toMatchObject({code:"42501"});
