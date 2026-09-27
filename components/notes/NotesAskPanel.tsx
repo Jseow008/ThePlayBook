@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { useChat } from "@ai-sdk/react";
+import { useReliableChat as useChat } from "@/hooks/useReliableChat";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import {
     ArrowRight,
@@ -212,17 +212,17 @@ function VerifiedNotesAskPanel({
 
     const {
         messages,
+        completedMessages,
         sendMessage,
         setMessages,
         status,
         error,
+        regenerate,
         stop,
     } = useChat<UIMessage>({
         id: `${chatInstanceId}:${chatGeneration}`,
         transport: chatTransport,
     });
-
-    useEffect(() => () => { void stop?.(); }, [stop]);
 
     useEffect(() => {
         if (messages.length === 0 && hasHydratedSessionRef.current) {
@@ -266,10 +266,10 @@ function VerifiedNotesAskPanel({
 
         writeNotesChatSession(ownerKey, {
             activeScope,
-            messages,
+            messages: completedMessages,
             updatedAt: Date.now(),
         });
-    }, [activeScope, currentScope.signature, messages, ownerKey, isCurrent]);
+    }, [activeScope, currentScope.signature, completedMessages, messages.length, ownerKey, isCurrent]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -342,6 +342,11 @@ function VerifiedNotesAskPanel({
         );
     };
 
+    const retry = async () => {
+        if (isStreaming || !activeScope.scope || !isCurrent(ownerKey)) return;
+        await regenerate({ body: { scope: activeScope.scope, scopeLabel: activeScope.summary } });
+    };
+
     const onSubmit = async (event?: FormEvent) => {
         event?.preventDefault();
         await sendPrompt(input);
@@ -412,7 +417,7 @@ function VerifiedNotesAskPanel({
             assistantLabel="Ask These Notes"
             scopeSummary={activeScope.summary}
             messages={displayMessages}
-            disabled={isStreaming || !activeScope.scope}
+            disabled={isStreaming || Boolean(error) || !activeScope.scope}
             className={isSidebar ? "px-3 py-1.5 text-[0.72rem]" : undefined}
         />
     ) : null;
@@ -467,7 +472,7 @@ function VerifiedNotesAskPanel({
 
                                 {displayMessages.map((message) => {
                                     const showFollowUps =
-                                        !isStreaming
+                                        !isStreaming && !error
                                         && message.role === "assistant"
                                         && message.id === latestAssistantMessageId;
 
@@ -557,6 +562,7 @@ function VerifiedNotesAskPanel({
                                             <p className="text-[0.9rem] font-medium text-destructive sm:text-sm">
                                                 {displayErrorMessage}
                                             </p>
+                                            <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={isStreaming}>Try again</button>
                                         </div>
                                     </div>
                                 )}
@@ -801,7 +807,7 @@ function VerifiedNotesAskPanel({
 
                     {displayMessages.map((message) => {
                         const showFollowUps =
-                            !isStreaming
+                            !isStreaming && !error
                             && message.role === "assistant"
                             && message.id === latestAssistantMessageId;
 
@@ -889,6 +895,7 @@ function VerifiedNotesAskPanel({
                                 <p className="text-sm font-medium text-destructive">
                                     {displayErrorMessage}
                                 </p>
+                                <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={isStreaming}>Try again</button>
                             </div>
                         </div>
                     )}

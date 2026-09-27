@@ -1,3 +1,4 @@
+import { withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
@@ -80,7 +81,7 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 }
 
 export async function POST(req: NextRequest) {
-    return withAiSpendingScope(req, "ask-library", () => handlePost(req));
+    return withChatDeadline(req, (boundedRequest) => withAiSpendingScope(boundedRequest, "ask-library", () => handlePost(boundedRequest)));
 }
 
 async function handlePost(req: NextRequest) {
@@ -93,6 +94,7 @@ async function handlePost(req: NextRequest) {
             data: { user },
             error: authError,
         } = await supabase.auth.getUser();
+        req.signal.throwIfAborted();
 
         if (authError || !user) {
             return apiError("UNAUTHORIZED", "Please log in to use Ask My Library", 401, requestId);
@@ -282,7 +284,8 @@ async function handlePost(req: NextRequest) {
                 content_item ( title, author, category )
             `)
             .eq("user_id", user.id)
-            .order("last_interacted_at", { ascending: false });
+            .order("last_interacted_at", { ascending: false })
+            .abortSignal(retrievalSignal);
         const embeddingPromise = intent !== "library_metadata" && hasGemini
             ? (async () => {
                 await reserveAiProviderCall({ provider: "google", model: EMBEDDING_MODEL, maxOutputTokens: 0, signal: retrievalSignal });
@@ -448,6 +451,7 @@ async function handlePost(req: NextRequest) {
             },
         });
     } catch (error: unknown) {
+        req.signal.throwIfAborted();
         const spendingFailure = aiSpendingFailureResponse(error);
         if (spendingFailure) return spendingFailure;
         logApiError({

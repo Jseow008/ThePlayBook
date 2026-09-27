@@ -17,6 +17,7 @@ export function retrievalTextResponse(text: string, protocol: "text" | "ui", cit
                 writer.write({ type: "text-end", id: "retrieval" });
                 if (exactQuotation) writer.write({ type: "data-exact-quotation", data: true });
                 if (citations.length) writer.write({ type: "data-citations", data: citations });
+                writer.write({ type: "finish", finishReason: "stop" });
             },
         }),
     });

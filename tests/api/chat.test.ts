@@ -160,7 +160,7 @@ describe('Chat API', () => {
         });
         segmentFetchIn.mockResolvedValue({ data: [], error: null });
         libraryOrder.mockResolvedValue({ data: defaultLibraryRows, error: null });
-        libraryEq.mockReturnValue({ order: libraryOrder });
+        libraryEq.mockReturnValue({ order: (...args: unknown[]) => ({ abortSignal: () => libraryOrder(...args) }) });
         librarySelect.mockReturnValue({ eq: libraryEq });
         mockFrom.mockImplementation((table: string) => {
             if (table === 'user_library') {
@@ -189,12 +189,26 @@ describe('Chat API', () => {
         vi.mocked(aiRateLimit).mockResolvedValueOnce(result);
         const req = new NextRequest("http://localhost/api/chat", { method: "POST", body: "{}" });
         const response = await POST(req);
-        expect(aiRateLimit).toHaveBeenCalledWith(req, mockUser.id);
+        expect(aiRateLimit).toHaveBeenCalledWith(expect.objectContaining({ url: req.url, method: req.method }), mockUser.id);
         expect(response.status).toBe(status);
         expect((await response.json()).error.code).toBe(code);
         expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
         expect(admitAiUsage).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('returns a bounded timeout when authentication never resolves, without dispatching AI', async () => {
+        vi.useFakeTimers();
+        try {
+            mockAuthUser.mockReturnValueOnce(new Promise(() => {}));
+            const pending = POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: '{}' }));
+            await vi.advanceTimersByTimeAsync(50_000);
+            const response = await pending;
+            expect(response.status).toBe(504);
+            expect((await response.json()).error.code).toBe('CHAT_TIMEOUT');
+            expect(streamText).not.toHaveBeenCalled();
+            expect(admitAiUsage).not.toHaveBeenCalled();
+        } finally { vi.useRealTimers(); }
     });
 
     it("blocks query embedding before provider work when the shared budget is exhausted", async () => {

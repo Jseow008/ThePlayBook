@@ -116,12 +116,26 @@ describe("Notes chat API", () => {
         vi.mocked(aiRateLimit).mockResolvedValueOnce(result);
         const req = new NextRequest("http://localhost/api/chat/notes", { method: "POST", body: "{}" });
         const response = await POST(req);
-        expect(aiRateLimit).toHaveBeenCalledWith(req, mockUser.id);
+        expect(aiRateLimit).toHaveBeenCalledWith(expect.objectContaining({ url: req.url, method: req.method }), mockUser.id);
         expect(response.status).toBe(status);
         expect((await response.json()).error.code).toBe(code);
         expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
         expect(admitAiUsage).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('returns a bounded timeout when authentication never resolves, without dispatching AI', async () => {
+        vi.useFakeTimers();
+        try {
+            mockAuthUser.mockReturnValueOnce(new Promise(() => {}));
+            const pending = POST(new NextRequest('http://localhost/api/chat/notes', { method: 'POST', body: '{}' }));
+            await vi.advanceTimersByTimeAsync(50_000);
+            const response = await pending;
+            expect(response.status).toBe(504);
+            expect((await response.json()).error.code).toBe('CHAT_TIMEOUT');
+            expect(streamText).not.toHaveBeenCalled();
+            expect(admitAiUsage).not.toHaveBeenCalled();
+        } finally { vi.useRealTimers(); }
     });
 
     it("preserves a budget failure from nested retrieval rather than reporting no matches", async () => {
@@ -266,7 +280,7 @@ describe("Notes chat API", () => {
 
         expect(retrievePersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({
             supabase: mockSupabaseClient, userId: "user-123", scope: { version: 1, itemType: "all" },
-            question: "Summarize these notes", signal: req.signal,
+            question: "Summarize these notes", signal: expect.any(AbortSignal),
         }));
         expect(mockSupabaseClient.from).not.toHaveBeenCalled();
         expect(res.status).toBe(200);
@@ -475,7 +489,7 @@ describe('Notes retrieval delivery boundary', () => {
         const req = request(); const response = await POST(req);
         expect(response.status).toBe(200); expect(await response.text()).toBe(quote);
         expect(response.headers.get('cache-control')).toBe('no-store');
-        expect(retrievePersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({ userId: 'ordinary-a', scope, question: 'Quote my reflection verbatim', signal: req.signal }));
+        expect(retrievePersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({ userId: 'ordinary-a', scope, question: 'Quote my reflection verbatim', signal: expect.any(AbortSignal) }));
         expect(streamText).not.toHaveBeenCalled(); expect(admitAiUsage).toHaveBeenCalledTimes(1);
     });
     it('abstains deterministically when complete authorized retrieval is empty', async () => {

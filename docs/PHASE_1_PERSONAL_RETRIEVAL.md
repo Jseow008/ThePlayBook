@@ -1208,3 +1208,40 @@ admin/worker/Auth and read surfaces retain their separately documented controls;
 this does not close the wider audit. Next bounded work: #24 graceful failures.
 Closeout branch: `codex/account-write-release-record`, based on `a7cc3271`.
 No candidate recreation, migration reapplication or repeated benchmark is needed.
+
+## Finding #24 graceful chat failures — 27 September 2026
+
+Branch `codex/graceful-retrieval-failures`, baseline `9661e5fd`. Scope: the three
+interactive chat paths, preserving models, ranking, evidence authorization, spending
+admission and existing layout. No SQL or environment changes; no hosted project needed.
+
+Inspection found unbounded library/source reads, platform-only generation deadlines,
+and client handling that could retain/export unfinished answers as completed. The
+correction applies a 50-second application deadline to preparation and streamed
+response delivery, propagates cancellation, and emits an explicit safe error when
+streaming cannot finish. Author Chat moves from plain text to the existing UI stream
+protocol. Successful deterministic extracts/empty responses now carry explicit finish.
+Clients exclude unfinished assistant turns from persistence/export/follow-up context,
+retain the user question, and offer an explicit retry in the existing error card.
+Retries remain subject to ordinary quota/spending admission; no automatic provider
+retry, quota refund or fallback answer is added. Failed/pending evidence continues to
+fail closed instead of returning a false empty result or partial evidence answer.
+
+Acceptance: stalled auth/preparation returns 504 without provider dispatch; disconnect
+and unmount cancel; stream interruption yields a safe error; only completed answers
+persist/export; retry retains scope/question; late callbacks cannot replace new chat
+state. Existing index/ownership/revocation tests remain required. One bounded client
+agent handles recovery while the coordinator handles server deadlines and release.
+Initial server/deadline suites: 103 tests pass; existing personal retrieval checks
+also passed in the earlier overlapping run.
+The initial full run passed 1,581 cases, with 277 declared skips and three client
+fixture failures. Those failures were a missing test import and successful mock streams
+without a finish marker; they are corrected. Final affected client suites pass 59 tests,
+including actual SDK fast-EOF/error/abort/output-limit handling and scope replacement.
+All route/deadline tests, typecheck and full lint pass. No acceptance threshold changed.
+Already-open legacy Author clients get a refresh-required 409 before AI dispatch.
+Author Chat's pre-existing optional-auth session behavior is not a new isolation
+contract; this patch covers failure delivery and unmount cancellation, with existing
+verified-session boundaries retained in library/Notes.
+Next: publish the scoped PR, require exact-head CI, merge and verify production.
+Do not rerun unchanged model/database evidence or create a temporary database.

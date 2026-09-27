@@ -1,3 +1,4 @@
+import { withChatDeadline } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse } from "@/lib/server/ai-spending";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
@@ -75,7 +76,7 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 }
 
 export async function POST(req: NextRequest) {
-    return withAiSpendingScope(req, "ask-notes", () => handlePost(req));
+    return withChatDeadline(req, (boundedRequest) => withAiSpendingScope(boundedRequest, "ask-notes", () => handlePost(boundedRequest)));
 }
 
 async function handlePost(req: NextRequest) {
@@ -88,6 +89,7 @@ async function handlePost(req: NextRequest) {
             data: { user },
             error: authError,
         } = await supabase.auth.getUser();
+        req.signal.throwIfAborted();
 
         if (authError || !user) {
             return apiError("UNAUTHORIZED", "Please log in to use Ask These Notes", 401, requestId);
@@ -261,6 +263,7 @@ async function handlePost(req: NextRequest) {
         }
         return retrievalTextResponse(text, protocol, protocol === "ui" ? issueEvidenceCitations({ userId: user.id, personal: evidence.items }) : []);
     } catch (error: unknown) {
+        req.signal.throwIfAborted();
         const spendingFailure = aiSpendingFailureResponse(error);
         if (spendingFailure) return spendingFailure;
         logApiError({

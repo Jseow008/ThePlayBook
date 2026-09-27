@@ -29,7 +29,7 @@ vi.mock('@/lib/server/ai-usage-quota', () => ({
 vi.mock('ai', () => ({
     smoothStream: vi.fn().mockReturnValue('mock-smooth-transform'),
     streamText: vi.fn().mockImplementation(() => ({
-        toTextStreamResponse: () => new Response('mocked-stream')
+        toUIMessageStreamResponse: () => new Response('mocked-stream')
     })),
 }));
 
@@ -56,7 +56,7 @@ describe('Author Chat API', () => {
     const queryBuilder = {
         select,
         eq,
-        order,
+        order: (...args: unknown[]) => ({ abortSignal: () => order(...args) }),
     };
 
     const mockSupabaseClient = {
@@ -99,9 +99,9 @@ describe('Author Chat API', () => {
     ])("stops before quota/provider work on burst rejection ($status)", async ({ result, status, code }) => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
         vi.mocked(aiRateLimit).mockResolvedValueOnce(result);
-        const req = new NextRequest("http://localhost/api/chat/author", { method: "POST", body: "{}" });
+        const req = new NextRequest("http://localhost/api/chat/author", { method: "POST", headers: { "x-evidence-protocol": "ui" }, body: "{}" });
         const response = await POST(req);
-        expect(aiRateLimit).toHaveBeenCalledWith(req, mockUser.id);
+        expect(aiRateLimit).toHaveBeenCalledWith(expect.objectContaining({ url: req.url, method: req.method }), mockUser.id);
         expect(response.status).toBe(status);
         expect((await response.json()).error.code).toBe(code);
         expect(Number(response.headers.get("retry-after"))).toBeGreaterThan(0);
@@ -111,7 +111,7 @@ describe('Author Chat API', () => {
 
     it.each([401, 503])("does not downgrade an authentication failure (%s) to guest admission", async (status) => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: null }, error: new AuthApiError("auth failed", status, undefined) });
-        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) }));
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", headers: { "x-evidence-protocol": "ui" }, body: JSON.stringify(validBody) }));
         expect(response.status).toBe(status);
         expect(aiRateLimit).not.toHaveBeenCalled();
         expect(admitAiUsage).not.toHaveBeenCalled();
@@ -120,13 +120,37 @@ describe('Author Chat API', () => {
 
     it.each(["disabled", "global_budget", "guest_budget", "guest_quota"])("does not start a provider stream after spending rejection: %s", async reason => {
         spendingRpc.mockReturnValue({ abortSignal: async () => ({ data: { allowed: false, reason, retryAfterMs: 1000 }, error: null }) });
-        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) }));
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", headers: { "x-evidence-protocol": "ui" }, body: JSON.stringify(validBody) }));
         expect(response.status).toBe(reason === "disabled" ? 503 : 429);
         expect(streamText).not.toHaveBeenCalled();
         expect(spendingRpc).toHaveBeenCalledTimes(1);
     });
+    it('asks old text-stream clients to refresh without dispatching provider work', async () => {
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', {
+            method: 'POST', body: JSON.stringify(validBody),
+        }));
+        expect(response.status).toBe(409);
+        expect((await response.json()).error.message).toContain('refresh');
+        expect(streamText).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
+    });
+
+    it('returns a bounded timeout when authentication never resolves, without dispatching AI', async () => {
+        vi.useFakeTimers();
+        try {
+            mockAuthUser.mockReturnValueOnce(new Promise(() => {}));
+            const pending = POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: '{}' }));
+            await vi.advanceTimersByTimeAsync(50_000);
+            const response = await pending;
+            expect(response.status).toBe(504);
+            expect((await response.json()).error.code).toBe('CHAT_TIMEOUT');
+            expect(streamText).not.toHaveBeenCalled();
+            expect(admitAiUsage).not.toHaveBeenCalled();
+        } finally { vi.useRealTimers(); }
+    });
+
     it("accounts for streamed usage and disables automatic provider retries", async () => {
-        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) }));
+        const response = await POST(new NextRequest("http://localhost/api/chat/author", { method: "POST", headers: { "x-evidence-protocol": "ui" }, body: JSON.stringify(validBody) }));
         expect(response.status).toBe(200);
         expect(streamText).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0 }));
         expect(spendingRpc).toHaveBeenCalledWith("reserve_ai_spend", expect.objectContaining({ p_guest_key: "a".repeat(64), p_feature: "author-chat" }));
@@ -136,26 +160,26 @@ describe('Author Chat API', () => {
 
     it("recognizes Supabase's missing-session response as a genuine guest", async () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: null }, error: new AuthSessionMissingError() });
-        const req = new NextRequest("http://localhost/api/chat/author", { method: "POST", body: JSON.stringify(validBody) });
+        const req = new NextRequest("http://localhost/api/chat/author", { method: "POST", headers: { "x-evidence-protocol": "ui" }, body: JSON.stringify(validBody) });
         expect((await POST(req)).status).toBe(200);
-        expect(aiRateLimit).toHaveBeenCalledWith(req, undefined);
+        expect(aiRateLimit).toHaveBeenCalledWith(expect.objectContaining({ url: req.url, method: req.method }), undefined);
     });
 
     it('allows valid guest requests', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify(validBody),
         });
 
         const res = await POST(req);
         expect(res.status).toBe(200);
-        expect(aiRateLimit).toHaveBeenCalledWith(req, undefined);
+        expect(aiRateLimit).toHaveBeenCalledWith(expect.objectContaining({ url: req.url, method: req.method }), undefined);
         expect(admitAiUsage).not.toHaveBeenCalled();
     });
 
     it('accepts legacy bookTitle payloads', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify({
                 ...validBody,
                 contentTitle: undefined,
@@ -171,14 +195,14 @@ describe('Author Chat API', () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify(validBody),
         });
 
         const res = await POST(req);
         expect(res.status).toBe(200);
-        expect(aiRateLimit).toHaveBeenCalledWith(req, 'user-123');
-        expect(admitAiUsage).toHaveBeenCalledWith('user-123', 'author-chat', req.signal);
+        expect(aiRateLimit).toHaveBeenCalledWith(expect.objectContaining({ url: req.url, method: req.method }), 'user-123');
+        expect(admitAiUsage).toHaveBeenCalledWith('user-123', 'author-chat', expect.any(AbortSignal));
         expect(vi.mocked(admitAiUsage).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(streamText).mock.invocationCallOrder[0]);
         await finishLatestStream();
         expect(admitAiUsage).toHaveBeenCalledTimes(1);
@@ -187,7 +211,7 @@ describe('Author Chat API', () => {
     it('does not admit when source loading fails', async () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
         order.mockReturnValueOnce({ data: null, error: new Error('source unavailable') });
-        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', body: JSON.stringify(validBody) }));
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody) }));
         expect(response.status).toBe(500);
         expect(admitAiUsage).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
@@ -196,7 +220,7 @@ describe('Author Chat API', () => {
     it('fails closed when admission is unavailable', async () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
         vi.mocked(admitAiUsage).mockRejectedValueOnce(new Error('quota unavailable'));
-        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', body: JSON.stringify(validBody) }));
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody) }));
         expect(response.status).toBe(500);
         expect(streamText).not.toHaveBeenCalled();
     });
@@ -204,7 +228,7 @@ describe('Author Chat API', () => {
     it('does not require stream completion to account for a failed provider attempt', async () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
         vi.mocked(streamText).mockImplementationOnce(() => { throw new Error('provider unavailable'); });
-        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', body: JSON.stringify(validBody) }));
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, body: JSON.stringify(validBody) }));
         expect(response.status).toBe(500);
         expect(admitAiUsage).toHaveBeenCalledTimes(1);
     });
@@ -213,8 +237,8 @@ describe('Author Chat API', () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
         const controller = new AbortController();
         vi.mocked(admitAiUsage).mockImplementationOnce(async () => { controller.abort(); return { allowed: true, windows: [] }; });
-        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', signal: controller.signal, body: JSON.stringify(validBody) }));
-        expect(response.status).toBe(500);
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', headers: { 'x-evidence-protocol': 'ui' }, signal: controller.signal, body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(499);
         expect(streamText).not.toHaveBeenCalled();
     });
 
@@ -231,7 +255,7 @@ describe('Author Chat API', () => {
         });
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify(validBody),
         });
 
@@ -248,7 +272,7 @@ describe('Author Chat API', () => {
         (aiRateLimit as any).mockResolvedValueOnce({ success: false, retryAfterMs: 20_000 });
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify(validBody),
         });
 
@@ -267,13 +291,13 @@ describe('Author Chat API', () => {
         (aiRateLimit as any).mockResolvedValueOnce({ success: false, retryAfterMs: 61_000 });
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify(validBody),
         });
 
         const res = await POST(req);
         expect(res.status).toBe(429);
-        expect(aiRateLimit).toHaveBeenCalledWith(req, 'user-123');
+        expect(aiRateLimit).toHaveBeenCalledWith(expect.objectContaining({ url: req.url, method: req.method }), 'user-123');
         expect(await res.json()).toEqual({
             error: {
                 code: 'RATE_LIMITED',
@@ -284,7 +308,7 @@ describe('Author Chat API', () => {
 
     it('validates payloads', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify({ ...validBody, messages: [] }),
         });
 
@@ -302,7 +326,7 @@ describe('Author Chat API', () => {
 
     it('rejects whitespace-only author messages after normalization', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify({
                 ...validBody,
                 messages: [{ role: 'user', content: '   ' }],
@@ -318,7 +342,7 @@ describe('Author Chat API', () => {
         process.env.OPENAI_API_KEY = 'openai-test-key';
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify(validBody),
         });
 
@@ -329,7 +353,7 @@ describe('Author Chat API', () => {
 
     it('uses the lower author output cap and last 4 messages only', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify({
                 ...validBody,
                 messages: Array.from({ length: 7 }, (_, index) => ({
@@ -354,7 +378,7 @@ describe('Author Chat API', () => {
 
     it('adds grounding, prompt injection, off topic, and dash style guardrails', async () => {
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify(validBody),
         });
 
@@ -380,7 +404,7 @@ describe('Author Chat API', () => {
         order.mockReturnValueOnce({ data: oversizedSegments, error: null });
 
         const req = new NextRequest(new URL('http://localhost/api/chat/author'), {
-            method: 'POST',
+            method: 'POST', headers: { 'x-evidence-protocol': 'ui' },
             body: JSON.stringify({
                 ...validBody,
                 messages: [{ role: 'user', content: 'What does the specific conclusion establish?' }],

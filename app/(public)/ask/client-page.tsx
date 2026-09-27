@@ -3,7 +3,7 @@
 import { EvidenceCitations } from "@/components/evidence/EvidenceCitations";
 import { getMessageCitations, isExactQuotation, type CitationLink } from "@/lib/evidence-citation";
 import { useMemo, useRef, useEffect, useState, type FormEvent } from "react";
-import { useChat } from "@ai-sdk/react";
+import { useReliableChat as useChat } from "@/hooks/useReliableChat";
 import { DefaultChatTransport } from "ai";
 import { Bot, User, Send, Loader2, ArrowLeft } from "lucide-react";
 import { BooksIcon, NotebookIcon } from "@phosphor-icons/react";
@@ -144,7 +144,7 @@ function VerifiedAskClientPage({
         sendMessage,
         status,
         error,
-        stop,
+        regenerate,
     } = useChat({
         transport: chatTransport,
     });
@@ -154,8 +154,6 @@ function VerifiedAskClientPage({
     // Full Ask layout follows lg app chrome behavior, not generic content desktop.
     const isAskFullLayout = useMediaQuery(VIEWPORT_QUERIES.askFullLayout);
     const resolvedScope = scope;
-
-    useEffect(() => () => { void stop?.(); }, [stop]);
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -175,6 +173,11 @@ function VerifiedAskClientPage({
         if (textareaRef.current) textareaRef.current.style.height = "auto";
         scrollToBottom();
         await sendMessage({ text: trimmed });
+    };
+
+    const retry = async () => {
+        if (isStreaming || !isCurrent(ownerKey)) return;
+        await regenerate();
     };
 
     const onSubmit = async (e?: FormEvent) => {
@@ -254,7 +257,7 @@ function VerifiedAskClientPage({
             assistantLabel="Ask My Library"
             scopeSummary={libraryComposerLabel}
             messages={displayMessages}
-            disabled={isStreaming}
+            disabled={isStreaming || Boolean(error)}
         />
     ) : null;
 
@@ -360,7 +363,7 @@ function VerifiedAskClientPage({
                                             )}
 
                                             {displayMessages.map((message) => {
-                                                const showFollowUpActions = !isStreaming && message.role === "assistant" && message.id === latestAssistantMessageId;
+                                                const showFollowUpActions = !isStreaming && !error && message.role === "assistant" && message.id === latestAssistantMessageId;
 
                                                 return (
                                                     <div key={message.id} className="space-y-3">
@@ -447,6 +450,7 @@ function VerifiedAskClientPage({
                                                         <p className="text-[0.9rem] font-medium text-destructive sm:text-sm">
                                                             {displayErrorMessage}
                                                         </p>
+                                                        <button type="button" onClick={() => void retry()} className="mt-2 text-sm font-medium underline underline-offset-4" disabled={isStreaming}>Try again</button>
                                                     </div>
                                                 </div>
                                             )}

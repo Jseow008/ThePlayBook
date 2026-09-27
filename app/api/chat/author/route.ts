@@ -1,3 +1,4 @@
+import { withChatDeadline, CHAT_INCOMPLETE_MESSAGE } from "@/lib/server/chat-deadline";
 import { withAiSpendingScope, markAiSpendingAuthenticated, aiSpendingFailureResponse, reserveAiProviderCall } from "@/lib/server/ai-spending";
 import { isAuthSessionMissingError } from "@supabase/supabase-js";
 import { aiRateLimit } from "@/lib/server/ai-rate-limit";
@@ -183,11 +184,14 @@ function buildSourceContext(segments: SourceSegment[], latestUserMessage: string
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
-    return withAiSpendingScope(req, "author-chat", () => handlePost(req));
+    return withChatDeadline(req, (boundedRequest) => withAiSpendingScope(boundedRequest, "author-chat", () => handlePost(boundedRequest)));
 }
 
 async function handlePost(req: NextRequest) {
     const requestId = getRequestId();
+    if (req.headers.get("x-evidence-protocol") !== "ui") {
+        return apiError("CONFLICT", "Please refresh the page to continue this chat.", 409, requestId);
+    }
 
     try {
         // --- Optional Auth ---
@@ -196,6 +200,7 @@ async function handlePost(req: NextRequest) {
             data: { user },
             error: authError,
         } = await supabase.auth.getUser();
+        req.signal.throwIfAborted();
         if (authError && !isAuthSessionMissingError(authError)) {
             const unavailable = !authError.status || authError.status === 429 || authError.status >= 500;
             return apiError(unavailable ? "INTERNAL_ERROR" : "UNAUTHORIZED",
@@ -314,7 +319,8 @@ async function handlePost(req: NextRequest) {
             .from("segment")
             .select("title, markdown_body, order_index")
             .eq("item_id", contentId)
-            .order("order_index", { ascending: true });
+            .order("order_index", { ascending: true })
+            .abortSignal(req.signal);
 
         if (segError) {
             logApiError({ requestId, route: "/api/chat/author", message: "Failed to fetch segments", error: segError });
@@ -425,8 +431,14 @@ Rules:
             },
         });
 
-        return result.toTextStreamResponse();
+        return result.toUIMessageStreamResponse({
+            onError: (error) => {
+                logApiError({ requestId, route: "/api/chat/author", message: "AI generation stream failed", error });
+                return CHAT_INCOMPLETE_MESSAGE;
+            },
+        });
     } catch (error: unknown) {
+        req.signal.throwIfAborted();
         const spendingFailure = aiSpendingFailureResponse(error);
         if (spendingFailure) return spendingFailure;
         logApiError({
