@@ -1,5 +1,5 @@
 import "server-only";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 // Leave time to deliver a failure before the platform's 60-second hard limit.
 export const CHAT_DEADLINE_MS = 50_000;
@@ -15,7 +15,7 @@ function untilAbort<T>(work: PromiseLike<T>, signal: AbortSignal): Promise<T> {
 }
 
 /** Bounds both preparation and streamed delivery, including uncooperative upstream waits. */
-export async function withChatDeadline(request: NextRequest, run: (request: NextRequest) => Promise<Response>): Promise<Response> {
+export async function withChatDeadline(request: NextRequest, run: (request: NextRequest, signal: AbortSignal) => Promise<Response>): Promise<Response> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(new DOMException("Chat deadline exceeded", "TimeoutError")), CHAT_DEADLINE_MS);
     timer.unref?.();
@@ -23,7 +23,8 @@ export async function withChatDeadline(request: NextRequest, run: (request: Next
     const cleanup = () => clearTimeout(timer);
     try {
         signal.throwIfAborted();
-        const work = run(new NextRequest(request, { signal }));
+        // Next.js can proxy the runtime request; reconstructing it reads native private fields.
+        const work = run(request, signal);
         // A late result must not continue streaming after the deadline response was sent.
         void work.then(response => { if (signal.aborted) void response.body?.cancel().catch(() => {}); }, () => {});
         const response = await untilAbort(work, signal);

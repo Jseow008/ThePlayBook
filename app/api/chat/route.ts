@@ -81,10 +81,10 @@ function normalizeMessages(rawMessages: Array<Record<string, unknown>>): Array<{
 }
 
 export async function POST(req: NextRequest) {
-    return withChatDeadline(req, (boundedRequest) => withAiSpendingScope(boundedRequest, "ask-library", () => handlePost(boundedRequest)));
+    return withChatDeadline(req, (originalRequest, signal) => withAiSpendingScope(originalRequest, "ask-library", () => handlePost(originalRequest, signal)));
 }
 
-async function handlePost(req: NextRequest) {
+async function handlePost(req: NextRequest, signal: AbortSignal) {
     const requestId = getRequestId();
 
     try {
@@ -94,7 +94,7 @@ async function handlePost(req: NextRequest) {
             data: { user },
             error: authError,
         } = await supabase.auth.getUser();
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
 
         if (authError || !user) {
             return apiError("UNAUTHORIZED", "Please log in to use Ask My Library", 401, requestId);
@@ -121,7 +121,7 @@ async function handlePost(req: NextRequest) {
         // including inventory and metadata-only recommendations, needs a live session.
         const validateChatSession = async () => {
             try {
-                await assertActiveChatSession({ supabase, signal: req.signal });
+                await assertActiveChatSession({ supabase, signal });
                 return null;
             } catch (error) {
                 if (error instanceof ChatSessionValidationError && error.code === "UNAUTHORIZED") {
@@ -240,7 +240,7 @@ async function handlePost(req: NextRequest) {
         }
 
         const admit = async () => {
-            const quota = await admitAiUsage(user.id, "ask-library", req.signal);
+            const quota = await admitAiUsage(user.id, "ask-library", signal);
             if (!quota.allowed) {
                 recordAiRouteAbuse({
                     signal: "ai_quota_exhausted",
@@ -272,8 +272,8 @@ async function handlePost(req: NextRequest) {
             const failure = await admit();
             if (failure) return failure;
         }
-        req.signal.throwIfAborted();
-        const retrievalSignal = AbortSignal.any([req.signal, AbortSignal.timeout(35_000)]);
+        signal.throwIfAborted();
+        const retrievalSignal = AbortSignal.any([signal, AbortSignal.timeout(35_000)]);
         const libraryPromise = supabase
             .from("user_library")
             .select(`
@@ -412,18 +412,18 @@ async function handlePost(req: NextRequest) {
             const failure = await admit();
             if (failure) return failure;
         }
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         const reservation = await reserveAiProviderCall({
             provider: selectedProvider, model: selectedModel,
-            maxOutputTokens: getOutputTokenCap(intent), signal: req.signal,
+            maxOutputTokens: getOutputTokenCap(intent), signal,
         });
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         const result = streamText({
             maxRetries: 0,
             model: aiModel,
             system: systemPrompt,
             messages: [{ role: "user", content: questionContext.semanticQuestion }],
-            abortSignal: req.signal,
+            abortSignal: signal,
             maxOutputTokens: getOutputTokenCap(intent),
             experimental_transform: smoothStream({ delayInMs: 6 }),
             onFinish: async ({ usage }) => {
@@ -451,7 +451,7 @@ async function handlePost(req: NextRequest) {
             },
         });
     } catch (error: unknown) {
-        req.signal.throwIfAborted();
+        signal.throwIfAborted();
         const spendingFailure = aiSpendingFailureResponse(error);
         if (spendingFailure) return spendingFailure;
         logApiError({

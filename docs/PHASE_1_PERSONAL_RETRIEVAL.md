@@ -1245,3 +1245,24 @@ contract; this patch covers failure delivery and unmount cancellation, with exis
 verified-session boundaries retained in library/Notes.
 Next: publish the scoped PR, require exact-head CI, merge and verify production.
 Do not rerun unchanged model/database evidence or create a temporary database.
+
+### #178 production runtime correction
+
+#178 merged as `64baf374` with required checks passing and reached production. A
+27 September live probe then returned an empty 500 on `/api/chat/author`; Vercel
+logs identified `Cannot read private member #state` while reconstructing Next.js's
+proxied runtime request. Local ordinary-request fixtures missed that runtime shape.
+#24 is not production-verified and must not be closed yet.
+
+Production was rolled back to verified `9661e5fd`, deployment
+`dpl_7Hiv6hpDaLzVqyKnoBgkMjvfpz56`; the alias confirms READY and both library/Notes
+unauthenticated probes return expected 401. No database change or rollback occurred.
+Correction branch `codex/chat-request-runtime-fix` preserves the original request and
+passes the deadline signal separately into all three handlers. The regression fixture
+asserts a proxied request is retained; 105 affected API/deadline tests, typecheck, lint
+and production build pass. Actual local HTTP returns library/Notes 401 and legacy
+Author 409; new-protocol Author reaches its existing fail-closed limiter (503 because
+the local limiter is unavailable), without a runtime exception or provider call. Next:
+publish the narrow corrective PR, require
+CI, then explicitly verify/promote the corrected build after rollback and repeat live
+probes. Do not claim #24 complete or proceed to another implementation before this gate.

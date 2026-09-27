@@ -9,12 +9,29 @@ const request = (signal?: AbortSignal) => new NextRequest("https://example.test/
 afterEach(() => vi.useRealTimers());
 
 describe("chat deadline and delivery", () => {
+    it("preserves a framework-proxied request without invoking its native private getters", async () => {
+        const original = request();
+        const proxied = new Proxy(original, {
+            get(target, property) {
+                if (property === 'signal') return target.signal;
+                return Reflect.get(target, property);
+            },
+        });
+        const run = vi.fn(async (received: NextRequest, signal: AbortSignal) => {
+            expect(received).toBe(proxied);
+            expect(signal.aborted).toBe(false);
+            return Response.json({ ok: true });
+        });
+        const result = await withChatDeadline(proxied, run);
+        expect(await result.json()).toEqual({ ok: true });
+    });
+
     it("bounds an upstream that ignores cancellation and cancels its late response", async () => {
         vi.useFakeTimers();
         let finish!: (response: Response) => void;
         let signal!: AbortSignal;
-        const response = withChatDeadline(request(), async req => {
-            signal = req.signal;
+        const response = withChatDeadline(request(), async (_req, workSignal) => {
+            signal = workSignal;
             return new Promise(resolve => { finish = resolve; });
         });
         await vi.advanceTimersByTimeAsync(CHAT_DEADLINE_MS);
@@ -59,8 +76,8 @@ describe("chat deadline and delivery", () => {
     it("propagates downstream cancellation to provider work", async () => {
         let signal!: AbortSignal;
         const cancel = vi.fn();
-        const response = await withChatDeadline(request(), async req => {
-            signal = req.signal;
+        const response = await withChatDeadline(request(), async (_req, workSignal) => {
+            signal = workSignal;
             return new Response(new ReadableStream({ cancel }));
         });
         await response.body!.cancel();
@@ -86,8 +103,8 @@ describe("chat deadline and delivery", () => {
                 output.close();
             } }),
         }) });
-        const response = await withChatDeadline(request(), async req => streamText({
-            model, prompt: "question", abortSignal: req.signal, maxRetries: 0,
+        const response = await withChatDeadline(request(), async (_req, workSignal) => streamText({
+            model, prompt: "question", abortSignal: workSignal, maxRetries: 0,
         }).toUIMessageStreamResponse({ onError: () => "The answer could not finish. Please retry." }));
         const text = await response.text();
         expect(text).toContain('"delta":"Unfinished"');
