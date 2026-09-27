@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Bell, LogOut, Trash2, Shield, HelpCircle, AlertTriangle, Download, Save, User as UserIcon, Loader2, CirclePlay } from "lucide-react";
 import { signOutAction } from "@/lib/actions/auth";
 import Link from "next/link";
+import { LibraryRecovery } from "@/components/settings/LibraryRecovery";
 import { useReadingProgress } from "@/hooks/useReadingProgress";
 import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
@@ -662,6 +663,7 @@ export default function SettingsPage() {
                         Data Management
                     </h2>
                     <div className="bg-card border border-border rounded-xl overflow-hidden divide-y divide-border">
+                        <LibraryRecovery />
                         <button
                             onClick={() => handleExportData(resumableExportSnapshotId ?? undefined)}
                             disabled={isExporting || isLoadingAuth || !user}

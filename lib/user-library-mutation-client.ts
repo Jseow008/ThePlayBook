@@ -1,25 +1,15 @@
 "use client";
 
-import { LibraryMutationConflictError, type LibraryBoundary } from "@/lib/user-library-mutation-contract";
-import type { Json } from "@/types/database";
+import { LibraryMutationConflictError, LibraryMutationReceiptError, type LibraryBoundary, type LibraryMutationInput, type LibraryMutationAcknowledgement } from "@/lib/user-library-mutation-contract";
 
-export type UserLibraryMutationAcknowledgement = {
-    resetEpoch: number;
-    libraryRevision: number;
-};
+export type UserLibraryMutationAcknowledgement = LibraryMutationAcknowledgement;
 
-export async function commitUserLibraryMutation(input: {
+export async function commitUserLibraryMutation(input: LibraryMutationInput & {
     expectedAccountId: string;
-    baseRevision: number;
-    resetEpoch: number;
-    contentId: string;
-    isBookmarked: boolean;
-    progress: Json | null;
-    lastInteractedAt: string;
-    deleteIfEmpty: boolean;
-}): Promise<UserLibraryMutationAcknowledgement> {
+}, signal?: AbortSignal): Promise<UserLibraryMutationAcknowledgement> {
     const response = await fetch("/api/account-data/user_library/mutation", {
         method: "POST",
+        signal,
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
         body: JSON.stringify(input),
@@ -27,6 +17,9 @@ export async function commitUserLibraryMutation(input: {
     const payload = await response.json().catch(() => null) as { data?: UserLibraryMutationAcknowledgement; error?: { message?: string; code?: string; current?: LibraryBoundary } } | null;
     if (response.status === 409 && payload?.error?.code === "LIBRARY_CONFLICT") {
         throw new LibraryMutationConflictError(payload.error.current);
+    }
+    if (payload?.error?.code && ["LIBRARY_MUTATION_ID_REUSED", "LIBRARY_RECEIPT_LIMIT", "VALIDATION_ERROR"].includes(payload.error.code)) {
+        throw new LibraryMutationReceiptError(payload.error.code as "LIBRARY_MUTATION_ID_REUSED" | "LIBRARY_RECEIPT_LIMIT" | "VALIDATION_ERROR", payload.error.message ?? "This change needs review.");
     }
     if (!response.ok || !payload?.data) {
         throw new Error(payload?.error?.message ?? "Could not commit your library change.");

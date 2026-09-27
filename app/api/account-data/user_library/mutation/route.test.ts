@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POST } from "@/app/api/account-data/user_library/mutation/route";
 import { createClient } from "@/lib/supabase/server";
-import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
+import { LibraryMutationConflictError, LibraryMutationReceiptError } from "@/lib/user-library-mutation-contract";
 import { commitLibraryMutationForAccount } from "@/lib/server/account-data-snapshots";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -90,4 +90,32 @@ describe("POST /api/account-data/user_library/mutation", () => {
         expect(await response.json()).toMatchObject({ error: { code: "LIBRARY_CONFLICT", current } });
         expect(commitLibraryMutationForAccount).toHaveBeenCalledTimes(1);
     });
+    it.each([{ mutationId: "bad", createdAt: mutation.lastInteractedAt }, { mutationId: "00000000-0000-4000-8000-000000000001" }, { createdAt: mutation.lastInteractedAt }, { guestImport: {} }])("rejects malformed durable identity %j", async (extra) => {
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", { method: "POST", body: JSON.stringify({ ...mutation, ...extra }) }));
+        expect(response.status).toBe(400);
+        expect(commitLibraryMutationForAccount).not.toHaveBeenCalled();
+    });
+    it("bounds streamed request bytes before reaching the worker", async () => {
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", { method: "POST", body: JSON.stringify({ ...mutation, progress: { text: "x".repeat(70_000) } }) }));
+        expect(response.status).toBe(413);
+        expect(commitLibraryMutationForAccount).not.toHaveBeenCalled();
+    });
+
+    it("passes durable guest identity intact and preserves a skipped acknowledgement", async () => {
+        const uuid = "00000000-0000-4000-8000-000000000001";
+        const extra = { mutationId: uuid, createdAt: mutation.lastInteractedAt, guestImport: { migrationId: uuid, guestStorageId: uuid, sourceRecordId: uuid } };
+        const ack = { resetEpoch: 3, libraryRevision: 20, outcome: "skipped" as const, reason: "destination_exists" as const };
+        vi.mocked(commitLibraryMutationForAccount).mockResolvedValueOnce(ack);
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", { method: "POST", body: JSON.stringify({ ...mutation, ...extra }) }));
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ data: ack });
+        expect(commitLibraryMutationForAccount).toHaveBeenCalledWith("account-a", expect.objectContaining(extra));
+    });
+    it.each([["LIBRARY_MUTATION_ID_REUSED", 409], ["LIBRARY_RECEIPT_LIMIT", 429]] as const)("returns typed receipt failure %s", async (code, status) => {
+        vi.mocked(commitLibraryMutationForAccount).mockRejectedValueOnce(new LibraryMutationReceiptError(code, "Not saved."));
+        const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", { method: "POST", body: JSON.stringify(mutation) }));
+        expect(response.status).toBe(status);
+        expect(await response.json()).toMatchObject({ error: { code } });
+    });
+
 });
