@@ -981,3 +981,82 @@ and settlement; no policy toggling or production test-suite replay was needed.
 The smoke used no user account or private library data. Both implementation and policy
 documentation are merged; root main was fast-forwarded. Temporary production environment
 files were removed after verification. No temporary hosted project remains.
+
+## Finding #23 mutation-boundary inventory — 27 September 2026
+
+Owner: Netflux engineering/security (Codex implementation coordinator for this pass).
+Inventory date/target: 27 September 2026. Baseline: `0e861306` on main.
+Branch: `codex/mutation-boundary-inventory`, workspace `/Users/j/Desktop/Lifebook`.
+This is a bounded inventory and correction plan, **not #23 closure**. No production
+mutation, migration or application edit occurred in this pass. #22 is shipped;
+STATUS and the register now reflect its production release rather than pending work.
+
+Method: searched browser hooks/components, repository helpers, API mutation exports,
+server actions and SQL migrations; compared with read-only production `pg_class`,
+`pg_proc`, `pg_policies`, `pg_trigger`, `pg_constraint`, and table/column/function
+privilege checks. Listed all 12 public functions executable by browser roles and cross-checked their code consumers;
+`set_onboarding_state` is the exposed mutation helper, while the others are reads.
+Grants alone are not evidence of writable rows: RLS and column grants are evaluated
+separately. No real-user data or credentials were collected and no abusive writes
+were attempted. This is structural evidence, not a runtime penetration test.
+
+### Mutation families and authoritative controls
+
+| Surface / code entry | Reachable boundary and existing protection | Remaining obligation |
+| --- | --- | --- |
+| Bookmarks/progress and guest import: `hooks/useReadingProgress.ts`, `/api/account-data/user_library/mutation` | Browser table mutation grants revoked; authenticated account-bound restricted worker, revision/reset checks, bounded streamed body, receipt capacity and idempotency. Legacy `/api/library/bookmarks` writes refuse stale clients. | New mutation route has no request-rate admission. Receipt capacity is not a request-rate limit; legacy requests without receipts remain accepted. Protect worker admission without breaking queued recovery/import. |
+| Account reset and snapshot/export creation: `/api/account-data/reset`, `/api/account-data/snapshots` | Strict account limits, restricted worker, locks, snapshot concurrency/size/time/expiry bounds and recovery. | Reuse #7/#10 runtime evidence; no new snapshot mechanism needed. |
+| Highlights/notes: `/api/library/highlights` and `[id]` | Route validation/rate limits and ownership RLS. Direct authenticated table INSERT/UPDATE/DELETE remains allowed. Anchor-pair and overlap checks exist. | Direct writes bypass route rate/text validation and can invalidate the personal-evidence index. No text-size CHECK found in live metadata. Close that direct path or enforce matching limits inside it. |
+| Reflections: `/api/library/reflections` and `[id]` | Ownership RLS and DB prompt/text length checks (500/1,000 chars). Direct authenticated writes remain allowed; route creation is limited. | DB lengths already protect payload fields; they do not rate-limit repeated writes/index invalidations. Bound the reachable mutation path, including edit/delete. |
+| Feedback: `/api/feedback/content` | Route limit 20/minute; authenticated ownership RLS and per-item upsert. Direct authenticated writes remain allowed. | The route budget can be bypassed; select controlled writes or DB admission. Preserve vote replacement/removal. |
+| Content requests/votes: `/api/content-requests`, `[id]/vote` | Request submission uses server RPC; browser has no applicable request-write policy. Vote route has 60/minute checks; direct vote INSERT/DELETE is permitted for owned/eligible votes and updates counts through triggers. | Close/bound direct vote churn; retain eligibility, uniqueness and count integrity. Do not interpret unused broad request grants as an existing ordinary-user write bypass. |
+| Notification preferences: `/api/notification-preferences` | Route limit 20/minute; one account row, ownership RLS; direct authenticated INSERT/UPDATE permitted. | Decide and enforce low-cost preference write budget at reachable boundary. |
+| Profile onboarding and reader settings: `set_onboarding_state`, `useReaderSettings` | RLS restricts profile updates to owner; production grants UPDATE only on `onboarding_state`. RPC validates nonempty tour/version and supported status. | Arbitrary tour/version length and direct JSON updates lack a DB size/rate bound. Separately, the existing reader-settings direct update lacks the required column grant; verify and repair persistence through a controlled path, not a broad profile grant. Never expose role updates. |
+| Reading activity/history: `/api/activity/log`, `/api/activity/history/content/[id]` | Authenticated/anonymous routes have validation and admission; aggregate content analytics RPCs are server-only. Direct own `reading_activity` INSERT/UPDATE policies remain. | Direct own activity writes bypass route controls. Preserve server logging and history removal when narrowing access. |
+| AI usage ledgers and three chat routes | #20–#22 enforce atomic quota/admission before dispatch. Browser own `ai_message_usage` INSERT remains permitted; trigger serializes account writes. Private monetary tables are server-only. | Legacy direct usage inserts can grow rows/consume the caller's own quota; the lock is not a rate bound. Revoke unnecessary browser INSERT after proving no remaining consumer. This does not bypass provider spending admission. |
+| Email subscribe/unsubscribe | Server routes and server-only subscription RPC/table access; token/route controls. | Reuse existing controls; no direct browser-write path identified. |
+| Admin content/sections/series, request actions, uploads | Admin authentication/server clients; narrow admin-only DB policies where present. Media/audio bucket size and MIME gates; processor queues/claims. | Retain existing admin/Storage security gates. Admin identity is a different trust tier, not evidence that every operation has a numeric quota. Background generation costs remain outside #22. |
+| Scheduled narration, story image, notification and evidence workers | Admin/cron or private DB entry points, service/restricted roles, queue claims and bounded batches. | Keep privileged credentials server-only; reuse existing worker checks. Do not route these through end-user write admission. |
+| Auth/OTP/admin login/logout and account deletion | Auth service/session/admin controls rather than ordinary table grants; account deletion has separate hosted/live evidence. | Preserve provider Auth limits and deletion semantics. No new Auth limits inferred from the table inventory. |
+| CSP/image-fallback telemetry, anonymous activity session, chat export | Dedicated route validation/limits; telemetry/token or temporary-export side effects. | Keep explicit scope; these are not personal-library table writes. |
+| Content batch/focus/recommendations/evidence resolver POSTs | POST transport for reads; evidence resolution rechecks access. | Do not add write quotas simply because HTTP method is POST. |
+
+The original repository mutation helpers still exist but no production caller of
+`upsertUserLibrary`, `updateUserLibrary`, or `deleteUserLibrary` was found. Do not
+reintroduce them as a browser fallback. The existing security-new-object allowlist
+accepts several historical grants; passing it does not close the gaps above.
+
+### Bounded correction sequence and acceptance
+
+1. **Library admission:** add an account-keyed, fail-closed server limit before worker
+   work. Choose and document a budget using actual progress-save cadence and guest
+   import/replay behavior; return Retry-After. Prove denied requests make zero worker
+   calls, account isolation, limiter outage behavior, and queued 429 recovery without
+   dropped changes. This can be a small application-only correction.
+2. **Personal captures:** make highlight/reflection writes use a controlled server
+   boundary with ownership derived from verified authentication; revoke direct browser
+   DML in the same reviewed rollout (or enforce equivalent atomic DB admission if
+   direct access is retained). Preserve RLS, field constraints, indexing invalidation,
+   citation unavailability and exports. Prove direct Data API denial, other-account
+   denial, exact size boundaries and concurrent admission with a disposable DB.
+3. **Remaining direct paths:** cover feedback, votes, preferences, activity and legacy
+   usage inserts; constrain onboarding JSON and repair reader-setting persistence.
+   Reuse shared admission only where semantics match. Keep this separate from capture
+   work so an unrelated preference fix cannot obscure retrieval evidence.
+
+Use staged compatibility: validate existing consumers before revoking privileges;
+never revoke a user-client write while leaving the deployed route dependent on it.
+A route-only UI change cannot close a still-granted direct Data API path. Database
+changes follow the existing disposable-hosted gate and reviewed production dry-run;
+this inventory does not authorize skipping those gates or claim their completion.
+
+Completion requires the inventory rows to point to either a tested authoritative
+limit or an explicit scoped exception, including row growth, text size and repeated
+indexing work. Do not add numeric quotas to every privileged/read operation by default.
+Target dates for correction deliveries follow the first bounded design; no launch
+promise is implied by today's inventory date.
+
+Handoff: documentation-only diff; production metadata inspection completed, no runtime
+exploit or load test performed. Next exact action is correction 1: inspect the progress
+save/import cadence, define admission and retry behavior, then implement/test that
+application-only path. #24 and broader deferred features remain outside this pass.
