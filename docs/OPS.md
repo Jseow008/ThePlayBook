@@ -859,6 +859,49 @@ Check:
 
 ### 5.4.1 Interactive AI spending controls (#22)
 
+Approved on 27 September 2026 (USD). These control Netflux's provider spending;
+they are not charges billed to users and are not a daily subscription fee.
+
+| Control | Approved allowance |
+| --- | --- |
+| All interactive AI users combined | $5 per UTC day |
+| All guests combined | $1 per UTC day, included within the $5 total |
+| Each guest network/IP | 5 requests per UTC day, also subject to shared budgets and burst limits |
+| Each signed-in account | 20 requests/day, 100/week, 300/month, shared across the three AI features |
+
+There is no individual dollar allowance for signed-in accounts. Guests sharing a
+network share its request allowance. If guests exhaust their $1 pool, signed-in
+accounts can continue within the remaining global allowance. Exhausting the global
+pool blocks new provider admissions for everyone; ordinary browsing/reading remains
+available. Daily allowances reset at 00:00 UTC (08:00 Singapore time).
+
+Unused allowance is not charged or carried forward. $5/day represents a nominal
+$150 allowance over 30 days for the covered features, not a promised invoice maximum.
+Provider credit availability is independent: exhausted credits or provider billing
+limits can reject a request even when Netflux's allowance remains. Resetting Netflux's
+allowance does not top up provider credits. No automatic credit purchase is configured
+by this feature.
+
+To change the approved policy, review the new amounts, then update this singleton
+through a server/operator connection. This is the currently approved configuration:
+
+```sql
+UPDATE private.ai_spend_policy
+SET enabled = true,
+    daily_limit_microusd = 5000000,
+    guest_daily_limit_microusd = 1000000,
+    guest_daily_requests = 5
+WHERE singleton
+RETURNING enabled, daily_limit_microusd, guest_daily_limit_microusd, guest_daily_requests;
+```
+
+Do not reset usage counters when changing a ceiling. Raising a ceiling makes only the
+additional budget available; lowering it below already-accounted usage blocks further
+admissions. Account request limits are configured separately by the server variables
+`AI_DAILY_MESSAGE_LIMIT`, `AI_WEEKLY_MESSAGE_LIMIT`, `AI_MONTHLY_MESSAGE_LIMIT`; their
+production values currently use the defaults shown above. Record approved changes
+here and in the release checkpoint.
+
 The migration creates a disabled policy. Before the application release, explicitly
 set approved ceilings in `private.ai_spend_policy` using the production database
 operator connection (not a browser client). Amounts are integer micro-USD:

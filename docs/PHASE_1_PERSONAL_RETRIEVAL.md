@@ -890,3 +890,84 @@ The actual CLI checker and all 15 runtime tests now pass locally (local CLI requ
 `sslmode=disable`). No migration SQL or application behavior changed in this fix.
 Next: push correction, finish approved hosted rehearsal, delete candidate, then wait
 for daily-cap selection before any production activation.
+
+## Finding #22 hosted rehearsal handoff — 27 September 2026
+
+PR #170 corrected head: `b28ae64a06ed0b3e887e97ded3bf0f481ab9c82a`.
+[Validation](https://github.com/Jseow008/ThePlayBook/actions/runs/36309634101),
+[Security Gates](https://github.com/Jseow008/ThePlayBook/actions/runs/36309634094),
+PR scope and Vercel all passed. Auto-merge remains off; no production mutation,
+merge or deployment performed. Working-tree checkpoint is intentionally pending the
+next release-evidence commit so recording status does not restart unchanged CI.
+
+Approved temporary project `jpurfcadxkefukrqcxgq` completed full 110-migration replay,
+guarded reset/replay and clean follow-up dry-run. Schema inventory comparison found
+only #22's added objects, no removed or changed existing objects. Generated public
+types differ from production only by the two spending RPCs and match the application
+contract. Six hosted security checks passed. All 15 runtime tests passed with a
+30-second per-test harness deadline for hosted round trips (application/SQL lock
+limits unchanged). Initial hosted run passed 14/15; the many-invalid-inputs test
+exceeded its local 5-second aggregate test deadline. All seven browser smoke checks
+passed with zero retries on the corrected fixture setup. Initial browser setup had
+5/7 pass: missing candidate admin-IP allowlist and localhost HTTPS redirect mismatch;
+preflighted ingress/origin configuration corrected these without application edits.
+
+Actual application requests against the hosted candidate returned disabled-policy
+503 and zero-budget 429 with Retry-After. Both left zero admitted operations; no paid
+provider work was dispatched. One active hourly `prune-ai-spend` job was verified.
+Security advisors: expected service-only/RLS-no-policy INFO on four new private tables;
+existing intentional search_catalog WARN exceptions unchanged. Performance findings
+were unused indexes on the fresh database and its Auth connection-allocation INFO.
+
+Setup notes: the new CLI's SQL endpoint cannot alter the privileged postgres role;
+use the Management API database/password endpoint for the disposable project. The
+existing CLI keychain credential used legacy base64 encoding. Supabase's official
+root certificate was needed for a verified TLS pooler connection. No TLS verification
+was disabled in the successful checks. Preserve these lessons to avoid repeating
+credential/connection discovery on the next hosted rehearsal.
+
+Temporary project deletion succeeded and absence from the project list was confirmed;
+production remains listed. Stopped the isolated server and removed private credentials,
+fixture data copies, candidate workdir and candidate-built application output. Safe
+local evidence: `/private/tmp/netflux-pr170-evidence/` (summary, schema comparison,
+hosted test summaries and dry-run). One primary agent performed this follow-up; no
+subagents or provider/model benchmarks were started.
+
+Production dry-run proposes exactly `20260927083746_add_ai_spend_ledger.sql`.
+Remaining input: daily USD ceiling ($5/$10/$20 offered; proposed guest share 20%,
+five attempts/network/day). Temporary-project approval did not answer the ceiling.
+Next action after the ceiling is selected: refresh backup/parity and exact dry-run,
+apply this sole migration under existing production authorization, configure approved
+policy, verify production schema/ACLs, then merge/deploy and smoke-test. Do not recreate
+the candidate or repeat unchanged hosted/model evidence without a relevant change.
+
+Final CI log confirmation: 1,528 unit tests passed with 261 declared skips; 176
+browser tests passed; Security Validation executed and passed all 15 spending
+runtime tests on the corrected exact commit. No required check was bypassed.
+
+## Finding #22 approved production policy — 27 September 2026
+
+User explicitly approved $5/day global interactive allowance, including $1/day
+shared guest allowance. Guest quota remains five requests/network/day; account quota
+remains 20/day, 100/week, 300/month (production has no overriding quota/model variables).
+The approved configuration, reset time, provider-credit distinction, conservative
+accounting, exclusions, inspection and change/kill-switch procedures are in OPS §5.4.1.
+
+Fresh backup: COMPLETED `2026-09-26T23:45:27.973Z`. Refreshed production dry-run listed
+only `20260927083746_add_ai_spend_ledger.sql`; applied that sole reviewed migration.
+Configured and read back enabled=true, 5,000,000 global micro-USD, 1,000,000 guest
+micro-USD and five daily guest requests. No existing usage counters were reset.
+Follow-up production dry-run is clean; all six production security checks pass.
+All seven affected schema categories match the preserved hosted-candidate fingerprints
+and counts. Advisor findings are the documented private-table INFO and pre-existing
+search_catalog/leaked-password-protection warnings; no unexpected regression.
+Hosted rehearsal and existing model evidence are unchanged and reused.
+
+PR #170 merged as `c82a704cd2389e108a55e9eb8f554141b6863500` after every required PR
+check passed. Approved amounts and this release record are a documentation-only
+follow-up, avoiding a new full application test run just for Markdown.
+At this checkpoint production still serves `99c32ac`; merge-triggered validation is
+running. Database policy is configured, but application enforcement is not yet verified
+live. Next: confirm the production deployment contains #170, run a bounded admission/
+settlement smoke, and record the result. Do not toggle production limits for testing
+or repeat the already-passed hosted denial and runtime suites.
