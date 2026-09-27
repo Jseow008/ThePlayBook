@@ -1039,7 +1039,7 @@ This is the operating cadence adopted on that date, not evidence that every dash
 
 ### 5.4.2 Personal-library write admission (#23)
 
-Implementation pending release; use the [checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-library-and-capture-admission--27-september-2026) for deployment status.
+Released on 27 September 2026 in [PR #174](https://github.com/Jseow008/ThePlayBook/pull/174), `e8e93d70`. The migration and application are live; the [checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-library-and-capture-admission--27-september-2026) records hosted and production verification.
 
 - Library saves/progress: 120 attempts per account per minute, shared across devices;
   verified account identity selects the existing Redis limiter. Limiter failure returns

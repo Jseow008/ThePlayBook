@@ -58,7 +58,7 @@ journey. Search/model evaluation was unchanged and not rerun.
 
 ## Current bounded work: mutation boundaries (#23)
 
-The [inventory and correction plan](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-mutation-boundary-inventory--27-september-2026) compares current routes with read-only production grants, RLS, triggers and RPC exposure. The original direct bookmark-write path is closed. Remaining direct-write/resource-limit gaps are documented; #23 is **open**, not closed by this inventory. Library and capture admission are now in implementation; see the [current checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-library-and-capture-admission--27-september-2026). They are not yet released.
+The [inventory and correction plan](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-mutation-boundary-inventory--27-september-2026) compares current routes with read-only production grants, RLS, triggers and RPC exposure. The original direct bookmark-write path is closed. Remaining direct-write/resource-limit gaps are documented; #23 is **open**, not closed by this inventory. Library and capture admission shipped in [#174](https://github.com/Jseow008/ThePlayBook/pull/174), `e8e93d70`: production migration/schema/security checks and authenticated save/replay/capture smoke passed. The [current checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-library-and-capture-admission--27-september-2026) records the evidence. Feedback, votes, preferences/profile, activity and legacy usage remain the next bounded scope; #23 is not yet complete.
 
 ## Updating this page
 
