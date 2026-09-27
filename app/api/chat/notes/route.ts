@@ -9,7 +9,7 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
-import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
+import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
 import { PersonalEvidenceScopeSchema } from "@/lib/personal-evidence";
 import { retrievePersonalEvidence, PersonalEvidenceIndexNotReady } from "@/lib/server/personal-retrieval";
 import { retrievalTextResponse } from "@/lib/server/retrieval-response";
@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
         const questionContext = contextualizeUserQuestion(messages);
         if (questionContext.contextMissing) return retrievalTextResponse(FOLLOW_UP_CLARIFICATION, protocol);
 
-        const quota = await checkAiUsageQuota(supabase, user.id);
+        const quota = await admitAiUsage(user.id, "ask-notes", req.signal);
         if (!quota.allowed) {
             recordAiRouteAbuse({
                 signal: "ai_quota_exhausted",
@@ -219,9 +219,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Charge one admitted retrieval attempt before embedding/selection; direct
-        // quotes and abstentions also consume provider resources.
-        await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-notes" });
+        req.signal.throwIfAborted();
         let evidence;
         try {
             evidence = await retrievePersonalEvidence({

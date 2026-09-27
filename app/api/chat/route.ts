@@ -11,7 +11,7 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
-import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
+import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
 import { GoogleGenAI } from "@google/genai";
 import { buildLibraryMetadataContext, type LibraryItemRow } from "@/lib/server/library-snapshot";
 
@@ -229,38 +229,40 @@ export async function POST(req: NextRequest) {
             return apiError("INTERNAL_ERROR", "Ask My Library retrieval is not configured. Please contact an administrator.", 500, requestId);
         }
 
-        const quota = await checkAiUsageQuota(supabase, user.id);
-        if (!quota.allowed) {
-            recordAiRouteAbuse({
-                signal: "ai_quota_exhausted",
-                request: req,
-                requestId,
-                route: "/api/chat",
-                userId: user.id,
-                reason: "quota_exhausted",
-                retryAfterMs: quota.retryAfterMs,
-                metadata: {
-                    blocked_window: quota.blockedWindow,
-                    limit: quota.limit,
-                    used: quota.used,
-                    reset_after_seconds: Math.max(1, Math.ceil(quota.retryAfterMs / 1000)),
-                },
-            });
-            return NextResponse.json(
-                { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
-                {
-                    status: 429,
-                    headers: { "Retry-After": String(Math.max(1, Math.ceil(quota.retryAfterMs / 1000))) },
-                }
-            );
+        const admit = async () => {
+            const quota = await admitAiUsage(user.id, "ask-library", req.signal);
+            if (!quota.allowed) {
+                recordAiRouteAbuse({
+                    signal: "ai_quota_exhausted",
+                    request: req,
+                    requestId,
+                    route: "/api/chat",
+                    userId: user.id,
+                    reason: "quota_exhausted",
+                    retryAfterMs: quota.retryAfterMs,
+                    metadata: {
+                        blocked_window: quota.blockedWindow,
+                        limit: quota.limit,
+                        used: quota.used,
+                        reset_after_seconds: Math.max(1, Math.ceil(quota.retryAfterMs / 1000)),
+                    },
+                });
+                return NextResponse.json(
+                    { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
+                    {
+                        status: 429,
+                        headers: { "Retry-After": String(Math.max(1, Math.ceil(quota.retryAfterMs / 1000))) },
+                    }
+                );
+            }
+            return null;
+        };
+        const usesEmbedding = intent !== "library_metadata" && hasGemini;
+        if (usesEmbedding) {
+            const failure = await admit();
+            if (failure) return failure;
         }
-
-        const retrievalUsageRecorded = intent !== "library_metadata" && hasGemini;
-        if (retrievalUsageRecorded) {
-            // One admitted retrieval attempt includes embedding/selection, even when
-            // it ends in a direct quote, abstention, provider failure or cancellation.
-            await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
-        }
+        req.signal.throwIfAborted();
         const retrievalSignal = AbortSignal.any([req.signal, AbortSignal.timeout(35_000)]);
         const libraryPromise = supabase
             .from("user_library")
@@ -383,6 +385,11 @@ export async function POST(req: NextRequest) {
             aiModel = anthropic(getAnthropicModelName(intent));
         }
 
+        if (!usesEmbedding) {
+            const failure = await admit();
+            if (failure) return failure;
+        }
+        req.signal.throwIfAborted();
         const result = streamText({
             model: aiModel,
             system: systemPrompt,
@@ -391,12 +398,6 @@ export async function POST(req: NextRequest) {
             maxOutputTokens: getOutputTokenCap(intent),
             experimental_transform: smoothStream({ delayInMs: 6 }),
             onFinish: async () => {
-                try {
-                    if (!retrievalUsageRecorded) await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "ask-library" });
-                } catch (error) {
-                    logApiError({ requestId, route: "/api/chat", message: "Failed to record AI usage", error });
-                }
-
                 if (messages.filter((message) => message.role === "user").length === 1) {
                     afterResponse(() => captureServerAnalyticsEvent({
                         event: "ai_chat_started",

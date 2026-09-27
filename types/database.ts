@@ -1178,6 +1178,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      admit_ai_usage: {
+        Args: {
+          p_day_limit: number
+          p_feature: string
+          p_month_limit: number
+          p_user_id: string
+          p_week_limit: number
+        }
+        Returns: Json
+      }
       canonical_book_base_title: { Args: { p_title: string }; Returns: string }
       catalog_search_plain_text: { Args: { p_value: string }; Returns: string }
       claim_content_request_notifications: {

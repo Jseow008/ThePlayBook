@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/server/rate-limit';
 import { recordAiRouteAbuse } from '@/lib/server/security-telemetry';
-import { checkAiUsageQuota, recordGeneratedAiMessage } from '@/lib/server/ai-usage-quota';
+import { admitAiUsage } from '@/lib/server/ai-usage-quota';
 import { smoothStream, streamText } from 'ai';
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -29,8 +29,7 @@ vi.mock('@/lib/server/security-telemetry', () => ({
 }));
 
 vi.mock('@/lib/server/ai-usage-quota', () => ({
-    checkAiUsageQuota: vi.fn(),
-    recordGeneratedAiMessage: vi.fn(),
+    admitAiUsage: vi.fn(),
     getQuotaExceededMessage: vi.fn((result) => `quota exceeded: ${result.blockedWindow}`),
 }));
 
@@ -87,8 +86,7 @@ describe('Author Chat API', () => {
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
-        (checkAiUsageQuota as any).mockResolvedValue({ allowed: true, windows: [] });
-        (recordGeneratedAiMessage as any).mockResolvedValue(undefined);
+        (admitAiUsage as any).mockResolvedValue({ allowed: true, windows: [] });
         mockAuthUser.mockResolvedValue({ data: { user: null } });
 
         select.mockReturnValue(queryBuilder);
@@ -112,8 +110,7 @@ describe('Author Chat API', () => {
             windowMs: 10 * 60_000,
             key: 'author-chat:guest',
         });
-        expect(checkAiUsageQuota).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
     });
 
     it('accepts legacy bookTitle payloads', async () => {
@@ -146,17 +143,49 @@ describe('Author Chat API', () => {
             key: 'author-chat:user',
             identifier: 'user-123',
         });
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(admitAiUsage).toHaveBeenCalledWith('user-123', 'author-chat', req.signal);
+        expect(vi.mocked(admitAiUsage).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(streamText).mock.invocationCallOrder[0]);
         await finishLatestStream();
-        expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
-            userId: 'user-123',
-            feature: 'author-chat',
-        });
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not admit when source loading fails', async () => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        order.mockReturnValueOnce({ data: null, error: new Error('source unavailable') });
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(500);
+        expect(admitAiUsage).not.toHaveBeenCalled();
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('fails closed when admission is unavailable', async () => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        vi.mocked(admitAiUsage).mockRejectedValueOnce(new Error('quota unavailable'));
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(500);
+        expect(streamText).not.toHaveBeenCalled();
+    });
+
+    it('does not require stream completion to account for a failed provider attempt', async () => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        vi.mocked(streamText).mockImplementationOnce(() => { throw new Error('provider unavailable'); });
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(500);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
+    });
+
+    it('stops dispatch when cancelled while awaiting admission', async () => {
+        mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
+        const controller = new AbortController();
+        vi.mocked(admitAiUsage).mockImplementationOnce(async () => { controller.abort(); return { allowed: true, windows: [] }; });
+        const response = await POST(new NextRequest('http://localhost/api/chat/author', { method: 'POST', signal: controller.signal, body: JSON.stringify(validBody) }));
+        expect(response.status).toBe(500);
+        expect(streamText).not.toHaveBeenCalled();
     });
 
     it('blocks signed-in generated author answers when the AI quota is exhausted', async () => {
         mockAuthUser.mockResolvedValueOnce({ data: { user: mockUser } });
-        (checkAiUsageQuota as any).mockResolvedValueOnce({
+        (admitAiUsage as any).mockResolvedValueOnce({
             allowed: false,
             blockedWindow: 'month',
             limit: 300,
@@ -178,7 +207,6 @@ describe('Author Chat API', () => {
         expect(res.headers.get('Retry-After')).toBe('86400');
         expect(json.error.code).toBe('AI_QUOTA_EXCEEDED');
         expect(streamText).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
     });
 
     it('rate limits guests at the guest quota', async () => {

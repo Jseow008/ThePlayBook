@@ -8,7 +8,7 @@ import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
 import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
-import { checkAiUsageQuota, getQuotaExceededMessage, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
+import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
 
 export const maxDuration = 60;
 
@@ -302,34 +302,6 @@ export async function POST(req: NextRequest) {
             return apiError("VALIDATION_ERROR", "Conversation is too long. Please start a new chat.", 400, requestId);
         }
 
-        if (user) {
-            const quota = await checkAiUsageQuota(supabase, user.id);
-            if (!quota.allowed) {
-                recordAiRouteAbuse({
-                    signal: "ai_quota_exhausted",
-                    request: req,
-                    requestId,
-                    route: "/api/chat/author",
-                    userId: user.id,
-                    reason: "quota_exhausted",
-                    retryAfterMs: quota.retryAfterMs,
-                    metadata: {
-                        blocked_window: quota.blockedWindow,
-                        limit: quota.limit,
-                        used: quota.used,
-                        reset_after_seconds: Math.max(1, Math.ceil(quota.retryAfterMs / 1000)),
-                    },
-                });
-                return NextResponse.json(
-                    { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
-                    {
-                        status: 429,
-                        headers: { "Retry-After": String(Math.max(1, Math.ceil(quota.retryAfterMs / 1000))) },
-                    }
-                );
-            }
-        }
-
         // --- Sliding Context Window: only keep last N messages ---
         const messages = allMessages.slice(-MAX_HISTORY_MESSAGES);
 
@@ -381,22 +353,44 @@ Rules:
             aiModel = anthropic(process.env.AI_MODEL || DEFAULT_ANTHROPIC_MODEL);
         }
 
+        if (user) {
+            const quota = await admitAiUsage(user.id, "author-chat", req.signal);
+            if (!quota.allowed) {
+                recordAiRouteAbuse({
+                    signal: "ai_quota_exhausted",
+                    request: req,
+                    requestId,
+                    route: "/api/chat/author",
+                    userId: user.id,
+                    reason: "quota_exhausted",
+                    retryAfterMs: quota.retryAfterMs,
+                    metadata: {
+                        blocked_window: quota.blockedWindow,
+                        limit: quota.limit,
+                        used: quota.used,
+                        reset_after_seconds: Math.max(1, Math.ceil(quota.retryAfterMs / 1000)),
+                    },
+                });
+                return NextResponse.json(
+                    { error: { code: "AI_QUOTA_EXCEEDED", message: getQuotaExceededMessage(quota) } },
+                    {
+                        status: 429,
+                        headers: { "Retry-After": String(Math.max(1, Math.ceil(quota.retryAfterMs / 1000))) },
+                    }
+                );
+            }
+        }
+
+        req.signal.throwIfAborted();
         // --- Stream ---
         const result = streamText({
             model: aiModel,
             system: systemPrompt,
             messages,
             maxOutputTokens: MAX_OUTPUT_TOKENS,
+            abortSignal: req.signal,
             experimental_transform: smoothStream({ delayInMs: 20, chunking: "word" }),
             onFinish: async () => {
-                if (user) {
-                    try {
-                        await recordGeneratedAiMessage(supabase, { userId: user.id, feature: "author-chat" });
-                    } catch (error) {
-                        logApiError({ requestId, route: "/api/chat/author", message: "Failed to record AI usage", error });
-                    }
-                }
-
                 if (allMessages.filter((message) => message.role === "user").length === 1) {
                     const distinctId = user?.id ?? `anonymous:${requestId}`;
                     afterResponse(() => captureServerAnalyticsEvent({
