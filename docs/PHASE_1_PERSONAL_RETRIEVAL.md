@@ -1243,8 +1243,8 @@ Already-open legacy Author clients get a refresh-required 409 before AI dispatch
 Author Chat's pre-existing optional-auth session behavior is not a new isolation
 contract; this patch covers failure delivery and unmount cancellation, with existing
 verified-session boundaries retained in library/Notes.
-Next: publish the scoped PR, require exact-head CI, merge and verify production.
-Do not rerun unchanged model/database evidence or create a temporary database.
+Implementation shipped in #178; the runtime correction and final release evidence are below.
+Unchanged model/database evidence was reused; no temporary database was created.
 
 ### #178 production runtime correction
 
@@ -1252,7 +1252,7 @@ Do not rerun unchanged model/database evidence or create a temporary database.
 27 September live probe then returned an empty 500 on `/api/chat/author`; Vercel
 logs identified `Cannot read private member #state` while reconstructing Next.js's
 proxied runtime request. Local ordinary-request fixtures missed that runtime shape.
-#24 is not production-verified and must not be closed yet.
+At that point #24 remained open; the correction and verified release below supersede this hold.
 
 Production was rolled back to verified `9661e5fd`, deployment
 `dpl_7Hiv6hpDaLzVqyKnoBgkMjvfpz56`; the alias confirms READY and both library/Notes
@@ -1262,7 +1262,30 @@ passes the deadline signal separately into all three handlers. The regression fi
 asserts a proxied request is retained; 105 affected API/deadline tests, typecheck, lint
 and production build pass. Actual local HTTP returns library/Notes 401 and legacy
 Author 409; new-protocol Author reaches its existing fail-closed limiter (503 because
-the local limiter is unavailable), without a runtime exception or provider call. Next:
-publish the narrow corrective PR, require
-CI, then explicitly verify/promote the corrected build after rollback and repeat live
-probes. Do not claim #24 complete or proceed to another implementation before this gate.
+the local limiter is unavailable), without a runtime exception or provider call. The corrected preview then passed actual HTTP checks: library/Notes 401, legacy Author
+409 and new-protocol invalid Author payload 400.
+
+### Verified #24 release
+
+[#179](https://github.com/Jseow008/ThePlayBook/pull/179) merged as `ca30f92f` after all
+required checks passed. Post-merge `validate` (`36326400372`) and Security Validation
+(`36326400451`) passed before explicit promotion of production deployment
+`dpl_uk3zLRauUek6uDtnmE4B1e3WSadx`. The alias `www.netflux.blog` confirms READY on
+`ca30f92f`. No required deployment gate was bypassed.
+
+Live verification on 27 September passed: library/Notes unauthenticated 401, legacy
+Author refresh-required 409, invalid new-protocol payload 400, public health 200 and
+one real public-source Author Chat response 200 with text and explicit `finishReason:
+stop` in the UI protocol. It used ordinary spending admission; no quota was reset.
+No account, personal record or database schema was created/changed for this smoke.
+The deployment log scan showed the expected deliberately invalid 400 probe, with no
+repeat of the request private-field runtime failure. Sanitized results are retained in
+[the release artifact](evidence/graceful-chat-release-20260927.json); generated answer text is not retained.
+
+#24 is complete within the recorded interactive chat failure scope: deterministic
+fault/SDK tests establish timeout, cancellation, incomplete-answer exclusion and retry;
+preview/live HTTP establishes the deployed request adapter and successful response path.
+This does not substitute for #26's combined later-session journey or the remaining audit.
+Closeout branch: `codex/graceful-chat-release-record`, based on `ca30f92f`.
+Next workstream: #26 capture → later session → retrieval → evidence → export/reconcile,
+reusing existing feature evidence and adding the missing combined ordinary-user proof.
