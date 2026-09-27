@@ -1004,10 +1004,10 @@ were attempted. This is structural evidence, not a runtime penetration test.
 
 | Surface / code entry | Reachable boundary and existing protection | Remaining obligation |
 | --- | --- | --- |
-| Bookmarks/progress and guest import: `hooks/useReadingProgress.ts`, `/api/account-data/user_library/mutation` | Browser table mutation grants revoked; authenticated account-bound restricted worker, revision/reset checks, bounded streamed body, receipt capacity and idempotency. Legacy `/api/library/bookmarks` writes refuse stale clients. | New mutation route has no request-rate admission. Receipt capacity is not a request-rate limit; legacy requests without receipts remain accepted. Protect worker admission without breaking queued recovery/import. |
+| Bookmarks/progress and guest import: `hooks/useReadingProgress.ts`, `/api/account-data/user_library/mutation` | Browser table mutation grants revoked; authenticated account-bound restricted worker, revision/reset checks, bounded streamed body, receipt capacity and idempotency. Legacy `/api/library/bookmarks` writes refuse stale clients. | Addressed by #174: account-keyed 120/minute admission before worker work, bounded Retry-After recovery and guest-import preservation. See release evidence below. |
 | Account reset and snapshot/export creation: `/api/account-data/reset`, `/api/account-data/snapshots` | Strict account limits, restricted worker, locks, snapshot concurrency/size/time/expiry bounds and recovery. | Reuse #7/#10 runtime evidence; no new snapshot mechanism needed. |
-| Highlights/notes: `/api/library/highlights` and `[id]` | Route validation/rate limits and ownership RLS. Direct authenticated table INSERT/UPDATE/DELETE remains allowed. Anchor-pair and overlap checks exist. | Direct writes bypass route rate/text validation and can invalidate the personal-evidence index. No text-size CHECK found in live metadata. Close that direct path or enforce matching limits inside it. |
-| Reflections: `/api/library/reflections` and `[id]` | Ownership RLS and DB prompt/text length checks (500/1,000 chars). Direct authenticated writes remain allowed; route creation is limited. | DB lengths already protect payload fields; they do not rate-limit repeated writes/index invalidations. Bound the reachable mutation path, including edit/delete. |
+| Highlights/notes: `/api/library/highlights` and `[id]` | Route validation/rate limits and ownership RLS. Direct authenticated table INSERT/UPDATE/DELETE remains allowed. Anchor-pair and overlap checks exist. | Addressed by #174: authoritative DB admission, text bounds and serialized 50-per-item cap apply to both route and direct writes; ownership/indexing semantics retained. |
+| Reflections: `/api/library/reflections` and `[id]` | Ownership RLS and DB prompt/text length checks (500/1,000 chars). Direct authenticated writes remain allowed; route creation is limited. | Addressed by #174: authoritative account budget covers inserts, updates and deletes, preserving existing DB lengths and upsert semantics. |
 | Feedback: `/api/feedback/content` | Route limit 20/minute; authenticated ownership RLS and per-item upsert. Direct authenticated writes remain allowed. | The route budget can be bypassed; select controlled writes or DB admission. Preserve vote replacement/removal. |
 | Content requests/votes: `/api/content-requests`, `[id]/vote` | Request submission uses server RPC; browser has no applicable request-write policy. Vote route has 60/minute checks; direct vote INSERT/DELETE is permitted for owned/eligible votes and updates counts through triggers. | Close/bound direct vote churn; retain eligibility, uniqueness and count integrity. Do not interpret unused broad request grants as an existing ordinary-user write bypass. |
 | Notification preferences: `/api/notification-preferences` | Route limit 20/minute; one account row, ownership RLS; direct authenticated INSERT/UPDATE permitted. | Decide and enforce low-cost preference write budget at reachable boundary. |
@@ -1056,10 +1056,9 @@ indexing work. Do not add numeric quotas to every privileged/read operation by d
 Target dates for correction deliveries follow the first bounded design; no launch
 promise is implied by today's inventory date.
 
-Handoff: documentation-only diff; production metadata inspection completed, no runtime
-exploit or load test performed. Next exact action is correction 1: inspect the progress
-save/import cadence, define admission and retry behavior, then implement/test that
-application-only path. #24 and broader deferred features remain outside this pass.
+Inventory handoff was documentation-only. Corrections 1–2 are implemented in #174;
+see the release evidence below. The next bounded scope is correction 3. #24 and broader
+deferred features remain outside this pass.
 
 ## Finding #23 library and capture admission — 27 September 2026
 
@@ -1096,11 +1095,42 @@ invalidation/deletion. Required CI includes this suite. Full unit suite passed 1
 with 268 declared skips before the added direct-API fixture; focused follow-ups cover
 later test/error-copy changes. Lint and typecheck passed; no production credentials used.
 
-Release remains held for exact-head CI and the existing hosted gate. Supabase quoted
-$10/month for a new temporary project in the existing Netflux organization; a fresh
-cost confirmation is required before creation. All six local security checks pass; the final migration has eight passing DB runtime
-cases and the route error-mapping fixture passes. Next: publish the scoped held PR,
-obtain cost confirmation, replay/verify hosted candidate,
-review exact production dry-run, then use existing rollout authority. Do not repeat
-unchanged AI retrieval/model evaluations. Clean up the disposable local project and
-hosted candidate after their evidence is retained.
+Release evidence: [PR #174](https://github.com/Jseow008/ThePlayBook/pull/174),
+verified head `27d1ebaf39aa0f1fb0be1c5d521137182249c1ba`, merged as `e8e93d70`.
+Required validate, Security Validation, PR scope, Vercel preview and catalog evidence
+passed. Security CI executed all eight capture-runtime cases; none were skipped.
+
+The approved hosted candidate `mnctvrkwubwujtueayqp` completed 111-migration replay,
+guarded reset and clean dry-run. Six security checks, eight capture runtime tests
+(including actual Auth/Data API), seven browser checks and application save/receipt/
+refusal proofs passed. Public types are unchanged. The candidate was deleted and its
+absence confirmed; isolated server, private credentials/workdirs and build output were
+removed. Unrelated local projects were untouched. Retained sanitized evidence:
+`/private/tmp/netflux-pr174-evidence/` (`hosted-summary.json`, runtime/browser logs,
+HTTP proof, schema fingerprints and production security results).
+
+Production backup completed at `2026-09-26T23:45:27.973Z`. Applied only the reviewed
+`20260927105709_bound_personal_capture_writes.sql`, SHA-256
+`6a80f959419ffbc5900d52221ef7c4acbae5cb8b25562593c1d4f2debf8b048f`.
+Follow-up dry-run is clean, all 14 schema fingerprint categories match the hosted
+candidate, and all six production security checks report zero findings. Advisors show
+expected private RLS-no-policy/unused-index INFO plus previously recorded public
+search and leaked-password warnings; no unexplained regression. No environment change.
+
+Harness lessons: compare receipt fields rather than serialized JSON key order. Run
+linked CLI checks sequentially because concurrent temporary login-role initialization
+can invalidate another command's password; the affected read-only dry-run succeeded
+when repeated sequentially. No application or acceptance-test weakening was needed.
+
+Production application `e8e93d70` is READY at `www.netflux.blog` after successful
+post-merge validation and Security Validation. One ordinary synthetic account verified
+library save 200, identical mutation receipt replay 200, highlight save 200, reflection
+save 200 and health 200. The session was signed out, the account deleted, and zero
+owned library/highlight/reflection rows confirmed. No production quota stress or
+counter reset was performed. Smoke setup needed an authorized server credential lookup
+and a password within Auth's 72-character bound; both were harness-only corrections.
+
+Closeout branch: `codex/library-write-release-record`, based on merged `e8e93d70`.
+The first two #23 corrections are released. The next bounded scope is the remaining
+feedback/votes/preferences/profile/activity/legacy-usage inventory; #23 as a whole
+remains open. Do not recreate the candidate or repeat unchanged database/model evidence.
