@@ -1349,6 +1349,9 @@ screen-reader process, speech caption or navigation result was observable throug
 the desktop tool. Direct launch timed out; one settings restart did not resolve it.
 VoiceOver is verified Off again, and the temporary Safari tab is closed. No success
 is claimed for spoken output. The [evidence and executable human checklist](evidence/screen-reader-verification-20260928.md)
-keep #27 open. Next: finish build/PR checks, publish the focused fixes, then obtain
-a real spoken-output sign-off on the corrected build. Do not repeat the unchanged
+keep #27 open. [PR #182](https://github.com/Jseow008/ThePlayBook/pull/182), implementation
+`16d2a71a`, is published and held without auto-merge for the applicable #27
+release gate. Build and focused checks passed; GitHub checks are pending. Next:
+complete the actual spoken-output checklist on the corrected preview, then merge
+once that acceptance and required CI pass. Do not repeat the unchanged
 retrieval benchmark or database rehearsal for these semantic UI changes.

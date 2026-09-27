@@ -2,6 +2,8 @@
 
 Owner: Codex (Engineering/QA). Application base: `55bbcdb8429cdcb5e3df150d0128dbd3766a2146` (#181). Scope: reflection capture, Notes answer states, validated citation navigation and Settings export. This is a focused accessibility correction, not a redesign or a claim of complete WCAG conformance.
 
+[PR #182](https://github.com/Jseow008/ThePlayBook/pull/182) is held without auto-merge under the [#27 release gate](../PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register) until the remaining actual screen-reader acceptance and required CI pass. No production release has occurred.
+
 ## Evidence and fixes
 
 | Surface | Finding / change | Evidence |
