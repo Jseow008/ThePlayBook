@@ -1,3 +1,4 @@
+import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -47,6 +48,8 @@ export async function GET(request: NextRequest) {
 
         const { data, error } = await query;
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             logApiError({ requestId, route: "GET /api/library/reflections", message: "Error loading reflections", error, userId: user.id });
             return apiError("INTERNAL_ERROR", "Failed to load reflections.", 500, requestId);
         }
@@ -94,6 +97,8 @@ export async function POST(request: NextRequest) {
             .single();
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             logApiError({ requestId, route: "POST /api/library/reflections", message: "Error saving reflection", error, userId: user.id });
             return apiError("INTERNAL_ERROR", "Failed to save reflection.", 500, requestId);
         }

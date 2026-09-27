@@ -1,3 +1,4 @@
+import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -104,6 +105,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             .eq("user_id", user.id); // Double check ownership via query (RLS also handles this)
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             logApiError({ requestId, route: "DELETE /api/library/highlights/[id]", message: "Error deleting highlight", error });
             return apiError("INTERNAL_ERROR", "Failed to delete highlight.", 500, requestId);
         }
@@ -229,6 +232,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             .single();
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             if (
                 isHighlightOverlapConstraintError(error)
                 && isRangeUpdate

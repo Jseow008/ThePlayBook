@@ -1060,3 +1060,47 @@ Handoff: documentation-only diff; production metadata inspection completed, no r
 exploit or load test performed. Next exact action is correction 1: inspect the progress
 save/import cadence, define admission and retry behavior, then implement/test that
 application-only path. #24 and broader deferred features remain outside this pass.
+
+## Finding #23 library and capture admission — 27 September 2026
+
+Branch `codex/library-write-admission`, workspace `/Users/j/Desktop/Lifebook`, based
+on freshly fetched `ff46edab`. Implements the first two inventory corrections; remaining
+mutation families stay open. No UI layout/design changes. One primary agent; no model
+benchmark or paid AI calls. No production change or hosted project created yet.
+
+Library admission uses verified account identity and existing fail-closed Redis
+infrastructure: 120/minute accommodates ordinary saves and pauses larger guest imports.
+The persisted request survives each wait unchanged; three automatic retries are bounded
+and cancelled by existing session/reset/unmount aborts. A controlled hook fixture proves
+queued guest data remains until acknowledgement, then the next item uses its predecessor's
+exact revision. Existing journal replay and reset fixtures pass unchanged in behavior.
+
+Capture design choice: enforce equivalent limits at the database boundary, retaining
+ownership RLS and existing user-scoped clients. This avoids broadening routes to service
+credentials or breaking deployed writes by revoking grants first. Private per-account
+budgets serialize concurrent writes; AFTER row admission counts upserts once. DELETE
+admission is per statement, preserving bulk removal. Reflection field constraints remain;
+highlights gain authoritative text and 50-per-item bounds without deleting legacy data.
+Operational details and exclusions are in OPS §5.4.2.
+
+Reviewed candidate migration: `20260927105709_bound_personal_capture_writes.sql`.
+Disposable local project `NetfluxCapture23`, isolated workdir `/private/tmp/netflux-capture-db`,
+ports 583xx. First local attempt used the old default database and correctly failed on
+missing reflections; its multi-statement migration rolled back. No local reset was run
+there. A second project's initial port conflicted with an existing candidate, so the new
+project was moved to unused ports; existing projects were not stopped or modified.
+All current migrations replayed in the isolated project. Eight runtime cases pass,
+including real Auth + direct Data API 429, concurrent last-unit admission, ownership,
+private-counter denial, upsert counting, bulk rollback/delete, field bounds and index
+invalidation/deletion. Required CI includes this suite. Full unit suite passed 1,535
+with 268 declared skips before the added direct-API fixture; focused follow-ups cover
+later test/error-copy changes. Lint and typecheck passed; no production credentials used.
+
+Release remains held for exact-head CI and the existing hosted gate. Supabase quoted
+$10/month for a new temporary project in the existing Netflux organization; a fresh
+cost confirmation is required before creation. All six local security checks pass; the final migration has eight passing DB runtime
+cases and the route error-mapping fixture passes. Next: publish the scoped held PR,
+obtain cost confirmation, replay/verify hosted candidate,
+review exact production dry-run, then use existing rollout authority. Do not repeat
+unchanged AI retrieval/model evaluations. Clean up the disposable local project and
+hosted candidate after their evidence is retained.

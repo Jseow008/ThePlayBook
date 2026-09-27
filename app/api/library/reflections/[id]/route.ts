@@ -1,3 +1,4 @@
+import { captureWriteFailure } from "@/lib/server/capture-write-errors";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
@@ -59,6 +60,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             .maybeSingle();
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             logApiError({ requestId, route: "PATCH /api/library/reflections/[id]", message: "Error updating reflection", error, userId: user.id });
             return apiError("INTERNAL_ERROR", "Failed to update reflection.", 500, requestId);
         }
@@ -117,6 +120,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
             .eq("user_id", user.id);
 
         if (error) {
+            const admissionFailure = captureWriteFailure(error);
+            if (admissionFailure) return admissionFailure;
             logApiError({ requestId, route: "DELETE /api/library/reflections/[id]", message: "Error deleting reflection", error, userId: user.id });
             return apiError("INTERNAL_ERROR", "Failed to delete reflection.", 500, requestId);
         }

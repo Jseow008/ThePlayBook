@@ -607,6 +607,35 @@ describe("useReadingProgress", () => {
         expect(result.current.recovery.attention[0].canReapply).toBe(false);
     });
 
+    it("keeps a throttled guest import durable and resumes the identical request before the next item", async () => {
+        currentAuthUser = { id: "user-a" };
+        localStorage.setItem(myListKey("guest"), JSON.stringify(["first", "second"]));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        const view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(view.result.current.hydrationStatus).toBe("ready"));
+        const actual = await vi.importActual<typeof import("@/lib/user-library-mutation-client")>("@/lib/user-library-mutation-client");
+        commitMutationMock.mockImplementation(actual.commitUserLibraryMutation);
+        const fetchMock = vi.fn()
+            .mockResolvedValueOnce(new Response(JSON.stringify({ error: { code: "RATE_LIMITED" } }), { status: 429, headers: { "Retry-After": "2" } }))
+            .mockResolvedValueOnce(new Response(JSON.stringify({ data: { resetEpoch: 0, libraryRevision: 11, outcome: "applied" } })))
+            .mockResolvedValueOnce(new Response(JSON.stringify({ data: { resetEpoch: 0, libraryRevision: 12, outcome: "applied" } })));
+        vi.stubGlobal("fetch", fetchMock); vi.useFakeTimers();
+        try {
+            let importing!: Promise<void>;
+            await act(async () => { importing = view.result.current.importGuestLibrary(); });
+            expect(readLibraryIntents(localStorage, "user-a").entries).toHaveLength(2);
+            expect(JSON.parse(localStorage.getItem(myListKey("guest"))!)).toEqual(["first", "second"]);
+            await act(async () => { await vi.advanceTimersByTimeAsync(1999); });
+            expect(fetchMock).toHaveBeenCalledOnce();
+            await act(async () => { await vi.advanceTimersByTimeAsync(1); await importing; });
+            expect(fetchMock).toHaveBeenCalledTimes(3);
+            expect(fetchMock.mock.calls[0][1].body).toBe(fetchMock.mock.calls[1][1].body);
+            expect(JSON.parse(fetchMock.mock.calls[2][1].body).baseRevision).toBe(11);
+            expect(JSON.parse(localStorage.getItem(myListKey("guest"))!)).toEqual([]);
+            expect(view.result.current.recovery.pending).toBe(0);
+        } finally { view.unmount(); vi.useRealTimers(); vi.unstubAllGlobals(); }
+    });
+
     it("resumes an interrupted guest batch without launching a competing snapshot", async () => {
         currentAuthUser = { id: "user-a" };
         localStorage.setItem(myListKey("guest"), JSON.stringify(["guest-first", "guest-second"]));
@@ -672,7 +701,7 @@ describe("useReadingProgress", () => {
         act(() => { void result.current.addToMyList("new-local-item"); });
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({
             expectedAccountId: "user-a", baseRevision: 10, resetEpoch: 0,
-        }), expect.any(AbortSignal)));
+        }), expect.any(AbortSignal), expect.any(Function)));
         act(() => result.current.retryHydration());
         await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
         expect(result.current.myListIds).toEqual(["new-local-item"]);
@@ -714,7 +743,7 @@ describe("useReadingProgress", () => {
         expect(result.current.isLoaded).toBe(true);
         expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1);
         await act(async () => { await result.current.addToMyList("new-local-item"); });
-        expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({ baseRevision: 2 }), expect.any(AbortSignal));
+        expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({ baseRevision: 2 }), expect.any(AbortSignal), expect.any(Function));
     });
 
     it("marks conflicts as needing attention and refreshes without replaying rejected saves", async () => {
@@ -732,7 +761,7 @@ describe("useReadingProgress", () => {
         expect(commitMutationMock).toHaveBeenCalledTimes(1);
         commitMutationMock.mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 13 });
         await act(async () => { expect(await result.current.addToMyList("new-local-item")).toBe(true); });
-        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 12 }), expect.any(AbortSignal));
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 12 }), expect.any(AbortSignal), expect.any(Function));
     });
 
     it("keeps a newer pending removal ahead of an older acknowledged save during hydration", async () => {
@@ -786,7 +815,7 @@ describe("useReadingProgress", () => {
         expect(result.current.myListIds).toEqual([]);
         await act(async () => resolveSave({ resetEpoch: 0, libraryRevision: 1 }));
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
-        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 1, isBookmarked: false }), expect.any(AbortSignal));
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 1, isBookmarked: false }), expect.any(AbortSignal), expect.any(Function));
         vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(2) as never);
         act(() => result.current.retryHydration());
         await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
@@ -823,7 +852,7 @@ describe("useReadingProgress", () => {
             detail: { scope: getStorageScope("user-a"), resetEpoch: 1, boundaryRevision: 2 },
         })));
         await act(async () => { expect(await result.current.addToMyList("post-reset-item")).toBe(true); });
-        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ resetEpoch: 1, baseRevision: 2 }), expect.any(AbortSignal));
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ resetEpoch: 1, baseRevision: 2 }), expect.any(AbortSignal), expect.any(Function));
         await act(async () => resolveOld({ resetEpoch: 0, libraryRevision: 1 }));
         expect(result.current.syncNeedsAttention).toBe(false);
         expect(commitMutationMock.mock.calls[0][1].aborted).toBe(true);
