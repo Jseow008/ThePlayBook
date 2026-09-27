@@ -452,6 +452,45 @@ Rows remain in `public.ai_message_usage`, preserving historical usage and existi
 
 Guest Author Chat retains its existing burst limiter. Global/guest budgets, provider spend caps, and a kill switch remain finding #22; this change does not claim to solve those controls. Higher quotas may justify aggregate counters after measured query latency warrants them.
 
+### 3.7 AI identity and burst limits (#21)
+
+The three interactive AI routes use `aiRateLimit` before quota/provider work.
+Authenticated accounts have **10 attempts/minute per route**, independent of IP.
+Guest Author Chat has **3 attempts/10 minutes per network address**. A separate
+**60 attempts/minute network bucket shared across all three routes** limits account
+rotation. Rejected account/guest attempts still consume the network bucket. These
+are request bursts, not the durable provider-attempt quota in section 3.6.
+
+Production ingress is Vercel: only `x-vercel-forwarded-for`, with `VERCEL=1` in the
+server environment, supplies the network address. Client-supplied Cloudflare,
+`x-real-ip`, and ordinary forwarding headers are ignored by this AI policy.
+See [Vercel's header contract](https://vercel.com/docs/headers/request-headers).
+IPv4/IPv6 are validated, equivalent IPv6 forms are canonicalized, and IPv4-mapped
+addresses share the IPv4 bucket. Redis receives a SHA-256 network identifier;
+this is pseudonymization, not anonymization. No diagnostic IP endpoint is exposed.
+
+Missing/invalid hosted identity, Redis failure, and Upstash's timeout-success
+response fail closed with `503 RATE_LIMIT_UNAVAILABLE` and `Retry-After`. Exhausted
+buckets return `429 RATE_LIMITED`. Author Chat accepts a genuine missing session
+as guest, but does not downgrade other authentication errors into guest admission.
+Existing private-route authentication/session checks remain in place.
+
+The public domain must point directly to Vercel. An additional upstream proxy can
+collapse clients into its network bucket; review ingress and rerun the hosted proof
+before changing that topology. Production on another hosting platform is refused
+until its trusted ingress is explicitly implemented. Non-production fixtures may
+use `x-forwarded-for` or the shared `local-unknown` bucket. A local **production**
+build used for controlled smoke tests must deliberately simulate Vercel's environment
+and injected header; this is test setup, never evidence of a real proxy boundary.
+
+Shared networks can hit the 60/minute guard collectively. Monitor existing
+`ai_rate_limit_exhausted` / `rate_limit_unavailable` signals before adjusting it.
+This is not complete bot/DDoS protection or a global spending cap; changing real
+network addresses can avoid a network bucket. #22's global/guest budgets remain open.
+No database or provider settings change. Rollback is an application rollback;
+Redis keys expire naturally. Do not flush shared Redis or disable protection.
+
+
 ## 4. Deployment
 
 ### 4.1 App Hosting

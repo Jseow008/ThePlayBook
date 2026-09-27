@@ -12,6 +12,8 @@ interface RateLimitOptions {
     key?: string;
     /** Optional explicit identifier override for the rate-limit bucket */
     identifier?: string;
+    /** Explicit cross-route scope, for shared abuse buckets only. */
+    scope?: string;
 }
 
 interface RateLimitResult {
@@ -69,7 +71,7 @@ function getClientIdentifier(req: NextRequest): string {
 
 function getRateLimitKey(req: NextRequest, options: RateLimitOptions): string {
     const identity = options.identifier ?? getClientIdentifier(req);
-    return `${req.nextUrl.pathname}::${options.key ?? "global"}::${identity}`;
+    return `${options.scope ?? req.nextUrl.pathname}::${options.key ?? "global"}::${identity}`;
 }
 
 // Module-level fallback store
@@ -153,7 +155,11 @@ export async function rateLimit(req: NextRequest, options: RateLimitOptions): Pr
             ratelimits.set(bucketKey, limiter);
         }
 
-        const { success, reset } = await limiter.limit(rateKey);
+        const { success, reset, reason } = await limiter.limit(rateKey);
+        // Upstash returns success=true on its default timeout. This is not admission.
+        if (reason === "timeout") {
+            throw new RateLimitBackendUnavailableError("Shared rate limiter timed out.");
+        }
 
         if (!success) {
             return {
@@ -220,7 +226,7 @@ export function rateLimitFailureResponse(
     result: StrictRateLimitResult | RateLimitResult,
     message = "Too many requests. Please wait and try again."
 ) {
-    const retryAfterSeconds = String(Math.ceil((result.retryAfterMs ?? 60_000) / 1000));
+    const retryAfterSeconds = String(Math.max(1, Math.ceil((result.retryAfterMs ?? 60_000) / 1000)));
 
     if ("unavailable" in result && result.unavailable) {
         return NextResponse.json(

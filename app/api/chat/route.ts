@@ -1,3 +1,4 @@
+import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { issueEvidenceCitations } from "@/lib/server/evidence-citation";
 import { renderEvidenceExtracts } from "@/lib/server/evidence-extract-response";
 import { MAX_LIBRARY_CONTEXT_CHARS, getOutputTokenCap, getAnthropicModelName, detectAskIntent, shouldBoostCompletedForIntent, buildRetrievalFallbackText, LIBRARY_NO_EVIDENCE } from "@/lib/server/retrieval-generation";
@@ -9,7 +10,7 @@ import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
-import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
+import { rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
 import { GoogleGenAI } from "@google/genai";
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
         }
 
         // --- Rate Limiting ---
-        const rl = await rateLimit(req, { limit: 10, windowMs: 60_000, key: user.id });
+        const rl = await aiRateLimit(req, user.id);
         if (!rl.success) {
             return rateLimitFailureResponseWithTelemetry({
                 request: req,

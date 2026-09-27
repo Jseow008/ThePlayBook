@@ -1,3 +1,5 @@
+import { isAuthSessionMissingError } from "@supabase/supabase-js";
+import { aiRateLimit } from "@/lib/server/ai-rate-limit";
 import { afterResponse } from "@/lib/server/after-response";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
@@ -6,14 +8,12 @@ import { smoothStream, streamText } from "ai";
 import { z } from "zod";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { captureServerAnalyticsEvent } from "@/lib/server/analytics";
-import { rateLimit, rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
+import { rateLimitFailureResponseWithTelemetry } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
 import { admitAiUsage, getQuotaExceededMessage } from "@/lib/server/ai-usage-quota";
 
 export const maxDuration = 60;
 
-const AUTHENTICATED_LIMIT = { limit: 10, windowMs: 60_000 } as const;
-const GUEST_LIMIT = { limit: 3, windowMs: 10 * 60_000 } as const;
 const DEFAULT_ANTHROPIC_MODEL = "claude-haiku-4-5-20251001";
 
 // ---------------------------------------------------------------------------
@@ -189,19 +189,17 @@ export async function POST(req: NextRequest) {
         const supabase = await createClient();
         const {
             data: { user },
+            error: authError,
         } = await supabase.auth.getUser();
+        if (authError && !isAuthSessionMissingError(authError)) {
+            const unavailable = !authError.status || authError.status === 429 || authError.status >= 500;
+            return apiError(unavailable ? "INTERNAL_ERROR" : "UNAUTHORIZED",
+                unavailable ? "Authentication could not be verified. Please retry." : "Please sign in again.",
+                unavailable ? 503 : 401, requestId);
+        }
 
         // --- Rate Limiting ---
-        const rl = user
-            ? await rateLimit(req, {
-                ...AUTHENTICATED_LIMIT,
-                key: "author-chat:user",
-                identifier: user.id,
-            })
-            : await rateLimit(req, {
-                ...GUEST_LIMIT,
-                key: "author-chat:guest",
-            });
+        const rl = await aiRateLimit(req, user?.id);
         if (!rl.success) {
             const retryAfterSeconds = Math.max(1, Math.ceil((rl.retryAfterMs ?? 60000) / 1000));
             return rateLimitFailureResponseWithTelemetry({
