@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import { Pool, type PoolClient } from "pg";
-import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
+import { LibraryMutationConflictError, LibraryMutationReceiptError, LIBRARY_MUTATION_MAX_BYTES, type LibraryMutationInput, type LibraryMutationAcknowledgement } from "@/lib/user-library-mutation-contract";
 import type { LibrarySnapshotWireRecord } from "@/lib/account-data-wire";
 import {
     ACCOUNT_DATA_SNAPSHOT_COLLECTIONS,
@@ -505,6 +505,8 @@ export async function resetLibraryForAccount(accountId: string) {
         return await withRestrictedWorkerTransaction(client, accountId, async () => {
             await lockLibraryBoundary(client, accountId);
             await client.query("DELETE FROM public.user_library WHERE user_id = $1", [accountId]);
+            await client.query("DELETE FROM snapshot_private.library_mutation_receipts WHERE account_id = $1", [accountId]);
+            await client.query("DELETE FROM snapshot_private.library_guest_import_receipts WHERE account_id = $1", [accountId]);
             const state = await client.query<{ reset_epoch: string; current_revision: string }>(
                 `INSERT INTO public.account_library_state (user_id, reset_epoch, current_revision)
                  VALUES ($1, 1, 1)
@@ -532,22 +534,58 @@ export async function resetLibraryForAccount(accountId: string) {
  */
 export async function commitLibraryMutationForAccount(
     accountId: string,
-    input: {
-        baseRevision: number;
-        resetEpoch: number;
-        contentId: string;
-        isBookmarked: boolean;
-        progress: unknown | null;
-        lastInteractedAt: string;
-        deleteIfEmpty: boolean;
-    },
-) {
+    input: LibraryMutationInput,
+): Promise<LibraryMutationAcknowledgement> {
+    // Canonical JSON makes object key order irrelevant while preserving every
+    // accepted field (including the original revision, timestamp and source).
+    const canonical = (value: unknown): string => {
+        if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
+        if (value !== null && typeof value === "object") return `{${Object.entries(value).filter(([, v]) => v !== undefined).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(",")}}`;
+        return JSON.stringify(value);
+    };
+    const payload = canonical(input);
+    if (Buffer.byteLength(payload) > LIBRARY_MUTATION_MAX_BYTES || Boolean(input.mutationId) !== Boolean(input.createdAt) || (input.guestImport && (!input.mutationId || input.deleteIfEmpty))) {
+        throw new LibraryMutationReceiptError("VALIDATION_ERROR", "This library change is invalid or too large.");
+    }
+    const fingerprint = createHash("sha256").update(payload).digest("hex");
     const client = await getPool().connect();
     try {
-        return await withRestrictedWorkerTransaction(client, accountId, async () => {
+        const result = await withRestrictedWorkerTransaction(client, accountId, async (): Promise<LibraryMutationAcknowledgement | { conflict: LibraryMutationAcknowledgement }> => {
             const current = await lockLibraryBoundary(client, accountId);
-            if (input.baseRevision !== current.libraryRevision || input.resetEpoch !== current.resetEpoch) {
-                throw new LibraryMutationConflictError(current);
+            // Reset is stronger than a previously successful receipt.
+            if (input.resetEpoch !== current.resetEpoch) return { conflict: current };
+            if (input.mutationId) {
+                const prior = await client.query<{ request_fingerprint: string; acknowledgement: LibraryMutationAcknowledgement | { conflict: LibraryMutationAcknowledgement } }>(
+                    `SELECT request_fingerprint, acknowledgement FROM snapshot_private.library_mutation_receipts
+                     WHERE account_id = $1 AND reset_epoch = $2 AND mutation_id = $3`, [accountId, input.resetEpoch, input.mutationId]);
+                if (prior.rows[0]) {
+                    if (prior.rows[0].request_fingerprint !== fingerprint) throw new LibraryMutationReceiptError("LIBRARY_MUTATION_ID_REUSED", "This change ID was already used for different content.");
+                    return prior.rows[0].acknowledgement;
+                }
+                const count = await client.query<{ count: string }>(`SELECT count(*) FROM snapshot_private.library_mutation_receipts WHERE account_id = $1 AND reset_epoch = $2`, [accountId, input.resetEpoch]);
+                if (Number(count.rows[0].count) >= 100_000) throw new LibraryMutationReceiptError("LIBRARY_RECEIPT_LIMIT", "Your library recovery history is full. This change has not been saved.");
+            }
+            const remember = async (ack: LibraryMutationAcknowledgement | { conflict: LibraryMutationAcknowledgement }) => {
+                if (input.mutationId) await client.query(
+                    `INSERT INTO snapshot_private.library_mutation_receipts (account_id, reset_epoch, mutation_id, request_fingerprint, acknowledgement)
+                     VALUES ($1, $2, $3, $4, $5::jsonb)`, [accountId, input.resetEpoch, input.mutationId, fingerprint, JSON.stringify(ack)]);
+                return ack;
+            };
+            if (input.baseRevision !== current.libraryRevision) return remember({ conflict: current });
+            if (input.guestImport) {
+                const guest = input.guestImport;
+                const priorSource = await client.query<{ outcome: string; reason: "destination_exists" | null }>(
+                    `SELECT outcome, reason FROM snapshot_private.library_guest_import_receipts
+                     WHERE account_id = $1 AND reset_epoch = $2 AND guest_storage_id = $3 AND source_record_id = $4`,
+                    [accountId, input.resetEpoch, guest.guestStorageId, guest.sourceRecordId]);
+                if (priorSource.rows[0]) return remember({ ...current, outcome: "skipped", reason: priorSource.rows[0].reason ?? "source_already_imported" });
+                const destination = await client.query(`SELECT 1 FROM public.user_library WHERE user_id = $1 AND content_id = $2`, [accountId, input.contentId]);
+                const exists = destination.rowCount !== 0;
+                await client.query(`INSERT INTO snapshot_private.library_guest_import_receipts
+                    (account_id, reset_epoch, guest_storage_id, source_record_id, migration_id, outcome, reason)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                    [accountId, input.resetEpoch, guest.guestStorageId, guest.sourceRecordId, guest.migrationId, exists ? "skipped" : "applied", exists ? "destination_exists" : null]);
+                if (exists) return remember({ ...current, outcome: "skipped", reason: "destination_exists" });
             }
             if (input.deleteIfEmpty) {
                 const deleted = await client.query(
@@ -592,11 +630,15 @@ export async function commitLibraryMutationForAccount(
             );
             const row = state.rows[0];
             if (!row) throw new AccountDataSnapshotError("FAILED", "Could not read the committed library boundary.");
-            return {
+            return remember({
                 resetEpoch: Number(row.reset_epoch),
                 libraryRevision: Number(row.current_revision),
-            };
+                ...(input.mutationId ? { outcome: "applied" as const } : {}),
+            });
         });
+        // Throw only AFTER COMMIT so a deterministic conflict receipt survives.
+        if ("conflict" in result) throw new LibraryMutationConflictError(result.conflict);
+        return result;
     } finally {
         client.release();
     }

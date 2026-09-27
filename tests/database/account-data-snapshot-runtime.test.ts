@@ -833,6 +833,86 @@ describeDatabase("DB-107 account-data snapshots on a disposable Supabase databas
         };
     }
 
+    it("replays a lost acknowledgement and concurrent duplicates exactly once; immutable payload and reset win", async () => {
+        const before = await readBoundary(accountMutation);
+        const input = { ...mutationAt(before), mutationId: randomUUID(), createdAt: new Date().toISOString() };
+        const results = await Promise.all([commitLibraryMutationForAccount(accountMutation, input), commitLibraryMutationForAccount(accountMutation, input)]);
+        expect(results[0]).toEqual(results[1]);
+        expect(results[0].libraryRevision).toBe(before.libraryRevision + 1);
+        expect(await commitLibraryMutationForAccount(accountMutation, input)).toEqual(results[0]);
+        await expect(commitLibraryMutationForAccount(accountMutation, { ...input, isBookmarked: false })).rejects.toMatchObject({ code: "LIBRARY_MUTATION_ID_REUSED" });
+        expect(await readBoundary(accountMutation)).toEqual({ resetEpoch: results[0].resetEpoch, libraryRevision: results[0].libraryRevision });
+        await resetLibraryForAccount(accountMutation);
+        await expect(commitLibraryMutationForAccount(accountMutation, input)).rejects.toMatchObject({ name: "LibraryMutationConflictError" });
+    });
+
+    it("commits deterministic conflict receipts and never rebases a replay", async () => {
+        const before = await readBoundary(accountMutation);
+        const input = { ...mutationAt(before), baseRevision: before.libraryRevision + 100, mutationId: randomUUID(), createdAt: new Date().toISOString() };
+        await expect(commitLibraryMutationForAccount(accountMutation, input)).rejects.toMatchObject({ current: before });
+        await commitLibraryMutationForAccount(accountMutation, mutationAt(before));
+        await expect(commitLibraryMutationForAccount(accountMutation, input)).rejects.toMatchObject({ current: before });
+        const receipt = await db.query(`SELECT acknowledgement FROM snapshot_private.library_mutation_receipts WHERE account_id=$1 AND mutation_id=$2`, [accountMutation, input.mutationId]);
+        expect(receipt.rows[0].acknowledgement).toEqual({ conflict: before });
+    });
+
+    it("guest imports preserve existing destinations and deduplicate source identities after interruption and removal", async () => {
+        const guestImport = { migrationId: randomUUID(), guestStorageId: randomUUID(), sourceRecordId: randomUUID() };
+        let boundary = await readBoundary(accountMutation);
+        const existing = await commitLibraryMutationForAccount(accountMutation, mutationAt(boundary));
+        const skippedInput = { ...mutationAt(existing), mutationId: randomUUID(), createdAt: new Date().toISOString(), guestImport };
+        const skipped = await commitLibraryMutationForAccount(accountMutation, skippedInput);
+        expect(skipped).toEqual({ ...existing, outcome: "skipped", reason: "destination_exists" });
+        expect(await commitLibraryMutationForAccount(accountMutation, skippedInput)).toEqual(skipped);
+        boundary = await commitLibraryMutationForAccount(accountMutation, mutationAt(skipped, true));
+        const source = { ...guestImport, sourceRecordId: randomUUID() };
+        const importedInput = { ...mutationAt(boundary), mutationId: randomUUID(), createdAt: new Date().toISOString(), guestImport: source };
+        const imported = await commitLibraryMutationForAccount(accountMutation, importedInput);
+        expect(imported.outcome).toBe("applied");
+        expect(await commitLibraryMutationForAccount(accountMutation, importedInput)).toEqual(imported);
+        boundary = await commitLibraryMutationForAccount(accountMutation, mutationAt(imported, true));
+        const duplicate = await commitLibraryMutationForAccount(accountMutation, { ...mutationAt(boundary), mutationId: randomUUID(), createdAt: new Date().toISOString(), guestImport: { ...source, migrationId: randomUUID() } });
+        expect(duplicate).toEqual({ ...boundary, outcome: "skipped", reason: "source_already_imported" });
+        expect((await db.query("SELECT 1 FROM public.user_library WHERE user_id=$1", [accountMutation])).rowCount).toBe(0);
+    });
+
+    it("fails visibly at the account ledger limit while allowing exact retries, and reset releases admission", async () => {
+        const before = await readBoundary(accountMutation);
+        const input = { ...mutationAt(before), mutationId: randomUUID(), createdAt: new Date().toISOString() };
+        const ack = await commitLibraryMutationForAccount(accountMutation, input);
+        await db.query(`INSERT INTO snapshot_private.library_mutation_receipts
+            (account_id, reset_epoch, mutation_id, request_fingerprint, acknowledgement)
+            SELECT $1, $2, gen_random_uuid(), repeat('a', 64), '{}'::jsonb
+            FROM generate_series(1, 100000 - (SELECT count(*)::int FROM snapshot_private.library_mutation_receipts WHERE account_id=$1 AND reset_epoch=$2))`, [accountMutation, ack.resetEpoch]);
+        expect(await commitLibraryMutationForAccount(accountMutation, input)).toEqual(ack);
+        await expect(commitLibraryMutationForAccount(accountMutation, { ...mutationAt(ack), mutationId: randomUUID(), createdAt: input.createdAt })).rejects.toMatchObject({ code: "LIBRARY_RECEIPT_LIMIT" });
+        await resetLibraryForAccount(accountMutation);
+        expect((await db.query("SELECT 1 FROM snapshot_private.library_mutation_receipts WHERE account_id=$1", [accountMutation])).rowCount).toBe(0);
+    });
+
+    it("keeps receipts account-bound and denies browser access and worker update", async () => {
+        await commitLibraryMutationForAccount(accountMutation, { ...mutationAt(await readBoundary(accountMutation)), mutationId: randomUUID(), createdAt: new Date().toISOString() });
+        expect((await db.query("SELECT 1 FROM snapshot_private.library_mutation_receipts WHERE account_id=$1", [accountMutation])).rowCount).toBeGreaterThan(0);
+        const client = await workerDb.connect();
+        try {
+            await client.query("BEGIN");
+            await client.query("SET LOCAL ROLE netflux_snapshot_worker");
+            await client.query("SELECT set_config('app.snapshot_account_id', $1, true)", [accountB]);
+            expect((await client.query("SELECT 1 FROM snapshot_private.library_mutation_receipts WHERE account_id=$1", [accountMutation])).rowCount).toBe(0);
+            await expect(client.query(`INSERT INTO snapshot_private.library_mutation_receipts
+                (account_id, reset_epoch, mutation_id, request_fingerprint, acknowledgement)
+                VALUES ($1, 0, $2, repeat('b', 64), '{}'::jsonb)`, [accountMutation, randomUUID()])).rejects.toThrow(/row-level security/);
+            await client.query("ROLLBACK");
+        } finally { client.release(); }
+        for (const table of ["library_mutation_receipts", "library_guest_import_receipts"]) {
+            for (const role of ["anon", "authenticated"]) {
+                const privileges = await db.query("SELECT has_table_privilege($1, $2, 'SELECT,INSERT,UPDATE,DELETE') AS allowed", [role, `snapshot_private.${table}`]);
+                expect(privileges.rows[0].allowed).toBe(false);
+            }
+            expect((await db.query("SELECT has_table_privilege('netflux_snapshot_worker', $1, 'UPDATE') AS allowed", [`snapshot_private.${table}`])).rows[0].allowed).toBe(false);
+        }
+    });
+
     it("rejects stale saves after removal, including removal of an absent row", async () => {
         const before = await readBoundary(accountMutation);
         const removed = await commitLibraryMutationForAccount(accountMutation, mutationAt(before, true));

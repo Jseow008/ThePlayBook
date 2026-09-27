@@ -15,8 +15,8 @@ import { AuthUser as User } from "@supabase/supabase-js";
 import { useQueryClient } from "@tanstack/react-query";
 import { commitUserLibraryMutation } from "@/lib/user-library-mutation-client";
 import { toast } from "sonner";
-import { LibraryMutationConflictError, type LibraryBoundary } from "@/lib/user-library-mutation-contract";
-import type { Json } from "@/types/database";
+import { LibraryMutationConflictError, LibraryMutationReceiptError, type LibraryBoundary, type LibraryMutationAcknowledgement, type LibraryGuestImport } from "@/lib/user-library-mutation-contract";
+import { writeLibraryIntent, readLibraryIntents, removeLibraryIntent, clearLibraryIntents, storeLibraryBoundary, readLibraryBoundary, LIBRARY_JOURNAL_PREFIX, type LibraryJournalEntry } from "@/lib/library-mutation-journal";
 import { useAuthUser } from "@/hooks/useAuthUser";
 import {
     clearScopedProgress,
@@ -31,6 +31,7 @@ import {
     migrateLegacyStorageToGuest,
 } from "@/lib/local-user-storage";
 import { clearCachedBrowseRecommendations } from "@/lib/browse-recommendation-cache";
+import { guestLibrarySources, bindGuestSource, consumeGuestSource, releaseGuestBinding } from "@/lib/guest-library-import";
 import { captureAnalyticsEvent } from "@/lib/analytics";
 import {
     clearLibrarySnapshotIdempotencyKey,
@@ -150,10 +151,15 @@ type LocalLibraryMutation = {
     sessionGeneration: number;
     isBookmarked: boolean;
     progress: ReadingProgressData | null;
-    acknowledgement?: LibraryBoundary;
+    acknowledgement?: LibraryMutationAcknowledgement;
+    createdAt: string;
+    status: LibraryJournalEntry["status"];
+    request?: LibraryJournalEntry["request"];
+    guestImport?: LibraryGuestImport;
     base?: LibraryBoundary;
     predecessor?: LocalLibraryMutation;
     needsAttention?: boolean;
+    reviewed?: boolean;
 };
 
 const terminalSnapshotOutcomeCodes = new Set([
@@ -179,6 +185,10 @@ function useReadingProgressController(initialUser?: User | null) {
     const [myListIds, setMyListIds] = useState<string[]>([]);
     const [progressMap, setProgressMap] = useState<Record<string, ReadingProgressData>>({});
     const [syncNeedsAttention, setSyncNeedsAttention] = useState(false);
+    const [journalVersion, setJournalVersion] = useState(0);
+    const [journalError, setJournalError] = useState(false);
+    const retryPendingRef = useRef<() => Promise<void>>(async () => {});
+    const activeWritesRef = useRef(new Set<AbortController>());
     const [isLoaded, setIsLoaded] = useState(false);
     const [hydrationStatus, setHydrationStatus] = useState<"idle" | "hydrating" | "ready" | "error">("idle");
     const [user, setUser] = useState<User | null>(initialUser ?? null);
@@ -200,17 +210,57 @@ function useReadingProgressController(initialUser?: User | null) {
     const syncBlockedRef = useRef(false);
     const refreshLibraryRef = useRef<() => void>(() => {});
 
+    const persistMutation = useCallback((mutation: LocalLibraryMutation) => {
+        writeLibraryIntent(localStorage, {
+            version: 1, id: mutation.id, accountId: mutation.accountId, itemId: mutation.itemId,
+            sequence: mutation.sequence, createdAt: mutation.createdAt, isBookmarked: mutation.isBookmarked,
+            progress: mutation.progress, base: mutation.base, predecessorId: mutation.predecessor?.acknowledgement ? undefined : mutation.predecessor?.id,
+            request: mutation.request, acknowledgement: mutation.acknowledgement, guestImport: mutation.guestImport,
+            needsAttention: mutation.needsAttention, status: mutation.status,
+        });
+        setJournalVersion(value => value + 1);
+    }, []);
+
+    const restoreJournal = useCallback((accountId: string) => {
+        try {
+            const { entries, unreadableKeys } = readLibraryIntents(localStorage, accountId);
+            setJournalError(unreadableKeys.length > 0);
+            for (const entry of entries) {
+                if (entry.guestImport && entry.acknowledgement && (entry.acknowledgement.outcome !== "skipped" || entry.acknowledgement.reason === "source_already_imported")) {
+                    consumeGuestSource(localStorage, { itemId: entry.itemId, isBookmarked: entry.isBookmarked, progress: entry.progress });
+                }
+                if (localMutationsRef.current.has(entry.id)) continue;
+                localMutationsRef.current.set(entry.id, { ...entry, scope: getStorageScope(accountId), sessionGeneration: authenticationGenerationRef.current });
+                mutationSequenceRef.current = Math.max(mutationSequenceRef.current, entry.sequence);
+            }
+            for (const entry of entries) {
+                const mutation = localMutationsRef.current.get(entry.id)!;
+                if (entry.predecessorId) mutation.predecessor = localMutationsRef.current.get(entry.predecessorId);
+                if (entry.predecessorId && !mutation.predecessor && !entry.request) {
+                    mutation.needsAttention = true;
+                    mutation.status = "needs_attention";
+                }
+            }
+            if (!latestMutationRef.current) latestMutationRef.current = [...localMutationsRef.current.values()]
+                .filter(m => m.accountId === accountId && m.status !== "needs_attention")
+                .sort((a,b) => a.sequence-b.sequence).at(-1);
+            setJournalVersion(value => value + 1);
+        } catch { setJournalError(true); }
+    }, []);
+
     const recordLocalMutation = useCallback((
         scope: StorageScope,
         itemId: string,
         isBookmarked: boolean,
         progress: ReadingProgressData | null,
+        guestImport?: LibraryGuestImport,
     ) => {
         const currentUser = userRef.current;
         if (!currentUser) return null;
         localMutationGenerationRef.current += 1;
         const mutation: LocalLibraryMutation = {
             id: crypto.randomUUID(),
+            createdAt: new Date().toISOString(), status: "pending", guestImport,
             accountId: currentUser.id,
             scope,
             itemId,
@@ -224,8 +274,13 @@ function useReadingProgressController(initialUser?: User | null) {
         };
         latestMutationRef.current = mutation;
         localMutationsRef.current.set(mutation.id, mutation);
+        try { persistMutation(mutation); } catch {
+            mutation.needsAttention = true; mutation.status = "needs_attention";
+            setJournalError(true);
+            toast.error("This device could not keep your change. Review Library sync in Settings.");
+        }
         return mutation.id;
-    }, []);
+    }, [persistMutation]);
 
     const readProgressFromScope = useCallback((scope: StorageScope, itemId: string) => {
         try {
@@ -236,18 +291,37 @@ function useReadingProgressController(initialUser?: User | null) {
         }
     }, []);
 
-    const acknowledgeMutation = useCallback((mutationId: string, acknowledgement: { resetEpoch: number; libraryRevision: number }) => {
+    const acknowledgeMutation = useCallback((mutationId: string, acknowledgement: LibraryMutationAcknowledgement) => {
         const mutation = localMutationsRef.current.get(mutationId);
         if (!mutation) return;
         if (mutation.sessionGeneration !== authenticationGenerationRef.current || mutation.accountId !== userRef.current?.id) return;
-        mutation.acknowledgement = acknowledgement;
-        mutation.predecessor = undefined;
-        const prior = confirmedBoundaryRef.current;
-        if (!prior || acknowledgement.resetEpoch > prior.resetEpoch
-            || (acknowledgement.resetEpoch === prior.resetEpoch && acknowledgement.libraryRevision > prior.libraryRevision)) {
-            confirmedBoundaryRef.current = acknowledgement;
-        }
-    }, []);
+        const next: LocalLibraryMutation = { ...mutation, acknowledgement, predecessor: undefined,
+            status: acknowledgement.outcome === "skipped" && acknowledgement.reason !== "source_already_imported" ? "needs_attention" : "acknowledged" };
+        next.needsAttention = next.status === "needs_attention";
+        persistMutation(next);
+        Object.assign(mutation, next);
+        try {
+            if (mutation.guestImport && (acknowledgement.outcome !== "skipped" || acknowledgement.reason === "source_already_imported")) {
+                consumeGuestSource(localStorage, { itemId: mutation.itemId, isBookmarked: mutation.isBookmarked, progress: mutation.progress });
+            }
+            const prior = confirmedBoundaryRef.current;
+            if (!prior || acknowledgement.resetEpoch > prior.resetEpoch
+                || (acknowledgement.resetEpoch === prior.resetEpoch && acknowledgement.libraryRevision > prior.libraryRevision)) {
+                confirmedBoundaryRef.current = acknowledgement;
+                storeLibraryBoundary(localStorage, mutation.accountId, acknowledgement);
+            }
+            // A newer acknowledgement for the same item supersedes an older
+            // confirmed overlay, unless an unresolved child still needs it.
+            for (const older of localMutationsRef.current.values()) {
+                if (older.id !== mutation.id && older.accountId === mutation.accountId && older.itemId === mutation.itemId
+                    && older.status === "acknowledged" && older.sequence < mutation.sequence
+                    && ![...localMutationsRef.current.values()].some(child => child.predecessor?.id === older.id && !child.request && !child.acknowledgement)) {
+                    removeLibraryIntent(localStorage, older.accountId, older.id);
+                    localMutationsRef.current.delete(older.id);
+                }
+            }
+        } catch { setJournalError(true); }
+    }, [persistMutation]);
 
     const resetState = useCallback(() => {
         setInProgressIds([]);
@@ -336,52 +410,140 @@ function useReadingProgressController(initialUser?: User | null) {
             const isCurrent = () => mutation.sessionGeneration === authenticationGenerationRef.current
                 && currentUser.id === userRef.current?.id && scope === scopeRef.current;
             if (!isCurrent()) return false;
+            const controller = new AbortController();
+            activeWritesRef.current.add(controller);
             try {
-                // Chain only this device's confirmed writes. Never replace a
-                // stale base with a newly fetched server boundary automatically.
+                if (mutation.acknowledgement) return mutation.status === "acknowledged";
+                if (mutation.predecessor && !mutation.predecessor.acknowledgement && !mutation.predecessor.needsAttention) return false;
+                if (navigator.onLine === false) {
+                    toast.info("Change pending. It will retry when you reconnect.");
+                    return false;
+                }
                 const predecessorBoundary = mutation.predecessor?.acknowledgement;
                 const base = predecessorBoundary && mutation.base
                     && predecessorBoundary.resetEpoch === mutation.base.resetEpoch
                     && predecessorBoundary.libraryRevision > mutation.base.libraryRevision
                     ? predecessorBoundary : mutation.base;
-                if (mutation.needsAttention || mutation.predecessor?.needsAttention || !base
+                if (mutation.needsAttention || (mutation.predecessor?.needsAttention && !mutation.predecessor.acknowledgement) || !base
                     || base.resetEpoch !== mutation.base?.resetEpoch
-                    || base.resetEpoch !== confirmedBoundaryRef.current?.resetEpoch) {
-                    throw new LibraryMutationConflictError();
+                    || base.resetEpoch !== confirmedBoundaryRef.current?.resetEpoch) throw new LibraryMutationConflictError();
+                if (!mutation.request) {
+                    mutation.request = { mutationId: mutation.id, createdAt: mutation.createdAt,
+                        baseRevision: base.libraryRevision, resetEpoch: base.resetEpoch, contentId: itemId,
+                        isBookmarked, progress: progressData, lastInteractedAt: mutation.createdAt,
+                        deleteIfEmpty: !isBookmarked && progressData === null, guestImport: mutation.guestImport };
                 }
-                const data = await commitUserLibraryMutation({
-                    expectedAccountId: mutation.accountId,
-                    baseRevision: base.libraryRevision,
-                    resetEpoch: base.resetEpoch,
-                    contentId: itemId,
-                    isBookmarked,
-                    progress: progressData as Json | null,
-                    lastInteractedAt: new Date().toISOString(),
-                    deleteIfEmpty: !isBookmarked && progressData === null,
-                });
-                if (!isCurrent() || mutation.needsAttention) return false;
+                // Persist the final wire request before sending it. Lost responses
+                // must never cause a retry with a new base, timestamp or ID.
+                persistMutation(mutation);
+                const data = await commitUserLibraryMutation({ ...mutation.request, expectedAccountId: mutation.accountId }, controller.signal);
+                if (!isCurrent() || mutation.needsAttention || localMutationsRef.current.get(mutation.id) !== mutation) return false;
                 acknowledgeMutation(mutationId, data);
-                return true;
+                return data.outcome !== "skipped";
             } catch (error) {
-                mutation.needsAttention = true;
+                if (!isCurrent() || localMutationsRef.current.get(mutation.id) !== mutation) return false;
+                const terminal = error instanceof LibraryMutationConflictError || error instanceof LibraryMutationReceiptError;
+                mutation.needsAttention = terminal;
+                mutation.reviewed = false;
+                mutation.status = terminal ? "needs_attention" : "pending";
+                try { persistMutation(mutation); } catch { setJournalError(true); }
                 if (!isCurrent() || (mutation.base && confirmedBoundaryRef.current
                     && mutation.base.resetEpoch < confirmedBoundaryRef.current.resetEpoch)) return false;
-                syncBlockedRef.current = true;
-                setSyncNeedsAttention(true);
+                syncBlockedRef.current = terminal;
+                setSyncNeedsAttention(terminal);
                 toast.error(error instanceof LibraryMutationConflictError
                     ? "Your library changed. Refresh it and review your change before saving again."
-                    : "This library change is not confirmed. Refresh your library before trying again.", {
+                    : "This change is pending on this device. Retry it in Settings when connected.", {
                     id: "library-sync-attention", duration: Infinity,
                     action: { label: "Refresh library", onClick: () => refreshLibraryRef.current() },
                 });
                 logRecoverableCloudSync("Library change needs attention", error, { itemId, scope });
                 return false;
-            }
+            } finally { activeWritesRef.current.delete(controller); }
         };
         const result = mutationTailRef.current.then(commit, commit);
         mutationTailRef.current = result;
         return result;
-    }, [acknowledgeMutation]);
+    }, [acknowledgeMutation, persistMutation]);
+
+    const retryPending = useCallback(async () => {
+        const currentUser = userRef.current;
+        if (!currentUser || navigator.onLine === false) return;
+        restoreJournal(currentUser.id);
+        const entries = [...localMutationsRef.current.values()]
+            .filter(mutation => mutation.accountId === currentUser.id && mutation.status === "pending")
+            .sort((a, b) => a.sequence - b.sequence);
+        for (const mutation of entries) {
+            if (userRef.current?.id !== currentUser.id) break;
+            await syncItemToCloud(currentUser, scopeRef.current, mutation.itemId, mutation.isBookmarked, mutation.progress, mutation.id);
+        }
+    }, [restoreJournal, syncItemToCloud]);
+    retryPendingRef.current = retryPending;
+
+    useEffect(() => {
+        const online = () => { void retryPending(); };
+        const changed = (event: StorageEvent) => {
+            if (userRef.current && event.key?.startsWith(LIBRARY_JOURNAL_PREFIX)) {
+                restoreJournal(userRef.current.id);
+            }
+        };
+        window.addEventListener("online", online);
+        window.addEventListener("storage", changed);
+        return () => { window.removeEventListener("online", online); window.removeEventListener("storage", changed); };
+    }, [retryPending, restoreJournal]);
+
+    const discardIntent = useCallback((id: string) => {
+        const mutation = localMutationsRef.current.get(id);
+        if (!mutation || mutation.accountId !== userRef.current?.id || mutation.status !== "needs_attention") return;
+        if (mutation.guestImport) releaseGuestBinding(localStorage, mutation.itemId, mutation.accountId, mutation.guestImport.sourceRecordId);
+        removeLibraryIntent(localStorage, mutation.accountId, id);
+        localMutationsRef.current.delete(id);
+        setJournalVersion(value => value + 1);
+        refreshLibraryRef.current();
+    }, []);
+
+    const retryJournalStorage = useCallback(() => {
+        try {
+            for (const mutation of localMutationsRef.current.values()) {
+                if (mutation.accountId === userRef.current?.id) persistMutation(mutation);
+            }
+            const unreadable = userRef.current ? readLibraryIntents(localStorage, userRef.current.id).unreadableKeys.length : 0;
+            setJournalError(unreadable > 0);
+        } catch { setJournalError(true); }
+    }, [persistMutation]);
+
+    const discardUnreadableIntents = useCallback(() => {
+        if (!userRef.current) return;
+        try {
+            readLibraryIntents(localStorage, userRef.current.id).unreadableKeys.forEach(key => localStorage.removeItem(key));
+            setJournalError(false);
+        } catch { setJournalError(true); }
+    }, []);
+
+    const importGuestLibrary = useCallback(async () => {
+        const currentUser = userRef.current;
+        if (!currentUser || !confirmedBoundaryRef.current) return;
+        try {
+            const migrationId = crypto.randomUUID();
+            const assignedItems = new Set([...localMutationsRef.current.values()].filter(mutation => mutation.guestImport).map(mutation => mutation.itemId));
+            const sources = guestLibrarySources(localStorage).filter(source => !assignedItems.has(source.itemId)).slice(0, 200);
+            for (const source of sources) {
+                if (userRef.current?.id !== currentUser.id) break;
+                const guestImport = bindGuestSource(localStorage, source, currentUser.id, migrationId);
+                const alreadyQueued = [...localMutationsRef.current.values()].some(mutation => mutation.guestImport?.sourceRecordId === guestImport.sourceRecordId);
+                if (alreadyQueued) continue;
+                recordLocalMutation(scopeRef.current, source.itemId, source.isBookmarked, source.progress, guestImport);
+            }
+            await retryPending();
+            // An uncertain write must keep its frozen request. Starting another
+            // snapshot here races a reload and does not resolve that outcome.
+            const stillPending = [...localMutationsRef.current.values()].some(mutation => mutation.accountId === currentUser.id && mutation.status === "pending");
+            if (!stillPending) refreshLibraryRef.current();
+        } catch (error) {
+            setJournalError(true);
+            toast.error(error instanceof Error ? error.message : "Guest import needs review.");
+        }
+    }, [recordLocalMutation, retryPending]);
 
     const hydrateCloudSnapshot = useCallback(async (
         currentUser: User,
@@ -408,12 +570,16 @@ function useReadingProgressController(initialUser?: User | null) {
             throw new Error("Refusing to install a snapshot from before the local reset epoch.");
         }
 
-        if (installed && snapshot.manifest.resetEpoch > installed.resetEpoch) {
-            for (const mutation of localMutationsRef.current.values()) {
-                if (mutation.scope === scope && mutation.base && mutation.base.resetEpoch < snapshot.manifest.resetEpoch) {
-                    mutation.needsAttention = true;
-                }
+        let superseded = false;
+        for (const mutation of localMutationsRef.current.values()) {
+            if (mutation.scope === scope && mutation.base && mutation.base.resetEpoch < snapshot.manifest.resetEpoch) {
+                mutation.needsAttention = true;
+                mutation.status = "needs_attention";
+                persistMutation(mutation);
+                superseded = true;
             }
+        }
+        if (superseded) {
             latestMutationRef.current = undefined;
             mutationTailRef.current = Promise.resolve();
         }
@@ -451,7 +617,11 @@ function useReadingProgressController(initialUser?: User | null) {
                 ));
                 if (hasEarlierUnsettledMutation) return [mutation];
 
-                localMutationsRef.current.delete(mutation.id);
+                const neededByPending = scopedMutations.some(candidate => candidate.predecessor?.id === mutation.id && !candidate.request && !candidate.acknowledgement);
+                if (!neededByPending) {
+                    removeLibraryIntent(localStorage, mutation.accountId, mutation.id);
+                    localMutationsRef.current.delete(mutation.id);
+                }
                 return [];
             });
         clearScopedProgress(localStorage, scope);
@@ -482,18 +652,23 @@ function useReadingProgressController(initialUser?: User | null) {
         if (!confirmed || boundary.resetEpoch > confirmed.resetEpoch
             || (boundary.resetEpoch === confirmed.resetEpoch && boundary.libraryRevision >= confirmed.libraryRevision)) {
             confirmedBoundaryRef.current = boundary;
+            storeLibraryBoundary(localStorage, currentUser.id, boundary);
         }
         if (syncBlockedRef.current) {
-            // Refresh shows canonical data; failed intent is retained in memory
-            // for #9's later durable recovery work, never silently resubmitted.
+            // Refresh shows canonical data; rejected intents stay in the durable
+            // journal for explicit review, never silently resubmitted.
             syncBlockedRef.current = false;
             setSyncNeedsAttention(false);
             latestMutationRef.current = undefined;
             toast.dismiss("library-sync-attention");
         }
+        for (const mutation of localMutationsRef.current.values()) {
+            if (mutation.accountId === currentUser.id && mutation.needsAttention) mutation.reviewed = true;
+        }
         clearLibrarySnapshotIdempotencyKey(currentUser.id);
+        setJournalVersion(value => value + 1);
         return true;
-    }, []);
+    }, [persistMutation]);
 
     const hydrateForUser = useCallback(async (nextUser: User | null, force = false) => {
         if (typeof window === "undefined") return;
@@ -503,7 +678,9 @@ function useReadingProgressController(initialUser?: User | null) {
         const nextUserId = nextUser?.id ?? null;
 
         if (currentUserId !== nextUserId) {
+            activeWritesRef.current.forEach(controller => controller.abort());
             authenticationGenerationRef.current += 1;
+            localMutationsRef.current.clear();
             confirmedBoundaryRef.current = undefined;
             latestMutationRef.current = undefined;
             mutationTailRef.current = Promise.resolve();
@@ -534,6 +711,10 @@ function useReadingProgressController(initialUser?: User | null) {
         setUser(nextUser);
         setStorageScope(nextScope);
 
+        if (nextUser) {
+            if (!confirmedBoundaryRef.current) confirmedBoundaryRef.current = readLibraryBoundary(localStorage, nextUser.id);
+            restoreJournal(nextUser.id);
+        }
         loadProgress(nextScope);
 
         if (!nextUser) {
@@ -550,6 +731,7 @@ function useReadingProgressController(initialUser?: User | null) {
                 if (syncSucceeded) {
                     loadProgress(nextScope);
                     setHydrationStatus("ready");
+                    void retryPendingRef.current();
                     return;
                 }
 
@@ -573,7 +755,7 @@ function useReadingProgressController(initialUser?: User | null) {
                     userId: nextUser.id,
                 });
             });
-    }, [hydrateCloudSnapshot, loadProgress, resetState]);
+    }, [hydrateCloudSnapshot, loadProgress, resetState, restoreJournal]);
 
     refreshLibraryRef.current = () => {
         if (userRef.current) clearLibrarySnapshotIdempotencyKey(userRef.current.id);
@@ -585,12 +767,14 @@ function useReadingProgressController(initialUser?: User | null) {
     }, [hydrateForUser, initialUser]);
 
     useEffect(() => {
+        const activeWrites = activeWritesRef.current;
         return () => {
             // A same-account auth refresh must not invalidate in-flight hydration.
             // Account changes are invalidated by hydrateForUser; only unmount
             // cancels here. Clear readiness so Strict Mode can restart setup.
             hydrateRunRef.current += 1;
             isLoadedRef.current = false;
+            activeWrites.forEach(controller => controller.abort());
         };
     }, []);
 
@@ -640,12 +824,22 @@ function useReadingProgressController(initialUser?: User | null) {
                 libraryRevision: detail.boundaryRevision ?? prior?.boundaryRevision ?? 0,
             };
             for (const mutation of localMutationsRef.current.values()) {
-                if (mutation.scope === detail.scope) mutation.needsAttention = true;
+                if (mutation.scope === detail.scope) {
+                    mutation.needsAttention = true;
+                    if (mutation.guestImport) consumeGuestSource(localStorage, { itemId: mutation.itemId, isBookmarked: mutation.isBookmarked, progress: mutation.progress });
+                    localMutationsRef.current.delete(mutation.id);
+                }
             }
             latestMutationRef.current = undefined;
             mutationTailRef.current = Promise.resolve();
             syncBlockedRef.current = false;
             setSyncNeedsAttention(false);
+            if (userRef.current) {
+                clearLibraryIntents(localStorage, userRef.current.id);
+                storeLibraryBoundary(localStorage, userRef.current.id, confirmedBoundaryRef.current!);
+            }
+            activeWritesRef.current.forEach(controller => controller.abort());
+            setJournalVersion(value => value + 1);
             toast.dismiss("library-sync-attention");
             setHydrationStatus("ready");
         };
@@ -894,6 +1088,39 @@ function useReadingProgressController(initialUser?: User | null) {
         window.dispatchEvent(new Event("netflux_progress_updated"));
     }, [insertOrMoveToFront, readProgressFromScope, recordLocalMutation, syncItemToCloud]);
 
+    const reapplyIntent = useCallback(async (id: string) => {
+        const mutation = localMutationsRef.current.get(id);
+        if (!mutation || mutation.accountId !== userRef.current?.id || mutation.status !== "needs_attention"
+            || !mutation.reviewed || hydrationStatus !== "ready" || !confirmedBoundaryRef.current) return;
+        // Explicit review is a NEW action; the rejected request is never mutated.
+        latestMutationRef.current = undefined;
+        syncBlockedRef.current = false;
+        const replacement = recordLocalMutation(scopeRef.current, mutation.itemId, mutation.isBookmarked, mutation.progress, mutation.guestImport);
+        if (!replacement) return;
+        removeLibraryIntent(localStorage, mutation.accountId, id);
+        localMutationsRef.current.delete(id);
+        await syncItemToCloud(userRef.current, scopeRef.current, mutation.itemId, mutation.isBookmarked, mutation.progress, replacement);
+        refreshLibraryRef.current();
+    }, [hydrationStatus, recordLocalMutation, syncItemToCloud]);
+
+    const recovery = useMemo(() => {
+        void journalVersion; // Recompute when the mutable journal changes.
+        const entries = [...localMutationsRef.current.values()].filter(mutation => mutation.accountId === user?.id && mutation.status !== "acknowledged");
+        let guestCount = 0;
+        let importableGuestCount = 0;
+        try {
+            const sources = guestLibrarySources(localStorage);
+            guestCount = sources.length;
+            const assignedItems = new Set([...localMutationsRef.current.values()].filter(mutation => mutation.accountId === user?.id && mutation.guestImport).map(mutation => mutation.itemId));
+            importableGuestCount = sources.filter(source => !assignedItems.has(source.itemId)).length;
+        } catch { /* The explicit import reports corrupt sources. */ }
+        return { pending: entries.filter(mutation => mutation.status === "pending").length,
+            attention: entries.filter(mutation => mutation.status === "needs_attention").map(mutation => ({
+                id: mutation.id, itemId: mutation.itemId, isBookmarked: mutation.isBookmarked,
+                createdAt: mutation.createdAt, canReapply: Boolean(mutation.reviewed) && hydrationStatus === "ready" && !(mutation.guestImport && mutation.acknowledgement?.outcome === "skipped"), guest: Boolean(mutation.guestImport), skipped: mutation.acknowledgement?.outcome === "skipped",
+            })), guestCount, importableGuestCount, storageError: journalError };
+    }, [journalVersion, journalError, user, hydrationStatus]);
+
     const isInMyList = useCallback((itemId: string) => myListIds.includes(itemId), [myListIds]);
     const getProgress = useCallback((itemId: string) => progressMap[itemId] || null, [progressMap]);
     const totalLibraryItems = inProgressIds.length + completedIds.length + myListIds.length;
@@ -909,6 +1136,7 @@ function useReadingProgressController(initialUser?: User | null) {
         isLoaded: isLoaded && (!user || hydrationStatus !== "hydrating"),
         hydrationStatus,
         syncNeedsAttention,
+        recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents,
         refresh,
         retryHydration,
         archiveFromProgressList,
@@ -926,7 +1154,7 @@ function useReadingProgressController(initialUser?: User | null) {
         totalLibraryItems,
         storageScope,
         user,
-    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, syncNeedsAttention, refresh, retryHydration, archiveFromProgressList,
+    }), [inProgressIds, completedIds, isLoaded, hydrationStatus, syncNeedsAttention, recovery, retryPending, discardIntent, reapplyIntent, importGuestLibrary, retryJournalStorage, discardUnreadableIntents, refresh, retryHydration, archiveFromProgressList,
         restoreProgressListArchive, removeFromProgress, removeFromHistory, saveReadingProgress,
         getProgress, myListIds, addToMyList, removeFromMyList, toggleMyList, isInMyList,
         totalLibraryItems, storageScope, user]);

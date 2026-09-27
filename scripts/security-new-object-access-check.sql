@@ -125,6 +125,18 @@ DECLARE
         WHERE function_acl.grantee = 0
           AND function_acl.privilege_type = 'EXECUTE'
     )
+    SELECT pg_catalog.format('library_receipt_access: %s', relation.oid::regclass) AS failure
+    FROM pg_catalog.pg_class relation
+    JOIN pg_catalog.pg_namespace namespace ON namespace.oid = relation.relnamespace
+    WHERE namespace.nspname = 'snapshot_private'
+      AND relation.relname IN ('library_mutation_receipts', 'library_guest_import_receipts')
+      AND (NOT relation.relrowsecurity
+        OR pg_catalog.has_table_privilege('anon', relation.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
+        OR pg_catalog.has_table_privilege('authenticated', relation.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
+        OR pg_catalog.has_table_privilege('netflux_snapshot_worker', relation.oid, 'UPDATE,TRUNCATE'))
+
+    UNION ALL
+
     SELECT pg_catalog.format(
         'public_table_without_rls: public.%I',
         table_row.relname

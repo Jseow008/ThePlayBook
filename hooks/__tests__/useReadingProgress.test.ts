@@ -17,6 +17,7 @@ import {
     myListKey,
     progressKey,
 } from "@/lib/local-user-storage";
+import { readLibraryIntents, writeLibraryIntent } from "@/lib/library-mutation-journal";
 import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
 import { clearLibrarySnapshotIdempotencyKey, fetchCompleteLibrarySnapshot, LibrarySnapshotClientError } from "@/lib/account-data-client";
 
@@ -136,6 +137,7 @@ describe("useReadingProgress", () => {
         currentAuthUser = null;
         currentAuthError = null;
         currentCloudRows = [];
+        Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
         window.localStorage.clear();
         upsertMock.mockResolvedValue({ error: null });
         commitMutationMock.mockResolvedValue({ resetEpoch: 0, libraryRevision: 1 });
@@ -525,6 +527,141 @@ describe("useReadingProgress", () => {
             progress: null, last_interacted_at: null, library_updated_at: "2026-01-01T00:00:00.000Z", library_revision: revision }] : [],
     });
 
+    it("keeps offline saves durable across reload and sends them only for the owning account", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        let view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(view.result.current.user?.id).toBe(currentAuthUser?.id); expect(view.result.current.hydrationStatus).toBe("ready"); });
+        Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
+        await act(async () => { await view.result.current.addToMyList("offline-item"); });
+        const queued = readLibraryIntents(localStorage, "user-a").entries;
+        expect(queued).toHaveLength(1);
+        expect(queued[0].status).toBe("pending");
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        view.unmount();
+        currentAuthUser = { id: "user-b" };
+        Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
+        view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(view.result.current.user?.id).toBe(currentAuthUser?.id); expect(view.result.current.hydrationStatus).toBe("ready"); });
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        expect(view.result.current.recovery.pending).toBe(0);
+        view.unmount();
+        currentAuthUser = { id: "user-a" };
+        commitMutationMock.mockResolvedValue({ resetEpoch: 0, libraryRevision: 11 });
+        view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
+        expect(commitMutationMock.mock.calls[0][0]).toMatchObject({ mutationId: queued[0].id, baseRevision: 10, expectedAccountId: "user-a" });
+        await waitFor(() => expect(view.result.current.recovery.pending).toBe(0));
+    });
+
+    it("reuses the exact frozen request after a lost response and newer snapshot", async () => {
+        currentAuthUser = { id: "user-a" };
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        commitMutationMock.mockRejectedValueOnce(new Error("response lost"));
+        let view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(view.result.current.user?.id).toBe(currentAuthUser?.id); expect(view.result.current.hydrationStatus).toBe("ready"); });
+        await act(async () => { await view.result.current.addToMyList("lost-ack"); });
+        const original = commitMutationMock.mock.calls[0][0];
+        expect(readLibraryIntents(localStorage, "user-a").entries[0].request?.mutationId).toBe(original.mutationId);
+        view.unmount();
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(11) as never);
+        commitMutationMock.mockResolvedValue({ resetEpoch: 0, libraryRevision: 11 });
+        view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
+        expect(commitMutationMock.mock.calls[1][0]).toEqual(original);
+        await waitFor(() => expect(view.result.current.recovery.pending).toBe(0));
+    });
+
+    it("does not overlay or replay an offline save after a reset discovered on reload", async () => {
+        currentAuthUser = { id: "user-a" };
+        writeLibraryIntent(localStorage, { version: 1, id: crypto.randomUUID(), accountId: "user-a", itemId: "old-item",
+            sequence: 1, createdAt: new Date().toISOString(), isBookmarked: true, progress: null,
+            base: { resetEpoch: 0, libraryRevision: 1 }, status: "pending" });
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(20, false, 1) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe(currentAuthUser?.id); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(result.current.myListIds).toEqual([]);
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        expect(readLibraryIntents(localStorage, "user-a").entries[0].status).toBe("needs_attention");
+    });
+
+    it("imports explicitly, queues the whole guest batch first, and continues after an existing destination", async () => {
+        currentAuthUser = { id: "user-a" };
+        localStorage.setItem(myListKey("guest"), JSON.stringify(["existing", "eligible"]));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe(currentAuthUser?.id); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        commitMutationMock.mockImplementationOnce(async () => {
+            expect(readLibraryIntents(localStorage, "user-a").entries).toHaveLength(2);
+            return { resetEpoch: 0, libraryRevision: 10, outcome: "skipped", reason: "destination_exists" };
+        }).mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 11, outcome: "applied" });
+        await act(async () => { await result.current.importGuestLibrary(); });
+        expect(commitMutationMock).toHaveBeenCalledTimes(2);
+        const [first, second] = commitMutationMock.mock.calls.map(call => call[0]);
+        expect(first.guestImport.migrationId).toBe(second.guestImport.migrationId);
+        expect(first.guestImport.sourceRecordId).not.toBe(second.guestImport.sourceRecordId);
+        expect(second.baseRevision).toBe(10);
+        expect(JSON.parse(localStorage.getItem(myListKey("guest"))!)).toEqual(["existing"]);
+        await waitFor(() => expect(result.current.recovery.attention).toHaveLength(1));
+        expect(result.current.recovery.attention[0].canReapply).toBe(false);
+    });
+
+    it("resumes an interrupted guest batch without launching a competing snapshot", async () => {
+        currentAuthUser = { id: "user-a" };
+        localStorage.setItem(myListKey("guest"), JSON.stringify(["guest-first", "guest-second"]));
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(10) as never);
+        let view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(view.result.current.user?.id).toBe("user-a"); expect(view.result.current.hydrationStatus).toBe("ready"); });
+        const initialSnapshotCalls = vi.mocked(fetchCompleteLibrarySnapshot).mock.calls.length;
+        commitMutationMock.mockRejectedValueOnce(new TypeError("lost response"));
+        await act(async () => { await view.result.current.importGuestLibrary(); });
+        expect(view.result.current.recovery.pending).toBe(2);
+        expect(vi.mocked(fetchCompleteLibrarySnapshot).mock.calls).toHaveLength(initialSnapshotCalls);
+        const original = commitMutationMock.mock.calls[0][0];
+        view.unmount();
+        commitMutationMock.mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 11, outcome: "applied" })
+            .mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 12, outcome: "applied" });
+        view = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(3));
+        expect(commitMutationMock.mock.calls[1][0]).toEqual(original);
+        expect(commitMutationMock.mock.calls[2][0].baseRevision).toBe(11);
+        await waitFor(() => expect(view.result.current.recovery.pending).toBe(0));
+        expect(JSON.parse(localStorage.getItem(myListKey("guest"))!)).toEqual([]);
+    });
+
+    it("finishes acknowledged guest cleanup after a reload without another mutation", async () => {
+        currentAuthUser = { id: "user-a" };
+        localStorage.setItem(myListKey("guest"), JSON.stringify(["imported-item"]));
+        writeLibraryIntent(localStorage, { version: 1, id: crypto.randomUUID(), accountId: "user-a",
+            itemId: "imported-item", sequence: 1, createdAt: new Date().toISOString(),
+            isBookmarked: true, progress: null, base: { resetEpoch: 0, libraryRevision: 10 },
+            guestImport: { migrationId: crypto.randomUUID(), guestStorageId: crypto.randomUUID(), sourceRecordId: crypto.randomUUID() },
+            acknowledgement: { resetEpoch: 0, libraryRevision: 11, outcome: "applied" }, status: "acknowledged" });
+        vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(11) as never);
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
+        expect(JSON.parse(localStorage.getItem(myListKey("guest"))!)).toEqual([]);
+        expect(commitMutationMock).not.toHaveBeenCalled();
+        expect(readLibraryIntents(localStorage, "user-a").entries).toHaveLength(0);
+    });
+
+    it("refuses network delivery when the intent cannot be persisted", async () => {
+        currentAuthUser = { id: "user-a" };
+        const { result } = renderHook(() => useReadingProgress(), { wrapper });
+        await waitFor(() => { expect(result.current.user?.id).toBe(currentAuthUser?.id); expect(result.current.hydrationStatus).toBe("ready"); });
+        const original = localStorageMock.setItem.getMockImplementation()!;
+        localStorageMock.setItem.mockImplementation((key, value) => {
+            if (key.startsWith("netflux.library-mutation")) throw new DOMException("full", "QuotaExceededError");
+            return original(key, value);
+        });
+        try {
+            await act(async () => { expect(await result.current.addToMyList("not-durable")).toBe(false); });
+            expect(commitMutationMock).not.toHaveBeenCalled();
+            expect(result.current.recovery.storageError).toBe(true);
+        } finally { localStorageMock.setItem.mockImplementation(original); }
+    });
+
     it("preserves a based pending save through stale snapshots until its exact acknowledgement is included", async () => {
         let resolveSave!: (value: unknown) => void;
         commitMutationMock.mockImplementationOnce(() => new Promise(resolve => { resolveSave = resolve; }));
@@ -535,7 +672,7 @@ describe("useReadingProgress", () => {
         act(() => { void result.current.addToMyList("new-local-item"); });
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({
             expectedAccountId: "user-a", baseRevision: 10, resetEpoch: 0,
-        })));
+        }), expect.any(AbortSignal)));
         act(() => result.current.retryHydration());
         await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
         expect(result.current.myListIds).toEqual(["new-local-item"]);
@@ -573,11 +710,11 @@ describe("useReadingProgress", () => {
         act(() => authStateChangeHandler?.("INITIAL_SESSION", { user: { id: "user-a" } }));
         act(() => authStateChangeHandler?.("TOKEN_REFRESHED", { user: { id: "user-a" } }));
         await act(async () => resolveSnapshot(snapshotAt(2) as never));
-        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        await waitFor(() => { expect(result.current.user?.id).toBe(currentAuthUser?.id); expect(result.current.hydrationStatus).toBe("ready"); });
         expect(result.current.isLoaded).toBe(true);
         expect(fetchCompleteLibrarySnapshot).toHaveBeenCalledTimes(1);
         await act(async () => { await result.current.addToMyList("new-local-item"); });
-        expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({ baseRevision: 2 }));
+        expect(commitMutationMock).toHaveBeenCalledWith(expect.objectContaining({ baseRevision: 2 }), expect.any(AbortSignal));
     });
 
     it("marks conflicts as needing attention and refreshes without replaying rejected saves", async () => {
@@ -595,7 +732,7 @@ describe("useReadingProgress", () => {
         expect(commitMutationMock).toHaveBeenCalledTimes(1);
         commitMutationMock.mockResolvedValueOnce({ resetEpoch: 0, libraryRevision: 13 });
         await act(async () => { expect(await result.current.addToMyList("new-local-item")).toBe(true); });
-        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 12 }));
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 12 }), expect.any(AbortSignal));
     });
 
     it("keeps a newer pending removal ahead of an older acknowledged save during hydration", async () => {
@@ -649,7 +786,7 @@ describe("useReadingProgress", () => {
         expect(result.current.myListIds).toEqual([]);
         await act(async () => resolveSave({ resetEpoch: 0, libraryRevision: 1 }));
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(2));
-        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 1, isBookmarked: false }));
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ baseRevision: 1, isBookmarked: false }), expect.any(AbortSignal));
         vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(2) as never);
         act(() => result.current.retryHydration());
         await waitFor(() => { expect(result.current.user?.id).toBe("user-a"); expect(result.current.hydrationStatus).toBe("ready"); });
@@ -686,9 +823,11 @@ describe("useReadingProgress", () => {
             detail: { scope: getStorageScope("user-a"), resetEpoch: 1, boundaryRevision: 2 },
         })));
         await act(async () => { expect(await result.current.addToMyList("post-reset-item")).toBe(true); });
-        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ resetEpoch: 1, baseRevision: 2 }));
+        expect(commitMutationMock).toHaveBeenLastCalledWith(expect.objectContaining({ resetEpoch: 1, baseRevision: 2 }), expect.any(AbortSignal));
         await act(async () => resolveOld({ resetEpoch: 0, libraryRevision: 1 }));
         expect(result.current.syncNeedsAttention).toBe(false);
+        expect(commitMutationMock.mock.calls[0][1].aborted).toBe(true);
+        expect(readLibraryIntents(localStorage, "user-a").entries.some(entry => entry.itemId === "old-item")).toBe(false);
     });
 
     it("does not overlay a pending pre-reset save onto a newer epoch snapshot", async () => {
@@ -701,7 +840,7 @@ describe("useReadingProgress", () => {
         await waitFor(() => expect(commitMutationMock).toHaveBeenCalledTimes(1));
         vi.mocked(fetchCompleteLibrarySnapshot).mockResolvedValue(snapshotAt(2, false, 1) as never);
         act(() => result.current.retryHydration());
-        await waitFor(() => expect(result.current.hydrationStatus).toBe("ready"));
+        await waitFor(() => { expect(result.current.user?.id).toBe(currentAuthUser?.id); expect(result.current.hydrationStatus).toBe("ready"); });
         expect(result.current.myListIds).toEqual([]);
         await act(async () => resolveOld({ resetEpoch: 0, libraryRevision: 1 }));
         expect(result.current.myListIds).toEqual([]);

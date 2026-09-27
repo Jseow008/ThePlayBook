@@ -576,3 +576,79 @@ claim is made. Future CI-policy changes must be separately scoped, not bypassed 
 Closeout branch `codex/library-stale-write-closeout` in
 `/Users/j/Desktop/Lifebook-library-durability` records this receipt only. Next workstream:
 #9 durability; do not reapply this migration or repeat the completed hosted rehearsal.
+
+## Finding #9 — library recovery implementation, 27 September 2026
+
+Active worktree `/Users/j/.codex/worktrees/library-recovery/Lifebook`, branch
+`codex/library-recovery`, from freshly fetched `9dae0eae`. Changes are uncommitted;
+no PR, hosted candidate, production migration, or deployment yet. One bounded
+server implementer also provided a read-only client review; the coordinator owns
+client recovery, UI, integration, and release.
+
+Scope: the existing guest/offline library surfaces (bookmarks and reading progress).
+Guest highlights/reflections do not exist today; this does not claim a new offline
+note/reflection editor. Authenticated library intents have immutable IDs, account,
+base revision/reset epoch, stable timestamps, and a request frozen before sending.
+Per-intent browser records survive reload; account switching cancels delivery and
+never transfers another account's queue. Network uncertainty remains pending;
+conflicts require explicit refresh/review. Corrupt or unavailable storage is visible.
+
+Server receipts commit atomically with writes under the existing account lock.
+Retries return the original outcome; changed payloads with the same ID reject.
+Receipt scope is account/reset epoch: reset supersedes older operations and clears
+receipts; unchanged old requests still reject by epoch before receipt lookup.
+Each account/epoch admits at most 100,000 receipts, with existing retries allowed
+at the cap. Requests are bounded to 64 KiB. Private worker RLS and browser denial
+apply; account deletion cascades. Migration:
+`20260927035548_library_mutation_receipts.sql` (draft installed through direct SQL
+only on existing disposable `supabase_db_netflux-pr153-browser-cbrcdq`, never reset
+or stopped). Server/API/security focused tests passed 27; database runtime 30 passed,
+1 real-Auth-only configuration skip. The skipped case still needs CI/hosted proof.
+
+Guest import is explicit in Settings, at most 200 captures per batch. The whole
+batch is queued before delivery, with one migration ID and stable source identities.
+Existing authenticated items are skipped and retained for review, never overwritten.
+Acknowledged guest sources are removed locally only if unchanged; interrupted local
+cleanup resumes. Discard releases the source's destination binding. Reset discards
+queued guest sources assigned to that account only when the original source is still
+unchanged. Unassigned guest data remains separate. Browser journal admission is
+1,000 stored intents; overflow is visible and does not submit an unpersisted write.
+
+Client review found and corrected: guest reapply dropping import protection; skipped
+sources blocking later eligible sources; interrupted acknowledged-source cleanup;
+and discarded imports retaining an unusable account binding. Frozen requests are
+validated against their displayed intent. Interrupted imports no longer start a
+competing snapshot while writes remain pending; the browser rehearsal exposed that
+race and a deterministic interrupted-batch fixture covers it.
+
+Validation so far: full local suite 1,461 passed / 234 environment-dependent skips
+before the final small journal/hook corrections; affected hook suite now 33 passed,
+journal suite 5 passed, Settings suite 2 passed. Typecheck, targeted lint and the
+candidate production build passed. Database runtime: 31/31 local with real Supabase
+Auth revocation; 30/30 hosted applicable cases, with hosted Auth sign-up excluded
+because that fixture uses a reserved synthetic domain. Hosted per-test timeout was
+30 seconds to accommodate remote round trips; application deadlines were unchanged.
+Initial hosted 5-second harness timeouts were recorded and resolved by this explicit
+harness setting, not by changing production behavior.
+
+Approved temporary candidate: `bzhvoizhcjtqlkjfmqls`, distinct from production
+`xmuqsgfxuaaophxnwure`, created in the existing organization at the approved $10/month
+rate. All 108 migrations replayed, guarded reset and final dry-run passed. Six SQL
+security gates passed. The schema fingerprint now includes `snapshot_private` (it
+previously omitted that schema); comparison finds only the two new receipt tables
+and their intended definitions/ACLs. Public generated types match production.
+Candidate advisors show the existing intentional search-function warnings and private
+RLS informational findings, plus unused indexes on synthetic data; no new receipt
+ACL warning. Seven production-build smoke checks passed after supplying the isolated
+harness's admin IP and forwarded-host configuration.
+
+Production read-only gate: completed backup at `2026-09-26T23:45:27.973Z`; exact dry-run
+proposes only `20260927035548_library_mutation_receipts.sql`. No production mutation,
+merge or deployment yet. Real hosted browser proof passed: explicit guest import,
+server commit with deliberately lost response, identical replay after reload without
+duplicate receipt/write, remaining-batch completion, offline save/reconnect, and
+375px/1440px Settings rendering with no uncaught browser errors or horizontal overflow.
+Next: publish the focused PR, require exact-commit CI, then perform the
+authorized reviewed migration/release and synthetic production verification. Delete
+the temporary hosted project and private fixtures after verification, including on a
+failed release. No model evaluation or additional subagent is needed.

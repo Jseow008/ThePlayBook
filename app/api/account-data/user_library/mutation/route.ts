@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
 import { commitLibraryMutationForAccount } from "@/lib/server/account-data-snapshots";
-import { LibraryMutationConflictError } from "@/lib/user-library-mutation-contract";
+import { LibraryMutationConflictError, LibraryMutationReceiptError, LIBRARY_MUTATION_MAX_BYTES, type LibraryGuestImport } from "@/lib/user-library-mutation-contract";
 
 export const runtime = "nodejs";
 
 type MutationRequest = {
+    mutationId?: unknown;
+    createdAt?: unknown;
+    guestImport?: unknown;
     expectedAccountId?: unknown;
     baseRevision?: unknown;
     resetEpoch?: unknown;
@@ -30,12 +33,34 @@ export async function POST(request: NextRequest) {
 
         let body: MutationRequest;
         try {
-            body = await request.json();
+            if (Number(request.headers.get("content-length")) > LIBRARY_MUTATION_MAX_BYTES) return apiError("VALIDATION_ERROR", "This library change is too large.", 413, requestId);
+            const reader = request.body?.getReader();
+            if (!reader) return apiError("INVALID_JSON", "Invalid JSON payload.", 400, requestId);
+            const chunks: Uint8Array[] = [];
+            let bytes = 0;
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) break;
+                bytes += value.byteLength;
+                if (bytes > LIBRARY_MUTATION_MAX_BYTES) {
+                    await reader.cancel();
+                    return apiError("VALIDATION_ERROR", "This library change is too large.", 413, requestId);
+                }
+                chunks.push(value);
+            }
+            body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
         } catch {
             return apiError("INVALID_JSON", "Invalid JSON payload.", 400, requestId);
         }
+        const guest = body?.guestImport as Partial<LibraryGuestImport> | undefined;
         if (
             !body || typeof body !== "object"
+            || (body.mutationId !== undefined && (typeof body.mutationId !== "string" || !isUuid(body.mutationId)))
+            || (body.createdAt !== undefined && (typeof body.createdAt !== "string" || !Number.isFinite(Date.parse(body.createdAt))))
+            || ((body.mutationId !== undefined) !== (body.createdAt !== undefined))
+            || (guest !== undefined && (!guest || typeof guest !== "object" || Array.isArray(guest)
+                || !body.mutationId || body.deleteIfEmpty === true
+                || ![guest.migrationId, guest.guestStorageId, guest.sourceRecordId].every(value => typeof value === "string" && isUuid(value))))
             || typeof body.expectedAccountId !== "string" || !body.expectedAccountId
             || typeof body.baseRevision !== "number" || !Number.isSafeInteger(body.baseRevision) || body.baseRevision < 0
             || typeof body.resetEpoch !== "number" || !Number.isSafeInteger(body.resetEpoch) || body.resetEpoch < 0
@@ -57,6 +82,8 @@ export async function POST(request: NextRequest) {
         }
 
         const data = await commitLibraryMutationForAccount(user.id, {
+            ...(body.mutationId ? { mutationId: body.mutationId as string, createdAt: body.createdAt as string } : {}),
+            ...(guest ? { guestImport: { migrationId: guest.migrationId!, guestStorageId: guest.guestStorageId!, sourceRecordId: guest.sourceRecordId! } } : {}),
             baseRevision: body.baseRevision,
             resetEpoch: body.resetEpoch,
             contentId: body.contentId,
@@ -75,6 +102,10 @@ export async function POST(request: NextRequest) {
                 current: error.current,
             } }, { status: 409, headers: { "Cache-Control": "no-store" } });
         }
+        if (error instanceof LibraryMutationReceiptError) return NextResponse.json({ error: {
+            code: error.code, message: error.message, request_id: requestId,
+        } }, { status: error.code === "LIBRARY_MUTATION_ID_REUSED" ? 409 : error.code === "LIBRARY_RECEIPT_LIMIT" ? 429 : 400,
+            headers: { "Cache-Control": "no-store" } });
         logApiError({ requestId, route: "POST /api/account-data/user_library/mutation", message: "Could not commit authenticated library mutation", error });
         return apiError("INTERNAL_ERROR", "Could not update your library.", 503, requestId);
     }

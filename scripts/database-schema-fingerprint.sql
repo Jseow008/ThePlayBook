@@ -23,7 +23,7 @@ WITH function_definitions AS (
     ON namespace.oid = procedure.pronamespace
   INNER JOIN pg_language AS language
     ON language.oid = procedure.prolang
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND procedure.prokind IN ('f', 'p')
 ),
 function_acl AS (
@@ -55,7 +55,7 @@ function_acl AS (
   ) AS acl
   LEFT JOIN pg_roles AS grantee
     ON grantee.oid = acl.grantee
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND procedure.prokind IN ('f', 'p')
     AND (
       acl.grantee = 0
@@ -78,7 +78,7 @@ relation_definitions AS (
   FROM pg_class AS relation
   INNER JOIN pg_namespace AS namespace
     ON namespace.oid = relation.relnamespace
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND relation.relkind IN ('r', 'p', 'v', 'm')
 ),
 column_definitions AS (
@@ -110,7 +110,7 @@ column_definitions AS (
   LEFT JOIN pg_collation AS collation_row
     ON collation_row.oid = attribute.attcollation
    AND attribute.attcollation <> 0
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND relation.relkind IN ('r', 'p', 'v', 'm')
     AND attribute.attnum > 0
     AND NOT attribute.attisdropped
@@ -125,7 +125,7 @@ enum_definitions AS (
     ON namespace.oid = type_row.typnamespace
   INNER JOIN pg_enum AS enum_row
     ON enum_row.enumtypid = type_row.oid
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
   GROUP BY namespace.nspname, type_row.typname
 ),
 constraint_definitions AS (
@@ -150,7 +150,7 @@ constraint_definitions AS (
     ON relation.oid = constraint_row.conrelid
   INNER JOIN pg_namespace AS namespace
     ON namespace.oid = relation.relnamespace
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
 ),
 index_definitions AS (
   SELECT
@@ -164,7 +164,7 @@ index_definitions AS (
     ON table_relation.oid = index_row.indrelid
   INNER JOIN pg_namespace AS namespace
     ON namespace.oid = table_relation.relnamespace
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
 ),
 policy_definitions AS (
   SELECT
@@ -208,7 +208,7 @@ relation_acl AS (
   ) AS acl
   LEFT JOIN pg_roles AS grantee
     ON grantee.oid = acl.grantee
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND relation.relkind IN ('r', 'p', 'v', 'm', 'S')
     AND (
       acl.grantee = 0
@@ -223,7 +223,7 @@ view_definitions AS (
   FROM pg_class AS relation
   INNER JOIN pg_namespace AS namespace
     ON namespace.oid = relation.relnamespace
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND relation.relkind IN ('v', 'm')
 ),
 trigger_definitions AS (
@@ -241,7 +241,7 @@ trigger_definitions AS (
     ON relation.oid = trigger_row.tgrelid
   INNER JOIN pg_namespace AS namespace
     ON namespace.oid = relation.relnamespace
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND NOT trigger_row.tgisinternal
 ),
 relation_comments AS (
@@ -252,7 +252,7 @@ relation_comments AS (
   FROM pg_class AS relation
   INNER JOIN pg_namespace AS namespace
     ON namespace.oid = relation.relnamespace
-  WHERE namespace.nspname IN ('public', 'private')
+  WHERE namespace.nspname IN ('public', 'private', 'snapshot_private')
     AND relation.relkind IN ('r', 'p', 'v', 'm')
     AND obj_description(relation.oid, 'pg_class') IS NOT NULL
 ),
