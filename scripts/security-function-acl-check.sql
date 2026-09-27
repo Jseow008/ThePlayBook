@@ -216,3 +216,34 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- Spending RPCs are explicitly service-only SECURITY INVOKER endpoints.
+DO $ai_spend_acl$
+DECLARE signature text; object_oid oid; table_name text;
+BEGIN
+    FOREACH signature IN ARRAY ARRAY[
+        'public.reserve_ai_spend(uuid,text,text,text,bigint,text)',
+        'public.record_ai_spend(uuid,bigint,bigint,bigint)'
+    ] LOOP
+        object_oid := to_regprocedure(signature);
+        IF object_oid IS NULL THEN RAISE EXCEPTION 'Missing AI spending RPC: %', signature; END IF;
+        IF (SELECT prosecdef FROM pg_proc WHERE oid = object_oid)
+            OR NOT has_function_privilege('service_role', object_oid, 'EXECUTE')
+            OR has_function_privilege('anon', object_oid, 'EXECUTE')
+            OR has_function_privilege('authenticated', object_oid, 'EXECUTE')
+            OR EXISTS (SELECT 1 FROM pg_proc p, LATERAL aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
+                WHERE p.oid = object_oid AND a.grantee = 0 AND a.privilege_type = 'EXECUTE') THEN
+            RAISE EXCEPTION 'Unsafe AI spending RPC: %', signature;
+        END IF;
+    END LOOP;
+    FOREACH table_name IN ARRAY ARRAY['ai_spend_policy','ai_spend_daily_totals','ai_spend_guest_daily_totals','ai_spend_operations'] LOOP
+        object_oid := to_regclass('private.' || table_name);
+        IF object_oid IS NULL THEN RAISE EXCEPTION 'Missing AI spending table: %', table_name; END IF;
+        IF NOT (SELECT relrowsecurity FROM pg_class WHERE oid = object_oid)
+            OR has_table_privilege('anon',object_oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
+            OR has_table_privilege('authenticated',object_oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE') THEN
+            RAISE EXCEPTION 'Unsafe AI spending table: %', table_name;
+        END IF;
+    END LOOP;
+END;
+$ai_spend_acl$;
