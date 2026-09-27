@@ -1065,12 +1065,13 @@ Released on 27 September 2026 in [PR #174](https://github.com/Jseow008/ThePlayBo
   browser-callable. Privileged service/maintenance writes retain their own controls.
 
 Do not reset usage to bypass a refusal. Adjusting capture limits requires a reviewed
-migration and updated concurrency fixtures. These controls do not close #23's remaining
-feedback, votes, profile/preference, activity and legacy AI-usage write inventory.
+migration and updated concurrency fixtures. The remaining feedback, votes,
+profile/preference, activity and legacy AI-usage controls are documented below.
 
 ### 5.4.3 Remaining account-write controls (#23)
 
-Candidate implementation; deployment evidence is in the [checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-remaining-write-boundaries--27-september-2026).
+Released in PR #176 (`a7cc3271`) on 27 September 2026. Production migration,
+security/parity checks and authenticated application smoke passed; see the [checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-remaining-write-boundaries--27-september-2026).
 Feedback and notification preferences admit 20 committed writes/account/60 seconds;
 onboarding admits 30. Windows start with the first committed write, upserts count once,
 deletes consume one unit per statement, and transaction rollback rolls back admission.

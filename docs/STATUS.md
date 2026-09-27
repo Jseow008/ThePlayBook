@@ -53,12 +53,12 @@ journey. Search/model evaluation was unchanged and not rerun.
 ## Deferred and separately open
 
 - Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7, #26 and #27 stay explicit in the register; broader synthesis and full editorial revision history remain deferred.
-- AI safeguards #20–#22 are shipped within their recorded scope. Remaining safeguards (#23–#24), operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
+- AI safeguards #20–#23 are shipped within their recorded scope. Remaining safeguard #24, operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
 - The account-deletion/revision-trigger defect is repaired in production by `20260926150259_account_deletion_library_revision.sql` ([#161](https://github.com/Jseow008/ThePlayBook/pull/161)). Real hosted and production Auth deletion proofs pass; full durability acceptance remains separate. See [release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
 
-## Current bounded work: mutation boundaries (#23)
+## Latest completion: mutation boundaries (#23)
 
-The [inventory and correction plan](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-mutation-boundary-inventory--27-september-2026) compares current routes with read-only production grants, RLS, triggers and RPC exposure. The original direct bookmark-write path is closed. Remaining direct-write/resource-limit gaps are documented; #23 is **open**, not closed by this inventory. Library and capture admission shipped in [#174](https://github.com/Jseow008/ThePlayBook/pull/174), `e8e93d70`: production migration/schema/security checks and authenticated save/replay/capture smoke passed. The [current checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-library-and-capture-admission--27-september-2026) records the evidence. Feedback, votes, preferences/profile, activity and legacy usage remain the next bounded scope; #23 is not yet complete.
+The [inventory and correction plan](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-mutation-boundary-inventory--27-september-2026) covers ordinary account writes and records the separately controlled admin, worker, Auth and read surfaces. Library/capture admission shipped in [#174](https://github.com/Jseow008/ThePlayBook/pull/174), `e8e93d70`. Remaining feedback, votes, preferences/profile, activity and legacy usage corrections merged in [#176](https://github.com/Jseow008/ThePlayBook/pull/176), `a7cc3271`; production migration, parity, security checks and authenticated application smoke passed. The production alias serves this build; #23 is complete for the recorded ordinary-account inventory. The [release checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-remaining-write-boundaries--27-september-2026) records hosted/runtime evidence and temporary-project cleanup. The next bounded work is #24 graceful failures; the wider audit remains open.
 
 ## Updating this page
 

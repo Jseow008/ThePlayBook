@@ -987,8 +987,8 @@ files were removed after verification. No temporary hosted project remains.
 Owner: Netflux engineering/security (Codex implementation coordinator for this pass).
 Inventory date/target: 27 September 2026. Baseline: `0e861306` on main.
 Branch: `codex/mutation-boundary-inventory`, workspace `/Users/j/Desktop/Lifebook`.
-This is a bounded inventory and correction plan, **not #23 closure**. No production
-mutation, migration or application edit occurred in this pass. #22 is shipped;
+This section records the original bounded inventory, before implementation. No production
+mutation, migration or application edit occurred during that inventory pass. #22 is shipped;
 STATUS and the register now reflect its production release rather than pending work.
 
 Method: searched browser hooks/components, repository helpers, API mutation exports,
@@ -1008,12 +1008,12 @@ were attempted. This is structural evidence, not a runtime penetration test.
 | Account reset and snapshot/export creation: `/api/account-data/reset`, `/api/account-data/snapshots` | Strict account limits, restricted worker, locks, snapshot concurrency/size/time/expiry bounds and recovery. | Reuse #7/#10 runtime evidence; no new snapshot mechanism needed. |
 | Highlights/notes: `/api/library/highlights` and `[id]` | Route validation/rate limits and ownership RLS. Direct authenticated table INSERT/UPDATE/DELETE remains allowed. Anchor-pair and overlap checks exist. | Addressed by #174: authoritative DB admission, text bounds and serialized 50-per-item cap apply to both route and direct writes; ownership/indexing semantics retained. |
 | Reflections: `/api/library/reflections` and `[id]` | Ownership RLS and DB prompt/text length checks (500/1,000 chars). Direct authenticated writes remain allowed; route creation is limited. | Addressed by #174: authoritative account budget covers inserts, updates and deletes, preserving existing DB lengths and upsert semantics. |
-| Feedback: `/api/feedback/content` | Route limit 20/minute; authenticated ownership RLS and per-item upsert. Direct authenticated writes remain allowed. | The route budget can be bypassed; select controlled writes or DB admission. Preserve vote replacement/removal. |
-| Content requests/votes: `/api/content-requests`, `[id]/vote` | Request submission uses server RPC; browser has no applicable request-write policy. Vote route has 60/minute checks; direct vote INSERT/DELETE is permitted for owned/eligible votes and updates counts through triggers. | Close/bound direct vote churn; retain eligibility, uniqueness and count integrity. Do not interpret unused broad request grants as an existing ordinary-user write bypass. |
-| Notification preferences: `/api/notification-preferences` | Route limit 20/minute; one account row, ownership RLS; direct authenticated INSERT/UPDATE permitted. | Decide and enforce low-cost preference write budget at reachable boundary. |
-| Profile onboarding and reader settings: `set_onboarding_state`, `useReaderSettings` | RLS restricts profile updates to owner; production grants UPDATE only on `onboarding_state`. RPC validates nonempty tour/version and supported status. | Arbitrary tour/version length and direct JSON updates lack a DB size/rate bound. Separately, the existing reader-settings direct update lacks the required column grant; verify and repair persistence through a controlled path, not a broad profile grant. Never expose role updates. |
-| Reading activity/history: `/api/activity/log`, `/api/activity/history/content/[id]` | Authenticated/anonymous routes have validation and admission; aggregate content analytics RPCs are server-only. Direct own `reading_activity` INSERT/UPDATE policies remain. | Direct own activity writes bypass route controls. Preserve server logging and history removal when narrowing access. |
-| AI usage ledgers and three chat routes | #20–#22 enforce atomic quota/admission before dispatch. Browser own `ai_message_usage` INSERT remains permitted; trigger serializes account writes. Private monetary tables are server-only. | Legacy direct usage inserts can grow rows/consume the caller's own quota; the lock is not a rate bound. Revoke unnecessary browser INSERT after proving no remaining consumer. This does not bypass provider spending admission. |
+| Feedback: `/api/feedback/content` | Route limit 20/minute; authenticated ownership RLS and per-item upsert. Direct authenticated writes remain allowed. | Addressed by #176: atomic DB admission covers route/direct feedback writes and removal, with bounded text; ownership retained. |
+| Content requests/votes: `/api/content-requests`, `[id]/vote` | Request submission uses server RPC; browser has no applicable request-write policy. Vote route has 60/minute checks; direct vote INSERT/DELETE is permitted for owned/eligible votes and updates counts through triggers. | Addressed by #176: direct browser vote mutations revoked; existing server route admission, eligibility, uniqueness and count triggers retained and tested. Unused broad request grants are not an ordinary-user write bypass. |
+| Notification preferences: `/api/notification-preferences` | Route limit 20/minute; one account row, ownership RLS; direct authenticated INSERT/UPDATE permitted. | Addressed by #176: atomic account DB budget and token bound cover reachable writes. |
+| Profile onboarding and reader settings: `set_onboarding_state`, `useReaderSettings` | RLS restricts profile updates to owner; production grants UPDATE only on `onboarding_state`. RPC validates nonempty tour/version and supported status. | Addressed by #176: direct onboarding JSON gains shape/size/rate bounds; existing RPC key/version bounds retained. Reader settings persist through a controlled authenticated route without broader profile grants or role writes. |
+| Reading activity/history: `/api/activity/log`, `/api/activity/history/content/[id]` | Authenticated/anonymous routes have validation and admission; aggregate content analytics RPCs are server-only. Direct own `reading_activity` INSERT/UPDATE policies remain. | Addressed by #176: browser mutations revoked; server logging/removal retained with verified-account admission and shared removal scope. |
+| AI usage ledgers and three chat routes | #20–#22 enforce atomic quota/admission before dispatch. Browser own `ai_message_usage` INSERT remains permitted; trigger serializes account writes. Private monetary tables are server-only. | Addressed by #176: unnecessary browser mutations revoked; trusted AI admission and quota writers verified. Provider spending controls remain unchanged. |
 | Email subscribe/unsubscribe | Server routes and server-only subscription RPC/table access; token/route controls. | Reuse existing controls; no direct browser-write path identified. |
 | Admin content/sections/series, request actions, uploads | Admin authentication/server clients; narrow admin-only DB policies where present. Media/audio bucket size and MIME gates; processor queues/claims. | Retain existing admin/Storage security gates. Admin identity is a different trust tier, not evidence that every operation has a numeric quota. Background generation costs remain outside #22. |
 | Scheduled narration, story image, notification and evidence workers | Admin/cron or private DB entry points, service/restricted roles, queue claims and bounded batches. | Keep privileged credentials server-only; reuse existing worker checks. Do not route these through end-user write admission. |
@@ -1168,13 +1168,43 @@ and runtime fixture. Its two findings (token size and unnecessary BEFORE advisor
 were fixed and covered. Setup failures were harness-only: explicit local container/port
 and disabled TLS for the local-only connection. No hosted/production TLS weakening.
 
-User authorized a temporary project in the existing organization at the quoted $10/month.
-Candidate `rwsppmfneczfprmhbtxh`; production `xmuqsgfxuaaophxnwure`. Candidate-only workdir
-`/private/tmp/netflux-remaining23-hosted`; local disposable `NetfluxRemaining23` at
-`/private/tmp/netflux-remaining23-db`. Safe evidence is in
-`/private/tmp/netflux-remaining23-evidence`. Migration candidate:
-`20260927114833_bound_remaining_account_writes.sql`. No production action yet.
-Next: hosted replay/reset/schema/types/security/runtime/application proof and exact-head
-CI; review the one-migration production dry-run, release under existing authorization,
-then production smoke, delete candidate and reconcile status. #23 remains open until
-this release evidence is complete. Reuse unchanged retrieval/model evidence.
+### Release evidence and checkpoint
+
+[PR #176](https://github.com/Jseow008/ThePlayBook/pull/176) merged as `a7cc3271`
+from final head `457ebac6`. Exact-head validate, Security Validation, PR scope,
+Catalog Search Evidence and Vercel preview passed. Security CI ran all eight new
+runtime cases without skips, including real Auth/Data API coverage.
+
+The user-authorized temporary hosted project completed a 112-migration replay,
+guarded reset and clean dry-run. Eight new runtime plus twelve AI-quota cases,
+six security checks, seven browser checks and ordinary-account HTTP proof passed.
+The HTTP proof covers settings persistence/scope rejection, onboarding, feedback,
+preferences, DB-driven Retry-After, vote counts/removal and activity logging/removal.
+Public types match. Schema differences are the intended private budget/helpers/triggers
+and browser ACL reductions. The candidate was deleted and absence confirmed; owned
+local stack/server, private credentials/workdirs and candidate build output were removed.
+
+Applied only `20260927114833_bound_remaining_account_writes.sql` to production,
+SHA-256 `32a1dc2592b073687357c6784824f216b9d5bfeaa84cd658b3aca191f2fa8ad8`.
+The completed backup was `2026-09-26T23:45:27.973Z`. Post-apply dry-run is clean,
+all 14 schema fingerprints match the final candidate, and six security checks report
+zero findings. Advisors retain reviewed search/password warnings and private-table INFO.
+Safe evidence remains at `/private/tmp/netflux-remaining23-evidence`.
+
+Review also caught mixed DELETE/upsert lock inversion; AFTER statement admission
+fixes it while refused deletes roll back. Hosted files run sequentially to fit the
+15-session pool, preserving concurrency inside tests. Browser harness corrections
+concerned forwarded host/IP headers; production security and acceptance were not relaxed.
+
+Production alias `www.netflux.blog` serves `a7cc3271` in READY state. Post-merge
+validate and Security Validation passed. The authenticated production smoke verified
+reader-settings persistence, account/field rejection, onboarding RPC, feedback save/remove,
+notification preferences, activity log/removal, denied direct table mutations and health
+200. The synthetic session was signed out, its account deleted, and zero owned
+profile/feedback/preference/activity rows confirmed. No quota stress or counter reset.
+
+#23 is complete for the recorded ordinary-account mutation inventory. Privileged
+admin/worker/Auth and read surfaces retain their separately documented controls;
+this does not close the wider audit. Next bounded work: #24 graceful failures.
+Closeout branch: `codex/account-write-release-record`, based on `a7cc3271`.
+No candidate recreation, migration reapplication or repeated benchmark is needed.
