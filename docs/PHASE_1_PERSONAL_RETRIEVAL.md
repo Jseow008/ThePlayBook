@@ -971,3 +971,13 @@ running. Database policy is configured, but application enforcement is not yet v
 live. Next: confirm the production deployment contains #170, run a bounded admission/
 settlement smoke, and record the result. Do not toggle production limits for testing
 or repeat the already-passed hosted denial and runtime suites.
+
+Production closeout: #171 merged as `71c7c8b0550fdb6bd3dabdce41317c8f7b40c1e8`;
+Vercel reports that exact commit READY on `www.netflux.blog`. Health returned 200.
+One guest author-chat smoke against existing public content returned 200 and a complete
+answer. The ledger recorded Anthropic Haiku, 2,526 input and 46 output tokens: 202,000
+micro-USD reserved and 2,756 micro-USD settled ($0.002756). This confirms live dispatch
+and settlement; no policy toggling or production test-suite replay was needed.
+The smoke used no user account or private library data. Both implementation and policy
+documentation are merged; root main was fast-forwarded. Temporary production environment
+files were removed after verification. No temporary hosted project remains.
