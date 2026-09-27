@@ -1,6 +1,9 @@
 DO $$
 DECLARE
   failures text;
+  signature text;
+  object_oid oid;
+  table_name text;
 BEGIN
   WITH service_role_only_definer_functions(function_name, arguments) AS (
     VALUES
@@ -214,13 +217,9 @@ BEGIN
   IF failures IS NOT NULL THEN
     RAISE EXCEPTION 'Supabase SECURITY DEFINER ACL drift detected:%', E'\n' || failures;
   END IF;
-END;
-$$;
 
--- Spending RPCs are explicitly service-only SECURITY INVOKER endpoints.
-DO $ai_spend_acl$
-DECLARE signature text; object_oid oid; table_name text;
-BEGIN
+  -- Spending RPCs are explicitly service-only SECURITY INVOKER endpoints.
+  -- Keep all checks in one statement for the Supabase prepared-query runner.
     FOREACH signature IN ARRAY ARRAY[
         'public.reserve_ai_spend(uuid,text,text,text,bigint,text)',
         'public.record_ai_spend(uuid,bigint,bigint,bigint)'
@@ -246,4 +245,4 @@ BEGIN
         END IF;
     END LOOP;
 END;
-$ai_spend_acl$;
+$$;

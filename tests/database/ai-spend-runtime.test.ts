@@ -162,7 +162,8 @@ database("atomic AI spending on disposable PostgreSQL", () => {
     });
     it("keeps access checks sensitive to accidental RPC grants and RLS removal", async () => {
         const checker = readFileSync("scripts/security-function-acl-check.sql", "utf8");
-        await db.query(checker);
+        // Match the CLI extended-query protocol: multiple top-level statements must fail.
+        await db.query({ name: "ai-spend-acl-proof", text: checker });
         for (const mutation of [
             "GRANT EXECUTE ON FUNCTION public.reserve_ai_spend(uuid,text,text,text,bigint,text) TO anon",
             "ALTER FUNCTION public.record_ai_spend(uuid,bigint,bigint,bigint) SECURITY DEFINER",
@@ -172,7 +173,7 @@ database("atomic AI spending on disposable PostgreSQL", () => {
             try {
                 await connection.query("BEGIN");
                 await connection.query(mutation);
-                await expect(connection.query(checker)).rejects.toThrow();
+                await expect(connection.query({ name: "ai-spend-acl-proof", text: checker })).rejects.toThrow();
             } finally { await connection.query("ROLLBACK"); connection.release(); }
         }
     });

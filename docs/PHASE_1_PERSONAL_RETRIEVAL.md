@@ -870,3 +870,23 @@ Next: complete application checks, inspect scope and open held PR; obtain daily-
 answer, perform OPS §2.2 hosted release rehearsal with fresh provider cost approval,
 review production dry-run, then apply only this migration/configuration and release.
 Do not repeat completed #20/#21 rollouts or unchanged model benchmarks.
+
+Handoff: PR #170 is open at application commit
+`375ae93b8d6b69dd03936b192f90d0b812ed994d`; GitHub file-list inspection and PR scope
+passed, auto-merge is off. Required validation/security and Vercel checks were still
+running at handoff. Fresh Supabase cost quote is $10/month in the existing Netflux
+organization; explicit new-project approval has been requested, not yet received.
+The daily-ceiling question also remains pending. No hosted project created and no
+production changes. This checkpoint-only working-tree update will be included with
+the next release-evidence commit; application evidence remains bound to `375ae93b`.
+
+27 September follow-up: user approved the quoted $10/month temporary project in
+Netflux's existing organization. The production daily ceiling is still unanswered.
+At `375ae93b`, validate, PR scope, Catalog Search Evidence and Vercel passed. Security
+Validation failed before runtime tests because the ACL checker had two top-level DO
+statements and the CLI uses prepared queries. Consolidated the checks into one DO;
+added prepared-query execution to the existing real-DB positive/negative ACL proof.
+The actual CLI checker and all 15 runtime tests now pass locally (local CLI requires
+`sslmode=disable`). No migration SQL or application behavior changed in this fix.
+Next: push correction, finish approved hosted rehearsal, delete candidate, then wait
+for daily-cap selection before any production activation.
