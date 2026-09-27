@@ -1,6 +1,6 @@
 # Netflux release and workstream status
 
-**Latest production verification:** consistent AI identity and burst limits on `450fb879` ([#168](https://github.com/Jseow008/ThePlayBook/pull/168)), 27 September 2026. Hosted and production proofs verify account/IP independence, forged-header resistance, guest limits and shared network protection; no AI usage was charged and temporary accounts were removed. Authenticated atomic quotas shipped earlier in #166. Earlier deliveries retain their own scope and evidence. This is not blanket closure of the 32-finding register.
+**Latest production verification:** shared AI spending controls (#22), implementation [#170](https://github.com/Jseow008/ThePlayBook/pull/170) (`c82a704c`), verified live on `71c7c8b0` on 27 September 2026. The approved $5/day global ceiling includes $1/day shared by guests. A live request completed and settled at $0.002756; health returned 200. [Policy and procedures](OPS.md#541-interactive-ai-spending-controls-22) and [release evidence](PHASE_1_PERSONAL_RETRIEVAL.md#finding-22-approved-production-policy--27-september-2026) retain exact scope, exclusions and verification. Earlier deliveries retain their own evidence; this is not blanket closure of the 32-finding register.
 
 ## Implemented on main
 
@@ -13,6 +13,7 @@ The [README](../README.md#what-ships-today) lists the product surfaces; [archite
 | Durable library recovery | [#164](https://github.com/Jseow008/ThePlayBook/pull/164), `d17d8c4d` | Finding #9 for bookmarks/progress: durable account-bound intents, idempotent retries, explicit guest import, and visible conflict recovery. No new offline note/reflection editor. |
 | Atomic authenticated AI quotas | [#166](https://github.com/Jseow008/ThePlayBook/pull/166), `00c0471e` | Finding #20: concurrent requests share atomic admission before provider dispatch; counts attempts, not successful answers. |
 | Trusted AI identity and burst limits | [#168](https://github.com/Jseow008/ThePlayBook/pull/168), `450fb879` | Finding #21: verified-account limits, trusted/canonical network identity, shared abuse guard and fail-closed backend handling. Hosted and production proof in the [checkpoint](PHASE_1_PERSONAL_RETRIEVAL.md#finding-21-implementation-checkpoint--27-september-2026). |
+| Shared AI spending admission | [#170](https://github.com/Jseow008/ThePlayBook/pull/170), `c82a704c` | Finding #22: global/guest admission, conservative reservations, measured settlement and kill switch for three interactive AI routes. Background/admin work is excluded. |
 | Complete account export | [#138](https://github.com/Jseow008/ThePlayBook/pull/138), `c6847bb` | Finding #10 delivery; one verified cross-collection snapshot. |
 | Separate export allowance, progress, refresh-safe delivery, and resume | [#139](https://github.com/Jseow008/ThePlayBook/pull/139), [#140](https://github.com/Jseow008/ThePlayBook/pull/140), [#141](https://github.com/Jseow008/ThePlayBook/pull/141), [#142](https://github.com/Jseow008/ThePlayBook/pull/142) | Resume reuses a valid server snapshot; the browser retains an opaque reference, not exported account data. |
 | Catalog and Notes search | [#145](https://github.com/Jseow008/ThePlayBook/pull/145), `7f479ce` | Findings #2/#12/#13: server search before pagination, lexical ranking/snippets, and distinct errors. This is separate from generative personal retrieval. |
@@ -52,8 +53,12 @@ journey. Search/model evaluation was unchanged and not rerun.
 ## Deferred and separately open
 
 - Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7, #26 and #27 stay explicit in the register; broader synthesis and full editorial revision history remain deferred.
-- AI safeguards #20–#21 are shipped within their recorded scope. Remaining safeguards (#22–#24), operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
+- AI safeguards #20–#22 are shipped within their recorded scope. Remaining safeguards (#23–#24), operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
 - The account-deletion/revision-trigger defect is repaired in production by `20260926150259_account_deletion_library_revision.sql` ([#161](https://github.com/Jseow008/ThePlayBook/pull/161)). Real hosted and production Auth deletion proofs pass; full durability acceptance remains separate. See [release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
+
+## Current bounded work: mutation boundaries (#23)
+
+The [inventory and correction plan](PHASE_1_PERSONAL_RETRIEVAL.md#finding-23-mutation-boundary-inventory--27-september-2026) compares current routes with read-only production grants, RLS, triggers and RPC exposure. The original direct bookmark-write path is closed. Remaining direct-write/resource-limit gaps are documented; #23 is **open**, not closed by this inventory. This pass changes documentation only.
 
 ## Updating this page
 
