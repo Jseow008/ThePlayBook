@@ -1,6 +1,7 @@
-type SupabaseLike = {
-    from: (table: string) => any;
-};
+import "server-only";
+
+import { z } from "zod";
+import { getAdminClient } from "@/lib/supabase/admin";
 
 type QuotaWindow = "day" | "week" | "month";
 
@@ -44,8 +45,8 @@ function parsePositiveInteger(value: string | undefined, fallback: number): numb
         return fallback;
     }
 
-    const parsed = Number.parseInt(value, 10);
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    const parsed = Number(value);
+    return /^\d+$/.test(value) && Number.isSafeInteger(parsed) && parsed > 0 && parsed <= 2_147_483_647 ? parsed : fallback;
 }
 
 export function getAiUsageQuotaLimits(): AiUsageQuotaLimits {
@@ -56,115 +57,34 @@ export function getAiUsageQuotaLimits(): AiUsageQuotaLimits {
     };
 }
 
-function startOfUtcDay(now: Date): Date {
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
+const windowSchema = z.object({
+    window: z.enum(["day", "week", "month"]),
+    limit: z.number().int().positive(), used: z.number().int().nonnegative(),
+    remaining: z.number().int().nonnegative(), resetAt: z.coerce.date(),
+});
+const admissionSchema = z.discriminatedUnion("allowed", [
+    z.object({ allowed: z.literal(true), windows: z.array(windowSchema).length(3) }),
+    z.object({ allowed: z.literal(false), windows: z.array(windowSchema).length(3),
+        blockedWindow: z.enum(["day", "week", "month"]), limit: z.number().int().positive(),
+        used: z.number().int().nonnegative(), retryAfterMs: z.number().int().nonnegative(), resetAt: z.coerce.date() }),
+]);
 
-function startOfUtcWeek(now: Date): Date {
-    const dayStart = startOfUtcDay(now);
-    const utcDay = dayStart.getUTCDay();
-    const daysSinceMonday = (utcDay + 6) % 7;
-    dayStart.setUTCDate(dayStart.getUTCDate() - daysSinceMonday);
-    return dayStart;
-}
-
-function startOfUtcMonth(now: Date): Date {
-    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-}
-
-function addUtcDays(date: Date, days: number): Date {
-    const next = new Date(date);
-    next.setUTCDate(next.getUTCDate() + days);
-    return next;
-}
-
-function addUtcMonths(date: Date, months: number): Date {
-    const next = new Date(date);
-    next.setUTCMonth(next.getUTCMonth() + months);
-    return next;
-}
-
-function getWindowBoundaries(now: Date): Record<QuotaWindow, { start: Date; resetAt: Date }> {
-    const dayStart = startOfUtcDay(now);
-    const weekStart = startOfUtcWeek(now);
-    const monthStart = startOfUtcMonth(now);
-
-    return {
-        day: { start: dayStart, resetAt: addUtcDays(dayStart, 1) },
-        week: { start: weekStart, resetAt: addUtcDays(weekStart, 7) },
-        month: { start: monthStart, resetAt: addUtcMonths(monthStart, 1) },
-    };
-}
-
-async function countUsageSince(
-    supabase: SupabaseLike,
-    userId: string,
-    since: Date
-): Promise<number> {
-    const { count, error } = await supabase
-        .from("ai_message_usage")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .gte("created_at", since.toISOString());
-
-    if (error) {
-        throw error;
-    }
-
-    return count ?? 0;
-}
-
-export async function checkAiUsageQuota(
-    supabase: SupabaseLike,
-    userId: string,
-    now: Date = new Date()
+/** Count one dispatch attempt atomically, before the first provider call.
+ * Provider failures/cancellation do not refund paid attempts. Never automatically
+ * retry an ambiguous RPC result: fail closed without dispatching provider work.
+ */
+export async function admitAiUsage(
+    userId: string, feature: AiUsageFeature, signal: AbortSignal,
 ): Promise<AiUsageQuotaResult> {
+    signal.throwIfAborted();
     const limits = getAiUsageQuotaLimits();
-    const boundaries = getWindowBoundaries(now);
-    const windows: QuotaWindow[] = ["day", "week", "month"];
-    const states: QuotaWindowState[] = await Promise.all(windows.map(async (window) => {
-        const used = await countUsageSince(supabase, userId, boundaries[window].start);
-        const limit = limits[window];
-
-        return {
-            window,
-            limit,
-            used,
-            remaining: Math.max(0, limit - used),
-            resetAt: boundaries[window].resetAt,
-        };
-    }));
-
-    const blocked = states.find((state) => state.used >= state.limit);
-    if (!blocked) {
-        return { allowed: true, windows: states };
-    }
-
-    return {
-        allowed: false,
-        blockedWindow: blocked.window,
-        limit: blocked.limit,
-        used: blocked.used,
-        retryAfterMs: Math.max(0, blocked.resetAt.getTime() - now.getTime()),
-        resetAt: blocked.resetAt,
-        windows: states,
-    };
-}
-
-export async function recordGeneratedAiMessage(
-    supabase: SupabaseLike,
-    params: { userId: string; feature: AiUsageFeature }
-): Promise<void> {
-    const { error } = await supabase
-        .from("ai_message_usage")
-        .insert({
-            user_id: params.userId,
-            feature: params.feature,
-        });
-
-    if (error) {
-        throw error;
-    }
+    const { data, error } = await getAdminClient().rpc("admit_ai_usage", {
+        p_user_id: userId, p_feature: feature,
+        p_day_limit: limits.day, p_week_limit: limits.week, p_month_limit: limits.month,
+    }).abortSignal(AbortSignal.any([signal, AbortSignal.timeout(10_000)]));
+    if (error) throw new Error("AI admission unavailable", { cause: error });
+    signal.throwIfAborted();
+    return admissionSchema.parse(data);
 }
 
 export function getQuotaExceededMessage(result: AiUsageQuotaBlocked): string {

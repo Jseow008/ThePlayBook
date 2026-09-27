@@ -1,109 +1,58 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import {
-    checkAiUsageQuota,
-    DEFAULT_AI_USAGE_QUOTA_LIMITS,
-    getAiUsageQuotaLimits,
-    getQuotaExceededMessage,
-    recordGeneratedAiMessage,
-} from "../ai-usage-quota";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { admitAiUsage, DEFAULT_AI_USAGE_QUOTA_LIMITS, getAiUsageQuotaLimits, getQuotaExceededMessage } from "../ai-usage-quota";
+import { getAdminClient } from "@/lib/supabase/admin";
+vi.mock("@/lib/supabase/admin", () => ({ getAdminClient: vi.fn() }));
 
-function createCountingSupabase(counts: number[]) {
-    const gte = vi.fn(async () => ({
-        count: counts.shift() ?? 0,
-        error: null,
-    }));
-    const eq = vi.fn(() => ({ gte }));
-    const select = vi.fn(() => ({ eq }));
-    const from = vi.fn(() => ({ select }));
-
-    return {
-        supabase: { from },
-        calls: { from, select, eq, gte },
-    };
-}
-
-describe("AI usage quota", () => {
-    afterEach(() => {
-        vi.unstubAllEnvs();
-        vi.restoreAllMocks();
+const states = ["day", "week", "month"].map((window) => ({ window, limit: 20, used: 19, remaining: 1, resetAt: "2026-10-01T00:00:00Z" }));
+describe("atomic AI admission", () => {
+    const abortSignal = vi.fn();
+    const rpc = vi.fn(() => ({ abortSignal }));
+    beforeEach(() => {
+        vi.clearAllMocks();
+        vi.mocked(getAdminClient).mockReturnValue({ rpc } as unknown as ReturnType<typeof getAdminClient>);
+        abortSignal.mockResolvedValue({ data: { allowed: true, windows: states }, error: null });
     });
-
-    it("starts all quota reads before waiting and preserves window order", async () => {
-        const resolvers: Array<(value: { count: number; error: null }) => void> = [];
-        const gte = vi.fn(() => new Promise<{ count: number; error: null }>((resolve) => resolvers.push(resolve)));
-        const supabase = { from: () => ({ select: () => ({ eq: () => ({ gte }) }) }) };
-        const resultPromise = checkAiUsageQuota(supabase, "user-123");
-        expect(gte).toHaveBeenCalledTimes(3);
-        resolvers[2]({ count: 200, error: null });
-        resolvers[0]({ count: 2, error: null });
-        resolvers[1]({ count: 30, error: null });
-        expect((await resultPromise).windows.map((window) => window.used)).toEqual([2, 30, 200]);
-    });
-
-    it("uses the free-user default limits", () => {
+    afterEach(() => vi.unstubAllEnvs());
+    it("uses the current defaults and rejects malformed overrides", () => {
         expect(getAiUsageQuotaLimits()).toEqual(DEFAULT_AI_USAGE_QUOTA_LIMITS);
+        vi.stubEnv("AI_DAILY_MESSAGE_LIMIT", "3junk");
+        vi.stubEnv("AI_WEEKLY_MESSAGE_LIMIT", "9999999999999");
+        vi.stubEnv("AI_MONTHLY_MESSAGE_LIMIT", "30");
+        expect(getAiUsageQuotaLimits()).toEqual({ day: 20, week: 100, month: 30 });
     });
-
-    it("allows usage below daily, weekly, and monthly limits", async () => {
-        const { supabase, calls } = createCountingSupabase([19, 99, 299]);
-
-        const result = await checkAiUsageQuota(
-            supabase,
-            "user-123",
-            new Date("2026-05-18T12:00:00.000Z")
-        );
-
+    it("uses one trusted RPC for the authenticated identity and feature", async () => {
+        const result = await admitAiUsage("account-a", "ask-notes", new AbortController().signal);
         expect(result.allowed).toBe(true);
-        expect(calls.from).toHaveBeenCalledTimes(3);
-        expect(calls.gte).toHaveBeenNthCalledWith(1, "created_at", "2026-05-18T00:00:00.000Z");
-        expect(calls.gte).toHaveBeenNthCalledWith(2, "created_at", "2026-05-18T00:00:00.000Z");
-        expect(calls.gte).toHaveBeenNthCalledWith(3, "created_at", "2026-05-01T00:00:00.000Z");
+        expect(rpc).toHaveBeenCalledExactlyOnceWith("admit_ai_usage", {
+            p_user_id: "account-a", p_feature: "ask-notes", p_day_limit: 20, p_week_limit: 100, p_month_limit: 300,
+        });
+        expect(result.windows[0].resetAt).toBeInstanceOf(Date);
     });
-
-    it("blocks when any quota window is exhausted", async () => {
-        const { supabase } = createCountingSupabase([5, 100, 120]);
-
-        const result = await checkAiUsageQuota(
-            supabase,
-            "user-123",
-            new Date("2026-05-20T12:00:00.000Z")
-        );
-
+    it("preserves the database's blocked window and retry delay", async () => {
+        abortSignal.mockResolvedValue({ data: { allowed: false, windows: states, blockedWindow: "week", limit: 100, used: 100, retryAfterMs: 1234, resetAt: states[0].resetAt }, error: null });
+        const result = await admitAiUsage("account-a", "ask-library", new AbortController().signal);
         expect(result.allowed).toBe(false);
         if (!result.allowed) {
-            expect(result.blockedWindow).toBe("week");
-            expect(result.limit).toBe(100);
-            expect(result.used).toBe(100);
-            expect(result.resetAt.toISOString()).toBe("2026-05-25T00:00:00.000Z");
+            expect(result.retryAfterMs).toBe(1234);
             expect(getQuotaExceededMessage(result)).toContain("weekly AI message limit of 100");
         }
     });
-
-    it("allows env overrides for quota limits", () => {
-        vi.stubEnv("AI_DAILY_MESSAGE_LIMIT", "3");
-        vi.stubEnv("AI_WEEKLY_MESSAGE_LIMIT", "9");
-        vi.stubEnv("AI_MONTHLY_MESSAGE_LIMIT", "30");
-
-        expect(getAiUsageQuotaLimits()).toEqual({
-            day: 3,
-            week: 9,
-            month: 30,
-        });
+    it("does not contact the database after cancellation", async () => {
+        await expect(admitAiUsage("account-a", "author-chat", AbortSignal.abort())).rejects.toThrow();
+        expect(rpc).not.toHaveBeenCalled();
     });
-
-    it("records generated AI messages with feature metadata", async () => {
-        const insert = vi.fn(async () => ({ error: null }));
-        const from = vi.fn(() => ({ insert }));
-
-        await recordGeneratedAiMessage({ from }, {
-            userId: "user-123",
-            feature: "ask-library",
+    it("rejects cancellation while the admission is in flight", async () => {
+        const controller = new AbortController();
+        abortSignal.mockImplementationOnce(async () => {
+            controller.abort();
+            return { data: { allowed: true, windows: states }, error: null };
         });
-
-        expect(from).toHaveBeenCalledWith("ai_message_usage");
-        expect(insert).toHaveBeenCalledWith({
-            user_id: "user-123",
-            feature: "ask-library",
-        });
+        await expect(admitAiUsage("account-a", "author-chat", controller.signal)).rejects.toThrow();
+        expect(rpc).toHaveBeenCalledTimes(1);
+    });
+    it.each([{ data: null, error: { message: "connection lost" } }, { data: { allowed: true }, error: null }])("fails closed without retrying an error or malformed acknowledgement", async (response) => {
+        abortSignal.mockResolvedValue(response);
+        await expect(admitAiUsage("account-a", "ask-notes", new AbortController().signal)).rejects.toThrow();
+        expect(rpc).toHaveBeenCalledTimes(1);
     });
 });

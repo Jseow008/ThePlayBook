@@ -6,7 +6,7 @@ import { vi } from "vitest";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/server/rate-limit";
 import { recordAiRouteAbuse } from "@/lib/server/security-telemetry";
-import { checkAiUsageQuota, recordGeneratedAiMessage } from "@/lib/server/ai-usage-quota";
+import { admitAiUsage } from "@/lib/server/ai-usage-quota";
 import { streamText } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
 
@@ -39,8 +39,7 @@ vi.mock("@/lib/server/security-telemetry", () => ({
 }));
 
 vi.mock("@/lib/server/ai-usage-quota", () => ({
-    checkAiUsageQuota: vi.fn(),
-    recordGeneratedAiMessage: vi.fn(),
+    admitAiUsage: vi.fn(),
     getQuotaExceededMessage: vi.fn((result) => `quota exceeded: ${result.blockedWindow}`),
 }));
 
@@ -94,8 +93,7 @@ describe("Notes chat API", () => {
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
-        (checkAiUsageQuota as any).mockResolvedValue({ allowed: true, windows: [] });
-        (recordGeneratedAiMessage as any).mockResolvedValue(undefined);
+        (admitAiUsage as any).mockResolvedValue({ allowed: true, windows: [] });
         mockAuthUser.mockResolvedValue({ data: { user: mockUser } });
         highlightQuery.then.mockImplementation((resolve: any) =>
             resolve({
@@ -158,8 +156,7 @@ describe("Notes chat API", () => {
         expect((await response.json()).error.code).toBe("UNAUTHORIZED");
         expect(mockAuthUser).toHaveBeenCalledOnce();
         expect(mockSupabaseClient.rpc).toHaveBeenCalledWith("personal_evidence_index_status", { p_scope: { version: 1, itemType: "all" } });
-        expect(checkAiUsageQuota).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
         expect(retrievePersonalEvidence).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
         expect(anthropic).not.toHaveBeenCalled();
@@ -175,8 +172,7 @@ describe("Notes chat API", () => {
         }) }));
         expect(response.status).toBe(503);
         expect((await response.json()).error.code).toBe("RETRIEVAL_UNAVAILABLE");
-        expect(checkAiUsageQuota).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
         expect(retrievePersonalEvidence).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
     });
@@ -190,10 +186,9 @@ describe("Notes chat API", () => {
             messages: [{ role: "user", content: "Summarize these notes" }], scope: { version: 1, itemType: "reflection" },
         }) }));
         expect(response.status).toBe(200);
-        expect(checkAiUsageQuota).toHaveBeenCalledOnce();
-        expect(recordGeneratedAiMessage).toHaveBeenCalledOnce();
+        expect(admitAiUsage).toHaveBeenCalledOnce();
         expect(retrievePersonalEvidence).toHaveBeenCalledOnce();
-        expect(sessionStatusQuery.abortSignal.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(checkAiUsageQuota).mock.invocationCallOrder[0]);
+        expect(sessionStatusQuery.abortSignal.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(admitAiUsage).mock.invocationCallOrder[0]);
         expect(retrievePersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({ scope: { version: 1, itemType: "reflection" } }));
     });
 
@@ -257,17 +252,14 @@ describe("Notes chat API", () => {
         expect(res.status).toBe(200);
         expect(await res.text()).toContain("**Your note**");
         expect(streamText).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
         await finishLatestStream();
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
-        expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
-            userId: "user-123",
-            feature: "ask-notes",
-        });
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledWith("user-123", "ask-notes", expect.any(AbortSignal));
     });
 
     it("blocks generated note answers when the AI quota is exhausted", async () => {
-        (checkAiUsageQuota as any).mockResolvedValueOnce({
+        (admitAiUsage as any).mockResolvedValueOnce({
             allowed: false,
             blockedWindow: "week",
             limit: 100,
@@ -293,7 +285,6 @@ describe("Notes chat API", () => {
         expect(json.error.code).toBe("AI_QUOTA_EXCEEDED");
         expect(mockSupabaseClient.from).not.toHaveBeenCalledWith("user_highlights");
         expect(streamText).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
     });
 
     it("accepts legacy content-only notes messages", async () => {
@@ -435,8 +426,7 @@ describe("Notes chat API", () => {
         }) }));
         expect(response.status).toBe(200);
         expect(await response.text()).toContain("Which topic, theme, or point");
-        expect(checkAiUsageQuota).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
         expect(retrievePersonalEvidence).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
     });
@@ -453,7 +443,7 @@ describe('Notes retrieval delivery boundary', () => {
             rpc: vi.fn(() => ({ abortSignal: vi.fn().mockResolvedValue({ data: readySessionStatus, error: null }) })),
         } as unknown as Awaited<ReturnType<typeof createClient>>);
         vi.mocked(rateLimit).mockResolvedValue({ success: true });
-        vi.mocked(checkAiUsageQuota).mockResolvedValue({ allowed: true, windows: [] } as unknown as Awaited<ReturnType<typeof checkAiUsageQuota>>);
+        vi.mocked(admitAiUsage).mockResolvedValue({ allowed: true, windows: [] } as unknown as Awaited<ReturnType<typeof admitAiUsage>>);
         vi.mocked(retrievePersonalEvidence).mockReset();
     });
     it('returns byte-exact stored text without reconstruction while accounting for retrieval', async () => {
@@ -463,20 +453,20 @@ describe('Notes retrieval delivery boundary', () => {
         expect(response.status).toBe(200); expect(await response.text()).toBe(quote);
         expect(response.headers.get('cache-control')).toBe('no-store');
         expect(retrievePersonalEvidence).toHaveBeenCalledWith(expect.objectContaining({ userId: 'ordinary-a', scope, question: 'Quote my reflection verbatim', signal: req.signal }));
-        expect(streamText).not.toHaveBeenCalled(); expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(streamText).not.toHaveBeenCalled(); expect(admitAiUsage).toHaveBeenCalledTimes(1);
     });
     it('abstains deterministically when complete authorized retrieval is empty', async () => {
         vi.mocked(retrievePersonalEvidence).mockResolvedValue({ items: [] } as unknown as Awaited<ReturnType<typeof retrievePersonalEvidence>>);
         const response = await POST(request());
         expect(response.status).toBe(200); expect(await response.text()).toContain('find enough relevant evidence');
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
         expect(streamText).not.toHaveBeenCalled();
     });
     it('returns retryable 503 for incomplete retrieval rather than empty context or stale history', async () => {
         vi.mocked(retrievePersonalEvidence).mockRejectedValue(new Error('ownership recheck failed'));
         const response = await POST(request());
         expect(response.status).toBe(503); expect((await response.json()).error.code).toBe('RETRIEVAL_UNAVAILABLE');
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
         expect(streamText).not.toHaveBeenCalled();
     });
     it('rejects legacy ID-only payloads rather than broadening their scope', async () => {
@@ -489,7 +479,7 @@ describe('Notes retrieval delivery boundary', () => {
         expect(response.status).toBe(500); expect(retrievePersonalEvidence).not.toHaveBeenCalled();
     });
     it('fails closed before retrieval when usage accounting is unavailable', async () => {
-        vi.mocked(recordGeneratedAiMessage).mockRejectedValueOnce(new Error('usage unavailable'));
+        vi.mocked(admitAiUsage).mockRejectedValueOnce(new Error('usage unavailable'));
         const response = await POST(new NextRequest('http://localhost/api/chat/notes', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'What patterns appear?' }], scope: { version: 1, itemType: 'all' } }) }));
         expect(response.status).toBeGreaterThanOrEqual(500);
         expect(retrievePersonalEvidence).not.toHaveBeenCalled();

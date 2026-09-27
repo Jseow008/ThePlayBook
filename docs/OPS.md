@@ -436,29 +436,21 @@ If notifications remain queued, verify:
 
 ### 3.6 AI Usage Quotas
 
-Generated AI chat responses are counted against the authenticated user's shared AI message quota. Current default limits are:
+Authenticated AI **dispatch attempts** share one quota across Ask My Library, Ask These Notes, and signed-in Author Chat:
 
-- 20 messages per UTC day
-- 100 messages per UTC week
-- 300 messages per UTC month
+- 20 attempts per UTC day
+- 100 attempts per UTC week (Monday boundary)
+- 300 attempts per UTC month
 
-The defaults can be overridden with `AI_DAILY_MESSAGE_LIMIT`, `AI_WEEKLY_MESSAGE_LIMIT`, and `AI_MONTHLY_MESSAGE_LIMIT`.
+`AI_DAILY_MESSAGE_LIMIT`, `AI_WEEKLY_MESSAGE_LIMIT`, and `AI_MONTHLY_MESSAGE_LIMIT` override these defaults with positive integers. All instances must use the same limits; a rolling configuration change is not a simultaneous budget change.
 
-Quota applies to generated responses from Ask My Library, Ask These Notes, and signed-in Author Chat. Guest Author Chat is protected by the existing burst limiter but does not use daily, weekly, or monthly quotas because guests do not have a durable user id.
+Admission occurs after authentication, validation, and configuration checks, immediately before the first provider phase. Stored answers and fixed clarifications that make no provider request bypass admission. Embedding/selection and a later generation within the same request consume **one** unit. Admitted failures, cancellations, quotations, and abstentions retain that unit. This is an admission budget, not a measure of successfully delivered answers or provider billing. A cancellation, crash, or lost database response between admission and dispatch can conservatively consume a unit without a provider call. An ambiguous database result fails closed and is not automatically retried.
 
-Stored recommended-prompt answers should not count against this quota if they return stored content without calling an AI provider. Generated answers should count.
+`public.admit_ai_usage` is a service-role-only, security-invoker RPC. The server supplies the verified account, feature, and configured limits. A transaction-scoped account lock serializes admission; one filtered-count query checks all three windows, then the transaction inserts the usage row. The clock is read after lock acquisition. Read-committed isolation is required. Lock waits are bounded to three seconds; the server bounds the RPC to ten seconds. Database errors prevent provider dispatch.
 
-Current implementation notes:
+Rows remain in `public.ai_message_usage`, preserving historical usage and existing exports. Its insert trigger takes the same account lock, so legacy direct inserts committed while a new request waits are visible to that request. Existing browser ownership policies/grants are unchanged for additive rollout compatibility; they cannot invoke admission or alter/delete usage. Do not claim atomic provider admission for the previous application build: migrate first, deploy the new three-route implementation, and let old in-flight requests drain before verification. A rollback to old application code restores its old admission limitation.
 
-- quota is checked after auth, burst rate limiting, and request validation
-- usage is recorded when a generated AI response is prepared
-- quota rows are stored in `public.ai_message_usage`
-- the current implementation uses separate day, week, and month count queries; this is acceptable at the current 300 messages/month/user default
-
-Future scaling considerations:
-
-- If quotas become tied to paid plans or hard credits, replace the app-level check-then-record flow with an atomic database reservation flow to avoid concurrent request overshoot.
-- If quotas increase substantially or quota checks become a measurable latency source, consolidate the day, week, and month counts into a single Postgres RPC using filtered counts.
+Guest Author Chat retains its existing burst limiter. Global/guest budgets, provider spend caps, and a kill switch remain finding #22; this change does not claim to solve those controls. Higher quotas may justify aggregate counters after measured query latency warrants them.
 
 ## 4. Deployment
 

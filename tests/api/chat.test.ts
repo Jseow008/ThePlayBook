@@ -11,7 +11,7 @@ import { vi } from 'vitest';
 import { createClient } from '@/lib/supabase/server';
 import { rateLimit } from '@/lib/server/rate-limit';
 import { recordAiRouteAbuse } from '@/lib/server/security-telemetry';
-import { checkAiUsageQuota, recordGeneratedAiMessage } from '@/lib/server/ai-usage-quota';
+import { admitAiUsage } from '@/lib/server/ai-usage-quota';
 import { streamText } from 'ai';
 
 const { anthropicMock, toUIMessageStreamResponseMock } = vi.hoisted(() => ({
@@ -59,8 +59,7 @@ vi.mock('@/lib/server/security-telemetry', () => ({
 }));
 
 vi.mock('@/lib/server/ai-usage-quota', () => ({
-    checkAiUsageQuota: vi.fn(),
-    recordGeneratedAiMessage: vi.fn(),
+    admitAiUsage: vi.fn(),
     getQuotaExceededMessage: vi.fn((result) => `quota exceeded: ${result.blockedWindow}`),
 }));
 
@@ -158,8 +157,7 @@ describe('Chat API', () => {
 
         (createClient as any).mockResolvedValue(mockSupabaseClient);
         (rateLimit as any).mockResolvedValue({ success: true, retryAfterMs: 0 });
-        (checkAiUsageQuota as any).mockResolvedValue({ allowed: true, windows: [] });
-        (recordGeneratedAiMessage as any).mockResolvedValue(undefined);
+        (admitAiUsage as any).mockResolvedValue({ allowed: true, windows: [] });
         mockAuthUser.mockResolvedValue({ data: { user: mockUser } });
         mockRpc.mockResolvedValue({ data: [], error: null }); // default empty vector return
         embedContentMock.mockResolvedValue({
@@ -312,17 +310,14 @@ describe('Chat API', () => {
         expect(streamText).not.toHaveBeenCalled();
         expect(await res.text()).toContain('Your note');
         expect(captureServerAnalyticsEvent).toHaveBeenCalledWith(expect.objectContaining({ event: 'ai_chat_started', properties: expect.objectContaining({ chat_scope: 'library' }) }));
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
         await finishLatestStream();
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
-        expect(recordGeneratedAiMessage).toHaveBeenCalledWith(mockSupabaseClient, {
-            userId: 'user-123',
-            feature: 'ask-library',
-        });
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledWith('user-123', 'ask-library', expect.any(AbortSignal));
     });
 
     it('blocks generated answers when the AI quota is exhausted', async () => {
-        (checkAiUsageQuota as any).mockResolvedValueOnce({
+        (admitAiUsage as any).mockResolvedValueOnce({
             allowed: false,
             blockedWindow: 'day',
             limit: 20,
@@ -346,7 +341,6 @@ describe('Chat API', () => {
         expect(res.headers.get('Retry-After')).toBe('3600');
         expect(json.error.code).toBe('AI_QUOTA_EXCEEDED');
         expect(streamText).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
     });
 
     it('answers inventory questions from library metadata without retrieval', async () => {
@@ -388,8 +382,7 @@ describe('Chat API', () => {
         expect((await response.json()).error.code).toBe('UNAUTHORIZED');
         expect(mockAuthUser).toHaveBeenCalled();
         expect(mockFrom).not.toHaveBeenCalled();
-        expect(checkAiUsageQuota).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
     });
 
@@ -539,7 +532,7 @@ describe('Chat API', () => {
         expect(mockFrom).not.toHaveBeenCalledWith('segment_embedding_gemini');
         expect(streamText).not.toHaveBeenCalled();
         expect(await res.text()).toContain('find enough relevant evidence');
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
     });
 
     it('accepts legacy content-only messages', async () => {
@@ -590,8 +583,7 @@ describe('Chat API', () => {
         }) }));
         expect(response.status).toBe(200);
         expect(await response.text()).toContain('Which topic, theme, or point');
-        expect(checkAiUsageQuota).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).not.toHaveBeenCalled();
+        expect(admitAiUsage).not.toHaveBeenCalled();
         expect(embedContentMock).not.toHaveBeenCalled();
         expect(retrievePersonalEvidence).not.toHaveBeenCalled();
         expect(streamText).not.toHaveBeenCalled();
@@ -649,7 +641,7 @@ describe('Chat API', () => {
         expect(mockFrom).not.toHaveBeenCalledWith('segment_embedding_gemini');
         expect(streamText).not.toHaveBeenCalled();
         expect(await res.text()).toContain('find enough relevant evidence');
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
     });
     it.each(['personal', 'source', 'final-recheck', 'final-auth'])('fails closed when %s retrieval or authorization fails', async (failure) => {
         if (failure === 'personal') vi.mocked(retrievePersonalEvidence).mockRejectedValueOnce(new Error('partial retrieval'));
@@ -659,7 +651,7 @@ describe('Chat API', () => {
         const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'Explain my saved ideas about focus' }] }) }));
         expect(response.status).toBe(503);
         expect((await response.json()).error.code).toBe('RETRIEVAL_UNAVAILABLE');
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
         expect(streamText).not.toHaveBeenCalled();
     });
 
@@ -672,7 +664,7 @@ describe('Chat API', () => {
         const events = (await response.text()).split('\n').filter((line) => line.startsWith('data: {')).map((line) => JSON.parse(line.slice(6)) as { type: string; delta?: string });
         expect(events.filter((event) => event.type === 'text-delta').map((event) => event.delta).join('')).toBe(quote);
         expect(streamText).not.toHaveBeenCalled();
-        expect(recordGeneratedAiMessage).toHaveBeenCalledTimes(1);
+        expect(admitAiUsage).toHaveBeenCalledTimes(1);
         expect(recheckPersonalEvidenceCandidates).toHaveBeenCalled();
         expect(mockAuthUser).toHaveBeenCalledTimes(2);
     });
@@ -697,7 +689,7 @@ describe('Chat API', () => {
         expect(streamText).not.toHaveBeenCalled();
     });
     it('fails closed before embeddings or selectors if retrieval-attempt accounting fails', async () => {
-        vi.mocked(recordGeneratedAiMessage).mockRejectedValueOnce(new Error('usage unavailable'));
+        vi.mocked(admitAiUsage).mockRejectedValueOnce(new Error('usage unavailable'));
         const response = await POST(new NextRequest('http://localhost/api/chat', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'What themes recur in my notes?' }] }) }));
         expect(response.status).toBeGreaterThanOrEqual(500);
         expect(embedContentMock).not.toHaveBeenCalled();

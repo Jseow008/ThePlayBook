@@ -683,3 +683,53 @@ note or reflection authoring remains outside this scope. Local `main` was pulled
 the merged release. This closeout is documentation only: do not reapply the migration,
 recreate the deleted candidate, or rerun unchanged model benchmarks. Remaining work
 retains its individual gates in the 32-finding register.
+
+### Finding #20 implementation checkpoint — 27 September 2026
+
+Scope: authenticated quota admission only, across Ask My Library, Ask These Notes,
+and signed-in Author Chat. #21 identity/burst consistency and #22 global/guest
+budgets remain separate. No retrieval prompts, models, ranking, citations, or UI
+changed. One implementing agent; no new provider evaluation calls.
+
+Worktree: `/Users/j/.codex/worktrees/ai-quota-admission/Lifebook`.
+Branch: `codex/ai-quota-admission`, based on freshly fetched `24d735e0`.
+Candidate migration: `20260927053554_atomic_ai_quota_admission.sql`.
+The commit containing this checkpoint identifies the implementation candidate.
+
+Implementation replaces check-then-record with a service-role-only, security-invoker
+RPC. A transaction-scoped account lock protects the shared UTC day/week/month count
+and insertion. Existing usage inserts acquire the same lock for additive rollout.
+Each request admits once before its first provider phase; completion callbacks no
+longer control accounting. Exhaustion preserves 429/Retry-After. Database failures,
+malformed acknowledgements, and cancellation prevent provider dispatch. Limits
+remain 20/day, 100/week, 300/month with validated server-side overrides.
+
+Accounting assumption presented to the user: count dispatch attempts, including
+subsequent failures/cancellation. No pre-dispatch reservation/lease system was added.
+The commit-to-dispatch gap is conservatively charged even if the database response
+is lost or the process stops; this is an admission budget, not provider billing.
+Explicit feedback choosing successful-response-only accounting would require a
+new lifecycle design before release. See OPS 3.6 for precise semantics and rollback.
+
+Completed local evidence:
+- 87 focused route/adapter tests; 1,469 full-suite tests passed (246 declared skips,
+  including database fixtures that are run separately).
+- All 12 new database tests passed on the existing disposable local stack, including
+  real Data API → production adapter, 12-way mixed-feature last-unit contention,
+  weekly/monthly contention, account isolation, legacy insert visibility, UTC windows,
+  role denial, invalid inputs, stale isolation rejection, and rollback recovery.
+- All six SQL security gates passed on that stack. Typecheck, lint, production build
+  with placeholder public configuration, and diff validation passed.
+- The generated new RPC signature matches the checked-in type. This reused local
+  stack has unrelated older catalog schema, so its whole-schema/type output is not
+  claimed as clean full-replay evidence. Fresh CI and hosted replay remain required.
+
+Release pending: open the scoped PR, inspect its GitHub file list, and require its
+exact-commit checks. Do not enable auto-merge before the database release gate.
+Supabase quoted $10/month for a new disposable project in the existing Netflux
+organization; a fresh cost confirmation was requested and is still pending.
+No hosted project was created and no production migration/deployment occurred.
+After approval, rehearse the complete candidate using OPS 2.2, review the exact
+production dry-run, deploy, let old 60-second requests drain, and verify admission.
+Delete the temporary project and private artifacts afterward. Do not rerun model
+benchmarks or reset the unrelated existing local stack.
