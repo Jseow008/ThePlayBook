@@ -1874,3 +1874,54 @@ Evidence: `docs/evidence/capacity-concurrent-20260929.json`. Independently recom
 all six 100-sample p95 values and verified outcomes/bounds/cleanup. Added to existing
 PR #192 on `codex/health-production-verification`, worktree
 `/Users/j/.codex/worktrees/library-latency-timing/Lifebook`; no test process remains.
+
+### #28 mixed-run stop and export harness correction — 29 September 2026
+
+PR #192 merged as `4626ba95` after all required checks passed. During the mixed
+run its merge had been held to preserve deployment identity. New independent branch:
+`codex/capacity-export-adapter`, from freshly fetched main `4626ba95`; worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`.
+
+Initial setup falsely treated Vercel's non-readable sensitive CRON_SECRET as absent.
+Metadata and successful scheduled jobs proved it exists. No secret was changed;
+the existing authenticated GitHub indexing workflow prepared fixtures in three
+bounded batches. The first two temporary setup accounts were cleaned up. This was a
+harness mistake, not a missing production setting.
+
+The mixed run passed functional preflight and completed 2-, 5-, and 10-user stages.
+It stopped early in the 25-user stage when both Node export checks failed, cancelling
+outstanding core requests. 253 core requests were recorded; 50-user, recovery, and
+AI retrieval did not run. Catalog search reached 136 successful samples with
+cumulative p95 1675ms; other routes had insufficient samples for capacity conclusions.
+The temporary diagnostic used cumulative sample-aware p95 gates plus a 10s absolute
+core deadline and strict failure/integrity/restriction/scheduling stops. The checked-in
+production runner's default sparse gate was not altered.
+
+Root cause found in the overlay harness: the browser export client requires
+window.location.origin and sends page reads as URL objects. The Node harness lacked
+the origin and rejected URL inputs. Its reflection check also incorrectly required
+user_id, which the real export deliberately omits. The correction supplies a scoped
+origin/transport adapter, preserves preview bypass support and cancellation, checks
+pinned origins before forwarding cookies, and matches exact fixture identities and
+reflection fields. Failures retain durations and a fixed category; AI execution is
+reported only after a request is actually attempted. No production application or
+schema change is involved.
+
+Nine focused tests passed, covering the actual export verifier through concurrent
+account scopes, URL page requests, hash rejection, wrong-account fixtures, cross-origin
+rejection, cancellation, request bounds and restored globals. Two real concurrent
+exports then passed all 11 collections (two records each) in 42.93s and 41.93s with
+24 HTTP requests. These are small smoke results, not the six-export load outcome.
+
+All 56 mixed-run accounts, snapshots, operations and personal-index rows were removed;
+the two later export-smoke accounts were also removed. Sessions were revoked before
+deletion. Existing counts stayed 8 accounts/603 catalog items; final health was normal.
+No AI retrieval requests ran (interactive ledger unchanged); real setup indexing did
+run, within the reserved indexing allowance. No new project or quota/config change.
+Evidence: capacity-mixed-setup-failure-20260929.json,
+capacity-mixed-stopped-20260929.json, capacity-export-adapter-smoke-20260929.json
+under docs/evidence. Preserve this failed run; do not count induced cancellations as
+independent server faults or claim a passing capacity result.
+
+Next: freeze the current live deployment, use the corrected adapter, and rerun the
+bounded mixed workload once. #28 remains open. No production test process is running.

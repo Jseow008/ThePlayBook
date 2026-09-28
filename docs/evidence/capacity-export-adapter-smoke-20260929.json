@@ -1,0 +1,85 @@
+{
+  "runId": "capacity-export-smoke-1790615802352",
+  "sha": "a87cff9f027d56e04118c3374e467901e551b527",
+  "deployment": "dpl_J4sfyQi2w24N1xcsKFU33mTdVHAe",
+  "startedAt": "2026-09-28T17:16:42.352Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-28T17:16:45.598Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T17:16:48.268Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T17:16:50.340Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T17:17:38.544Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "exports": [
+    {
+      "outcome": "success",
+      "collections": 11,
+      "records": 2,
+      "durationMs": 42930.816875
+    },
+    {
+      "outcome": "success",
+      "collections": 11,
+      "records": 2,
+      "durationMs": 41929.084167
+    }
+  ],
+  "requests": 24,
+  "completed": true,
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "interpretation": {
+    "capacityEstablished": false,
+    "test": "Two concurrent ordinary synthetic-account exports through corrected Node adapter and unchanged production export verifier.",
+    "noAIRequests": true,
+    "limitations": [
+      "Two records per export, not the 1201-record fixture.",
+      "No background core load in this smoke.",
+      "Browser file-save UI excluded."
+    ]
+  }
+}

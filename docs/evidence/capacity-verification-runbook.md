@@ -1,6 +1,7 @@
 # #28 bounded capacity verification
 
-Status: preparation only; no capacity result or launch clearance yet.
+Status: bounded sequential and two/five-user diagnostics passed; the first mixed
+production run stopped on an export-harness defect. No full capacity or launch clearance.
 Draft executable configuration: `scripts/verification/capacity/scenario.json`.
 The core HTTP runner and report module have 24 passing regression checks.
 Hosted preflight stopped on an unreachable isolated Redis dependency; see
@@ -222,3 +223,23 @@ This closed-loop diagnostic is not the original arrival-paced mixed workload.
 Evaluate each stage separately; neither pooled percentiles nor later-stage warmth
 can establish capacity or a causal benefit from increased concurrency. No further
 concurrency escalation is included in this diagnostic.
+
+
+### Mixed production diagnostic and export adapter
+
+The September 29 mixed diagnostic used the existing 2/5/10/25/50/5 stages with
+cumulative per-route p95 checks after 100 successful samples (30 reflection writes).
+Sparse latency alone did not trigger a stop; any request failure, integrity failure,
+unplanned restriction, scheduling loss, unhealthy/changed target, or core request
+above 10 seconds did. Existing admission remained enabled. The source production
+runner's default sparse gate remains unchanged; this policy was confined to the
+authorized diagnostic driver. Six separate export accounts and two real retrieval
+samples had a combined maximum $1 indexing/query allowance. Every first request was
+retained. The run stopped in the 25-user stage; no full-envelope pass is claimed.
+
+For Node overlays use overlay-runtime.ts: it supplies the browser origin required by
+the real client, accepts same-origin URL objects, isolates per-account cookies, and
+restores globals after all requests settle. Compare redacted export records with
+exact run-owned fixture identities/fields; do not require an absent user_id field.
+Verify a small real export before a full load run. Retain failed operation timing
+and distinguish configured AI fixtures from actually attempted AI calls.
