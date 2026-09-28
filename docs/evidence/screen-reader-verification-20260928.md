@@ -2,7 +2,7 @@
 
 Owner: Codex (Engineering/QA). Application base: `55bbcdb8429cdcb5e3df150d0128dbd3766a2146` (#181). Scope: reflection capture, Notes answer states, validated citation navigation and Settings export. This is a focused accessibility correction, not a redesign or a claim of complete WCAG conformance.
 
-[PR #182](https://github.com/Jseow008/ThePlayBook/pull/182) is held without auto-merge under the [#27 release gate](../PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register) until the remaining actual screen-reader acceptance and required CI pass. No production release has occurred.
+[PR #182](https://github.com/Jseow008/ThePlayBook/pull/182) merged as `8c1ad354d45c364f205c9e5c86bae8e047ac9ddd` after required validation, security and scope checks passed. On 28 September 2026, the owner explicitly instructed: “That's fine, let's merge it and close #27 as well.” #27 is closed by owner acceptance of the documented spoken-output verification gap. This is not a passing VoiceOver result, a general accessibility certification, or a waiver for future unrelated releases. Deployment completion was not checked as part of this merge request.
 
 ## Evidence and fixes
 
@@ -23,9 +23,9 @@ With the user's explicit permission, a dedicated Safari tab was opened and macOS
 
 VoiceOver was switched Off again and that state was verified. The temporary Safari tab was closed. No VoiceOver caption preferences were changed. No production personal records, database/schema changes, paid verification projects or AI calls were needed.
 
-## Remaining spoken-output check
+## Retained spoken-output checklist (unexecuted)
 
-#27 remains open until a working screen-reader session completes this checklist on the corrected build. Record the commit/deployment, OS/browser/screen-reader versions, tester/date and observed result for each step. Use an ordinary test account and synthetic text.
+#27 is closed under the owner decision above. Retain this unexecuted checklist for follow-up when a working screen-reader session is available, or when these interactions next change; it no longer blocks this release. Record the commit/deployment, OS/browser/screen-reader versions, tester/date and observed result for each step. Use an ordinary test account and synthetic text.
 
 1. Open a reflection with the keyboard. Confirm the dialog title, reflection prompt and length/privacy instructions are spoken. Type a short reflection, then press Escape and confirm focus returns to the opener. Reopen and save; confirm the save feedback is spoken.
 2. Open Ask These Notes. Submit a question and hear the searching state, then the response-ready announcement without every partial token being read. Navigate to the Notes conversation, read the answer and reach its supporting-passage link. Repeat in the full-page view.
