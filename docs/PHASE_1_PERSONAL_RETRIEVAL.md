@@ -1748,3 +1748,51 @@ Continuation: branch `codex/health-production-verification`, worktree
 `a87cff9f` main. This verification checkpoint is retained locally for the next
 related change; no additional documentation-only release was opened for this smoke.
 No local test or monitor remains running after this check.
+
+### #28 matched platform timing checkpoint — 29 September 2026
+
+Continuation on `codex/health-production-verification` in
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`; base `a87cff9f`.
+The prior local checkpoint commit is `9f327467`. No application change, migration,
+region change, quota change, or additional deployment was made in this investigation.
+
+Production deployment `dpl_J4sfyQi2w24N1xcsKFU33mTdVHAe` serves `a87cff9f`.
+The read-only platform request-log API supplies cold/hot start and function timing
+metadata omitted by the normal CLI output. Older request logs returned
+`ExceedsBillingLimitError`; no billing upgrade was made. Raw request metadata and
+credentials are not retained in tracked evidence.
+
+One fresh matched diagnostic used two synthetic accounts and six requests. First
+save/read/reader client times were 3588/1633/3766ms; subsequent times were
+816/223/1463ms. All six succeeded with integrity checks. Platform metadata confirms
+the first save and read were cold invocations; the first reader had cold middleware
+and page invocations. The subsequent requests were hot. Library operation times
+were 8–115ms and reported function concurrency was one. This supports investigating
+cold-path overhead; it does not demonstrate database saturation or establish capacity.
+Function durations can overlap or exceed request duration, so they must not be added
+or subtracted as exact critical-path accounting. Cold-start boot time alone also
+does not explain all observed latency.
+
+Evidence: `docs/evidence/capacity-platform-client-20260929.json` and
+`docs/evidence/capacity-platform-runtime-20260929.json` (UTC collection date September
+28, local Singapore date September 29). Both synthetic sessions were revoked and
+accounts deleted. Fixture accounts/library/reflections/boundaries/receipts remaining:
+zero. Existing account/catalog totals stayed 8/603. Final health was OK/reachable.
+No test or monitor remains running.
+
+The production sparse-sample stop is explicitly intentional in the runbook, not a
+percentile calculation defect. It is stricter than the statistical acceptance rule
+requiring at least 100 samples. No stop rule or acceptance threshold was changed.
+Pending user decision: permit one fixed low-concurrency diagnostic with all cold
+samples retained, without escalation to the 50-user ladder, or preserve the sparse
+stop and investigate cold-path changes first. An async question was sent explaining
+this safety-rule change. Until answered, do not run dependent production traffic.
+
+Proposed diagnostic bounds: at most two disposable accounts, one in-flight request,
+100 saves, 100 library reads, 100 reader requests; maximum 12 minutes and 300 measured
+requests. No AI, export, or full capacity claim. Preserve auth, admission, integrity,
+isolation, cleanup and health checks; stop on errors or failed integrity, health, or
+resource bounds. Report every sample including cold starts, p95 and maximum per
+route. Any later load escalation remains separately gated under the original plan.
+Next action: resolve that decision, then implement and verify only the selected
+bounded path; do not repeat the same sparse preflight until it happens to pass.

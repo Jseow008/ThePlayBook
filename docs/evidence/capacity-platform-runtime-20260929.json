@@ -1,0 +1,155 @@
+[
+  {
+    "name": "fresh",
+    "rows": [
+      {
+        "timestamp": "2026-09-28T16:09:24.548Z",
+        "path": "/read/:id/atomic-habits",
+        "requestDurationMs": 1358,
+        "functions": [
+          {
+            "region": "sin1",
+            "durationMs": 81,
+            "startType": "hot",
+            "coldStartDurationMs": -1,
+            "concurrency": 1,
+            "memoryMb": 244
+          },
+          {
+            "region": "iad1",
+            "durationMs": 820,
+            "startType": "hot",
+            "coldStartDurationMs": -1,
+            "concurrency": 1,
+            "memoryMb": 290
+          }
+        ],
+        "proxyEvents": [
+          {
+            "region": "sin1",
+            "source": "static"
+          }
+        ],
+        "status": 200
+      },
+      {
+        "timestamp": "2026-09-28T16:09:22.313Z",
+        "path": "/api/account-data/user_library",
+        "requestDurationMs": 188,
+        "functions": [
+          {
+            "region": "bom1",
+            "durationMs": 104,
+            "startType": "hot",
+            "coldStartDurationMs": -1,
+            "concurrency": 1,
+            "memoryMb": 232
+          }
+        ],
+        "proxyEvents": [
+          {
+            "region": "sin1",
+            "source": "static"
+          }
+        ],
+        "status": 200
+      },
+      {
+        "timestamp": "2026-09-28T16:09:21.497Z",
+        "path": "/api/account-data/user_library/mutation",
+        "requestDurationMs": 708,
+        "functions": [
+          {
+            "region": "bom1",
+            "durationMs": 624,
+            "startType": "hot",
+            "coldStartDurationMs": -1,
+            "concurrency": 1,
+            "memoryMb": 249
+          }
+        ],
+        "proxyEvents": [
+          {
+            "region": "sin1",
+            "source": "static"
+          }
+        ],
+        "status": 200
+      },
+      {
+        "timestamp": "2026-09-28T16:09:14.381Z",
+        "path": "/read/:id/atomic-habits",
+        "requestDurationMs": 3749,
+        "functions": [
+          {
+            "region": "sin1",
+            "durationMs": 869,
+            "startType": "cold",
+            "coldStartDurationMs": 333,
+            "concurrency": 1,
+            "memoryMb": 242
+          },
+          {
+            "region": "iad1",
+            "durationMs": 2353,
+            "startType": "cold",
+            "coldStartDurationMs": 346,
+            "concurrency": 1,
+            "memoryMb": 290
+          }
+        ],
+        "proxyEvents": [
+          {
+            "region": "sin1",
+            "source": "static"
+          }
+        ],
+        "status": 200
+      },
+      {
+        "timestamp": "2026-09-28T16:09:10.339Z",
+        "path": "/api/account-data/user_library",
+        "requestDurationMs": 1592,
+        "functions": [
+          {
+            "region": "bom1",
+            "durationMs": 1353,
+            "startType": "cold",
+            "coldStartDurationMs": 278,
+            "concurrency": 1,
+            "memoryMb": 249
+          }
+        ],
+        "proxyEvents": [
+          {
+            "region": "sin1",
+            "source": "static"
+          }
+        ],
+        "status": 200
+      },
+      {
+        "timestamp": "2026-09-28T16:09:06.758Z",
+        "path": "/api/account-data/user_library/mutation",
+        "requestDurationMs": 3545,
+        "functions": [
+          {
+            "region": "bom1",
+            "durationMs": 3643,
+            "startType": "cold",
+            "coldStartDurationMs": 302,
+            "concurrency": 1,
+            "memoryMb": 313
+          }
+        ],
+        "proxyEvents": [
+          {
+            "region": "sin1",
+            "source": "static"
+          }
+        ],
+        "status": 200
+      }
+    ]
+  }
+]
