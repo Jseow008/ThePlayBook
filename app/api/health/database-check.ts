@@ -32,7 +32,19 @@ function applyAbortSignal(
 }
 
 async function runDatabaseProbe(): Promise<DatabaseCheckResult> {
+    const started = performance.now();
     const abortController = new AbortController();
+    const failure = (): DatabaseCheckResult => {
+        const timedOut = abortController.signal.aborted;
+        // Fixed categories only: never log provider errors, URLs, credentials or rows.
+        console.warn(JSON.stringify({
+            event: "health_database_probe_failed",
+            reason: timedOut ? "timeout" : "query_failure",
+            duration_ms: Math.round(Math.max(0, performance.now() - started)),
+            timeout_ms: DB_CHECK_TIMEOUT_MS,
+        }));
+        return { database: "unreachable", issue: timedOut ? DB_CHECK_TIMEOUT_ISSUE : DB_CHECK_FAILED_ISSUE };
+    };
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
@@ -53,13 +65,11 @@ async function runDatabaseProbe(): Promise<DatabaseCheckResult> {
             timeoutPromise,
         ]);
 
-        return error
-            ? { database: "unreachable", issue: DB_CHECK_FAILED_ISSUE }
+        return error || abortController.signal.aborted
+            ? failure()
             : { database: "reachable", issue: null };
-    } catch (error) {
-        return error instanceof Error && error.message === DB_CHECK_TIMEOUT_ISSUE
-            ? { database: "unreachable", issue: DB_CHECK_TIMEOUT_ISSUE }
-            : { database: "unreachable", issue: DB_CHECK_FAILED_ISSUE };
+    } catch {
+        return failure();
     } finally {
         if (timeoutId) clearTimeout(timeoutId);
     }
