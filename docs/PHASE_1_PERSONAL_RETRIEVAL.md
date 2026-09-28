@@ -1936,3 +1936,55 @@ two AI fixtures before preparing the core pool. The workflow now retains the exi
 safe JSON response with --fail-with-body, without changing its failure status,
 endpoint, credential, timeout, or worker behavior. Do not label this a resolved
 production indexing defect or discard the stopped setup evidence.
+
+### #28 corrected mixed observation completed — 29 September 2026
+
+Pinned live deployment `dpl_4RBos864PgtqKzKLsCfuLhWJMHsR`, SHA `4626ba95`.
+Its diff from the prior application baseline is documentation/evidence only. The
+corrected verification code is PR #193 commit `03cf4c69`; this closeout adds evidence
+without another application change. Branch `codex/capacity-export-adapter`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`.
+
+Reassessed setup after the indexing stop: index only the two AI fixtures first, then
+create the core pool. One authenticated workflow run (36459824429) completed that
+preflight. Existing 2/5/10-user core evidence was retained; this run repeated the
+affected 25-user steady stage, 50-user burst and 5-user recovery. This is not one
+continuous six-stage run. First requests were retained; no failed measurement was
+replayed within the run, and prior failed attempts remain recorded.
+
+All 780 scheduled core actions started, with zero scheduling drops, request failures,
+restrictions, or integrity failures. There were 938 core HTTP requests plus 74 export/
+AI HTTP requests. Core elapsed time: 348.58 seconds; maximum core HTTP concurrency:
+9 (50 active users are paced, not 50 continuously outstanding requests).
+
+| Route | Successful samples | Observed p95 | Interpretation |
+| --- | ---: | ---: | --- |
+| Catalog search | 473 | 1301ms | Meets 2s target and minimum sample count |
+| Reader HTML | 155 | 1595ms | Meets 3s target and minimum sample count |
+| Library mutation | 117 | 1139ms | Meets 2s target and minimum sample count |
+| Library read | 117 | 260ms | Meets 2s target and minimum sample count |
+| Reflection read | 58 | 1793ms | Insufficient: minimum 100 |
+| Reflection write | 18 | 2004ms | Insufficient: minimum 30; do not claim a pass |
+
+Six exports ran at concurrency two alongside the steady core workload. Every export
+verified all 11 collections and exact fixture identities/fields; durations ranged
+43.68–47.89 seconds, below the 60s bound. They contained two or three records each,
+not the 1201-record fixture. Two real Notes retrieval requests returned the expected
+indexed evidence in 13.28s and 11.85s, below the 30s bound. No AI percentile claim.
+
+The interactive global ledger delta was 416616 microUSD reserved / 5610 microUSD
+settled. These are global counters, not independently attributed per account or a
+provider invoice. Setup indexing is outside that ledger and used the separate
+250000-microUSD allowance; do not describe $0.00561 as the entire experiment's bill.
+
+All 56 sessions were revoked and accounts removed. Checked library/reflection/state/
+receipt/index/snapshot/operation rows returned to zero. Existing totals remained
+8 accounts and 603 catalog items, and final health was OK/reachable. No test process
+or temporary hosted project remains. No production setting, quota, or migration changed.
+
+Evidence: `docs/evidence/capacity-mixed-completed-20260929.json`, independently checked
+for counts, outcomes, bounds, percentiles, and cleanup. #28 remains open for sufficient
+reflection samples, large-corpus/large-export coverage, and the originally specified
+longer envelope. The earlier 56-record indexing 503 is not explained or erased by a
+successful two-record preflight. Next: resolve these explicit coverage gaps; do not
+repeat the already-passing core/export/AI checks without changed inputs or a new concern.

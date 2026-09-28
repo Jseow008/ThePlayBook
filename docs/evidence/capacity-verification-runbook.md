@@ -1,13 +1,12 @@
 # #28 bounded capacity verification
 
-Status: bounded sequential and two/five-user diagnostics passed; the first mixed
-production run stopped on an export-harness defect. No full capacity or launch clearance.
-Draft executable configuration: `scripts/verification/capacity/scenario.json`.
-The core HTTP runner and report module have 24 passing regression checks.
-Hosted preflight stopped on an unreachable isolated Redis dependency; see
-`capacity-preflight-20260928.json`. The corrected export adapter passed a two-account real smoke; real AI retrieval
-under load is still pending. The mixed run stopped before full-envelope completion.
-Application baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`.
+Status: bounded sequential, two/five-user, and corrected 25/50/recovery mixed
+production observations completed. #28 remains open: reflection sample counts,
+large-corpus/large-export coverage, and the original longer envelope are incomplete.
+The failed mixed attempt and indexing setup stop remain retained. Six small exports
+and two real AI retrieval samples passed in the corrected run. See the latest
+checkpoint in docs/PHASE_1_PERSONAL_RETRIEVAL.md and capacity-mixed-completed-20260929.json.
+Initial preparation baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`; later run identities are recorded with their evidence.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.
 
