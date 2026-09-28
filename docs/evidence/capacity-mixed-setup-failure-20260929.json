@@ -1,0 +1,65 @@
+{
+  "runId": "capacity-mixed-1790614719660",
+  "sha": "a87cff9f027d56e04118c3374e467901e551b527",
+  "deployment": "dpl_J4sfyQi2w24N1xcsKFU33mTdVHAe",
+  "startedAt": "2026-09-28T16:58:39.660Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-28T16:58:43.901Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:58:49.974Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:58:51.907Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:58:58.134Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "error": "The expression evaluated to a falsy value:\n\n  assert(cronSecret)\n",
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "derivedCleanup": {
+    "personal_index": 0,
+    "snapshots": 0,
+    "operations": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  }
+}

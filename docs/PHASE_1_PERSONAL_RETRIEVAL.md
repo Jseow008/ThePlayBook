@@ -1874,3 +1874,117 @@ Evidence: `docs/evidence/capacity-concurrent-20260929.json`. Independently recom
 all six 100-sample p95 values and verified outcomes/bounds/cleanup. Added to existing
 PR #192 on `codex/health-production-verification`, worktree
 `/Users/j/.codex/worktrees/library-latency-timing/Lifebook`; no test process remains.
+
+### #28 mixed-run stop and export harness correction — 29 September 2026
+
+PR #192 merged as `4626ba95` after all required checks passed. During the mixed
+run its merge had been held to preserve deployment identity. New independent branch:
+`codex/capacity-export-adapter`, from freshly fetched main `4626ba95`; worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`.
+
+Initial setup falsely treated Vercel's non-readable sensitive CRON_SECRET as absent.
+Metadata and successful scheduled jobs proved it exists. No secret was changed;
+the existing authenticated GitHub indexing workflow prepared fixtures in three
+bounded batches. The first two temporary setup accounts were cleaned up. This was a
+harness mistake, not a missing production setting.
+
+The mixed run passed functional preflight and completed 2-, 5-, and 10-user stages.
+It stopped early in the 25-user stage when both Node export checks failed, cancelling
+outstanding core requests. 253 core requests were recorded; 50-user, recovery, and
+AI retrieval did not run. Catalog search reached 136 successful samples with
+cumulative p95 1675ms; other routes had insufficient samples for capacity conclusions.
+The temporary diagnostic used cumulative sample-aware p95 gates plus a 10s absolute
+core deadline and strict failure/integrity/restriction/scheduling stops. The checked-in
+production runner's default sparse gate was not altered.
+
+Root cause found in the overlay harness: the browser export client requires
+window.location.origin and sends page reads as URL objects. The Node harness lacked
+the origin and rejected URL inputs. Its reflection check also incorrectly required
+user_id, which the real export deliberately omits. The correction supplies a scoped
+origin/transport adapter, preserves preview bypass support and cancellation, checks
+pinned origins before forwarding cookies, and matches exact fixture identities and
+reflection fields. Failures retain durations and a fixed category; AI execution is
+reported only after a request is actually attempted. No production application or
+schema change is involved.
+
+Nine focused tests passed, covering the actual export verifier through concurrent
+account scopes, URL page requests, hash rejection, wrong-account fixtures, cross-origin
+rejection, cancellation, request bounds and restored globals. Two real concurrent
+exports then passed all 11 collections (two records each) in 42.93s and 41.93s with
+24 HTTP requests. These are small smoke results, not the six-export load outcome.
+
+All 56 mixed-run accounts, snapshots, operations and personal-index rows were removed;
+the two later export-smoke accounts were also removed. Sessions were revoked before
+deletion. Existing counts stayed 8 accounts/603 catalog items; final health was normal.
+No AI retrieval requests ran (interactive ledger unchanged); real setup indexing did
+run, within the reserved indexing allowance. No new project or quota/config change.
+Evidence: capacity-mixed-setup-failure-20260929.json,
+capacity-mixed-stopped-20260929.json, capacity-export-adapter-smoke-20260929.json
+under docs/evidence. Preserve this failed run; do not count induced cancellations as
+independent server faults or claim a passing capacity result.
+
+Next: freeze the current live deployment, use the corrected adapter, and rerun the
+bounded mixed workload once. #28 remains open. No production test process is running.
+
+
+The first corrected repeat stopped during fixture indexing, before core load: workflow
+36459122121 returned HTTP 503 after about 44 seconds and the worker set a 60-second
+cooldown. Its old curl --fail discarded the safe response counters; deadline versus
+provider failure is not established. All 56 accounts and checked derived rows were
+cleaned up, with normal health and original counts. The next setup indexes only the
+two AI fixtures before preparing the core pool. The workflow now retains the existing
+safe JSON response with --fail-with-body, without changing its failure status,
+endpoint, credential, timeout, or worker behavior. Do not label this a resolved
+production indexing defect or discard the stopped setup evidence.
+
+### #28 corrected mixed observation completed — 29 September 2026
+
+Pinned live deployment `dpl_4RBos864PgtqKzKLsCfuLhWJMHsR`, SHA `4626ba95`.
+Its diff from the prior application baseline is documentation/evidence only. The
+corrected verification code is PR #193 commit `03cf4c69`; this closeout adds evidence
+without another application change. Branch `codex/capacity-export-adapter`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`.
+
+Reassessed setup after the indexing stop: index only the two AI fixtures first, then
+create the core pool. One authenticated workflow run (36459824429) completed that
+preflight. Existing 2/5/10-user core evidence was retained; this run repeated the
+affected 25-user steady stage, 50-user burst and 5-user recovery. This is not one
+continuous six-stage run. First requests were retained; no failed measurement was
+replayed within the run, and prior failed attempts remain recorded.
+
+All 780 scheduled core actions started, with zero scheduling drops, request failures,
+restrictions, or integrity failures. There were 938 core HTTP requests plus 74 export/
+AI HTTP requests. Core elapsed time: 348.58 seconds; maximum core HTTP concurrency:
+9 (50 active users are paced, not 50 continuously outstanding requests).
+
+| Route | Successful samples | Observed p95 | Interpretation |
+| --- | ---: | ---: | --- |
+| Catalog search | 473 | 1301ms | Meets 2s target and minimum sample count |
+| Reader HTML | 155 | 1595ms | Meets 3s target and minimum sample count |
+| Library mutation | 117 | 1139ms | Meets 2s target and minimum sample count |
+| Library read | 117 | 260ms | Meets 2s target and minimum sample count |
+| Reflection read | 58 | 1793ms | Insufficient: minimum 100 |
+| Reflection write | 18 | 2004ms | Insufficient: minimum 30; do not claim a pass |
+
+Six exports ran at concurrency two alongside the steady core workload. Every export
+verified all 11 collections and exact fixture identities/fields; durations ranged
+43.68–47.89 seconds, below the 60s bound. They contained two or three records each,
+not the 1201-record fixture. Two real Notes retrieval requests returned the expected
+indexed evidence in 13.28s and 11.85s, below the 30s bound. No AI percentile claim.
+
+The interactive global ledger delta was 416616 microUSD reserved / 5610 microUSD
+settled. These are global counters, not independently attributed per account or a
+provider invoice. Setup indexing is outside that ledger and used the separate
+250000-microUSD allowance; do not describe $0.00561 as the entire experiment's bill.
+
+All 56 sessions were revoked and accounts removed. Checked library/reflection/state/
+receipt/index/snapshot/operation rows returned to zero. Existing totals remained
+8 accounts and 603 catalog items, and final health was OK/reachable. No test process
+or temporary hosted project remains. No production setting, quota, or migration changed.
+
+Evidence: `docs/evidence/capacity-mixed-completed-20260929.json`, independently checked
+for counts, outcomes, bounds, percentiles, and cleanup. #28 remains open for sufficient
+reflection samples, large-corpus/large-export coverage, and the originally specified
+longer envelope. The earlier 56-record indexing 503 is not explained or erased by a
+successful two-record preflight. Next: resolve these explicit coverage gaps; do not
+repeat the already-passing core/export/AI checks without changed inputs or a new concern.

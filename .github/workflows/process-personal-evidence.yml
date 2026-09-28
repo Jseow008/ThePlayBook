@@ -22,7 +22,7 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           test -n "$CRON_SECRET"
-          curl --fail --show-error --silent \
+          curl --fail-with-body --show-error --silent \
             --max-time 55 \
             "https://www.netflux.blog/api/admin/personal-evidence/process" \
             -H "Authorization: Bearer $CRON_SECRET"

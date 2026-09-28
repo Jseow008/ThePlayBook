@@ -1,12 +1,12 @@
 # #28 bounded capacity verification
 
-Status: preparation only; no capacity result or launch clearance yet.
-Draft executable configuration: `scripts/verification/capacity/scenario.json`.
-The core HTTP runner and report module have 24 passing regression checks.
-Hosted preflight stopped on an unreachable isolated Redis dependency; see
-`capacity-preflight-20260928.json`. Export/AI overlays are implemented but not yet
-runtime-verified. No full capacity run has occurred.
-Application baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`.
+Status: bounded sequential, two/five-user, and corrected 25/50/recovery mixed
+production observations completed. #28 remains open: reflection sample counts,
+large-corpus/large-export coverage, and the original longer envelope are incomplete.
+The failed mixed attempt and indexing setup stop remain retained. Six small exports
+and two real AI retrieval samples passed in the corrected run. See the latest
+checkpoint in docs/PHASE_1_PERSONAL_RETRIEVAL.md and capacity-mixed-completed-20260929.json.
+Initial preparation baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`; later run identities are recorded with their evidence.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.
 
@@ -222,3 +222,23 @@ This closed-loop diagnostic is not the original arrival-paced mixed workload.
 Evaluate each stage separately; neither pooled percentiles nor later-stage warmth
 can establish capacity or a causal benefit from increased concurrency. No further
 concurrency escalation is included in this diagnostic.
+
+
+### Mixed production diagnostic and export adapter
+
+The September 29 mixed diagnostic used the existing 2/5/10/25/50/5 stages with
+cumulative per-route p95 checks after 100 successful samples (30 reflection writes).
+Sparse latency alone did not trigger a stop; any request failure, integrity failure,
+unplanned restriction, scheduling loss, unhealthy/changed target, or core request
+above 10 seconds did. Existing admission remained enabled. The source production
+runner's default sparse gate remains unchanged; this policy was confined to the
+authorized diagnostic driver. Six separate export accounts and two real retrieval
+samples had a combined maximum $1 indexing/query allowance. Every first request was
+retained. The run stopped in the 25-user stage; no full-envelope pass is claimed.
+
+For Node overlays use overlay-runtime.ts: it supplies the browser origin required by
+the real client, accepts same-origin URL objects, isolates per-account cookies, and
+restores globals after all requests settle. Compare redacted export records with
+exact run-owned fixture identities/fields; do not require an absent user_id field.
+Verify a small real export before a full load run. Retain failed operation timing
+and distinguish configured AI fixtures from actually attempted AI calls.
