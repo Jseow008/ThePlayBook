@@ -411,6 +411,14 @@ function VerifiedNotesAskPanel({
     const latestAssistantMessageId = [...displayMessages]
         .reverse()
         .find((message) => message.role === "assistant")?.id;
+    // Announce state changes once, not every streamed token, without moving focus.
+    const responseStatus = (
+        <p role="status" aria-label="Notes response status" aria-live="polite" aria-atomic="true" className="sr-only">
+            {isStreaming ? "Searching your saved notes."
+                : error ? `Request failed. ${displayErrorMessage}`
+                    : latestAssistantMessageId ? "Response ready. Review it in the Notes conversation." : ""}
+        </p>
+    );
     const exportButton = !isEmptyState ? (
         <ChatExportButton
             title="Ask These Notes"
@@ -435,7 +443,8 @@ function VerifiedNotesAskPanel({
                     )}
 
                     <div className="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col px-4 py-6 sm:px-6 sm:py-7">
-                        <div ref={messagesContainerRef} className="min-h-0 flex-1 overflow-y-auto pr-1 [overflow-anchor:none]">
+                        {responseStatus}
+                        <div ref={messagesContainerRef} role="region" aria-label="Notes conversation" tabIndex={0} className="min-h-0 flex-1 overflow-y-auto pr-1 [overflow-anchor:none]">
                             <div className="space-y-5 pb-2">
                                 <ScopeOverview scope={activeScope} />
 
@@ -747,8 +756,9 @@ function VerifiedNotesAskPanel({
                 </div>
             )}
 
+            {responseStatus}
             <div
-                ref={messagesContainerRef}
+                ref={messagesContainerRef} role="region" aria-label="Notes conversation" tabIndex={0}
                 className={cn(
                 "min-h-0 flex-1 overflow-y-auto px-4 py-4 [overflow-anchor:none]",
                 isSidebar && "px-5 py-5"

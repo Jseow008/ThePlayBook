@@ -84,6 +84,30 @@ describe("NotesAskPanel", () => {
         expect(setMessages).toHaveBeenCalledWith([expect.objectContaining({ id: "question" })]);
     });
 
+    it.each(["page", "sidebar"] as const)("announces request boundaries without streaming tokens in %s", (variant) => {
+        const chat = { messages: [], sendMessage: sendMessageMock, setMessages: setMessagesMock, status: "ready", error: null } as unknown as ReturnType<typeof useChat>;
+        vi.mocked(useChat).mockReturnValue(chat);
+        const { rerender } = render(<NotesAskPanel variant={variant} currentScope={currentScope} onClose={vi.fn()} />);
+        const status = screen.getByRole("status", { name: "Notes response status" });
+        expect(status).toBeEmptyDOMElement();
+        const composer = screen.getByRole("textbox");
+        composer.focus();
+        vi.mocked(useChat).mockReturnValue({ ...chat, status: "streaming", messages: [{ id: "answer", role: "assistant", parts: [{ type: "text", text: "Partial words" }] }] } as ReturnType<typeof useChat>);
+        rerender(<NotesAskPanel variant={variant} currentScope={currentScope} onClose={vi.fn()} />);
+        expect(status).toHaveTextContent("Searching your saved notes.");
+        expect(status).not.toHaveTextContent("Partial words");
+        vi.mocked(useChat).mockReturnValue({ ...chat, messages: [{ id: "answer", role: "assistant", parts: [{ type: "text", text: "Verified words" }] }] } as ReturnType<typeof useChat>);
+        rerender(<NotesAskPanel variant={variant} currentScope={currentScope} onClose={vi.fn()} />);
+        expect(status).toHaveTextContent("Response ready.");
+        expect(status).toHaveAttribute("aria-atomic", "true");
+        expect(screen.getByRole("region", { name: "Notes conversation" })).toHaveTextContent("Verified words");
+        expect(composer).toHaveFocus();
+        vi.mocked(useChat).mockReturnValue({ ...chat, status: "error", error: new Error("Disconnected") });
+        rerender(<NotesAskPanel variant={variant} currentScope={currentScope} onClose={vi.fn()} />);
+        expect(status).toHaveTextContent("Request failed.");
+        expect(status).not.toHaveTextContent("Response ready.");
+    });
+
     it("renders exact quotations literally and keeps validated citation links separate", () => {
         const text = "**literal** [not a link](https://example.invalid) <script>stored</script>";
         vi.mocked(useChat).mockReturnValue({ messages: [{ id: "quoted", role: "assistant", parts: [
