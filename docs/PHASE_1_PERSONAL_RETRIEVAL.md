@@ -1553,3 +1553,28 @@ production writes or capacity reruns occurred during this diagnosis.
 Next: once the CI correction is clear, obtain route phase timings and compare a
 small same-region candidate against the current route before changing production
 placement or batching SQL. Preserve transaction/RLS/reset/idempotency guarantees.
+
+#### #28 timing diagnostic completed on staged production build
+
+#184 merged as `6cd056f8`; timing-only #185 merged as `b9fe7c10`, all required PR
+checks green. Production build `dpl_MX3Tv9LobyGA74pWtEznoktLeAUM` was READY/staged,
+with public aliases still awaiting post-merge deployment checks. OPS permits exact
+build verification before promotion: the bounded sample used this protected
+production-target build and existing verification access against production data,
+without promoting it. Two ordinary synthetic accounts only; six successful writes
+and six verified reads; all fixtures and sessions cleaned up afterward. Eight
+original accounts and 496 published items remained, detailed health healthy.
+
+Mean write client time 4,234ms: auth 544ms, admission 184ms, library operation 2,825ms.
+Mean read client time 2,414ms: auth 642ms, library operation 1,397ms. No capacity pass
+or p95 claim. Library operation includes network and connection overhead, so pure
+network causality remains unproven. Regional placement is the next measured
+candidate; Upstash upgrade is not supported by this evidence.
+
+Evidence and exact next action: [timing checkpoint](evidence/library-latency-timing.md)
+and [sanitized sample](evidence/library-latency-sample-20260928.json).
+Current evidence branch `codex/library-latency-evidence` in
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, based on freshly fetched
+`b9fe7c10`. No production schema, SQL, quotas or region changes in this step.
+Next: small same-region save/list comparison, preserving the baseline and all
+correctness/admission guarantees, before any full capacity rerun. #28 remains open.
