@@ -129,3 +129,30 @@ Public rollout: PR #187, required checks and normal production deployment gates.
 No migration. After promotion, verify routing and integrity on the public endpoint;
 then resume the bounded capacity preflight with the original latency targets and
 all startup observations retained. No Upstash upgrade is needed for this correction.
+
+## Public production preflight — 28 September 2026
+
+PR #187 merged as `bc33d7ab`; public alias `www.netflux.blog` serves READY/promoted
+`dpl_BZMzdMGUp7RwWtg1gomd7RVw7u3D`. Its function configuration places both library
+routes in Mumbai. Public unauthenticated probes returned expected 401 responses
+with `sin1:bom1` routing; health returned 200 with `sin1:iad1`.
+
+The existing production runner's two-account preflight completed all five semantic
+actions (eight HTTP requests). Every request returned 200 and all read-back checks
+passed. Escalation stopped on reader 3,203ms (limit 3,000ms) and first library save
+2,542ms (limit 2,000ms). Library read was 308ms; search 1,169ms; reflection requests
+776–1,391ms. No load ladder or provider/export overlay was started. These observations
+remain failures; the regional improvement does not close #28.
+
+[Retained request evidence](capacity-public-mumbai-preflight-20260928.json) was
+reconstructed from runner stdout because the temporary wrapper's cleanup-verification
+query used `user_id` instead of the receipts table's `account_id`. Both synthetic
+sessions had already been revoked and accounts deleted. Corrected read-only checks
+confirmed cleanup. The failure prevented saving phase headers and before-counts;
+those unavailable values are not inferred. Future wrappers must persist measurement
+evidence before cleanup and save cleanup results separately, including on errors.
+
+Next: capture a bounded trace of the above-target save's auth, admission, library,
+and platform time, plus the reader route's server work. Preserve this failed sample;
+do not repeat the full preflight until a demonstrated bottleneck is corrected. The
+remaining delay cannot yet be called a cold start, an Upstash problem, or slow SQL.

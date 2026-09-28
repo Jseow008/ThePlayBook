@@ -1601,6 +1601,24 @@ public-route placement after normal deployment promotion, then resume bounded #2
 preflight with unchanged thresholds. Preserve startup observations; do not rerun
 until green. No new subagents or model experiments were needed.
 
+### #28 public rollout and preflight — 28 September 2026
+
+#187 merged as `bc33d7ab` and is publicly deployed; Mumbai library routing verified.
+Branch `codex/capacity-public-preflight`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, based on that main commit.
+Two synthetic accounts; existing runner preflight passed all eight request/integrity
+checks but stopped on first save 2.54s and reader 3.20s, above unchanged 2s/3s limits.
+No load escalation. #28 remains open. See the updated
+[library timing checkpoint](evidence/library-latency-timing.md) and linked evidence.
+
+The temporary evidence wrapper failed after account deletion because its receipts
+cleanup query named the wrong ownership column. Request timings were recovered from
+stdout without rerunning traffic; phase headers and before-counts were lost and are
+not claimed. Corrected read-only cleanup proof is retained in the evidence record.
+Next: bounded phase tracing for save and reader before selecting another fix; persist
+measurements before cleanup. No schema/config/application changes in this follow-up,
+no new agents, no paid projects or Upstash upgrade.
+
 ### #28 health diagnostics and reader placement experiment — 28 September 2026
 
 Branch `codex/reader-region-health-diagnostics`, same library-latency-timing worktree,

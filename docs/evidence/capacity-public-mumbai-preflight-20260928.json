@@ -1,0 +1,118 @@
+{
+  "date": "2026-09-28",
+  "commit": "bc33d7ab256621042bd65317e0b45e0310f16741",
+  "deployment": "dpl_BZMzdMGUp7RwWtg1gomd7RVw7u3D",
+  "origin": "https://www.netflux.blog",
+  "mode": "controlled-production-preflight",
+  "syntheticAccounts": 2,
+  "verdict": "stopped",
+  "stopReason": "preflight_gate",
+  "failedLimits": {
+    "browse_reader": {
+      "observedMs": 3203.16,
+      "limitMs": 3000
+    },
+    "library_mutation": {
+      "observedMs": 2541.51775,
+      "limitMs": 2000
+    }
+  },
+  "requests": [
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1168.860958,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3203.16,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 2541.51775,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 308.105125,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1031.101875,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 805.2925,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1390.873042,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 776.148375,
+      "outcome": "success"
+    }
+  ],
+  "closesIssue28": false,
+  "evidenceProvenance": "Request results recovered verbatim from completed runner stdout. Temporary wrapper failed in its post-deletion verification query before writing its full JSON artifact. No traffic rerun.",
+  "limitations": [
+    "Eight requests, not a capacity percentile or throughput result.",
+    "Catalog expectation captured immediately before preflight from existing public results; checks response consistency, not independent ranking correctness.",
+    "Full phase/routing headers and before-count metadata were not persisted due to wrapper failure; they cannot support attribution or before/after count claims.",
+    "First request is retained; a cold start is not established."
+  ],
+  "cleanupVerification": "Recorded separately after correcting receipts account_id column; both account deletions and session revocations had completed before the faulty verification query.",
+  "cleanup": {
+    "accounts": 8,
+    "catalog": 603,
+    "remaining_fixture_accounts": 0,
+    "orphan_library": 0,
+    "orphan_reflections": 0,
+    "orphan_boundaries": 0,
+    "orphan_receipts": 0,
+    "published": 496,
+    "health": {
+      "status": "ok",
+      "database": "reachable"
+    }
+  },
+  "routingProbes": [
+    {
+      "route": "/api/account-data/user_library",
+      "status": 401,
+      "executionRegion": "bom1"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "status": 401,
+      "executionRegion": "bom1"
+    },
+    {
+      "route": "/api/health",
+      "status": 200,
+      "executionRegion": "iad1"
+    }
+  ]
+}
