@@ -172,3 +172,29 @@ See [production evidence](capacity-production-preflight-20260928.json).
 Next diagnostic: distinguish cold connection/function startup, network round trips
 and database execution in a bounded two-account sample before changing architecture
 or resuming load. Current evidence does not identify which component caused latency.
+
+
+### Approved low-concurrency diagnostic — 29 September 2026
+
+After matched platform logs identified cold first requests and hot subsequent
+requests, the user approved one bounded diagnostic that may continue past sparse
+latency exceedances. This is an exception for this diagnostic only; the production
+escalation ladder and release thresholds above remain unchanged.
+
+- Two run-owned synthetic accounts; one HTTP request in flight at a time.
+- Exactly 100 library mutations, each followed by a verified library read, and 100
+  reader documents: at most 300 measured requests and 12 minutes of measurement.
+- Alternate accounts and rotate save/progress/remove using the existing integrity
+  checks. Retain first requests; no discarded warm-up and no retries for a pass.
+- Stop on any request error, failed integrity check, changed deployment, unhealthy
+  database probe, or request/time bound. Check health and deployment before setup,
+  every ten iterations, and after measurement. Existing quotas stay enabled.
+- Use no AI calls, exports, catalog writes, migrations, or infrastructure changes.
+  Revoke sessions, remove owned fixtures, and record cleanup verification.
+- Report sample count, p50, p95 (only with 100 successes), maximum and count above
+  each original target. Report incomplete runs as incomplete, never as passing.
+
+The diagnostic measures this sequential workload on the current catalog from one
+client location. It cannot establish the 50-user envelope, large-corpus performance,
+all-route coverage, or browser rendering performance. Its slower closed-loop request
+rate during slow responses is another reason not to use it as load-capacity proof.

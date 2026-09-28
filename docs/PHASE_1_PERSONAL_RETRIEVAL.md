@@ -1796,3 +1796,44 @@ resource bounds. Report every sample including cold starts, p95 and maximum per
 route. Any later load escalation remains separately gated under the original plan.
 Next action: resolve that decision, then implement and verify only the selected
 bounded path; do not repeat the same sparse preflight until it happens to pass.
+
+### #28 approved sequential diagnostic result — 29 September 2026
+
+The user approved the bounded diagnostic exception after the checkpoint above.
+One run completed on unchanged production `a87cff9f` / deployment
+`dpl_J4sfyQi2w24N1xcsKFU33mTdVHAe`, using two ordinary synthetic accounts and
+one HTTP request in flight. Measurement lasted 262 seconds; no discarded warm-up,
+retry, provider call, migration, production configuration change, or new project.
+The runbook records the one-run exception, preserving the original escalation gate.
+
+| Route | Successful samples | p50 | p95 | Maximum | Above target |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Library mutation | 100 | 366ms | 649ms | 2291ms | 1 (>2s) |
+| Library read | 100 | 196ms | 299ms | 516ms | 0 (>2s) |
+| Reader HTML | 100 | 784ms | 1371ms | 3004ms | 1 (>3s) |
+
+All 300 requests returned 200. Every save/progress/remove acknowledgement and library
+read-back passed the existing semantic/revision checks. The first save and reader
+were the above-target observations and remain included. Their cold/hot status was
+not independently sampled in this run; the earlier matched platform evidence is
+separate. Sequential p95 targets passed; this is not concurrent capacity proof.
+At most one saved item per account and one reader title were exercised. No catalog
+search, reflections, exports, AI overlays, or browser-rendering capacity was measured.
+
+Evidence: `docs/evidence/capacity-low-concurrency-20260929.json`, including all
+samples, route phase timings, health checks, bounds, harness hashes and limitations.
+Summary percentiles and sample counts were independently recomputed from raw samples.
+Both fixture sessions were revoked, both accounts deleted, and checked associated
+records returned to zero. Existing totals remained 8 accounts and 603 catalog items;
+final detailed health was OK/reachable. No test process remains running.
+
+Decision: no infrastructure upgrade or speculative application fix is justified by
+this run. #28 remains open for the concurrent mixed-workload envelope and missing
+route/overlay coverage. The existing production escalation rule still blocks on sparse
+latency exceedances; this one-run approval does not authorize replacing it globally.
+Before the next load run, define a reviewed cumulative-sample escalation rule that
+retains all slow samples, enforces error/integrity/health/resource stops, and evaluates
+p95 only after sufficient samples. Avoid repeating the same first-request preflight.
+Continuation: branch `codex/health-production-verification`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`. Prior evidence commits
+`9f327467` and `7bd46686` are included in the same evidence-only PR. No subagents used.
