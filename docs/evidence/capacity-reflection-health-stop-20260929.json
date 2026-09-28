@@ -1,0 +1,135 @@
+{
+  "runId": "capacity-reflections-1790618604634",
+  "sha": "4626ba9580bd9c689e918bef63576aedc1162a65",
+  "deployment": "dpl_4RBos864PgtqKzKLsCfuLhWJMHsR",
+  "startedAt": "2026-09-28T18:03:24.634Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-28T18:03:31.408Z",
+      "httpStatus": 503,
+      "status": "degraded",
+      "database": "unreachable",
+      "issues": [
+        "Database connectivity check timed out."
+      ]
+    }
+  ],
+  "error": "Expected values to be strictly equal:\n\n503 !== 200\n",
+  "interpretation": {
+    "loadStarted": false,
+    "accountsCreated": 0,
+    "applicationOrInfrastructureChanged": false,
+    "diagnosis": "Database request exceeded the existing 2500ms deadline; this does not establish database saturation or an underlying cause.",
+    "status": "unresolved intermittent readiness failure"
+  },
+  "matchedRuntimeEvent": {
+    "event": "health_database_probe_failed",
+    "reason": "timeout",
+    "initialization_ms": 8,
+    "query_ms": 2498,
+    "duration_ms": 2505,
+    "timeout_ms": 2500
+  },
+  "platform": [
+    {
+      "name": "fresh",
+      "rows": [
+        {
+          "timestamp": "2026-09-28T18:03:27.081Z",
+          "path": "/api/health",
+          "requestDurationMs": 4440,
+          "functions": [
+            {
+              "region": "iad1",
+              "durationMs": 3109,
+              "startType": "cold",
+              "coldStartDurationMs": 316,
+              "concurrency": 1,
+              "memoryMb": 230
+            }
+          ],
+          "proxyEvents": [
+            {
+              "region": "sin1",
+              "source": "static"
+            }
+          ],
+          "status": 503
+        }
+      ]
+    }
+  ],
+  "fixedThreeProbeRecoveryCheck": [
+    {
+      "at": "2026-09-28T18:04:58.938Z",
+      "status": 200,
+      "durationMs": 1662.9235410000001,
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T18:04:57.809Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T18:05:11.150Z",
+      "status": 200,
+      "durationMs": 1207.9789579999997,
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T18:05:10.246Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T18:05:23.266Z",
+      "status": 200,
+      "durationMs": 1113.8106659999976,
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T18:05:22.452Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    }
+  ],
+  "recoveryDatabaseQueryMs": [
+    1123,
+    877,
+    814
+  ]
+}

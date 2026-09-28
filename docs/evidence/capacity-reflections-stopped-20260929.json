@@ -1,0 +1,2142 @@
+{
+  "runId": "capacity-reflections-1790618743358",
+  "sha": "4626ba9580bd9c689e918bef63576aedc1162a65",
+  "deployment": "dpl_4RBos864PgtqKzKLsCfuLhWJMHsR",
+  "startedAt": "2026-09-28T18:05:43.358Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-28T18:05:46.531Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T18:05:49.183Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T18:05:51.893Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T18:05:53.306Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T18:07:53.152Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T18:08:55.409Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "scenario": {
+    "kind": "separate_paced_reflection_observation",
+    "accounts": 2,
+    "reads": 100,
+    "writes": 30,
+    "minimumWriteSpacingMs": 6500,
+    "maximumRequests": 130,
+    "hardDeadlineMs": 360000,
+    "latencyP95TargetMs": 2000,
+    "firstRequestsIncluded": true,
+    "concurrency": 1,
+    "poolingWithMixedRun": false
+  },
+  "requests": [
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4688.917749999999,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1977.879499999999,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3607.6588329999977,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3236.826624999998,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 8289.0975,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 7111.261290999999,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1849.6910840000055,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2489.395082999996,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1710.229250000004,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1633.3048750000016,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 989.7905829999945,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1680.4975419999973,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1831.140333000003,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 762.7589169999992,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 963.2179590000014,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3983.8464170000007,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 3648.6570839999986,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1527.3510000000024,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1276.654042000002,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2350.871834000005,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1890.575667000012,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 2133.5310420000023,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1612.6796250000043,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2327.7760839999974,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1680.3671249999898,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 757.2364170000073,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1026.3375420000084,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1063.6732090000005,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1214.3482089999889,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1256.0692080000008,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 782.6621250000026,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1152.0496669999993,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1928.007958999995,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1322.1739579999994,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 949.5338750000083,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1480.1080829999992,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1690.7255830000067,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2725.2625839999964,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2471.9868330000027,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1563.9039589999884,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1732.8098749999917,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1793.1432499999937,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 777.1528340000077,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1681.4565000000002,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2139.617041999998,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4571.042333000005,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 7784.069541999997,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 6669.096250000002,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1567.8227500000066,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1334.5445000000036,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 815.758084000001,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1025.3856249999953,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 926.2395839999954,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1222.1597919999913,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3990.1723749999946,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 2448.2693749999744,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1602.4494580000173,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1427.937333000009,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1816.4294579999987,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1188.2261660000077,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 997.8731250000128,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 973.0489579999994,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2431.238417000015,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1552.4988749999902,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1447.614916999999,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1739.0589579999796,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1221.8944999999949,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 3238.0282920000027,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 775.0304579999938,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1010.3710000000137,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1025.4504590000142,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 939.3823750000156,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1522.1961670000164,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1221.6558340000047,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1996.9765409999818,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1435.0390420000185,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1179.400416999997,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/library/reflections",
+      "method": "GET",
+      "status": 0,
+      "durationMs": 10009.537041000003,
+      "outcome": "failure",
+      "timeout": true
+    }
+  ],
+  "schedule": [
+    {
+      "cycle": 0,
+      "offsetMs": 607.1834579999995
+    },
+    {
+      "cycle": 1,
+      "offsetMs": 22409.212874999997
+    },
+    {
+      "cycle": 2,
+      "offsetMs": 37203.548166
+    },
+    {
+      "cycle": 3,
+      "offsetMs": 43705.396457999996
+    },
+    {
+      "cycle": 4,
+      "offsetMs": 56493.326250000006
+    },
+    {
+      "cycle": 5,
+      "offsetMs": 66138.67654100001
+    },
+    {
+      "cycle": 6,
+      "offsetMs": 72639.540458
+    },
+    {
+      "cycle": 7,
+      "offsetMs": 79140.359458
+    },
+    {
+      "cycle": 8,
+      "offsetMs": 89072.803958
+    },
+    {
+      "cycle": 9,
+      "offsetMs": 97197.411875
+    },
+    {
+      "cycle": 10,
+      "offsetMs": 120453.98329100001
+    },
+    {
+      "cycle": 11,
+      "offsetMs": 126953.865
+    },
+    {
+      "cycle": 12,
+      "offsetMs": 136423.113208
+    },
+    {
+      "cycle": 13,
+      "offsetMs": 142924.347541
+    },
+    {
+      "cycle": 14,
+      "offsetMs": 150095.193833
+    },
+    {
+      "cycle": 15,
+      "offsetMs": 156596.990291
+    },
+    {
+      "cycle": 16,
+      "offsetMs": 163099.90649999998
+    }
+  ],
+  "error": "The operation was aborted due to timeout",
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "derivedCleanup": {
+    "personal_index": 0,
+    "snapshots": 0,
+    "operations": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "completed": false,
+  "status": "stopped_on_read_timeout",
+  "driverSha256": "f3159bb62121ce858d8358017b289e5e636a7a5396123e4a2e93d836264eadb2",
+  "interpretation": "Separate low-concurrency observation, not pooled with the mixed test. Neither per-route minimum sample count was reached. No percentile pass is claimed. No retries within measurement.",
+  "counts": {
+    "GET": {
+      "attempted": 61,
+      "successful": 60
+    },
+    "POST": {
+      "attempted": 17,
+      "successful": 17
+    }
+  },
+  "platformWindow": {
+    "start": "2026-09-28T18:05:50Z",
+    "end": "2026-09-28T18:08:10Z",
+    "note": "Partial window only; not a one-to-one match of every measured request. Warm iad1 function timings demonstrate server-side delays, not database execution time."
+  },
+  "platformRows": [
+    {
+      "timestamp": "2026-09-28T18:08:09.250Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1804,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 236
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1341,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:08:07.823Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1417,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 926,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 236
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:08:06.220Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1593,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 236
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1095,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:08:03.774Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 2436,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2184,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 11,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 235
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:59.781Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 3977,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 3709,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 235
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:56.049Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1167,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 674,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 55,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 235
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:55.122Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 859,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 579,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 14,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 235
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:54.098Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 930,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 675,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 235
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:53.282Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 779,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 514,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 8,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 235
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:50.634Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1301,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 944,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        },
+        {
+          "region": "sin1",
+          "durationMs": 8,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:49.051Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1535,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1076,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:42.380Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 6653,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        },
+        {
+          "region": "iad1",
+          "durationMs": 6391,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:34.596Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 7768,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        },
+        {
+          "region": "iad1",
+          "durationMs": 7516,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 260
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:30.026Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 4558,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        },
+        {
+          "region": "iad1",
+          "durationMs": 4087,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 257
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:27.886Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 2126,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1641,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 257
+        },
+        {
+          "region": "sin1",
+          "durationMs": 8,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:26.205Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1613,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1361,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 257
+        },
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:25.430Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 761,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 490,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 257
+        },
+        {
+          "region": "sin1",
+          "durationMs": 8,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:23.633Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1714,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1455,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 257
+        },
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 234
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:21.899Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1724,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 233
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1481,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 255
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:20.336Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1549,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 12,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 233
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1286,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 255
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:17.865Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 2457,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 232
+        },
+        {
+          "region": "iad1",
+          "durationMs": 2201,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 253
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:15.139Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 2708,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2439,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 252
+        },
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 232
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:13.448Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1683,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1234,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 252
+        },
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 232
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:11.970Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1411,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 232
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1150,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 252
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:10.652Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 858,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 232
+        },
+        {
+          "region": "iad1",
+          "durationMs": 513,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 251
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:09.329Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1154,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 908,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 251
+        },
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 232
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:07.402Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1916,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 11,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 232
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1428,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 251
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:06.249Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1139,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 680,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 251
+        },
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 231
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:05.467Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 764,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 496,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 251
+        },
+        {
+          "region": "sin1",
+          "durationMs": 11,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 231
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:03.027Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1183,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 230
+        },
+        {
+          "region": "iad1",
+          "durationMs": 927,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 250
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:01.815Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1199,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 230
+        },
+        {
+          "region": "iad1",
+          "durationMs": 935,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:07:00.751Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1041,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 230
+        },
+        {
+          "region": "iad1",
+          "durationMs": 527,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:59.724Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 942,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 230
+        },
+        {
+          "region": "iad1",
+          "durationMs": 700,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:58.965Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 743,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 479,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        },
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 230
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:57.285Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1663,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1306,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        },
+        {
+          "region": "sin1",
+          "durationMs": 17,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 230
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:54.958Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 2312,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 19,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 230
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1963,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:53.348Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1588,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 229
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1343,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:51.212Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 2115,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 229
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1846,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 249
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:49.321Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1875,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1421,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 248
+        },
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 228
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:46.972Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 2335,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 228
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1835,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 248
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:45.695Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1263,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 228
+        },
+        {
+          "region": "iad1",
+          "durationMs": 997,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 248
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:44.166Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1432,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 228
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1169,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 248
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:40.517Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 3615,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 11,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 228
+        },
+        {
+          "region": "iad1",
+          "durationMs": 3345,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 248
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:36.535Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 3964,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 227
+        },
+        {
+          "region": "iad1",
+          "durationMs": 3696,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 247
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:35.296Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 951,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 10,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 227
+        },
+        {
+          "region": "iad1",
+          "durationMs": 467,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 246
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:34.533Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 752,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 11,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 226
+        },
+        {
+          "region": "iad1",
+          "durationMs": 475,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 245
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-28T18:06:32.704Z",
+      "path": "/api/library/reflections",
+      "requestDurationMs": 1780,
+      "functions": [
+        {
+          "region": "sin1",
+          "durationMs": 9,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 226
+        },
+        {
+          "region": "iad1",
+          "durationMs": 1322,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 245
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    }
+  ]
+}

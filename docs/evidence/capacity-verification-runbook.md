@@ -3,7 +3,10 @@
 Status: bounded sequential, two/five-user, and corrected 25/50/recovery mixed
 production observations completed. #28 remains open: reflection sample counts,
 large-corpus/large-export coverage, and the original longer envelope are incomplete.
-The failed mixed attempt and indexing setup stop remain retained. Six small exports
+The failed mixed attempt and indexing setup stop remain retained. A subsequent
+reflection-only observation stopped on a 10-second read timeout; health also had a
+preflight database timeout. A two-route Mumbai placement correction is pending
+verification. See capacity-reflections-stopped-20260929.json and the latest checkpoint. Six small exports
 and two real AI retrieval samples passed in the corrected run. See the latest
 checkpoint in docs/PHASE_1_PERSONAL_RETRIEVAL.md and capacity-mixed-completed-20260929.json.
 Initial preparation baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`; later run identities are recorded with their evidence.

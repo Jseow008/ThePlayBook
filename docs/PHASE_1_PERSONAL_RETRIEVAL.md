@@ -1988,3 +1988,51 @@ reflection samples, large-corpus/large-export coverage, and the originally speci
 longer envelope. The earlier 56-record indexing 503 is not explained or erased by a
 successful two-record preflight. Next: resolve these explicit coverage gaps; do not
 repeat the already-passing core/export/AI checks without changed inputs or a new concern.
+
+### #28 reflection observation and region correction — 29 September 2026
+
+PR #193 merged as `f33f9858` with all required checks passing. Continuation branch:
+`codex/reflection-health-regions`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, based on that fresh main.
+The tested live deployment remains `dpl_4RBos864PgtqKzKLsCfuLhWJMHsR` / `4626ba95`.
+
+One separate reflection-only sample was planned: 100 GETs, 30 POSTs, two synthetic
+accounts, one request in flight, minimum 6.5-second write-cycle spacing, 10-second
+request bound and six-minute measurement bound. It does not pool the previous mixed
+sample or claim the original mixed-load envelope.
+
+The first preflight returned health 503 before accounts/load. Matched runtime logs
+show initialization 8ms, query 2498ms, total 2505ms against the unchanged 2500ms
+health deadline. Platform logs show a cold iad1 function, concurrency one. Three
+fixed recovery probes subsequently passed (query 1123/877/814ms). This locates the
+timeout in the database request but does not prove database saturation or its cause.
+The initial failure is retained in `capacity-reflection-health-stop-20260929.json`.
+
+After recovery, the single measured attempt stopped on a 10009.54ms GET timeout:
+60 successful reads out of 61 attempts and 17 successful writes. Maximum successful
+read/write times were 8289.10/7784.07ms. Neither minimum sample count was reached;
+no p95 pass is claimed. A partial platform-log window confirms multi-second delays
+inside warm iad1 functions at concurrency one (including 7516ms); the delay is not
+solely client-side. No retries were made within the measurement. All two accounts,
+sessions and checked derived rows were cleaned; original counts remained 8 accounts
+and 603 catalog items, with final detailed health OK/reachable. Evidence:
+`capacity-reflections-stopped-20260929.json`.
+
+Bounded correction: place only reflection and health functions in `bom1`, beside the
+existing Mumbai database and library functions. This follows the same per-function
+configuration already deployed for library access and Vercel's data-locality guidance
+(https://vercel.com/docs/functions/configuring-functions/region). It removes a known
+cross-region dependency; it is not proof that geography explains every slow request.
+No timeout, admission rule, route logic, database schema, provider model or paid tier
+changes. Verify the built function placement and rerun only affected health/reflection
+evidence after deployment. Keep #28 open until that measurement is complete.
+
+The earlier bulk-indexing 503 remains unexplained: code inspection confirms any
+nonterminal indexing failure can set cooldown, so cooldown alone does not establish
+provider rate limiting. #193 now retains the safe response counters for the next
+occurrence. Do not recreate the 56-record indexing burst just to seek a passing run.
+
+The original large-corpus/large-export and longer mixed envelope remain untested.
+A scope question is pending: complete the original isolated benchmark, or explicitly
+approve a current-catalog launch scope and defer the larger envelope. No reduced
+acceptance scope has been assumed and no new hosted project has been created.
