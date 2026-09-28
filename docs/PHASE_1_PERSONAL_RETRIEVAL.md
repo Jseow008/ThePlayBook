@@ -1601,6 +1601,40 @@ public-route placement after normal deployment promotion, then resume bounded #2
 preflight with unchanged thresholds. Preserve startup observations; do not rerun
 until green. No new subagents or model experiments were needed.
 
+### #28 public rollout and preflight — 28 September 2026
+
+#187 merged as `bc33d7ab` and is publicly deployed; Mumbai library routing verified.
+Branch `codex/capacity-public-preflight`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, based on that main commit.
+Two synthetic accounts; existing runner preflight passed all eight request/integrity
+checks but stopped on first save 2.54s and reader 3.20s, above unchanged 2s/3s limits.
+No load escalation. #28 remains open. See the updated
+[library timing checkpoint](evidence/library-latency-timing.md) and linked evidence.
+
+The temporary evidence wrapper failed after account deletion because its receipts
+cleanup query named the wrong ownership column. Request timings were recovered from
+stdout without rerunning traffic; phase headers and before-counts were lost and are
+not claimed. Corrected read-only cleanup proof is retained in the evidence record.
+Next: bounded phase tracing for save and reader before selecting another fix; persist
+measurements before cleanup. No schema/config/application changes in this follow-up,
+no new agents, no paid projects or Upstash upgrade.
+
+#### Follow-up phase diagnosis
+
+On the same `bc33d7ab` production build, six bounded diagnostic requests passed
+semantic checks. Slow save 2,189ms = 537ms auth + 448ms admission + 92ms library,
+with 1,110ms outside the measured handler. Reader remained in Virginia; approximately
+0.94s elapsed after headers on both reads. No speculative optimization was applied.
+Trace is in `docs/evidence/library-reader-phase-trace-20260928.json`.
+
+Post-sample detailed health returned 503, preventing further traffic. Cleanup
+completed and later health passed; all fixture accounts removed and original
+8-account/603-total-catalog counts preserved (496 published). Failure bodies were
+not retained, so its exact cause remains unknown. Next: diagnose health instability
+and platform save overhead, then a reader-only regional candidate; no load escalation
+or #28 closure. This evidence extends documentation-only PR #188 on the existing
+branch/worktree; no new agent, production configuration, migration or paid project.
+
 ### #28 health diagnostics and reader placement experiment — 28 September 2026
 
 Branch `codex/reader-region-health-diagnostics`, same library-latency-timing worktree,
@@ -1628,3 +1662,23 @@ results describe the rejected configuration, not the final PR's performance.
 Next: after diagnostic release, capture the reason for any recurrence; investigate
 platform request startup/transport attribution for first saves and reader rendering
 before another regional or caching change. Keep #28 open and load escalation paused.
+
+#### #189 production verification — timeout recurrence captured
+
+#189 merged as `18f2648af0e38a0b522e6ef3acad267c257dd062`; public deployment
+`dpl_7vrXyfWwDDDQU97gYUYYN1H2Crv5` is READY and serves that commit. Library routes
+remain Mumbai; the rejected reader override is absent. Required PR checks passed.
+
+Three detailed-health probes 11 seconds apart returned 503/200/200. The first
+response explicitly reported `Database connectivity check timed out.`; its matching
+runtime warning recorded `health_database_probe_failed`, `reason: timeout`,
+`duration_ms: 2505`, `timeout_ms: 2500`. Every configuration-readiness field was ready.
+See `docs/evidence/health-postrelease-20260928.json`. The diagnostic release therefore
+works and identifies the failing check, but it does not fix the underlying delay.
+
+No load test, account creation, migration or further application change was performed.
+#188 was rebased onto current main preserving both documents' histories and all
+previous failed samples; its refreshed CI still gates merge. Next: distinguish the
+probe's client initialization from request/transport/database latency. The existing
+2.5s bound covers dynamic client import as well as query execution, so timeout alone
+does not establish slow SQL or a database outage. #28 remains open.

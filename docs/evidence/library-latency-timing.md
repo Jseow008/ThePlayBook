@@ -129,3 +129,85 @@ Public rollout: PR #187, required checks and normal production deployment gates.
 No migration. After promotion, verify routing and integrity on the public endpoint;
 then resume the bounded capacity preflight with the original latency targets and
 all startup observations retained. No Upstash upgrade is needed for this correction.
+
+## Public production preflight — 28 September 2026
+
+PR #187 merged as `bc33d7ab`; public alias `www.netflux.blog` serves READY/promoted
+`dpl_BZMzdMGUp7RwWtg1gomd7RVw7u3D`. Its function configuration places both library
+routes in Mumbai. Public unauthenticated probes returned expected 401 responses
+with `sin1:bom1` routing; health returned 200 with `sin1:iad1`.
+
+The existing production runner's two-account preflight completed all five semantic
+actions (eight HTTP requests). Every request returned 200 and all read-back checks
+passed. Escalation stopped on reader 3,203ms (limit 3,000ms) and first library save
+2,542ms (limit 2,000ms). Library read was 308ms; search 1,169ms; reflection requests
+776–1,391ms. No load ladder or provider/export overlay was started. These observations
+remain failures; the regional improvement does not close #28.
+
+[Retained request evidence](capacity-public-mumbai-preflight-20260928.json) was
+reconstructed from runner stdout because the temporary wrapper's cleanup-verification
+query used `user_id` instead of the receipts table's `account_id`. Both synthetic
+sessions had already been revoked and accounts deleted. Corrected read-only checks
+confirmed cleanup. The failure prevented saving phase headers and before-counts;
+those unavailable values are not inferred. Future wrappers must persist measurement
+evidence before cleanup and save cleanup results separately, including on errors.
+
+Next: capture a bounded trace of the above-target save's auth, admission, library,
+and platform time, plus the reader route's server work. Preserve this failed sample;
+do not repeat the full preflight until a demonstrated bottleneck is corrected. The
+remaining delay cannot yet be called a cold start, an Upstash problem, or slow SQL.
+
+### Bounded phase attribution — 28 September 2026
+
+The subsequent diagnostic used two ordinary synthetic accounts, two saves with
+read-back, and two reader requests (six measured requests; no load ladder). Same
+public deployment `bc33d7ab`. Every operation succeeded and passed semantic checks.
+[Raw sanitized trace](library-reader-phase-trace-20260928.json) is retained before
+cleanup, so cleanup/health failures cannot erase the measurements.
+
+| Save phase | First save | Second save |
+| --- | ---: | ---: |
+| Client total | 2,189ms | 1,099ms |
+| Auth | 537ms | 457ms |
+| Admission | 448ms | 428ms |
+| Library | 92ms | 21ms |
+| Handler total | 1,079ms | 907ms |
+| Client minus handler (unattributed) | 1,110ms | 192ms |
+
+The library operation is no longer the dominant observed save cost. The residual
+is not a cold-start measurement: platform startup, transport and response work
+are outside the handler timer. Do not weaken getUser validation, admission, or
+mutation correctness to hit the target. No Upstash upgrade is justified by this
+trace alone.
+
+Readers executed in `iad1` with cache MISS: totals 1,602/1,245ms, headers at
+658/312ms, leaving about 943/933ms to finish the streamed response. Source inspection
+confirms public content is checked with the anonymous client and React request-local
+cache; optional series data follows the content lookup. These timings do not separate
+query time from rendering/transport. Moving this route near its database is a
+reasonable next controlled candidate; do not add stale-content caching or change
+withdrawal visibility without its separate correctness proof.
+
+The post-sample detailed-health guard returned 503, and the first final-health check
+also returned 503. Traffic stopped. Bodies were not retained, so the specific failed
+health component is unknown. A later read-only check returned 200, all readiness
+checks ready, and database reachable. Both synthetic sessions were revoked and
+accounts deleted; corrected verification found no remaining trace accounts or
+orphaned library/reflection/boundary/receipt rows. Counts were 8 accounts and 603
+total catalog rows before/after; 496 are published. No existing data was changed.
+
+Next decision: keep load escalation held. Investigate the health failure and obtain
+platform startup/request traces for the slow save; compare a reader-only Mumbai
+candidate when health is stable. Existing runtime request logs lacked duration/startup
+fields, so they do not establish the unexplained 1.11s. Do not keep repeating the
+capacity preflight to obtain a favorable sample.
+
+### Diagnostic release verification
+
+#189 is live at `18f2648a`, deployment `dpl_7vrXyfWwDDDQU97gYUYYN1H2Crv5`.
+[Post-release health responses](health-postrelease-20260928.json) retain the first
+503 and subsequent two 200s. The warning at approximately 14:14:27 UTC reports
+`health_database_probe_failed`, timeout, 2,505ms against the unchanged 2,500ms bound.
+All configuration checks were ready. This establishes probe timeout as the current
+failure mode, not its ultimate cause: dynamic client initialization and the query
+share that deadline. No capacity traffic was generated during this verification.
