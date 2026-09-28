@@ -65,10 +65,20 @@ describe("GET /api/account-data/user_library", () => {
         }, 100);
     });
 
+    it("keeps timing samples local to each response", async () => {
+        const first = await GET(new NextRequest("http://localhost/api/account-data/user_library"));
+        const second = await GET(new NextRequest("http://localhost/api/account-data/user_library"));
+        for (const response of [first, second]) {
+            expect(response.headers.get("server-timing")).toMatch(/^auth;dur=\d+\.\d, library;dur=\d+\.\d, handler;dur=\d+\.\d$/);
+            expect(response.headers.get("cache-control")).toBe("no-store");
+        }
+    });
+
     it("rejects unauthenticated live-list reads", async () => {
         getUser.mockResolvedValue({ data: { user: null } });
         const response = await GET(new NextRequest("http://localhost/api/account-data/user_library"));
         expect(response.status).toBe(401);
+        expect(response.headers.get("server-timing")).toBeNull();
         expect(getLiveLibraryPage).not.toHaveBeenCalled();
     });
 });

@@ -1,3 +1,4 @@
+import { createLibraryRouteTiming } from "@/lib/server/library-route-timing";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { apiError, getRequestId, logApiError } from "@/lib/server/api";
@@ -28,15 +29,18 @@ function isUuid(value: string) {
 
 export async function POST(request: NextRequest) {
     const requestId = getRequestId();
+    const timing = createLibraryRouteTiming();
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await timing.measure("auth", async () => {
+            const supabase = await createClient();
+            return supabase.auth.getUser();
+        });
         if (!user) return apiError("UNAUTHORIZED", "Sign in to update your library.", 401, requestId);
 
-        const admission = await strictPublicRateLimit(request, {
+        const admission = await timing.measure("admission", () => strictPublicRateLimit(request, {
             limit: 120, windowMs: 60_000, identifier: user.id,
             key: "library-write", routeLabel: "library-write",
-        });
+        }));
         if (!admission.success) return rateLimitFailureResponseWithTelemetry({
             request, requestId, result: admission, route: "POST /api/account-data/user_library/mutation",
             category: "public", userId: user.id, authState: "authenticated",
@@ -93,7 +97,7 @@ export async function POST(request: NextRequest) {
             } }, { status: 409, headers: { "Cache-Control": "no-store" } });
         }
 
-        const data = await commitLibraryMutationForAccount(user.id, {
+        const input = {
             ...(body.mutationId ? { mutationId: body.mutationId as string, createdAt: body.createdAt as string } : {}),
             ...(guest ? { guestImport: { migrationId: guest.migrationId!, guestStorageId: guest.guestStorageId!, sourceRecordId: guest.sourceRecordId! } } : {}),
             baseRevision: body.baseRevision,
@@ -103,8 +107,9 @@ export async function POST(request: NextRequest) {
             progress: body.progress ?? null,
             lastInteractedAt: body.lastInteractedAt,
             deleteIfEmpty: body.deleteIfEmpty,
-        });
-        return NextResponse.json({ data }, { headers: { "Cache-Control": "no-store" } });
+        };
+        const data = await timing.measure("library", () => commitLibraryMutationForAccount(user.id, input));
+        return NextResponse.json({ data }, { headers: { "Cache-Control": "no-store", "Server-Timing": timing.header() } });
     } catch (error) {
         if (error instanceof LibraryMutationConflictError) {
             return NextResponse.json({ error: {
