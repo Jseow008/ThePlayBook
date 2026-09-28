@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "runId": "capacity-latency-1790582409422-f5342e38",
+  "expectedCommit": "b9fe7c1015ecf01229637c4fdf21bb366a6cba33",
+  "target": "exact-staged-production-build",
+  "startedAt": "2026-09-28T08:00:09.423Z",
+  "samples": [
+    {
+      "accountOrdinal": 1,
+      "operation": "save",
+      "clientMs": 5323.780542,
+      "timing": {
+        "auth": 659.4,
+        "admission": 194.9,
+        "library": 3655.3,
+        "handler": 4512
+      },
+      "mutationKind": "save"
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "read",
+      "clientMs": 2283.812666,
+      "timing": {
+        "auth": 602.5,
+        "library": 1400.7,
+        "handler": 2004
+      }
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "save",
+      "clientMs": 3808.065083999998,
+      "timing": {
+        "auth": 708.3,
+        "admission": 174.1,
+        "library": 2380.2,
+        "handler": 3264.1
+      },
+      "mutationKind": "progress"
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "read",
+      "clientMs": 2583.7292500000003,
+      "timing": {
+        "auth": 659.3,
+        "library": 1387.1,
+        "handler": 2046.8
+      }
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "save",
+      "clientMs": 6199.922124999997,
+      "timing": {
+        "auth": 729.7,
+        "admission": 199.5,
+        "library": 3711.5,
+        "handler": 4642.9
+      },
+      "mutationKind": "remove"
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "read",
+      "clientMs": 2352.9905830000025,
+      "timing": {
+        "auth": 647.2,
+        "library": 1400.6,
+        "handler": 2048.1
+      }
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "save",
+      "clientMs": 3871.738209000003,
+      "timing": {
+        "auth": 720.2,
+        "admission": 174.4,
+        "library": 2405.6,
+        "handler": 3302.2
+      },
+      "mutationKind": "save"
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "read",
+      "clientMs": 2757.9760000000024,
+      "timing": {
+        "auth": 1060.2,
+        "library": 1399.3,
+        "handler": 2460
+      }
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "save",
+      "clientMs": 3092.7757500000007,
+      "timing": {
+        "auth": 232.4,
+        "admission": 180.9,
+        "library": 2396.6,
+        "handler": 2811.4
+      },
+      "mutationKind": "progress"
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "read",
+      "clientMs": 2145.8624999999956,
+      "timing": {
+        "auth": 263.5,
+        "library": 1397.4,
+        "handler": 1661.1
+      }
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "save",
+      "clientMs": 3107.479542000001,
+      "timing": {
+        "auth": 215.7,
+        "admission": 179.2,
+        "library": 2398.8,
+        "handler": 2795.2
+      },
+      "mutationKind": "remove"
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "read",
+      "clientMs": 2359.026291000002,
+      "timing": {
+        "auth": 618.9,
+        "library": 1399.5,
+        "handler": 2018.6
+      }
+    }
+  ],
+  "cleanup": {
+    "removed": 2,
+    "remaining": [
+      {
+        "accounts": 0,
+        "library": 0,
+        "boundaries": 0,
+        "receipts": 0
+      }
+    ]
+  },
+  "limitations": [
+    "Two synthetic accounts and three sequential mutations per account; no throughput or percentile claim.",
+    "First observed request is not a proven cold start.",
+    "Library phase includes connection acquisition and SQL/network round trips, not pure database execution."
+  ],
+  "deployment": {
+    "id": "dpl_MX3Tv9LobyGA74pWtEznoktLeAUM",
+    "sha": "b9fe7c1015ecf01229637c4fdf21bb366a6cba33",
+    "region": "iad1"
+  },
+  "before": [
+    {
+      "accounts": 8,
+      "catalog": 496
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "timestamp": "2026-09-28T08:00:15.083Z",
+    "environment": "production",
+    "database": "reachable",
+    "readiness": {
+      "supabase_public": "ready",
+      "supabase_admin": "ready",
+      "site_url": "ready",
+      "app_url": "derived",
+      "ai_generation": "ready",
+      "ai_retrieval": "ready",
+      "rate_limiting": "ready",
+      "error_reporting": "ready"
+    },
+    "issues": []
+  },
+  "healthAfter": {
+    "status": "ok",
+    "timestamp": "2026-09-28T08:01:09.141Z",
+    "environment": "production",
+    "database": "reachable",
+    "readiness": {
+      "supabase_public": "ready",
+      "supabase_admin": "ready",
+      "site_url": "ready",
+      "app_url": "derived",
+      "ai_generation": "ready",
+      "ai_retrieval": "ready",
+      "rate_limiting": "ready",
+      "error_reporting": "ready"
+    },
+    "issues": []
+  },
+  "deploymentAfter": {
+    "id": "dpl_MX3Tv9LobyGA74pWtEznoktLeAUM",
+    "sha": "b9fe7c1015ecf01229637c4fdf21bb366a6cba33",
+    "region": "iad1"
+  },
+  "completed": true,
+  "after": [
+    {
+      "accounts": 8,
+      "catalog": 496
+    }
+  ],
+  "finishedAt": "2026-09-28T08:01:14.749Z"
+}
