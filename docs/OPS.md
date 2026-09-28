@@ -350,8 +350,8 @@ AI narration now runs as a queued background job.
 Narration provider configuration:
 
 - `NARRATION_PROVIDER=openai` is the default; set `NARRATION_PROVIDER=fish` to use Fish Audio.
-- Fish requires server-only `FISH_AUDIO_API_KEY`. The default voice is Documentary Narrator (`3df6f0a0b0f349dbb0f9425e50c36a5b`); override it with `FISH_AUDIO_VOICE_ID` if needed.
-- Fish narration uses temperature `0.5`, `top_p` `0.7`, and the direction `[deliver a sober factual briefing: serious, steady, restrained, with clear articulation and understated emphasis]` on each synthesis request.
+- Fish requires server-only `FISH_AUDIO_API_KEY`. The default voice is WISDOM RISE (`03647a8ad0e04a0ea11ec99c4e9da5a7`); override it with `FISH_AUDIO_VOICE_ID` if needed. Set the Production override to this ID when releasing the new default.
+- Fish narration uses temperature `0.5`, `top_p` `0.7`, speed `1.0`, and the direction `[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis]` on each synthesis request.
 - `FISH_AUDIO_MODEL` accepts only `s2.1-pro-free` (default) or `s2.1-pro`. Unsupported names fail before calling Fish, because Fish otherwise falls back to a paid model.
 - Confirm production-use rights before selecting the free model for a commercial deployment. Fish currently describes the free offer as time-limited and best-effort. A live deployment also needs these variables in the hosting environment; `.env.local` applies only to the local checkout.
 
