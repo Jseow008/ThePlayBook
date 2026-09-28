@@ -15,6 +15,7 @@ describe("Health API", () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.spyOn(console, "warn").mockImplementation(() => {});
         resetHealthCheckCacheForTests();
         process.env = {
             ...originalEnv,
@@ -40,6 +41,7 @@ describe("Health API", () => {
     afterEach(() => {
         resetHealthCheckCacheForTests();
         process.env = { ...originalEnv };
+        vi.restoreAllMocks();
     });
 
     function buildRequest(headers: HeadersInit = {}) {
@@ -176,6 +178,36 @@ describe("Health API", () => {
         } finally {
             vi.useRealTimers();
         }
+    });
+
+    it("logs only fixed failure metadata once for a cached failed probe", async () => {
+        mockLimit.mockResolvedValueOnce({ error: { message: "private-provider-detail", token: "private-token" } });
+        expect((await GET(buildAuthorizedRequest())).status).toBe(503);
+        expect((await GET(buildAuthorizedRequest())).status).toBe(503);
+        expect(console.warn).toHaveBeenCalledTimes(1);
+        const record = JSON.parse(vi.mocked(console.warn).mock.calls[0][0]);
+        expect(record).toEqual({
+            event: "health_database_probe_failed", reason: "query_failure",
+            duration_ms: expect.any(Number), timeout_ms: 2500,
+        });
+    });
+
+    it("classifies abort-resolved provider errors as timeouts", async () => {
+        vi.useFakeTimers();
+        const abortSignal = vi.fn((signal: AbortSignal) => new Promise<{ error: unknown }>(resolve => {
+            signal.addEventListener("abort", () => resolve({ error: { message: "provider abort detail" } }), { once: true });
+        }));
+        mockLimit.mockReturnValueOnce({ abortSignal });
+        try {
+            const pending = GET(buildAuthorizedRequest());
+            await vi.waitFor(() => expect(abortSignal).toHaveBeenCalled());
+            await vi.advanceTimersByTimeAsync(2500);
+            const response = await pending;
+            expect(response.status).toBe(503);
+            expect((await response.json()).issues).toContain("Database connectivity check timed out.");
+            expect(console.warn).toHaveBeenCalledTimes(1);
+            expect(JSON.parse(vi.mocked(console.warn).mock.calls[0][0]).reason).toBe("timeout");
+        } finally { vi.useRealTimers(); }
     });
 
     it("returns degraded when production readiness is incomplete", async () => {
