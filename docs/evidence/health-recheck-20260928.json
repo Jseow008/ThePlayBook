@@ -1,0 +1,68 @@
+[
+  {
+    "at": "2026-09-28T13:19:43.945Z",
+    "status": 200,
+    "durationMs": 742.1230420000002,
+    "body": {
+      "status": "ok",
+      "timestamp": "2026-09-28T13:19:43.549Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    }
+  },
+  {
+    "at": "2026-09-28T13:19:55.471Z",
+    "status": 200,
+    "durationMs": 529.2533749999984,
+    "body": {
+      "status": "ok",
+      "timestamp": "2026-09-28T13:19:55.286Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    }
+  },
+  {
+    "at": "2026-09-28T13:20:07.478Z",
+    "status": 200,
+    "durationMs": 1013.1099580000009,
+    "body": {
+      "status": "ok",
+      "timestamp": "2026-09-28T13:20:06.855Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    }
+  }
+]

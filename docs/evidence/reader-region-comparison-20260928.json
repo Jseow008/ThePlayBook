@@ -1,0 +1,107 @@
+{
+  "at": "2026-09-28T13:22:16.282Z",
+  "mode": "anonymous-reader-regional-comparison",
+  "samples": [
+    {
+      "target": "production",
+      "status": 200,
+      "headersMs": 502.35450000000037,
+      "durationMs": 908.6582910000006,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "cache": "MISS",
+      "titlePresent": true
+    },
+    {
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1884.2347499999996,
+      "durationMs": 2782.6475420000006,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "cache": "MISS",
+      "titlePresent": true
+    },
+    {
+      "target": "production",
+      "status": 200,
+      "headersMs": 357.20679200000086,
+      "durationMs": 615.5319580000014,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "cache": "MISS",
+      "titlePresent": true
+    },
+    {
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 407.14241700000093,
+      "durationMs": 478.0573750000003,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "cache": "MISS",
+      "titlePresent": true
+    }
+  ],
+  "health": [
+    {
+      "target": "production",
+      "status": 200,
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "target": "candidate",
+      "status": 200,
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "target": "production",
+      "status": 200,
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "target": "candidate",
+      "status": 200,
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "limitations": [
+    "Two anonymous reads per deployment; does not verify authenticated middleware or establish capacity.",
+    "Requests alternate production/candidate; first observations retained without cache busting or warmup.",
+    "Body transfer/render time does not isolate database time."
+  ],
+  "candidate": {
+    "id": "dpl_Aqp3rG63Lrv7FuoYGN75gusWSG2E",
+    "sha": "5b7f1b12482890871de9ab40c86cbe41ba75b8c6",
+    "functions": {
+      "app/api/account-data/user_library/route.ts": {
+        "regions": [
+          "bom1"
+        ]
+      },
+      "app/api/account-data/user_library/mutation/route.ts": {
+        "regions": [
+          "bom1"
+        ]
+      },
+      "app/**/read/**/page.tsx": {
+        "regions": [
+          "bom1"
+        ]
+      }
+    }
+  },
+  "productionId": "dpl_BZMzdMGUp7RwWtg1gomd7RVw7u3D"
+}

@@ -1600,3 +1600,31 @@ Next: let #187's exact-head gates finish and merge through normal workflow, veri
 public-route placement after normal deployment promotion, then resume bounded #28
 preflight with unchanged thresholds. Preserve startup observations; do not rerun
 until green. No new subagents or model experiments were needed.
+
+### #28 health diagnostics and reader placement experiment — 28 September 2026
+
+Branch `codex/reader-region-health-diagnostics`, same library-latency-timing worktree,
+based on freshly fetched `bc33d7ab`. No load escalation. Three detailed-health probes
+11 seconds apart passed; the previous 503 cause cannot be recovered because its
+response body was not retained and the server emitted no reason.
+
+Implemented fixed-category database-probe failure logging with elapsed time, once per
+actual probe (not cached response), without provider error text, URLs, credentials,
+SQL or row values. Corrected a diagnostic race: an abort-resolved provider error must
+be classified as timeout. Timeout, abort, caching, authorization and 503 remain intact.
+Twelve health tests, typecheck and focused lint passed. No migration.
+
+Staged production-target build `dpl_Aqp3rG63Lrv7FuoYGN75gusWSG2E` at `5b7f1b12`
+confirmed a reader-only Mumbai override works. Two alternating anonymous reads each:
+production 909/616ms; candidate 2,783/478ms. All content/title checks and detailed
+health probes passed. No account writes, public alias change or paid project.
+See `docs/evidence/reader-region-comparison-20260928.json`. An initial metadata check
+stopped before traffic while the build was BUILDING; sampling began only once READY.
+
+The region override was removed from the final diff: this small comparison does not
+establish a first-load improvement. Only the health diagnostics correction is proposed
+for release. Staged-build evidence covers that unchanged health code; reader timing
+results describe the rejected configuration, not the final PR's performance.
+Next: after diagnostic release, capture the reason for any recurrence; investigate
+platform request startup/transport attribution for first saves and reader rendering
+before another regional or caching change. Keep #28 open and load escalation paused.
