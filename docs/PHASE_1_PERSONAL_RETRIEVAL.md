@@ -1528,3 +1528,28 @@ Local verification for this checkpoint: 31 runner/report tests passed, TypeScrip
 and focused lint passed, and diff whitespace validation passed. The production
 adapter and overlay are not claimed runtime-proven; only the retained small
 production preflight ran. No additional agents were spawned for review.
+
+#### #184 CI correction and read-only latency diagnosis
+
+At head `2f59b6db`, `validate` failed because Vitest attempted to bundle `node:test`
+from the two capacity harness suites. Security Validation, Catalog Search Evidence,
+PR scope and Vercel passed. The correction excludes exactly those two files from
+Vitest and executes both through Node in `npm test`; no tests or gates are removed.
+The complete corrected command passes locally: 1,589 Vitest tests passed, 277
+existing tests skipped, then all 31 capacity harness tests passed. Focused lint and
+diff validation pass. This correction stays on PR #184 and requires fresh CI.
+
+Read-only production metadata confirms functions in `iad1` (Virginia), database in
+`ap-south-1` (Mumbai), and unchanged deployment. The ordinary idempotent save path
+contains approximately 12 sequential SQL round trips, plus authentication,
+admission and possible connection setup. Cumulative worker SQL statistics show
+library-upsert mean 12.357ms / max 99.979ms and library-read mean 17.117ms / max
+51.814ms. These are not per-request traces or cold-start measurements.
+[Diagnostic evidence](evidence/capacity-latency-diagnosis-20260928.json) supports
+investigating cross-region round trips before database scaling or an Upstash upgrade;
+it does not prove an exact latency breakdown. No new accounts, provider calls,
+production writes or capacity reruns occurred during this diagnosis.
+
+Next: once the CI correction is clear, obtain route phase timings and compare a
+small same-region candidate against the current route before changing production
+placement or batching SQL. Preserve transaction/RLS/reset/idempotency guarantees.
