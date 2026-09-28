@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "applicationCommit": "7ebab7769d59b3bef2e62fcc5121a3bc44ca6475",
+  "status": "draft-awaiting-environment-preflight",
+  "seed": 2801,
+  "pacingMs": 10000,
+  "maxElapsedMs": 1200000,
+  "maxProviderReservationMicrousd": 1000000,
+  "phases": [
+    { "name": "warmup", "users": 5, "durationMs": 120000, "measured": false },
+    { "name": "steady", "users": 25, "durationMs": 600000, "measured": true },
+    { "name": "burst", "users": 50, "durationMs": 120000, "measured": true },
+    { "name": "recovery", "users": 5, "durationMs": 120000, "measured": true }
+  ],
+  "targets": {
+    "catalog_search": { "p95Ms": 2000, "minimumSamples": 100 },
+    "reflection_read": { "p95Ms": 2000, "minimumSamples": 100 },
+    "browse_reader": { "p95Ms": 3000, "minimumSamples": 100 },
+    "library_mutation": { "p95Ms": 2000, "minimumSamples": 100 },
+    "reflection_write": { "p95Ms": 2000, "minimumSamples": 30 },
+    "export": { "maxMs": 60000, "minimumSamples": 6 },
+    "ai_retrieval": { "maxMs": 30000, "minimumSamples": 1 }
+  },
+  "maximumUnexpectedFailureFraction": 0.01,
+  "minimumStartedFraction": 0.99,
+  "abortFailureWindow": 100,
+  "abortUnexpectedFailureFraction": 0.05
+}

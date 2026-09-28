@@ -1361,3 +1361,195 @@ Closeout branch: `codex/close-accessibility-finding`, based on `8c1ad354`, in th
 managed worktree. This documentation-only closeout preserves the unexecuted checklist
 and the reason for closure. Next workstream: #28 bounded capacity verification;
 #29–#32 and other explicitly deferred findings remain separate.
+
+### #28 capacity verification — preparation, 28 September 2026
+
+#183 merged as `7ebab776`; root main was pulled clean. Worktree:
+`/Users/j/.codex/worktrees/capacity-verification/Lifebook`, branch
+`codex/capacity-verification`, based on that commit. One owner, no subagents.
+The [bounded capacity runbook](evidence/capacity-verification-runbook.md) proposes
+25 active users/50 burst, explicit outcome/latency/cost limits, and isolation rules.
+No capacity test, provider call, production change or hosted project creation has
+occurred. The scenario is not yet frozen in an executable runner.
+
+Pending: optional owner workload selection and required fresh confirmation of the
+temporary Supabase project's quoted $10/month cost. Do not interpret elapsed time
+as cost approval. Production ref is excluded from candidate execution. Existing
+per-network admission means one generator cannot prove independent-network user
+capacity; keep admission and successful-work measurements distinct.
+
+Two connected Vercel project-read attempts failed on contradictory argument schemas
+(`projectId` versus `idOrName`); do not repeat that approach. Use authenticated CLI
+or REST metadata access instead; the global CLI was not found on PATH. Next action:
+resolve candidate cost approval, inspect hosted runtime/compute parity, implement
+the bounded runner and run its small preflight before the frozen full scenario.
+No results are claimed and #28 remains open.
+
+#### #28 continuation — access/preflight
+
+Owner approved proceeding with the quoted $10/month temporary Supabase project
+and the 25-user/50-burst envelope. Cost confirmation was obtained; do not ask for
+the same approval again. Creation is intentionally postponed until all hosted
+dependencies are available. No paid candidate or production change exists.
+
+Vercel CLI 54.17.2 refreshed its existing credential successfully. Direct REST
+project inspection now works: production is Next.js, Node 24.x, Fluid enabled,
+default function region `iad1`, basic build machine. The connector still has the
+argument-schema failure; use the authenticated CLI/REST path, not repeated retries.
+
+Upstash is signed out in the dedicated Opera tab at
+`https://console.upstash.com/auth/sign-in`. An asynchronous user handoff requests
+sign-in so an isolated rate-limit database can be provisioned. Do not use production
+Redis buckets or disable the limiter to get the test running. No Upstash resource
+was created. This is the immediate external blocker.
+
+Added draft scenario JSON plus a pure evidence summarizer and six passing Node
+regression tests (missing samples, quota restrictions, corruption, latency, dropped
+load, aborts and per-operation failure rates). These are harness checks, not capacity
+evidence. Workload execution, fixture seeding and hosted provisioning remain undone.
+Current implementation branch is unchanged; initial plan commit `3aef0788`.
+Next: after Upstash sign-in, create isolated dependencies, record compute/region
+parity, finish the HTTP runner, freeze the scenario, then run the small preflight.
+
+#### #28 hosted preparation — original account verified
+
+Verified the current Upstash account owns `flux-prod-rate-limit`; its endpoint
+matches the production Vercel Redis URL. No ownership transfer occurred. The account
+allows one free database, so its existing production resource was left unchanged.
+A separate free 72-hour Upstash scratch database was created (ID
+`1b7751c8-752e-49ad-9731-b873cd815982`, expires 1 October); hosting parity is not
+established. No paid Upstash plan or payment method was added.
+
+Approved disposable Supabase: `rqtopztmopbxfmocpzzz`, same Mumbai region as production,
+Micro compute, PostgreSQL `17.6.1.166` versus production `17.6.1.063`. Production
+compute could not yet be conclusively established from selected-addons metadata.
+All migrations replayed. Dedicated restricted-role credentials were provisioned.
+Test-only certificate packaging supplies Supabase's published CA; direct setup and
+application worker connections verify TLS. No production database changes occurred.
+
+Dedicated Vercel project: `prj_SneBAuNkQ3xU3LmMOlPYOrpW0bb7`,
+`netflux-capacity28-disposable`, Node 24.x / iad1. Current deployment:
+`dpl_6WeDeibpHv8owoYpXPZHgM9dGJLg`. Clean baseline application source `7ebab776`
+plus the test-only CA tracing inclusion. Scoped preview access remains protected.
+Health, synthetic catalog match and canonical reader HTTP checks pass.
+
+Private setup state lives under `/private/tmp/netflux-capacity28` (credentials must
+never be committed or printed). This directory includes cleanup identities, replay
+logs, private candidate configuration, corpus setup and fixture session setup. Both
+hosted projects and the scratch Redis still require cleanup after verification.
+Synthetic corpus: 10,000 items, 100,000 segments, 50 ordinary users, 100 library rows
+per ordinary account and 1,201 for the oversized export account, 10 reflections each.
+Session creation is paced after encountering Auth's existing request limit; this
+is fixture setup, not load-test evidence. A wrong setup column name was corrected
+against the migration (`current_revision`, `user_id`).
+
+One fresh-context agent implemented the core runner and focused regression tests;
+it also caught that upsert acknowledgements can advance by more than one revision,
+and separated route timing from validation/read-back duration. 24 harness tests
+pass. Coordinator adds real export/AI overlays. Full typecheck is running; real
+personal indexing and paced session creation are in progress. No measured load
+run has started, no performance pass is claimed, and no PR has been opened.
+
+Exact next action: inspect `auth-setup.log`, `index-preflight.json`, and typecheck;
+finish private runner config with authored pagination fixture; execute core and
+overlay preflight once; only if they pass, freeze inputs and run full traffic.
+Preserve all failures, then delete candidate services and private credentials.
+
+#### #28 preflight stop — isolated Redis unavailable
+
+The hosted core preflight stopped at its first library mutation: HTTP 503, shared
+rate limiter timed out. Health, catalog match and canonical reader checks passed.
+The temporary Upstash service's metrics reported zero commands and zero keys; a
+direct authenticated PING also timed out at five seconds. A separate SDK probe
+returned its timeout fallback, which is not service-success evidence. No admission
+rule or deadline was relaxed. This is a candidate-dependency failure, not a
+production capacity result. No full load test or export/AI overlay ran. Real personal
+index setup completed 20/20 records; interactive generation was not called.
+
+[Sanitized preflight evidence](evidence/capacity-preflight-20260928.json) preserves
+the failed attempt. 24 harness checks, full typecheck and focused lint passed.
+One agent implemented the core runner; coordinator prepared fixtures, hosting and
+export/AI overlays. The overlay remains runtime-unverified. Fixture setup fixes
+were local schema names and paced Auth admission; no product code changed.
+
+Asked whether the owner approves a normal temporary Upstash pay-as-you-go database
+with a $1 ceiling at the displayed $0.20/100,000 commands. Adding a payment method
+is a user handoff. That answer is pending. Both the paid Supabase candidate and
+dedicated Vercel project were deleted rather than left idle; scratch Redis is empty
+and expires automatically on 1 October. Production resources are unchanged.
+
+Next action: resolve the Redis option, prove its ordinary SDK rate-limit call works
+before recreating hosted dependencies, then rebuild isolated fixtures and repeat
+only the failed preflight/remaining stages. Preserve the failed evidence. Supabase
+requires fresh cost confirmation for a newly created project. The previously
+approved candidate is now deleted. #28 remains open; no PR or merge yet.
+
+Fresh project listings confirmed both candidate deletions. Private credentials,
+fixture sessions and temporary deployment files were removed after retaining the
+sanitized evidence. Working branch: `codex/capacity-verification`; no published PR.
+
+#### #28 authorized production preflight — stopped, cleaned up
+
+The owner superseded the pending isolated-Redis decision by explicitly authorizing
+controlled production testing. No billing upgrade, deployment or migration was made.
+Pinned production remains `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`, deployment
+`dpl_45LfcahgoMcf3cgvP1zkpAVUsg4S`. Worktree remains
+`/Users/j/.codex/worktrees/capacity-verification/Lifebook`, branch
+`codex/capacity-verification` (prior checkpoint commit `f572032e`).
+
+One bounded fresh-context agent implemented the guarded production runner while the
+coordinator prepared fixtures and monitoring. Harness checks, not hosted load, cover
+the 2→5→10→25→50→5 sequence. Production development preflight stopped after one
+save/read-back: save 4,715ms and read 2,255ms exceeded the frozen 2,000ms escalation
+limit. All four measured HTTP responses were 200. An additional harness assertion
+failed because PostgreSQL returned a bigint string and the acknowledgement used a
+number. Corrected exact-integer comparison passes captured real read-back offline;
+this was not evidence of lost or corrupt production data.
+
+No full load stages, exports or AI overlay ran. No capacity pass is claimed and #28
+remains open. [Sanitized evidence](evidence/capacity-production-preflight-20260928.json)
+retains the failure, its classification and cleanup. Production detailed health
+passed before/after; deployment was unchanged. All 15 created synthetic accounts,
+library/reflection/index/boundary/receipt records checked were deleted, leaving the
+original eight accounts and 496 published items. Private fixture credentials are
+removed after retaining evidence. Existing quotas and configuration were unchanged.
+
+Efficiency correction: account setup was started ahead of semantic preflight and
+stopped at 15 accounts. The tracked runner now supports an explicit two-account-only
+preflight; do not create the remaining 48 accounts before it passes. No new provider
+experiment or test aimed at obtaining a favorable load result was performed.
+
+Exact next action: diagnose save/read latency with a small two-account sample and
+server-side phase evidence, separating cold starts/network/database execution.
+Preserve this failed sample. Do not assume Upstash needs payment, weaken the latency
+limit, or rerun full load until a credible explanation/correction is established.
+
+Local verification for this checkpoint: 31 runner/report tests passed, TypeScript
+and focused lint passed, and diff whitespace validation passed. The production
+adapter and overlay are not claimed runtime-proven; only the retained small
+production preflight ran. No additional agents were spawned for review.
+
+#### #184 CI correction and read-only latency diagnosis
+
+At head `2f59b6db`, `validate` failed because Vitest attempted to bundle `node:test`
+from the two capacity harness suites. Security Validation, Catalog Search Evidence,
+PR scope and Vercel passed. The correction excludes exactly those two files from
+Vitest and executes both through Node in `npm test`; no tests or gates are removed.
+The complete corrected command passes locally: 1,589 Vitest tests passed, 277
+existing tests skipped, then all 31 capacity harness tests passed. Focused lint and
+diff validation pass. This correction stays on PR #184 and requires fresh CI.
+
+Read-only production metadata confirms functions in `iad1` (Virginia), database in
+`ap-south-1` (Mumbai), and unchanged deployment. The ordinary idempotent save path
+contains approximately 12 sequential SQL round trips, plus authentication,
+admission and possible connection setup. Cumulative worker SQL statistics show
+library-upsert mean 12.357ms / max 99.979ms and library-read mean 17.117ms / max
+51.814ms. These are not per-request traces or cold-start measurements.
+[Diagnostic evidence](evidence/capacity-latency-diagnosis-20260928.json) supports
+investigating cross-region round trips before database scaling or an Upstash upgrade;
+it does not prove an exact latency breakdown. No new accounts, provider calls,
+production writes or capacity reruns occurred during this diagnosis.
+
+Next: once the CI correction is clear, obtain route phase timings and compare a
+small same-region candidate against the current route before changing production
+placement or batching SQL. Preserve transaction/RLS/reset/idempotency guarantees.

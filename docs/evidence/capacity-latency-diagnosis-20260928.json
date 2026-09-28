@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "environment": {
+    "at": "2026-09-28T07:15:19.152Z",
+    "databaseRegion": "ap-south-1",
+    "functionsRegion": "iad1",
+    "deployment": "dpl_45LfcahgoMcf3cgvP1zkpAVUsg4S",
+    "statsSchema": "extensions"
+  },
+  "databaseStatistics": {
+    "at": "2026-09-28T07:15:19.985Z",
+    "scope": "Cumulative normalized worker SQL statistics; not trace attribution to the preflight.",
+    "rows": [
+      {
+        "operation": "library_boundary",
+        "calls": 209,
+        "weighted_mean_ms": "0.405",
+        "max_ms": "6.823"
+      },
+      {
+        "operation": "library_reads",
+        "calls": 85,
+        "weighted_mean_ms": "17.117",
+        "max_ms": "51.814"
+      },
+      {
+        "operation": "library_upsert",
+        "calls": 40,
+        "weighted_mean_ms": "12.357",
+        "max_ms": "99.979"
+      },
+      {
+        "operation": "receipt_insert",
+        "calls": 21,
+        "weighted_mean_ms": "0.675",
+        "max_ms": "3.458"
+      },
+      {
+        "operation": "receipt_reads",
+        "calls": 46,
+        "weighted_mean_ms": "0.077",
+        "max_ms": "1.143"
+      }
+    ]
+  },
+  "interpretation": "Virginia functions / Mumbai database plus sequential worker queries is a latency hypothesis. Cumulative query timings do not attribute the original preflight request or measure connection/auth/rate-limit/network time. No production change or load rerun."
+}

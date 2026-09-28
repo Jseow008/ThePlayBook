@@ -1,0 +1,227 @@
+{
+  "version": 1,
+  "mode": "sample",
+  "coreActionContract": {
+    "catalog_search": "60%: exact ordered fixture pages, including configured category/type filters and cursor pages",
+    "browse_reader": "20%: reader HTTP document with expected fixture text",
+    "library_mutation": "15%: rotate save, progress update, remove; each acknowledged revision followed by complete library read-back",
+    "reflection": "5%: complete reflection read on every action; alternate actions additionally upsert one fixture and read back"
+  },
+  "latencyBasis": "durationMs measures individual catalog page / mutation acknowledgement HTTP response; actionDurationMs includes all validation reads and governs scheduling",
+  "phaseOperations": {},
+  "generatedAt": "2026-09-28T06:26:29.274Z",
+  "scenario": {
+    "version": 1,
+    "applicationCommit": "7ebab7769d59b3bef2e62fcc5121a3bc44ca6475",
+    "status": "draft-awaiting-environment-preflight",
+    "seed": 2801,
+    "pacingMs": 10000,
+    "maxElapsedMs": 1200000,
+    "maxProviderReservationMicrousd": 1000000,
+    "phases": [
+      {
+        "name": "warmup",
+        "users": 5,
+        "durationMs": 120000,
+        "measured": false
+      },
+      {
+        "name": "steady",
+        "users": 25,
+        "durationMs": 600000,
+        "measured": true
+      },
+      {
+        "name": "burst",
+        "users": 50,
+        "durationMs": 120000,
+        "measured": true
+      },
+      {
+        "name": "recovery",
+        "users": 5,
+        "durationMs": 120000,
+        "measured": true
+      }
+    ],
+    "targets": {
+      "catalog_search": {
+        "p95Ms": 2000,
+        "minimumSamples": 100
+      },
+      "reflection_read": {
+        "p95Ms": 2000,
+        "minimumSamples": 100
+      },
+      "browse_reader": {
+        "p95Ms": 3000,
+        "minimumSamples": 100
+      },
+      "library_mutation": {
+        "p95Ms": 2000,
+        "minimumSamples": 100
+      },
+      "reflection_write": {
+        "p95Ms": 2000,
+        "minimumSamples": 30
+      },
+      "export": {
+        "maxMs": 60000,
+        "minimumSamples": 6
+      },
+      "ai_retrieval": {
+        "maxMs": 30000,
+        "minimumSamples": 1
+      }
+    },
+    "maximumUnexpectedFailureFraction": 0.01,
+    "minimumStartedFraction": 0.99,
+    "abortFailureWindow": 100,
+    "abortUnexpectedFailureFraction": 0.05
+  },
+  "configurationSha256": "1d09e8960e0dd0f542b3d267bcd368b6a56a52e739855d13210c6e8949a325bd",
+  "isolationEvidenceSha256": "dfb5f7350c8a5d5701e2507c292ad2937afdcebcded09377b78ee3e9e362097e",
+  "limitations": [
+    "Single real generator ingress; no spoofed forwarding headers.",
+    "Reader HTTP document only; no browser rendering or recommendation API.",
+    "Export and real AI overlays are not implemented; this runner cannot establish full-envelope pass.",
+    "Deployment/database/admission identity relies on externally verified hash-bound isolation evidence."
+  ],
+  "planned": 2220,
+  "started": 0,
+  "samples": [],
+  "dropped": [],
+  "elapsedMs": 0,
+  "maxInFlight": 0,
+  "requests": [
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1113.328125,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/capacity-lantern-1",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1990.8710829999998,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 503,
+      "durationMs": 5621.477917,
+      "outcome": "failure",
+      "timeout": false
+    }
+  ],
+  "maxRequestsInFlight": 1,
+  "summary": {
+    "planned": 2220,
+    "started": 0,
+    "startedFraction": 0,
+    "aborted": true,
+    "operations": {
+      "catalog_search": {
+        "total": 0,
+        "successful": 0,
+        "failures": 0,
+        "integrityFailures": 0,
+        "restricted": 0,
+        "p95Ms": null,
+        "maxMs": null,
+        "verdict": "insufficient_evidence"
+      },
+      "reflection_read": {
+        "total": 0,
+        "successful": 0,
+        "failures": 0,
+        "integrityFailures": 0,
+        "restricted": 0,
+        "p95Ms": null,
+        "maxMs": null,
+        "verdict": "insufficient_evidence"
+      },
+      "browse_reader": {
+        "total": 0,
+        "successful": 0,
+        "failures": 0,
+        "integrityFailures": 0,
+        "restricted": 0,
+        "p95Ms": null,
+        "maxMs": null,
+        "verdict": "insufficient_evidence"
+      },
+      "library_mutation": {
+        "total": 0,
+        "successful": 0,
+        "failures": 0,
+        "integrityFailures": 0,
+        "restricted": 0,
+        "p95Ms": null,
+        "maxMs": null,
+        "verdict": "insufficient_evidence"
+      },
+      "reflection_write": {
+        "total": 0,
+        "successful": 0,
+        "failures": 0,
+        "integrityFailures": 0,
+        "restricted": 0,
+        "p95Ms": null,
+        "maxMs": null,
+        "verdict": "insufficient_evidence"
+      },
+      "export": {
+        "total": 0,
+        "successful": 0,
+        "failures": 0,
+        "integrityFailures": 0,
+        "restricted": 0,
+        "p95Ms": null,
+        "maxMs": null,
+        "verdict": "insufficient_evidence"
+      },
+      "ai_retrieval": {
+        "total": 0,
+        "successful": 0,
+        "failures": 0,
+        "integrityFailures": 0,
+        "restricted": 0,
+        "p95Ms": null,
+        "maxMs": null,
+        "verdict": "insufficient_evidence"
+      }
+    },
+    "verdict": "failed"
+  },
+  "samplePassed": false,
+  "abortReason": "preflight_http_503",
+  "environmentConclusion": "Isolated scratch Redis unreachable; no production capacity conclusion",
+  "scratchRedisMetrics": {
+    "commands_total": 0,
+    "keys": 0
+  },
+  "directRedisProbe": {
+    "outcome": "timeout",
+    "deadlineMs": 5000
+  },
+  "functionalPreflight": {
+    "health": 200,
+    "catalog": 200,
+    "reader": 200,
+    "personalIndex": {
+      "claimed": 20,
+      "completed": 20,
+      "failed": 0
+    }
+  },
+  "cleanup": {
+    "supabaseProject": "rqtopztmopbxfmocpzzz",
+    "vercelProject": "prj_SneBAuNkQ3xU3LmMOlPYOrpW0bb7",
+    "deletedAt": "2026-09-28T06:30:02.679Z",
+    "scratchRedis": "Expires automatically; no successful commands or stored keys"
+  }
+}
