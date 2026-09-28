@@ -1384,3 +1384,29 @@ or REST metadata access instead; the global CLI was not found on PATH. Next acti
 resolve candidate cost approval, inspect hosted runtime/compute parity, implement
 the bounded runner and run its small preflight before the frozen full scenario.
 No results are claimed and #28 remains open.
+
+#### #28 continuation — access/preflight
+
+Owner approved proceeding with the quoted $10/month temporary Supabase project
+and the 25-user/50-burst envelope. Cost confirmation was obtained; do not ask for
+the same approval again. Creation is intentionally postponed until all hosted
+dependencies are available. No paid candidate or production change exists.
+
+Vercel CLI 54.17.2 refreshed its existing credential successfully. Direct REST
+project inspection now works: production is Next.js, Node 24.x, Fluid enabled,
+default function region `iad1`, basic build machine. The connector still has the
+argument-schema failure; use the authenticated CLI/REST path, not repeated retries.
+
+Upstash is signed out in the dedicated Opera tab at
+`https://console.upstash.com/auth/sign-in`. An asynchronous user handoff requests
+sign-in so an isolated rate-limit database can be provisioned. Do not use production
+Redis buckets or disable the limiter to get the test running. No Upstash resource
+was created. This is the immediate external blocker.
+
+Added draft scenario JSON plus a pure evidence summarizer and six passing Node
+regression tests (missing samples, quota restrictions, corruption, latency, dropped
+load, aborts and per-operation failure rates). These are harness checks, not capacity
+evidence. Workload execution, fixture seeding and hosted provisioning remain undone.
+Current implementation branch is unchanged; initial plan commit `3aef0788`.
+Next: after Upstash sign-in, create isolated dependencies, record compute/region
+parity, finish the HTTP runner, freeze the scenario, then run the small preflight.

@@ -1,6 +1,9 @@
 # #28 bounded capacity verification
 
 Status: preparation only; no capacity result or launch clearance yet.
+Draft executable configuration: `scripts/verification/capacity/scenario.json`.
+The pure report module has six passing regression checks; an HTTP workload runner
+and hosted execution are still outstanding.
 Application baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.
@@ -20,7 +23,7 @@ and thresholds before the measured run. Do not revise targets after seeing resul
 ## Isolation and prerequisites
 
 - Dedicated hosted Supabase candidate in the existing organization, region matching
-  production; synthetic accounts/content only. Fresh quoted-cost approval is pending.
+  production; synthetic accounts/content only. The owner approved the quoted $10/month cost on 28 September 2026; no project has yet been created.
 - A dedicated hosted application deployment must point exclusively to candidate
   database, Auth, storage and restricted worker/maintenance connections. Never
   replace production environment variables or point a load runner at its aliases.
