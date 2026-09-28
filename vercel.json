@@ -6,6 +6,12 @@
     },
     "app/api/account-data/user_library/mutation/route.ts": {
       "regions": ["bom1"]
+    },
+    "app/api/library/reflections/route.ts": {
+      "regions": ["bom1"]
+    },
+    "app/api/health/route.ts": {
+      "regions": ["bom1"]
     }
   }
 }
