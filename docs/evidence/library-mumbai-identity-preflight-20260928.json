@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "runId": "capacity-region-1790584968191-95cff085",
+  "target": "protected-staged-production-candidate",
+  "commit": "14ac11594b788e04da98d2d9a6cc14546a8d4e27",
+  "deployment": "dpl_3Btd7UfJH6xyFXAatjhHnh8nq6SP",
+  "startedAt": "2026-09-28T08:42:48.192Z",
+  "samples": [],
+  "cleanup": null,
+  "limitations": [
+    "Six sequential writes and reads, not a capacity percentile or load test.",
+    "Historical Virginia comparison is not a simultaneous randomized experiment.",
+    "Library phase includes pool acquisition and network/database round trips."
+  ],
+  "completed": false,
+  "failure": "Deployment changed or candidate is not ready",
+  "finishedAt": "2026-09-28T08:42:49.364Z"
+}

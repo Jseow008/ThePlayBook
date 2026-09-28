@@ -1,0 +1,294 @@
+{
+  "version": 1,
+  "runId": "capacity-region-1790585021088-d604f8c2",
+  "target": "protected-staged-production-candidate",
+  "commit": "14ac11594b788e04da98d2d9a6cc14546a8d4e27",
+  "deployment": "dpl_3Btd7UfJH6xyFXAatjhHnh8nq6SP",
+  "startedAt": "2026-09-28T08:43:41.088Z",
+  "samples": [
+    {
+      "accountOrdinal": 1,
+      "operation": "write",
+      "clientMs": 2470.723417,
+      "timing": {
+        "auth": 745.9,
+        "admission": 457,
+        "library": 124.7,
+        "handler": 1329.9
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ],
+      "mutationKind": "save"
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "read",
+      "clientMs": 531.1836660000008,
+      "timing": {
+        "auth": 55.7,
+        "library": 23,
+        "handler": 79.6
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ]
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "write",
+      "clientMs": 825.711292,
+      "timing": {
+        "auth": 53.5,
+        "admission": 149.3,
+        "library": 22.8,
+        "handler": 226.2
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ],
+      "mutationKind": "progress"
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "read",
+      "clientMs": 523.5027919999993,
+      "timing": {
+        "auth": 60.4,
+        "library": 11.2,
+        "handler": 71.8
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ]
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "write",
+      "clientMs": 411.5469159999993,
+      "timing": {
+        "auth": 69.7,
+        "admission": 149.2,
+        "library": 23.4,
+        "handler": 242.7
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ],
+      "mutationKind": "remove"
+    },
+    {
+      "accountOrdinal": 1,
+      "operation": "read",
+      "clientMs": 211.8732080000009,
+      "timing": {
+        "auth": 33.8,
+        "library": 12.7,
+        "handler": 46.6
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ]
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "write",
+      "clientMs": 1163.4180419999975,
+      "timing": {
+        "auth": 479.4,
+        "admission": 431.9,
+        "library": 27.9,
+        "handler": 941.1
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ],
+      "mutationKind": "save"
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "read",
+      "clientMs": 228.25845800000025,
+      "timing": {
+        "auth": 49,
+        "library": 12.3,
+        "handler": 61.5
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ]
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "write",
+      "clientMs": 327.6657919999998,
+      "timing": {
+        "auth": 51.8,
+        "admission": 145,
+        "library": 22.6,
+        "handler": 219.9
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ],
+      "mutationKind": "progress"
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "read",
+      "clientMs": 231.08150000000023,
+      "timing": {
+        "auth": 54.2,
+        "library": 13.3,
+        "handler": 67.7
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ]
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "write",
+      "clientMs": 473.1294999999991,
+      "timing": {
+        "auth": 28.2,
+        "admission": 145,
+        "library": 21.2,
+        "handler": 194.7
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ],
+      "mutationKind": "remove"
+    },
+    {
+      "accountOrdinal": 2,
+      "operation": "read",
+      "clientMs": 150.4708329999994,
+      "timing": {
+        "auth": 30.4,
+        "library": 11.3,
+        "handler": 41.8
+      },
+      "routingRegions": [
+        "sin1",
+        "bom1"
+      ]
+    }
+  ],
+  "cleanup": {
+    "removed": 2,
+    "remaining": [
+      {
+        "accounts": 0,
+        "library": 0,
+        "boundaries": 0,
+        "receipts": 0
+      }
+    ]
+  },
+  "limitations": [
+    "Six sequential writes and reads, not a capacity percentile or load test.",
+    "Historical Virginia comparison is not a simultaneous randomized experiment.",
+    "Library phase includes pool acquisition and network/database round trips."
+  ],
+  "placement": {
+    "ready": "READY",
+    "publicAliasUnchanged": true,
+    "functions": {
+      "app/api/account-data/user_library/route.ts": {
+        "regions": [
+          "bom1"
+        ]
+      },
+      "app/api/account-data/user_library/mutation/route.ts": {
+        "regions": [
+          "bom1"
+        ]
+      }
+    }
+  },
+  "before": [
+    {
+      "accounts": 8,
+      "catalog": 496
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "timestamp": "2026-09-28T08:43:45.704Z",
+    "environment": "production",
+    "database": "reachable",
+    "readiness": {
+      "supabase_public": "ready",
+      "supabase_admin": "ready",
+      "site_url": "ready",
+      "app_url": "derived",
+      "ai_generation": "ready",
+      "ai_retrieval": "ready",
+      "rate_limiting": "ready",
+      "error_reporting": "ready"
+    },
+    "issues": []
+  },
+  "healthAfter": {
+    "status": "ok",
+    "timestamp": "2026-09-28T08:44:06.527Z",
+    "environment": "production",
+    "database": "reachable",
+    "readiness": {
+      "supabase_public": "ready",
+      "supabase_admin": "ready",
+      "site_url": "ready",
+      "app_url": "derived",
+      "ai_generation": "ready",
+      "ai_retrieval": "ready",
+      "rate_limiting": "ready",
+      "error_reporting": "ready"
+    },
+    "issues": []
+  },
+  "placementAfter": {
+    "ready": "READY",
+    "publicAliasUnchanged": true,
+    "functions": {
+      "app/api/account-data/user_library/route.ts": {
+        "regions": [
+          "bom1"
+        ]
+      },
+      "app/api/account-data/user_library/mutation/route.ts": {
+        "regions": [
+          "bom1"
+        ]
+      }
+    }
+  },
+  "completed": true,
+  "after": [
+    {
+      "accounts": 8,
+      "catalog": 496
+    }
+  ],
+  "finishedAt": "2026-09-28T08:44:12.363Z",
+  "control": {
+    "route": "/api/health",
+    "status": 200,
+    "routingRegions": [
+      "sin1",
+      "iad1"
+    ]
+  }
+}
