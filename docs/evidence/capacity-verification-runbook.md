@@ -5,8 +5,8 @@ production run stopped on an export-harness defect. No full capacity or launch c
 Draft executable configuration: `scripts/verification/capacity/scenario.json`.
 The core HTTP runner and report module have 24 passing regression checks.
 Hosted preflight stopped on an unreachable isolated Redis dependency; see
-`capacity-preflight-20260928.json`. Export/AI overlays are implemented but not yet
-runtime-verified. No full capacity run has occurred.
+`capacity-preflight-20260928.json`. The corrected export adapter passed a two-account real smoke; real AI retrieval
+under load is still pending. The mixed run stopped before full-envelope completion.
 Application baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.

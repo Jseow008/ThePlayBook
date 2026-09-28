@@ -1925,3 +1925,14 @@ independent server faults or claim a passing capacity result.
 
 Next: freeze the current live deployment, use the corrected adapter, and rerun the
 bounded mixed workload once. #28 remains open. No production test process is running.
+
+
+The first corrected repeat stopped during fixture indexing, before core load: workflow
+36459122121 returned HTTP 503 after about 44 seconds and the worker set a 60-second
+cooldown. Its old curl --fail discarded the safe response counters; deadline versus
+provider failure is not established. All 56 accounts and checked derived rows were
+cleaned up, with normal health and original counts. The next setup indexes only the
+two AI fixtures before preparing the core pool. The workflow now retains the existing
+safe JSON response with --fail-with-body, without changing its failure status,
+endpoint, credential, timeout, or worker behavior. Do not label this a resolved
+production indexing defect or discard the stopped setup evidence.

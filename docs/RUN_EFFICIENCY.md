@@ -37,7 +37,7 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
 
 ## Release lessons — 26 September 2026
 
-- **Serial CI from strict branch freshness:** separately merging related release PRs made the next branch out of date. Choose the release packaging before starting final CI; combine already-reviewed changes when they share one verified candidate, compare the final application tree, and retain every required gate. Check improvement by counting full CI runs per release.
+- **Serial CI from strict branch freshness:** separately merging related release PRs made the next branch out of date. Choose the release packaging before starting final CI; combine already-reviewed changes when they share one verified candidate, compare the final application tree, and retain every required gate. Keep evidence-only merges until deployment-pinned testing finishes when those merges trigger a deployment; otherwise the experiment may need to wait for a new identity. Check improvement by counting full CI runs per release and waits introduced by our own publishing order.
 - **Hosted smoke setup:** local HTTP redirects and missing platform IP headers caused setup failures despite a successful hosted build. Preflight the fixture schema, rate limiter, auth origin, and forwarded-client headers before the smoke suite; use established fixtures. Count setup retries separately from product failures.
 
 ## Release comparison lesson — 27 September 2026
@@ -51,3 +51,11 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
 ## Capacity preparation lesson — 28 September 2026
 
 - **Fixtures before preflight:** production fixture creation continued to 15 accounts before the small check stopped on latency and a bigint-string harness mismatch. Run the two-account semantic preflight before preparing the full fixture pool; validate wire representations against real responses. Check improvement by accounts created before the first passing preflight and unnecessary setup/cleanup time, while preserving failed latency evidence.
+
+- **Overlay preflight before load:** the September 29 mixed run reached 25 users
+  before its Node export adapter failed on browser-origin, URL-input and redacted-field
+  assumptions. Verify one small real operation for every newly introduced overlay
+  before expanding the fixture pool or starting load; a core HTTP preflight does not
+  cover browser-client adapters. Check configuration presence through metadata when
+  sensitive values are intentionally unreadable. Measure improvement by fixture
+  accounts and load stages executed before the first complete overlay proof.
