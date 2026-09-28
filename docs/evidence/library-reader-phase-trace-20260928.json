@@ -1,0 +1,157 @@
+{
+  "runId": "capacity-trace-1790601317431",
+  "sha": "bc33d7ab256621042bd65317e0b45e0310f16741",
+  "deployment": "dpl_BZMzdMGUp7RwWtg1gomd7RVw7u3D",
+  "startedAt": "2026-09-28T13:15:17.431Z",
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "mode": "phase-diagnostic-not-capacity-retest",
+  "requests": [
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 2188.9738750000015,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 182.49712499999987,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1601.8534579999996,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1099.205417000001,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 205.52091700000165,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1244.929250000001,
+      "outcome": "success"
+    }
+  ],
+  "routing": [
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "headersMs": 2187.9093749999993,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=537.4, admission;dur=447.5, library;dur=92.3, handler;dur=1079.2",
+      "cache": "MISS"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "headersMs": 181.9298749999998,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=54.0, library;dur=19.3, handler;dur=74.1",
+      "cache": "MISS"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "headersMs": 658.4537090000013,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "serverTiming": null,
+      "cache": "MISS"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "headersMs": 1098.6787079999995,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=456.9, admission;dur=427.7, library;dur=21.1, handler;dur=906.8",
+      "cache": "MISS"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "headersMs": 201.33745799999815,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=33.4, library;dur=9.3, handler;dur=42.9",
+      "cache": "MISS"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "headersMs": 311.5465409999997,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "serverTiming": null,
+      "cache": "MISS"
+    }
+  ],
+  "error": "Expected values to be strictly equal:\n\n503 !== 200\n",
+  "cleanupVerification": {
+    "accounts": 8,
+    "catalog": 603,
+    "remaining_fixture_accounts": 0,
+    "orphan_library": 0,
+    "orphan_reflections": 0,
+    "orphan_boundaries": 0,
+    "orphan_receipts": 0,
+    "published": 496,
+    "healthStatus": 200,
+    "health": {
+      "status": "ok",
+      "timestamp": "2026-09-28T13:16:14.785Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    }
+  },
+  "limitations": [
+    "Diagnostic sample only, not a repeat capacity pass.",
+    "Handler residual includes platform, transport and serialization; cold-start attribution is not established.",
+    "Reader headers do not time its server data query; post-header time includes streamed rendering and transport.",
+    "Post-sample and initial post-cleanup detailed-health requests returned 503. Their bodies were not retained; a later detailed-health check passed. No further traffic followed the failed health guard."
+  ],
+  "closesIssue28": false
+}

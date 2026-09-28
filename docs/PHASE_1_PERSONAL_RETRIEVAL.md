@@ -1619,6 +1619,22 @@ Next: bounded phase tracing for save and reader before selecting another fix; pe
 measurements before cleanup. No schema/config/application changes in this follow-up,
 no new agents, no paid projects or Upstash upgrade.
 
+#### Follow-up phase diagnosis
+
+On the same `bc33d7ab` production build, six bounded diagnostic requests passed
+semantic checks. Slow save 2,189ms = 537ms auth + 448ms admission + 92ms library,
+with 1,110ms outside the measured handler. Reader remained in Virginia; approximately
+0.94s elapsed after headers on both reads. No speculative optimization was applied.
+Trace is in `docs/evidence/library-reader-phase-trace-20260928.json`.
+
+Post-sample detailed health returned 503, preventing further traffic. Cleanup
+completed and later health passed; all fixture accounts removed and original
+8-account/603-total-catalog counts preserved (496 published). Failure bodies were
+not retained, so its exact cause remains unknown. Next: diagnose health instability
+and platform save overhead, then a reader-only regional candidate; no load escalation
+or #28 closure. This evidence extends documentation-only PR #188 on the existing
+branch/worktree; no new agent, production configuration, migration or paid project.
+
 ### #28 health diagnostics and reader placement experiment — 28 September 2026
 
 Branch `codex/reader-region-health-diagnostics`, same library-latency-timing worktree,

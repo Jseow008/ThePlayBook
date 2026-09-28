@@ -156,3 +156,48 @@ Next: capture a bounded trace of the above-target save's auth, admission, librar
 and platform time, plus the reader route's server work. Preserve this failed sample;
 do not repeat the full preflight until a demonstrated bottleneck is corrected. The
 remaining delay cannot yet be called a cold start, an Upstash problem, or slow SQL.
+
+### Bounded phase attribution — 28 September 2026
+
+The subsequent diagnostic used two ordinary synthetic accounts, two saves with
+read-back, and two reader requests (six measured requests; no load ladder). Same
+public deployment `bc33d7ab`. Every operation succeeded and passed semantic checks.
+[Raw sanitized trace](library-reader-phase-trace-20260928.json) is retained before
+cleanup, so cleanup/health failures cannot erase the measurements.
+
+| Save phase | First save | Second save |
+| --- | ---: | ---: |
+| Client total | 2,189ms | 1,099ms |
+| Auth | 537ms | 457ms |
+| Admission | 448ms | 428ms |
+| Library | 92ms | 21ms |
+| Handler total | 1,079ms | 907ms |
+| Client minus handler (unattributed) | 1,110ms | 192ms |
+
+The library operation is no longer the dominant observed save cost. The residual
+is not a cold-start measurement: platform startup, transport and response work
+are outside the handler timer. Do not weaken getUser validation, admission, or
+mutation correctness to hit the target. No Upstash upgrade is justified by this
+trace alone.
+
+Readers executed in `iad1` with cache MISS: totals 1,602/1,245ms, headers at
+658/312ms, leaving about 943/933ms to finish the streamed response. Source inspection
+confirms public content is checked with the anonymous client and React request-local
+cache; optional series data follows the content lookup. These timings do not separate
+query time from rendering/transport. Moving this route near its database is a
+reasonable next controlled candidate; do not add stale-content caching or change
+withdrawal visibility without its separate correctness proof.
+
+The post-sample detailed-health guard returned 503, and the first final-health check
+also returned 503. Traffic stopped. Bodies were not retained, so the specific failed
+health component is unknown. A later read-only check returned 200, all readiness
+checks ready, and database reachable. Both synthetic sessions were revoked and
+accounts deleted; corrected verification found no remaining trace accounts or
+orphaned library/reflection/boundary/receipt rows. Counts were 8 accounts and 603
+total catalog rows before/after; 496 are published. No existing data was changed.
+
+Next decision: keep load escalation held. Investigate the health failure and obtain
+platform startup/request traces for the slow save; compare a reader-only Mumbai
+candidate when health is stable. Existing runtime request logs lacked duration/startup
+fields, so they do not establish the unexplained 1.11s. Do not keep repeating the
+capacity preflight to obtain a favorable sample.
