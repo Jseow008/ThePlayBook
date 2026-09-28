@@ -52,7 +52,7 @@ journey. Search/model evaluation was unchanged and not rerun.
 
 ## Deferred and separately open
 
-- Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7 and #27 stay explicit in the register; broader synthesis and full editorial revision history remain deferred.
+- Core retrieval implementations through #5 are shipped. Remaining acceptance boundaries for #7 stay explicit in the register; #27 is closed by owner acceptance of its documented VoiceOver verification gap; broader synthesis and full editorial revision history remain deferred.
 - AI safeguards #20–#24 are shipped within their recorded scope. Remaining operational proof, and later product experiments retain their acceptance obligations in the [32-finding register](PHASE_1_TRUSTWORTHY_RETRIEVAL_CONTRACT.md#5-finding-register).
 - The account-deletion/revision-trigger defect is repaired in production by `20260926150259_account_deletion_library_revision.sql` ([#161](https://github.com/Jseow008/ThePlayBook/pull/161)). Real hosted and production Auth deletion proofs pass; full durability acceptance remains separate. See [release evidence](../tests/fixtures/retrieval/evidence/account-deletion-release-20260926.json).
 
@@ -74,8 +74,18 @@ verified. The reusable runner fails on missing prerequisites or stages and verif
 fixture/server cleanup. This closes the recorded #26 fixture; it is not a new
 production deployment, email-delivery test or broad retrieval-quality benchmark.
 [Evidence and run history](PHASE_1_PERSONAL_RETRIEVAL.md#26-combined-journey--verified-27-september-2026).
-Next acceptance gap: #27's remaining screen-reader coverage; capacity, analytics
-and operational readiness retain separate open entries in the register.
+Next acceptance gap: #28 capacity verification; analytics and operational readiness
+retain separate open entries in the register.
+
+## Accessibility closeout (#27) — 28 September 2026
+
+[#182](https://github.com/Jseow008/ThePlayBook/pull/182) merged as `8c1ad354` after
+required checks passed. It fixes reflection labeling, Notes response announcements
+and export progress semantics. The owner explicitly accepted the unavailable actual
+VoiceOver verification and requested closure. **#27 is closed by that decision;
+spoken-output testing did not pass or complete.** The [evidence record](evidence/screen-reader-verification-20260928.md)
+retains the limitation and unexecuted checklist. This records the merge, not a new
+production deployment verification. Local main is updated.
 
 ## Updating this page
 

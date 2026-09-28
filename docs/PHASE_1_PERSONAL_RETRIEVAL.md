@@ -1349,9 +1349,15 @@ screen-reader process, speech caption or navigation result was observable throug
 the desktop tool. Direct launch timed out; one settings restart did not resolve it.
 VoiceOver is verified Off again, and the temporary Safari tab is closed. No success
 is claimed for spoken output. The [evidence and executable human checklist](evidence/screen-reader-verification-20260928.md)
-keep #27 open. [PR #182](https://github.com/Jseow008/ThePlayBook/pull/182), implementation
-`16d2a71a`, is published and held without auto-merge for the applicable #27
-release gate. Build and focused checks passed; GitHub checks are pending. Next:
-complete the actual spoken-output checklist on the corrected preview, then merge
-once that acceptance and required CI pass. Do not repeat the unchanged
-retrieval benchmark or database rehearsal for these semantic UI changes.
+records the unverified spoken-output behavior. On 28 September, the owner explicitly
+requested merging #182 and closing #27 despite this documented limitation. #27 is
+therefore closed by owner acceptance, not by a passing VoiceOver run.
+
+[PR #182](https://github.com/Jseow008/ThePlayBook/pull/182) merged as
+`8c1ad354d45c364f205c9e5c86bae8e047ac9ddd`; required validation, Security Validation,
+PR scope, catalog evidence and Vercel checks passed. Root main was pulled clean.
+No production database change occurred, and post-merge deployment was not checked.
+Closeout branch: `codex/close-accessibility-finding`, based on `8c1ad354`, in the same
+managed worktree. This documentation-only closeout preserves the unexecuted checklist
+and the reason for closure. Next workstream: #28 bounded capacity verification;
+#29–#32 and other explicitly deferred findings remain separate.
