@@ -47,3 +47,7 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
 ## Runtime adapter lesson — 27 September 2026
 
 - **Framework request mismatch:** #178 passed ordinary-request unit tests but failed in production when a deadline wrapper reconstructed Next.js's proxied request. Preserve the original framework request and pass cancellation separately. For changes at request/stream adapters, probe the built preview over actual HTTP before merge; a cheap unauthenticated or invalid-payload probe catches this class of failure without provider calls or a database rehearsal. #179 adds that regression coverage. Measure improvement by production-only adapter failures and repair CI runs, not by adding another blanket gate to unrelated changes.
+
+## Capacity preparation lesson — 28 September 2026
+
+- **Fixtures before preflight:** production fixture creation continued to 15 accounts before the small check stopped on latency and a bigint-string harness mismatch. Run the two-account semantic preflight before preparing the full fixture pool; validate wire representations against real responses. Check improvement by accounts created before the first passing preflight and unnecessary setup/cleanup time, while preserving failed latency evidence.

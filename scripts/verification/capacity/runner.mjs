@@ -19,6 +19,7 @@ export class IntegrityError extends Error {}
 function ensure(value, message) { if (!value) throw new IntegrityError(message); }
 
 export function validateConfig(config) {
+    validateCommonConfig(config);
     ensure(config.requiresReconciliation !== true, 'Prior incomplete writes require fixture reconciliation');
     ensure(config.vercelProtectionBypass === undefined || (typeof config.vercelProtectionBypass === 'string' && config.vercelProtectionBypass.length > 0 && !/[\r\n]/.test(config.vercelProtectionBypass)), 'Invalid preview protection bypass');
     const origin = new URL(config.origin);
@@ -32,6 +33,12 @@ export function validateConfig(config) {
         && config.isolation?.dedicatedRateBackend === true && config.isolation?.syntheticOnly === true
         && typeof config.isolation?.evidenceSha256 === 'string' && /^[a-f0-9]{64}$/.test(config.isolation.evidenceSha256),
     'Hash-bound external deployment, database and admission verification required');
+    return config;
+}
+
+/** Shared fixture validation makes no assertion about deployment isolation. */
+export function validateCommonConfig(config, expectedUsers = 50) {
+    ensure(config.requiresReconciliation !== true, 'Prior incomplete writes require fixture reconciliation');
     ensure(Number.isInteger(config.maxRequests) && config.maxRequests > 0 && config.maxRequests <= 20000, 'Request bound must be 1..20000');
     ensure(Number.isInteger(config.requestTimeoutMs) && config.requestTimeoutMs >= 100 && config.requestTimeoutMs <= 30000, 'Request deadline must be 100..30000ms');
     ensure(Array.isArray(config.catalogCases) && config.catalogCases.length > 0, 'Catalog expectations required');
@@ -40,7 +47,7 @@ export function validateConfig(config) {
             'Bounded catalog pages required');
         ensure(fixture.pages.every(page => Array.isArray(page) && page.length > 0 && page.every(id => UUID.test(id))), 'Expected catalog IDs required');
     }
-    ensure(config.users?.length === 50 && new Set(config.users.map(user => user.accountId)).size === 50 && new Set(config.users.map(user => user.cookie)).size === 50, 'Exactly 50 distinct fixture accounts required');
+    ensure(config.users?.length === expectedUsers && new Set(config.users.map(user => user.accountId)).size === expectedUsers && new Set(config.users.map(user => user.cookie)).size === expectedUsers, 'Required distinct fixture accounts missing');
     for (const user of config.users) {
         ensure(UUID.test(user.accountId) && typeof user.cookie === 'string' && user.cookie.length > 0 && !/[\r\n]/.test(user.cookie), 'Ordinary user cookie required');
         ensure(Number.isSafeInteger(user.libraryRevision) && user.libraryRevision >= 0 && Number.isSafeInteger(user.resetEpoch) && user.resetEpoch >= 0, 'Library boundary required');
@@ -78,7 +85,7 @@ export function buildSchedule(scenario) {
 export function makeTransport(config, { fetchImpl = fetch, now = () => performance.now() } = {}) {
     const controller = new AbortController();
     const requests = [];
-    let inFlight = 0, maxInFlight = 0;
+    let inFlight = 0, maxInFlight = 0, consecutiveServerErrors = 0;
     function abort(reason) { if (!controller.signal.aborted) controller.abort(new Error(reason)); }
     async function request(user, path, { method = 'GET', body, html = false } = {}) {
         ensure(path.startsWith('/') && !path.startsWith('//') && new URL(path, config.origin).origin === config.origin, 'Cross-origin request refused');
@@ -95,6 +102,8 @@ export function makeTransport(config, { fetchImpl = fetch, now = () => performan
                 ...(body ? { body: JSON.stringify(body) } : {}),
             });
             record.status = response.status;
+            consecutiveServerErrors = response.status >= 500 ? consecutiveServerErrors + 1 : 0;
+            if (config.productionAuthorization && consecutiveServerErrors >= 3) abort('consecutive_server_errors');
             ensure(response.status < 300 || response.status >= 400, 'Redirect/target identity change');
             ensure(!response.url || new URL(response.url).origin === config.origin, 'Response target identity change');
             if (!response.ok) {
@@ -137,7 +146,7 @@ export function makeActions(config, transport, { now = () => performance.now() }
                 ensure(rows.length === user.library.size && new Set(rows.map(row => row.content_id)).size === rows.length, 'Library count/duplicate mismatch');
                 for (const row of rows) {
                     ensure(isDeepStrictEqual(libraryValue(row), user.library.get(row.content_id)), 'Library isolation or mutation data mismatch');
-                    if (row.content_id === user.mutationContentId) ensure(row.library_revision === user.libraryRevision, 'Library read-back revision differs from acknowledgement');
+                    if (row.content_id === user.mutationContentId) ensure((typeof row.library_revision === 'number' && Number.isSafeInteger(row.library_revision) || typeof row.library_revision === 'string' && /^(0|[1-9][0-9]*)$/.test(row.library_revision)) && BigInt(row.library_revision) === BigInt(user.libraryRevision), 'Library read-back revision differs from acknowledgement');
                 }
                 return;
             }

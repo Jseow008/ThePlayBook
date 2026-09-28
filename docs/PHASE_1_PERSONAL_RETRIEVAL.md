@@ -1487,3 +1487,44 @@ approved candidate is now deleted. #28 remains open; no PR or merge yet.
 Fresh project listings confirmed both candidate deletions. Private credentials,
 fixture sessions and temporary deployment files were removed after retaining the
 sanitized evidence. Working branch: `codex/capacity-verification`; no published PR.
+
+#### #28 authorized production preflight — stopped, cleaned up
+
+The owner superseded the pending isolated-Redis decision by explicitly authorizing
+controlled production testing. No billing upgrade, deployment or migration was made.
+Pinned production remains `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`, deployment
+`dpl_45LfcahgoMcf3cgvP1zkpAVUsg4S`. Worktree remains
+`/Users/j/.codex/worktrees/capacity-verification/Lifebook`, branch
+`codex/capacity-verification` (prior checkpoint commit `f572032e`).
+
+One bounded fresh-context agent implemented the guarded production runner while the
+coordinator prepared fixtures and monitoring. Harness checks, not hosted load, cover
+the 2→5→10→25→50→5 sequence. Production development preflight stopped after one
+save/read-back: save 4,715ms and read 2,255ms exceeded the frozen 2,000ms escalation
+limit. All four measured HTTP responses were 200. An additional harness assertion
+failed because PostgreSQL returned a bigint string and the acknowledgement used a
+number. Corrected exact-integer comparison passes captured real read-back offline;
+this was not evidence of lost or corrupt production data.
+
+No full load stages, exports or AI overlay ran. No capacity pass is claimed and #28
+remains open. [Sanitized evidence](evidence/capacity-production-preflight-20260928.json)
+retains the failure, its classification and cleanup. Production detailed health
+passed before/after; deployment was unchanged. All 15 created synthetic accounts,
+library/reflection/index/boundary/receipt records checked were deleted, leaving the
+original eight accounts and 496 published items. Private fixture credentials are
+removed after retaining evidence. Existing quotas and configuration were unchanged.
+
+Efficiency correction: account setup was started ahead of semantic preflight and
+stopped at 15 accounts. The tracked runner now supports an explicit two-account-only
+preflight; do not create the remaining 48 accounts before it passes. No new provider
+experiment or test aimed at obtaining a favorable load result was performed.
+
+Exact next action: diagnose save/read latency with a small two-account sample and
+server-side phase evidence, separating cold starts/network/database execution.
+Preserve this failed sample. Do not assume Upstash needs payment, weaken the latency
+limit, or rerun full load until a credible explanation/correction is established.
+
+Local verification for this checkpoint: 31 runner/report tests passed, TypeScript
+and focused lint passed, and diff whitespace validation passed. The production
+adapter and overlay are not claimed runtime-proven; only the retained small
+production preflight ran. No additional agents were spawned for review.

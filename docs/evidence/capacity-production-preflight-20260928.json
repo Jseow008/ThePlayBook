@@ -1,0 +1,133 @@
+{
+  "version": 1,
+  "applicationCommit": "7ebab7769d59b3bef2e62fcc5121a3bc44ca6475",
+  "deployment": "dpl_45LfcahgoMcf3cgvP1zkpAVUsg4S",
+  "mode": "production-development-preflight",
+  "verdict": "stopped-before-load",
+  "closesIssue28": false,
+  "baseline": {
+    "deployment": "dpl_45LfcahgoMcf3cgvP1zkpAVUsg4S",
+    "commit": "7ebab7769d59b3bef2e62fcc5121a3bc44ca6475",
+    "counts": [
+      {
+        "users": 8,
+        "catalog_items": 496,
+        "segments": 5974,
+        "policy": [
+          {
+            "enabled": true,
+            "singleton": true,
+            "daily_limit_microusd": 5000000,
+            "guest_daily_requests": 5,
+            "guest_daily_limit_microusd": 1000000
+          }
+        ],
+        "ai_charged_microusd": "0"
+      }
+    ],
+    "at": "2026-09-28T06:54:50.157Z"
+  },
+  "preflight": {
+    "at": "2026-09-28T07:02:11.941Z",
+    "results": [
+      {
+        "operation": "catalog_search",
+        "passed": true
+      },
+      {
+        "operation": "browse_reader",
+        "passed": true
+      },
+      {
+        "operation": "library_mutation",
+        "passed": false,
+        "reason": "IntegrityError"
+      }
+    ],
+    "requests": [
+      {
+        "route": "/api/catalog/search",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 838.414083,
+        "outcome": "success"
+      },
+      {
+        "route": "/read/:id/vlad-tenev-on-scaling-robinhood-and-democratizing-financial-ownership",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 814.8801669999999,
+        "outcome": "success"
+      },
+      {
+        "route": "/api/account-data/user_library/mutation",
+        "method": "POST",
+        "status": 200,
+        "durationMs": 4714.853458,
+        "outcome": "success"
+      },
+      {
+        "route": "/api/account-data/user_library",
+        "method": "GET",
+        "status": 200,
+        "durationMs": 2254.5069999999996,
+        "outcome": "success"
+      }
+    ]
+  },
+  "diagnosis": {
+    "integrityFailure": "Harness compared PostgreSQL bigint string with numeric acknowledgement using strict equality.",
+    "capturedReadbackVerifiedAfterHarnessFix": true,
+    "libraryMutationMs": 4714.853458,
+    "libraryReadMs": 2254.5069999999996,
+    "stopReason": "Library save and read exceeded the frozen 2000ms escalation threshold.",
+    "interpretation": "One sample is a stop signal, not a percentile or a proven database bottleneck."
+  },
+  "cleanup": {
+    "runId": "capacity-1790578489071-3c9956df",
+    "removed": 15,
+    "remaining": 0,
+    "at": "2026-09-28T07:03:51.366Z"
+  },
+  "after": {
+    "at": "2026-09-28T07:04:30.256Z",
+    "counts": [
+      {
+        "total_users": 8,
+        "fixture_library": 0,
+        "fixture_reflections": 0,
+        "fixture_index": 0,
+        "fixture_boundaries": 0,
+        "fixture_receipts": 0,
+        "catalog_items": 496
+      }
+    ],
+    "healthHttp": 200,
+    "health": {
+      "status": "ok",
+      "timestamp": "2026-09-28T07:04:28.564Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    },
+    "deployment": "dpl_45LfcahgoMcf3cgvP1zkpAVUsg4S",
+    "unchangedDeployment": true
+  },
+  "limitations": [
+    "No 2/5/10/25/50-user load stages executed.",
+    "No export or AI overlay executed; synthetic index records remained pending.",
+    "Current catalog only: 496 items and 5974 segments; no large corpus seeded.",
+    "Vercel error-level log query returned no records; absence of logs is not a complete telemetry proof.",
+    "Measurements are client-observed HTTP latency from the operator desktop, not server execution timings."
+  ]
+}

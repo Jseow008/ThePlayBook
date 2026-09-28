@@ -76,7 +76,7 @@ test('library save/progress/remove requires exact acknowledgement and complete r
             row = body.deleteIfEmpty ? null : { content_id: body.contentId, is_bookmarked: body.isBookmarked, progress: body.progress };
             return { data: { libraryRevision: ++revision, resetEpoch: 0, outcome: 'applied' } };
         }
-        return { data: [...c.users[0].library, ...(row ? [{ ...row, library_revision: revision }] : [])], pageInfo: { hasNextPage: false } };
+        return { data: [...c.users[0].library, ...(row ? [{ ...row, library_revision: String(revision) }] : [])], pageInfo: { hasNextPage: false } };
     } });
     for (let sequence = 0; sequence < 3; sequence++) await action({ operation: 'library_mutation', userIndex: 0, sequence });
     assert.equal(payloads[2].deleteIfEmpty, true);
@@ -191,4 +191,107 @@ test('catalog records each verified page latency rather than combined action lat
     assert.deepEqual(result.samples.map(row => row.durationMs), [10, 20]);
     assert.deepEqual(result.samples.map(row => row.actionDurationMs), [30, 30]);
     assert.equal(result.started, 1);
+});
+
+const productionModule = await import('./production-runner.mjs');
+function productionConfig() {
+    const c = config(); delete c.isolation;
+    c.origin = 'https://www.netflux.blog'; c.candidateProjectRef = 'xmuqsgfxuaaophxnwure'; c.maxRequests = 2000;
+    c.productionAuthorization = { token: productionModule.PRODUCTION_TOKEN, origin: c.origin, projectRef: c.candidateProjectRef,
+        deploymentId: c.candidateDeploymentId, evidenceSha256: 'a'.repeat(64), runId: 'capacity-test-28',
+        fixtureAccountIds: c.users.map(user => user.accountId), currentCatalogOnly: true, quotaProtectionsUnchanged: true, syntheticOwnershipVerified: true };
+    return c;
+}
+test('production opt-in validates shared services honestly while default runner still denies production', () => {
+    const c = productionConfig();
+    assert.equal(productionModule.validateProductionConfig(c, productionModule.PRODUCTION_TOKEN), c);
+    assert.throws(() => validateConfig(c), IntegrityError);
+    for (const mutate of [c => c.origin = 'https://netflux.blog', c => c.productionAuthorization.deploymentId = 'dpl_changed',
+        c => c.productionAuthorization.fixtureAccountIds[0] = id(9876), c => c.maxRequests = 2001,
+        c => c.productionAuthorization.quotaProtectionsUnchanged = false, c => c.serviceRoleKey = 'private', c => c.vercelProtectionBypass = 'private']) {
+        const c = productionConfig(); mutate(c);
+        assert.throws(() => productionModule.validateProductionConfig(c, productionModule.PRODUCTION_TOKEN), IntegrityError);
+    }
+    assert.throws(() => productionModule.validateProductionConfig(c, undefined), IntegrityError);
+});
+test('production transport aborts at third consecutive 5xx completion before more traffic', async () => {
+    const c = productionConfig(); let count = 0;
+    const transport = makeTransport(c, { fetchImpl: async () => { count++; return new Response(null, { status: 503 }); } });
+    for (let n = 0; n < 4; n++) await assert.rejects(transport.request(c.users[0], '/api/catalog/search'));
+    assert.equal(count, 3); assert.equal(transport.signal.reason.message, 'consecutive_server_errors');
+});
+test('production escalation gates enforce errors, throttles, integrity, latency and drops despite small samples', () => {
+    const result = { planned: 1, started: 1, samples: [{ outcome: 'success' }], dropped: [] };
+    const request = { route: '/api/catalog/search', method: 'GET', status: 200, outcome: 'success', durationMs: 50 };
+    const gate = productionModule.productionStageGate(result, [request]);
+    assert.equal(gate.healthy, true); assert.equal(gate.capacityEstablished, false); assert.equal(gate.routes.catalog_search.lowSampleSize, true);
+    for (const patch of [{ status: 429, outcome: 'restricted' }, { status: 500, outcome: 'failure' }, { outcome: 'integrity_failure' }, { durationMs: 2001 }]) {
+        assert.equal(productionModule.productionStageGate(result, [{ ...request, ...patch }]).healthy, false);
+    }
+    assert.equal(productionModule.productionStageGate({ ...result, dropped: [{}] }, [request]).healthy, false);
+});
+test('production preflight failure records stop, private continuation and sends no later stage traffic', async () => {
+    const c = productionConfig(); let count = 0;
+    const { evidence, continuation } = await productionModule.runProduction(c, { fetchImpl: async () => { count++; return new Response(null, { status: 429 }); } });
+    assert.equal(count, 1); assert.equal(evidence.completed, false); assert.equal(evidence.closesIssue28, false);
+    assert.equal(evidence.stages.length, 1); assert.equal(evidence.stopReason, 'preflight_gate');
+    assert.equal(continuation.requiresReconciliation, true);
+    assert.ok(!JSON.stringify(evidence).includes(c.users[0].cookie));
+});
+test('bounded production completes exact phase ladder against a synthetic mock and never claims acceptance', async () => {
+    const c = productionConfig(), state = new Map(c.users.map(user => [user.cookie, structuredClone(user)]));
+    let time = 0;
+    const { evidence, continuation } = await productionModule.runProduction(c, {
+        now: () => time,
+        sleep: async ms => { time += ms; await new Promise(resolve => setImmediate(resolve)); },
+        fetchImpl: async (url, options) => {
+            const user = state.get(options.headers.cookie);
+            if (url.pathname === '/api/catalog/search') {
+                const page = url.searchParams.has('cursor') ? 2 : 1;
+                return json({ outcome: 'results', results: [{ id: id(999 + page) }], pageInfo: { page, nextCursor: page === 1 ? 'next' : null } });
+            }
+            if (url.pathname.startsWith('/read/')) return new Response('Fixture book');
+            if (url.pathname === '/api/account-data/user_library/mutation') {
+                const body = JSON.parse(options.body);
+                user.library = user.library.filter(row => row.content_id !== body.contentId);
+                user.libraryRevision++;
+                if (!body.deleteIfEmpty) user.library.push({ content_id: body.contentId, is_bookmarked: body.isBookmarked, progress: body.progress, library_revision: user.libraryRevision });
+                return json({ data: { libraryRevision: user.libraryRevision, resetEpoch: user.resetEpoch } });
+            }
+            if (url.pathname === '/api/account-data/user_library') return json({ data: user.library, pageInfo: { hasNextPage: false } });
+            if (url.pathname === '/api/library/reflections') {
+                if (options.method === 'POST') {
+                    user.reflections[0] = { ...user.reflections[0], ...JSON.parse(options.body) };
+                    return json({ data: { ...user.reflections[0], user_id: user.accountId } });
+                }
+                return json({ data: user.reflections });
+            }
+            throw new Error('Unexpected mock route');
+        },
+    });
+    assert.equal(evidence.completed, true, JSON.stringify(evidence.stages.map(row => row.gate.reasons)));
+    assert.deepEqual(evidence.stages.slice(1).map(row => row.users), [2, 5, 10, 25, 50, 5]);
+    assert.ok(evidence.requests.length <= 2000); assert.ok(evidence.elapsedMs <= 720000);
+    assert.equal(evidence.closesIssue28, false); assert.equal(continuation.requiresReconciliation, false);
+    assert.equal(evidence.stages.every(row => row.gate.healthy), true);
+});
+
+test('production health/deployment gate can stop before any traffic', async () => {
+    let requests = 0;
+    const { evidence } = await productionModule.runProduction(productionConfig(), {
+        checkStage: async () => { throw new Error('Health or deployment changed'); },
+        fetchImpl: async () => { requests++; return json({}); },
+    });
+    assert.equal(requests, 0);
+    assert.equal(evidence.completed, false);
+    assert.equal(evidence.stopReason, 'runner_failure');
+});
+
+test('two-account production fixture requires explicit preflight-only mode', () => {
+    const c = productionConfig();
+    c.users = c.users.slice(0, 2);
+    c.productionAuthorization.fixtureAccountIds = c.users.map(user => user.accountId);
+    assert.throws(() => productionModule.validateProductionConfig(c, productionModule.PRODUCTION_TOKEN));
+    c.preflightOnly = true;
+    assert.equal(productionModule.validateProductionConfig(c, productionModule.PRODUCTION_TOKEN).users.length, 2);
 });

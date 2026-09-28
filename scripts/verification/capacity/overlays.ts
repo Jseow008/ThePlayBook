@@ -5,12 +5,14 @@ import assert from 'node:assert/strict';
 import { fetchVerifiedAccountDataExport } from '../../../lib/account-data-export-client';
 import { ACCOUNT_DATA_EXPORT_COLLECTIONS } from '../../../lib/account-data-snapshot-collections';
 import { validateConfig } from './runner.mjs';
+import { validateProductionConfig, PRODUCTION_TOKEN } from './production-runner.mjs';
 
 async function main() {
-    const [configPath, output, mode = 'sample'] = process.argv.slice(2);
+    const [configPath, output, mode = 'sample', productionToken] = process.argv.slice(2);
     assert(configPath && output && ['sample', 'full'].includes(mode));
     assert.equal((await stat(configPath)).mode & 0o077, 0);
-    const config = validateConfig(JSON.parse(await readFile(configPath, 'utf8')));
+    const parsed = JSON.parse(await readFile(configPath, 'utf8'));
+    const config = productionToken === PRODUCTION_TOKEN ? validateProductionConfig(parsed, productionToken) : validateConfig(parsed);
     const originalFetch = globalThis.fetch;
     const context = new AsyncLocalStorage<{ cookie: string; signal: AbortSignal }>();
     let requests = 0;
@@ -20,7 +22,7 @@ async function main() {
         assert(++requests <= 200, 'Overlay request bound');
         const response = await originalFetch(new URL(input, config.origin), {
             ...init, redirect: 'manual', signal: AbortSignal.any([active.signal, ...(init?.signal ? [init.signal] : [])]),
-            headers: { ...init?.headers, cookie: active.cookie, 'x-vercel-protection-bypass': config.vercelProtectionBypass },
+            headers: { ...init?.headers, cookie: active.cookie, ...(config.vercelProtectionBypass ? { 'x-vercel-protection-bypass': config.vercelProtectionBypass } : {}) },
         });
         assert(new URL(response.url).origin === config.origin && !(response.status >= 300 && response.status < 400), 'Overlay target changed');
         return response;

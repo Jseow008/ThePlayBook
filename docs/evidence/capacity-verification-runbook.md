@@ -138,3 +138,37 @@ Delete synthetic users/data, hosted candidate, temporary application/rate backen
 and private credentials after retention. Record cleanup identities and confirmation
 without secrets. #28 closes only after the envelope is tested and its limitations
 are recorded; preparing this document does not close it.
+
+## Authorized production observation — 28 September 2026
+
+The owner authorized using production instead of recreating paid isolated services.
+This is a separate, smaller observation; the original scenario and thresholds above
+remain intact. Do not interpret production observation as the large-corpus proof.
+
+Use current published catalog data, ordinary synthetic accounts with server-controlled
+run ownership metadata, existing admission protections, and no preview bypass. Pin
+and verify deployment, origin and database identity externally. Record detailed
+health before/after and before each escalation; stop if identity or health changes.
+Never modify existing accounts or publish synthetic catalog content. Revoke fixture
+sessions, delete only verified run-owned accounts, and verify associated data cleanup.
+
+`production-runner.mjs` requires its explicit production token and a hash-bound
+`productionAuthorization` record, including verified fixture IDs. Start with
+`preflightOnly: true` and exactly two accounts. Do not prepare 50 accounts until the
+small preflight succeeds. The full observation uses 50 distinct accounts, stages
+2/5/10/25/50/5 for 60/60/120/180/60/60 seconds, 10-second pacing, a 12-minute bound,
+and at most 2,000 requests. Stage latency limits remain 2 seconds for API routes and
+3 seconds for reader HTML; even sparse observations are escalation stop signals,
+not reliable percentiles. Never retry failures simply to obtain passing evidence.
+
+The actual run stopped during the development preflight. The harness initially
+miscompared a bigint string revision with a numeric acknowledgement; captured live
+responses pass the corrected exact-integer comparison. The save still took 4,715ms
+and read-back 2,255ms. No load stages or export/AI overlays ran. All 15 prepared
+synthetic accounts and their checked associated records were removed; the original
+eight accounts and 496-item catalog remain. Detailed health passed afterward.
+See [production evidence](capacity-production-preflight-20260928.json).
+
+Next diagnostic: distinguish cold connection/function startup, network round trips
+and database execution in a bounded two-account sample before changing architecture
+or resuming load. Current evidence does not identify which component caused latency.
