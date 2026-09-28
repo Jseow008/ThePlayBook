@@ -1410,3 +1410,80 @@ evidence. Workload execution, fixture seeding and hosted provisioning remain und
 Current implementation branch is unchanged; initial plan commit `3aef0788`.
 Next: after Upstash sign-in, create isolated dependencies, record compute/region
 parity, finish the HTTP runner, freeze the scenario, then run the small preflight.
+
+#### #28 hosted preparation — original account verified
+
+Verified the current Upstash account owns `flux-prod-rate-limit`; its endpoint
+matches the production Vercel Redis URL. No ownership transfer occurred. The account
+allows one free database, so its existing production resource was left unchanged.
+A separate free 72-hour Upstash scratch database was created (ID
+`1b7751c8-752e-49ad-9731-b873cd815982`, expires 1 October); hosting parity is not
+established. No paid Upstash plan or payment method was added.
+
+Approved disposable Supabase: `rqtopztmopbxfmocpzzz`, same Mumbai region as production,
+Micro compute, PostgreSQL `17.6.1.166` versus production `17.6.1.063`. Production
+compute could not yet be conclusively established from selected-addons metadata.
+All migrations replayed. Dedicated restricted-role credentials were provisioned.
+Test-only certificate packaging supplies Supabase's published CA; direct setup and
+application worker connections verify TLS. No production database changes occurred.
+
+Dedicated Vercel project: `prj_SneBAuNkQ3xU3LmMOlPYOrpW0bb7`,
+`netflux-capacity28-disposable`, Node 24.x / iad1. Current deployment:
+`dpl_6WeDeibpHv8owoYpXPZHgM9dGJLg`. Clean baseline application source `7ebab776`
+plus the test-only CA tracing inclusion. Scoped preview access remains protected.
+Health, synthetic catalog match and canonical reader HTTP checks pass.
+
+Private setup state lives under `/private/tmp/netflux-capacity28` (credentials must
+never be committed or printed). This directory includes cleanup identities, replay
+logs, private candidate configuration, corpus setup and fixture session setup. Both
+hosted projects and the scratch Redis still require cleanup after verification.
+Synthetic corpus: 10,000 items, 100,000 segments, 50 ordinary users, 100 library rows
+per ordinary account and 1,201 for the oversized export account, 10 reflections each.
+Session creation is paced after encountering Auth's existing request limit; this
+is fixture setup, not load-test evidence. A wrong setup column name was corrected
+against the migration (`current_revision`, `user_id`).
+
+One fresh-context agent implemented the core runner and focused regression tests;
+it also caught that upsert acknowledgements can advance by more than one revision,
+and separated route timing from validation/read-back duration. 24 harness tests
+pass. Coordinator adds real export/AI overlays. Full typecheck is running; real
+personal indexing and paced session creation are in progress. No measured load
+run has started, no performance pass is claimed, and no PR has been opened.
+
+Exact next action: inspect `auth-setup.log`, `index-preflight.json`, and typecheck;
+finish private runner config with authored pagination fixture; execute core and
+overlay preflight once; only if they pass, freeze inputs and run full traffic.
+Preserve all failures, then delete candidate services and private credentials.
+
+#### #28 preflight stop — isolated Redis unavailable
+
+The hosted core preflight stopped at its first library mutation: HTTP 503, shared
+rate limiter timed out. Health, catalog match and canonical reader checks passed.
+The temporary Upstash service's metrics reported zero commands and zero keys; a
+direct authenticated PING also timed out at five seconds. A separate SDK probe
+returned its timeout fallback, which is not service-success evidence. No admission
+rule or deadline was relaxed. This is a candidate-dependency failure, not a
+production capacity result. No full load test or export/AI overlay ran. Real personal
+index setup completed 20/20 records; interactive generation was not called.
+
+[Sanitized preflight evidence](evidence/capacity-preflight-20260928.json) preserves
+the failed attempt. 24 harness checks, full typecheck and focused lint passed.
+One agent implemented the core runner; coordinator prepared fixtures, hosting and
+export/AI overlays. The overlay remains runtime-unverified. Fixture setup fixes
+were local schema names and paced Auth admission; no product code changed.
+
+Asked whether the owner approves a normal temporary Upstash pay-as-you-go database
+with a $1 ceiling at the displayed $0.20/100,000 commands. Adding a payment method
+is a user handoff. That answer is pending. Both the paid Supabase candidate and
+dedicated Vercel project were deleted rather than left idle; scratch Redis is empty
+and expires automatically on 1 October. Production resources are unchanged.
+
+Next action: resolve the Redis option, prove its ordinary SDK rate-limit call works
+before recreating hosted dependencies, then rebuild isolated fixtures and repeat
+only the failed preflight/remaining stages. Preserve the failed evidence. Supabase
+requires fresh cost confirmation for a newly created project. The previously
+approved candidate is now deleted. #28 remains open; no PR or merge yet.
+
+Fresh project listings confirmed both candidate deletions. Private credentials,
+fixture sessions and temporary deployment files were removed after retaining the
+sanitized evidence. Working branch: `codex/capacity-verification`; no published PR.

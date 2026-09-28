@@ -2,8 +2,10 @@
 
 Status: preparation only; no capacity result or launch clearance yet.
 Draft executable configuration: `scripts/verification/capacity/scenario.json`.
-The pure report module has six passing regression checks; an HTTP workload runner
-and hosted execution are still outstanding.
+The core HTTP runner and report module have 24 passing regression checks.
+Hosted preflight stopped on an unreachable isolated Redis dependency; see
+`capacity-preflight-20260928.json`. Export/AI overlays are implemented but not yet
+runtime-verified. No full capacity run has occurred.
 Application baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.
@@ -23,7 +25,7 @@ and thresholds before the measured run. Do not revise targets after seeing resul
 ## Isolation and prerequisites
 
 - Dedicated hosted Supabase candidate in the existing organization, region matching
-  production; synthetic accounts/content only. The owner approved the quoted $10/month cost on 28 September 2026; no project has yet been created.
+  production; synthetic accounts/content only. The owner approved and used one quoted $10/month candidate on 28 September 2026; it has since been deleted after a dependency preflight failure. A new candidate requires fresh cost confirmation.
 - A dedicated hosted application deployment must point exclusively to candidate
   database, Auth, storage and restricted worker/maintenance connections. Never
   replace production environment variables or point a load runner at its aliases.
