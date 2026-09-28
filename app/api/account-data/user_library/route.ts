@@ -1,3 +1,4 @@
+import { createLibraryRouteTiming } from "@/lib/server/library-route-timing";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
@@ -33,9 +34,12 @@ function decodeCursor(accountId: string, cursor: string | null): CursorPayload |
 
 export async function GET(request: NextRequest) {
     const requestId = getRequestId();
+    const timing = createLibraryRouteTiming();
     try {
-        const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await timing.measure("auth", async () => {
+            const supabase = await createClient();
+            return supabase.auth.getUser();
+        });
         if (!user) return apiError("UNAUTHORIZED", "Sign in to read your library.", 401, requestId);
         const requestedLimit = Number.parseInt(request.nextUrl.searchParams.get("limit") ?? "100", 10);
         const limit = Number.isInteger(requestedLimit) && requestedLimit >= 1 && requestedLimit <= 200 ? requestedLimit : 100;
@@ -45,7 +49,7 @@ export async function GET(request: NextRequest) {
         } catch {
             return apiError("VALIDATION_ERROR", "This library cursor is invalid. Start again.", 400, requestId);
         }
-        const page = await getLiveLibraryPage(user.id, after, limit);
+        const page = await timing.measure("library", () => getLiveLibraryPage(user.id, after, limit));
         const finalRow = page.rows.at(-1);
         return NextResponse.json({
             data: page.rows,
@@ -53,7 +57,7 @@ export async function GET(request: NextRequest) {
                 hasNextPage: page.hasNextPage,
                 endCursor: finalRow ? encodeCursor(user.id, { updatedAt: finalRow.library_updated_at, contentId: finalRow.content_id }) : null,
             },
-        }, { headers: { "Cache-Control": "no-store" } });
+        }, { headers: { "Cache-Control": "no-store", "Server-Timing": timing.header() } });
     } catch (error) {
         logApiError({ requestId, route: "GET /api/account-data/user_library", message: "Could not list the authenticated library", error });
         return apiError("INTERNAL_ERROR", "Could not read your library.", 503, requestId);

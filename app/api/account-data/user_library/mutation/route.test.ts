@@ -51,6 +51,25 @@ describe("POST /api/account-data/user_library/mutation", () => {
         await expect(response.json()).resolves.toEqual({ data: { resetEpoch: 3, libraryRevision: 21 } });
     });
 
+    it("reports separate numeric phases without changing the acknowledgement or exposing data", async () => {
+        let clock = 0;
+        const now = vi.spyOn(performance, "now").mockImplementation(() => clock);
+        getUser.mockImplementationOnce(async () => { clock += 5; return { data: { user: { id: "account-a" } } }; });
+        vi.mocked(strictPublicRateLimit).mockImplementationOnce(async () => { clock += 7; return { success: true }; });
+        vi.mocked(commitLibraryMutationForAccount).mockImplementationOnce(async () => {
+            clock += 13;
+            return { resetEpoch: 3, libraryRevision: 21 };
+        });
+        try {
+            const response = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", {
+                method: "POST", body: JSON.stringify(mutation),
+            }));
+            expect(response.headers.get("server-timing")).toBe("auth;dur=5.0, admission;dur=7.0, library;dur=13.0, handler;dur=25.0");
+            expect(response.headers.get("cache-control")).toBe("no-store");
+            await expect(response.json()).resolves.toEqual({ data: { resetEpoch: 3, libraryRevision: 21 } });
+        } finally { now.mockRestore(); }
+    });
+
     it("rejects unauthenticated and malformed mutation attempts before the worker is called", async () => {
         getUser.mockResolvedValueOnce({ data: { user: null } });
         const unauthenticated = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", {
@@ -58,6 +77,7 @@ describe("POST /api/account-data/user_library/mutation", () => {
             body: JSON.stringify(mutation),
         }));
         expect(unauthenticated.status).toBe(401);
+        expect(unauthenticated.headers.get("server-timing")).toBeNull();
 
         const malformed = await POST(new NextRequest("http://localhost/api/account-data/user_library/mutation", {
             method: "POST",
