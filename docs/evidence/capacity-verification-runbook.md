@@ -198,3 +198,27 @@ The diagnostic measures this sequential workload on the current catalog from one
 client location. It cannot establish the 50-user envelope, large-corpus performance,
 all-route coverage, or browser rendering performance. Its slower closed-loop request
 rate during slow responses is another reason not to use it as load-capacity proof.
+
+
+### Approved two/five-user concurrent diagnostic — 29 September 2026
+
+Following the sequential result, the user authorized proceeding to controlled
+concurrent testing. This diagnostic uses the same per-route targets and retains all
+first requests. It permits sparse latency exceedances while collecting exactly 100
+samples per route at each fixed concurrency level; it does not alter the default
+production ladder or authorize an automatic 50-user escalation.
+
+Run two simultaneous ordinary synthetic users first, then five only after the
+first stage meets all p95 targets. Each stage has 100 mutations with verified library
+read-backs and 100 reader documents. Each user runs sequentially; batches finish
+before the next batch begins, with 500ms pauses after actions. Total bound: 600
+measured requests, five accounts, five simultaneous HTTP requests, 12 minutes.
+Stop on errors, integrity/health/deployment failures, resource bounds, or failing
+stage p95. Check deployment and health before setup, every five batches, between
+stages, and after measurement. Prepare the additional three accounts only after
+the first stage passes. Revoke sessions and verify cleanup afterward.
+
+This closed-loop diagnostic is not the original arrival-paced mixed workload.
+Evaluate each stage separately; neither pooled percentiles nor later-stage warmth
+can establish capacity or a causal benefit from increased concurrency. No further
+concurrency escalation is included in this diagnostic.

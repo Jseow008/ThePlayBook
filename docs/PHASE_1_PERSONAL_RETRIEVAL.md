@@ -1837,3 +1837,40 @@ p95 only after sufficient samples. Avoid repeating the same first-request prefli
 Continuation: branch `codex/health-production-verification`, worktree
 `/Users/j/.codex/worktrees/library-latency-timing/Lifebook`. Prior evidence commits
 `9f327467` and `7bd46686` are included in the same evidence-only PR. No subagents used.
+
+### #28 two/five-user concurrent diagnostic — 29 September 2026
+
+User authorized proceeding after the sequential result. One bounded run completed
+on unchanged `a87cff9f` production, first at two simultaneous test users and then at
+five. Each stage measured 100 successful requests per route. All 600 requests were
+200 with passing save/progress/remove acknowledgements and read-back integrity.
+Measurement including the stage transition took approximately 246 seconds; all first
+requests remain included, with no warm-up exclusion or rerun.
+
+| Concurrent users | Mutation p95 | Library read p95 | Reader HTML p95 |
+| ---: | ---: | ---: | ---: |
+| 2 | 1281ms | 279ms | 2598ms |
+| 5 | 911ms | 291ms | 1379ms |
+
+Both stages passed the original 2s API / 3s reader targets. At two users, three
+mutations, one library read, and two reader requests exceeded their individual
+targets (maximum reader 4861ms); all remain in evidence. At five users, none exceeded
+the targets. Later-stage improvement does not demonstrate that more concurrency is
+faster: warming and other shared-service state are uncontrolled factors.
+
+The test was limited to five accounts, one saved item per account, one reader title,
+and closed-loop batches. It did not exercise the original fixed-arrival mixed workload
+or the remaining search/reflection/AI/export/browser coverage. #28 stays open. Next:
+prepare the mixed-workload run with cumulative sample sufficiency and explicit
+escalation stops, then execute its bounded stages rather than repeating these routes.
+The default production ladder's sparse stop rule is still unchanged.
+
+All five sessions were revoked, all five accounts deleted, and checked fixture
+library/reflection/boundary/receipt records returned to zero. Existing totals stayed
+8 accounts / 603 catalog items, and final health was OK/reachable. No migration,
+configuration change, new project, application edit, or subagent was needed.
+
+Evidence: `docs/evidence/capacity-concurrent-20260929.json`. Independently recomputed
+all six 100-sample p95 values and verified outcomes/bounds/cleanup. Added to existing
+PR #192 on `codex/health-production-verification`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`; no test process remains.
