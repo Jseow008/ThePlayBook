@@ -1682,3 +1682,43 @@ previous failed samples; its refreshed CI still gates merge. Next: distinguish t
 probe's client initialization from request/transport/database latency. The existing
 2.5s bound covers dynamic client import as well as query execution, so timeout alone
 does not establish slow SQL or a database outage. #28 remains open.
+
+### #28 bounded health phase investigation — 28 September 2026
+
+Branch `codex/health-probe-phase-timing`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, base `18f2648a`.
+User authorized production testing and new Supabase projects if needed. No new
+project, database mutation, user fixture, quota change, or public alias change was
+needed. One coordinator; no subagents or model experiments.
+
+Found a deadline-handling flaw: the health probe started its timeout before dynamic
+client loading but attached the timeout race only after loading completed. The fix
+races the entire operation and prevents a late initializer from starting a query.
+The same 2,500ms deadline, abort behavior, 503 failure, auth and 10s cache remain.
+Fixed numeric initialization/query/total timing is logged per actual probe; cached
+responses do not create duplicate probe logs. No provider details or secrets logged.
+
+Thirteen focused tests, typecheck and lint passed, including delayed initialization,
+abort-resolved timeout, and cached-failure logging. Staged production-target build
+`dpl_8sRC3MmXReujTEy29mN1L2XTSYrJ` at `59c801c1` passed the full production build.
+It retained Virginia health placement, existing production dependencies and timeout.
+Public production stayed at `dpl_7vrXyfWwDDDQU97gYUYYN1H2Crv5` (`18f2648a`).
+
+Fixed read-only test: three alternating candidate/production probes with 11-second
+pauses, then eight candidate probes with 30-second pauses. All 11 candidate and 3
+production responses passed. Candidate runtime logs show initialization 0–26ms,
+query 273–898ms. This rules out initialization as a dominant cost in these samples,
+not in every historical failure. Request time includes transport and backend work;
+it is not a measurement of SQL execution alone. No timeout recurred, so the previous
+production 503s remain unresolved and are not erased by these passing observations.
+
+Evidence: `docs/evidence/health-phase-comparison-20260928.json`,
+`docs/evidence/health-phase-extended-20260928.json`, and
+`docs/evidence/health-phase-runtime-20260928.md`. First observations are retained;
+no rerun-until-green, forced failure, timeout increase, or capacity/load run.
+
+Next: ship the deadline correction and diagnostics through required checks. Any
+future health timeout now records which phase consumed the bound. Do not buy capacity
+or change reader placement based on this small healthy sample. #28 remains open;
+the first-save/reader latency failures and intermittent timeout need stronger
+attribution before the original capacity workload can be declared passed.

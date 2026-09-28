@@ -16,6 +16,7 @@ describe("Health API", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.spyOn(console, "warn").mockImplementation(() => {});
+        vi.spyOn(console, "info").mockImplementation(() => {});
         resetHealthCheckCacheForTests();
         process.env = {
             ...originalEnv,
@@ -125,6 +126,11 @@ describe("Health API", () => {
         expect(secondResponse.status).toBe(200);
         expect(createPublicServerClient).toHaveBeenCalledTimes(1);
         expect(mockFrom).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(vi.mocked(console.info).mock.calls[0][0])).toEqual({
+            event: "health_database_probe_completed", initialization_ms: expect.any(Number),
+            query_ms: expect.any(Number), duration_ms: expect.any(Number),
+        });
     });
 
     it("collapses concurrent authorized database readiness checks into one query", async () => {
@@ -150,6 +156,11 @@ describe("Health API", () => {
         expect(secondResponse.status).toBe(200);
         expect(createPublicServerClient).toHaveBeenCalledTimes(1);
         expect(mockFrom).toHaveBeenCalledTimes(1);
+        expect(console.info).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(vi.mocked(console.info).mock.calls[0][0])).toEqual({
+            event: "health_database_probe_completed", initialization_ms: expect.any(Number),
+            query_ms: expect.any(Number), duration_ms: expect.any(Number),
+        });
     });
 
     it("fails authorized database readiness fast and aborts the query when the probe times out", async () => {
@@ -188,7 +199,7 @@ describe("Health API", () => {
         const record = JSON.parse(vi.mocked(console.warn).mock.calls[0][0]);
         expect(record).toEqual({
             event: "health_database_probe_failed", reason: "query_failure",
-            duration_ms: expect.any(Number), timeout_ms: 2500,
+            duration_ms: expect.any(Number), initialization_ms: expect.any(Number), query_ms: expect.any(Number), timeout_ms: 2500,
         });
     });
 

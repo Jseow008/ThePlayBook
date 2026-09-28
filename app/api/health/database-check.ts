@@ -34,13 +34,22 @@ function applyAbortSignal(
 async function runDatabaseProbe(): Promise<DatabaseCheckResult> {
     const started = performance.now();
     const abortController = new AbortController();
+    let queryStarted: number | null = null;
+    const measurements = () => {
+        const ended = performance.now();
+        return {
+            initialization_ms: Math.round(Math.max(0, (queryStarted ?? ended) - started)),
+            query_ms: queryStarted === null ? null : Math.round(Math.max(0, ended - queryStarted)),
+            duration_ms: Math.round(Math.max(0, ended - started)),
+        };
+    };
     const failure = (): DatabaseCheckResult => {
         const timedOut = abortController.signal.aborted;
         // Fixed categories only: never log provider errors, URLs, credentials or rows.
         console.warn(JSON.stringify({
             event: "health_database_probe_failed",
             reason: timedOut ? "timeout" : "query_failure",
-            duration_ms: Math.round(Math.max(0, performance.now() - started)),
+            ...measurements(),
             timeout_ms: DB_CHECK_TIMEOUT_MS,
         }));
         return { database: "unreachable", issue: timedOut ? DB_CHECK_TIMEOUT_ISSUE : DB_CHECK_FAILED_ISSUE };
@@ -54,20 +63,20 @@ async function runDatabaseProbe(): Promise<DatabaseCheckResult> {
     });
 
     try {
-        const { createPublicServerClient } = await import("@/lib/supabase/public-server");
-        const supabase = createPublicServerClient();
-        const query = supabase
-            .from("content_item")
-            .select("id")
-            .limit(1);
-        const { error } = await Promise.race([
-            applyAbortSignal(query, abortController.signal),
-            timeoutPromise,
-        ]);
-
-        return error || abortController.signal.aborted
-            ? failure()
-            : { database: "reachable", issue: null };
+        // Race the entire operation, including lazy client initialization. A timed-out
+        // initializer must not start a database request after the deadline.
+        const operation = (async () => {
+            const { createPublicServerClient } = await import("@/lib/supabase/public-server");
+            if (abortController.signal.aborted) throw new Error(DB_CHECK_TIMEOUT_ISSUE);
+            const supabase = createPublicServerClient();
+            const query = supabase.from("content_item").select("id").limit(1);
+            queryStarted = performance.now();
+            return await applyAbortSignal(query, abortController.signal);
+        })();
+        const { error } = await Promise.race([operation, timeoutPromise]);
+        if (error || abortController.signal.aborted) return failure();
+        console.info(JSON.stringify({ event: "health_database_probe_completed", ...measurements() }));
+        return { database: "reachable", issue: null };
     } catch {
         return failure();
     } finally {

@@ -1,0 +1,235 @@
+{
+  "at": "2026-09-28T14:29:23.592Z",
+  "samples": [
+    {
+      "at": "2026-09-28T14:29:27.177Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1030.411917,
+      "durationMs": 1031.9569999999999,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:29:26.735Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T14:29:57.781Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 594.8413330000039,
+      "durationMs": 596.726625000003,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:29:57.417Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T14:30:28.927Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1142.2869159999973,
+      "durationMs": 1143.5176250000004,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:30:28.016Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T14:30:59.993Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1061.443082999991,
+      "durationMs": 1062.7237909999967,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:30:59.206Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T14:31:31.119Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1122.2655000000086,
+      "durationMs": 1123.4819160000043,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:31:30.223Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T14:32:02.626Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1498.8504170000087,
+      "durationMs": 1501.1605839999975,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:32:01.601Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T14:32:33.728Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1094.775500000018,
+      "durationMs": 1096.4663750000182,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:32:33.079Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T14:33:04.887Z",
+      "target": "candidate",
+      "status": 200,
+      "headersMs": 1153.7295419999864,
+      "durationMs": 1155.9493749999965,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T14:33:03.973Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    }
+  ],
+  "mode": "read-only-health-phase-diagnostic",
+  "candidate": {
+    "id": "dpl_8sRC3MmXReujTEy29mN1L2XTSYrJ",
+    "sha": "59c801c1e021da4b44fa1e0af67796adbdff292d"
+  },
+  "productionId": "dpl_7vrXyfWwDDDQU97gYUYYN1H2Crv5"
+}
