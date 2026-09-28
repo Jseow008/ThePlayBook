@@ -1578,3 +1578,25 @@ Current evidence branch `codex/library-latency-evidence` in
 `b9fe7c10`. No production schema, SQL, quotas or region changes in this step.
 Next: small same-region save/list comparison, preserving the baseline and all
 correctness/admission guarantees, before any full capacity rerun. #28 remains open.
+
+#### #28 regional correction — candidate evidence complete
+
+PR #187 (`codex/library-mumbai-region`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`) changes only Vercel
+placement for library save/list to `bom1`, using per-function configuration rather
+than the deprecated Next.js region export. Base `fd3660a3`; tested application
+commit `14ac1159`; subsequent changes are evidence/docs only.
+
+A protected production-target candidate with aliasing disabled built successfully.
+All 12 sample requests executed in Mumbai; a health-route control stayed in Virginia.
+Mean write/read elapsed improved from 4,234/2,414ms to 945/313ms. Library phases fell
+from 2,825/1,397ms to 40/14ms. Six writes and six exact read-backs passed, with two
+synthetic accounts fully cleaned up and original 8 accounts/496 catalog items intact.
+The first save was 2,471ms and is retained above target: no capacity pass or p95 claim.
+See [timing checkpoint and limitations](evidence/library-latency-timing.md) and its
+linked raw evidence. No SQL, schema, auth, quota, Upstash or global-region change.
+
+Next: let #187's exact-head gates finish and merge through normal workflow, verify
+public-route placement after normal deployment promotion, then resume bounded #28
+preflight with unchanged thresholds. Preserve startup observations; do not rerun
+until green. No new subagents or model experiments were needed.

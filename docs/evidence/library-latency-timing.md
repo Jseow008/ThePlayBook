@@ -91,3 +91,41 @@ Hold public rollout until a staged production-target build confirms the two rout
 placements and the same two-account/six-write/six-read diagnostic succeeds. Retain
 raw sanitized phase measurements and cleanup proof. A faster small sample is not
 #28 closure or a throughput claim. No temporary database or Upstash upgrade.
+
+### Mumbai comparison completed
+
+Candidate code commit `14ac11594b788e04da98d2d9a6cc14546a8d4e27` built successfully
+as production-target deployment `dpl_3Btd7UfJH6xyFXAatjhHnh8nq6SP`, with automatic
+alias assignment disabled. All 12 authenticated responses reported `bom1` execution
+via their Vercel routing header. A health-route control still reported `iad1`,
+confirming the change is scoped to the selected functions.
+
+| Mean across six requests | Virginia baseline | Mumbai candidate |
+| --- | ---: | ---: |
+| Write client elapsed | 4,234ms | 945ms |
+| Write library-operation phase | 2,825ms | 40ms |
+| Read client elapsed | 2,414ms | 313ms |
+| Read library-operation phase | 1,397ms | 14ms |
+
+All six save/progress/remove operations and six revision/field read-backs passed.
+The first save took 2,471ms; it remains above the frozen 2,000ms target and is not
+excluded. The other five writes were below the target. This fixed small diagnostic
+supports shipping the placement improvement, not claiming #28 completion or a p95.
+It is a historical comparison, not a simultaneous randomized experiment; startup,
+auth caching and changing external-service latency can affect totals. The large
+library-phase reduction with unchanged SQL/application code supports avoiding the
+cross-region path as the effective correction.
+
+[All candidate samples](library-mumbai-sample-20260928.json) include routing-region,
+phase and cleanup evidence. Both synthetic accounts, library rows, boundaries and
+receipts were removed. Original account/catalog counts remain 8/496; detailed health
+passed; the candidate did not receive the public alias. An initial identity preflight
+stopped with zero samples/accounts because the preceding documentation release had
+just moved the public alias. Its [record](library-mumbai-identity-preflight-20260928.json)
+is retained; the expected baseline was updated only after verifying merged main
+`fd3660a3`. No failed timing result was discarded or rerun for a favorable outcome.
+
+Public rollout: PR #187, required checks and normal production deployment gates.
+No migration. After promotion, verify routing and integrity on the public endpoint;
+then resume the bounded capacity preflight with the original latency targets and
+all startup observations retained. No Upstash upgrade is needed for this correction.
