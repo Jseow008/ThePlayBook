@@ -1,0 +1,70 @@
+[
+  {
+    "at": "2026-09-28T14:14:32.004Z",
+    "status": 503,
+    "durationMs": 5278.993917,
+    "body": {
+      "status": "degraded",
+      "timestamp": "2026-09-28T14:14:29.432Z",
+      "environment": "production",
+      "database": "unreachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": [
+        "Database connectivity check timed out."
+      ]
+    }
+  },
+  {
+    "at": "2026-09-28T14:14:44.339Z",
+    "status": 200,
+    "durationMs": 1329.3617919999997,
+    "body": {
+      "status": "ok",
+      "timestamp": "2026-09-28T14:14:43.574Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    }
+  },
+  {
+    "at": "2026-09-28T14:14:56.580Z",
+    "status": 200,
+    "durationMs": 1234.740249999999,
+    "body": {
+      "status": "ok",
+      "timestamp": "2026-09-28T14:14:56.088Z",
+      "environment": "production",
+      "database": "reachable",
+      "readiness": {
+        "supabase_public": "ready",
+        "supabase_admin": "ready",
+        "site_url": "ready",
+        "app_url": "derived",
+        "ai_generation": "ready",
+        "ai_retrieval": "ready",
+        "rate_limiting": "ready",
+        "error_reporting": "ready"
+      },
+      "issues": []
+    }
+  }
+]

@@ -1662,3 +1662,23 @@ results describe the rejected configuration, not the final PR's performance.
 Next: after diagnostic release, capture the reason for any recurrence; investigate
 platform request startup/transport attribution for first saves and reader rendering
 before another regional or caching change. Keep #28 open and load escalation paused.
+
+#### #189 production verification — timeout recurrence captured
+
+#189 merged as `18f2648af0e38a0b522e6ef3acad267c257dd062`; public deployment
+`dpl_7vrXyfWwDDDQU97gYUYYN1H2Crv5` is READY and serves that commit. Library routes
+remain Mumbai; the rejected reader override is absent. Required PR checks passed.
+
+Three detailed-health probes 11 seconds apart returned 503/200/200. The first
+response explicitly reported `Database connectivity check timed out.`; its matching
+runtime warning recorded `health_database_probe_failed`, `reason: timeout`,
+`duration_ms: 2505`, `timeout_ms: 2500`. Every configuration-readiness field was ready.
+See `docs/evidence/health-postrelease-20260928.json`. The diagnostic release therefore
+works and identifies the failing check, but it does not fix the underlying delay.
+
+No load test, account creation, migration or further application change was performed.
+#188 was rebased onto current main preserving both documents' histories and all
+previous failed samples; its refreshed CI still gates merge. Next: distinguish the
+probe's client initialization from request/transport/database latency. The existing
+2.5s bound covers dynamic client import as well as query execution, so timeout alone
+does not establish slow SQL or a database outage. #28 remains open.

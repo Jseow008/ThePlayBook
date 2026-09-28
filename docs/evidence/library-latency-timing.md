@@ -201,3 +201,13 @@ platform startup/request traces for the slow save; compare a reader-only Mumbai
 candidate when health is stable. Existing runtime request logs lacked duration/startup
 fields, so they do not establish the unexplained 1.11s. Do not keep repeating the
 capacity preflight to obtain a favorable sample.
+
+### Diagnostic release verification
+
+#189 is live at `18f2648a`, deployment `dpl_7vrXyfWwDDDQU97gYUYYN1H2Crv5`.
+[Post-release health responses](health-postrelease-20260928.json) retain the first
+503 and subsequent two 200s. The warning at approximately 14:14:27 UTC reports
+`health_database_probe_failed`, timeout, 2,505ms against the unchanged 2,500ms bound.
+All configuration checks were ready. This establishes probe timeout as the current
+failure mode, not its ultimate cause: dynamic client initialization and the query
+share that deadline. No capacity traffic was generated during this verification.
