@@ -1361,3 +1361,26 @@ Closeout branch: `codex/close-accessibility-finding`, based on `8c1ad354`, in th
 managed worktree. This documentation-only closeout preserves the unexecuted checklist
 and the reason for closure. Next workstream: #28 bounded capacity verification;
 #29–#32 and other explicitly deferred findings remain separate.
+
+### #28 capacity verification — preparation, 28 September 2026
+
+#183 merged as `7ebab776`; root main was pulled clean. Worktree:
+`/Users/j/.codex/worktrees/capacity-verification/Lifebook`, branch
+`codex/capacity-verification`, based on that commit. One owner, no subagents.
+The [bounded capacity runbook](evidence/capacity-verification-runbook.md) proposes
+25 active users/50 burst, explicit outcome/latency/cost limits, and isolation rules.
+No capacity test, provider call, production change or hosted project creation has
+occurred. The scenario is not yet frozen in an executable runner.
+
+Pending: optional owner workload selection and required fresh confirmation of the
+temporary Supabase project's quoted $10/month cost. Do not interpret elapsed time
+as cost approval. Production ref is excluded from candidate execution. Existing
+per-network admission means one generator cannot prove independent-network user
+capacity; keep admission and successful-work measurements distinct.
+
+Two connected Vercel project-read attempts failed on contradictory argument schemas
+(`projectId` versus `idOrName`); do not repeat that approach. Use authenticated CLI
+or REST metadata access instead; the global CLI was not found on PATH. Next action:
+resolve candidate cost approval, inspect hosted runtime/compute parity, implement
+the bounded runner and run its small preflight before the frozen full scenario.
+No results are claimed and #28 remains open.
