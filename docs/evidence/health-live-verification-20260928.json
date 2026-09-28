@@ -1,0 +1,142 @@
+{
+  "deployment": "dpl_4LC9WxrT6gwx9frZi4LrMbvCp1aC",
+  "commit": "eabbfd908576282bf7ebec9065d497d718d1b9a6",
+  "health": [
+    {
+      "at": "2026-09-28T15:25:58.999Z",
+      "status": 200,
+      "durationMs": 4609.671042,
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T15:25:57.311Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T15:26:11.456Z",
+      "status": 200,
+      "durationMs": 1445.8949580000008,
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T15:26:10.542Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    },
+    {
+      "at": "2026-09-28T15:26:24.501Z",
+      "status": 200,
+      "durationMs": 2041.0670830000017,
+      "body": {
+        "status": "ok",
+        "timestamp": "2026-09-28T15:26:23.617Z",
+        "environment": "production",
+        "database": "reachable",
+        "readiness": {
+          "supabase_public": "ready",
+          "supabase_admin": "ready",
+          "site_url": "ready",
+          "app_url": "derived",
+          "ai_generation": "ready",
+          "ai_retrieval": "ready",
+          "rate_limiting": "ready",
+          "error_reporting": "ready"
+        },
+        "issues": []
+      }
+    }
+  ],
+  "connectionDiagnostics": [
+    {
+      "at": "2026-09-28T15:27:32.347Z",
+      "detailed": false,
+      "status": 200,
+      "dnsSeconds": 0.039382,
+      "tcpSeconds": 0.048454,
+      "tlsSeconds": 0.075079,
+      "firstByteSeconds": 0.781783,
+      "totalSeconds": 0.782256,
+      "health": "ok"
+    },
+    {
+      "at": "2026-09-28T15:27:33.627Z",
+      "detailed": true,
+      "status": 200,
+      "dnsSeconds": 0.002399,
+      "tcpSeconds": 0.009404,
+      "tlsSeconds": 0.030366,
+      "firstByteSeconds": 1.266442,
+      "totalSeconds": 1.266831,
+      "database": "reachable",
+      "health": "ok"
+    },
+    {
+      "at": "2026-09-28T15:27:34.001Z",
+      "detailed": false,
+      "status": 200,
+      "dnsSeconds": 0.003169,
+      "tcpSeconds": 0.010697,
+      "tlsSeconds": 0.076384,
+      "firstByteSeconds": 0.358909,
+      "totalSeconds": 0.359567,
+      "health": "ok"
+    },
+    {
+      "at": "2026-09-28T15:27:34.593Z",
+      "detailed": true,
+      "status": 200,
+      "dnsSeconds": 0.003592,
+      "tcpSeconds": 0.014297,
+      "tlsSeconds": 0.031172,
+      "firstByteSeconds": 0.573072,
+      "totalSeconds": 0.574197,
+      "database": "reachable",
+      "health": "ok"
+    }
+  ],
+  "probeLogs": [
+    {
+      "initialization_ms": 30,
+      "query_ms": 1487,
+      "duration_ms": 1518
+    },
+    {
+      "initialization_ms": 34,
+      "query_ms": 809,
+      "duration_ms": 843
+    },
+    {
+      "initialization_ms": 8,
+      "query_ms": 795,
+      "duration_ms": 803
+    }
+  ],
+  "limitations": [
+    "Seven successful health requests are not a capacity pass or proof the intermittent failure is resolved.",
+    "The paired curl requests are separate connections; the second detailed-health response may reuse the ten-second probe cache.",
+    "Client total minus measured probe includes uninstrumented server/platform work and transport; cannot label it cold-start duration."
+  ]
+}

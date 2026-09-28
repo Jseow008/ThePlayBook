@@ -1722,3 +1722,29 @@ future health timeout now records which phase consumed the bound. Do not buy cap
 or change reader placement based on this small healthy sample. #28 remains open;
 the first-save/reader latency failures and intermittent timeout need stronger
 attribution before the original capacity workload can be declared passed.
+
+### #191 live deployment verification — 28 September 2026
+
+Confirmed #191 merged as `eabbfd90` and public deployment
+`dpl_4LC9WxrT6gwx9frZi4LrMbvCp1aC` serves its phase diagnostics. Three spaced
+production probes returned 200. Their initialization/request totals were
+30/1487ms, 34/809ms, and 8/795ms; corresponding client totals were
+4609.7ms, 1445.9ms, and 2041.1ms. First response therefore spent approximately
+3.09s outside the measured probe, not in client module initialization.
+
+Four additional curl connection diagnostics returned 200; DNS/TCP/TLS setup was
+complete in 30–76ms, versus 0.36–1.27s total. These are cumulative curl connection
+milestones, not additive times. Detailed probes may reuse the 10s cache. The result
+narrows current investigation to hosted request processing/response delivery; it
+neither isolates platform startup nor proves slow SQL or an upstream outage.
+
+Evidence is in `docs/evidence/health-live-verification-20260928.json`. No accounts,
+database writes, quota changes or load testing. #28 stays open. Next useful evidence
+is platform request/startup tracing for an above-target request, not another batch
+of general health probes or an unproven region/caching change.
+
+Continuation: branch `codex/health-production-verification`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, based on freshly fetched
+`a87cff9f` main. This verification checkpoint is retained locally for the next
+related change; no additional documentation-only release was opened for this smoke.
+No local test or monitor remains running after this check.
