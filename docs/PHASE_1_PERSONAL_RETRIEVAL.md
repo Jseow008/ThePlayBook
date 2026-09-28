@@ -1722,3 +1722,155 @@ future health timeout now records which phase consumed the bound. Do not buy cap
 or change reader placement based on this small healthy sample. #28 remains open;
 the first-save/reader latency failures and intermittent timeout need stronger
 attribution before the original capacity workload can be declared passed.
+
+### #191 live deployment verification — 28 September 2026
+
+Confirmed #191 merged as `eabbfd90` and public deployment
+`dpl_4LC9WxrT6gwx9frZi4LrMbvCp1aC` serves its phase diagnostics. Three spaced
+production probes returned 200. Their initialization/request totals were
+30/1487ms, 34/809ms, and 8/795ms; corresponding client totals were
+4609.7ms, 1445.9ms, and 2041.1ms. First response therefore spent approximately
+3.09s outside the measured probe, not in client module initialization.
+
+Four additional curl connection diagnostics returned 200; DNS/TCP/TLS setup was
+complete in 30–76ms, versus 0.36–1.27s total. These are cumulative curl connection
+milestones, not additive times. Detailed probes may reuse the 10s cache. The result
+narrows current investigation to hosted request processing/response delivery; it
+neither isolates platform startup nor proves slow SQL or an upstream outage.
+
+Evidence is in `docs/evidence/health-live-verification-20260928.json`. No accounts,
+database writes, quota changes or load testing. #28 stays open. Next useful evidence
+is platform request/startup tracing for an above-target request, not another batch
+of general health probes or an unproven region/caching change.
+
+Continuation: branch `codex/health-production-verification`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, based on freshly fetched
+`a87cff9f` main. This verification checkpoint is retained locally for the next
+related change; no additional documentation-only release was opened for this smoke.
+No local test or monitor remains running after this check.
+
+### #28 matched platform timing checkpoint — 29 September 2026
+
+Continuation on `codex/health-production-verification` in
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`; base `a87cff9f`.
+The prior local checkpoint commit is `9f327467`. No application change, migration,
+region change, quota change, or additional deployment was made in this investigation.
+
+Production deployment `dpl_J4sfyQi2w24N1xcsKFU33mTdVHAe` serves `a87cff9f`.
+The read-only platform request-log API supplies cold/hot start and function timing
+metadata omitted by the normal CLI output. Older request logs returned
+`ExceedsBillingLimitError`; no billing upgrade was made. Raw request metadata and
+credentials are not retained in tracked evidence.
+
+One fresh matched diagnostic used two synthetic accounts and six requests. First
+save/read/reader client times were 3588/1633/3766ms; subsequent times were
+816/223/1463ms. All six succeeded with integrity checks. Platform metadata confirms
+the first save and read were cold invocations; the first reader had cold middleware
+and page invocations. The subsequent requests were hot. Library operation times
+were 8–115ms and reported function concurrency was one. This supports investigating
+cold-path overhead; it does not demonstrate database saturation or establish capacity.
+Function durations can overlap or exceed request duration, so they must not be added
+or subtracted as exact critical-path accounting. Cold-start boot time alone also
+does not explain all observed latency.
+
+Evidence: `docs/evidence/capacity-platform-client-20260929.json` and
+`docs/evidence/capacity-platform-runtime-20260929.json` (UTC collection date September
+28, local Singapore date September 29). Both synthetic sessions were revoked and
+accounts deleted. Fixture accounts/library/reflections/boundaries/receipts remaining:
+zero. Existing account/catalog totals stayed 8/603. Final health was OK/reachable.
+No test or monitor remains running.
+
+The production sparse-sample stop is explicitly intentional in the runbook, not a
+percentile calculation defect. It is stricter than the statistical acceptance rule
+requiring at least 100 samples. No stop rule or acceptance threshold was changed.
+Pending user decision: permit one fixed low-concurrency diagnostic with all cold
+samples retained, without escalation to the 50-user ladder, or preserve the sparse
+stop and investigate cold-path changes first. An async question was sent explaining
+this safety-rule change. Until answered, do not run dependent production traffic.
+
+Proposed diagnostic bounds: at most two disposable accounts, one in-flight request,
+100 saves, 100 library reads, 100 reader requests; maximum 12 minutes and 300 measured
+requests. No AI, export, or full capacity claim. Preserve auth, admission, integrity,
+isolation, cleanup and health checks; stop on errors or failed integrity, health, or
+resource bounds. Report every sample including cold starts, p95 and maximum per
+route. Any later load escalation remains separately gated under the original plan.
+Next action: resolve that decision, then implement and verify only the selected
+bounded path; do not repeat the same sparse preflight until it happens to pass.
+
+### #28 approved sequential diagnostic result — 29 September 2026
+
+The user approved the bounded diagnostic exception after the checkpoint above.
+One run completed on unchanged production `a87cff9f` / deployment
+`dpl_J4sfyQi2w24N1xcsKFU33mTdVHAe`, using two ordinary synthetic accounts and
+one HTTP request in flight. Measurement lasted 262 seconds; no discarded warm-up,
+retry, provider call, migration, production configuration change, or new project.
+The runbook records the one-run exception, preserving the original escalation gate.
+
+| Route | Successful samples | p50 | p95 | Maximum | Above target |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Library mutation | 100 | 366ms | 649ms | 2291ms | 1 (>2s) |
+| Library read | 100 | 196ms | 299ms | 516ms | 0 (>2s) |
+| Reader HTML | 100 | 784ms | 1371ms | 3004ms | 1 (>3s) |
+
+All 300 requests returned 200. Every save/progress/remove acknowledgement and library
+read-back passed the existing semantic/revision checks. The first save and reader
+were the above-target observations and remain included. Their cold/hot status was
+not independently sampled in this run; the earlier matched platform evidence is
+separate. Sequential p95 targets passed; this is not concurrent capacity proof.
+At most one saved item per account and one reader title were exercised. No catalog
+search, reflections, exports, AI overlays, or browser-rendering capacity was measured.
+
+Evidence: `docs/evidence/capacity-low-concurrency-20260929.json`, including all
+samples, route phase timings, health checks, bounds, harness hashes and limitations.
+Summary percentiles and sample counts were independently recomputed from raw samples.
+Both fixture sessions were revoked, both accounts deleted, and checked associated
+records returned to zero. Existing totals remained 8 accounts and 603 catalog items;
+final detailed health was OK/reachable. No test process remains running.
+
+Decision: no infrastructure upgrade or speculative application fix is justified by
+this run. #28 remains open for the concurrent mixed-workload envelope and missing
+route/overlay coverage. The existing production escalation rule still blocks on sparse
+latency exceedances; this one-run approval does not authorize replacing it globally.
+Before the next load run, define a reviewed cumulative-sample escalation rule that
+retains all slow samples, enforces error/integrity/health/resource stops, and evaluates
+p95 only after sufficient samples. Avoid repeating the same first-request preflight.
+Continuation: branch `codex/health-production-verification`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`. Prior evidence commits
+`9f327467` and `7bd46686` are included in the same evidence-only PR. No subagents used.
+
+### #28 two/five-user concurrent diagnostic — 29 September 2026
+
+User authorized proceeding after the sequential result. One bounded run completed
+on unchanged `a87cff9f` production, first at two simultaneous test users and then at
+five. Each stage measured 100 successful requests per route. All 600 requests were
+200 with passing save/progress/remove acknowledgements and read-back integrity.
+Measurement including the stage transition took approximately 246 seconds; all first
+requests remain included, with no warm-up exclusion or rerun.
+
+| Concurrent users | Mutation p95 | Library read p95 | Reader HTML p95 |
+| ---: | ---: | ---: | ---: |
+| 2 | 1281ms | 279ms | 2598ms |
+| 5 | 911ms | 291ms | 1379ms |
+
+Both stages passed the original 2s API / 3s reader targets. At two users, three
+mutations, one library read, and two reader requests exceeded their individual
+targets (maximum reader 4861ms); all remain in evidence. At five users, none exceeded
+the targets. Later-stage improvement does not demonstrate that more concurrency is
+faster: warming and other shared-service state are uncontrolled factors.
+
+The test was limited to five accounts, one saved item per account, one reader title,
+and closed-loop batches. It did not exercise the original fixed-arrival mixed workload
+or the remaining search/reflection/AI/export/browser coverage. #28 stays open. Next:
+prepare the mixed-workload run with cumulative sample sufficiency and explicit
+escalation stops, then execute its bounded stages rather than repeating these routes.
+The default production ladder's sparse stop rule is still unchanged.
+
+All five sessions were revoked, all five accounts deleted, and checked fixture
+library/reflection/boundary/receipt records returned to zero. Existing totals stayed
+8 accounts / 603 catalog items, and final health was OK/reachable. No migration,
+configuration change, new project, application edit, or subagent was needed.
+
+Evidence: `docs/evidence/capacity-concurrent-20260929.json`. Independently recomputed
+all six 100-sample p95 values and verified outcomes/bounds/cleanup. Added to existing
+PR #192 on `codex/health-production-verification`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`; no test process remains.

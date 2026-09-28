@@ -1,0 +1,211 @@
+{
+  "runId": "capacity-platform-1790611728947",
+  "sha": "a87cff9f027d56e04118c3374e467901e551b527",
+  "deployment": "dpl_J4sfyQi2w24N1xcsKFU33mTdVHAe",
+  "startedAt": "2026-09-28T16:08:48.947Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-28T16:08:55.270Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:08:59.492Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:09:03.460Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:09:06.737Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:09:14.365Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:09:21.484Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:09:24.532Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:09:27.834Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-28T16:09:32.542Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "mode": "phase-diagnostic-not-capacity-retest",
+  "requests": [
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 3587.967457999999,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1632.5826250000027,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3765.564875,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 816.2950420000016,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 223.05666600000404,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1463.234083999996,
+      "outcome": "success"
+    }
+  ],
+  "routing": [
+    {
+      "at": "2026-09-28T16:09:10.320Z",
+      "route": "/api/account-data/user_library/mutation",
+      "headersMs": 3581.829582999999,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=1040.2, admission;dur=834.5, library;dur=114.9, handler;dur=1990.8",
+      "cache": "MISS"
+    },
+    {
+      "at": "2026-09-28T16:09:11.958Z",
+      "route": "/api/account-data/user_library",
+      "headersMs": 1631.8654999999999,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=121.6, library;dur=96.0, handler;dur=218.4",
+      "cache": "MISS"
+    },
+    {
+      "at": "2026-09-28T16:09:16.920Z",
+      "route": "/read/:id/atomic-habits",
+      "headersMs": 2554.517749999999,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "serverTiming": null,
+      "cache": "MISS"
+    },
+    {
+      "at": "2026-09-28T16:09:22.299Z",
+      "route": "/api/account-data/user_library/mutation",
+      "headersMs": 815.135083000001,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=77.2, admission;dur=408.2, library;dur=37.9, handler;dur=525.1",
+      "cache": "MISS"
+    },
+    {
+      "at": "2026-09-28T16:09:22.519Z",
+      "route": "/api/account-data/user_library",
+      "headersMs": 218.03008299999783,
+      "regions": [
+        "sin1",
+        "bom1"
+      ],
+      "serverTiming": "auth;dur=86.2, library;dur=8.2, handler;dur=94.6",
+      "cache": "MISS"
+    },
+    {
+      "at": "2026-09-28T16:09:24.925Z",
+      "route": "/read/:id/atomic-habits",
+      "headersMs": 392.5145409999968,
+      "regions": [
+        "sin1",
+        "iad1"
+      ],
+      "serverTiming": null,
+      "cache": "MISS"
+    }
+  ],
+  "healthAfter": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  }
+}
