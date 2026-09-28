@@ -76,3 +76,18 @@ Efficiency: one coordinator, no new subagents or model experiments. Most elapsed
 time was required CI and a strict branch-freshness rebase. The staged-build sample
 avoided waiting for the second full CI cycle to promote public aliases, while
 preserving that promotion gate. Codex token usage was not measured.
+
+## Mumbai-region candidate
+
+Branch `codex/library-mumbai-region`, based on fresh `fd3660a3` main.
+The candidate changes only Vercel's per-function region configuration for library
+save and list routes to `bom1`. This follows Vercel's current
+[per-function configuration](https://vercel.com/docs/functions/configuring-functions/region#per-function-configuration).
+The installed Next.js guide marks `preferredRegion` deprecated, so no route export
+or runtime change is introduced. SQL, auth, rate limits, read-back verification and
+all other route placement stay unchanged.
+
+Hold public rollout until a staged production-target build confirms the two route
+placements and the same two-account/six-write/six-read diagnostic succeeds. Retain
+raw sanitized phase measurements and cleanup proof. A faster small sample is not
+#28 closure or a throughput claim. No temporary database or Upstash upgrade.

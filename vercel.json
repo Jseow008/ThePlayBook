@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "app/api/account-data/user_library/route.ts": {
+      "regions": ["bom1"]
+    },
+    "app/api/account-data/user_library/mutation/route.ts": {
+      "regions": ["bom1"]
+    }
+  }
+}
