@@ -30,7 +30,7 @@ export {
 const OPENAI_WAV_FORMAT = "wav";
 const FINAL_AUDIO_FORMAT = "mp3";
 const FINAL_AUDIO_CONTENT_TYPE = "audio/mpeg";
-const FISH_NARRATION_DIRECTION = "[deliver a sober factual briefing: serious, steady, restrained, with clear articulation and understated emphasis]";
+const FISH_NARRATION_DIRECTION = "[speak in a calm, grounded conversational tone, with natural pauses and understated emphasis]";
 const FISH_NARRATION_TEMPERATURE = 0.5;
 const FISH_NARRATION_TOP_P = 0.7;
 const TTS_CONCURRENCY = 3;
