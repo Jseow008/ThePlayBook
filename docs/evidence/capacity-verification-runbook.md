@@ -284,3 +284,15 @@ and browser rendering remain outside this run. The production-only choice does
 not justify publishing fake catalog records or pretending those gaps were tested.
 No further load is running; review the remaining launch envelope before expanding
 scope or rerunning benchmarks.
+
+
+### AI coexistence observation — 30 September 2026
+
+The bounded mixed run returned six correct AI responses (8.5–15.6s) alongside
+123 successful core HTTP requests. Its final verdict remains inconclusive because
+a concurrent shared-request-tail assertion generated false action-failure markers.
+Raw markers, the earlier setup failure, cleanup, and global spend deltas are
+retained in [mixed evidence](capacity-ai-mixed-20260930.json) and the
+[checkpoint](../PHASE_1_PERSONAL_RETRIEVAL.md). No automatic rerun is planned.
+#28 remains open at the user's explicit request; do not treat this observation as
+a clean acceptance pass or a six-sample AI percentile proof.

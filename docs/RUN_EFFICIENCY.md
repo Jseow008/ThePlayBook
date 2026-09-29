@@ -59,3 +59,14 @@ Keep this pattern for comparable changes: one implementation owner, bounded inde
   cover browser-client adapters. Check configuration presence through metadata when
   sensitive values are intentionally unreadable. Measure improvement by fixture
   accounts and load stages executed before the first complete overlay proof.
+
+
+## Concurrent harness lesson — 30 September 2026
+
+- **Shared request bookkeeping:** the AI capacity observation returned successful
+  HTTP requests but a redundant post-action assertion read the shared request
+  array's tail while another request was pending. Keep assertions bound to the
+  individual action/request; let the existing action verifier check semantics.
+  Keep browser-style global fetch wrappers outside administrative fixture setup.
+  Reproduce harness races locally before spending on another production run, and
+  preserve original unsuccessful verdicts rather than relabeling raw evidence.

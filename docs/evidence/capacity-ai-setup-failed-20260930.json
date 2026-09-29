@@ -1,0 +1,107 @@
+{
+  "runId": "capacity-ai-mixed-1790698688731",
+  "sha": "9e8d31bcf23ad8d31946892513e2a6f2963a6f43",
+  "deployment": "dpl_CFKwiceTRdYoqg9vNck6azAA5cTV",
+  "startedAt": "2026-09-29T16:18:08.731Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-29T16:18:12.993Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:18:15.642Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:18:18.063Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:18:24.713Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:19:11.248Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:19:15.581Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "budget": {
+    "maximumMicrousd": 1000000,
+    "indexingAllowanceMicrousd": 250000,
+    "queryAllowanceMicrousd": 250000,
+    "maximumQueries": 7
+  },
+  "spendBefore": {
+    "reserved": "0",
+    "settled": "0"
+  },
+  "verificationCommit": "9e8d31bcf23ad8d31946892513e2a6f2963a6f43",
+  "indexing": [
+    {
+      "workflowRunId": 36596747816,
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "ai": [
+    {
+      "phase": "preflight",
+      "userSlot": 0,
+      "outcome": "success",
+      "startedAt": "2026-09-29T16:18:55.958Z",
+      "status": 200,
+      "durationMs": 13544.799583
+    }
+  ],
+  "error": "ifError got unwanted exception: Missing user request scope",
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "derivedCleanup": {
+    "personal_index": 0,
+    "snapshots": 0,
+    "operations": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  }
+}

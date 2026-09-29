@@ -2198,3 +2198,43 @@ Current branch: `codex/capacity-production-results`, based on `c57dd537`; worktr
 synthetic fixture remains. Next: publish this evidence-only PR. Then explicitly
 resolve the remaining capacity scope before a larger launch; no automatic rerun,
 new paid project, fake published catalog, or infrastructure upgrade is planned.
+
+
+### AI alongside normal traffic — 30 September 2026
+
+User authorized one bounded production AI mixed test and explicitly requested that
+#28 remain open for questions. PR #196 is merged (`9e8d31bc`); public production
+was pinned to READY deployment `dpl_CFKwiceTRdYoqg9vNck6azAA5cTV`.
+
+First setup: real indexed AI preflight passed, then the browser-style global fetch
+wrapper intercepted administrative account creation. No mixed traffic began.
+Both accounts were cleaned. This harness failure is retained in
+[evidence](evidence/capacity-ai-setup-failed-20260930.json). The corrected driver used
+ordinary authenticated HTTP directly for AI and reused the successful preflight.
+
+Mixed run: five core users, 90 scheduled actions at 10-second pacing, six AI
+requests in three pairs, 30-second AI deadline, unchanged production quotas. All
+90 actions started with zero drops; all 123 core HTTP requests succeeded. All six
+AI responses contained the expected reflection evidence, taking 8463–15640ms.
+However, the final harness verdict was unsuccessful: a redundant post-action
+assertion inspected `transport.requests.at(-1)` while another concurrent request
+could still be pending. It produced 35 action-failure markers. A local two-request
+reproduction confirmed this race. The original markers and unsuccessful verdict
+are retained; this is not declared a clean acceptance pass. The erroneous assertion
+was removed from the temporary driver, but no additional production run was started.
+
+Global ledger settled-cost delta was 16929 microUSD ($0.016929); exposure delta,
+including outstanding reservations, was 18777 microUSD. These are global deltas,
+not account-attributed provider billing. Initial preflight cost is separate.
+All seven accounts/sessions and checked library, reflection, boundary, receipt,
+personal-index, snapshot and operation rows were removed. Original 8 accounts and
+603 catalog items were preserved; final detailed health was ok.
+
+[Raw mixed evidence and assessment](evidence/capacity-ai-mixed-20260930.json).
+Six AI samples are only a bounded coexistence observation, not an AI percentile or
+maximum-capacity proof. #28 remains open; larger corpus/query diversity is untested.
+No application changes, migration, infrastructure upgrade, or new paid project.
+Branch `codex/capacity-ai-mixed`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`, base `9e8d31bc`.
+Next: publish this evidence-only update, then answer the user's questions before
+any further capacity testing or closure. No production test remains running.

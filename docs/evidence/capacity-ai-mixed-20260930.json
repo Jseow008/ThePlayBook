@@ -1,0 +1,1934 @@
+{
+  "runId": "capacity-ai-mixed-1790698790577",
+  "sha": "9e8d31bcf23ad8d31946892513e2a6f2963a6f43",
+  "deployment": "dpl_CFKwiceTRdYoqg9vNck6azAA5cTV",
+  "startedAt": "2026-09-29T16:19:50.577Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-29T16:19:53.861Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:19:59.892Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:20:01.675Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:20:08.320Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:20:52.150Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:20:54.024Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:20:55.235Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:20:56.528Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:20:58.394Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:21:02.656Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:22:02.543Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:23:02.528Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T16:23:59.759Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "budget": {
+    "maximumMicrousd": 1000000,
+    "indexingAllowanceMicrousd": 250000,
+    "queryAllowanceMicrousd": 750000,
+    "maximumQueries": 6
+  },
+  "spendBefore": {
+    "reserved": "208308",
+    "settled": "2891",
+    "exposure": "3199"
+  },
+  "verificationCommit": "9e8d31bcf23ad8d31946892513e2a6f2963a6f43",
+  "indexing": [
+    {
+      "workflowRunId": 36596959319,
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "ai": [
+    {
+      "phase": "mixed",
+      "userSlot": 0,
+      "outcome": "success",
+      "startedAt": "2026-09-29T16:21:03.395Z",
+      "status": 200,
+      "durationMs": 15531.082083000001
+    },
+    {
+      "phase": "mixed",
+      "userSlot": 1,
+      "outcome": "success",
+      "startedAt": "2026-09-29T16:21:03.403Z",
+      "status": 200,
+      "durationMs": 15640.153584
+    },
+    {
+      "phase": "mixed",
+      "userSlot": 1,
+      "outcome": "success",
+      "startedAt": "2026-09-29T16:22:03.257Z",
+      "status": 200,
+      "durationMs": 9379.018458000006
+    },
+    {
+      "phase": "mixed",
+      "userSlot": 0,
+      "outcome": "success",
+      "startedAt": "2026-09-29T16:22:03.324Z",
+      "status": 200,
+      "durationMs": 13918.576792000007
+    },
+    {
+      "phase": "mixed",
+      "userSlot": 0,
+      "outcome": "success",
+      "startedAt": "2026-09-29T16:23:03.350Z",
+      "status": 200,
+      "durationMs": 9892.300458999991
+    },
+    {
+      "phase": "mixed",
+      "userSlot": 1,
+      "outcome": "success",
+      "startedAt": "2026-09-29T16:23:03.608Z",
+      "status": 200,
+      "durationMs": 8462.817167000001
+    }
+  ],
+  "reusedAiPreflight": "ai-mixed-setup-failed.json",
+  "coreRequests": [
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1113.5136250000069,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1205.4522080000024,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 175.82787500000268,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1586.320458000002,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 4020.2465419999935,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 368.1987499999959,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 669.7534580000065,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2652.4294999999984,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 244.00541599999997,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 2025.5407080000004,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1506.0862500000076,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1019.266374999992,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1973.7649579999998,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1203.3327080000017,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 197.82816699999967,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 139.72070800000802,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 658.7792090000003,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 538.7038750000065,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 825.7405829999916,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 565.7047500000044,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 537.7022079999879,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 116.76420800000778,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 351.38004100001126,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 652.4564580000006,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1073.6428329999908,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1524.7752089999994,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 934.5704160000023,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1598.627667000008,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 225.24266699999862,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1224.8406669999968,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 692.4602500000037,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 977.7970830000122,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1296.0555000000022,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 376.43516599999566,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 217.0633749999979,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 247.35354200001166,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1081.091790999999,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1258.7837500000023,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 622.5357079999958,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 616.3960829999996,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 990.6860830000078,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 142.7651249999908,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 214.41266599998926,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 575.0604999999923,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 622.3437080000003,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 726.8164169999945,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 986.9828330000164,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1004.8959580000082,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 149.23054199997569,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 658.6635000000242,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 637.8547090000066,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 782.4914999999746,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 757.5957500000077,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 378.95737500002724,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 137.66108399999212,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 228.5268330000108,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 619.5924159999995,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 522.0542919999862,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 923.5154579999798,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 640.4603749999951,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 544.6490409999969,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 184.96537499999977,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 202.59304200002225,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 556.1775419999904,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1001.5061250000144,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 680.3205000000016,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 730.3123750000086,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1171.5981249999895,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 197.42454100001487,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 691.6208749999932,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1087.5496660000063,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1757.6081249999988,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 706.5360830000136,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 631.2037079999864,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 181.36208399999305,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 208.04366699999082,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 725.1957500000135,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1226.3585409999941,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 960.3513340000063,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 659.5978339999856,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1159.2270830000052,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 185.32154099998297,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 198.2256659999839,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1437.5303330000024,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1441.7257079999836,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 1061.2969579999917,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 760.5478749999893,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 779.1839579999796,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 151.4088749999937,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 844.3362079999933,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 741.9981249999837,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 752.2691249999916,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 568.3087079999968,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 445.4079999999958,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 209.56204200000502,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 138.64233299999614,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 819.2998329999973,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 774.5807499999937,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 657.5275419999962,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 707.7434160000121,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 569.3980840000149,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 873.7730000000156,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 191.4752499999886,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1082.2648329999938,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 788.7245000000112,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 717.6722920000029,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 3271.795207999996,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 967.2737079999933,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 152.0705420000013,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1250.481083999999,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 671.8934169999848,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 1094.5784580000036,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 616.8992910000088,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 295.0273750000051,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 148.754958000005,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 194.49287499999627,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 675.8787920000032,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 543.6537910000188,
+      "outcome": "success"
+    },
+    {
+      "route": "/read/:id/atomic-habits",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 555.2209999999905,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library/mutation",
+      "method": "POST",
+      "status": 200,
+      "durationMs": 607.9869999999937,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/catalog/search",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 699.9189579999947,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 259.62966700000106,
+      "outcome": "success"
+    },
+    {
+      "route": "/api/account-data/user_library",
+      "method": "GET",
+      "status": 200,
+      "durationMs": 193.4544590000005,
+      "outcome": "success"
+    }
+  ],
+  "plan": {
+    "coreUsers": 5,
+    "coreActions": 90,
+    "durationMs": 180000,
+    "pacingMs": 10000,
+    "aiConcurrent": 2,
+    "aiRequestsDuringLoad": 6,
+    "aiPreflight": 0,
+    "maxCoreRequests": 180,
+    "aiDeadlineMs": 30000,
+    "quotaChanges": false
+  },
+  "core": {
+    "planned": 90,
+    "started": 90,
+    "samples": [
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 200,
+        "lagMs": 0.49570800000219606,
+        "outcome": "success",
+        "durationMs": 368.2600829999865,
+        "actionDurationMs": 612.4750420000055
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 300,
+        "lagMs": 0.7944160000042757,
+        "outcome": "success",
+        "durationMs": 669.8665409999958,
+        "actionDurationMs": 670.031416999991,
+        "page": 1
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 0,
+        "lagMs": 0.007166000010329299,
+        "outcome": "success",
+        "durationMs": 1586.383707999994,
+        "actionDurationMs": 1586.480958,
+        "page": 1
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 400,
+        "lagMs": 0.545458000007784,
+        "outcome": "success",
+        "durationMs": 2656.1020419999986,
+        "actionDurationMs": 2656.1020419999986
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 100,
+        "lagMs": 0.751750000010361,
+        "outcome": "success",
+        "durationMs": 4020.408917000008,
+        "actionDurationMs": 4020.408917000008
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 10200,
+        "lagMs": 3.2524580000026617,
+        "outcome": "failure",
+        "durationMs": 1032.357707999996,
+        "actionDurationMs": 1032.357707999996
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 10100,
+        "lagMs": 8.963958000007551,
+        "outcome": "success",
+        "durationMs": 1506.4114579999878,
+        "actionDurationMs": 1646.6366249999992
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 10400,
+        "lagMs": 3.337875000011991,
+        "outcome": "success",
+        "durationMs": 1203.5372500000085,
+        "actionDurationMs": 1401.5893329999963
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 10000,
+        "lagMs": 4.802250000007916,
+        "outcome": "success",
+        "durationMs": 2025.8464169999934,
+        "actionDurationMs": 2025.8464169999934
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 10300,
+        "lagMs": 5.007291000001715,
+        "outcome": "success",
+        "durationMs": 1973.985584000009,
+        "actionDurationMs": 1973.985584000009
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 20100,
+        "lagMs": 6.373916000011377,
+        "outcome": "failure",
+        "durationMs": 541.5212920000049,
+        "actionDurationMs": 541.5212920000049
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 20000,
+        "lagMs": 0.40404100000159815,
+        "outcome": "success",
+        "durationMs": 658.9358750000101,
+        "actionDurationMs": 781.5242500000022
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 20400,
+        "lagMs": 3.5404580000031274,
+        "outcome": "failure",
+        "durationMs": 538.830833,
+        "actionDurationMs": 538.830833
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 20200,
+        "lagMs": 3.061583000002429,
+        "outcome": "failure",
+        "durationMs": 826.8091669999994,
+        "actionDurationMs": 826.8091669999994
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 20300,
+        "lagMs": 4.966291000004276,
+        "outcome": "success",
+        "durationMs": 565.7945420000033,
+        "actionDurationMs": 917.5971250000002
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 30000,
+        "lagMs": 5.021708000000217,
+        "outcome": "failure",
+        "durationMs": 654.5147920000018,
+        "actionDurationMs": 654.5147920000018
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 30100,
+        "lagMs": 5.875500000009197,
+        "outcome": "failure",
+        "durationMs": 1074.5218749999913,
+        "actionDurationMs": 1074.5218749999913
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 30300,
+        "lagMs": 5.876083000010112,
+        "outcome": "failure",
+        "durationMs": 935.8191669999942,
+        "actionDurationMs": 935.8191669999942
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 30200,
+        "lagMs": 1.7380830000038259,
+        "outcome": "success",
+        "durationMs": 1524.8540420000063,
+        "actionDurationMs": 1750.3595829999977
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 30400,
+        "lagMs": 6.182125000006636,
+        "outcome": "success",
+        "durationMs": 1598.8275830000057,
+        "actionDurationMs": 1598.8275830000057
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 40400,
+        "lagMs": 0,
+        "outcome": "failure",
+        "durationMs": 594.9237090000097,
+        "actionDurationMs": 594.9237090000097
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 40100,
+        "lagMs": 5.281875000000582,
+        "outcome": "success",
+        "durationMs": 692.5705410000082,
+        "actionDurationMs": 940.1231660000049
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 40200,
+        "lagMs": 1.1077500000101281,
+        "outcome": "success",
+        "durationMs": 979.0807919999934,
+        "actionDurationMs": 979.8607919999922,
+        "page": 1
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 40000,
+        "lagMs": 7.151624999998603,
+        "outcome": "success",
+        "durationMs": 1225.3205829999933,
+        "actionDurationMs": 1225.3205829999933
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 40300,
+        "lagMs": 1.9065410000039265,
+        "outcome": "success",
+        "durationMs": 1296.1523750000051,
+        "actionDurationMs": 1296.1523750000051
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 50200,
+        "lagMs": 0,
+        "outcome": "failure",
+        "durationMs": 624.4385000000038,
+        "actionDurationMs": 624.4385000000038
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 50300,
+        "lagMs": 3.4767080000019632,
+        "outcome": "success",
+        "durationMs": 616.4599589999998,
+        "actionDurationMs": 759.3680420000019
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 50000,
+        "lagMs": 13.877250000005006,
+        "outcome": "success",
+        "durationMs": 1084.367208999989,
+        "actionDurationMs": 1300.840584000005
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 50100,
+        "lagMs": 4.958125000004657,
+        "outcome": "success",
+        "durationMs": 1258.8641250000073,
+        "actionDurationMs": 1259.0416660000046,
+        "page": 1
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 50400,
+        "lagMs": 0,
+        "outcome": "success",
+        "durationMs": 990.7416249999951,
+        "actionDurationMs": 991.1714579999971,
+        "page": 1
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 60000,
+        "lagMs": 29.05991600001289,
+        "outcome": "failure",
+        "durationMs": 577.0449580000131,
+        "actionDurationMs": 577.0449580000131
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 60100,
+        "lagMs": 0.7610000000131549,
+        "outcome": "failure",
+        "durationMs": 623.1710409999941,
+        "actionDurationMs": 623.1710409999941
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 60200,
+        "lagMs": 4.098666000019875,
+        "outcome": "success",
+        "durationMs": 726.8835830000171,
+        "actionDurationMs": 876.2929580000055
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 60300,
+        "lagMs": 4.225625000006403,
+        "outcome": "success",
+        "durationMs": 987.0702079999901,
+        "actionDurationMs": 987.1534999999858,
+        "page": 1
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 60400,
+        "lagMs": 0,
+        "outcome": "success",
+        "durationMs": 1006.0486249999958,
+        "actionDurationMs": 1006.0486249999958
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 70000,
+        "lagMs": 8.013458000015817,
+        "outcome": "failure",
+        "durationMs": 661.237374999997,
+        "actionDurationMs": 661.237374999997
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 70100,
+        "lagMs": 1.0630830000009155,
+        "outcome": "failure",
+        "durationMs": 776.093292000005,
+        "actionDurationMs": 776.093292000005
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 70200,
+        "lagMs": 0.2959160000173142,
+        "outcome": "failure",
+        "durationMs": 787.6721249999828,
+        "actionDurationMs": 787.6721249999828
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 70400,
+        "lagMs": 0.633125000007567,
+        "outcome": "success",
+        "durationMs": 379.04824999999255,
+        "actionDurationMs": 607.7902079999913
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 70300,
+        "lagMs": 5.352708000005805,
+        "outcome": "success",
+        "durationMs": 757.8143329999875,
+        "actionDurationMs": 757.8143329999875
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 80100,
+        "lagMs": 1.0366249999933643,
+        "outcome": "failure",
+        "durationMs": 523.2806659999769,
+        "actionDurationMs": 523.2806659999769
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 80000,
+        "lagMs": 4.444040999995195,
+        "outcome": "success",
+        "durationMs": 619.7523749999818,
+        "actionDurationMs": 805.0377089999965
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 80400,
+        "lagMs": 4.016290999992634,
+        "outcome": "failure",
+        "durationMs": 545.1830419999897,
+        "actionDurationMs": 545.1830419999897
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 80200,
+        "lagMs": 0,
+        "outcome": "failure",
+        "durationMs": 924.5120830000087,
+        "actionDurationMs": 924.5120830000087
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 80300,
+        "lagMs": 3.017915999997058,
+        "outcome": "success",
+        "durationMs": 640.5947920000181,
+        "actionDurationMs": 843.3344999999972
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 90000,
+        "lagMs": 7.204291000016383,
+        "outcome": "failure",
+        "durationMs": 564.828125,
+        "actionDurationMs": 564.828125
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 90300,
+        "lagMs": 0.725458000015351,
+        "outcome": "failure",
+        "durationMs": 730.9757500000123,
+        "actionDurationMs": 730.9757500000123
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 90200,
+        "lagMs": 0.47716600001149345,
+        "outcome": "success",
+        "durationMs": 680.3928330000199,
+        "actionDurationMs": 878.0826670000097
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 90100,
+        "lagMs": 4.263833000019076,
+        "outcome": "success",
+        "durationMs": 1001.7451669999864,
+        "actionDurationMs": 1001.7451669999864
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 90400,
+        "lagMs": 4.2202910000196425,
+        "outcome": "success",
+        "durationMs": 1171.861333000008,
+        "actionDurationMs": 1171.861333000008
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 100000,
+        "lagMs": 0.5500000000029104,
+        "outcome": "failure",
+        "durationMs": 693.6842910000123,
+        "actionDurationMs": 693.6842910000123
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 100300,
+        "lagMs": 0.08708300000580493,
+        "outcome": "failure",
+        "durationMs": 707.2869160000118,
+        "actionDurationMs": 707.2869160000118
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 100400,
+        "lagMs": 7.314375000001746,
+        "outcome": "failure",
+        "durationMs": 813.4429579999996,
+        "actionDurationMs": 813.4429579999996
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 100100,
+        "lagMs": 0.8821660000103293,
+        "outcome": "success",
+        "durationMs": 1087.6116669999901,
+        "actionDurationMs": 1295.801999999996
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 100200,
+        "lagMs": 2.926833000019542,
+        "outcome": "success",
+        "durationMs": 1757.7537080000038,
+        "actionDurationMs": 1757.9540830000187,
+        "page": 1
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 110000,
+        "lagMs": 1.2311250000057044,
+        "outcome": "success",
+        "durationMs": 725.6802090000128,
+        "actionDurationMs": 911.6486250000016
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 110300,
+        "lagMs": 0.7434159999975236,
+        "outcome": "success",
+        "durationMs": 659.6454999999842,
+        "actionDurationMs": 858.0895829999936
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 110200,
+        "lagMs": 0.8742080000083661,
+        "outcome": "success",
+        "durationMs": 960.4445830000041,
+        "actionDurationMs": 960.4445830000041
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 110100,
+        "lagMs": 0.12325000001874287,
+        "outcome": "success",
+        "durationMs": 1226.4174160000111,
+        "actionDurationMs": 1226.5015840000124,
+        "page": 1
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 110400,
+        "lagMs": 0.8196250000182772,
+        "outcome": "success",
+        "durationMs": 1159.2952910000167,
+        "actionDurationMs": 1159.358333000011,
+        "page": 1
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 120300,
+        "lagMs": 0,
+        "outcome": "failure",
+        "durationMs": 762.6311249999853,
+        "actionDurationMs": 762.6311249999853
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 120400,
+        "lagMs": 0.6129999999975553,
+        "outcome": "success",
+        "durationMs": 779.327541000006,
+        "actionDurationMs": 779.327541000006
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 120200,
+        "lagMs": 2.663916000004974,
+        "outcome": "success",
+        "durationMs": 1061.3594169999997,
+        "actionDurationMs": 1212.9569590000028
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 120000,
+        "lagMs": 15.010583000010229,
+        "outcome": "success",
+        "durationMs": 1437.6938749999972,
+        "actionDurationMs": 1437.8750829999917,
+        "page": 1
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 120100,
+        "lagMs": 4.995291000013822,
+        "outcome": "success",
+        "durationMs": 1441.8400419999962,
+        "actionDurationMs": 1441.8400419999962
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 130000,
+        "lagMs": 5.053040999991936,
+        "outcome": "failure",
+        "durationMs": 847.1154579999857,
+        "actionDurationMs": 847.1154579999857
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 130300,
+        "lagMs": 3.6779999999998836,
+        "outcome": "failure",
+        "durationMs": 569.0030420000257,
+        "actionDurationMs": 569.0030420000257
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 130200,
+        "lagMs": 2.602415999994264,
+        "outcome": "failure",
+        "durationMs": 752.8730420000211,
+        "actionDurationMs": 752.8730420000211
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 130400,
+        "lagMs": 0.3598330000095302,
+        "outcome": "success",
+        "durationMs": 447.90408300000126,
+        "actionDurationMs": 586.8074579999957
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 130100,
+        "lagMs": 3.830708000008599,
+        "outcome": "success",
+        "durationMs": 742.6704169999866,
+        "actionDurationMs": 952.6942500000005
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 140200,
+        "lagMs": 3.2219160000095144,
+        "outcome": "failure",
+        "durationMs": 659.6575840000005,
+        "actionDurationMs": 659.6575840000005
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 140100,
+        "lagMs": 0.5704580000019632,
+        "outcome": "failure",
+        "durationMs": 775.3171250000014,
+        "actionDurationMs": 775.3171250000014
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 140400,
+        "lagMs": 2.7281659999862313,
+        "outcome": "failure",
+        "durationMs": 570.0917080000218,
+        "actionDurationMs": 570.0917080000218
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 140300,
+        "lagMs": 0,
+        "outcome": "success",
+        "durationMs": 707.8113329999906,
+        "actionDurationMs": 899.4453749999811
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 140000,
+        "lagMs": 4.230625000025611,
+        "outcome": "success",
+        "durationMs": 819.6623750000144,
+        "actionDurationMs": 1693.8328329999931
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 150100,
+        "lagMs": 4.093832999991719,
+        "outcome": "failure",
+        "durationMs": 790.1534579999861,
+        "actionDurationMs": 790.1534579999861
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 150200,
+        "lagMs": 3.9184580000001006,
+        "outcome": "success",
+        "durationMs": 718.1527079999796,
+        "actionDurationMs": 870.4618330000085
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 150000,
+        "lagMs": 4.953665999986697,
+        "outcome": "success",
+        "durationMs": 1082.7414160000044,
+        "actionDurationMs": 1083.1137500000186,
+        "page": 1
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 150400,
+        "lagMs": 4.774207999987993,
+        "outcome": "success",
+        "durationMs": 967.4930419999873,
+        "actionDurationMs": 967.4930419999873
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 150300,
+        "lagMs": 0,
+        "outcome": "success",
+        "durationMs": 3271.9239170000073,
+        "actionDurationMs": 3271.9875839999877,
+        "page": 1
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 160400,
+        "lagMs": 0.32512500003213063,
+        "outcome": "failure",
+        "durationMs": 445.4767909999937,
+        "actionDurationMs": 445.4767909999937
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 160300,
+        "lagMs": 4.882665999990422,
+        "outcome": "failure",
+        "durationMs": 617.3867909999972,
+        "actionDurationMs": 617.3867909999972
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 160100,
+        "lagMs": 4.480875000008382,
+        "outcome": "success",
+        "durationMs": 672.0087920000078,
+        "actionDurationMs": 866.6599170000118
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 160000,
+        "lagMs": 4.288750000006985,
+        "outcome": "success",
+        "durationMs": 1250.8597080000036,
+        "actionDurationMs": 1250.8597080000036
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 160200,
+        "lagMs": 0,
+        "outcome": "success",
+        "durationMs": 1094.708416999987,
+        "actionDurationMs": 1094.981999999989,
+        "page": 1
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 170100,
+        "lagMs": 0.000750000006519258,
+        "outcome": "failure",
+        "durationMs": 544.9725829999952,
+        "actionDurationMs": 544.9725829999952
+      },
+      {
+        "operation": "browse_reader",
+        "phase": "ai_mixed",
+        "atMs": 170200,
+        "lagMs": 0,
+        "outcome": "failure",
+        "durationMs": 555.5675420000043,
+        "actionDurationMs": 555.5675420000043
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 170000,
+        "lagMs": 7.927625000011176,
+        "outcome": "failure",
+        "durationMs": 937.8077079999784,
+        "actionDurationMs": 937.8077079999784
+      },
+      {
+        "operation": "library_mutation",
+        "phase": "ai_mixed",
+        "atMs": 170300,
+        "lagMs": 4.248916000011377,
+        "outcome": "success",
+        "durationMs": 608.0498329999973,
+        "actionDurationMs": 801.6087499999849
+      },
+      {
+        "operation": "catalog_search",
+        "phase": "ai_mixed",
+        "atMs": 170400,
+        "lagMs": 6.784207999997307,
+        "outcome": "success",
+        "durationMs": 700.0310000000172,
+        "actionDurationMs": 700.1362079999817,
+        "page": 1
+      }
+    ],
+    "dropped": [],
+    "maxInFlight": 5,
+    "elapsedMs": 171106.951833
+  },
+  "maxCoreRequestsInFlight": 5,
+  "overlayRequests": [],
+  "elapsedMs": 171108.01625,
+  "error": "Mixed workload stopped",
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "derivedCleanup": {
+    "personal_index": 0,
+    "snapshots": 0,
+    "operations": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "spendAfter": {
+    "reserved": "1458156",
+    "settled": "19820",
+    "exposure": "21976"
+  },
+  "spendDeltaIsGlobalNotAccountAttribution": true,
+  "assessment": {
+    "verdict": "inconclusive-harness-failure",
+    "issue28Closed": false,
+    "aiSuccesses": 6,
+    "coreHttpSuccesses": 123,
+    "scheduledActions": 90,
+    "droppedActions": 0,
+    "actionFailureMarkers": 35,
+    "diagnosis": "A post-action assertion reads transport.requests.at(-1), a shared concurrent array tail that may belong to another pending request. Offline two-request reproduction demonstrates false failure despite both requests succeeding. Original action outcomes are retained, not relabelled.",
+    "costSettledDeltaMicrousd": 16929,
+    "costExposureDeltaMicrousd": 18777,
+    "costLimitations": "Global ledger delta includes any concurrent production use, not account-attributed billing; unsettled reservations are not billed cost.",
+    "limits": [
+      "Six AI samples do not establish an AI p95 or throughput ceiling.",
+      "One question and two synthetic personal-evidence accounts.",
+      "Five paced core users; larger catalog and high-load AI remain unproved."
+    ]
+  },
+  "driverSha256": "0ac911c5483b331107147cc7b8920a7ef482dbe3160c01efc02086509c9fa9b1"
+}
