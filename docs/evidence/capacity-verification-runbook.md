@@ -1,14 +1,27 @@
 # #28 bounded capacity verification
 
 Status: bounded sequential, two/five-user, and corrected 25/50/recovery mixed
-production observations completed. #28 remains open: reflection sample counts,
-large-corpus/large-export coverage, and the original longer envelope are incomplete.
-The failed mixed attempt and indexing setup stop remain retained. A subsequent
-reflection-only observation stopped on a 10-second read timeout; health also had a
-preflight database timeout. A two-route Mumbai placement correction is pending
-verification. See capacity-reflections-stopped-20260929.json and the latest checkpoint. Six small exports
-and two real AI retrieval samples passed in the corrected run. See the latest
-checkpoint in docs/PHASE_1_PERSONAL_RETRIEVAL.md and capacity-mixed-completed-20260929.json.
+production observations completed. After #194 deployed the two-route Mumbai
+correction, a separate reflection sample passed: 100 reads (p95 816ms), 30 writes
+(p95 783ms), no failures, and eight successful detailed health probes. One read took
+2735ms and remains included. See capacity-reflections-mumbai-20260929.json.
+
+#28 remains open for large-corpus/large-export coverage and the original longer mixed
+envelope. Separate low-concurrency reflection evidence does not fill the mixed-load
+coverage requirement. Earlier stopped runs, health timeout and unexplained indexing
+503 remain retained. Six small exports and two real AI retrieval samples passed in
+the corrected mixed run. See the latest checkpoint in
+`docs/PHASE_1_PERSONAL_RETRIEVAL.md`; do not repeat unaffected passing observations.
+
+Production-only continuation authorized by the owner on 29 September: no separate
+Supabase or Redis resource and no billing prerequisite. Use unpublished run-owned
+catalog fixtures for large private exports, verifying ordinary-role invisibility
+before expansion. Public catalog search remains measured against current published
+content; this does not establish the original 10k-published-item/100k-segment target.
+A 1201-library-record export stopped at the unchanged 60s deadline. Snapshot routes
+are being moved to Mumbai; repeat that affected check before the longer load run.
+See capacity-large-export-stopped-20260929.json.
+
 Initial preparation baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`; later run identities are recorded with their evidence.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.
