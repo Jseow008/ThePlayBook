@@ -2143,3 +2143,58 @@ retained. Deterministic schedule has 2220 actions, 52 reflection writes and at m
 Temporary driver: `/private/tmp/netflux188-preflight/long-runner.mjs`. The original
 10k published catalog/100k segments remains untested; draft records cannot prove that
 search-index workload. Do not publish fake catalog content to fill the evidence gap.
+
+
+### Production capacity completion — 29 September 2026
+
+PR #195 merged as `c57dd537234677cbac67e6ad0f6da3e3019c78a9`; both required
+merge-commit checks passed. The public alias now serves READY deployment
+`dpl_DRvwp6wrBvFyscMSZwFPbvK3sa8S`. Public health returns 200 and unauthenticated
+snapshot resume returns 401. Snapshot routes run in bom1. No migration or quota
+change was required.
+
+The corrected 1201-library-record export completed in 5594ms (previously exceeded
+60000ms), with all 11 collections verified. See
+[large export evidence](evidence/capacity-large-export-mumbai-20260929.json).
+The failed US-region result remains recorded; this is not a discarded retry.
+
+A subsequent fixed production workload completed: 5 users/120s warmup, 25 users/600s,
+50 users/120s burst, and 5 users/120s recovery, paced at one action per user per 10s.
+All 2220 scheduled workload actions plus five preflight actions started, without
+drops. All 2664 core HTTP requests succeeded; maximum simultaneous core HTTP
+requests was 9. All six concurrent export overlays succeeded, including 1201 library
+records plus ten reflections in 6879ms. Each core account began with 100 saved
+items and ten reflections. No application admission limits were changed.
+
+Cumulative p95, including first requests, preflight and warmup: search 1769.54ms,
+reader 1638.06ms, library mutation 973.30ms, library read 291.91ms, reflection read
+633.86ms, reflection write 737.70ms. All cumulative minimum-sample gates passed.
+The 25-user stage also independently has sufficient samples and meets all six
+route targets. Sparse burst/recovery samples are not independent route-capacity
+proof. Slow tails remain: maximum search 6186.61ms, reader 5814.43ms, save 3703.42ms.
+Warmup search p95 was 2174.54ms with only 36 samples; no samples were discarded.
+
+Evidence: [full workload](evidence/capacity-long-production-20260929.json), including
+raw requests, per-stage summaries, timing, driver hashes, cleanup, and limitations.
+The immutable production-configured build was tested before public promotion using
+existing platform protection access, ordinary account authentication, and shared
+production services. Promotion happened normally after its required checks.
+
+Cleanup verified zero owned accounts, library/reflections, boundaries, receipts,
+personal index, snapshots, operations, and draft catalog records. Original counts
+(8 accounts/603 catalog items) were restored; final detailed health was ok. All
+56 accounts and 1201 draft entries were run-owned. Drafts were verified inaccessible
+to anonymous and ordinary authenticated reads; none were published.
+
+#28 remains open only for evidence beyond this bounded observation: the original
+10k published items/100k segments and diverse-query workload were not reproduced;
+this run used the current catalog and one search/reader item. AI retrieval was not
+run concurrently; prior AI evidence is separate. Browser rendering/file-creation
+latency is outside this HTTP/export-client measurement. Do not claim full original
+capacity-contract closure or infer a need for an Upstash upgrade from these results.
+
+Current branch: `codex/capacity-production-results`, based on `c57dd537`; worktree:
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`. No test process or
+synthetic fixture remains. Next: publish this evidence-only PR. Then explicitly
+resolve the remaining capacity scope before a larger launch; no automatic rerun,
+new paid project, fake published catalog, or infrastructure upgrade is planned.
