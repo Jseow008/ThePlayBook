@@ -1,0 +1,119 @@
+{
+  "runId": "capacity-large-export-1790694124485",
+  "sha": "c57dd537234677cbac67e6ad0f6da3e3019c78a9",
+  "deployment": "dpl_DRvwp6wrBvFyscMSZwFPbvK3sa8S",
+  "startedAt": "2026-09-29T15:02:04.485Z",
+  "targetMode": "immutable production-configured build before public-alias promotion",
+  "healthChecks": [
+    {
+      "at": "2026-09-29T15:02:10.864Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T15:02:14.978Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T15:02:17.027Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T15:02:24.042Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T15:02:37.177Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "visibilityPreflight": {
+    "publicSearchExcluded": true,
+    "anonymousDenied": true,
+    "ordinaryAccountDenied": true,
+    "draftOnly": true
+  },
+  "fixture": {
+    "libraryRecords": 1201,
+    "unpublishedCatalogRecords": 1201,
+    "otherAccountLibraryRecords": 0,
+    "recordContent": "synthetic",
+    "deadlineMs": 60000,
+    "maximumConcurrentExports": 2
+  },
+  "exports": [
+    {
+      "outcome": "success",
+      "timings": {
+        "snapshotPreparationMs": 1505.559083,
+        "collectionRetrievalMs": 4040.2357090000005,
+        "verificationMs": 36.59562499999811
+      },
+      "libraryRecords": 1201,
+      "collections": 11,
+      "records": 1203,
+      "durationMs": 5593.609124999999
+    },
+    {
+      "outcome": "success",
+      "timings": {
+        "snapshotPreparationMs": 2951.384000000002,
+        "collectionRetrievalMs": 2107.2739170000023,
+        "verificationMs": 6.551459000002069
+      },
+      "libraryRecords": 0,
+      "collections": 11,
+      "records": 2,
+      "durationMs": 5065.499583000001
+    }
+  ],
+  "requests": 30,
+  "completed": true,
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "draftCleanup": {
+    "remaining": 0
+  },
+  "derivedCleanup": {
+    "snapshots": 0,
+    "operations": 0,
+    "personal_index": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "driverSha256": "1aed422a627db47e113999f12a0e2a98dfd9b4367836c0f26e2ca9e1792a88f3",
+  "interpretation": "Pre-promotion test of the immutable production-target deployment, using production database and admission. Existing platform protection credential used only for this exact protected build; normal app authentication and quotas remain enforced. No production alias was changed. Includes all records and verified hashes; no large published-catalog capacity claim."
+}

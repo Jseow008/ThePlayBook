@@ -258,3 +258,29 @@ restores globals after all requests settle. Compare redacted export records with
 exact run-owned fixture identities/fields; do not require an absent user_id field.
 Verify a small real export before a full load run. Retain failed operation timing
 and distinguish configured AI fixtures from actually attempted AI calls.
+
+
+### Completed production workload — 29 September 2026
+
+The user's latest environment instruction is production-only; earlier proposals
+for a separate paid test project are superseded. Preserve existing accounts and
+catalog data, use run-owned fixtures, and verify cleanup.
+
+On production build `c57dd537`, the fixed 5/25/50/5-user workload completed with
+2664 successful core requests, zero scheduling drops, and six verified exports.
+The 1201-record library export under load took 6879ms. All cumulative p95 gates
+passed; the independently sufficient 25-user stage also met all route targets.
+Core HTTP concurrency peaked at 9, with 10-second user pacing. All 56 synthetic
+accounts and 1201 unpublished draft items were removed; counts returned to
+8 accounts and 603 catalog items, with healthy final status.
+
+See [raw results and per-stage evidence](capacity-long-production-20260929.json)
+and [standalone corrected large export](capacity-large-export-mumbai-20260929.json).
+Retain [the previous timeout](capacity-large-export-stopped-20260929.json).
+
+This establishes a bounded current-catalog observation, not the entire original
+#28 contract. Large published corpus/query diversity, concurrent AI retrieval,
+and browser rendering remain outside this run. The production-only choice does
+not justify publishing fake catalog records or pretending those gaps were tested.
+No further load is running; review the remaining launch envelope before expanding
+scope or rerunning benchmarks.
