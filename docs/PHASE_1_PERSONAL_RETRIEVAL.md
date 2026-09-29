@@ -2089,3 +2089,57 @@ add the Upstash payment method and confirm the temporary Supabase quote. Alterna
 a narrower current-catalog acceptance scope must be explicitly approved, not inferred.
 Results/evidence PR: #195, initial evidence commit `72aad03a`; this note records the
 concrete blocker found afterward. No test process or temporary project is running.
+
+Continuation checkpoint: the owner's subsequent “Proceed” is accepted as approval
+of the quoted $10/month temporary Supabase project. Do not ask for that same approval
+again unless the quoted cost or scope changes. Creation remains deferred until Redis
+is ready. Fresh Opera inspection still shows “No credit card added yet” in Upstash;
+the billing page is open at https://console.upstash.com/account/billing for the owner
+to complete Add new card. No card, project or database was created. #195 at `6fe6c804`
+remains open with auto-merge enabled; required CI is still running. This continuation
+note is intentionally local pending the next substantive evidence update, avoiding
+another documentation-only CI restart while blocked on billing.
+
+### #28 production-only instruction and large-export finding — 29 September 2026
+
+The owner explicitly rejected additional test databases and authorized direct
+production testing. This supersedes all preceding billing/isolated-environment
+prerequisites. Do not ask for a card, create paid projects, or silently reinstate that
+requirement. Retain any coverage limitation that cannot be tested with hidden fixtures.
+
+A fixed two-account export preflight used 1201 uniquely tagged, unpublished draft
+catalog records and 1201 private library rows for one account; the other had no library
+rows. Actual anonymous and ordinary authenticated queries could not read the first
+draft before fixture expansion. Live RLS restricts both roles to verified content.
+Snapshot export reads the owned library directly, so these draft references exercise
+full library pagination without putting synthetic publications in public browsing.
+
+On production `d5d825cb` / `dpl_GhcBVRTQ8AG56jFvU3ogGnNvoxHL`, the large export hit
+the unchanged 60s deadline (60009ms); the simultaneous two-record export completed
+in 48694ms. Both snapshots were created. Platform observations: creation
+17463/17710ms, page-request median 2741.5ms (26 observed), all snapshot handlers in
+iad1. Larger load has not started. These results support co-locating the snapshot
+routes with the Mumbai database; they do not separately measure SQL execution time.
+
+All 1201 draft entries, both accounts/sessions and checked library, reflection,
+boundary, receipt, personal-index, snapshot and operation rows were removed. Original
+8-account/603-item counts and healthy detailed status were restored. Evidence:
+`docs/evidence/capacity-large-export-stopped-20260929.json`. Original failure retained.
+
+PR #195 auto-merge was temporarily disabled to keep the test deployment stable. It
+now includes the bounded per-function region correction for snapshot creation,
+resume and collection reads, using the same established bom1 configuration. No
+migration, timeout, quota, authorization or payload behavior changes. Branch/worktree
+remain `codex/capacity-reflection-results` /
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`. Next: validate and deploy
+this candidate, repeat the 1201-record export, then execute the longer production
+workload if the export meets its unchanged bound. No test process remains.
+
+Prepared longer workload (not yet executed): warmup 5 users/120s, steady 25/600s,
+burst 50/120s, recovery 5/120s; 10-second per-user pacing, 20-minute hard bound,
+3500 core HTTP request cap, original latency/integrity thresholds, all raw samples
+retained. Deterministic schedule has 2220 actions, 52 reflection writes and at most
+8 reflection writes in any 60-second window, below the existing 12/network/min limit.
+Temporary driver: `/private/tmp/netflux188-preflight/long-runner.mjs`. The original
+10k published catalog/100k segments remains untested; draft records cannot prove that
+search-index workload. Do not publish fake catalog content to fill the evidence gap.

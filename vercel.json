@@ -12,6 +12,9 @@
     },
     "app/api/health/route.ts": {
       "regions": ["bom1"]
+    },
+    "app/api/account-data/snapshots/**/route.ts": {
+      "regions": ["bom1"]
     }
   }
 }

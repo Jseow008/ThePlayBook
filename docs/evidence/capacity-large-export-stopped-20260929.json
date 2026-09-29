@@ -1,0 +1,724 @@
+{
+  "runId": "capacity-large-export-1790692385771",
+  "sha": "d5d825cb92100c0c75f8f8cf8d8a374a5fef9474",
+  "deployment": "dpl_GhcBVRTQ8AG56jFvU3ogGnNvoxHL",
+  "startedAt": "2026-09-29T14:33:05.771Z",
+  "healthChecks": [
+    {
+      "at": "2026-09-29T14:33:10.194Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T14:33:15.249Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T14:33:18.630Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T14:33:24.400Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    },
+    {
+      "at": "2026-09-29T14:34:32.476Z",
+      "httpStatus": 200,
+      "status": "ok",
+      "database": "reachable",
+      "issues": []
+    }
+  ],
+  "healthBefore": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "before": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "visibilityPreflight": {
+    "anonymousDenied": true,
+    "ordinaryAccountDenied": true,
+    "draftOnly": true
+  },
+  "fixture": {
+    "libraryRecords": 1201,
+    "unpublishedCatalogRecords": 1201,
+    "otherAccountLibraryRecords": 0,
+    "recordContent": "synthetic",
+    "deadlineMs": 60000,
+    "maximumConcurrentExports": 2
+  },
+  "exports": [
+    {
+      "outcome": "failure",
+      "failureKind": 23,
+      "durationMs": 60009.045459
+    },
+    {
+      "outcome": "success",
+      "libraryRecords": 0,
+      "collections": 11,
+      "records": 2,
+      "durationMs": 48694.28475
+    }
+  ],
+  "requests": 28,
+  "error": "Small export verification failed",
+  "cleanup": {
+    "accounts": 0,
+    "library": 0,
+    "reflections": 0,
+    "boundaries": 0,
+    "receipts": 0
+  },
+  "draftCleanup": {
+    "remaining": 0
+  },
+  "derivedCleanup": {
+    "snapshots": 0,
+    "operations": 0,
+    "personal_index": 0
+  },
+  "after": {
+    "accounts": 8,
+    "catalog": 603
+  },
+  "healthFinal": {
+    "status": "ok",
+    "database": "reachable"
+  },
+  "completed": false,
+  "driverSha256": "116bc6af977044763b670ed872e380a7b7bac8e3801067539dabed62396a0783",
+  "platformRows": [
+    {
+      "timestamp": "2026-09-29T14:34:22.585Z",
+      "path": "/api/account-data/snapshots/:id/notification_preferences",
+      "requestDurationMs": 2295,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2060,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 277
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:19.944Z",
+      "path": "/api/account-data/snapshots/:id/request_votes",
+      "requestDurationMs": 2629,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2046,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 276
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:17.659Z",
+      "path": "/api/account-data/snapshots/:id/submitted_requests",
+      "requestDurationMs": 2260,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2035,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 276
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:15.368Z",
+      "path": "/api/account-data/snapshots/:id/feedback",
+      "requestDurationMs": 2276,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2036,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 276
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:12.475Z",
+      "path": "/api/account-data/snapshots/:id/reading_activity",
+      "requestDurationMs": 2880,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2425,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 275
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:10.946Z",
+      "path": "/api/account-data/snapshots/:id/ai_usage",
+      "requestDurationMs": 2274,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2021,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 275
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:09.814Z",
+      "path": "/api/account-data/snapshots/:id/reflections",
+      "requestDurationMs": 2598,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1912,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 274
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:08.645Z",
+      "path": "/api/account-data/snapshots/:id/request_notifications",
+      "requestDurationMs": 2292,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2043,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 273
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:06.998Z",
+      "path": "/api/account-data/snapshots/:id/highlights",
+      "requestDurationMs": 2799,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2329,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 272
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:06.185Z",
+      "path": "/api/account-data/snapshots/:id/notification_preferences",
+      "requestDurationMs": 2448,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2013,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 272
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:04.379Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 2608,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1916,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 271
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:02.062Z",
+      "path": "/api/account-data/snapshots/:id/request_votes",
+      "requestDurationMs": 4111,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 3645,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 271
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:34:01.588Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 2776,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2313,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 270
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:58.690Z",
+      "path": "/api/account-data/snapshots/:id/submitted_requests",
+      "requestDurationMs": 3360,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 3127,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 269
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:58.449Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 3126,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2457,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 250
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:56.343Z",
+      "path": "/api/account-data/snapshots/:id/feedback",
+      "requestDurationMs": 2317,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2063,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 255
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:55.132Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 3304,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2297,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 255
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:53.623Z",
+      "path": "/api/account-data/snapshots/:id/reading_activity",
+      "requestDurationMs": 2707,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2090,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 254
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:51.925Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 3191,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2714,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 254
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:50.783Z",
+      "path": "/api/account-data/snapshots/:id/reflections",
+      "requestDurationMs": 2826,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2504,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 254
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:48.564Z",
+      "path": "/api/account-data/snapshots/:id/highlights",
+      "requestDurationMs": 2207,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1974,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 252
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:48.412Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 3498,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2858,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 254
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:46.258Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 2293,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 1950,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 250
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:44.915Z",
+      "path": "/api/account-data/snapshots/:id/user_library",
+      "requestDurationMs": 3479,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2860,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 250
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:42.301Z",
+      "path": "/api/account-data/snapshots/:id/preferences",
+      "requestDurationMs": 3944,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 3725,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 248
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:42.063Z",
+      "path": "/api/account-data/snapshots/:id/preferences",
+      "requestDurationMs": 2830,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 2606,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 2,
+          "memoryMb": 248
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 200
+    },
+    {
+      "timestamp": "2026-09-29T14:33:24.580Z",
+      "path": "/api/account-data/snapshots",
+      "requestDurationMs": 17710,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 16174,
+          "startType": "cold",
+          "coldStartDurationMs": 386,
+          "concurrency": 2,
+          "memoryMb": 259
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 201
+    },
+    {
+      "timestamp": "2026-09-29T14:33:24.556Z",
+      "path": "/api/account-data/snapshots",
+      "requestDurationMs": 17463,
+      "functions": [
+        {
+          "region": "iad1",
+          "durationMs": 17049,
+          "startType": "hot",
+          "coldStartDurationMs": -1,
+          "concurrency": 1,
+          "memoryMb": 307
+        }
+      ],
+      "proxyEvents": [
+        {
+          "region": "sin1",
+          "source": "static"
+        }
+      ],
+      "status": 201
+    }
+  ],
+  "interpretation": "Large export timed out at the fixed 60s bound. Both snapshots were created. This is not a passing large-export result. All synthetic accounts and unpublished catalog records were removed; no published catalog data changed."
+}

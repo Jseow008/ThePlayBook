@@ -12,6 +12,16 @@ coverage requirement. Earlier stopped runs, health timeout and unexplained index
 503 remain retained. Six small exports and two real AI retrieval samples passed in
 the corrected mixed run. See the latest checkpoint in
 `docs/PHASE_1_PERSONAL_RETRIEVAL.md`; do not repeat unaffected passing observations.
+
+Production-only continuation authorized by the owner on 29 September: no separate
+Supabase or Redis resource and no billing prerequisite. Use unpublished run-owned
+catalog fixtures for large private exports, verifying ordinary-role invisibility
+before expansion. Public catalog search remains measured against current published
+content; this does not establish the original 10k-published-item/100k-segment target.
+A 1201-library-record export stopped at the unchanged 60s deadline. Snapshot routes
+are being moved to Mumbai; repeat that affected check before the longer load run.
+See capacity-large-export-stopped-20260929.json.
+
 Initial preparation baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`; later run identities are recorded with their evidence.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.
