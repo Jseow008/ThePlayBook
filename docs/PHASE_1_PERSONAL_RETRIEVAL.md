@@ -2077,3 +2077,15 @@ before the larger benchmark. Prior authorization for production observation did 
 authorize publishing thousands of synthetic catalog items. A new hosted project
 requires the provider's fresh cost confirmation and a working isolated rate backend;
 no reduced acceptance scope has been assumed.
+
+Isolated-environment prerequisite checked through the existing Opera Upstash session:
+only production `flux-prod-rate-limit` is listed. The Create Database control reports
+one free database allowed and requires a payment method for another database. No
+resource, plan or billing change was made. Supabase's current get_cost quote for the
+existing Netflux organization is $10/month for a new project; its tool requires fresh
+cost confirmation before creation. Do not create a paid database while the isolated
+rate backend is still unavailable. Human next action for the original benchmark:
+add the Upstash payment method and confirm the temporary Supabase quote. Alternatively,
+a narrower current-catalog acceptance scope must be explicitly approved, not inferred.
+Results/evidence PR: #195, initial evidence commit `72aad03a`; this note records the
+concrete blocker found afterward. No test process or temporary project is running.
