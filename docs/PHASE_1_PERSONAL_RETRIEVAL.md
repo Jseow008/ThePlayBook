@@ -2036,3 +2036,44 @@ The original large-corpus/large-export and longer mixed envelope remain untested
 A scope question is pending: complete the original isolated benchmark, or explicitly
 approve a current-catalog launch scope and defer the larger envelope. No reduced
 acceptance scope has been assumed and no new hosted project has been created.
+
+### #28 Mumbai reflection verification passed — 29 September 2026
+
+PR #194 merged at `d5d825cb`; all required PR checks passed. Production alias serves
+that SHA in deployment `dpl_GhcBVRTQ8AG56jFvU3ogGnNvoxHL`. Deployment metadata verifies
+reflection, health and existing library functions in `bom1`; a partial runtime-log
+window independently shows 36 reflection invocations using `bom1`.
+
+One bounded repeat of the affected reflection observation completed: 100 reads and
+30 writes, two accounts, one HTTP request in flight, first requests retained, no
+retries, 190.33 seconds. Read p50/p95/max: 261.46/816.28/2734.81ms. Write p50/p95/max:
+671.47/783.21/798.78ms. All 130 requests and data checks succeeded. Both p95 targets
+and sample minimums pass; one read exceeded 2 seconds, so this is not a maximum-
+latency guarantee. Do not pool these samples with the earlier mixed workload.
+
+All eight detailed health probes passed. Initial runtime probe events recorded
+25ms initialization with 887ms and 691ms database requests. This run does not prove
+intermittent timeouts can never recur or isolate geography as the sole cause of the
+previous failure; before/after observations occurred at different times.
+
+Both sessions were revoked and run-owned accounts/data removed. Checked library,
+reflection, boundary, receipt, personal-index, snapshot and operation rows are zero.
+Original totals remain 8 accounts and 603 catalog items; final health OK/reachable.
+No migration, paid tier, timeout, quota or production setting changed in this repeat.
+No verification process or hosted candidate remains. Evidence:
+`docs/evidence/capacity-reflections-mumbai-20260929.json`, independently recomputed
+for sample counts, nearest-rank percentiles, cleanup and platform region.
+
+Branch `codex/capacity-reflection-results`, based on `d5d825cb`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`. This continuation changes
+only evidence/documentation. Original failures remain retained. #28 stays open for
+the large-corpus/large-export and longer mixed envelope, including reflection
+coverage under that mixed load. The initial indexing 503 remains unexplained; the
+read-only preflight found no current non-ready indexing backlog. Do not rerun the
+passing low-concurrency sample without changed inputs or a new concern.
+
+Next: resolve the isolated-environment versus explicit current-catalog scope choice
+before the larger benchmark. Prior authorization for production observation did not
+authorize publishing thousands of synthetic catalog items. A new hosted project
+requires the provider's fresh cost confirmation and a working isolated rate backend;
+no reduced acceptance scope has been assumed.

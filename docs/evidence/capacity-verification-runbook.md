@@ -1,14 +1,17 @@
 # #28 bounded capacity verification
 
 Status: bounded sequential, two/five-user, and corrected 25/50/recovery mixed
-production observations completed. #28 remains open: reflection sample counts,
-large-corpus/large-export coverage, and the original longer envelope are incomplete.
-The failed mixed attempt and indexing setup stop remain retained. A subsequent
-reflection-only observation stopped on a 10-second read timeout; health also had a
-preflight database timeout. A two-route Mumbai placement correction is pending
-verification. See capacity-reflections-stopped-20260929.json and the latest checkpoint. Six small exports
-and two real AI retrieval samples passed in the corrected run. See the latest
-checkpoint in docs/PHASE_1_PERSONAL_RETRIEVAL.md and capacity-mixed-completed-20260929.json.
+production observations completed. After #194 deployed the two-route Mumbai
+correction, a separate reflection sample passed: 100 reads (p95 816ms), 30 writes
+(p95 783ms), no failures, and eight successful detailed health probes. One read took
+2735ms and remains included. See capacity-reflections-mumbai-20260929.json.
+
+#28 remains open for large-corpus/large-export coverage and the original longer mixed
+envelope. Separate low-concurrency reflection evidence does not fill the mixed-load
+coverage requirement. Earlier stopped runs, health timeout and unexplained indexing
+503 remain retained. Six small exports and two real AI retrieval samples passed in
+the corrected mixed run. See the latest checkpoint in
+`docs/PHASE_1_PERSONAL_RETRIEVAL.md`; do not repeat unaffected passing observations.
 Initial preparation baseline: `7ebab7769d59b3bef2e62fcc5121a3bc44ca6475`; later run identities are recorded with their evidence.
 Owner: platform engineering. This check does not replace functional, security,
 retrieval-quality, or accessibility evidence.
