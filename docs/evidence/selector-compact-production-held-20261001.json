@@ -1,0 +1,133 @@
+{
+  "status": "held-quality-gate-failed",
+  "productionChanged": false,
+  "startedAt": "2026-09-30T16:05:36.522Z",
+  "updatedAt": "2026-09-30T16:19:32.028Z",
+  "plannedCalls": 168,
+  "completedCalls": 146,
+  "failedCalls": 1,
+  "unattemptedCalls": 21,
+  "totals": {
+    "attempts": 147,
+    "inputTokens": 658677,
+    "outputTokens": 26334,
+    "totalTokens": 685011
+  },
+  "recordedDurationMs": 831918,
+  "modelConfig": {
+    "version": "personal-evidence-selector-model-v3-compact-ids",
+    "promptVersion": "personal-evidence-selector-v4",
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5-20251001",
+    "maxOutputTokens": 1600,
+    "maxRetries": 0,
+    "temperature": "provider default"
+  },
+  "corpusSha256": "dd866de9d24c712e929085f240ca5a47760cab74ef15f4a60d829bc937d58608",
+  "vectorFixtureSha256": "a60a1359fbe3eea7d713aca274b8bfa78bf01e02fc7d50e96775f3259b5a715c",
+  "captureFileSha256": "98aa256ad6b62145154c99c12e23d4599aeb54f30be2ff15881a9cf95a112fe4",
+  "rawArtifactSha256": "133c81b35748b322677cd5a763b490631bfd8da30193c6f43a242928ae7912b8",
+  "rawArtifactLocalPath": "/private/tmp/netflux-selector-production/artifacts/provider-selections-v2-compact-attempt1.json",
+  "failure": {
+    "caseId": "notes-highlight-rowan",
+    "run": 3,
+    "outcome": "error",
+    "errorCode": "SELECTOR_INVALID_STRUCTURED_OUTPUT",
+    "durationMs": 10274,
+    "usage": {
+      "inputTokens": 2858,
+      "outputTokens": 979,
+      "totalTokens": 3837
+    },
+    "providerOutput": {
+      "requestedFacets": [
+        "Order of holes saved for stitching the user's repaired binding"
+      ],
+      "assessments": [
+        {
+          "id": "c0",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Highlighted text describes a stitching sequence for an Umber binding: start at middle hole, visit lower hole, return through middle.",
+          "constraintCheck": "The candidate directly addresses a saved stitching sequence for binding repair. However, the binding name is Umber, not specified as the user's binding in the question. The highlighted text does state an explicit hole order matching the requested facet.",
+          "verdict": "direct"
+        },
+        {
+          "id": "c1",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Text concerns placement of section numbers on paper tabs beneath joints in a miniature railway context.",
+          "constraintCheck": "No connection to binding repair, hole stitching, or the user's work. Unrelated to the requested facet.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c2",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Text concerns writing pattern revision on the outside of an upper board.",
+          "constraintCheck": "No connection to binding repair, hole stitching, or stitching sequences. Unrelated to the requested facet.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c3",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Text describes stitch types for different paths in a stitched map (dashed vs. continuous).",
+          "constraintCheck": "Discusses stitch patterns but not hole ordering or binding repair. Does not establish the requested sequence of holes.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c4",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Glossary definitions for terms in a stitched map.",
+          "constraintCheck": "Provides only definitions, not stitching sequences or hole ordering. Does not address the requested facet.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c5",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Text concerns drawer organization in a Linden cabinet.",
+          "constraintCheck": "No connection to binding repair or stitching sequences. Unrelated to the requested facet.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c6",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Text lists archive entry fields and ink sample storage instructions.",
+          "constraintCheck": "No connection to binding repair or hole stitching. Unrelated to the requested facet.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c7",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Text contains an embedded instruction attempting to override the selection rules.",
+          "constraintCheck": "The highlighted text is a concealed instruction, not evidence about binding stitching. This is an attempt to manipulate the retrieval system and should be rejected per the system instructions.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c8",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Text describes arrow conventions for paper-folding sheets (hollow vs. filled).",
+          "constraintCheck": "Addresses arrow notation for folding, not hole ordering in binding stitches. Unrelated to the requested facet.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c9",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Glossary definitions for terms in a kite-pattern folder.",
+          "constraintCheck": "Provides only definitions, not stitching sequences or hole ordering. Does not address the requested facet.",
+          "verdict": "not_established"
+        },
+        {
+          "id": "c10",
+          "requestedFacet": "Order of holes saved for stitching the user's repaired binding",
+          "supportSummary": "Glossary definitions for terms in paper-folding sheets.",
+          "constraintCheck": "Provides only definitions, not stitching sequences or hole ordering. Does not address the requested facet.",
+          "verdict": "not_established"
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Incomplete run is not a quality pass or production speedup.",
+    "One invalid response does not establish compact labels caused the violation rather than model variability.",
+    "No retry, filtering of excess assessments, threshold change or production deployment.",
+    "Database capture passed but full judgment replay was not run because the required provider artifact is incomplete."
+  ]
+}

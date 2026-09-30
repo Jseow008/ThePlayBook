@@ -23,7 +23,7 @@ import { composeLibraryEvidence, buildLibraryEvidencePrompt, type LibrarySourceE
 import { exactPersonalQuoteField, buildPersonalEvidencePrompt } from "../lib/server/personal-retrieval";
 import {
     PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG, PERSONAL_EVIDENCE_SELECTOR_LIMITS,
-    canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash, selectPersonalEvidence, derivePersonalEvidenceSelectionIds, PersonalEvidenceSelectionError,
+    canonicalPersonalEvidenceSelectionRequest, buildPersonalEvidenceProviderRequest, personalEvidenceSelectionRequestHash, selectPersonalEvidence, derivePersonalEvidenceSelectionIds, PersonalEvidenceSelectionError,
     type CanonicalPersonalEvidenceSelectionRequest, type PersonalEvidenceSelectionCandidate, type PersonalEvidenceSelectionRequest,
 } from "../lib/server/personal-evidence-selector";
 
@@ -739,15 +739,20 @@ export function readCapturedSelectorInputs(corpus: Corpus, path: string, vectorF
 }
 export type ProviderSelectorRecord = {
     caseId: string; run: number; inputSha256: string; outcome: "complete" | "error";
-    output: { ids: string[] } | null; providerOutput?: unknown; usage?: Partial<LanguageModelUsage>; model: string; provider: string;
+    output: { ids: string[] } | null; providerOutput?: unknown; providerWireOutput?: unknown; usage?: Partial<LanguageModelUsage>; model: string; provider: string;
     rawText?: string; rawTextTruncated?: boolean; rawTextBytes?: number; rawTextSha256?: string; responseId?: string; durationMs: number; errorCode?: string;
 };
 /** Replay the raw model judgment through production validation; IDs alone are insufficient evidence. */
 export function validateRecordedProviderSelectionOutput(
-    record: Pick<ProviderSelectorRecord, "output" | "providerOutput">,
-    request: Pick<PersonalEvidenceSelectionRequest, "schema">,
+    record: Pick<ProviderSelectorRecord, "output" | "providerOutput" | "providerWireOutput">,
+    request: Pick<PersonalEvidenceSelectionRequest, "schema"> & Partial<Pick<PersonalEvidenceSelectionRequest, "system" | "prompt" | "maxOutputTokens">>,
 ): unknown {
     if (!record.providerOutput || !record.output || !Array.isArray(record.output.ids)) throw new ProbeFailure("SELECTOR_RAW_OUTPUT_REQUIRED");
+    if (record.providerWireOutput !== undefined) {
+        if (!request.system || !request.prompt || !request.maxOutputTokens) throw new ProbeFailure("SELECTOR_WIRE_REQUEST_REQUIRED");
+        const restored = buildPersonalEvidenceProviderRequest({ system: request.system, prompt: request.prompt, maxOutputTokens: request.maxOutputTokens }).restore(record.providerWireOutput);
+        if (JSON.stringify(restored) !== JSON.stringify(record.providerOutput)) throw new ProbeFailure("SELECTOR_WIRE_RESTORE_MISMATCH");
+    }
     const ids = derivePersonalEvidenceSelectionIds(record.providerOutput, request);
     if (JSON.stringify(ids) !== JSON.stringify(record.output.ids)) throw new ProbeFailure("SELECTOR_DERIVED_IDS_MISMATCH");
     return record.providerOutput;
@@ -847,11 +852,13 @@ async function executeCapturedSelectors(corpus: Corpus, inputPath: string, vecto
                             totals.attempts++;
                             let usageCounted = false;
                             try {
-                                const generated = await generateText({ model: anthropic(config.model), system: request.system, prompt: request.prompt,
-                                    output: Output.object({ schema: request.schema }), maxOutputTokens: request.maxOutputTokens,
+                                const wire = buildPersonalEvidenceProviderRequest(request);
+                                const generated = await generateText({ model: anthropic(config.model), system: wire.request.system, prompt: wire.request.prompt,
+                                    output: Output.object({ schema: wire.request.schema }), maxOutputTokens: request.maxOutputTokens,
                                     maxRetries: 0, abortSignal: request.signal });
                                 const usage = generated.usage;
-                                rawResult = { text: generated.text, output: generated.output, responseId: generated.response.id,
+                                record.providerWireOutput = generated.output;
+                                rawResult = { text: generated.text, output: wire.restore(generated.output), responseId: generated.response.id,
                                     usage: { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, totalTokens: usage.totalTokens,
                                         inputTokenDetails: usage.inputTokenDetails, outputTokenDetails: usage.outputTokenDetails } };
                                 if (!Number.isSafeInteger(usage.inputTokens) || !Number.isSafeInteger(usage.outputTokens)
@@ -860,7 +867,7 @@ async function executeCapturedSelectors(corpus: Corpus, inputPath: string, vecto
                                 totals.totalTokens += usage.totalTokens ?? usage.inputTokens! + usage.outputTokens!;
                                 usageCounted = true;
                                 if (generated.response.modelId !== config.model) throw new ProbeFailure("SELECTOR_PROVIDER_MODEL_MISMATCH");
-                                return { output: generated.output, usage: rawResult.usage, model: generated.response.modelId, provider: config.provider };
+                                return { output: rawResult.output, usage: rawResult.usage, model: generated.response.modelId, provider: config.provider };
                             } catch (error) {
                                 const failedOutput = safeSelectorOutputFailure(error);
                                 if (failedOutput) {

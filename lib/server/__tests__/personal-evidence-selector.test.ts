@@ -256,7 +256,7 @@ describe("selector deadlines and cancellation", () => {
 });
 
 describe("existing provider configuration and AI SDK6 structured output", () => {
-    const sdkResult = () => ({ output: structuralSelectionOutput([highlight().id]), usage: { inputTokens: 55, outputTokens: 7, totalTokens: 62 }, response: { modelId: "actual-provider-model" } });
+    const sdkResult = () => ({ output: structuralSelectionOutput(["c0"]), usage: { inputTokens: 55, outputTokens: 7, totalTokens: 62 }, response: { modelId: "actual-provider-model" } });
 
     it("uses Anthropic Haiku by default, structured output, no SDK retries and the bounded abort signal", async () => {
         vi.stubEnv("ANTHROPIC_API_KEY", "dummy-key-never-sent");
@@ -266,6 +266,8 @@ describe("existing provider configuration and AI SDK6 structured output", () => 
             model: { provider: "anthropic", modelId: "claude-haiku-4-5-20251001" }, maxRetries: 0, maxOutputTokens: 1600,
             abortSignal: expect.any(AbortSignal), output: expect.objectContaining({ name: "object" }),
         }));
+        expect(result.ids).toEqual([highlight().id]);
+        expect(JSON.parse(providerMocks.generateText.mock.calls[0][0].prompt).candidates[0].id).toBe("c0");
         expect(result.provider).toBe("anthropic");
         expect(result.model).toBe("actual-provider-model");
         expect(JSON.stringify(result)).not.toContain("dummy-key");

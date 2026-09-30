@@ -63,7 +63,7 @@ type CapturedSelection = {
     diagnosticOnlyAllCandidateIds: string[];
 };
 type RecordedSelection = {
-    caseId: string; run: number; inputSha256: string; output: { ids: string[] }; providerOutput: unknown;
+    caseId: string; run: number; inputSha256: string; output: { ids: string[] }; providerOutput: unknown; providerWireOutput?: unknown;
     usage: Awaited<ReturnType<PersonalEvidenceSelectionGenerator>>["usage"];
     model: string; provider: string;
 };
@@ -305,6 +305,7 @@ describeDatabase("frozen personal retrieval corpus through real Auth and product
                 throw new Error(`Actual selector decision missing or mismatched for ${testCase.id} run ${run}.`);
             }
             const record = records[0];
+            if (!record.providerWireOutput) throw new Error("Compact selector replay requires original provider wire output.");
             return { output: validateRecordedProviderSelectionOutput(record, actualRequest), usage: record.usage, model: record.model, provider: record.provider };
         };
     }

@@ -20,7 +20,7 @@ beforeEach(() => {
     vi.stubEnv("AI_MODEL", "claude-haiku-4-5-20251001");
     rpc.mockImplementation((name, args) => ({ abortSignal: async () => ({ data: name === "reserve_ai_spend"
         ? { allowed: true, operationId: args.p_operation_id, reservedMicrousd: args.p_reserved_microusd } : { recorded: true }, error: null }) }));
-    generate.mockResolvedValue({ output: { ids: [] }, usage: { inputTokens: 10, outputTokens: 5 }, response: { modelId: "claude-haiku-4-5-20251001" } });
+    generate.mockResolvedValue({ output: { requestedFacets: ["fixture"], assessments: [] }, usage: { inputTokens: 10, outputTokens: 5 }, response: { modelId: "claude-haiku-4-5-20251001" } });
     embed.mockResolvedValue({ embeddings: [{ values: [1, 0] }] });
 });
 afterEach(() => vi.unstubAllEnvs());

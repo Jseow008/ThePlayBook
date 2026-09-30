@@ -2676,3 +2676,86 @@ Worktree `/private/tmp/netflux-selection-attribution`, branch
 follow-up carries the deferred checkpoint history. Next: merge the evidence PR
 through required gates and remove the completed attribution monitor; further
 optimization is separate work, not a claim that the AI wait is resolved.
+### Compact selector production integration — 1 October 2026 (in progress)
+
+Worktree `/private/tmp/netflux-selector-production`, branch
+`codex/selector-compact-production`, based on freshly fetched `066a672f`.
+The user authorized integration, existing quality gates, release and production
+verification following the seven-case short-ID development experiment (#207).
+Production is unchanged. This checkpoint is not a release acceptance claim.
+
+The production generator and provider evaluation share a request-local `c0`… ID
+mapping. Original identities are restored only after schema/membership/duplicate
+validation. Candidate text/order/count, Haiku model, semantic prompt, output limits,
+spending and authorization remain unchanged. Request hashes bind both logical and
+provider-wire requests with version `personal-evidence-selector-model-v3-compact-ids`.
+Replay retains and checks both raw wire judgments and restored original identities.
+
+Fresh disposable local Supabase `netflux-selector-compact` captured 59/59 database
+checks successfully; capture is not a quality pass. A single frozen evaluation of
+168 provider calls (56 invoking cases × three runs) is in progress, retaining every
+failure, unchanged thresholds and zero provider retries. Gemini vectors are reused
+because embedding inputs/model are unchanged. Provider progress is
+`artifacts/provider-selections-v2-compact-attempt1.json`; inputs are
+`artifacts/personal-selection-inputs-compact.json`. Do not restart the paid run.
+Focused mapping/timing tests pass. Full unit run: 1,616 passed, one outdated
+spending mock failed; corrected it to the actual structured judgment shape and its
+four tests pass. Lint/typecheck are running. No database migration is involved.
+
+Next: finish the existing provider run, then replay its real judgments through the
+disposable database quality suite (including all original-ID evidence checks).
+Only if unchanged quality gates pass, adopt the new recorded fixture and publish
+through required PR gates. Preserve failed evidence and reassess instead of tuning
+against frozen cases. After deployment, verify one ordinary authenticated response
+and record latency/citation correctness; do not claim a permanent or worldwide
+speedup from development timings. #28 remains open. One implementing agent.
+
+**Release decision: held — frozen evaluation failed.** Attempt one stopped on call
+147 (run three, `notes-highlight-rowan`): `SELECTOR_INVALID_STRUCTURED_OUTPUT`.
+The model emitted 11 unique assessments (one direct, ten not-established) where
+the unchanged contract permits at most eight. This was not truncation: the record
+contains a complete JSON object and 979 output tokens. Do not silently discard
+extra judgments, raise limits, replay a previous answer, or retry for a favorable
+result. The first 146 provider calls completed; 21 planned calls were not made.
+The incomplete artifact cannot satisfy full database quality replay, so that replay
+and deployment were not attempted. One failure alone does not prove shorter labels
+caused the violation rather than ordinary model variability.
+
+Observed provider usage: 658,677 input and 26,334 output tokens; exact billed cost
+unavailable. Recorded provider execution totaled about 13.9 minutes. No second paid
+attempt or subagent was used. Build, lint and typecheck pass; build initially failed
+on the temporary dependency symlink, then passed using a local dependency copy.
+Added a regression proving excess non-direct assessments are rejected too. Full
+unit run's lone obsolete mock was corrected and its focused suite passed.
+
+Failure summary and exact synthetic failing judgment:
+`docs/evidence/selector-compact-production-held-20261001.json`. Full local evidence
+remains at the artifact path above, hash-bound in that summary. Keep this candidate
+unmerged with auto-merge off. Recommended next decision: retain production's existing
+selector and investigate provider response-shape enforcement on a separate small
+development corpus before considering another full paid gate. Do not tune the prompt
+against this held-out failure. #206's evidence merged at `5cbf0a12`; its completed
+monitor was removed. #207 rebased to `b4d38516` without changing experiment code or
+results; its required checks remain pending. #28 remains open.
+
+Handoff: six mapping regressions, including the observed overflow shape, pass;
+final typecheck and focused lint pass. The disposable local Supabase instance was
+stopped after verification. The candidate is preserved on its branch without a PR:
+opening a known-unacceptable application PR would trigger CI without changing the
+failed quality decision. No production action or new recurring monitor was taken.
+Next action is a bounded response-format design investigation; the existing paid
+run must not be restarted. The raw artifact is retained locally; its compact failure
+record is tracked. The previous production implementation remains the rollback-free
+safe state.
+
+Bounded root-cause inspection: installed `@ai-sdk/anthropic` 3.0.89 selects native
+structured output for Haiku 4.5. Its `src/sanitize-json-schema.ts` removes `maxItems`
+from the provider's constrained schema and appends it to description text; the SDK
+still validates the original schema on return. Thus the eight-assessment bound is
+not guaranteed by provider decoding. This is an existing adapter limitation, not
+proof that compact IDs caused the error. A concrete next design candidate is a
+fixed-slot provider response mapped back to the unchanged logical assessment list.
+Test that shape on a small independent development corpus first, including output
+size/latency; do not change the frozen corpus, relax the eight-item bound, or run a
+second full evaluation until it is credible. No such format change is implemented
+in this held branch yet.

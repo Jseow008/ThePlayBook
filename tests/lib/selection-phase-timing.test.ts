@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { z } from "zod";
-import { generatePersonalEvidenceSelection } from "@/lib/server/personal-evidence-selector";
+import { buildPersonalEvidenceSelectionRequest, generatePersonalEvidenceSelection } from "@/lib/server/personal-evidence-selector";
 import { measureAskNotesPhase, withAskNotesTiming } from "@/lib/server/ask-notes-timing";
 
 const mocks = vi.hoisted(() => ({ reserve: vi.fn(), generate: vi.fn(), record: vi.fn() }));
@@ -9,14 +8,14 @@ vi.mock("ai", () => ({ generateText: mocks.generate, Output: { object: vi.fn() }
 vi.mock("@ai-sdk/anthropic", () => ({ createAnthropic: () => () => ({}) }));
 vi.mock("@ai-sdk/openai", () => ({ createOpenAI: () => () => ({}) }));
 let now = 0;
-const request = () => ({ system: "private system", prompt: "private question", schema: z.object({ requestedFacets: z.array(z.string()), assessments: z.array(z.object({ id: z.string(), requestedFacet: z.string(), supportSummary: z.string(), constraintCheck: z.string(), verdict: z.literal("direct") })) }), signal: new AbortController().signal, maxOutputTokens: 1600 });
+const request = () => ({ ...buildPersonalEvidenceSelectionRequest({ question: "private question", candidates: [{ id: "highlight:private-id", type: "highlight", title: "private source", fields: [{ name: "highlightedText", text: "private passage" }] }] }).request, signal: new AbortController().signal });
 beforeEach(() => {
     vi.resetAllMocks(); now = 0;
     vi.stubEnv("ANTHROPIC_API_KEY", "test-only"); vi.stubEnv("AI_PROVIDER", "anthropic");
     vi.spyOn(performance, "now").mockImplementation(() => now);
     vi.spyOn(console, "info").mockImplementation(() => {});
     mocks.reserve.mockImplementation(async () => { now += 20; return { record: mocks.record }; });
-    mocks.generate.mockImplementation(async () => { now += 100; return { output: { requestedFacets: [], assessments: [] }, usage: { outputTokens: 12 }, response: { modelId: "test-model" } }; });
+    mocks.generate.mockImplementation(async () => { now += 100; return { output: { requestedFacets: ["private facet"], assessments: [] }, usage: { outputTokens: 12 }, response: { modelId: "test-model" } }; });
     mocks.record.mockImplementation(async () => { now += 30; });
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });
@@ -30,7 +29,7 @@ describe("real selector generator timing boundaries", () => {
         expect(response.headers.get("server-timing")).toBe("selection;dur=150, selection_reserve;dur=20, selection_provider;dur=100, selection_settle;dur=30, response_ready;dur=150");
         expect(await response.text()).toBe("unchanged");
         expect(mocks.record).toHaveBeenCalledWith({ outputTokens: 12 });
-        expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0, maxOutputTokens: 1600, prompt: "private question" }));
+        expect(mocks.generate).toHaveBeenCalledWith(expect.objectContaining({ maxRetries: 0, maxOutputTokens: 1600, prompt: expect.stringContaining("private question") }));
         expect(JSON.stringify(vi.mocked(console.info).mock.calls)).not.toMatch(/private|test-model/);
     });
     it("does not call the provider when reservation fails", async () => {

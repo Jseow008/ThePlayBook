@@ -54,7 +54,7 @@ export type PersonalEvidenceSelectionRequest = {
     maxOutputTokens: number;
 };
 export const PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG = Object.freeze({
-    version: "personal-evidence-selector-model-v2",
+    version: "personal-evidence-selector-model-v3-compact-ids",
     promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION,
     provider: "anthropic",
     model: "claude-haiku-4-5-20251001",
@@ -129,19 +129,20 @@ export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerat
         : process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
     const model = useAnthropic ? createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(modelId)
         : createOpenAI({ apiKey: process.env.OPENAI_API_KEY })(modelId);
+    const wire = buildPersonalEvidenceProviderRequest(request);
     const reservation = await measureAskNotesPhase("selection_reserve", () => reserveAiProviderCall({ provider, model: modelId, maxOutputTokens: request.maxOutputTokens, signal: request.signal }));
     request.signal?.throwIfAborted();
     const result = await measureAskNotesPhase("selection_provider", () => generateText({
         model,
-        system: request.system,
-        prompt: request.prompt,
-        output: Output.object({ schema: request.schema }),
+        system: wire.request.system,
+        prompt: wire.request.prompt,
+        output: Output.object({ schema: wire.request.schema }),
         maxOutputTokens: request.maxOutputTokens,
         maxRetries: 0,
         abortSignal: request.signal,
     }));
     await measureAskNotesPhase("selection_settle", () => reservation.record(result.usage));
-    return { output: result.output, usage: result.usage, model: result.response.modelId, provider };
+    return { output: wire.restore(result.output), usage: result.usage, model: result.response.modelId, provider };
 };
 
 function validFields(candidate: PersonalEvidenceSelectionCandidate): boolean {
@@ -225,6 +226,27 @@ export function canonicalPersonalEvidenceSelectionRequest(request: Pick<Personal
         || (request.outputSchema !== undefined && JSON.stringify(request.outputSchema) !== JSON.stringify(rebuilt.outputSchema))) throw new PersonalEvidenceSelectionError("INVALID_INPUT");
     return rebuilt;
 }
+/** Shared wire transformation: no candidate content or reasoning contract is removed. */
+export function buildPersonalEvidenceProviderRequest(request: Parameters<typeof canonicalPersonalEvidenceSelectionRequest>[0]) {
+    const logical = canonicalPersonalEvidenceSelectionRequest(request);
+    const input = JSON.parse(logical.prompt) as { question: string; exactQuote: boolean; candidates: PersonalEvidenceSelectionCandidate[] };
+    const originalIds = input.candidates.map(candidate => candidate.id);
+    const compact = buildPersonalEvidenceSelectionRequest({ ...input,
+        candidates: input.candidates.map((candidate, index) => ({ ...candidate, id: `c${index}` })),
+    });
+    const aliases = new Map(compact.candidates.map((candidate, index) => [candidate.id, originalIds[index]]));
+    return {
+        request: compact.request,
+        canonical: compact.canonical,
+        restore(output: unknown): PersonalEvidenceSelectionOutput {
+            // Validate all verdicts, unknown labels and duplicates before mapping any IDs.
+            derivePersonalEvidenceSelectionIds(output, compact.request);
+            const parsed = compact.request.schema.parse(output);
+            return { ...parsed, assessments: parsed.assessments.map(item => ({ ...item, id: aliases.get(item.id)! })) };
+        },
+    };
+}
+
 export function personalEvidenceSelectionRequestHash(
     request: Parameters<typeof canonicalPersonalEvidenceSelectionRequest>[0],
     modelConfig: PersonalEvidenceSelectionModelConfig = PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG,
@@ -232,7 +254,7 @@ export function personalEvidenceSelectionRequestHash(
     // Explicit field order is shared by capture, live provider runs and database replay.
     const config = { version: modelConfig.version, promptVersion: modelConfig.promptVersion, provider: modelConfig.provider,
         model: modelConfig.model, maxOutputTokens: modelConfig.maxOutputTokens, maxRetries: modelConfig.maxRetries, temperature: modelConfig.temperature };
-    return createHash("sha256").update(JSON.stringify({ request: canonicalPersonalEvidenceSelectionRequest(request), modelConfig: config })).digest("hex");
+    return createHash("sha256").update(JSON.stringify({ request: canonicalPersonalEvidenceSelectionRequest(request), providerWire: buildPersonalEvidenceProviderRequest(request).canonical, modelConfig: config })).digest("hex");
 }
 function safeUsage(usage?: Partial<LanguageModelUsage>): PersonalEvidenceSelectionUsage {
     const count = (value: unknown) => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
