@@ -2344,3 +2344,26 @@ No additional load or paid AI testing occurred. This reduces speculative work;
 the larger first-load JavaScript/CSS bottleneck is not declared solved. Next:
 required PR checks and squash auto-merge of #200; #28 remains open. This final
 checkpoint is documentation-only and retains the measured application tree.
+
+### Critical first-paint follow-up — 30 September 2026
+
+#200 merged as `73b8ad81`. Current branch `codex/critical-first-paint`, worktree
+`/private/tmp/netflux-critical-paint`, based on that merge. User authorized follow-up
+implementation and deployment verification; no AI calls or capacity test needed.
+
+Same-production constrained-browser diagnosis found CSS completion immediately
+before paint. Normal versus diagnostic script blocking: Home FCP 2800/1300ms,
+Browse 3120/1468ms, reader 3836/1552ms. Script blocking is an attribution experiment,
+not a deployable fix. Raw evidence: `/private/tmp/netflux-critical-evidence/diagnostic.json`.
+
+Candidate uses Next's experimental inlineCss to deliver CSS with HTML. This keeps
+styles, scripts, analytics and error monitoring intact, but increases HTML and
+sacrifices independent CSS caching on hard visits. Local Next documentation flags
+RSC duplication and experimental status. Do not merge on the diagnosis alone.
+
+Next: built-preview comparison against immutable #200 preview with the same env,
+three cold and warm samples per Home/Browse/reader, alternating order. Require
+meaningful cold-paint improvement and examine warm navigation/HTML costs before
+accepting the tradeoff. Keep every sample, including slow ones; do not rerun until
+favorable. A reusable browser check also asserts inline styles and no stylesheet
+dependency on hard loads. #28 remains open. AI wait time is a separate workstream.
