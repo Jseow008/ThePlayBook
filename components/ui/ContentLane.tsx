@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ContentItem } from "@/types/database";
 import { ContentCard } from "@/components/ui/ContentCard";
-import { COMPACT_SHELF_CARD_CLASS } from "@/components/ui/content-card-standards";
+import { COMPACT_SHELF_CARD_CLASS, COMPACT_SHELF_IMAGE_SIZES } from "@/components/ui/content-card-standards";
 
 interface ContentLaneProps {
     title: React.ReactNode;
@@ -168,6 +168,7 @@ export function ContentLane({
                                 >
                                     <ContentCard
                                         item={item}
+                                        imageSizes={COMPACT_SHELF_IMAGE_SIZES}
                                         enableUserState={enableCardUserState}
                                         navigationMode={cardNavigationMode}
                                         titleDensity={cardTitleDensity}

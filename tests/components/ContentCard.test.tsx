@@ -14,8 +14,8 @@ const mockGetProgress = vi.fn<(_: string) => ReadingProgressData | null>();
 const mockToastSuccess = vi.fn();
 
 vi.mock("next/link", () => ({
-    default: ({ children, href, ...props }: { children: React.ReactNode; href: string }) => (
-        <a href={href} {...props}>
+    default: ({ children, href, prefetch, ...props }: { children: React.ReactNode; href: string; prefetch?: boolean | null }) => (
+        <a href={href} data-prefetch={String(prefetch)} {...props}>
             {children}
         </a>
     ),
@@ -91,6 +91,16 @@ describe("ContentCard", () => {
         mockToastSuccess.mockReset();
         mockIsInMyList.mockReturnValue(false);
         mockGetProgress.mockReturnValue(null);
+    });
+
+    it.each(["mouse", "keyboard"])("prefetches card links only after %s intent", (intent) => {
+        render(<ContentCard item={item} enableUserState={false} showDesktopQuickActions />);
+        const links = screen.getAllByRole("link");
+        for (const link of links) expect(link).toHaveAttribute("data-prefetch", "false");
+        if (intent === "mouse") fireEvent.mouseEnter(links[0]);
+        else fireEvent.focus(links[0]);
+        for (const link of links) expect(link).toHaveAttribute("data-prefetch", "null");
+        expect(links[0]).toHaveAttribute("href", `/preview/${item.id}`);
     });
 
     it("defaults to the preview page", () => {
