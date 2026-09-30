@@ -1,4 +1,5 @@
 import "server-only";
+import { measureAskNotesPhase } from "@/lib/server/ask-notes-timing";
 import { AiSpendingError, reserveAiProviderCall } from "@/lib/server/ai-spending";
 
 import { createHash } from "node:crypto";
@@ -128,9 +129,9 @@ export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerat
         : process.env.OPENAI_FALLBACK_MODEL || "gpt-4o-mini";
     const model = useAnthropic ? createAnthropic({ apiKey: process.env.ANTHROPIC_API_KEY })(modelId)
         : createOpenAI({ apiKey: process.env.OPENAI_API_KEY })(modelId);
-    const reservation = await reserveAiProviderCall({ provider, model: modelId, maxOutputTokens: request.maxOutputTokens, signal: request.signal });
+    const reservation = await measureAskNotesPhase("selection_reserve", () => reserveAiProviderCall({ provider, model: modelId, maxOutputTokens: request.maxOutputTokens, signal: request.signal }));
     request.signal?.throwIfAborted();
-    const result = await generateText({
+    const result = await measureAskNotesPhase("selection_provider", () => generateText({
         model,
         system: request.system,
         prompt: request.prompt,
@@ -138,8 +139,8 @@ export const generatePersonalEvidenceSelection: PersonalEvidenceSelectionGenerat
         maxOutputTokens: request.maxOutputTokens,
         maxRetries: 0,
         abortSignal: request.signal,
-    });
-    await reservation.record(result.usage);
+    }));
+    await measureAskNotesPhase("selection_settle", () => reservation.record(result.usage));
     return { output: result.output, usage: result.usage, model: result.response.modelId, provider };
 };
 
