@@ -11,6 +11,10 @@ export function assertCriticalCss(html) {
     const external = document.querySelectorAll('link[rel="stylesheet"]');
     if (external.length) throw new Error('First paint depends on an external stylesheet');
     const styles = [...document.querySelectorAll('style[data-precedence]')];
+    // Current generated styles are approximately 256 KB before compression.
+    // Allow headroom, but fail a large increase before it reaches production.
+    const cssBytes = styles.reduce((sum, style) => sum + Buffer.byteLength(style.textContent), 0);
+    if (cssBytes > 320 * 1024) throw new Error('Critical CSS exceeds the 320 KiB build budget');
     if (!styles.some(style => style.textContent.includes('--background:'))) {
       throw new Error('Initial HTML is missing the application stylesheet');
     }

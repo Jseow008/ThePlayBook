@@ -2379,3 +2379,32 @@ comparison only; reuse unchanged Home/reader evidence. Build-time output guard
 checks rendered production HTML rather than merely checking the configuration flag.
 The initial guard test loader failed to resolve a data-URL module; replacing it
 with a normal module import fixed the fixture (three tests pass).
+
+Refinement `c41f96aa`: actual browser requests confirm High priority for the initial
+hero. Across three more cold/warm Browse pairs, median cold FCP 2920→768ms; warm
+368→512ms. Cold LCP 3264→3384ms, warm 740→780ms. The first candidate LCP was 5096ms
+versus baseline 3588ms; retain this slow result. Navigation smoke overlapped part
+of that comparison, so main-thread timings may include local contention. This is
+strong evidence for removing the blank-screen CSS dependency, not a proven hero
+image speedup or a guarantee about every user's total loading time.
+
+Desktop/mobile Home→Browse→Preview navigation and final heading typography/geometry
+passed. An initial smoke assertion checked before route content arrived; waiting
+for the visible heading corrected that fixture. One early screenshot missed the
+animated heading; a constrained follow-up observed its opacity reach 1 at 1.63s
+(candidate) versus 3.40s (baseline), with no later opacity reset. Final screenshots
+match the existing design. Existing analytics, scripts and error monitoring remain.
+
+Evidence retained in `docs/evidence/first-paint-20260930.json`; raw screenshots and
+heading samples remain `/private/tmp/netflux-critical-evidence/`. The application
+change is accepted for the large first-paint improvement, with the explicit larger
+HTML, experimental-framework and slower warm-reload tradeoffs. No global JavaScript
+performance or tail-latency closure is claimed. A build-output guard prevents the
+CSS waterfall from silently returning and caps critical CSS at 320 KiB (currently
+about 256 KiB uncompressed). Repeat the browser script for relevant framework or
+critical-style changes, not every unrelated edit. The source-scan narrowing probe
+saved only 161 compressed bytes and was discarded.
+
+Next: final required CI and squash merge of #201, then verify the production build
+identity, inline CSS, hero priority and navigation. Production follow-up is explicitly
+requested; do not stop at merge. No further capacity run or paid AI call is planned.

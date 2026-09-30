@@ -8,6 +8,9 @@ describe('production critical-style regression guard', () => {
   it('rejects external CSS even alongside inline styles', () => {
     expect(() => assertCriticalCss('<style data-precedence="next">:root{--background:0}</style><link href="/app.css" rel="stylesheet">')).toThrow('external stylesheet');
   });
+  it('rejects oversized critical styles before release', () => {
+    expect(() => assertCriticalCss(`<style data-precedence="next">:root{--background:0}/*${'x'.repeat(320 * 1024)}*/</style>`)).toThrow('build budget');
+  });
   it('rejects unrelated styles and script strings masquerading as markup', () => {
     expect(() => assertCriticalCss('<script>const html = `<style data-precedence="next">--background:0</style>`</script><style>body{color:red}</style>')).toThrow('missing');
   });

@@ -35,6 +35,11 @@ try {
           isMobile: true, deviceScaleFactor: 1 });
         const page = await context.newPage();
         const cdp = await context.newCDPSession(page);
+        let imageRequests = [];
+        cdp.on('Network.requestWillBeSent', event => {
+          if (event.type === 'Image') imageRequests.push({ priority: event.request.initialPriority,
+            path: new URL(event.request.url).pathname });
+        });
         await cdp.send('Network.enable');
         // CDP interception preserves the cache for the warm pass. Playwright
         // context.route would disable it, making a "warm" comparison misleading.
@@ -63,6 +68,7 @@ try {
           }).observe({ type: 'longtask', buffered: true });
         });
         for (const cache of ['cold', 'warm']) {
+          imageRequests = [];
           const response = await page.goto(origin + route, { waitUntil: 'load', timeout: 60000 });
           assert.equal(response.status(), 200);
           await page.waitForTimeout(2000);
@@ -75,6 +81,7 @@ try {
               ...window.__firstLoad,
               stylesheetLinks: document.querySelectorAll('link[rel="stylesheet"]').length,
               inlineStyles: document.querySelectorAll('style[data-precedence]').length,
+              highPriorityImages: document.querySelectorAll('img[fetchpriority="high"]').length,
               overflow: document.documentElement.scrollWidth > innerWidth,
               resources: performance.getEntriesByType('resource').map(e => ({
                 path: new URL(e.name).pathname, type: e.initiatorType, start: e.startTime,
@@ -88,7 +95,10 @@ try {
             assert(data.inlineStyles > 0, 'Built candidate must include critical CSS in HTML');
             assert.equal(data.stylesheetLinks, 0, 'Hard loads must not depend on an external stylesheet');
           }
-          result.cases.push({ run, route, target, cache, ...data });
+          if (target === 'candidate' && route === '/browse') {
+            assert(data.highPriorityImages > 0, 'Initial hero must have explicit fetch priority');
+          }
+          result.cases.push({ run, route, target, cache, imageRequests, ...data });
           await fs.writeFile(path.join(output, 'results.json'), JSON.stringify(result, null, 2));
           console.log(JSON.stringify({ run, route, target, cache, fcp: data.fcp, lcp: data.lcp.at(-1)?.at,
             ttfb: data.ttfb, htmlBytes: data.htmlBytes, cssLinks: data.stylesheetLinks }));

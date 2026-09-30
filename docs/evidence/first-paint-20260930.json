@@ -1,0 +1,2621 @@
+{
+  "initial": {
+    "baseline": {
+      "origin": "https://netflux-1caau4p79-jseow008s-projects.vercel.app",
+      "commit": "dfb7cd0a22746217997d3c38145fca3a9b299474"
+    },
+    "candidate": {
+      "origin": "https://netflux-a9rrg9ex7-jseow008s-projects.vercel.app",
+      "commit": "887e315ff60225983048f68e99b53f509752ef00"
+    },
+    "conditions": {
+      "viewport": "390x844",
+      "dpr": 1,
+      "downloadBytesPerSecond": 200000,
+      "latencyMs": 150,
+      "cpuSlowdown": 4,
+      "repetitions": 3,
+      "tour": "dismissed",
+      "cache": "cold context, then same-context warm reload",
+      "note": "Synthetic sequential samples, not field percentiles. No production writes or AI calls."
+    },
+    "cases": [
+      {
+        "run": 0,
+        "route": "/",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 88.80000001192093,
+        "htmlBytes": 16688,
+        "htmlDecodedBytes": 310565,
+        "domInteractive": 3551.0999999940395,
+        "load": 5033.300000011921,
+        "fcp": 3516,
+        "lcp": [
+          {
+            "at": 3516,
+            "tag": "IMG"
+          },
+          {
+            "at": 3756,
+            "tag": "SPAN"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 656724,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 1423.800000011921,
+            "end": 1593.5999999940395,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 1423.800000011921,
+            "end": 3363.300000011921,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 87492,
+        "longTaskCount": 4,
+        "longTaskTotalMs": 528
+      },
+      {
+        "run": 0,
+        "route": "/",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 9.400000005960464,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 310565,
+        "domInteractive": 489,
+        "load": 539.5,
+        "fcp": 340,
+        "lcp": [
+          {
+            "at": 456,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 7839,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 277.59999999403954,
+            "end": 277.59999999403954,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 277.69999998807907,
+            "end": 277.69999998807907,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 130
+      },
+      {
+        "run": 0,
+        "route": "/",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 43.80000001192093,
+        "htmlBytes": 89497,
+        "htmlDecodedBytes": 1109712,
+        "domInteractive": 4253.300000011921,
+        "load": 5486.4000000059605,
+        "fcp": 2104,
+        "lcp": [
+          {
+            "at": 2104,
+            "tag": "A"
+          },
+          {
+            "at": 2464,
+            "tag": "IMG"
+          },
+          {
+            "at": 3504,
+            "tag": "P"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 617024,
+        "stylesheetRequests": [],
+        "fontBytes": 87492,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 267
+      },
+      {
+        "run": 0,
+        "route": "/",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 7.799999982118607,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1109712,
+        "domInteractive": 575.0999999940395,
+        "load": 622.5999999940395,
+        "fcp": 488,
+        "lcp": [
+          {
+            "at": 536,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 109013,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 60
+      },
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 32.900000005960464,
+        "htmlBytes": 41644,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 3190.300000011921,
+        "load": 5014.0999999940395,
+        "fcp": 3180,
+        "lcp": [
+          {
+            "at": 3180,
+            "tag": "IMG"
+          },
+          {
+            "at": 3508,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 818304,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 569.0999999940395,
+            "end": 980.6999999880791,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 569.0999999940395,
+            "end": 3132.300000011921,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 120020,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 322
+      },
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 11.700000017881393,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 518.8000000119209,
+        "load": 871,
+        "fcp": 384,
+        "lcp": [
+          {
+            "at": 492,
+            "tag": "IMG"
+          },
+          {
+            "at": 808,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 67948,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 311.5,
+            "end": 311.5,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 311.5,
+            "end": 311.5,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 4,
+        "longTaskTotalMs": 237
+      },
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 32.29999998211861,
+        "htmlBytes": 98432,
+        "htmlDecodedBytes": 1133483,
+        "domInteractive": 4973.799999982119,
+        "load": 5851.5999999940395,
+        "fcp": 1580,
+        "lcp": [
+          {
+            "at": 1580,
+            "tag": "SPAN"
+          },
+          {
+            "at": 1752,
+            "tag": "IMG"
+          },
+          {
+            "at": 4884,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 813642,
+        "stylesheetRequests": [],
+        "fontBytes": 120020,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 273
+      },
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 9.399999976158142,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1133483,
+        "domInteractive": 547.0999999940395,
+        "load": 788.5,
+        "fcp": 448,
+        "lcp": [
+          {
+            "at": 512,
+            "tag": "IMG"
+          },
+          {
+            "at": 748,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 14751,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 106
+      },
+      {
+        "run": 0,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 32.80000001192093,
+        "htmlBytes": 19464,
+        "htmlDecodedBytes": 115349,
+        "domInteractive": 1366,
+        "load": 5330.700000017881,
+        "fcp": 1480,
+        "lcp": [
+          {
+            "at": 1528,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 815232,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 572.7000000178814,
+            "end": 770.0999999940395,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 572.8000000119209,
+            "end": 1324.0999999940395,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 87492,
+        "longTaskCount": 4,
+        "longTaskTotalMs": 428
+      },
+      {
+        "run": 0,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 9.599999994039536,
+        "htmlBytes": 19388,
+        "htmlDecodedBytes": 115258,
+        "domInteractive": 797.0999999940395,
+        "load": 820.9000000059605,
+        "fcp": 880,
+        "lcp": [
+          {
+            "at": 880,
+            "tag": "IMG"
+          },
+          {
+            "at": 1064,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 35792,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 522.4000000059605,
+            "end": 522.4000000059605,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 522.7999999821186,
+            "end": 522.7999999821186,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 0,
+        "longTaskTotalMs": 0
+      },
+      {
+        "run": 0,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 33.900000005960464,
+        "htmlBytes": 72893,
+        "htmlDecodedBytes": 914403,
+        "domInteractive": 3508.9000000059605,
+        "load": 5810.299999982119,
+        "fcp": 1536,
+        "lcp": [
+          {
+            "at": 1536,
+            "tag": "SPAN"
+          },
+          {
+            "at": 1632,
+            "tag": "IMG"
+          },
+          {
+            "at": 3748,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 814499,
+        "stylesheetRequests": [],
+        "fontBytes": 87492,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 351
+      },
+      {
+        "run": 0,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 9.299999982118607,
+        "htmlBytes": 72815,
+        "htmlDecodedBytes": 914314,
+        "domInteractive": 1111.7999999821186,
+        "load": 1147.4000000059605,
+        "fcp": 948,
+        "lcp": [
+          {
+            "at": 948,
+            "tag": "IMG"
+          },
+          {
+            "at": 1304,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 6770,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 0,
+        "longTaskTotalMs": 0
+      },
+      {
+        "run": 1,
+        "route": "/",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 36.79999998211861,
+        "htmlBytes": 89497,
+        "htmlDecodedBytes": 1109712,
+        "domInteractive": 1540.4000000059605,
+        "load": 3966.4000000059605,
+        "fcp": 712,
+        "lcp": [
+          {
+            "at": 712,
+            "tag": "A"
+          },
+          {
+            "at": 744,
+            "tag": "IMG"
+          },
+          {
+            "at": 1232,
+            "tag": "P"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 741253,
+        "stylesheetRequests": [],
+        "fontBytes": 87492,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 299
+      },
+      {
+        "run": 1,
+        "route": "/",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 12,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1109712,
+        "domInteractive": 554.4000000059605,
+        "load": 608.3000000119209,
+        "fcp": 504,
+        "lcp": [
+          {
+            "at": 512,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 43655,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 63
+      },
+      {
+        "run": 1,
+        "route": "/",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 47.29999998211861,
+        "htmlBytes": 16688,
+        "htmlDecodedBytes": 310565,
+        "domInteractive": 2334.2999999821186,
+        "load": 3904.7999999821186,
+        "fcp": 2336,
+        "lcp": [
+          {
+            "at": 2336,
+            "tag": "IMG"
+          },
+          {
+            "at": 2716,
+            "tag": "P"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 742112,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 337.09999999403954,
+            "end": 515.2999999821186,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 337.2999999821186,
+            "end": 2270.199999988079,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 87492,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 283
+      },
+      {
+        "run": 1,
+        "route": "/",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 8.599999994039536,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 310565,
+        "domInteractive": 476.30000001192093,
+        "load": 529.2000000178814,
+        "fcp": 380,
+        "lcp": [
+          {
+            "at": 516,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 34689,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 331.59999999403954,
+            "end": 331.59999999403954,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 331.7000000178814,
+            "end": 331.7000000178814,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 67
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 63.80000001192093,
+        "htmlBytes": 98432,
+        "htmlDecodedBytes": 1133483,
+        "domInteractive": 4009.7000000178814,
+        "load": 4880.9000000059605,
+        "fcp": 708,
+        "lcp": [
+          {
+            "at": 708,
+            "tag": "SPAN"
+          },
+          {
+            "at": 800,
+            "tag": "IMG"
+          },
+          {
+            "at": 3880,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 819882,
+        "stylesheetRequests": [],
+        "fontBytes": 120020,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 273
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 9.300000011920929,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1133483,
+        "domInteractive": 518.8000000119209,
+        "load": 773.0999999940395,
+        "fcp": 420,
+        "lcp": [
+          {
+            "at": 484,
+            "tag": "IMG"
+          },
+          {
+            "at": 736,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 36497,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 53
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 34.900000005960464,
+        "htmlBytes": 41644,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 2925.199999988079,
+        "load": 4748.0999999940395,
+        "fcp": 2912,
+        "lcp": [
+          {
+            "at": 2912,
+            "tag": "IMG"
+          },
+          {
+            "at": 3252,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 824604,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 308.19999998807907,
+            "end": 485.59999999403954,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 308.19999998807907,
+            "end": 2861.9000000059605,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 120020,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 275
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 9.599999994039536,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 461.09999999403954,
+        "load": 691.2000000178814,
+        "fcp": 352,
+        "lcp": [
+          {
+            "at": 488,
+            "tag": "IMG"
+          },
+          {
+            "at": 652,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 43336,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 299.2000000178814,
+            "end": 299.2000000178814,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 299.30000001192093,
+            "end": 299.30000001192093,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 50
+      },
+      {
+        "run": 1,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 34.099999994039536,
+        "htmlBytes": 72931,
+        "htmlDecodedBytes": 914313,
+        "domInteractive": 3008.699999988079,
+        "load": 5624.4000000059605,
+        "fcp": 1504,
+        "lcp": [
+          {
+            "at": 1504,
+            "tag": "SPAN"
+          },
+          {
+            "at": 1544,
+            "tag": "IMG"
+          },
+          {
+            "at": 3092,
+            "tag": "DIV"
+          },
+          {
+            "at": 3144,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 814952,
+        "stylesheetRequests": [],
+        "fontBytes": 87492,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 353
+      },
+      {
+        "run": 1,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 8.900000005960464,
+        "htmlBytes": 72930,
+        "htmlDecodedBytes": 914313,
+        "domInteractive": 1239.7999999821186,
+        "load": 1313.0999999940395,
+        "fcp": 928,
+        "lcp": [
+          {
+            "at": 928,
+            "tag": "IMG"
+          },
+          {
+            "at": 1284,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 6770,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 0,
+        "longTaskTotalMs": 0
+      },
+      {
+        "run": 1,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 31.900000005960464,
+        "htmlBytes": 19477,
+        "htmlDecodedBytes": 115348,
+        "domInteractive": 3889.7999999821186,
+        "load": 5734.199999988079,
+        "fcp": 4252,
+        "lcp": [
+          {
+            "at": 4252,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 815688,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 936.1999999880791,
+            "end": 1099.2999999821186,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 936.2999999821186,
+            "end": 3851.4000000059605,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 87492,
+        "longTaskCount": 4,
+        "longTaskTotalMs": 426
+      },
+      {
+        "run": 1,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 6.5,
+        "htmlBytes": 19398,
+        "htmlDecodedBytes": 115259,
+        "domInteractive": 1407.4000000059605,
+        "load": 1438.699999988079,
+        "fcp": 1136,
+        "lcp": [
+          {
+            "at": 1136,
+            "tag": "IMG"
+          },
+          {
+            "at": 1568,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 35791,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 726.0999999940395,
+            "end": 726.0999999940395,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 726.9000000059605,
+            "end": 726.9000000059605,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 0,
+        "longTaskTotalMs": 0
+      },
+      {
+        "run": 2,
+        "route": "/",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 37.80000001192093,
+        "htmlBytes": 16688,
+        "htmlDecodedBytes": 310565,
+        "domInteractive": 1042.5999999940395,
+        "load": 3932.0999999940395,
+        "fcp": 1188,
+        "lcp": [
+          {
+            "at": 1216,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 742114,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 298.30000001192093,
+            "end": 462.5,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 299.09999999403954,
+            "end": 1016.8000000119209,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 87492,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 282
+      },
+      {
+        "run": 2,
+        "route": "/",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 9.599999994039536,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 310565,
+        "domInteractive": 432.5,
+        "load": 489.19999998807907,
+        "fcp": 336,
+        "lcp": [
+          {
+            "at": 468,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 32514,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 281.7999999821186,
+            "end": 281.7999999821186,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 281.7999999821186,
+            "end": 281.7999999821186,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 63
+      },
+      {
+        "run": 2,
+        "route": "/",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 37.400000005960464,
+        "htmlBytes": 89497,
+        "htmlDecodedBytes": 1109712,
+        "domInteractive": 2919.5999999940395,
+        "load": 3968.199999988079,
+        "fcp": 696,
+        "lcp": [
+          {
+            "at": 696,
+            "tag": "A"
+          },
+          {
+            "at": 784,
+            "tag": "IMG"
+          },
+          {
+            "at": 2372,
+            "tag": "P"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 741250,
+        "stylesheetRequests": [],
+        "fontBytes": 87492,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 279
+      },
+      {
+        "run": 2,
+        "route": "/",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 10.199999988079071,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1109712,
+        "domInteractive": 527.1999999880791,
+        "load": 576.3000000119209,
+        "fcp": 440,
+        "lcp": [
+          {
+            "at": 488,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 43652,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 61
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 30.5,
+        "htmlBytes": 41644,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 2927,
+        "load": 4755.100000023842,
+        "fcp": 2912,
+        "lcp": [
+          {
+            "at": 2912,
+            "tag": "IMG"
+          },
+          {
+            "at": 3236,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 821716,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 317.10000002384186,
+            "end": 484.80000001192093,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 317.2000000178814,
+            "end": 2862.7000000178814,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 120020,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 275
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 8.5,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 451.2000000178814,
+        "load": 780.9000000059605,
+        "fcp": 340,
+        "lcp": [
+          {
+            "at": 456,
+            "tag": "IMG"
+          },
+          {
+            "at": 728,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 49315,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 268.30000001192093,
+            "end": 268.30000001192093,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 268.7000000178814,
+            "end": 268.7000000178814,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 176
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 33.60000002384186,
+        "htmlBytes": 98432,
+        "htmlDecodedBytes": 1133483,
+        "domInteractive": 4038.2000000178814,
+        "load": 4925,
+        "fcp": 756,
+        "lcp": [
+          {
+            "at": 756,
+            "tag": "SPAN"
+          },
+          {
+            "at": 840,
+            "tag": "IMG"
+          },
+          {
+            "at": 3892,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 816788,
+        "stylesheetRequests": [],
+        "fontBytes": 120020,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 333
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 10.900000005960464,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1133483,
+        "domInteractive": 534.6000000238419,
+        "load": 772,
+        "fcp": 484,
+        "lcp": [
+          {
+            "at": 484,
+            "tag": "IMG"
+          },
+          {
+            "at": 728,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 31040,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 53
+      },
+      {
+        "run": 2,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "baseline",
+        "cache": "cold",
+        "ttfb": 34.10000002384186,
+        "htmlBytes": 19390,
+        "htmlDecodedBytes": 115258,
+        "domInteractive": 3567.7000000178814,
+        "load": 5407.300000011921,
+        "fcp": 3564,
+        "lcp": [
+          {
+            "at": 3564,
+            "tag": "IMG"
+          },
+          {
+            "at": 3892,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 815235,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 600.9000000059605,
+            "end": 859.9000000059605,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 601.3000000119209,
+            "end": 3499.100000023842,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 87492,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 364
+      },
+      {
+        "run": 2,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "baseline",
+        "cache": "warm",
+        "ttfb": 12.400000005960464,
+        "htmlBytes": 19399,
+        "htmlDecodedBytes": 115259,
+        "domInteractive": 770,
+        "load": 804,
+        "fcp": 596,
+        "lcp": [
+          {
+            "at": 680,
+            "tag": "IMG"
+          },
+          {
+            "at": 1080,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "overflow": false,
+        "resourceBytes": 35790,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 501.30000001192093,
+            "end": 501.30000001192093,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 501.40000000596046,
+            "end": 501.40000000596046,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 0,
+        "longTaskTotalMs": 0
+      },
+      {
+        "run": 2,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "candidate",
+        "cache": "cold",
+        "ttfb": 32.900000005960464,
+        "htmlBytes": 73012,
+        "htmlDecodedBytes": 914404,
+        "domInteractive": 3544.100000023842,
+        "load": 5946.9000000059605,
+        "fcp": 2056,
+        "lcp": [
+          {
+            "at": 2056,
+            "tag": "IMG"
+          },
+          {
+            "at": 3760,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 814502,
+        "stylesheetRequests": [],
+        "fontBytes": 87492,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 341
+      },
+      {
+        "run": 2,
+        "route": "/read/f57a80ae-c899-4e27-a731-7d59e01a7f65/atomic-habits",
+        "target": "candidate",
+        "cache": "warm",
+        "ttfb": 8.100000023841858,
+        "htmlBytes": 72920,
+        "htmlDecodedBytes": 914314,
+        "domInteractive": 1510.1000000238419,
+        "load": 1544.5,
+        "fcp": 1328,
+        "lcp": [
+          {
+            "at": 1328,
+            "tag": "IMG"
+          },
+          {
+            "at": 1664,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "overflow": false,
+        "resourceBytes": 6772,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 0,
+        "longTaskTotalMs": 0
+      }
+    ]
+  },
+  "heroRefinement": {
+    "baseline": {
+      "origin": "https://netflux-1caau4p79-jseow008s-projects.vercel.app",
+      "commit": "dfb7cd0a22746217997d3c38145fca3a9b299474"
+    },
+    "candidate": {
+      "origin": "https://netflux-ebboeibmn-jseow008s-projects.vercel.app",
+      "commit": "c41f96aa022a9d40eb1bc195d6da94cfbcecaf5e"
+    },
+    "conditions": {
+      "viewport": "390x844",
+      "dpr": 1,
+      "downloadBytesPerSecond": 200000,
+      "latencyMs": 150,
+      "cpuSlowdown": 4,
+      "repetitions": 3,
+      "tour": "dismissed",
+      "cache": "cold context, then same-context warm reload",
+      "note": "Synthetic sequential samples, not field percentiles. No production writes or AI calls."
+    },
+    "cases": [
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "cold",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 64.30000001192093,
+        "htmlBytes": 41644,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 3270.0999999940395,
+        "load": 5093.9000000059605,
+        "fcp": 3252,
+        "lcp": [
+          {
+            "at": 3252,
+            "tag": "IMG"
+          },
+          {
+            "at": 3588,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "highPriorityImages": 0,
+        "overflow": false,
+        "resourceBytes": 819690,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 665.6999999880791,
+            "end": 842.9000000059605,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 665.6999999880791,
+            "end": 3190.4000000059605,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 120020,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 345
+      },
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "warm",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 9.699999988079071,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 468.59999999403954,
+        "load": 775.2999999821186,
+        "fcp": 368,
+        "lcp": [
+          {
+            "at": 472,
+            "tag": "IMG"
+          },
+          {
+            "at": 740,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "highPriorityImages": 0,
+        "overflow": false,
+        "resourceBytes": 52311,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 290,
+            "end": 290,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 290.09999999403954,
+            "end": 290.09999999403954,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 125
+      },
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "cold",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "High",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 44.89999997615814,
+        "htmlBytes": 98651,
+        "htmlDecodedBytes": 1133525,
+        "domInteractive": 4994.699999988079,
+        "load": 6274.299999982119,
+        "fcp": 1900,
+        "lcp": [
+          {
+            "at": 1900,
+            "tag": "SPAN"
+          },
+          {
+            "at": 5096,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "highPriorityImages": 1,
+        "overflow": false,
+        "resourceBytes": 746533,
+        "stylesheetRequests": [],
+        "fontBytes": 120020,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 396
+      },
+      {
+        "run": 0,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "warm",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "High",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 8.300000011920929,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1133525,
+        "domInteractive": 552.0999999940395,
+        "load": 818.9000000059605,
+        "fcp": 496,
+        "lcp": [
+          {
+            "at": 496,
+            "tag": "IMG"
+          },
+          {
+            "at": 780,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "highPriorityImages": 1,
+        "overflow": false,
+        "resourceBytes": 75083,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 111
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "cold",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "High",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 35.900000005960464,
+        "htmlBytes": 98651,
+        "htmlDecodedBytes": 1133525,
+        "domInteractive": 1760.5,
+        "load": 4950.700000017881,
+        "fcp": 768,
+        "lcp": [
+          {
+            "at": 768,
+            "tag": "SPAN"
+          },
+          {
+            "at": 996,
+            "tag": "IMG"
+          },
+          {
+            "at": 1460,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "highPriorityImages": 1,
+        "overflow": false,
+        "resourceBytes": 816856,
+        "stylesheetRequests": [],
+        "fontBytes": 120020,
+        "longTaskCount": 4,
+        "longTaskTotalMs": 391
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "warm",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "High",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 7.199999988079071,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1133525,
+        "domInteractive": 601.9000000059605,
+        "load": 793.5999999940395,
+        "fcp": 556,
+        "lcp": [
+          {
+            "at": 556,
+            "tag": "IMG"
+          },
+          {
+            "at": 724,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "highPriorityImages": 1,
+        "overflow": false,
+        "resourceBytes": 36100,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 58
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "cold",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 27.69999998807907,
+        "htmlBytes": 41644,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 2920.899999976158,
+        "load": 4766.5999999940395,
+        "fcp": 2896,
+        "lcp": [
+          {
+            "at": 2896,
+            "tag": "IMG"
+          },
+          {
+            "at": 3256,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "highPriorityImages": 0,
+        "overflow": false,
+        "resourceBytes": 823257,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 291.19999998807907,
+            "end": 694.5,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 291.7999999821186,
+            "end": 2839.2999999821186,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 120020,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 373
+      },
+      {
+        "run": 1,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "warm",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 9.899999976158142,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 523.1999999880791,
+        "load": 730.7999999821186,
+        "fcp": 376,
+        "lcp": [
+          {
+            "at": 496,
+            "tag": "IMG"
+          },
+          {
+            "at": 748,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "highPriorityImages": 0,
+        "overflow": false,
+        "resourceBytes": 46119,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 289.89999997615814,
+            "end": 289.89999997615814,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 290,
+            "end": 290,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 56
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "cold",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 37.5,
+        "htmlBytes": 41644,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 2937.199999988079,
+        "load": 4788.9000000059605,
+        "fcp": 2920,
+        "lcp": [
+          {
+            "at": 2920,
+            "tag": "IMG"
+          },
+          {
+            "at": 3264,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "highPriorityImages": 0,
+        "overflow": false,
+        "resourceBytes": 824604,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 330.19999998807907,
+            "end": 514.1999999880791,
+            "transfer": 1469,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 330.19999998807907,
+            "end": 2855.0999999940395,
+            "transfer": 34951,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 120020,
+        "longTaskCount": 4,
+        "longTaskTotalMs": 432
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "baseline",
+        "cache": "warm",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 10.399999976158142,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 334776,
+        "domInteractive": 466.59999999403954,
+        "load": 756.1999999880791,
+        "fcp": 344,
+        "lcp": [
+          {
+            "at": 480,
+            "tag": "IMG"
+          },
+          {
+            "at": 716,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 2,
+        "inlineStyles": 0,
+        "highPriorityImages": 0,
+        "overflow": false,
+        "resourceBytes": 49524,
+        "stylesheetRequests": [
+          {
+            "path": "/_next/static/immutable/chunks/201b4pzldjvpe.css",
+            "type": "link",
+            "start": 275.59999999403954,
+            "end": 275.59999999403954,
+            "transfer": 0,
+            "decoded": 4687
+          },
+          {
+            "path": "/_next/static/immutable/chunks/3b0u9uhzh2fy-.css",
+            "type": "link",
+            "start": 276.2999999821186,
+            "end": 276.2999999821186,
+            "transfer": 0,
+            "decoded": 258671
+          }
+        ],
+        "fontBytes": 0,
+        "longTaskCount": 1,
+        "longTaskTotalMs": 66
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "cold",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "High",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 32.80000001192093,
+        "htmlBytes": 98651,
+        "htmlDecodedBytes": 1133525,
+        "domInteractive": 3993.0999999940395,
+        "load": 4848.5999999940395,
+        "fcp": 708,
+        "lcp": [
+          {
+            "at": 708,
+            "tag": "SPAN"
+          },
+          {
+            "at": 772,
+            "tag": "IMG"
+          },
+          {
+            "at": 3384,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "highPriorityImages": 1,
+        "overflow": false,
+        "resourceBytes": 816854,
+        "stylesheetRequests": [],
+        "fontBytes": 120020,
+        "longTaskCount": 3,
+        "longTaskTotalMs": 361
+      },
+      {
+        "run": 2,
+        "route": "/browse",
+        "target": "candidate",
+        "cache": "warm",
+        "imageRequests": [
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "High",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          },
+          {
+            "priority": "Low",
+            "path": "/_next/image"
+          }
+        ],
+        "ttfb": 14.900000005960464,
+        "htmlBytes": 300,
+        "htmlDecodedBytes": 1133525,
+        "domInteractive": 620.8000000119209,
+        "load": 898.5999999940395,
+        "fcp": 512,
+        "lcp": [
+          {
+            "at": 588,
+            "tag": "IMG"
+          },
+          {
+            "at": 856,
+            "tag": "IMG"
+          }
+        ],
+        "stylesheetLinks": 0,
+        "inlineStyles": 1,
+        "highPriorityImages": 1,
+        "overflow": false,
+        "resourceBytes": 42700,
+        "stylesheetRequests": [],
+        "fontBytes": 0,
+        "longTaskCount": 2,
+        "longTaskTotalMs": 109
+      }
+    ]
+  },
+  "limitations": [
+    "Three synthetic samples per case are not production percentiles.",
+    "First cold results retained; candidate Browse first LCP 5096ms versus baseline 3588ms.",
+    "Navigation smoke overlapped part of the hero comparison; main-thread timings may include local contention.",
+    "Final Browse median LCP 3384ms versus 3264ms is not an image-speed improvement.",
+    "Inline CSS increases HTML bytes and remains experimental in Next.js.",
+    "Home and reader reuse initial evidence because the refinement only changes HeroCarousel.",
+    "No paid AI calls or load testing."
+  ]
+}
