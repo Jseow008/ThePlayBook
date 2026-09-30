@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "dev:turbo": "next dev --turbopack",
-    "build": "next build && node scripts/check-sharp-build-traces.mjs",
+    "build": "next build && node scripts/check-sharp-build-traces.mjs && node scripts/check-critical-css.mjs",
     "start": "next start",
     "lint": "eslint . --max-warnings=0 && npm run check:type-safety-ratchet && npm run check:revalidation-boundaries && npm run check:route-shell-policy && npm run check:dependency-isolation",
     "typecheck": "tsc --noEmit",

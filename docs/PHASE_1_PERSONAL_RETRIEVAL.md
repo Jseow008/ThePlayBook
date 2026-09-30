@@ -2367,3 +2367,15 @@ meaningful cold-paint improvement and examine warm navigation/HTML costs before
 accepting the tradeoff. Keep every sample, including slow ones; do not rerun until
 favorable. A reusable browser check also asserts inline styles and no stylesheet
 dependency on hard loads. #28 remains open. AI wait time is a separate workstream.
+
+First candidate `887e315f` completed all 36 fixed cold/warm navigations. Median cold
+FCP: Home 2336→712ms, Browse 2912→756ms, reader 3564→1536ms. Warm FCP changes were
++148/+96/+68ms. However Browse LCP regressed 3252→3892ms: its first hero image now
+competes with shelf images that begin loading as soon as the earlier layout paints.
+This candidate is not accepted as-is. One targeted refinement gives the initial
+hero image explicit high fetch priority; all images/quality/layout remain unchanged.
+Next: verify the actual hero request priority and repeat the affected Browse
+comparison only; reuse unchanged Home/reader evidence. Build-time output guard
+checks rendered production HTML rather than merely checking the configuration flag.
+The initial guard test loader failed to resolve a data-URL module; replacing it
+with a normal module import fixed the fixture (three tests pass).

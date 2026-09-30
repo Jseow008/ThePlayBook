@@ -179,6 +179,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                     alt={item.title}
                                     fill
                                     priority={activeIndex === 0 && !isPrevious}
+                                    fetchPriority={activeIndex === 0 && !isPrevious ? "high" : "auto"}
                                     surface="hero-carousel"
                                     sizes="(max-width: 768px) 100vw, (max-width: 1280px) 85vw, 65vw"
                                     className="object-cover object-[50%_20%]"
@@ -213,6 +214,7 @@ export function HeroCarousel({ items }: HeroCarouselProps) {
                                         alt={item.title}
                                         fill
                                         priority={activeIndex === 0 && !isPrevious}
+                                        fetchPriority={activeIndex === 0 && !isPrevious ? "high" : "auto"}
                                         surface="hero-carousel"
                                         sizes="(max-width: 768px) 100vw, (max-width: 1280px) 82vw, 68vw"
                                         className="object-cover object-[50%_30%]"
