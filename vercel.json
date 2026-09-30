@@ -1,6 +1,9 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
+    "app/api/chat/notes/route.ts": {
+      "regions": ["bom1"]
+    },
     "app/api/account-data/user_library/route.ts": {
       "regions": ["bom1"]
     },
