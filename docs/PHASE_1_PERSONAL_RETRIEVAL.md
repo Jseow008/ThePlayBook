@@ -2676,3 +2676,54 @@ Worktree `/private/tmp/netflux-selection-attribution`, branch
 follow-up carries the deferred checkpoint history. Next: merge the evidence PR
 through required gates and remove the completed attribution monitor; further
 optimization is separate work, not a claim that the AI wait is resolved.
+
+### Compact selector IDs development experiment — 30 September 2026
+
+Worktree `/private/tmp/netflux-selector-compact`, branch
+`codex/selector-compact-development`, based on `066a672f`. The user authorized a
+bounded optimization after #205 attributed 7.596s to provider/SDK versus 646ms to
+spending reservation/settlement. Production code remains unchanged.
+
+Candidate: replace only opaque record IDs with request-local `c0`… labels, mapping
+selected IDs back afterward. Keep candidate text/order/count, system prompt,
+assessment fields, output cap, model, security requirements and expected membership.
+Use six existing synthetic precision development cases plus the independent eight-
+record capacity case. Deterministic UUID-shaped IDs replace toy IDs in BOTH arms.
+Alternate arm order, one pair per case, maximum14 provider calls, no retry,20s
+per-call deadline. No held-out cases are inspected or tuned against. The existing
+production request builder and generator are reused by the experiment harness.
+
+Frozen decision before provider run: reject candidate on extra/missing expected IDs
+or structured-output errors. Advance only if output tokens and median latency both
+fall, with full existing quality gates still required before release. This small
+sample cannot establish production percentiles or global improvement. Tokens are
+measured; actual billed cost unavailable. Direct development calls are outside
+application spending scope, controlled by the hard14-call cap instead.
+
+No-network plan and typecheck passed. Harness:
+`scripts/experiments/selector-compact-ids.ts`; plan `/private/tmp/netflux-compact-plan.json`;
+run `/private/tmp/netflux-compact-development-v1.json`. Next: inspect completed paired
+results, retain failures, choose advance/reject rather than rerunning for better
+numbers. #206 documentation merges independently; #28 remains open.
+
+
+Development result: all14 calls completed without retry; both arms passed7/7 cases,
+including the8-record capacity case. Median latency baseline6321ms versus compact
+4529ms (28.3% lower); output tokens2896 versus2372 (18.1% lower), input17580 versus
+16090 (8.5% lower). These are seven paired synthetic cases, one attempt per arm,
+not field percentiles or proof of production savings. No actual billed amount is
+claimed. Full per-case outputs/timings and frozen plan/hashes are retained in
+`docs/evidence/selector-compact-ids-development-20260930.json`.
+
+The planned development criterion passed. Next implementation must make the compact
+mapping a shared, validated request transformation used by BOTH production and
+provider evaluation. Reject unknown/duplicate labels; restore original IDs before
+materialization, fingerprint rechecks or citations. Retain separate logical-request
+and provider-wire hashes (or version the canonical wire contract) so old provider
+responses cannot pass as evidence for changed wire inputs. Existing capture replay
+currently verifies exact canonical request hashes and bypasses the default provider
+generator; modifying only that generator would produce misleading benchmark proof.
+Do not weaken those checks. No production selector code changed in this experiment;
+full frozen quality and database-backed integration evidence remain outstanding.
+Typecheck, targeted harness lint, no-network plan and diff checks passed. No new
+accounts, database writes, infrastructure or additional production AI requests.
