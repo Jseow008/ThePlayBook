@@ -295,3 +295,45 @@ test('two-account production fixture requires explicit preflight-only mode', () 
     c.preflightOnly = true;
     assert.equal(productionModule.validateProductionConfig(c, productionModule.PRODUCTION_TOKEN).users.length, 2);
 });
+
+test('concurrent action completion is independent of a pending shared request tail', async () => {
+    for (const completionOrder of [[0, 1], [1, 0]]) {
+        const cfg = config(); cfg.requestTimeoutMs = 5000;
+        const resolvers = [];
+        const transport = makeTransport(cfg, { fetchImpl: () => new Promise(resolve => resolvers.push(resolve)) });
+        const action = makeActions(cfg, transport);
+        const pending = [0, 1].map(userIndex => action({ operation: 'browse_reader', userIndex, sequence: 0 }));
+        const [first, second] = completionOrder;
+        resolvers[first](new Response('Fixture book'));
+        await pending[first];
+        assert.equal(transport.requests[first].outcome, 'success');
+        assert.equal(transport.requests[second].outcome, 'failure'); // Still pending, not a verdict on the first action.
+        resolvers[second](new Response('Fixture book'));
+        await pending[second];
+        assert(transport.requests.every(request => request.outcome === 'success'));
+    }
+});
+
+test('genuine concurrent request failure stops scheduled work', async () => {
+    const cfg = config(); cfg.requestTimeoutMs = 5000;
+    const transport = makeTransport(cfg, { fetchImpl: async () => new Response('unavailable', { status: 503 }) });
+    const action = makeActions(cfg, transport);
+    const result = await runSchedule([
+        { atMs: 0, userIndex: 0, operation: 'browse_reader', sequence: 0 },
+        { atMs: 1, userIndex: 1, operation: 'browse_reader', sequence: 0 },
+    ], async event => {
+        try { return await action(event); }
+        catch (error) { transport.abort('action_failure'); throw error; }
+    }, { signal: transport.signal });
+    assert(transport.signal.aborted);
+    assert(result.samples.some(sample => sample.outcome === 'failure'));
+    assert.equal(transport.requests[0].status, 503);
+});
+
+test('injected capacity transport leaves administrative global fetch unchanged', async () => {
+    const original = globalThis.fetch;
+    const cfg = config();
+    const transport = makeTransport(cfg, { fetchImpl: async () => new Response('Fixture book') });
+    await makeActions(cfg, transport)({ operation: 'browse_reader', userIndex: 0, sequence: 0 });
+    assert.equal(globalThis.fetch, original);
+});

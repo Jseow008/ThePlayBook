@@ -2239,6 +2239,43 @@ Branch `codex/capacity-ai-mixed`, worktree
 Next: publish this evidence-only update, then answer the user's questions before
 any further capacity testing or closure. No production test remains running.
 
+
+
+### Authorized AI confirmation — 30 September 2026
+
+After the user explicitly authorized the correction/repeat and highlighted API
+cost, 28 local harness tests passed, including both concurrent completion orders,
+a real HTTP-failure stop, and unchanged global fetch for administrative setup.
+No paid calls were used for local validation. The erroneous shared-tail assertion
+was absent; each action used the existing request/semantic verifier and failures
+aborted the mixed run. No browser-style global fetch wrapper was installed.
+
+One repeat ran on public production `6f5e35ae` /
+`dpl_8NeoLHqwf8CwZX2SfxtVHdh9NZdx`: five core users, 90 actions at 10-second pacing,
+and exactly six AI requests in three pairs. No extra AI preflight or automatic
+retry. All 90 actions started, no drops/failures, all 123 core HTTP requests passed,
+and all six AI responses contained the expected evidence. AI duration 7783–12273ms,
+within the unchanged 30-second deadline. This is a clean bounded coexistence pass,
+not an AI percentile, throughput, or diverse-query quality claim.
+
+Global settled-cost delta was 16964 microUSD ($0.016964); exposure delta including
+unsettled reservations was 18812 microUSD ($0.018812). These are recorded global
+ledger changes, not exact account-attributed billing. Existing $5/day global and
+$1/day guest limits remained enabled. The driver checked exposure before AI calls;
+no spending policy or model setting changed. Indexing used the existing worker.
+
+All seven synthetic accounts/sessions and checked library, reflections, boundaries,
+receipts, index, snapshot, and operation rows were removed. Original counts
+(8 accounts/603 catalog items) were restored and detailed health returned ok.
+[Full evidence](evidence/capacity-ai-confirmation-20260930.json). Previous failed
+setup and inconclusive mixed evidence remain intact.
+
+#28 remains open at the user's request. Larger-catalog/query-diversity evidence
+is still deferred; no further production load or paid AI test is running/planned.
+Current branch `codex/capacity-ai-confirmation`, base `6f5e35ae`, worktree
+`/Users/j/.codex/worktrees/library-latency-timing/Lifebook`. Next: publish tests and
+evidence, then answer the user's questions before any further capacity work.
+
 ### PR #198 merge blocker — 30 September 2026
 
 PR #198 remains open: validate, scope, catalog evidence, and Vercel passed, but
@@ -2255,3 +2292,9 @@ through both affected dependency chains passes. Required CI will gate the repair
 Next: merge the repair after checks, update #198 from patched main, and confirm its
 required checks and merge. #28 remains open. No application or database changes,
 production testing, model calls, or spending-policy changes are needed.
+
+PR #199 subsequently passed all required checks and merged as `84de46cc`.
+PR #198 is now rebased onto that patched main, preserving the confirmation evidence
+and regression tests. The conflict was confined to appended checkpoint sections;
+both histories were retained. Next: required checks and squash auto-merge of #198.
+No paid AI calls or production capacity reruns were performed for this update.
