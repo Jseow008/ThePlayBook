@@ -2759,3 +2759,46 @@ Test that shape on a small independent development corpus first, including outpu
 size/latency; do not change the frozen corpus, relax the eight-item bound, or run a
 second full evaluation until it is credible. No such format change is implemented
 in this held branch yet.
+
+### Fixed-slot development follow-up — 1 October 2026
+
+User authorized a small fixed-slot development test, advancing to the full frozen
+quality gate only if credible. Continued the held integration branch
+`codex/selector-compact-production` in `/private/tmp/netflux-selector-production`.
+Provider format version is `personal-evidence-selector-model-v4-fixed-slots`:
+eight named nullable assessment slots (one for exact quotations, zero for no
+candidates), strict extra-property rejection, original IDs restored after validating
+membership/duplicates. Model, candidate text/order/count and semantic relevance rules
+are unchanged; a wire-format instruction specifies slots. No UI/database changes.
+
+Typecheck, focused lint and 48 boundary/timing/spending tests passed. The independent
+seven-case development comparison made exactly 14 calls, alternating arm order,
+zero retries and the existing 20s deadline. Baseline: seven/seven passed. Fixed slots:
+five/seven passed; the note-exception case omitted a required source_segment despite
+returning its supporting highlight. The eight-procedure capacity case failed after
+20,011ms with no usage reported. The harness retained a generic error, so exact
+provider error classification is unavailable; do not invent it or repeat the call.
+
+Observed baseline tokens: 17,580 input / 2,899 output over seven completions. Fixed
+slots: 29,055 input / 1,541 output over six completions; failed-call tokens/cost unknown.
+Median completed-call durations: 3,880ms baseline versus 4,229ms fixed slots. This is a
+small synthetic development sample, not p95 or a controlled production speedup.
+Explicit slot schemas repeat the assessment definition and increase input overhead.
+
+**Decision: reject this candidate.** Do not run the 168-call full gate, deploy it,
+raise limits, discard failed evidence or repeat the comparison for favorable results.
+The previous short-ID array candidate failed its full gate; fixed slots failed its
+small development gate. Reassess the design before another experiment, per run
+policy. Production remains unchanged. The next decision should compare a smaller
+provider response contract against the required relevance reasoning; avoid another
+prompt-tuning cycle or simply increasing the maximum. No new approach is authorized
+by a passing result: none was achieved here.
+
+Evidence and the frozen decision rule are tracked in
+`docs/evidence/selector-fixed-slots-development-20261001.json`; harness:
+`scripts/experiments/selector-fixed-slots.ts`. Raw local artifact:
+`/private/tmp/netflux-slots-development-v1.json`. No subagents, accounts, migrations,
+production requests or infrastructure changes. #207's prior development evidence is
+now merged at `5cb80ea5`; its historical seven-case result does not validate this
+format. Preserve both failed attempts. Branch remains held without a release PR or
+auto-merge. #28 remains open.

@@ -1,3 +1,4 @@
+import { structuralSlotOutput } from "@/tests/fixtures/retrieval/selection-output";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildPersonalEvidenceSelectionRequest, generatePersonalEvidenceSelection } from "@/lib/server/personal-evidence-selector";
 import { measureAskNotesPhase, withAskNotesTiming } from "@/lib/server/ask-notes-timing";
@@ -15,7 +16,7 @@ beforeEach(() => {
     vi.spyOn(performance, "now").mockImplementation(() => now);
     vi.spyOn(console, "info").mockImplementation(() => {});
     mocks.reserve.mockImplementation(async () => { now += 20; return { record: mocks.record }; });
-    mocks.generate.mockImplementation(async () => { now += 100; return { output: { requestedFacets: ["private facet"], assessments: [] }, usage: { outputTokens: 12 }, response: { modelId: "test-model" } }; });
+    mocks.generate.mockImplementation(async () => { now += 100; return { output: structuralSlotOutput([]), usage: { outputTokens: 12 }, response: { modelId: "test-model" } }; });
     mocks.record.mockImplementation(async () => { now += 30; });
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllEnvs(); });

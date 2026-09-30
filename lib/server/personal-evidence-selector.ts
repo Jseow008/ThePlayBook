@@ -54,7 +54,7 @@ export type PersonalEvidenceSelectionRequest = {
     maxOutputTokens: number;
 };
 export const PERSONAL_EVIDENCE_SELECTOR_BENCHMARK_MODEL_CONFIG = Object.freeze({
-    version: "personal-evidence-selector-model-v3-compact-ids",
+    version: "personal-evidence-selector-model-v4-fixed-slots",
     promptVersion: PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION,
     provider: "anthropic",
     model: "claude-haiku-4-5-20251001",
@@ -197,7 +197,7 @@ export function buildPersonalEvidenceSelectionRequest(options: {
     if (candidateBytes > PERSONAL_EVIDENCE_SELECTOR_LIMITS.candidateBytes) throw new PersonalEvidenceSelectionError("CONTEXT_TOO_LARGE");
     const maximum = candidates.length === 0 ? 0 : options.exactQuote ? 1 : PERSONAL_EVIDENCE_SELECTOR_LIMITS.selectedItems;
     const internalText = z.string().min(1).max(PERSONAL_EVIDENCE_SELECTOR_LIMITS.internalTextCharacters).refine((value) => Boolean(value.trim()));
-    const schema: z.ZodType<PersonalEvidenceSelectionOutput> = z.object({
+    const schema = z.object({
         requestedFacets: z.array(internalText).min(1).max(PERSONAL_EVIDENCE_SELECTOR_LIMITS.requestedFacets),
         assessments: z.array(z.object({
             id: candidates.length ? z.enum(candidateIds as [string, ...string[]]) : z.never(),
@@ -235,14 +235,22 @@ export function buildPersonalEvidenceProviderRequest(request: Parameters<typeof 
         candidates: input.candidates.map((candidate, index) => ({ ...candidate, id: `c${index}` })),
     });
     const aliases = new Map(compact.candidates.map((candidate, index) => [candidate.id, originalIds[index]]));
+    const maximum = input.candidates.length === 0 ? 0 : input.exactQuote ? 1 : PERSONAL_EVIDENCE_SELECTOR_LIMITS.selectedItems;
+    const slotNames = Array.from({ length: maximum }, (_, index) => `slot${index + 1}`);
+    const slotShape = Object.fromEntries(slotNames.map(name => [name, compact.request.schema.shape.assessments.element.nullable()]));
+    const schema = z.object({ requestedFacets: compact.request.schema.shape.requestedFacets, assessments: z.object(slotShape).strict() }).strict();
+    const system = `${compact.request.system}\n\nProvider wire format: assessments is an object with exactly these slots: ${slotNames.join(", ") || "none"}. Put one assessment in each used slot, strongest first. Set every unused slot to null. Do not add slots. All relevance rules above still apply.`;
     return {
-        request: compact.request,
-        canonical: compact.canonical,
+        request: { ...compact.request, system, schema },
+        canonical: { ...compact.canonical, system, outputSchema: { format: "fixed-assessment-slots-v1", slotNames, logical: compact.canonical.outputSchema } },
         restore(output: unknown): PersonalEvidenceSelectionOutput {
-            // Validate all verdicts, unknown labels and duplicates before mapping any IDs.
-            derivePersonalEvidenceSelectionIds(output, compact.request);
-            const parsed = compact.request.schema.parse(output);
-            return { ...parsed, assessments: parsed.assessments.map(item => ({ ...item, id: aliases.get(item.id)! })) };
+            const parsed = schema.safeParse(output);
+            if (!parsed.success) throw new PersonalEvidenceSelectionError("INVALID_SELECTION");
+            const logicalOutput = { requestedFacets: parsed.data.requestedFacets,
+                assessments: slotNames.flatMap(name => parsed.data.assessments[name] === null ? [] : [parsed.data.assessments[name]]) };
+            // All identities and verdicts are checked before restoring original IDs.
+            derivePersonalEvidenceSelectionIds(logicalOutput, compact.request);
+            return { ...logicalOutput, assessments: logicalOutput.assessments.map(item => ({ ...item, id: aliases.get(item.id)! })) };
         },
     };
 }

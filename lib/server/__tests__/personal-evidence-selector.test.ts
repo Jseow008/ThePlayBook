@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createHash } from "node:crypto";
-import { structuralSelectionOutput } from "@/tests/fixtures/retrieval/selection-output";
+import { structuralSelectionOutput, structuralSlotOutput } from "@/tests/fixtures/retrieval/selection-output";
 import {
     PERSONAL_EVIDENCE_SELECTOR_LIMITS, PERSONAL_EVIDENCE_SELECTOR_PROMPT_VERSION, PERSONAL_EVIDENCE_SELECTION_OUTPUT_SCHEMA_VERSION,
     buildPersonalEvidenceSelectionRequest, canonicalPersonalEvidenceSelectionRequest, personalEvidenceSelectionRequestHash,
@@ -256,7 +256,7 @@ describe("selector deadlines and cancellation", () => {
 });
 
 describe("existing provider configuration and AI SDK6 structured output", () => {
-    const sdkResult = () => ({ output: structuralSelectionOutput(["c0"]), usage: { inputTokens: 55, outputTokens: 7, totalTokens: 62 }, response: { modelId: "actual-provider-model" } });
+    const sdkResult = () => ({ output: structuralSlotOutput(["c0"]), usage: { inputTokens: 55, outputTokens: 7, totalTokens: 62 }, response: { modelId: "actual-provider-model" } });
 
     it("uses Anthropic Haiku by default, structured output, no SDK retries and the bounded abort signal", async () => {
         vi.stubEnv("ANTHROPIC_API_KEY", "dummy-key-never-sent");

@@ -11,3 +11,9 @@ export function structuralSelectionOutput(ids: readonly string[]) {
         })),
     };
 }
+
+/** Provider wire test double; never evidence of model quality. */
+export function structuralSlotOutput(ids: readonly string[], slots = 8) {
+    const logical = structuralSelectionOutput(ids);
+    return { ...logical, assessments: Object.fromEntries(Array.from({ length: Math.max(slots, ids.length) }, (_, i) => [`slot${i + 1}`, logical.assessments[i] ?? null])) };
+}
